@@ -15,15 +15,11 @@
  */
 package org.labkey.api.gwt.client.ui.property;
 
-import com.extjs.gxt.ui.client.event.BaseEvent;
-import com.extjs.gxt.ui.client.event.ColorPaletteEvent;
-import com.extjs.gxt.ui.client.event.Events;
-import com.extjs.gxt.ui.client.event.Listener;
-import com.extjs.gxt.ui.client.widget.ColorPalette;
-import com.extjs.gxt.ui.client.widget.form.Field;
-import com.extjs.gxt.ui.client.widget.form.FieldSet;
-import com.extjs.gxt.ui.client.widget.form.TextField;
-import com.extjs.gxt.ui.client.widget.form.Validator;
+import com.google.gwt.cell.client.Cell;
+import com.google.gwt.cell.client.ValueUpdater;
+import com.google.gwt.core.client.GWT;
+import com.google.gwt.editor.client.Editor;
+import com.google.gwt.editor.client.EditorError;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.logical.shared.ValueChangeEvent;
@@ -42,6 +38,13 @@ import com.google.gwt.user.client.ui.PushButton;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.Widget;
+import com.sencha.gxt.widget.core.client.ColorPalette;
+import com.sencha.gxt.widget.core.client.ColorPaletteCell;
+import com.sencha.gxt.widget.core.client.container.VerticalLayoutContainer;
+import com.sencha.gxt.widget.core.client.form.FieldSet;
+import com.sencha.gxt.widget.core.client.form.TextField;
+import com.sencha.gxt.widget.core.client.form.Validator;
+import com.sencha.gxt.widget.core.client.form.validator.AbstractValidator;
 import org.labkey.api.gwt.client.model.GWTConditionalFormat;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -55,6 +58,7 @@ import org.labkey.api.gwt.client.util.FlexTableRowDropController;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -74,8 +78,10 @@ public class ConditionalFormatItem<DomainType extends GWTDomain<FieldType>, Fiel
     private class ColorComponents
     {
         private FieldSet _fieldSet = new FieldSet();
-        private TextField<String> _textField = new TextField<String>();
-        private ColorPalette _colorPalette = new ColorPalette();
+        private VerticalLayoutContainer _container = new VerticalLayoutContainer();
+        private TextField _textField = new TextField();
+        private ColorPaletteCell _colorPaletteCell = new ColorPaletteCell();
+        private ColorPalette _colorPalette = new ColorPalette(_colorPaletteCell);
     }
 
     public ConditionalFormatItem(RootPanel rootPanel, PropertyPane<DomainType, FieldType> propertyPane)
@@ -124,13 +130,7 @@ public class ConditionalFormatItem<DomainType extends GWTDomain<FieldType>, Fiel
         };
         _tableRowDragController.registerDropController(controller);
 
-        _addFormatButton = new ImageButton("Add Conditional Format", new ClickHandler()
-        {
-            public void onClick(ClickEvent event)
-            {
-                showFilterDialog(new GWTConditionalFormat());
-            }
-        });
+        _addFormatButton = new ImageButton("Add Conditional Format", (ClickHandler) event -> showFilterDialog(new GWTConditionalFormat()));
         flexTable.setWidget(++row, INPUT_COLUMN, _addFormatButton);
         
         return row;
@@ -256,25 +256,15 @@ public class ConditionalFormatItem<DomainType extends GWTDomain<FieldType>, Fiel
 
         for (final GWTConditionalFormat cf : _formats)
         {
-            ClickHandler editHandler = new ClickHandler()
-            {
-                public void onClick(ClickEvent event)
-                {
-                    showFilterDialog(cf);
-                }
-            };
+            ClickHandler editHandler = event -> showFilterDialog(cf);
 
             int col = 0;
 
             PushButton deleteButton = new PushButton(new Image(PropertyUtil.getContextPath() + "/_images/partdelete.gif"));
-            deleteButton.addClickHandler(new ClickHandler()
-            {
-                public void onClick(ClickEvent event)
-                {
-                    _formats.remove(cf);
-                    _propertyPane.copyValuesToPropertyDescriptor();
-                    refreshFormats();
-                }
+            deleteButton.addClickHandler(event -> {
+                _formats.remove(cf);
+                _propertyPane.copyValuesToPropertyDescriptor();
+                refreshFormats();
             });
             Tooltip.addTooltip(deleteButton, "Remove this conditional format");
             deleteButton.setVisible(_addFormatButton.isEnabled());
@@ -300,13 +290,9 @@ public class ConditionalFormatItem<DomainType extends GWTDomain<FieldType>, Fiel
             boldCheckBox.setName("Bold");
             boldCheckBox.setValue(cf.isBold());
             boldCheckBox.setEnabled(_addFormatButton.isEnabled());
-            boldCheckBox.addValueChangeHandler(new ValueChangeHandler<Boolean>()
-            {
-                public void onValueChange(ValueChangeEvent<Boolean> e)
-                {
-                    cf.setBold(e.getValue().booleanValue());
-                    propertyChanged(cf);
-                }
+            boldCheckBox.addValueChangeHandler(e -> {
+                cf.setBold(e.getValue().booleanValue());
+                propertyChanged(cf);
             });
             _formatTable.setWidget(row, col++, boldCheckBox);
 
@@ -314,13 +300,9 @@ public class ConditionalFormatItem<DomainType extends GWTDomain<FieldType>, Fiel
             italicCheckBox.setName("Italic");
             italicCheckBox.setValue(cf.isItalic());
             italicCheckBox.setEnabled(_addFormatButton.isEnabled());
-            italicCheckBox.addValueChangeHandler(new ValueChangeHandler<Boolean>()
-            {
-                public void onValueChange(ValueChangeEvent<Boolean> e)
-                {
-                    cf.setItalic(e.getValue().booleanValue());
-                    propertyChanged(cf);
-                }
+            italicCheckBox.addValueChangeHandler(e -> {
+                cf.setItalic(e.getValue().booleanValue());
+                propertyChanged(cf);
             });
             _formatTable.setWidget(row, col++, italicCheckBox);
 
@@ -328,13 +310,9 @@ public class ConditionalFormatItem<DomainType extends GWTDomain<FieldType>, Fiel
             strikethroughCheckBox.setName("Strikethrough");
             strikethroughCheckBox.setValue(cf.isStrikethrough());
             strikethroughCheckBox.setEnabled(_addFormatButton.isEnabled());
-            strikethroughCheckBox.addValueChangeHandler(new ValueChangeHandler<Boolean>()
-            {
-                public void onValueChange(ValueChangeEvent<Boolean> e)
-                {
-                    cf.setStrikethrough(e.getValue().booleanValue());
-                    propertyChanged(cf);
-                }
+            strikethroughCheckBox.addValueChangeHandler(e -> {
+                cf.setStrikethrough(e.getValue().booleanValue());
+                propertyChanged(cf);
             });
             _formatTable.setWidget(row, col++, strikethroughCheckBox);
 
@@ -343,87 +321,66 @@ public class ConditionalFormatItem<DomainType extends GWTDomain<FieldType>, Fiel
             colorsWidget.setTitle("Color");
             Tooltip.addTooltip(colorsWidget, "Click to choose colors");
 
-            colorsWidget.addClickHandler(new ClickHandler()
-            {
-                public void onClick(ClickEvent event)
+            colorsWidget.addClickHandler(event -> {
+                if (!_addFormatButton.isEnabled())
                 {
-                    if (!_addFormatButton.isEnabled())
-                    {
-                        return;
-                    }
-                    
-                    final DialogBox dialog = new DialogBox(false, true);
-                    dialog.setText("Conditional Format Colors");
-
-                    final ColorComponents foregroundComponents = new ColorComponents();
-                    final ColorComponents backgroundComponents = new ColorComponents();
-
-                    final ImageButton okButton = new ImageButton("OK", new ClickHandler()
-                    {
-                        public void onClick(ClickEvent event)
-                        {
-                            cf.setBackgroundColor(backgroundComponents._textField.getValue());
-                            cf.setTextColor(foregroundComponents._textField.getValue());
-                            colorsWidget.setHTML(getColorsHTML(cf));
-                            dialog.hide();
-                            propertyChanged(cf);
-                        }
-                    });
-                    ImageButton cancelButton = new ImageButton("Cancel", new ClickHandler()
-                    {
-                        public void onClick(ClickEvent event)
-                        {
-                            dialog.hide();
-                        }
-                    });
-
-                    configureColorPicker(foregroundComponents, cf.getTextColor());
-                    configureColorPicker(backgroundComponents, cf.getBackgroundColor());
-
-                    Listener<BaseEvent> okEnablerListener = new Listener<BaseEvent>()
-                    {
-                        public void handleEvent(BaseEvent baseEvent)
-                        {
-                            okButton.setEnabled(_colorValidator.validate(foregroundComponents._textField, foregroundComponents._textField.getValue()) == null &&
-                                    _colorValidator.validate(backgroundComponents._textField, backgroundComponents._textField.getValue()) == null);
-                        }
-                    };
-                    foregroundComponents._textField.addListener(Events.Change, okEnablerListener);
-                    backgroundComponents._textField.addListener(Events.Change, okEnablerListener);
-
-                    // Fire the listener once to initialize the dialog correctly
-                    okEnablerListener.handleEvent(null);
-
-                    foregroundComponents._fieldSet.setHeading("Foreground");
-                    foregroundComponents._fieldSet.add(foregroundComponents._textField);
-                    foregroundComponents._fieldSet.add(foregroundComponents._colorPalette);
-
-                    backgroundComponents._fieldSet.setHeading("Background");
-                    backgroundComponents._fieldSet.add(backgroundComponents._textField);
-                    backgroundComponents._fieldSet.add(backgroundComponents._colorPalette);
-
-                    HorizontalPanel buttonPanel = new HorizontalPanel();
-                    buttonPanel.add(okButton);
-                    buttonPanel.add(cancelButton);
-
-                    HorizontalPanel fieldSetPanel = new HorizontalPanel();
-                    fieldSetPanel.add(backgroundComponents._fieldSet);
-                    fieldSetPanel.add(foregroundComponents._fieldSet);
-
-                    VerticalPanel mainPanel = new VerticalPanel();
-                    mainPanel.add(fieldSetPanel);
-                    mainPanel.add(new Label("Colors must be specified in six character RGB hex format."));
-                    mainPanel.add(new Label("For example, 'FF0000' is red."));
-                    mainPanel.add(buttonPanel);
-                    mainPanel.setCellHorizontalAlignment(buttonPanel, HasHorizontalAlignment.ALIGN_CENTER);
-
-                    dialog.setWidget(mainPanel);
-                    dialog.show();
-                    WindowUtil.centerDialog(dialog);
-
-                    selectColor(foregroundComponents, foregroundComponents._textField.getValue());
-                    selectColor(backgroundComponents, backgroundComponents._textField.getValue());
+                    return;
                 }
+
+                final DialogBox dialog = new DialogBox(false, true);
+                dialog.setText("Conditional Format Colors");
+
+                final ColorComponents foregroundComponents = new ColorComponents();
+                final ColorComponents backgroundComponents = new ColorComponents();
+
+                final ImageButton okButton = new ImageButton("OK", (ClickHandler) event1 -> {
+                    cf.setBackgroundColor(backgroundComponents._textField.getValue());
+                    cf.setTextColor(foregroundComponents._textField.getValue());
+                    colorsWidget.setHTML(getColorsHTML(cf));
+                    dialog.hide();
+                    propertyChanged(cf);
+                });
+                ImageButton cancelButton = new ImageButton("Cancel", (ClickHandler) event12 -> dialog.hide());
+
+                configureColorPicker(foregroundComponents, cf.getTextColor());
+                configureColorPicker(backgroundComponents, cf.getBackgroundColor());
+
+                ValueChangeHandler okEnableHandler = event13 -> okButton.setEnabled(_colorValidator.validate(foregroundComponents._textField, foregroundComponents._textField.getValue()).isEmpty() &&
+                        _colorValidator.validate(backgroundComponents._textField, backgroundComponents._textField.getValue()).isEmpty());
+                foregroundComponents._textField.addValueChangeHandler(okEnableHandler);
+                backgroundComponents._textField.addValueChangeHandler(okEnableHandler);
+
+                foregroundComponents._fieldSet.setHeading("Foreground");
+                foregroundComponents._container.add(foregroundComponents._textField);
+                foregroundComponents._container.add(foregroundComponents._colorPalette);
+                foregroundComponents._fieldSet.add(foregroundComponents._container);
+
+                backgroundComponents._fieldSet.setHeading("Background");
+                backgroundComponents._container.add(backgroundComponents._textField);
+                backgroundComponents._container.add(backgroundComponents._colorPalette);
+                backgroundComponents._fieldSet.add(backgroundComponents._container);
+
+                HorizontalPanel buttonPanel = new HorizontalPanel();
+                buttonPanel.add(okButton);
+                buttonPanel.add(cancelButton);
+
+                HorizontalPanel fieldSetPanel = new HorizontalPanel();
+                fieldSetPanel.add(backgroundComponents._fieldSet);
+                fieldSetPanel.add(foregroundComponents._fieldSet);
+
+                VerticalPanel mainPanel = new VerticalPanel();
+                mainPanel.add(fieldSetPanel);
+                mainPanel.add(new Label("Colors must be specified in six character RGB hex format."));
+                mainPanel.add(new Label("For example, 'FF0000' is red."));
+                mainPanel.add(buttonPanel);
+                mainPanel.setCellHorizontalAlignment(buttonPanel, HasHorizontalAlignment.ALIGN_CENTER);
+
+                dialog.setWidget(mainPanel);
+                dialog.show();
+                WindowUtil.centerDialog(dialog);
+
+                selectColor(foregroundComponents, foregroundComponents._textField.getValue());
+                selectColor(backgroundComponents, backgroundComponents._textField.getValue());
             });
 
             _formatTable.setWidget(row, col++, colorsWidget);
@@ -435,19 +392,19 @@ public class ConditionalFormatItem<DomainType extends GWTDomain<FieldType>, Fiel
         _noValidatorsLabel.setVisible(_formats.isEmpty());
     }
 
-    private Validator _colorValidator = new Validator()
+    private Validator<String> _colorValidator = new AbstractValidator<String>()
     {
-        public String validate(Field field, String s)
+        public List<EditorError> validate(Editor<String> editor, String s)
         {
             if (s == null || s.length() == 0)
             {
-                return null;
+                return Collections.emptyList();
             }
             if (!s.matches(GWTConditionalFormat.COLOR_REGEX))
             {
-                return "Color must be specified as a 6 digit hex value";
+                return createError(editor, "Color must be specified as a 6 digit hex value", s);
             }
-            return null;
+            return Collections.emptyList();
         }
     };
 
@@ -479,37 +436,30 @@ public class ConditionalFormatItem<DomainType extends GWTDomain<FieldType>, Fiel
 
     private void configureColorPicker(final ColorComponents components, String initialColor)
     {
-        final TextField<String> textBox = components._textField;
+        final TextField textBox = components._textField;
         
         textBox.setValue(initialColor);
-        textBox.setValidator(_colorValidator);
+        textBox.addValidator(_colorValidator);
 
         addPaletteListener(components);
 
-        textBox.addListener(Events.Change, new Listener<BaseEvent>()
-        {
-            public void handleEvent(BaseEvent e)
+        textBox.addValueChangeHandler(event -> {
+            String value = event.getValue();
+            if (value != null && !value.equals(components._colorPalette.getValue()) &&
+                    _colorValidator.validate(textBox, value).isEmpty())
             {
-                if (textBox.getValue() != null && !textBox.getValue().equals(components._colorPalette.getValue()) &&
-                    _colorValidator.validate(textBox, textBox.getValue()) == null)
-                {
-                    selectColor(components, textBox.getValue());
-                }
+                selectColor(components, value);
             }
         });
     }
 
     private void addPaletteListener(final ColorComponents components)
     {
-        components._colorPalette.addListener(Events.Select, new Listener<ColorPaletteEvent>()
-        {
-            public void handleEvent(ColorPaletteEvent e)
+        components._colorPalette.addSelectionHandler(event -> {
+            TextField textBox = components._textField;
+            if (textBox.getValue() == null || !textBox.getValue().equals(event.getSelectedItem()))
             {
-                TextField<String> textBox = components._textField;
-                if (textBox.getValue() == null || !textBox.getValue().equals(e.getColor()))
-                {
-                    textBox.setValue(e.getColor());
-                }
+                textBox.setValue(event.getSelectedItem(), true);
             }
         });
     }
@@ -519,7 +469,7 @@ public class ConditionalFormatItem<DomainType extends GWTDomain<FieldType>, Fiel
         if (desiredColor != null && !desiredColor.isEmpty())
         {
             boolean foundColor = false;
-            for (String color : components._colorPalette.getColors())
+            for (String color : components._colorPaletteCell.getColors())
             {
                 if (color.equals(desiredColor))
                 {
@@ -530,18 +480,21 @@ public class ConditionalFormatItem<DomainType extends GWTDomain<FieldType>, Fiel
             if (!foundColor)
             {
                 // Swap out the color picker with one that contains the user-defined color
-                components._colorPalette.removeFromParent();
-                String[] colors = components._colorPalette.getColors();
+                components._container.remove(components._colorPalette);
+                String[] colors = components._colorPaletteCell.getColors();
+                String[] labels = components._colorPaletteCell.getLabels();
                 colors[colors.length - 1] = desiredColor;
 
-                components._colorPalette = new ColorPalette();
-                components._colorPalette.setColors(colors);
+                components._colorPaletteCell = new ColorPaletteCell(GWT.<ColorPaletteCell.ColorPaletteAppearance>create(ColorPaletteCell.ColorPaletteAppearance.class), colors, labels);
+                components._colorPalette = new ColorPalette(components._colorPaletteCell);
                 addPaletteListener(components);
-                components._fieldSet.add(components._colorPalette);
-                components._fieldSet.layout();
+                components._container.add(components._colorPalette);
             }
 
-            components._colorPalette.select(desiredColor);
+            // select the new color
+            components._colorPaletteCell.select(components._colorPalette.getElement(), new Cell.Context(1, 1, null), desiredColor, desiredColor, value -> {
+                // noop
+            });
         }
     }
 

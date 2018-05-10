@@ -438,7 +438,7 @@ LABKEY.Utils = new function(impl, $) {
 
         signalContainer.find('div[name=' + LABKEY.Utils.encode(signalName) + ']').remove();
         signalContainer.append('<div name="' + LABKEY.Utils.encodeHtml(signalName) + '" id="' + LABKEY.Utils.id() + '"/>');
-        if (signalResult)
+        if (signalResult !== undefined)
         {
             signalContainer.find('div[name="' + LABKEY.Utils.encodeHtml(signalName) + '"]').attr("value", LABKEY.Utils.encodeHtml(signalResult));
         }

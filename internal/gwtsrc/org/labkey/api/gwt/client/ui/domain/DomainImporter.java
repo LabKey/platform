@@ -15,7 +15,6 @@
  */
 package org.labkey.api.gwt.client.ui.domain;
 
-import com.extjs.gxt.ui.client.widget.form.SimpleComboBox;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.Timer;
@@ -29,6 +28,7 @@ import com.google.gwt.user.client.ui.FormSubmitEvent;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.Hidden;
 import com.google.gwt.user.client.ui.HorizontalPanel;
+import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.Panel;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.Widget;
@@ -458,7 +458,7 @@ public class DomainImporter
     {
         boolean columnsSelected = true;
         if (null != grid.getColumnMapper())
-            for ( SimpleComboBox<String> column : grid.getColumnMapper()._columnSelectors )
+            for (ListBox column : grid.getColumnMapper()._columnSelectors )
                 if (column.getSelectedIndex() == -1 )
                     columnsSelected = false;
         return columnsSelected;

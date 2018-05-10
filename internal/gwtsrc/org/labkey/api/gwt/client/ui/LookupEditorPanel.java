@@ -16,23 +16,17 @@
 
 package org.labkey.api.gwt.client.ui;
 
-import com.extjs.gxt.ui.client.core.XTemplate;
-import com.extjs.gxt.ui.client.data.BaseModelData;
-import com.extjs.gxt.ui.client.event.ComponentEvent;
-import com.extjs.gxt.ui.client.event.Events;
-import com.extjs.gxt.ui.client.event.FieldEvent;
-import com.extjs.gxt.ui.client.event.Listener;
-import com.extjs.gxt.ui.client.store.ListStore;
-import com.extjs.gxt.ui.client.widget.LayoutContainer;
-import com.extjs.gxt.ui.client.widget.ListView;
-import com.extjs.gxt.ui.client.widget.form.ComboBox;
-import com.extjs.gxt.ui.client.widget.layout.TableLayout;
 import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.shared.HandlerManager;
 import com.google.gwt.user.client.Event;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Label;
+import com.sencha.gxt.cell.core.client.form.ComboBoxCell;
+import com.sencha.gxt.data.shared.ListStore;
+import com.sencha.gxt.data.shared.ModelKeyProvider;
+import com.sencha.gxt.widget.core.client.container.VerticalLayoutContainer;
+import com.sencha.gxt.widget.core.client.form.SimpleComboBox;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 import org.labkey.api.gwt.client.util.PropertyUtil;
@@ -46,7 +40,7 @@ import java.util.TreeSet;
  *
  *  LookupEditorPanel for editing lookup information
  */
-public class LookupEditorPanel extends LayoutContainer
+public class LookupEditorPanel extends VerticalLayoutContainer
 {
     private final LookupServiceAsync _service;
     private final String _currentFolderText = "[current " + (PropertyUtil.isProject() ? "project" : "folder") + "]"; // Fix confusion from #19961
@@ -82,17 +76,15 @@ public class LookupEditorPanel extends LayoutContainer
 
     protected void initUI(boolean showContainer)
     {
-        setLayout(new TableLayout(2));
-        
         if (showContainer)
         {
-            ComboStore store = getContainerStore();
             _comboContainer = new _ComboBox();
             _comboContainer.setAutoSizeList(true);
             _comboContainer.setName("lookupContainer");
             _comboContainer.setEmptyText(_currentFolderText);
-            _comboContainer.setStore(store);
             _comboContainer.getElement().setId("lookupFolder");
+
+            populateContainerStore(_comboContainer);
 
             this.add(new Label("Folder"));
             this.add(_comboContainer);
@@ -127,19 +119,16 @@ public class LookupEditorPanel extends LayoutContainer
         String schema = getSchemaName();
 
         //Issue 15485: prevent query if the user enters an invalid container
-        if (folder != null && !"".equals(folder) && _comboContainer.getStore().getCount() > 0 && _comboContainer.getStore().findModel("text", folder) == null)
+        if (folder != null && !"".equals(folder) && _comboContainer.getStore().size() > 0 && _comboContainer.getStore().findModelWithKey(folder) == null)
         {
             Window.alert("Container not found: " + folder);
             _comboContainer.reset();
             return;
         }
 
-        ComboStore schemaStore = (ComboStore)_comboSchema.getStore();
-        populateSchemaStore(schemaStore, folder);
-
-        ComboStore tableStore = (ComboStore)_comboTableName.getStore();
+        populateSchemaStore(_comboSchema, folder);
         if (!_empty(schema))
-            populateTableStore(tableStore,folder, schema);
+            populateTableStore(_comboTableName, folder, schema);
 
         _comboTableName.updateTestMarker();
 
@@ -163,8 +152,12 @@ public class LookupEditorPanel extends LayoutContainer
     }
 
 
-    public static class ComboModelData extends BaseModelData
+    public static class ComboModelData
     {
+        private String _value;
+        private String _text;
+        private String _type;
+
         public ComboModelData(String value)
         {
             this(value,value);
@@ -172,72 +165,78 @@ public class LookupEditorPanel extends LayoutContainer
         public ComboModelData(String value, String text)
         {
             super();
-            set("value", value);
-            set("text", null == text ? "" : text);
+            _value = value;
+            _text = text == null ? "" : text;
         }
         public ComboModelData(String value, String text, String rangeURI)
         {
             super();
-            set("value", value);
-            set("text", null==text?"":text);
-            set("type", null==rangeURI?"":rangeURI);
+            _value = value;
+            _text = text == null ? "" : text;
+            _type = rangeURI == null ? "" : rangeURI;
+        }
+
+        public String getValue()
+        {
+            return _value;
+        }
+
+        public String getText()
+        {
+            return _text;
+        }
+
+        public String getType()
+        {
+            return _type;
         }
     }
 
-
-    public static class ComboStore extends ListStore<ComboModelData>
+    void populateContainerStore(_ComboBox comboBox)
     {
-    }
-
-
-    ComboStore getContainerStore()
-    {
-        final ComboStore ret = new ComboStore();
         _service.getContainers(new ErrorDialogAsyncCallback<List<String>>()
         {
             public void onSuccess(List<String> l)
             {
-                ret.add(new ComboModelData("", _currentFolderText));
+                comboBox.add(new ComboModelData("", _currentFolderText));
                 for (String folder : l)
-                    ret.add(new ComboModelData(folder));
+                    comboBox.add(new ComboModelData(folder));
             }
         });
-        return ret;
     }
 
 
     String lastFolderSchemaStore = null;
     
-    void populateSchemaStore(final ComboStore store, String f)
+    void populateSchemaStore(_ComboBox comboBox, String f)
     {
         final String folder = null==f ? "" : f;
         if (folder.equals(lastFolderSchemaStore))
             return;
         lastFolderSchemaStore = folder;
 
-        store.removeAll();
-        
+        comboBox.getStore().clear();
+
         _service.getSchemas(folder, getDefaultLookupSchemaName(), new ErrorDialogAsyncCallback<List<String>>()
         {
             public void onSuccess(List<String> l)
             {
                 if (!folder.equals(lastFolderSchemaStore) )
                     return;
-                store.add(new ComboModelData(""));
+                comboBox.add(new ComboModelData(""));
                 for (String schema : l)
-                    store.add(new ComboModelData(schema));
+                    comboBox.add(new ComboModelData(schema));
 
                 _comboContainer.updateTestMarker();
             }
         });
     }
 
-
     String lastFolderTableStore = null;
     String lastSchemaTableStore = null;
     PropertyType lastKeyType = null;
     
-    void populateTableStore(final ComboStore store, String f, final String schema)
+    void populateTableStore(_ComboBox comboBox, String f, final String schema)
     {
         final String folder = null==f ? "" : f;
         if (null == schema) throw new IllegalArgumentException();
@@ -255,7 +254,7 @@ public class LookupEditorPanel extends LayoutContainer
         lastSchemaTableStore = schema;
         lastKeyType = _currentType;
 
-        store.removeAll();
+        comboBox.getStore().clear();
 
         _comboTableName.setEmptyText("Loading tables...");
         _service.getTablesForLookup(folder, schema, new ErrorDialogAsyncCallback<List<LookupService.LookupTable>>()
@@ -264,7 +263,6 @@ public class LookupEditorPanel extends LayoutContainer
             {
                 if (!folder.equals(lastFolderTableStore) || !schema.equals(lastSchemaTableStore))
                     return;
-                store.removeAll();
                 TreeSet<LookupService.LookupTable> set = new TreeSet<LookupService.LookupTable>(list);
                 for (LookupService.LookupTable lk : set)
                 {
@@ -276,13 +274,13 @@ public class LookupEditorPanel extends LayoutContainer
 
                     if (ConceptPicker.validateLookup(_currentType,schema,table,tableKeyType))
                     {
-                        store.add(new ComboModelData(table, table + " (" +  tableKeyType.getShortName() + ")", tableKeyType.getURI()));
+                        comboBox.add(new ComboModelData(table, table + " (" +  tableKeyType.getShortName() + ")", tableKeyType.getURI()));
                     }
                 }
 
                 checkForMissingTargetQuery();
 
-                if (store.getCount()==0)
+                if (comboBox.getStore().size()==0)
                     _comboTableName.setEmptyText(list.isEmpty()?"No tables found":"No matching tables found");
                 else
                     updateEmptyText();
@@ -298,9 +296,9 @@ public class LookupEditorPanel extends LayoutContainer
         boolean matchExisting = false;
         StringBuilder possibleTargets = new StringBuilder();
         String separator = "";
-        for (ComboModelData comboModelData : _comboTableName.getStore().getModels())
+        for (ComboModelData comboModelData : _comboTableName.getStore().getAll())
         {
-            String value = comboModelData.get("value");
+            String value = comboModelData.getValue();
             possibleTargets.append(separator);
             possibleTargets.append(value);
             separator = "; ";
@@ -365,69 +363,47 @@ public class LookupEditorPanel extends LayoutContainer
         return _typeURI;
     }
 
-    private class _ComboBox extends ComboBox<ComboModelData>
+    private class _ComboBox extends SimpleComboBox<ComboModelData>
     {
         boolean autoSizeList = false;
         String _previousSelection = null;
         
         _ComboBox()
         {
-            super();
+            super(item -> item.getText());
             setWidth(250);
             sinkEvents(Event.ONCHANGE);
-            setTriggerAction(TriggerAction.ALL);
-            setStore(new ComboStore());
-            addListener(Events.Change,new Listener<FieldEvent>(){
-                public void handleEvent(FieldEvent fe)
+            setTriggerAction(ComboBoxCell.TriggerAction.ALL);
+            setStore(new ListStore<>(new ModelKeyProvider<ComboModelData>(){
+                @Override
+                public String getKey(ComboModelData item)
                 {
-                    _log("Change " + String.valueOf(fe.getValue()));
-                    if (null != fe.getValue())
-                    {
-                        ComboModelData cmd = (ComboModelData)fe.getValue();
-                        String type = cmd.get("type");
-                        if (null != type)
-                            _typeURI = type;
-                        _log("  value="+cmd.get("value"));
-                        _log("  text="+cmd.get("text"));
-                        _log("  type="+cmd.get("type"));
-                    }
-                    _widgetChange();
+                    return item.getValue();
                 }
-            });
-            addListener(Events.Select,new Listener<FieldEvent>(){
-                public void handleEvent(FieldEvent fe)
+            }));
+
+            addSelectionHandler(event -> {
+                ComboModelData item = event.getSelectedItem();
+                _log("Change " + String.valueOf(item.getValue()));
+                if (null != item.getValue())
                 {
-                    _log("Select " + String.valueOf(fe.getValue()));
-                    if (null != fe.getValue())
-                    {
-                        ComboModelData cmd = (ComboModelData)fe.getValue();
-                        _log("  value="+cmd.get("value"));
-                        _log("  text="+cmd.get("text"));
-                        _log("  type="+cmd.get("type"));
-                    }
-                    _widgetChange();
+                    String type = item.getType();
+                    if (null != type)
+                        _typeURI = type;
+                    _log("  value=" + item.getValue());
+                    _log("  text=" + item.getText());
+                    _log("  type=" + item.getType());
+
+                    setValue(item);
                 }
+                _widgetChange();
             });
-            addListener(Events.Expand,new Listener<FieldEvent>(){
-                public void handleEvent(FieldEvent fe)
-                {
-                    _listExpand();
-                }
-            });
-            setTemplate(XTemplate.create("<tpl for=\".\"><div class=\"x-combo-list-item\" title=\"{[fm.htmlEncode(values." + getDisplayField() + ")]}\">{[fm.htmlEncode(values." + getDisplayField() + ")]}</div></tpl>"));
             updateTestMarker();
         }
 
         void setAutoSizeList(boolean b)
         {
             autoSizeList = b;
-        }
-
-        @Override
-        protected void initList()
-        {
-            super.initList();
-            _listExpand();
         }
 
         void clearTestMarker()
@@ -457,50 +433,16 @@ public class LookupEditorPanel extends LayoutContainer
 
         String getStringValue()
         {
-            return null==getValue()?null:(String)getValue().get("value");
+            ComboModelData data = getValue();
+            return null == data ? null : data.getValue();
         }
 
-
-        void _listExpand()
-        {
-            ListView listView = getListView();
-            if (null != listView)
-            {
-                if (autoSizeList)
-                {
-                    listView.setAutoWidth(true);
-                    ((LayoutContainer)listView.getParent()).setAutoWidth(true);
-                }
-            }
-        }
-        
         void _widgetChange()
         {
             _log("widgetChange(" + getName() + ") = " + getStringValue());
             setPreviousSelection(getStringValue());
             updateUI();
             LookupEditorPanel.this.fireChange();
-        }
-
-
-        public void onComponentEvent(ComponentEvent ce)
-        {
-            super.onComponentEvent(ce);
-            if (ce.getEventTypeInt() == Event.ONCHANGE)
-            {
-                _log("_ComboBox.ONCHANGE()");
-                //onChange(ce);
-                value = new ComboModelData(getRawValue(),getRawValue());   // TODO: could this cause #24770
-                _widgetChange();
-            }
-        }
-
-        // TODO avoid double fireChangeEvent() on blur
-        protected void onChange(ComponentEvent be)
-        {
-            ComboModelData v = getValue();
-            value = v;
-            fireChangeEvent(focusValue, v);
         }
     }
 

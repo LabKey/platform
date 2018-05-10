@@ -16,25 +16,20 @@
 
 package org.labkey.api.gwt.client.ui;
 
-import com.extjs.gxt.ui.client.Style;
-import com.extjs.gxt.ui.client.event.ComponentEvent;
-import com.extjs.gxt.ui.client.event.Events;
-import com.extjs.gxt.ui.client.event.FieldEvent;
-import com.extjs.gxt.ui.client.event.Listener;
-import com.extjs.gxt.ui.client.widget.Dialog;
-import com.extjs.gxt.ui.client.widget.button.Button;
-import com.extjs.gxt.ui.client.widget.form.Field;
-import com.extjs.gxt.ui.client.widget.form.PropertyEditor;
-import com.extjs.gxt.ui.client.widget.form.Radio;
-import com.extjs.gxt.ui.client.widget.form.RadioGroup;
-import com.extjs.gxt.ui.client.widget.form.TriggerField;
-import com.extjs.gxt.ui.client.widget.layout.RowLayout;
-import com.extjs.gxt.ui.client.widget.tips.ToolTip;
 import com.google.gwt.user.client.Event;
 import com.google.gwt.user.client.Window;
+import com.google.gwt.user.client.ui.Button;
+import com.google.gwt.user.client.ui.DialogBox;
+import com.google.gwt.user.client.ui.HorizontalPanel;
+import com.google.gwt.user.client.ui.RadioButton;
+import com.sencha.gxt.core.client.util.ToggleGroup;
+import com.sencha.gxt.widget.core.client.container.VerticalLayoutContainer;
+import com.sencha.gxt.widget.core.client.form.PropertyEditor;
+import com.sencha.gxt.widget.core.client.form.TriggerField;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.util.StringUtils;
 
+import java.text.ParseException;
 import java.util.ArrayList;
 
 /**
@@ -58,23 +53,10 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
     private boolean allowAttachmentProperties = true;
     private boolean allowFlagProperties = false;
 
-    public void onComponentEvent(ComponentEvent ce)
-    {
-        super.onComponentEvent(ce);
-        if (ce.getEventTypeInt() == Event.ONCHANGE)
-        {
-            // TODO avoid double fireChangeEvent() on blur
-            ConceptType v = getValue();
-            value = v;
-            fireChangeEvent(focusValue, v);
-        }
-    }
-    
     public ConceptPicker(LookupServiceAsync lookupService, String name, GWTPropertyDescriptor initial)
     {
-        super();
+        super(conceptTypePropertyEditor);
         sinkEvents(Event.ONCHANGE);
-        setPropertyEditor(conceptTypePropertyEditor);
         _lookupService = lookupService;
         setEditable(false);
         setName(name);
@@ -84,19 +66,15 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
 
         ConceptType type = fromPropertyDescriptor(initial);
         setValue(type);
+        addTriggerClickHandler(event -> showEditor(ConceptPicker.this));
     }
 
-    @Override
-    public ToolTip getToolTip()
-    {
-        return super.getToolTip();
-    }
-
-    public void setValue(ConceptType t)
+    public void setValue(ConceptType t, boolean fireEvents)
     {
         assert t != genericLookup;
-        setToolTip(t == null ? null : StringUtils.filter(t.getDisplay()));
-        super.setValue(t);
+        if (t != null)
+            setToolTip(t == null ? null : StringUtils.filter(t.getDisplay()));
+        super.setValue(t, fireEvents);
     }
 
     public static String getDisplayString(GWTPropertyDescriptor pd)
@@ -130,60 +108,6 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
         this.allowFlagProperties = allowFlagProperties;
     }
 
-
-    //
-    // NOTE: raw value does not encode all the possible concept information
-    // so we have to override getValue() which assumes that it does
-    //
-
-    @Override
-    public ConceptType getValue()
-    {
-        ConceptType value = this.value;
-        String rawValue = this.getRawValue();
-        if (null != value && value.getDisplay().equals(rawValue))
-            return value;
-        return super.getValue();
-    }
-
-    @Override
-    protected void beforeBlur()
-    {
-        ConceptType value = this.value;
-        String rawValue = this.getRawValue();
-        // if textbox is edited directly (and valid) we want to update the display
-        if (null != value && rawValue.equals(value.getDisplay()))
-            return;
-        ConceptType type = parseRawValue(rawValue);
-        if (null != type)
-            setValue(type);
-    }
-
-    @Override
-    protected boolean validateValue(String rawValue)
-    {
-        if (null != value && rawValue.equals(value.getDisplay()))
-            return true;
-        ConceptType type = parseRawValue(rawValue);
-        if (null != type)
-            return true;
-        markInvalid("Unrecognized type");
-        return false;
-    }
-
-
-    //
-    // Custom window on trigger
-    //
-
-
-    @Override
-    protected void onTriggerClick(ComponentEvent ce)
-    {
-        showEditor(ConceptPicker.this);
-    }
-
-
     private static void _copy(GWTPropertyDescriptor from, GWTPropertyDescriptor to)
     {
         to.setRangeURI(from.getRangeURI());
@@ -194,20 +118,20 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
     }
     
 
-    private static class ConceptTypeRadio extends Radio
+    private static class ConceptTypeRadio extends RadioButton
     {
         ConceptType _type;
 
-        ConceptTypeRadio(ConceptType type)
+        ConceptTypeRadio(String name, ConceptType type)
         {
+            super(name, type.getDisplay());
             this._type = type;
-            setBoxLabel(type.getDisplay());
         }
     }
 
 
 
-    private static class EditorWindow extends Dialog
+    private static class EditorWindow extends DialogBox
     {
         ArrayList<ConceptTypeRadio> allradios = new ArrayList<ConceptTypeRadio>();
         ConceptTypeRadio _lookupRadio = null;
@@ -222,71 +146,59 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
             super();
             _service = lookupService;
             setModal(true);
-            setSize(400, 500);
-            setAutoHeight(true);
-            setHeading("Choose Field Type");
+            setWidth("400");
+            setText("Choose Field Type");
 
-            setLayout(new RowLayout(Style.Orientation.VERTICAL));
-            okText = "Apply";
-            setButtons(Dialog.OKCANCEL);
-            
             // SIMPLE
-            final RadioGroup group = new RadioGroup("rangeURI");
-            group.setOrientation(Style.Orientation.VERTICAL);
-            group.add(new ConceptTypeRadio(stringType));
-            group.add(new ConceptTypeRadio(multilineType));
-            group.add(new ConceptTypeRadio(booleanType));
-            group.add(new ConceptTypeRadio(integerType));
-            group.add(new ConceptTypeRadio(doubleType));
-            group.add(new ConceptTypeRadio(datetimeType));
-            group.add(new ConceptTypeRadio(flagType));
-            group.add(new ConceptTypeRadio(fileType));
-            group.add(new ConceptTypeRadio(attachmentType));
-            group.add(new ConceptTypeRadio(userType));
-            group.add(new ConceptTypeRadio(subjectType));
-            add(group);
+            VerticalLayoutContainer group = new VerticalLayoutContainer();
+            group.add(new ConceptTypeRadio("rangeURI", stringType));
+            group.add(new ConceptTypeRadio("rangeURI", multilineType));
+            group.add(new ConceptTypeRadio("rangeURI", booleanType));
+            group.add(new ConceptTypeRadio("rangeURI", integerType));
+            group.add(new ConceptTypeRadio("rangeURI", doubleType));
+            group.add(new ConceptTypeRadio("rangeURI", datetimeType));
+            group.add(new ConceptTypeRadio("rangeURI", flagType));
+            group.add(new ConceptTypeRadio("rangeURI", fileType));
+            group.add(new ConceptTypeRadio("rangeURI", attachmentType));
+            group.add(new ConceptTypeRadio("rangeURI", userType));
+            group.add(new ConceptTypeRadio("rangeURI", subjectType));
 
             // LOOKUP
-            _lookupRadio = new ConceptTypeRadio(genericLookup)
-            {
-                @Override
-                public void setValue(Boolean value)
-                {
-                    super.setValue(value);
-                    _lookupEditorPanel.setEnabled(getValue()==Boolean.TRUE);
-                }
-            };
+            _lookupRadio = new ConceptTypeRadio("rangeURI", genericLookup);
             _lookupEditorPanel = new LookupEditorPanel(lookupService, null, true);
             group.add(_lookupRadio);
-            add(_lookupEditorPanel);
 
-            for (Field f : group.getAll())
-                allradios.add((ConceptTypeRadio)f);
-
-            // events : disable radios in other groups
-            group.addListener(Events.Change, new Listener<FieldEvent>(){
-                public void handleEvent(FieldEvent fe)
-                {
-                    if (Boolean.TRUE != fe.getValue())
-                        return;
-                    _selectedRadio = (ConceptTypeRadio)((RadioGroup)fe.getField()).getValue();
-                }
-            });
-        }
-
-
-        @Override
-        protected void onButtonPressed(Button button)
-        {
-            if (button.getText().equalsIgnoreCase(Dialog.CANCEL))
+            // need to add all the radio buttons to a toggle group else the lookup value change handler
+            // won't fire on deselect
+            ToggleGroup toggleGroup = new ToggleGroup();
+            for (int i=0; i < group.getWidgetCount(); i++)
             {
-                hide();
-                return;
+                allradios.add((ConceptTypeRadio)group.getWidget(i));
+                toggleGroup.add((ConceptTypeRadio)group.getWidget(i));
             }
 
-            apply(true);
-        }
+            toggleGroup.addValueChangeHandler(event -> {
+                if (event.getValue().getValue() == Boolean.TRUE)
+                {
+                    _selectedRadio = (ConceptTypeRadio)event.getValue();
+                    _lookupEditorPanel.setEnabled(_selectedRadio == _lookupRadio);
+                }
+            });
+            group.add(_lookupEditorPanel);
 
+            Button btn = new Button("Apply");
+            btn.addClickHandler(event -> apply(true));
+
+            Button cancel = new Button("Cancel");
+            cancel.addClickHandler(event -> hide());
+
+            HorizontalPanel buttonPanel = new HorizontalPanel();
+            buttonPanel.add(btn);
+            buttonPanel.add(cancel);
+            group.add(buttonPanel);
+
+            add(group);
+        }
 
         @Override
         public void hide()
@@ -313,9 +225,9 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
                 ConceptTypeRadio r = allradios.get(i);
                 if (null != pd && r._type.matches(pd))
                 {
-                    r.setValue(true);
+                    r.setValue(true, true);
                     _selectedRadio = r;
-                    r.focus();
+                    r.setFocus(true);
                     pd = null;
                 }
                 if (r._type == attachmentType)
@@ -363,13 +275,13 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
                     return;
                 }
 
-                _current.setValue(new LookupConceptType(type, folder, schema, table));
+                _current.setValue(new LookupConceptType(type, folder, schema, table), true);
                 if (hideOnSuccess)
                     hide();
             }
             else // !lookup
             {
-                _current.setValue(_selectedRadio._type);
+                _current.setValue(_selectedRadio._type, true);
                 if (hideOnSuccess)
                     hide();
             }
@@ -635,14 +547,16 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
 
     public static PropertyEditor<ConceptType> conceptTypePropertyEditor = new PropertyEditor<ConceptType>()
     {
-        public String getStringValue(ConceptType value)
+        @Override
+        public ConceptType parse(CharSequence text) throws ParseException
         {
-            return null==value ? "" : value.getDisplay();
+            return parseRawValue(text.toString());
         }
 
-        public ConceptType convertStringValue(String value)
+        @Override
+        public String render(ConceptType value)
         {
-            return parseRawValue(value);
+            return null==value ? "" : value.getDisplay();
         }
     };
 
@@ -651,7 +565,7 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
      * this is a bound version of the ConceptPicker, it automatically
      * applies the value of the picker to the provided PropertyDescriptor
      */
-    public static class Bound extends ConceptPicker implements BoundWidget, Listener<FieldEvent>
+    public static class Bound extends ConceptPicker implements BoundWidget
     {
         GWTPropertyDescriptor _target;
 
@@ -659,14 +573,7 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
         {
             super(lookupService, name, target);
             _target = target;
-            setFireChangeEventOnSetValue(true);
-            this.addListener(Events.Change, this);
-        }
-
-        public void handleEvent(FieldEvent fe)
-        {
-            if (fe.getType() == Events.Change)
-                pushValue();
+            addValueChangeHandler(event -> pushValue());
         }
 
         public void pushValue()

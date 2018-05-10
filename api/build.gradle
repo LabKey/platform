@@ -42,7 +42,7 @@ List apache = [
 List gwt = [
         "com.allen-sauer.gwt.dnd:gwt-dnd:${gwtDndVersion}",
         "com.google.gwt:gwt-servlet:${gwtServletVersion}",
-        "com.extjs:gxt:${gxtVersion}"
+        "com.sencha.gxt:gxt:${gxtVersion}"
 ]
 
 List jackson = [
@@ -105,7 +105,9 @@ List javax = [
 
 configurations {
     // Exclude the bundled org.json library from com.fasterxml.jackson.datatype:jackson-datatype-json-org dependency
+    // and the org.json module as well because they get in the way of our own JSON object implementations from server/api
     all*.exclude group: "org.apache.geronimo.bundles", module: "json"
+    all*.exclude group: "org.json", module: "json"
 }
 
 // this is required for compiling the API jar file.

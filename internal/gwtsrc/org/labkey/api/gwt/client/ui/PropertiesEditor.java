@@ -16,24 +16,11 @@
 
 package org.labkey.api.gwt.client.ui;
 
-import com.extjs.gxt.ui.client.event.ComponentEvent;
-import com.extjs.gxt.ui.client.event.Events;
-import com.extjs.gxt.ui.client.event.FieldEvent;
-import com.extjs.gxt.ui.client.event.Listener;
-import com.extjs.gxt.ui.client.event.TabPanelEvent;
-import com.extjs.gxt.ui.client.util.Size;
-import com.extjs.gxt.ui.client.widget.TabItem;
-import com.extjs.gxt.ui.client.widget.form.Field;
-import com.extjs.gxt.ui.client.widget.form.TextField;
-import com.extjs.gxt.ui.client.widget.form.Validator;
-import com.extjs.gxt.ui.client.widget.layout.FitLayout;
 import com.google.gwt.dom.client.Node;
-import com.google.gwt.event.dom.client.ChangeEvent;
+import com.google.gwt.editor.client.Editor;
+import com.google.gwt.editor.client.EditorError;
 import com.google.gwt.event.dom.client.ChangeHandler;
-import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.event.dom.client.FocusEvent;
-import com.google.gwt.event.dom.client.FocusHandler;
 import com.google.gwt.event.dom.client.HasAllMouseHandlers;
 import com.google.gwt.event.dom.client.KeyPressEvent;
 import com.google.gwt.event.dom.client.KeyPressHandler;
@@ -60,9 +47,15 @@ import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.PopupPanel;
 import com.google.gwt.user.client.ui.PushButton;
 import com.google.gwt.user.client.ui.RootPanel;
+import com.google.gwt.user.client.ui.TabPanel;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.Widget;
+import com.sencha.gxt.widget.core.client.event.FocusEvent;
+import com.sencha.gxt.widget.core.client.form.Field;
+import com.sencha.gxt.widget.core.client.form.TextField;
+import com.sencha.gxt.widget.core.client.form.Validator;
+import com.sencha.gxt.widget.core.client.form.error.DefaultEditorError;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.property.ConditionalFormatItem;
@@ -88,6 +81,7 @@ import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.util.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -114,7 +108,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     }
 
     protected VerticalPanel _contentPanel;
-    private com.extjs.gxt.ui.client.widget.TabPanel _extraPropertiesTabPanel = new com.extjs.gxt.ui.client.widget.TabPanel();
+    private TabPanel _extraPropertiesTabPanel = new TabPanel();
     private Image _spacerImage;
     protected boolean _warnAboutDelete = true;
     private static final String BAD_NAME_WARNING_MESSAGE = "To improve compatibility with SQL queries, R scripts, and other code, consider using field names that only contain letters, numbers, and underscores (_), and start with a letter or underscore.";
@@ -221,30 +215,22 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         _noColumnsPanel = new VerticalPanel();
         _noColumnsPanel.add(new HTML("<br/>No fields have been defined.<br/>&nbsp;"));
 
-        ClickHandler rowBubbleHandler = new ClickHandler()
-        {
-            public void onClick(ClickEvent event)
-            {
-                HTMLTable.Cell cell = _table.getCellForEvent(event);
-                if (null == cell)
-                    return;
-                int row = cell.getRowIndex();
-                int i = row-1;
-                if (i >= 0 && i < _rows.size())
-                    select(i);
-            }
+        ClickHandler rowBubbleHandler = event -> {
+            HTMLTable.Cell cell = _table.getCellForEvent(event);
+            if (null == cell)
+                return;
+            int row = cell.getRowIndex();
+            int i = row-1;
+            if (i >= 0 && i < _rows.size())
+                select(i);
         };
 
         _table.addClickHandler(rowBubbleHandler);
 
-        ClickHandler addListener = new ClickHandler()
-        {
-            public void onClick(ClickEvent e)
-            {
-                GWTPropertyDescriptor prop = new GWTPropertyDescriptor();
-                prop.setDefaultValueType(_domain.getDefaultDefaultValueType());
-                addField((FieldType) prop);
-            }
+        ClickHandler addListener = e -> {
+            GWTPropertyDescriptor prop = new GWTPropertyDescriptor();
+            prop.setDefaultValueType(_domain.getDefaultDefaultValueType());
+            addField((FieldType) prop);
         };
 
         _buttonPanel = new HorizontalPanel();
@@ -252,46 +238,28 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
         _addFieldButton = new ImageButton("Add Field", addListener);
 
-        ClickHandler importSchemaListener = new ClickHandler()
-        {
-            public void onClick(ClickEvent e)
-            {
-                final ImportSchemaWizard popup = new ImportSchemaWizard(PropertiesEditor.this);
-                popup.setText("Import Fields");
-                popup.show();
-                WindowUtil.centerDialog(popup);
-            }
+        ClickHandler importSchemaListener = e -> {
+            final ImportSchemaWizard popup = new ImportSchemaWizard(PropertiesEditor.this);
+            popup.setText("Import Fields");
+            popup.show();
+            WindowUtil.centerDialog(popup);
         };
 
-        ClickHandler exportSchemaListener = new ClickHandler()
-        {
-            public void onClick(ClickEvent e)
-            {
-                final ExportSchemaWizard popup = new ExportSchemaWizard(PropertiesEditor.this);
-                popup.setText("Export Fields");
-                popup.show();
-                WindowUtil.centerDialog(popup);
-            }
+        ClickHandler exportSchemaListener = e -> {
+            final ExportSchemaWizard popup = new ExportSchemaWizard(PropertiesEditor.this);
+            popup.setText("Export Fields");
+            popup.show();
+            WindowUtil.centerDialog(popup);
         };
 
-        ClickHandler inferSchemaListener = new ClickHandler()
-        {
-            public void onClick(ClickEvent e)
-            {
-                final InferSchemaWizard popup = new InferSchemaWizard(PropertiesEditor.this);
-                popup.setText("Infer Fields from File");
-                popup.show();
-                WindowUtil.centerDialog(popup);
-            }
+        ClickHandler inferSchemaListener = e -> {
+            final InferSchemaWizard popup = new InferSchemaWizard(PropertiesEditor.this);
+            popup.setText("Infer Fields from File");
+            popup.show();
+            WindowUtil.centerDialog(popup);
         };
 
-        ClickHandler compareTemplateListener = new ClickHandler()
-        {
-            public void onClick(ClickEvent e)
-            {
-                _navigate("./property-compareWithTemplate.view?schemaName=" + URL.decode(_schemaName) + "&queryName=" + URL.encode(_queryName));
-            }
-        };
+        ClickHandler compareTemplateListener = e -> _navigate("./property-compareWithTemplate.view?schemaName=" + URL.decode(_schemaName) + "&queryName=" + URL.encode(_queryName));
 
         _importSchemaButton = new ImageButton("Import Fields", importSchemaListener);
         // Assume this button will be hidden; conditionally setVisible(true) in init.
@@ -313,13 +281,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
         _propertiesPanes = createPropertyPanes(propertyDock);
 
-        ChangeListener listener = new ChangeListener()
-        {
-            public void onChange(Widget sender)
-            {
-                fireChangeEvent();
-            }
-        };
+        ChangeListener listener = sender -> fireChangeEvent();
         for (PropertyPane<DomainType, FieldType> propertiesPane : _propertiesPanes)
         {
             propertiesPane.addChangeListener(listener);
@@ -328,29 +290,15 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             // TabPanel size
             wrapper.add(propertiesPane, DockPanel.NORTH);
 
-            TabItem ti = new TabItem(propertiesPane.getName());
-            ti.setLayout(new FitLayout());
-            ti.add(wrapper);
-            _extraPropertiesTabPanel.add(ti);
+            VerticalPanel lc = new VerticalPanel();
+            lc.add(wrapper);
+            _extraPropertiesTabPanel.add(lc, propertiesPane.getName());
         }
 
-        _extraPropertiesTabPanel.setPlain(true);
-        _extraPropertiesTabPanel.addListener(Events.Render, new Listener<ComponentEvent>(){
-            public void handleEvent(ComponentEvent be)
-            {
-                _extraPropertiesTabPanel.getLayoutTarget().setStyleAttribute("backgroundColor","#eeeeee");
-            }
-        });
-        _extraPropertiesTabPanel.setPixelSize(460, getExtraPropertiesHeight());
-        _extraPropertiesTabPanel.setSelection(_extraPropertiesTabPanel.getItem(0));
-        _extraPropertiesTabPanel.addListener(Events.Select, new Listener<TabPanelEvent>()
-        {
-            public void handleEvent(TabPanelEvent integerSelectionEvent)
-            {
-                repositionExtraProperties();
-            }
-        });
-
+        _extraPropertiesTabPanel.getDeckPanel().getElement().getStyle().setBackgroundColor("#eeeeee");
+        _extraPropertiesTabPanel.getDeckPanel().setPixelSize(460, getExtraPropertiesHeight());
+        _extraPropertiesTabPanel.selectTab(0);
+        _extraPropertiesTabPanel.addSelectionHandler(event -> repositionExtraProperties());
         _spacerImage = new Image(PropertyUtil.getContextPath() + "/_.gif");
         _spacerImage.setPixelSize(1, 1);
 
@@ -399,7 +347,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
     protected int getExtraPropertiesHeight()
     {
-        return 260;
+        return 232;
     }
 
     protected List<PropertyPane<DomainType, FieldType>> createPropertyPanes(DockPanel propertyDock)
@@ -409,14 +357,10 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         displayPane.addItem(new URLItem<DomainType, FieldType>(displayPane));
         displayPane.addItem(new VisibilityItem<DomainType, FieldType>(displayPane));
         addChangeHandler(displayPane.getChangeListener());
-        addChangeHandler(new ChangeHandler()
-        {
-            public void onChange(ChangeEvent event)
+        addChangeHandler(event -> {
+            if (_selectedPD != null)
             {
-                if (_selectedPD != null)
-                {
-                    updateStatusImage(_selectedPD);
-                }
+                updateStatusImage(_selectedPD);
             }
         });
 
@@ -751,8 +695,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         refreshRow(index, rowObject);
     }
 
-
-    class RowWidgetListener implements FocusHandler, Listener<ComponentEvent>, KeyPressHandler
+    class RowWidgetListener implements FocusEvent.FocusHandler, KeyPressHandler
     {
         FieldType pd;
         int index;
@@ -768,23 +711,9 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             focus();
         }
 
-        public void handleEvent(ComponentEvent e)   // Listener(Events.KeyPress,Events.Focus) (gxt)
-        {
-            if (e.getType() ==  Events.KeyPress)
-                componentKeyPress(e);
-            else if (e.getType() == Events.Focus)
-                focus();
-        }
-
         public void onKeyPress(KeyPressEvent event) // KeyPressHandler (gwt)
         {
             if (event.getCharCode() == 13)
-                enter();
-        }
-
-        public void componentKeyPress(ComponentEvent event)
-        {
-            if (event.getKeyCode() == 13)
                 enter();
         }
 
@@ -805,11 +734,12 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
     class ColumnNameValidator implements WarningValidator
     {
-        public String validate(Field<?> field, String value)
+        @Override
+        public List<EditorError> validate(Editor<String> editor, String value)
         {
             if (null != value && _domain.getReservedFieldNames().contains(value.toLowerCase()))
-                return "'" + value + "' is reserved";
-            return null;
+                return Collections.singletonList(new DefaultEditorError(editor, "'" + value + "' is reserved", value));
+            return Collections.emptyList();
         }
 
         public String warning(Field<?> field, String text)
@@ -854,20 +784,16 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         if (isReorderable())
         {
             FontButton upButton = getUpButton(index);
-            upButton.addClickHandler(new ClickHandler()
-            {
-                public void onClick(ClickEvent event)
-                {
-                    if (index < 1)
-                        return;
-                    Row moveUp = rowObject;
-                    Row moveDown = _rows.get(index - 1);
-                    _rows.set(index, moveDown);
-                    _rows.set(index - 1, moveUp);
-                    fireChangeEvent();
-                    refreshRow(index, moveDown);
-                    refreshRow(index-1, moveUp);
-                }
+            upButton.addClickHandler(event -> {
+                if (index < 1)
+                    return;
+                Row moveUp = rowObject;
+                Row moveDown = _rows.get(index - 1);
+                _rows.set(index, moveDown);
+                _rows.set(index - 1, moveUp);
+                fireChangeEvent();
+                refreshRow(index, moveDown);
+                refreshRow(index-1, moveUp);
             });
             if (index > 0)
             {
@@ -882,20 +808,16 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             _table.setWidget(tableRow, col++, upButton);
 
             FontButton downButton = getDownButton(index);
-            downButton.addClickHandler(new ClickHandler()
-            {
-                public void onClick(ClickEvent event)
-                {
-                    if (index > _rows.size() - 2)
-                        return;
-                    Row moveDown = rowObject;
-                    Row moveUp = _rows.get(index + 1);
-                    _rows.set(index, moveUp);
-                    _rows.set(index + 1, moveDown);
-                    fireChangeEvent();
-                    refreshRow(index, moveUp);
-                    refreshRow(index + 1, moveDown);
-                }
+            downButton.addClickHandler(event -> {
+                if (index > _rows.size() - 2)
+                    return;
+                Row moveDown = rowObject;
+                Row moveUp = _rows.get(index + 1);
+                _rows.set(index, moveUp);
+                _rows.set(index + 1, moveDown);
+                fireChangeEvent();
+                refreshRow(index, moveUp);
+                refreshRow(index + 1, moveDown);
             });
             if (index < _rows.size() - 1)
             {
@@ -920,55 +842,41 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         {
             if (status == FieldStatus.Deleted)
             {
-                PushButton cancelButton = getCancelButton(index, new ClickHandler()
-                {
-                    public void onClick(ClickEvent event)
-                    {
-                        markUndeleted(index);
-                    }
-                });
+                PushButton cancelButton = getCancelButton(index, event -> markUndeleted(index));
                 addTooltip(cancelButton, "Click to cancel deletion");
                 _table.setWidget(tableRow,col,cancelButton);
             }
             else
             {
-                FontButton deleteButton = getDeleteButton(index, new ClickHandler()
-                {
-                    public void onClick(ClickEvent event)
+                FontButton deleteButton = getDeleteButton(index, event -> {
+                    if (rowObject.orig == null)
                     {
-                        if (rowObject.orig == null)
+                        _rows.remove(index);
+                        if (_selectedPD == pd)
                         {
-                            _rows.remove(index);
-                            if (_selectedPD == pd)
-                            {
-                                select(null);
-                            }
-                            refresh();
+                            select(null);
+                        }
+                        refresh();
+                    }
+                    else
+                    {
+                        if (_warnAboutDelete)
+                        {
+                            // If we haven't already warned about the dangers of delete, do so now
+                            ImageButton okButton = new ImageButton("OK", (ClickHandler) e -> {
+                                // Once they say yes, don't bother them again
+                                _warnAboutDelete = false;
+                                markDeleted(index);
+                            });
+
+                            WindowUtil.showConfirmDialog("Confirm Field Deletion",
+                                    "Are you sure you want to remove this field? All of its data will be deleted as well.",
+                                    okButton);
                         }
                         else
                         {
-                            if (_warnAboutDelete)
-                            {
-                                // If we haven't already warned about the dangers of delete, do so now
-                                ImageButton okButton = new ImageButton("OK", new ClickHandler()
-                                {
-                                    public void onClick(ClickEvent e)
-                                    {
-                                        // Once they say yes, don't bother them again
-                                        _warnAboutDelete = false;
-                                        markDeleted(index);
-                                    }
-                                });
-
-                                WindowUtil.showConfirmDialog("Confirm Field Deletion",
-                                        "Are you sure you want to remove this field? All of its data will be deleted as well.",
-                                        okButton);
-                            }
-                            else
-                            {
-                                // Otherwise, don't bother the user again
-                                markDeleted(index);
-                            }
+                            // Otherwise, don't bother the user again
+                            markDeleted(index);
                         }
                     }
                 });
@@ -1003,9 +911,9 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         else
         {
             BoundTextBox nameTextBox = new BoundTextBox(pd, pd.bindProperty("name"), "120", 200, prefixInputId + "name" + index, "ff_name" + index);
-            nameTextBox.setValidator(new ColumnNameValidator());
-            nameTextBox.addListener(Events.Focus, listener);
-            nameTextBox.addListener(Events.KeyPress, listener);
+            nameTextBox.addValidator(new ColumnNameValidator());
+            nameTextBox.addFocusHandler(listener);
+            nameTextBox.addKeyPressHandler(listener);
             name = nameTextBox;
         }
         _table.setWidget(tableRow, col, name);
@@ -1020,8 +928,8 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         else
         {
             BoundTextBox labelTextBox = new BoundTextBox(pd, pd.bindProperty("label"), "120", 200, prefixInputId + "label" + index, "ff_label" + index);
-            labelTextBox.addListener(Events.Focus, listener);
-            labelTextBox.addListener(Events.KeyPress, listener);
+            labelTextBox.addFocusHandler(listener);
+            labelTextBox.addKeyPressHandler(listener);
             labelTextBox.setEnabled(!readOnly);
             label = labelTextBox;
         }
@@ -1036,18 +944,14 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         else
         {
             ConceptPicker picker = new ConceptPicker.Bound(_lookupService, "ff_type" + index, pd);
-            picker.addListener(Events.Focus, listener);
-            picker.addListener(Events.KeyPress, listener);
-            picker.addListener(Events.Change, new Listener<FieldEvent>()
-            {
-                public void handleEvent(FieldEvent be)
-                {
-                    // UNDONE: this is a terrible place to put this call.  ConceptPicker.Bound updates the type of
-                    // the underlying property descriptor in a change listener like this one, so updating measure
-                    // and dimension here introduces a dependency on listener order.
-                    pd.guessMeasureAndDimension();
-                    fireChangeEvent();
-                }
+            picker.addFocusHandler(listener);
+            picker.addKeyPressHandler(listener);
+            picker.addValueChangeHandler(event -> {
+                // UNDONE: this is a terrible place to put this call.  ConceptPicker.Bound updates the type of
+                // the underlying property descriptor in a change listener like this one, so updating measure
+                // and dimension here introduces a dependency on listener order.
+                pd.guessMeasureAndDimension();
+                fireChangeEvent();
             });
             picker.setAllowAttachmentProperties(_domain.isAllowAttachmentProperties());
             picker.setAllowFileLinkProperties(_domain.isAllowFileLinkProperties());
@@ -1399,7 +1303,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         TestUtil.signalWebDriver("propertiesEditorChange");
     }
 
-    private interface WarningValidator extends Validator
+    private interface WarningValidator extends Validator<String>
     {
         public String warning(Field<?> field, String value);
     }
@@ -1523,7 +1427,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     }
 
 
-    private class _TextField<D> extends TextField<D>
+    private class _TextField extends TextField
     {
         public _TextField()
         {
@@ -1534,42 +1438,20 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         }
 
         @Override
-        protected Size adjustInputSize()
-        {
-            // trying to make TextField look like the ConceptPicker (TriggerField)
-            return new Size(0, isFirefox?4:2);
-        }
-
-        @Override
         protected void onResize(int width, int height)
         {
+/*
             if (errorIcon != null && errorIcon.isAttached())
             {
               alignErrorIcon();
             }
             Size asize = adjustInputSize();
             getInputEl().setSize(width - asize.width, height - asize.height, false);
-        }
-
-        public void onComponentEvent(ComponentEvent ce)
-        {
-            super.onComponentEvent(ce);
-            if (ce.getEventTypeInt() == Event.ONCHANGE)
-            {
-                onChange(ce);
-            }
-        }
-
-        // TODO avoid double fireChangeEvent() on blur
-        protected void onChange(ComponentEvent be)
-        {
-            D v = getValue();
-            value = v;
-            fireChangeEvent(focusValue, v);
+*/
         }
     }
 
-    protected class BoundTextBox extends _TextField<String> implements BoundWidget
+    protected class BoundTextBox extends TextField implements BoundWidget
     {
         FieldType _pd = null;
         IPropertyWrapper _prop;
@@ -1580,26 +1462,17 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                 setId(id);
             if (null != name)
                 setName(name);
+/*
             if (maxLength > 0)
                 setMaxLength(maxLength);
+*/
             if (width != null && width.length()!=0)
                 setWidth(width);
             setAutoValidate(true);
 
-            this.addListener(Events.Change, new Listener<ComponentEvent>(){
-                public void handleEvent(ComponentEvent be)
-                {
-                    _log("Listener.handleEvent(Events.Change, " + getName());
-                    pushChange();
-                }
-            });
-
-            this.addListener(Events.KeyUp, new Listener<ComponentEvent>(){
-                public void handleEvent(ComponentEvent be)
-                {
-                    _log("Listener.handleEvent(Events.KeyUp, " + getName());
-                    pushChange();
-                }
+            addValueChangeHandler(event -> {
+                _log("Listener.handleEvent(Events.ValueChange, " + getName());
+                pushChange();
             });
         }
 
@@ -1624,8 +1497,8 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
         /* push data from field to bound property, refreshRow() on status change */
         void pushChange()
-        {                 
-            _log("update()  " + getName() + "=" + getValue() + ", " + getRawValue() +", " + (null==getInputEl()?"???":getInputEl().getValue()));
+        {
+            _log("update()  " + getName() + "=" + getValue() + ", "  + (null==getInputEl()?"???":getInputEl().getNodeValue()));
 
             String text = _default(getValue(), null);
 
@@ -1675,13 +1548,16 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
         String updateErrorFormat(String text, boolean alert)
         {
-            if (null == getValidator() || !isRendered())
+            if (getValidators().isEmpty() || !isRendered())
                 return null;
             text = _trimToNull(text);
-            String message = getValidator().validate(this, text);
-            if (null != message)
+            Validator validator = getValidators().get(0);
+            List<EditorError> messages = validator.validate(this, text);
+            if (!messages.isEmpty())
             {
-                getInputEl().addStyleName("labkey-textbox-error");
+                String message = messages.get(0).getMessage();
+
+                getInputEl().addClassName("labkey-textbox-error");
                 getInputEl().setTitle(message);
                 if (alert)
                     Window.alert(message);
@@ -1690,15 +1566,15 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             else
             {
                 // No error. How about a warning?
-                String warning = (getValidator() instanceof WarningValidator) ? ((WarningValidator)getValidator()).warning(this, text) : null;
+                String warning = (validator instanceof WarningValidator) ? ((WarningValidator)validator).warning(this, text) : null;
                 if (null != warning)
                 {
-                    getInputEl().addStyleName("labkey-textbox-warning");
+                    getInputEl().addClassName("labkey-textbox-warning");
                     getInputEl().setTitle(warning);
                     return null; // Never alert
                 }
             }
-            getInputEl().removeStyleName("labkey-textbox-error", "labkey-textbox-warning");
+            getInputEl().removeClassName("labkey-textbox-error", "labkey-textbox-warning");
             getInputEl().setTitle("");
             return null;
         }
