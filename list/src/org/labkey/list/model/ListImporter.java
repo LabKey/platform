@@ -253,6 +253,10 @@ public class ListImporter
                         throw new IllegalStateException("Table information not available for list: " + def.getName());
                     }
                 }
+                else
+                {
+                    errors.add("Could not retrieve file stream for dir: " + sourceDir.toString() + " and flie: " + fileName);
+                }
             }
             return true;
         }

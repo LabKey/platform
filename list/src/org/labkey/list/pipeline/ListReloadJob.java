@@ -51,8 +51,7 @@ public class ListReloadJob extends PipelineJob
         List<String> errors = new LinkedList<>();
         try
         {
-            //TODO ensure logging from importer is exposed in 'wrapping' pipeline job log
-            if (!importer.processSingle(new FileSystemFile(getPipeRoot().getRootPath()), _dataFile.getName(), getPipeRoot().getContainer(), getInfo().getUser(), errors, getLogger()))
+            if (!importer.processSingle(new FileSystemFile(_dataFile.getParentFile()), _dataFile.getName(), getPipeRoot().getContainer(), getInfo().getUser(), errors, getLogger()))
             {
                 error("Job failed.");
             }
