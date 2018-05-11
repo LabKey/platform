@@ -215,7 +215,8 @@ public class ModuleLoader implements Filter
         }
     }
 
-
+    /** Stash these warnings as a member variable so they can be registered after the WarningService has been initialized */
+    private final List<String> _duplicateModuleErrors = new ArrayList<>();
     private Map<String, ModuleContext> _contextMap = new HashMap<>();
     private Map<String, Module> _moduleMap = new CaseInsensitiveHashMap<>();
     private Map<Class<? extends Module>, Module> _moduleClassMap = new HashMap<>();
@@ -347,6 +348,21 @@ public class ModuleLoader implements Filter
         boolean coreRequiredUpgrade = upgradeCoreModule();
 
         initializeAndPruneModules();
+
+        if (!_duplicateModuleErrors.isEmpty())
+        {
+            WarningService.get().register(new WarningProvider()
+            {
+                @Override
+                public void addStaticWarnings(Warnings warnings)
+                {
+                    for (String error : _duplicateModuleErrors)
+                    {
+                        warnings.add(error);
+                    }
+                }
+            });
+        }
 
         // Clear the map to remove schemas associated with modules that failed to load
         clearAllSchemaDetails();
@@ -652,8 +668,10 @@ public class ModuleLoader implements Filter
                     //don't load if we've already loaded a module of the same name
                     if (moduleNameToFile.containsKey(module.getName()))
                     {
-                        _log.warn("Module with name '" + module.getName() + "' has already been loaded from "
-                                + moduleNameToFile.get(module.getName()).getAbsolutePath() + ". Skipping additional copy of the module in " + moduleDir);
+                        String error = "Module with name '" + module.getName() + "' has already been loaded from "
+                                + moduleNameToFile.get(module.getName()).getAbsolutePath() + ". Skipping additional copy of the module in " + moduleDir + ". You should delete the extra copy and restart the server.";
+                        _duplicateModuleErrors.add(error);
+                        _log.error(error);
                     }
                     else if (!moduleNamePattern.matcher(module.getName()).matches())
                     {
