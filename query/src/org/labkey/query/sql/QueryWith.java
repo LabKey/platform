@@ -3,6 +3,7 @@ package org.labkey.query.sql;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryException;
@@ -64,7 +65,9 @@ public class QueryWith
                                     if (null != withTermRelation && 0 == _query.getParseErrors().size())
                                     {
                                         _withRelations.put(legalName, withTermRelation);
-                                        queryTable.setTableInfo(withTermRelation.getTableInfo());
+                                        TableInfo tableInfo = withTermRelation.getTableInfo();
+                                        if (null != tableInfo)           // Getting table can reveal parse errors
+                                            queryTable.setTableInfo(tableInfo);
                                         queryTable.setParsingWith(false);       // Done parsing the query itself
                                     }
                                     else

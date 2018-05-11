@@ -291,7 +291,7 @@ groupByLoop:
                         }
                         queryTableWith.setSeenRecursiveReference(true);
                     }
-                    if (getParseErrors().isEmpty() && null == relation.getTableInfo())
+                    if (getParseErrors().isEmpty() && null == queryTableWith.getTableInfo())
                     {
                         // Can happen in a recursive query. To be valid, WITH must be in a UNION, not in the first child of the UNION
                         // Use the tableInfo from the first child of the UNION
@@ -299,15 +299,20 @@ groupByLoop:
                         if (null != parent && parent instanceof QueryUnion &&
                                 ((QueryUnion) parent)._termList.size() > 0)
                         {
-                            queryTableWith.setTableInfo(((QueryUnion) parent)._termList.get(0).getTableInfo());
+                            TableInfo firstTableInfo = ((QueryUnion) parent)._termList.get(0).getTableInfo();
+                            if (null != firstTableInfo)             // Could be null if parse error found
+                                queryTableWith.setTableInfo(firstTableInfo);
                         }
-                        if (null != parent && null != relation.getTableInfo())
+                        if (getParseErrors().isEmpty())
                         {
-                            _query.setHasRecursiveWith(true);
-                        }
-                        else
-                        {
-                            parseError("TableInfo not found for " + ((QIdentifier) node).getIdentifier(), node);
+                            if (null != parent && null != queryTableWith.getTableInfo())
+                            {
+                                _query.setHasRecursiveWith(true);
+                            }
+                            else
+                            {
+                                parseError("TableInfo not found for " + ((QIdentifier) node).getIdentifier(), node);
+                            }
                         }
                     }
                 }
