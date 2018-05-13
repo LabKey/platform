@@ -16,6 +16,7 @@
 package org.labkey.test.tests.study;
 
 import org.junit.experimental.categories.Category;
+import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
@@ -36,6 +37,7 @@ import static org.junit.Assert.assertTrue;
 import static org.labkey.test.util.DataRegionTable.DataRegion;
 
 @Category({DailyC.class})
+@BaseWebDriverTest.ClassTimeout(minutes = 15)
 public class AncillaryStudyTest extends StudyBaseTest
 {
     private static final String PROJECT_NAME = "AncillaryStudyTest Project";
