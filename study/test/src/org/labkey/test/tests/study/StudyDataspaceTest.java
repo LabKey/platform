@@ -20,6 +20,7 @@ import org.apache.commons.collections4.bag.HashBag;
 import org.junit.Assert;
 import org.junit.experimental.categories.Category;
 import org.labkey.api.util.Pair;
+import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyC;
@@ -42,6 +43,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 
 @Category({DailyC.class})
+@BaseWebDriverTest.ClassTimeout(minutes = 15)
 public class StudyDataspaceTest extends StudyBaseTest
 {
     protected final String FOLDER_STUDY1 = "Study 1";

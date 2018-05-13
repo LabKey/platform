@@ -56,7 +56,7 @@ import static org.junit.Assert.fail;
  * Each @Test then sets a property in that study, exports the study, and reimports it into a subfolder
  */
 @Category({DailyC.class, FileBrowser.class})
-@BaseWebDriverTest.ClassTimeout(minutes = 60)
+@BaseWebDriverTest.ClassTimeout(minutes = 28)
 public class StudySimpleExportTest extends StudyBaseTest
 {
     private static final String TEST_DATASET_NAME = "TestDataset";

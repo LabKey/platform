@@ -23,6 +23,7 @@ import org.labkey.remoteapi.query.ContainerFilter;
 import org.labkey.remoteapi.query.SelectRowsCommand;
 import org.labkey.remoteapi.query.SelectRowsResponse;
 import org.labkey.remoteapi.query.Sort;
+import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.Locators;
 import org.labkey.test.SortDirection;
@@ -66,6 +67,7 @@ import static org.labkey.test.util.DataRegionTable.DataRegion;
 import static org.labkey.test.util.PasswordUtil.getUsername;
 
 @Category({Specimen.class, DailyC.class})
+@BaseWebDriverTest.ClassTimeout(minutes = 15)
 public class StudyTest extends StudyBaseTest
 {
     protected String datasetLink = datasetCount + " datasets";

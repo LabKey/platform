@@ -17,6 +17,7 @@ package org.labkey.test.tests.study;
 
 import org.junit.Assert;
 import org.junit.experimental.categories.Category;
+import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.components.PropertiesEditor.PhiSelectType;
 import org.labkey.test.Locator;
 import org.labkey.test.SortDirection;
@@ -35,6 +36,7 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 
 @Category({DailyC.class})
+@BaseWebDriverTest.ClassTimeout(minutes = 15)
 public class StudyPHIExportTest extends StudyExportTest
 {
     private String idPreface = "P!@#$%^&*(";
