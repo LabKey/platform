@@ -593,6 +593,27 @@ public class SQLFragment implements Appendable, CharSequence
     {
         if (null == commonTableExpressionsMap)
             commonTableExpressionsMap = new LinkedHashMap<>();
+
+        if (null != sqlf.commonTableExpressionsMap && !sqlf.commonTableExpressionsMap.isEmpty())
+        {
+            // Need to merge CTEs up; this.cte depends on newSql.ctes, so they need to come first
+            SQLFragment newSql = new SQLFragment(sqlf);
+            LinkedHashMap<Object, CTE> toMap = new LinkedHashMap<>(newSql.commonTableExpressionsMap);
+            for (Map.Entry<Object, CTE> e : commonTableExpressionsMap.entrySet())
+            {
+                CTE from = e.getValue();
+                CTE to = toMap.get(e.getKey());
+                if (null != to)
+                    to.tokens.addAll(from.tokens);
+                else
+                    toMap.put(e.getKey(), from.copy(false));
+            }
+
+            commonTableExpressionsMap = toMap;
+            newSql.commonTableExpressionsMap = null;
+            sqlf = newSql;
+        }
+
         CTE cte = commonTableExpressionsMap.get(key);
         if (null == cte)
             throw new IllegalStateException("CTE not found.");
