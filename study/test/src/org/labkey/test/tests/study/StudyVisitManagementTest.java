@@ -47,6 +47,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @Category({DailyC.class, Study.class})
+@BaseWebDriverTest.ClassTimeout(minutes = 10)
 public class StudyVisitManagementTest extends BaseWebDriverTest
 {
     private final File INITIAL_FOLDER_ARCHIVE = TestFileUtils.getSampleData("study/StudyVisitManagement.folder.zip");

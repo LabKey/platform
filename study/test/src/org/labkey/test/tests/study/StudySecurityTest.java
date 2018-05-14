@@ -16,6 +16,7 @@
 package org.labkey.test.tests.study;
 
 import org.junit.experimental.categories.Category;
+import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
@@ -24,6 +25,7 @@ import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
 
 @Category({DailyC.class})
+@BaseWebDriverTest.ClassTimeout(minutes = 15)
 public class StudySecurityTest extends StudyBaseTest
 {
     protected static final String READER = "dsreader@studysecurity.test";

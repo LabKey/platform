@@ -17,6 +17,7 @@ package org.labkey.test.tests.study;
 
 import com.google.common.base.Function;
 import org.junit.experimental.categories.Category;
+import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyC;
@@ -40,6 +41,7 @@ import java.io.File;
 import java.util.Collections;
 
 @Category({DailyC.class})
+@BaseWebDriverTest.ClassTimeout(minutes = 15)
 public class StudyScheduleTest extends StudyBaseTest
 {
     // dataset names

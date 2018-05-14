@@ -17,6 +17,7 @@
 package org.labkey.test.tests.study;
 
 import org.junit.experimental.categories.Category;
+import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.tests.StudyBaseTest;
@@ -30,6 +31,7 @@ import java.util.List;
 import static org.junit.Assert.assertFalse;
 
 @Category({DailyC.class})
+@BaseWebDriverTest.ClassTimeout(minutes = 10)
 public class StudyDemoModeTest extends StudyBaseTest
 {
     @Override
