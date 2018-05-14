@@ -652,6 +652,8 @@ public class AdminController extends SpringActionController
     @IgnoresAllocationTracking
     public class MaintenanceAction extends SimpleViewAction<ReturnUrlForm>
     {
+        private String _title = "Maintenance in progress";
+
         public ModelAndView getView(ReturnUrlForm form, BindException errors)
         {
             if (!getUser().isInSiteAdminGroup())
@@ -664,16 +666,15 @@ public class AdminController extends SpringActionController
             boolean startupInProgress = ModuleLoader.getInstance().isStartupInProgress();
             boolean maintenanceMode = AppProps.getInstance().isUserRequestedAdminOnlyMode();
 
-            String title = "Maintenance in progress";
             String content = "This site is currently undergoing maintenance, only site admins may login at this time.";
             if (upgradeInProgress)
             {
-                title = "Upgrade in progress";
+                _title = "Upgrade in progress";
                 content = "Upgrade in progress: only site admins may login at this time. Your browser will be redirected when startup is complete.";
             }
             else if (startupInProgress)
             {
-                title = "Startup in progress";
+                _title = "Startup in progress";
                 content = "Startup in progress: only site admins may login at this time. Your browser will be redirected when startup is complete.";
             }
             else if (maintenanceMode)
@@ -686,7 +687,7 @@ public class AdminController extends SpringActionController
             }
 
             if (content == null)
-                content = title;
+                content = _title;
 
             ActionURL loginURL = null;
             if (getUser().isGuest())
@@ -703,13 +704,13 @@ public class AdminController extends SpringActionController
             bean.loginURL = loginURL;
 
             JspView view = new JspView<>("/org/labkey/core/admin/maintenance.jsp", bean, errors);
-            view.setTitle(title);
+            view.setTitle(_title);
             return view;
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return null;
+            return root.addChild(_title);
         }
     }
 
