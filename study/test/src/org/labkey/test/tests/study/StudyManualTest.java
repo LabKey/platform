@@ -206,7 +206,7 @@ public abstract class StudyManualTest extends StudyTest
                 .setName("verifyAssay")
                 .submit();
 
-        waitForElement(Locator.xpath("//input[@id='DatasetDesignerName']"), WAIT_FOR_JAVASCRIPT);
+        waitForElement(Locator.input("dsName"), WAIT_FOR_JAVASCRIPT);
 
         checkRadioButton(Locator.radioButtonByName("additionalKey").index(1));
 

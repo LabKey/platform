@@ -25,7 +25,6 @@ import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.logical.shared.ValueChangeEvent;
 import com.google.gwt.event.logical.shared.ValueChangeHandler;
-import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.ChangeListener;
@@ -675,7 +674,6 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
             });
             if (fromAssay)
                 dsName.setEnabled(false);
-            DOM.setElementAttribute(dsName._box.getElement(), "id", "DatasetDesignerName");
             HorizontalPanel panel = new HorizontalPanel();
             panel.add(new Label("Name"));
             panel.add(new HelpPopup("Name", "Short unique name, e.g. 'DEM1'"));
@@ -683,11 +681,15 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
             cellFormatter.setStyleName(row, 0, labelStyleName);
             _table.setWidget(row, 1, dsName);
 
+            panel = new HorizontalPanel();
+            panel.add(new Label("ID"));
+
             TextBox dsId = new TextBox();
+            dsId.setName("dsId");
             dsId.setText(Integer.toString(_dataset.getDatasetId()));
             dsId.setEnabled(false);
 
-            _table.setHTML(row, 2, "ID");
+            _table.setWidget(row, 2, panel);
             cellFormatter.setStyleName(row, 2, labelStyleName);
             _table.setWidget(row++, 3, dsId);
 
@@ -753,6 +755,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
                     }
                 }
             });
+            dsCohort.setName("dsCohort");
             panel = new HorizontalPanel();
             panel.add(new Label("Cohort Association"));
             _table.setWidget(row, 0, panel);
@@ -776,6 +779,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
                         }
                     }
                 });
+                dsVisitDate.setName("dsVisitDate");
                 panel = new HorizontalPanel();
                 panel.add(new Label("Visit Date Column"));
                 panel.add(new HelpPopup("Visit Date Column", "If the official 'Visit Date' for a visit can come from this dataset, choose the date column to represent it. Note that since datasets can include data from many visits, each visit must also indicate the official 'VisitDate' dataset."));
@@ -837,7 +841,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
                     onAdditionalKeyFieldChanged();
                 }
             });
-            DOM.setElementAttribute(dataFieldsBox.getElement(), "id", "list_dataField");
+            dataFieldsBox.setName("list_dataField");
             dataFieldsBox.setEnabled(!fromAssay && !_dataset.getDemographicData() && !_dataset.getKeyPropertyManaged() && _dataset.getKeyPropertyName() != null);
 
             panel.add(dataFieldsBox);
@@ -862,7 +866,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
                     onAdditionalKeyFieldChanged();
                 }
             });
-            DOM.setElementAttribute(managedFieldsBox.getElement(), "id", "list_managedField");
+            managedFieldsBox.setName("list_managedField");
             managedFieldsBox.setEnabled(_dataset.getKeyPropertyManaged() && !fromAssay && !_dataset.getDemographicData());
 
             panel.add(managedFieldsBox);

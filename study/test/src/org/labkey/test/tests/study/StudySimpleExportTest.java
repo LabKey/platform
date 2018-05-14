@@ -133,14 +133,17 @@ public class StudySimpleExportTest extends StudyBaseTest
                 .clickCreateNewDataset()
                 .setName(TEST_DATASET_NAME)
                 .submit();
-        _listHelper.deleteField("Dataset Fields", 0);
-        _listHelper.addField("Dataset Fields", "TestInt", "TestInt", ListHelper.ListColumnType.Integer,
-                new ListHelper.RangeValidator("numberValidator", "numberValidator", "TestInt must equals '999'.", ListHelper.RangeType.Equals, "999"));
-        _listHelper.addField("Dataset Fields", "TestString", "TestRequiredString", ListHelper.ListColumnType.String, null, true);
+        PropertiesEditor fieldsEditor = editDatasetPage.getFieldsEditor();
+        fieldsEditor.selectField(0).markForDeletion();
+        fieldsEditor.addField(new FieldDefinition("TestInt").setLabel("TestInt").setType(FieldDefinition.ColumnType.Integer)
+                .setValidator(new ListHelper.RangeValidator("numberValidator", "numberValidator", "TestInt must equals '999'.", ListHelper.RangeType.Equals, "999"))
+                .setRequired(false));
+        fieldsEditor.addField(new FieldDefinition("TestString").setLabel("TestRequiredString").setType(FieldDefinition.ColumnType.String)
+                .setRequired(true));
         // Format "TestDate" as "Date"
-        _listHelper.addField("Dataset Fields", "TestDate", "TestDate", ListHelper.ListColumnType.DateTime);
+        fieldsEditor.addField(new FieldDefinition("TestDate").setLabel("TestDate").setType(FieldDefinition.ColumnType.DateTime));
         // "TestDateTime" format will default to date-time
-        _listHelper.addField("Dataset Fields", "TestDateTime", "TestDateTime", ListHelper.ListColumnType.DateTime);
+        fieldsEditor.addField(new FieldDefinition("TestDateTime").setLabel("TestDateTime").setType(FieldDefinition.ColumnType.DateTime));
         editDatasetPage
                 .save()
                 .clickViewData()

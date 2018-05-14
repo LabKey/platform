@@ -382,13 +382,13 @@ public class QuerySnapshotTest extends StudyBaseTest
         if (keyField != null)
         {
             clickButton("Edit Dataset Definition");
-            waitForElement(Locator.xpath("//input[@id='DatasetDesignerName']"), WAIT_FOR_JAVASCRIPT);
+            waitForElement(Locator.input("dsName"), WAIT_FOR_JAVASCRIPT);
 
             _listHelper.addField("Dataset Fields", keyField, null, ListHelper.ListColumnType.Integer);
 
             click(Locator.name("ff_name0"));
             click(Locator.radioButtonById("button_managedField"));
-            selectOptionByText(Locator.xpath("//select[@id='list_managedField']"), keyField);
+            selectOptionByText(Locator.name("list_managedField"), keyField);
             clickButton("Save", WAIT_FOR_JAVASCRIPT);
         }
         clickButton("Create Snapshot");

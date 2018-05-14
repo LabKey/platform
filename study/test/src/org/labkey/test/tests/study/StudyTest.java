@@ -780,7 +780,7 @@ public class StudyTest extends StudyBaseTest
 
         setFormElement(Locator.name("typeName"), PARTICIPANT_CMT_DATASET);
         clickButton("Next");
-        waitForElement(Locator.xpath("//input[@id='DatasetDesignerName']"), WAIT_FOR_JAVASCRIPT);
+        waitForElement(Locator.input("dsName"), WAIT_FOR_JAVASCRIPT);
 
         // set the demographic data checkbox
         checkCheckbox(Locator.xpath("//input[@name='demographicData']"));
@@ -801,7 +801,7 @@ public class StudyTest extends StudyBaseTest
 
             setFormElement(Locator.name("typeName"), PARTICIPANT_VISIT_CMT_DATASET);
             clickButton("Next");
-            waitForElement(Locator.xpath("//input[@id='DatasetDesignerName']"), WAIT_FOR_JAVASCRIPT);
+            waitForElement(Locator.input("dsName"), WAIT_FOR_JAVASCRIPT);
 
             // add a comment field
             editor = PropertiesEditor.PropertiesEditor(getDriver()).withTitleContaining("Dataset Fields").find();
@@ -1192,11 +1192,7 @@ public class StudyTest extends StudyBaseTest
         editDatasetPage
                 .getFieldsEditor()
                 .addField(new FieldDefinition("VisitDay").setLabel("VisitDay").setType(FieldDefinition.ColumnType.Integer));
-        Locator element3 = Locator.tagWithClass("select", "gwt-ListBox").withPredicate(Locator.xpath("../preceding-sibling::td/table/tbody/tr/td/div").withText("Visit Date Column"));
-
-        selectOptionByValue(element3, "DEMdt");
-
-        editDatasetPage
+        editDatasetPage.setVisitDate("DEMdt")
                 .save()
                 .clickViewData();
 

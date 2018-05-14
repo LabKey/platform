@@ -162,7 +162,7 @@ public class StudyMergeParticipantsTest extends StudyBaseTest
         setFormElement(Locator.name("tsv"), "Property\tNotNull\n" + ALIAS_COLUMN + "\tTRUE\n" + SOURCE_COLUMN + "\tTRUE");
         clickButton("Import", ALIAS_COLUMN);
         click(Locator.radioButtonById("button_dataField"));
-        selectOptionByValue(Locator.id("list_dataField"), SOURCE_COLUMN);
+        selectOptionByValue(Locator.name("list_dataField"), SOURCE_COLUMN);
         editDatasetPage
                 .save()
                 .clickViewData()
