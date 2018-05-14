@@ -476,10 +476,9 @@ public class StorageProvisioner
             {
                 mvColumn = storageTable.getColumn(mvColumnName);
                 if (null != mvColumn)
-                    break;
+                    return mvColumn;
             }
-            if (null == mvColumn)
-                throw new IllegalStateException(errMessage);
+            throw new IllegalStateException(errMessage);
         }
         return mvColumn;
     }
