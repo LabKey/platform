@@ -873,7 +873,7 @@ public class PipelineServiceImpl implements PipelineService
     {
         private static String PROJECT_NAME = "__PipelineRootTestProject";
         private static String FOLDER_NAME = "subfolder";
-        private static String DEFAULT_ROOT_URI = "build/deploy/files/__PipelineRootTestProject/@files";
+        private static String DEFAULT_ROOT_URI = "/files/__PipelineRootTestProject/@files";
         private static String FILE_ROOT_SUFFIX = "_FileRootTest";
         private static String PIPELINE_ROOT_SUFFIX = "_PipelineRootTest";
 
