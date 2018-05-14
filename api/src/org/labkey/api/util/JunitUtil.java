@@ -17,6 +17,7 @@ package org.labkey.api.util;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assume;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.Module;
@@ -244,6 +245,8 @@ public class JunitUtil
         }
 
         File file = new File(sampleDataDir, relativePath);
+
+        Assume.assumeTrue("No sample data directory was found at '" + sampleDataDir.getAbsolutePath() + "'. Skipping test.", sampleDataDir.exists());
 
         return file.exists() ? file : null;
     }
