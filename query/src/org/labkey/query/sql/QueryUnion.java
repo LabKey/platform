@@ -303,8 +303,6 @@ public class QueryUnion extends QueryRelation
             {
                 SQLFragment f = new SQLFragment();
                 f.append("(").append(getSql()).append(") ").append(alias);
-                if (null != getQueryWith())
-                    f.prepend(getQueryWith().getQueryWithSql());         // Only CTEs
                 return f;
             }
 

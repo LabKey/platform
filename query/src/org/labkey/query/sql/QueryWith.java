@@ -15,7 +15,7 @@ import java.util.Map;
 
 public class QueryWith
 {
-    final private Map<String, QueryRelation> _withRelations = new LinkedCaseInsensitiveMap<>();
+    final private Map<String, WithInfo> _withRelations = new LinkedCaseInsensitiveMap<>();
     final private Query _query;
     final private SQLFragment _withSql = new SQLFragment();
 
@@ -48,23 +48,25 @@ public class QueryWith
                         else
                         {
                             String legalName = getLegalName(dialect, aliasKey.getName());
-                            if (null != _withSql.getCommonTableExpressionToken(makeCteKey(legalName)))
+                            String cteKey = makeCteKey(legalName);
+
+                            if (null != _withRelations.get(cteKey))
                                 Query.parseError(errors, aliasKey.getName() + " already used as CTE name.", expr);
                             else
                             {
-                                String cteToken = _withSql.createCommonTableExpressionToken(makeCteKey(legalName), legalName);
+                                WithInfo withInfo = addWithInfo(cteKey, legalName);
                                 if (null != _query.lookupWithTable(legalName))
                                     Query.parseError(errors, aliasKey + " was specified more than once in With.", expr);
                                 else
                                 {
-                                    QueryTableWith queryTable = new QueryTableWith(_query, _query.getSchema(), legalName, cteToken);
+                                    QueryTableWith queryTable = new QueryTableWith(_query, _query.getSchema(), legalName, cteKey, withInfo.getCteToken());
                                     _query.putWithTable(legalName, queryTable);
 
                                     // Build relations after creating QueryTable to handle recursive queries
                                     QueryRelation withTermRelation = Query.createQueryRelation(_query, expr, false);
                                     if (null != withTermRelation && 0 == _query.getParseErrors().size())
                                     {
-                                        _withRelations.put(legalName, withTermRelation);
+                                        withInfo.setRelation(withTermRelation);
                                         TableInfo tableInfo = withTermRelation.getTableInfo();
                                         if (null != tableInfo)           // Getting table can reveal parse errors
                                             queryTable.setTableInfo(tableInfo);
@@ -93,18 +95,24 @@ public class QueryWith
         }
     }
 
-    public SQLFragment getQueryWithSql()
+    private SQLFragment getQueryWithSql(String cteKey)
     {
-        boolean dialectNeedsRecursive = _query.getSchema().getDbSchema().getSqlDialect().isWithRecursiveKeywordRequired();
-        for (Map.Entry<String, QueryRelation> entry : getWithRelations().entrySet())
-        {
-            _withSql.setCommonTableExpressionSql(makeCteKey(entry.getKey()), entry.getValue().getSql(),
-                    (dialectNeedsRecursive && _query.hasRecursiveWith()));
-        }
-        return _withSql;
+        SqlDialect dialect = _query.getSchema().getDbSchema().getSqlDialect();
+        WithInfo withInfo = getWithRelations().get(cteKey);
+        if (null == withInfo)
+            throw new IllegalStateException("Expected CTE.");
+        withInfo.setCTE(dialect.isWithRecursiveKeywordRequired() && _query.hasRecursiveWith());
+        return withInfo._sql;
     }
 
-    private Map<String, QueryRelation> getWithRelations()
+    private WithInfo addWithInfo(String cteKey, String legalName)
+    {
+        WithInfo withInfo = new WithInfo(cteKey, legalName);
+        _withRelations.put(cteKey, withInfo);
+        return withInfo;
+    }
+
+    private Map<String, WithInfo> getWithRelations()
     {
         return _withRelations;
     }
@@ -124,11 +132,13 @@ public class QueryWith
         private boolean _seenRecursiveReference = false;
         private boolean _parsingWith = true;
         private boolean _settingContainerFilter = false;    // prevent endless recursion
+        final private String _cteKey;
         final private String _cteToken;
 
-        public QueryTableWith(Query query, QuerySchema schema, String alias, String cteToken)
+        public QueryTableWith(Query query, QuerySchema schema, String alias, String cteKey, String cteToken)
         {
             super(query, schema, alias);
+            _cteKey = cteKey;
             _cteToken = cteToken;
         }
 
@@ -137,7 +147,14 @@ public class QueryWith
         {
             // Reference to With
             _generateSelectSQL = true;
-            return new SQLFragment("(SELECT * FROM ").append(_cteToken).append(") ").append(getAlias());
+            SQLFragment sql = new SQLFragment("(SELECT * FROM ")
+                    .append(_cteToken).append(") ")
+                    .append(getAlias());
+
+            if (!_parsingWith)
+                sql.prepend(getQueryWithSql(_cteKey));
+            
+            return sql;
         }
 
         @Override
@@ -147,6 +164,9 @@ public class QueryWith
             {
                 _settingContainerFilter = true;
                 super.setContainerFilter(containerFilter);
+
+                // Need to regenerate WITH SQL
+                getWithRelations().get(_cteKey).clearCTESet();
                 _settingContainerFilter = false;
             }
         }
@@ -169,6 +189,51 @@ public class QueryWith
         public void setParsingWith(boolean parsingWith)
         {
             _parsingWith = parsingWith;
+        }
+    }
+
+    private static class WithInfo
+    {
+        private QueryRelation _relation = null;
+        private final SQLFragment _sql;
+        private final String _cteToken;
+        private final String _cteKey;
+        private boolean _isCTESet = false;
+
+        WithInfo(String cteKey, String legalName)
+        {
+            _sql = new SQLFragment();
+            _cteKey = cteKey;
+            _cteToken = _sql.createCommonTableExpressionToken(cteKey, legalName);
+        }
+
+        public void setCTE(boolean isRecursive)
+        {
+            if (!_isCTESet)
+            {
+                _isCTESet = true;       // Set first to prevent endless recursion
+                _sql.setCommonTableExpressionSql(_cteKey, _relation.getSql(), isRecursive);
+            }
+        }
+
+        public SQLFragment getSql()
+        {
+            return _sql;
+        }
+
+        public String getCteToken()
+        {
+            return _cteToken;
+        }
+
+        public void setRelation(QueryRelation relation)
+        {
+            this._relation = relation;
+        }
+
+        public void clearCTESet()
+        {
+            _isCTESet = false;
         }
     }
 }

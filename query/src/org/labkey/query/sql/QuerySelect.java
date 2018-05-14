@@ -1199,9 +1199,6 @@ groupByLoop:
                 SQLFragment f = new SQLFragment();
                 f.append("(").append(s).append(") ").append(alias);
 
-                if (null != getQueryWith())
-                    f.prepend(getQueryWith().getQueryWithSql());     // Only CTEs
-
                 return f;
             }
 

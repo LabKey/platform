@@ -1519,6 +1519,7 @@ public class Query
         // WITH
         new SqlTest("WITH peeps AS (SELECT * FROM R) SELECT * FROM peeps", -1, 84),
         new SqlTest("WITH peeps1 AS (SELECT * FROM R), peeps AS (SELECT * FROM peeps1 UNION ALL SELECT * FROM peeps WHERE (1=0)) SELECT * FROM peeps", -1, 84),
+        new SqlTest("WITH peeps1 AS (SELECT * FROM R), peeps AS (SELECT * FROM peeps1 UNION ALL SELECT * FROM peeps WHERE (1=0)), peeps2 AS (SELECT * FROM peeps) SELECT * FROM peeps2", -1, 84),
         new SqlTest("WITH peeps1 AS (SELECT * FROM R), peeps AS (SELECT * FROM peeps1 UNION ALL SELECT * FROM peeps WHERE (1=0)) SELECT p.* FROM R JOIN peeps p ON p.rowId = R.rowId", -1, 84),
         new SqlTest("WITH \"P 1\" AS (SELECT * FROM R), \"P 2\" AS (SELECT seven, twelve, day, month, date, duration, guid FROM \"P 1\") SELECT * FROM \"P 2\"", 7, 84),
         new SqlTest("WITH \"P 1\" AS (SELECT * FROM Folder.qtest.lists.S), \"P 2\" AS (SELECT seven, twelve, day, month, date, duration, guid FROM \"P 1\") SELECT * FROM \"P 2\"", 7, 84),
@@ -1533,6 +1534,26 @@ public class Query
                 "  GROUP BY date, month \n" +
                 "  PIVOT MaxDay BY month", -1, 84),
         new SqlTest("PARAMETERS(Z INTEGER DEFAULT 2, A INTEGER DEFAULT 2, B INTEGER DEFAULT 2) WITH peeps AS (SELECT * FROM R WHERE (Z=2)) SELECT * FROM peeps WHERE (A=B)", -1, 84),
+        new SqlTest("WITH folderTree AS (SELECT \n" +
+                "                              cast('' as varchar) as ParentName, \n" +
+                "                              cast('root' as varchar) as name, \n" +
+                "                              c.entityId, \n" +
+                "                              c.path, \n" +
+                "                              0 as level \n" +
+                "                            FROM core.Containers c \n" +
+                "                            --where name is null \n" +
+                "                            UNION ALL \n" +
+                "                            SELECT \n" +
+                "                              cast(p.Name as varchar) as ParentName, \n" +
+                "                              cast(c.Name as varchar) as name, \n" +
+                "                              c.entityId, \n" +
+                "                              c.path, \n" +
+                "                              level + 1 \n" +
+                "                            FROM core.Containers c \n" +
+                "                              INNER JOIN folderTree p ON c.parent = p.entityId \n" +
+                "  ) \n" +
+                "  SELECT * \n" +
+                "  FROM folderTree", -1, -1)
     };
 
 
