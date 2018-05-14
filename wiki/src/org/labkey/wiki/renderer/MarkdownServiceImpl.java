@@ -46,7 +46,10 @@ public class MarkdownServiceImpl implements MarkdownService
         if (r != null && r.isFile() && r.exists())
         {
             engine.eval(new InputStreamReader(new BufferedInputStream(r.getInputStream(), 1024 * 20), StringUtilsLabKey.DEFAULT_CHARSET));
-            engine.eval("var md = new markdownit()");
+            engine.eval("var md = new markdownit({" +
+                    "breaks: true," +
+                    "linkify: true" +
+                    "})");
             mdCompiled = engine.eval("md");
             invocable = (Invocable) engine;
             invocable.invokeMethod(mdCompiled, "render", "# call render method here to ensure that nashorn compiles this method before use by app");
