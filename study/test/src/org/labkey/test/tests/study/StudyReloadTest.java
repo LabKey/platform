@@ -16,6 +16,7 @@
 package org.labkey.test.tests.study;
 
 import org.junit.experimental.categories.Category;
+import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyC;
@@ -24,6 +25,7 @@ import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.PipelineStatusTable;
 
 @Category({DailyC.class})
+@BaseWebDriverTest.ClassTimeout(minutes = 5)
 public class StudyReloadTest extends StudyBaseTest
 {
     @Override

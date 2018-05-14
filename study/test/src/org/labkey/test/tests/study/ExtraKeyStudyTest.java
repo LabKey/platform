@@ -16,6 +16,7 @@
 package org.labkey.test.tests.study;
 
 import org.junit.experimental.categories.Category;
+import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyC;
@@ -30,6 +31,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @Category({DailyC.class})
+@BaseWebDriverTest.ClassTimeout(minutes = 8)
 public class ExtraKeyStudyTest extends StudyBaseTest
 {
     private static final File studyFolder = TestFileUtils.getSampleData("studies/ExtraKeyStudy");

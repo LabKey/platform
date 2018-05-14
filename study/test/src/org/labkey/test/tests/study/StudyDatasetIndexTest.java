@@ -16,6 +16,7 @@
 package org.labkey.test.tests.study;
 
 import org.junit.experimental.categories.Category;
+import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.WebTestHelper;
@@ -26,6 +27,7 @@ import org.labkey.test.util.LogMethod;
 import java.io.File;
 
 @Category({DailyC.class})
+@BaseWebDriverTest.ClassTimeout(minutes = 12)
 public class StudyDatasetIndexTest extends StudyBaseTest
 {
     private static final File STUDY_WITH_DATASET_INDEX = TestFileUtils.getSampleData("studies/StudyWithDatasetIndex.folder.zip");

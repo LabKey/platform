@@ -18,6 +18,7 @@ package org.labkey.test.tests.study;
 import org.apache.commons.collections4.Bag;
 import org.apache.commons.collections4.bag.HashBag;
 import org.junit.experimental.categories.Category;
+import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyC;
@@ -33,6 +34,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 
 @Category({DailyC.class})
+@BaseWebDriverTest.ClassTimeout(minutes = 7)
 public class StudyVisitTagTest extends StudyBaseTest
 {
     protected final String PARENT_FOLDER_STUDY = "VisitTagsStarter";

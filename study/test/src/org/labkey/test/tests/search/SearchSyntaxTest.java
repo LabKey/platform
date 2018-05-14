@@ -14,6 +14,7 @@ import java.util.List;
 import static org.junit.Assert.assertTrue;
 
 @Category({DailyC.class, Search.class})
+@BaseWebDriverTest.ClassTimeout(minutes = 1)
 public class SearchSyntaxTest extends BaseWebDriverTest
 {
     @Test

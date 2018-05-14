@@ -19,6 +19,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.junit.Assert;
 import org.junit.experimental.categories.Category;
+import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyC;
@@ -38,6 +39,7 @@ import java.util.List;
 import static org.junit.Assert.assertTrue;
 
 @Category({DailyC.class})
+@BaseWebDriverTest.ClassTimeout(minutes = 7)
 public class ProgressReportTest extends ReportTest
 {
     private static final File STUDY_ZIP = TestFileUtils.getSampleData("studies/LabkeyDemoStudy.zip");

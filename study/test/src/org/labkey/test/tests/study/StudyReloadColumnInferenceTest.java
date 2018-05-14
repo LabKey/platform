@@ -3,6 +3,7 @@ package org.labkey.test.tests.study;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.experimental.categories.Category;
+import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyC;
@@ -16,6 +17,7 @@ import java.util.List;
 import java.io.File;
 
 @Category({DailyC.class})
+@BaseWebDriverTest.ClassTimeout(minutes = 6)
 public class StudyReloadColumnInferenceTest extends StudyBaseTest
 {
     /*List archive:

@@ -18,6 +18,7 @@ package org.labkey.test.tests.study;
 
 import org.junit.experimental.categories.Category;
 import org.junit.rules.Timeout;
+import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
@@ -41,6 +42,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 @Category({DailyC.class, FileBrowser.class})
+@BaseWebDriverTest.ClassTimeout(minutes = 25)
 public class StudyExportTest extends StudyManualTest
 {
     private static final String SPECIMEN_ARCHIVE_B = "/sampledata/study/specimens/sample_b.specimens";
