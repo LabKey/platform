@@ -438,7 +438,10 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public Path getLogFilePath()
     {
-        return null != _logFilePathName ? FileUtil.stringToPath(getContainer(), _logFilePathName) : null;
+        if (_logFilePathName == null)
+            return null;
+
+        return FileUtil.hasCloudScheme(_logFilePathName) ? FileUtil.stringToPath(getContainer(), _logFilePathName) : new File(FileUtil.createUri(_logFilePathName)).toPath();
     }
 
     public LocalDirectory getLocalDirectory()
