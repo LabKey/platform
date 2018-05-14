@@ -21,6 +21,7 @@ import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.components.ext4.RadioButton;
+import org.labkey.test.pages.EditDatasetDefinitionPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.Ext4Helper;
@@ -278,11 +279,11 @@ public class StudyScheduleTest extends StudyBaseTest
                 click(Ext4Helper.Locators.ext4Radio("Define dataset manually"));
                 clickButton("Next");
 
-                waitForElement(Locator.xpath("//input[@id='DatasetDesignerName']"), WAIT_FOR_JAVASCRIPT);
+                EditDatasetDefinitionPage datasetDesignerPage = new EditDatasetDefinitionPage(getDriver());
 
                 // add a single name field
-                _listHelper.setColumnName(0, "antigenName");
-                clickButton("Save");
+                datasetDesignerPage.getFieldsEditor().selectField(0).setName("antigenName");
+                datasetDesignerPage.save();
                 break;
             case importFromFile:
                 click(Ext4Helper.Locators.ext4Radio("Import data from file"));
@@ -365,11 +366,11 @@ public class StudyScheduleTest extends StudyBaseTest
                 click(Ext4Helper.Locators.ext4Radio("Define dataset manually"));
                 clickButton("Next");
 
-                waitForElement(Locator.xpath("//input[@id='DatasetDesignerName']"), WAIT_FOR_JAVASCRIPT);
+                EditDatasetDefinitionPage datasetDesignerPage = new EditDatasetDefinitionPage(getDriver());
 
                 // add a single name field
-                _listHelper.setColumnName(0, "antigenName");
-                clickButton("Save");
+                datasetDesignerPage.getFieldsEditor().selectField(0).setName("antigenName");
+                datasetDesignerPage.save();
                 break;
             case importFromFile:
                 click(Ext4Helper.Locators.ext4Radio("Import data from file"));

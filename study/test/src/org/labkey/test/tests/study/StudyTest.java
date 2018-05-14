@@ -41,7 +41,6 @@ import org.labkey.test.util.ChartHelper;
 import org.labkey.test.util.DataRegionExportHelper;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
-import org.labkey.test.util.ListHelper;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.PasswordUtil;
 import org.labkey.test.util.PortalHelper;
@@ -791,7 +790,7 @@ public class StudyTest extends StudyBaseTest
         PropertiesEditor.FieldRow row = editor.selectField(0);
         row.setName(COMMENT_FIELD_NAME);
         row.setLabel(PARTICIPANT_COMMENT_LABEL);
-        row.setType(null, FieldDefinition.ColumnType.MultiLine);
+        row.setType(FieldDefinition.ColumnType.MultiLine);
         clickButton("Save");
 
         if(isVisitBased)
@@ -809,7 +808,7 @@ public class StudyTest extends StudyBaseTest
             row = editor.selectField(0);
             row.setName(COMMENT_FIELD_NAME);
             row.setLabel(PARTICIPANT_VISIT_COMMENT_LABEL);
-            row.setType(null, FieldDefinition.ColumnType.MultiLine);
+            row.setType(FieldDefinition.ColumnType.MultiLine);
             clickButton("Save");
         }
         log("configure comments");
