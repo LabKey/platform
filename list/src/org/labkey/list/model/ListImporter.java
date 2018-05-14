@@ -253,9 +253,14 @@ public class ListImporter
                         throw new IllegalStateException("Table information not available for list: " + def.getName());
                     }
                 }
+                else if (_importContext.isTriggeredReload())
+                {
+                    // Triggered source file might have been moved, deleted, etc. so we fail the job
+                    errors.add("Could not retrieve file stream for dir: " + sourceDir.toString() + " and flie: " + fileName);
+                }
                 else
                 {
-                    errors.add("Could not retrieve file stream for dir: " + sourceDir.toString() + " and flie: " + fileName);
+                    log.info("Could not retrieve file stream for dir: " + sourceDir.toString() + " and flie: " + fileName);
                 }
             }
             return true;

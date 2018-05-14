@@ -54,7 +54,7 @@ public class ListReloadTask extends PipelineJob.Task<ListReloadTask.Factory>
             try
             {
                 Map<String, Pair<String, String>> inputDataMap = new CaseInsensitiveHashMap<>();
-                ListImportContext context = new ListImportContext(null);
+                ListImportContext context = new ListImportContext(null, false, true);
                 boolean useMerge = false;
 
                 if (params.containsKey(LIST_ID_KEY))
@@ -66,7 +66,7 @@ public class ListReloadTask extends PipelineJob.Task<ListReloadTask.Factory>
                     useMerge = Boolean.parseBoolean(params.get(LIST_MERGE_OPTION));
 
                 if (!inputDataMap.isEmpty() || useMerge)
-                    context = new ListImportContext(inputDataMap, useMerge);
+                    context = new ListImportContext(inputDataMap, useMerge, true);
 
 
                 ListReloadJob reloadJob = new ListReloadJob(job.getInfo(), pr, dataFile, job.getLogFile(), context);

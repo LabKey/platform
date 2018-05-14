@@ -13,6 +13,17 @@ public class ListImportContext
     //generally, _useMerge == false means we truncate and replace the data
     private boolean _useMerge = false;
 
+    private boolean _triggeredReload = false;
+
+    public ListImportContext(@Nullable Map<String, Pair<String, String>> inputDataMap, boolean useMerge, boolean isTriggeredReload)
+    {
+        if (inputDataMap != null && !inputDataMap.isEmpty())
+            _inputDataMap = inputDataMap;
+
+        _useMerge = useMerge;
+        _triggeredReload = isTriggeredReload;
+    }
+
     public ListImportContext(@Nullable Map<String, Pair<String, String>> inputDataMap, boolean useMerge)
     {
         if (inputDataMap != null && !inputDataMap.isEmpty())
@@ -34,5 +45,10 @@ public class ListImportContext
     public boolean useMerge()
     {
         return _useMerge;
+    }
+
+    public boolean isTriggeredReload()
+    {
+        return _triggeredReload;
     }
 }
