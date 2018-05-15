@@ -17,14 +17,11 @@ package org.labkey.core.workbook;
 
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
-import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.Sort;
-import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
@@ -51,26 +48,15 @@ public class WorkbookQueryView extends QueryView
     }
 
     @Override
-    public DataView createDataView()
+    protected void populateButtonBar(DataView view, ButtonBar bar)
     {
-        DataView view = super.createDataView();
-        DataRegion region = view.getDataRegion();
-        if (region.getButtonBarPosition() != DataRegion.ButtonBarPosition.NONE)
-        {
-            ButtonBar bar = region.getButtonBar(DataRegion.MODE_GRID);
-            if (null != bar)
-            {
-                ActionButton btn = null;
-
-                btn = new ActionButton(new ActionURL(CoreController.MoveWorkbooksAction.class, getContainer()), "Move");
-                btn.setActionType(ActionButton.Action.POST);
-                btn.setIconCls("share");
-                btn.setRequiresSelection(true);
-                btn.setDisplayPermission(AdminPermission.class);
-                bar.add(btn);
-            }
-        }
-        return view;
+        super.populateButtonBar(view, bar);
+        ActionButton btn = new ActionButton(new ActionURL(CoreController.MoveWorkbooksAction.class, getContainer()), "Move");
+        btn.setActionType(ActionButton.Action.POST);
+        btn.setIconCls("share");
+        btn.setRequiresSelection(true);
+        btn.setDisplayPermission(AdminPermission.class);
+        bar.add(btn);
     }
 
     @Override
