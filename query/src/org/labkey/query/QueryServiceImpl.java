@@ -3070,7 +3070,7 @@ public class QueryServiceImpl implements QueryService
                 assertEquals(JdbcType.REAL.sqlType, rsmd.getColumnType(rs.findColumn("real")));
                 assertEquals(JdbcType.SMALLINT.sqlType, rsmd.getColumnType(rs.findColumn("sint")));
                 assertEquals(JdbcType.TIMESTAMP.sqlType, rsmd.getColumnType(rs.findColumn("ts")));
-                assertEquals(JdbcType.TINYINT.sqlType, rsmd.getColumnType(rs.findColumn("ti")));
+                assertEquals(t.getSqlDialect().isPostgreSQL() ? JdbcType.SMALLINT.sqlType : JdbcType.TINYINT.sqlType, rsmd.getColumnType(rs.findColumn("ti")));
                 assertTrue(JdbcType.VARCHAR.sqlType==rsmd.getColumnType(rs.findColumn("s")) || Types.NVARCHAR==rsmd.getColumnType(rs.findColumn("s")));
             }
         }

@@ -180,6 +180,8 @@ abstract class PostgreSql91Dialect extends SqlDialect
     @Override
     protected void addSqlTypeInts(Map<Integer, String> sqlTypeIntMap)
     {
+        sqlTypeIntMap.put(Types.TINYINT, "SMALLINT");  // PostgreSQL doesn't support TINYINT
+
         sqlTypeIntMap.put(Types.BINARY, "BYTEA");
         sqlTypeIntMap.put(Types.BIT, "BOOLEAN");
         sqlTypeIntMap.put(Types.BOOLEAN, "BOOLEAN");
