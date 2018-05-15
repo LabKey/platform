@@ -51,6 +51,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.list.client.GWTList;
 import org.labkey.list.client.ListEditorService;
 import org.labkey.list.view.ListItemAttachmentParent;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -403,6 +404,10 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
                 }
 
                 throw new ListImportException(message);
+            }
+            catch (DataIntegrityViolationException x)
+            {
+                throw new ListImportException("A data error occurred: " + x.getMessage());
             }
 
             if (!errors.isEmpty())
