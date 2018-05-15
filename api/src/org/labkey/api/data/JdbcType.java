@@ -234,8 +234,7 @@ public enum JdbcType
         // make sure ConvertHelper is initialized
         ConvertHelper.getPropertyEditorRegistrar();
 
-        // TODO: Don't do this -- JdbcType should represent the actual type in the database. Callers can choose to use SMALLINT instead of TINYINT if they need to.
-        this.sqlType = type==Types.TINYINT ? Types.SMALLINT : type;
+        this.sqlType = type;
         this.cls = cls;
         this.typeCls = typeCls;
         this.xtype = xtype;
@@ -563,11 +562,11 @@ public enum JdbcType
             assertEquals("JdbcType.convert produced wrong type.", Timestamp.class, TIMESTAMP.convert("2001-02-03").getClass());
             assertEquals("JdbcType.convert produced wrong type.", java.sql.Date.class, DATE.convert("2001-02-03").getClass());
 
-            try {BOOLEAN.convert(2.3); fail();} catch (ConversionException x){}
-            try {BOOLEAN.convert(2.3); fail();} catch (ConversionException x){}
-            try {INTEGER.convert(2.3); fail();} catch (ConversionException x){}
-            try {INTEGER.convert("barney"); fail();} catch (ConversionException x){}
-            try {BIGINT.convert("fred"); fail();} catch (ConversionException x){}
+            try {BOOLEAN.convert(2.3); fail();} catch (ConversionException ignored){}
+            try {BOOLEAN.convert(2.3); fail();} catch (ConversionException ignored){}
+            try {INTEGER.convert(2.3); fail();} catch (ConversionException ignored){}
+            try {INTEGER.convert("barney"); fail();} catch (ConversionException ignored){}
+            try {BIGINT.convert("fred"); fail();} catch (ConversionException ignored){}
         }
 
         @Test
