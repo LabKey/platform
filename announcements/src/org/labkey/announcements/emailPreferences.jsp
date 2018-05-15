@@ -17,6 +17,7 @@
 %>
 <%@ page import="org.labkey.announcements.AnnouncementsController" %>
 <%@ page import="org.labkey.api.announcements.EmailOption" %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page extends="org.labkey.announcements.EmailPreferencesPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -58,5 +59,7 @@
     <br><input type=hidden name="srcUrl" value="<%=h(srcURL)%>"/>
     <br><input type=hidden name="srcIdentifier" value="<%=h(srcIdentifier)%>"/>
     <%= button("Update").submit(true) %>
-    <%= button((message == null ? "Cancel" : "Done")).href(srcURL) %>
+    <% if (null != StringUtils.trimToNull(srcURL)) { %>
+        <%= button((message == null ? "Cancel" : "Done")).href(srcURL) %>
+    <% } %>
 </labkey:form>
