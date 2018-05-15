@@ -275,11 +275,9 @@ public class Encryption
                 test(aes2, aes);
             }
 
-            if (Cipher.getMaxAllowedKeyLength("AES") >= 1024)
+            if (Cipher.getMaxAllowedKeyLength("AES") >= 256)
             {
                 test(new AES(passPhrase, 256, "test pass phrase"));
-                test(new AES(passPhrase, 512, "test pass phrase"));
-                test(new AES(passPhrase, 1024, "test pass phrase"));
             }
         }
 
