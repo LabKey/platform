@@ -33,9 +33,9 @@ import org.labkey.test.categories.DailyA;
 import org.labkey.test.components.ParticipantListWebPart;
 import org.labkey.test.components.studydesigner.ManageAssaySchedulePage;
 import org.labkey.test.pages.DatasetInsertPage;
+import org.labkey.test.pages.EditDatasetDefinitionPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.util.DataRegionTable;
-import org.labkey.test.util.DatasetDesignerPage;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.Maps;
 
@@ -87,7 +87,7 @@ public class SharedStudyTest extends BaseWebDriverTest
     protected void doCleanup(boolean afterTest) throws TestTimeoutException
     {
         super.doCleanup(afterTest);
-        deleteUsersIfPresent(user);
+        _userHelper.deleteUsers(false, user);
     }
 
     @BeforeClass
@@ -102,9 +102,9 @@ public class SharedStudyTest extends BaseWebDriverTest
     {
         createDataspaceProject(getProjectName(), PARTICIPANT_NOUN_SINGULAR, PARTICIPANT_NOUN_PLURAL, "PandaId","VISIT", true, true);
 
-        DatasetDesignerPage datasetDomainEditor = _studyHelper.defineDataset(SHARED_DEMOGRAPHICS, getProjectName());
-        datasetDomainEditor.checkDemographicData();
-        datasetDomainEditor.shareDemographics(DatasetDesignerPage.ShareDemographicsBy.PTID);
+        EditDatasetDefinitionPage datasetDomainEditor = _studyHelper.defineDataset(SHARED_DEMOGRAPHICS, getProjectName());
+        datasetDomainEditor.setIsDemographicData(true);
+        datasetDomainEditor.shareDemographics(EditDatasetDefinitionPage.ShareDemographicsBy.PTID);
         datasetDomainEditor.inferFieldsFromFile(new File(STUDY_DIR, "study/datasets/dataset5001.tsv"));
         datasetDomainEditor.save();
 
@@ -284,7 +284,7 @@ public class SharedStudyTest extends BaseWebDriverTest
 
         //verfiy that published study description has correct number visits, and number participants
         beginAt("/" + nonDataspaceProject + "/" + studyPublishedFromDataspace + "/project-begin.view?");
-        assertTextPresent(String.format("over 6 visits. Data is present for 6 Pandas."));
+        assertTextPresent("over 6 visits. Data is present for 6 Pandas.");
 
         // verfiy that published study description has correct dataset
         clickAndWait(Locator.linkWithText("1 dataset"));
