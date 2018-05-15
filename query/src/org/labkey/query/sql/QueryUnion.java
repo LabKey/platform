@@ -211,30 +211,35 @@ public class QueryUnion extends QueryRelation
                 return null;
             }
 
-            if (null == columnTypes)
+            if (dialect.isPostgreSQL() || dialect.isSqlServer())
             {
-                // First Union clause; remember types. Columns are ordered
-                columnTypes = new ArrayList<>();
-                for (RelationColumn termColumn : term.getAllColumns().values())
+                if (null == columnTypes)
                 {
-                    columnTypes.add(termColumn.getJdbcType());
+                    // First Union clause; remember types. Columns are ordered
+                    columnTypes = new ArrayList<>();
+                    for (RelationColumn termColumn : term.getAllColumns().values())
+                    {
+                        columnTypes.add(termColumn.getJdbcType());
+                    }
                 }
-            }
-            else
-            {
-                // Subsequent clauses; check types. We use promote, which is lenient as long as there is a possible conversion.
-                // Postgres is stricter so we'll allow some cases that will yield errors when run.
-                // Also, this allows VARCHAR to INT, which will fail on SQL Server if the VARCHAR cannot be converted (and always, of course, on Postgres)
-                int i = 0;
-                for (RelationColumn termColumn : term.getAllColumns().values())
+                else
                 {
-                    JdbcType type = termColumn.getJdbcType();
-                    if (!JdbcType.NULL.equals(type) && JdbcType.NULL.equals(columnTypes.get(i)))
-                        columnTypes.set(i, type);   // Once we see non-NULL for this position, remember that
-                    else if (!type.equals(columnTypes.get(i)) && JdbcType.OTHER.equals(JdbcType.promote(type, columnTypes.get(i))))
-                        Query.parseError(_query.getParseErrors(), _query._name + ": Mismatched types in UNION (" +
-                                        type.name() + ", " + columnTypes.get(i).name() + ") for column position " + i, _qunion);
-                    i += 1;
+                    // Subsequent clauses; check types. We use promote, which is lenient as long as there is a possible conversion.
+                    // Postgres is stricter so we'll allow some cases that will yield errors when run.
+                    // Also, this allows VARCHAR to INT, which will fail on SQL Server if the VARCHAR cannot be converted (and always, of course, on Postgres)
+                    int i = 0;
+                    for (RelationColumn termColumn : term.getAllColumns().values())
+                    {
+                        JdbcType type = termColumn.getJdbcType();
+                        if (!JdbcType.NULL.equals(type) && JdbcType.NULL.equals(columnTypes.get(i)))
+                            columnTypes.set(i, type);   // Once we see non-NULL for this position, remember that
+
+                        else if (!JdbcType.NULL.equals(type) && !JdbcType.OTHER.equals(type) && !JdbcType.OTHER.equals(columnTypes.get(i)) &&
+                                !type.equals(columnTypes.get(i)) && JdbcType.OTHER.equals(JdbcType.promote(type, columnTypes.get(i))))
+                            Query.parseError(_query.getParseErrors(), _query._name + ": Mismatched types in UNION (" +
+                                    type.name() + ", " + columnTypes.get(i).name() + ") for column position " + i, _qunion);
+                        i += 1;
+                    }
                 }
             }
 
