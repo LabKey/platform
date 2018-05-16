@@ -67,7 +67,7 @@
         <tr>
             <td class="labkey-form-label">Protocol Day&nbsp;<%=helpPopup("Protocol Day", "The expected day for this visit according to the protocol, used for study alignment.")%></td>
             <td>
-                <input type="text" size="26" name="protocolDay" value="<%= null != visit.getProtocolDayDouble() ? (int)(double)visit.getProtocolDayDouble() : ""%>">
+                <input type="text" size="26" name="protocolDay" value="<%= null != visit.getProtocolDay() ? visit.getProtocolDay().intValue() : ""%>">
             </td>
         </tr>
 <%
@@ -84,7 +84,7 @@
         <tr>
             <td class="labkey-form-label">Protocol Day&nbsp;<%=helpPopup("Protocol Day", "The expected day for this visit according to the protocol, used for study alignment.")%></td>
             <td>
-                <input type="text" size="26" name="protocolDay" value="<%=null != visit.getProtocolDayDouble() ? visit.getProtocolDayDouble() : ""%>">
+                <input type="text" size="26" name="protocolDay" value="<%=null != visit.getProtocolDay() ? visit.getProtocolDay() : ""%>">
             </td>
         </tr>
 <%

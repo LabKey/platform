@@ -75,14 +75,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     @Deprecated // Use BigDecimal constructor instead
     public VisitImpl(Container container, double seqMin, double seqMax, String label, @Nullable Type type)
     {
-        this(container, seqMin, seqMax, label, null == type ? null : type.getCode());
-    }
-
-
-    @Deprecated // Use BigDecimal constructor instead
-    public VisitImpl(Container container, double seqMin, double seqMax, String name, @Nullable Character typeCode)
-    {
-        this(container, BigDecimal.valueOf(seqMin), BigDecimal.valueOf(seqMax), name, typeCode);
+        this(container, BigDecimal.valueOf(seqMin), BigDecimal.valueOf(seqMax), label, null == type ? null : type.getCode());
     }
 
 
