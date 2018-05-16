@@ -16,7 +16,6 @@
 package org.labkey.api.security;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.SessionHelper;
 
 import javax.servlet.http.HttpServletRequest;
@@ -31,6 +30,7 @@ public class SessionApiKeyManager extends SessionKeyManager<HttpSession>
 {
     private final static SessionApiKeyManager INSTANCE = new SessionApiKeyManager();
 
+    @NotNull
     public static SessionApiKeyManager get()
     {
         return INSTANCE;
@@ -48,7 +48,7 @@ public class SessionApiKeyManager extends SessionKeyManager<HttpSession>
     }
 
     @Override
-    @Nullable
+    @NotNull
     protected String getKeyPrefix()
     {
         return "session|";

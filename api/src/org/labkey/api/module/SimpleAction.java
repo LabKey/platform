@@ -38,7 +38,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Action for simple .html file-baacked views in a module's ./resources directory.
+ * Action for simple .html file-backed views in a module's ./resources directory.
  * User: Dave
  * Date: Jan 23, 2009
  */

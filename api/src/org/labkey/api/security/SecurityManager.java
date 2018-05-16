@@ -100,7 +100,6 @@ import org.springframework.validation.Errors;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
-import javax.naming.NamingException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.beans.PropertyChangeEvent;
@@ -469,7 +468,7 @@ public class SecurityManager
         @Nullable String apiKey = getApiKey(basicCredentials, request);
 
         // Handle session API key early, if present and valid
-        if (apiKey != null && apiKey.startsWith("session|"))
+        if (apiKey != null && apiKey.startsWith(SessionApiKeyManager.get().getKeyPrefix()))
         {
             HttpSession session = SessionApiKeyManager.get().getContext(apiKey);
 
@@ -2080,13 +2079,7 @@ public class SecurityManager
                 sql += " AND Active=?" + "\nORDER BY Users.Name";
                 sqlFragment = new SQLFragment(sql, groupId, true);
             }
-            new SqlSelector(core.getSchema(), sqlFragment).forEach(new Selector.ForEachBlock<ResultSet>() {
-                @Override
-                public void exec(ResultSet rs) throws SQLException
-                {
-                    members.add(new Pair<>(rs.getInt(1), rs.getString(2)));
-                }
-            });
+            new SqlSelector(core.getSchema(), sqlFragment).forEach(rs -> members.add(new Pair<>(rs.getInt(1), rs.getString(2))));
         }
 
         return members;
@@ -2191,10 +2184,6 @@ public class SecurityManager
 
         return groupId;
     }
-
-
-    ;
-
 
     // CONSIDER: Support multiple LDAP domains?
     public static boolean isLdapEmail(ValidEmail email)
@@ -2308,7 +2297,7 @@ public class SecurityManager
 
         private Object[][] getRenameGroupExpectError()
         {
-            Object[][] ret = {{"", "Name is required (may not be blank)"},
+            return new Object[][]{{"", "Name is required (may not be blank)"},
                     {null, "Name is required (may not be blank)"},
                     {groupA.getName(), "Cannot rename group '" + groupA.getName() +
                             "' to '" + groupA.getName() + "' because that name is already used by another group!"},
@@ -2316,7 +2305,6 @@ public class SecurityManager
                             "' to '" + groupB.getName() + "' because that name is already used by another group!"}
 
             };
-            return ret;
         }
 
         @Test
@@ -2383,10 +2371,9 @@ public class SecurityManager
 
         private Object[][] getAddMemberErrorArgs()
         {
-            Object[][] ret = {  {null, null, NULL_GROUP_ERROR_MESSAGE},
+            return new Object[][]{  {null, null, NULL_GROUP_ERROR_MESSAGE},
                                 {groupA, null, NULL_PRINCIPAL_ERROR_MESSAGE},
                                 {groupA, groupA, ADD_GROUP_TO_ITSELF_ERROR_MESSAGE}};
-            return ret;
         }
 
         private void addMemberToGroupVerifyResponse(Group group, UserPrincipal principal, String expectedResponse)
