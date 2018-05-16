@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.Set;
 
 @Category({DailyA.class})
+@BaseWebDriverTest.ClassTimeout(minutes = 9)
 public class SharedStudyTest extends BaseWebDriverTest
 {
     private static final String NON_DATASPACE_PROJECT = "Non Dataspace Project";

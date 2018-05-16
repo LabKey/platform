@@ -31,6 +31,7 @@ import java.util.function.Supplier;
 import static org.junit.Assert.fail;
 
 @Category({DailyA.class})
+@BaseWebDriverTest.ClassTimeout(minutes = 6)
 public class SCHARPStudyTest extends BaseWebDriverTest implements PostgresOnlyTest
 {
     public static final String PROJECT_NAME="SCHARP Study Test";

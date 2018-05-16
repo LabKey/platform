@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @Category({DailyA.class})
+@BaseWebDriverTest.ClassTimeout(minutes = 8)
 public class VaccineProtocolTest extends BaseWebDriverTest
 {
     protected static final String PROJECT_NAME = "ProtocolVerifyProject";

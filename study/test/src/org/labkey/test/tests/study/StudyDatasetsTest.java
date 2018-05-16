@@ -53,6 +53,7 @@ import static org.junit.Assert.fail;
 import static org.labkey.test.components.ext4.Window.Window;
 
 @Category({DailyA.class})
+@BaseWebDriverTest.ClassTimeout(minutes = 15)
 public class StudyDatasetsTest extends BaseWebDriverTest
 {
     private static final String CATEGORY1 = "Category1";

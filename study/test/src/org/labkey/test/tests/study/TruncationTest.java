@@ -35,6 +35,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 
 @Category({DailyA.class, Specimen.class})
+@BaseWebDriverTest.ClassTimeout(minutes = 6)
 public class TruncationTest extends BaseWebDriverTest
 {
     private final File LIST_ARCHIVE = TestFileUtils.getSampleData("lists/searchTest.lists.zip");

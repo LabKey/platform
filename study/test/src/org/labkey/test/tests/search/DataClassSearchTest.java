@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 
 @Category({DailyA.class, Search.class})
+@BaseWebDriverTest.ClassTimeout(minutes = 5)
 public class DataClassSearchTest extends BaseWebDriverTest
 {
     public SearchAdminAPIHelper.DirectoryType directoryType()
