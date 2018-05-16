@@ -1,7 +1,7 @@
 //== Standalone Buttons
 //
 
-.labkey-button {
+.labkey-button, .gwt-Button {
   background-color: $lk-button-bg-color;
   @include gradient-vertical($lk-button-bg-color-start, $lk-button-bg-color-end);
   border-width: $lk-button-border-size;

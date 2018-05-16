@@ -1,8 +1,12 @@
 .gwt-ToolTip {
-  background-color: #FFDF8C;
-  font-size: 8pt;
+  background-color: black;
+  opacity: 0.9;
+  color: $white;
+  font-size: 10pt;
+  font-family: $lk-body-font-family;
   padding: 2px 4px;
   border: solid 1px #AAAAAA;
+  border-radius: $border-radius-small;
 }
 
 .dialogMiddleCenter {
@@ -10,12 +14,13 @@
 }
 
 .gwt-DialogBox {
-  border: 8px solid #89A1B4;
-  background-color: #FFFFFF;
+  border: 4px solid $lk-theme-dark-accent;
+  background-color: $white;
+  box-shadow: 0 6px 10px 0 rgba(0, 0, 0, 0.25), 0 6px 20px 0 rgba(0, 0, 0, 0.22);
 
   .Caption {
-    background-color: $lk-grid-color;
-    border: 1px solid #89A1B4;
+    background-color: $lk-primary-bg-color;
+    border-bottom: 1px solid $lk-theme-dark-accent;
     padding: 3px;
     font-weight: bold;
     cursor: default;
@@ -108,8 +113,18 @@
   border-spacing: 2px;
 }
 
+.gwt-TabPanel {
+  td {
+    padding: 0;
+  }
+}
+
 .gwt-TabPanelBottom {
+  padding: 10px;
   border: 1px solid #b4b4b4;
+  td {
+    padding: 2px;
+  }
 }
 
 .gwt-TabBar {
@@ -144,7 +159,7 @@
     cursor: default;
     background: transparent;
     opacity: 1;
-
+    border-top: 2px solid $lk-theme-light-accent;
     div {
       font-weight: bold;
     }

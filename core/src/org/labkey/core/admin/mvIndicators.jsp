@@ -115,7 +115,7 @@
         <tr>
             <td>
                 <div id="mvIndicatorsDiv" style="display: <%=text(inherited ? "none" : "block")%>;">
-                    <table id="mvTable">
+                    <table id="mvTable" class="table-condensed">
                         <tr>
                             <th>&nbsp;</th>
                             <th>Indicator</th>
@@ -134,7 +134,7 @@
                         %>
 
                         <tr id="rowId<%=++rowId%>">
-                            <td><img src="<%=getContextPath()%>/_images/partdelete.gif"
+                            <td><img style="margin-right: 8px; cursor: pointer" src="<%=getContextPath()%>/_images/partdelete.gif"
                                      alt="delete" onclick="removeRow(<%=rowId%>);"></td>
                             <td><input name="mvIndicators" type="TEXT" size=3
                                        id="mvIndicators<%=rowId%>" value="<%=h(indicator)%>">
@@ -182,6 +182,7 @@
         imgNode.src = '<%=getContextPath()%>/_images/partdelete.gif';
         imgNode.setAttribute("onclick", 'removeRow(' + maxRowId + ');');
         imgNode.setAttribute("alt", "delete");
+        imgNode.setAttribute("style", "margin-right: 8px; cursor: pointer");
         cellLeft.appendChild(imgNode);
 
         var cellMiddle = row.insertCell(1);
