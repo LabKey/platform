@@ -72,6 +72,7 @@
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.TreeMap" %>
 <%@ page import="java.util.TreeSet" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -88,19 +89,23 @@
     final StudyManager.ParticipantViewConfig bean = me.getModelBean();
     Map<String, String> aliasMap = bean.getAliases();
 
-    ChartDesignerBean chartBean = new ChartDesignerBean();
-
-    chartBean.setReportType(StudyChartQueryReport.TYPE);
-    chartBean.setSchemaName(querySchema.getSchemaName());
     String currentUrl = bean.getRedirectUrl();
     if (currentUrl == null)
         currentUrl = getActionURL().getLocalURIString();
 
-    ActionURL url = ReportUtil.getChartDesignerURL(context, chartBean);
-    url.setAction(ReportsController.DesignChartAction.class);
-    url.addParameter("returnUrl", currentUrl);
-    url.addParameter("isParticipantChart", "true");
-    url.addParameter("participantId", bean.getParticipantId());
+    ActionURL oldChartDesignerURL = null;
+
+    if (AppProps.getInstance().isExperimentalFeatureEnabled(ReportService.EXPERIMENTAL_DEPRECATED_CHART_VIEW))
+    {
+        ChartDesignerBean chartBean = new ChartDesignerBean();
+        chartBean.setReportType(StudyChartQueryReport.TYPE);
+        chartBean.setSchemaName(querySchema.getSchemaName());
+        oldChartDesignerURL = ReportUtil.getChartDesignerURL(context, chartBean);
+        oldChartDesignerURL.setAction(ReportsController.DesignChartAction.class);
+        oldChartDesignerURL.addParameter("returnUrl", currentUrl);
+        oldChartDesignerURL.addParameter("isParticipantChart", "true");
+        oldChartDesignerURL.addParameter("participantId", bean.getParticipantId());
+    }
 
     StudyManager manager = StudyManager.getInstance();
     StudyImpl study = manager.getStudy(getContainer());
@@ -388,12 +393,12 @@
 <%
     }
 
-    if (updateAccess)
+    if (updateAccess && null != oldChartDesignerURL)
     {
 %>
 <tr style="<%=text(expanded ? "" : "display:none")%>">
     <td colspan="<%=totalSeqKeyCount+1%>"
-        class="labkey-alternate-row"><%=textLink("add chart", url.replaceParameter("queryName", dataset.getName()).replaceParameter("datasetId", String.valueOf(datasetId)))%>
+        class="labkey-alternate-row"><%=textLink("add chart", oldChartDesignerURL.replaceParameter("queryName", dataset.getName()).replaceParameter("datasetId", String.valueOf(datasetId)))%>
     </td>
 </tr>
 <%

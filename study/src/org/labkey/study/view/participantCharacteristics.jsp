@@ -60,19 +60,9 @@
     JspView<StudyManager.ParticipantViewConfig> me = (JspView<StudyManager.ParticipantViewConfig>) HttpView.currentView();
     StudyManager.ParticipantViewConfig bean = me.getModelBean();
 
-    ChartDesignerBean chartBean = new ChartDesignerBean();
-
-    chartBean.setReportType(StudyChartQueryReport.TYPE);
-    chartBean.setSchemaName(schema.getSchemaName());
     String currentUrl = bean.getRedirectUrl();
     if (currentUrl == null)
         currentUrl = getActionURL().getLocalURIString();
-
-    ActionURL url = ReportUtil.getChartDesignerURL(context, chartBean);
-    url.setAction(ReportsController.DesignChartAction.class);
-    url.addParameter("returnUrl", currentUrl);
-    url.addParameter("isParticipantChart", "true");
-    url.addParameter("participantId", bean.getParticipantId());
 
     StudyManager manager = StudyManager.getInstance();
     Study study = manager.getStudy(getContainer());

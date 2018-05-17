@@ -168,16 +168,14 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
             crossTabURL.addParameter(ReportDescriptor.Prop.reportType, StudyCrosstabReport.TYPE);
             designers.add(new DesignerInfoImpl(StudyCrosstabReport.TYPE, "Crosstab Report", null, crossTabURL, _getIconPath(StudyCrosstabReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(StudyCrosstabReport.TYPE)));
 
-            // chart designer
-            ChartDesignerBean chartBean = new ChartDesignerBean(settings);
-            chartBean.setReportType(StudyChartQueryReport.TYPE);
-
-            ActionURL url = ReportUtil.getChartDesignerURL(context, chartBean);
-            url.addParameter(DatasetDefinition.DATASETKEY, NumberUtils.toInt(context.getActionURL().getParameter(DatasetDefinition.DATASETKEY), 0));
-            url.setAction(ReportsController.DesignChartAction.class);
-
             if (AppProps.getInstance().isExperimentalFeatureEnabled(ReportService.EXPERIMENTAL_DEPRECATED_CHART_VIEW))
             {
+                // chart designer
+                ChartDesignerBean chartBean = new ChartDesignerBean(settings);
+                chartBean.setReportType(StudyChartQueryReport.TYPE);
+                ActionURL url = ReportUtil.getChartDesignerURL(context, chartBean);
+                url.addParameter(DatasetDefinition.DATASETKEY, NumberUtils.toInt(context.getActionURL().getParameter(DatasetDefinition.DATASETKEY), 0));
+                url.setAction(ReportsController.DesignChartAction.class);
                 designers.add(new DesignerInfoImpl(StudyChartQueryReport.TYPE, "Chart View (deprecated)", null, url, _getIconPath(StudyChartQueryReport.TYPE), ReportService.DesignerType.VISUALIZATION, _getIconCls(StudyChartQueryReport.TYPE)));
             }
 
