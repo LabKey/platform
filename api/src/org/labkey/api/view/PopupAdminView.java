@@ -208,7 +208,7 @@ public class PopupAdminView extends PopupMenuView
 
     public static boolean hasPermission(ViewContext context)
     {
-        return isFolderAdmin(context) || context.getUser().hasRootPermission(AdminReadPermission.class);
+        return !context.getUser().isGuest();
     }
 
     private static boolean isFolderAdmin(ViewContext context)
