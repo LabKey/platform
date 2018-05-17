@@ -272,23 +272,25 @@ public class AnnouncementManager
 
     public static void approve(Container c, User user, boolean sendEmailNotifications, AnnouncementModel ann, Date date)
     {
-        updateApproved(c, ann, date);
-
-        // Send email if there's body text or an attachment.
-        if (sendEmailNotifications && (null != ann.getBody() || !ann.getAttachments().isEmpty()))
+        // This checks for multiple moderator race condition, #34266
+        if (updateApproved(c, ann, date))
         {
-            String rendererTypeName = ann.getRendererType();
-            WikiRendererType currentRendererType = (null == rendererTypeName ? null : WikiRendererType.valueOf(rendererTypeName));
-            if (null == currentRendererType)
+            // Send email if there's body text or an attachment.
+            if (sendEmailNotifications && (null != ann.getBody() || !ann.getAttachments().isEmpty()))
             {
-                WikiService wikiService = WikiService.get();
-                if (null != wikiService)
-                    currentRendererType = wikiService.getDefaultMessageRendererType();
+                String rendererTypeName = ann.getRendererType();
+                WikiRendererType currentRendererType = (null == rendererTypeName ? null : WikiRendererType.valueOf(rendererTypeName));
+                if (null == currentRendererType)
+                {
+                    WikiService wikiService = WikiService.get();
+                    if (null != wikiService)
+                        currentRendererType = wikiService.getDefaultMessageRendererType();
+                }
+                sendNotificationEmails(ann, currentRendererType, c, user);
             }
-            sendNotificationEmails(ann, currentRendererType, c, user);
-        }
 
-        indexThread(ann);
+            indexThread(ann);
+        }
     }
 
     private static void notifyModerators(Container c, User user, AnnouncementModel ann)
@@ -338,10 +340,11 @@ public class AnnouncementManager
     }
 
     // Execute direct SQL (not Table.update())... I don't think we want to change Modified or ModifiedBy. Could consider adding column for Moderator, though.
-    private static void updateApproved(Container c, AnnouncementModel ann, Date date)
+    // Returns true if an update was made, false if not (e.g., message was already reviewed).
+    private static boolean updateApproved(Container c, AnnouncementModel ann, Date date)
     {
         TableInfo ti = CommSchema.getInstance().getTableInfoAnnouncements();
-        new SqlExecutor(ti.getSchema()).execute("UPDATE " + ti.getSelectName() + " SET Approved = ? WHERE Container = ? AND RowId = ?", date, c, ann.getRowId());
+        return new SqlExecutor(ti.getSchema()).execute("UPDATE " + ti.getSelectName() + " SET Approved = ? WHERE Container = ? AND RowId = ? AND Approved IS NULL", date, c, ann.getRowId()) > 0;
     }
 
     // Render and send all the email notifications on a background thread, #13143
