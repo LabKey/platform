@@ -35,6 +35,7 @@ import static org.junit.Assert.assertEquals;
  * Imports a SampleMinded data export (.xlsx) into the specimen repository.
  */
 @Category({DailyB.class, Specimen.class})
+@BaseWebDriverTest.ClassTimeout(minutes = 7)
 public class SampleMindedImportTest extends BaseWebDriverTest
 {
     private static final String PROJECT_NAME = "SampleMindedImportTest";

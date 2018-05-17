@@ -56,6 +56,7 @@ import static org.labkey.test.pages.test.TestActions.ExceptionActions;
 import static org.labkey.test.util.mothership.MothershipHelper.MOTHERSHIP_PROJECT;
 
 @Category({DailyB.class})
+@BaseWebDriverTest.ClassTimeout(minutes = 6)
 public class MothershipTest extends BaseWebDriverTest
 {
     private static final String ASSIGNEE = "assignee@mothership.test";

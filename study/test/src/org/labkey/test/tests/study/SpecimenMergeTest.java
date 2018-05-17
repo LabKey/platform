@@ -32,6 +32,7 @@ import java.util.List;
  * CreateVialsTest also uses the specimen merge feature.
  */
 @Category({DailyB.class, Specimen.class})
+@BaseWebDriverTest.ClassTimeout(minutes = 7)
 public class SpecimenMergeTest extends BaseWebDriverTest
 {
     protected static final String PROJECT_NAME = "SpecimenMergeTest";

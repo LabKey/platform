@@ -37,6 +37,7 @@ import static org.labkey.test.TestProperties.isTestRunningOnTeamCity;
 import static org.labkey.test.util.mothership.MothershipHelper.MOTHERSHIP_PROJECT;
 
 @Category({DailyB.class})
+@BaseWebDriverTest.ClassTimeout(minutes = 4)
 public class MothershipReportTest extends BaseWebDriverTest
 {
     private MothershipHelper _mothershipHelper;

@@ -18,6 +18,7 @@ package org.labkey.test.tests.study;
 
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.SortDirection;
 import org.labkey.test.TestFileUtils;
@@ -36,6 +37,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 @Category({DailyB.class, Assays.class})
+@BaseWebDriverTest.ClassTimeout(minutes = 10)
 public class TargetStudyTest extends AbstractAssayTest
 {
     private static final String ASSAY_NAME = "Assay";
