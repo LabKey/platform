@@ -36,6 +36,7 @@
 <%@ page import="org.labkey.core.view.template.bootstrap.Header" %>
 <%@ page import="org.labkey.core.view.template.bootstrap.PageTemplate" %>
 <%@ page import="org.labkey.api.search.SearchUtils" %>
+<%@ page import="org.labkey.api.view.NavTree" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -57,6 +58,8 @@
 
     HtmlView headerHtml = PageTemplate.getTemplateResource(new HeaderProperties());
     String siteShortName = (laf.getShortName() != null && laf.getShortName().length() > 0) ? laf.getShortName() : null;
+
+    final NavTree optionsMenu = PopupAdminView.createNavTree(context);
 %>
 <div class="labkey-page-header">
     <div class="container clearfix">
@@ -116,13 +119,13 @@
                 </ul>
             </li>
 <% } %>
-<% if (PopupAdminView.hasPermission(context)) { %>
+<% if (optionsMenu != null && optionsMenu.hasChildren()) { %>
             <li class="dropdown dropdown-rollup" id="headerAdminDropdown">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                     <i class="fa fa-cog"></i>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-right">
-                    <% PopupMenuView.renderTree(PopupAdminView.createNavTree(context), out); %>
+                    <% PopupMenuView.renderTree(optionsMenu, out); %>
                 </ul>
             </li>
 <% } %>
