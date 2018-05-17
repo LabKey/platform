@@ -98,7 +98,7 @@ public class XmlVisitMapReader implements VisitMapReader
             if (visitXml.isSetProtocolDay())
                 protocolDay = visitXml.getProtocolDay();
             else if (TimepointType.DATE == timepointType)
-                VisitImpl.calcDefaultDateBasedProtocolDay(visitXml.getSequenceNum(), maxSequenceNum);
+                protocolDay = VisitImpl.calcDefaultDateBasedProtocolDay(visitXml.getSequenceNum(), maxSequenceNum);
 
             List<Integer> required = new ArrayList<>();
             List<Integer> optional = new ArrayList<>();
