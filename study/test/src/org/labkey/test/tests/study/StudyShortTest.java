@@ -16,9 +16,11 @@
 package org.labkey.test.tests.study;
 
 import org.junit.experimental.categories.Category;
+import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.categories.DRT;
 
 @Category(DRT.class)
+@BaseWebDriverTest.ClassTimeout(minutes = 10)
 public class StudyShortTest extends StudyTest
 {
     @Override
