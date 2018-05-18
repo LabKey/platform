@@ -3423,6 +3423,10 @@ public class ExperimentServiceImpl implements ExperimentService
                         StudyService studyService = StudyService.get();
                         if (studyService != null)
                         {
+                            AssayProvider provider = AssayService.get().getProvider(protocol);
+                            if (provider != null && provider.isExclusionSupported())
+                                deleteExclusionsForRunId(runId);
+
                             for (Dataset dataset : studyService.getDatasetsForAssayRuns(Collections.singletonList(run), user))
                             {
                                 if (!dataset.canWrite(user))
@@ -3431,7 +3435,7 @@ public class ExperimentServiceImpl implements ExperimentService
                                 }
                                 UserSchema schema = QueryService.get().getUserSchema(user, dataset.getContainer(), "study");
                                 TableInfo tableInfo = schema.getTable(dataset.getName());
-                                AssayProvider provider = AssayService.get().getProvider(protocol);
+
                                 if (provider != null)
                                 {
                                     AssayTableMetadata tableMetadata = provider.getTableMetadata(protocol);
@@ -3474,6 +3478,40 @@ public class ExperimentServiceImpl implements ExperimentService
                 transaction.commit();
             }
         }
+    }
+
+    private void deleteExclusionsForRunId(@NotNull Integer runId)
+    {
+        // Select which exclusions are to be deleted
+        List<Integer> exclusionsToDelete = new ArrayList<>();
+
+        SimpleFilter runFilter = new SimpleFilter(FieldKey.fromParts("RunId"), runId);
+        TableInfo exclusionsTi = getTinfoExclusion();
+        LinkedHashSet<ColumnInfo> cols = new LinkedHashSet<>();
+        cols.add(exclusionsTi.getColumn("RunId"));
+        cols.add(exclusionsTi.getColumn("RowId"));
+        TableSelector ts = new TableSelector(exclusionsTi, cols, runFilter, null);
+        try (TableResultSet rs = ts.getResultSet(false, false))
+        {
+            for (Map<String, Object> row : rs)
+            {
+                exclusionsToDelete.add((Integer) row.get("RowId"));
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+
+        // Delete exclusionMaps for the run first due to FK constraints
+        for (Integer exclusion : exclusionsToDelete)
+        {
+            SimpleFilter exclusionMapsFilter = new SimpleFilter(FieldKey.fromParts("ExclusionId"), exclusion);
+            Table.delete(getTinfoExclusionMap(), exclusionMapsFilter);
+        }
+
+        // Delete exclusion details last
+        Table.delete(getTinfoExclusion(), runFilter);
     }
 
     private Collection<Integer> getRelatedProtocolIds(Collection<Integer> selectedProtocolIds)

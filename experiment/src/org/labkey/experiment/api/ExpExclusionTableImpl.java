@@ -2,11 +2,14 @@ package org.labkey.experiment.api;
 
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DatabaseTableType;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpExclusionTable;
 import org.labkey.api.query.DefaultQueryUpdateService;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
@@ -69,6 +72,20 @@ public class ExpExclusionTableImpl extends ExpTableImpl<ExpExclusionTable.Column
         addColumn(Column.CreatedBy);
         addColumn(Column.Modified);
         addColumn(Column.ModifiedBy);
+    }
+
+    @Override
+    protected void applyContainerFilter(ContainerFilter filter)
+    {
+        FieldKey containerFieldKey = FieldKey.fromParts("Container");
+        clearConditions(containerFieldKey);
+        SQLFragment sql = new SQLFragment("RunId IN (SELECT er.RowId FROM ");
+        sql.append(ExperimentService.get().getTinfoExperimentRun(), "er");
+        sql.append(" WHERE ");
+        sql.append(filter.getSQLFragment(getSchema(), new SQLFragment("er.Container"), getContainer()));
+        sql.append(")");
+
+        addCondition(sql, containerFieldKey);
     }
 
     @Override
