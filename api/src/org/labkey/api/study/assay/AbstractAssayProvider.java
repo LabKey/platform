@@ -1132,7 +1132,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 }
                 else
                     throw new ExperimentException("Script engine for the extension : " + ext + " has not been registered.\nFor documentation about how to configure a " +
-                            "scripting engine, paste this link into your browser: \"https://www.labkey.org/wiki/home/Documentation/page.view?name=configureScripting\".");
+                            "scripting engine, paste this link into your browser: \"https://www.labkey.org/Documentation/wiki-page.view?name=configureScripting\".");
             }
             else
                 throw new ExperimentException("The transform script '" + scriptFile.getPath() + "' is invalid or does not exist");
@@ -1256,6 +1256,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public ReRunSupport getReRunSupport()
     {
         return ReRunSupport.None;
+    }
+
+    @Override
+    public boolean isExclusionSupported()
+    {
+        return false;
     }
 
     @Override

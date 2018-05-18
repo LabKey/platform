@@ -43,6 +43,8 @@ import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.exp.query.ExpDataClassTable;
 import org.labkey.api.exp.query.ExpDataInputTable;
 import org.labkey.api.exp.query.ExpDataTable;
+import org.labkey.api.exp.query.ExpExclusionMapTable;
+import org.labkey.api.exp.query.ExpExclusionTable;
 import org.labkey.api.exp.query.ExpExperimentTable;
 import org.labkey.api.exp.query.ExpMaterialInputTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
@@ -64,7 +66,9 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.util.Pair;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -390,6 +394,10 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     ExpDataTable createFilesTable(String name, UserSchema schema);
 
+    ExpExclusionTable createExclusionTable(String name, UserSchema schema);
+
+    ExpExclusionMapTable createExclusionMapTable(String name, UserSchema schema);
+
     String generateLSID(Container container, Class<? extends ExpObject> clazz, String name);
 
     String generateGuidLSID(Container container, Class<? extends ExpObject> clazz);
@@ -652,6 +660,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     void onMaterialsCreated(List<? extends ExpMaterial> materials, Container container, User user);
 
+    void createExclusionEvent(Integer runId, Set<String> rowIds, String comment, User user, Container container);
+
+    ActionURL getExclusionURL(Container container, AssayProvider provider, int rowId, String runId, String returnUrl);
 
     // see org.labkey.experiment.LSIDRelativizer
     public static final String LSID_OPTION_ABSOLUTE = "ABSOLUTE";

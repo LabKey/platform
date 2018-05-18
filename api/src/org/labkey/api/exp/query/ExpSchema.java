@@ -155,6 +155,22 @@ public class ExpSchema extends AbstractExpSchema
                 ExpDataTable result = ExperimentService.get().createFilesTable(Files.toString(), expSchema);
                 return expSchema.setupTable(result);
             }
+        },
+        Exclusions
+        {
+            public TableInfo createTable(ExpSchema expSchema, String queryName)
+            {
+                ExpExclusionTable result = ExperimentService.get().createExclusionTable(Exclusions.toString(), expSchema);
+                return expSchema.setupTable(result);
+            }
+        },
+        ExclusionMaps
+        {
+            public TableInfo createTable(ExpSchema expSchema, String queryName)
+            {
+                ExpExclusionMapTable result = ExperimentService.get().createExclusionMapTable(ExclusionMaps.toString(), expSchema);
+                return expSchema.setupTable(result);
+            }
         };
 
         public abstract TableInfo createTable(ExpSchema expSchema, String queryName);
@@ -329,6 +345,18 @@ public class ExpSchema extends AbstractExpSchema
                 ExpProtocolTable protocolTable = (ExpProtocolTable)TableType.Protocols.createTable(ExpSchema.this, TableType.Protocols.toString());
                 protocolTable.setContainerFilter(ContainerFilter.EVERYTHING);
                 return protocolTable;
+            }
+        };
+    }
+
+    public ForeignKey getExclusionForeignKey()
+    {
+        return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.Exclusions.name(), "RowId", null)
+        {
+            @Override
+            public @Nullable TableInfo getLookupTableInfo()
+            {
+                return getTable(TableType.Exclusions);
             }
         };
     }

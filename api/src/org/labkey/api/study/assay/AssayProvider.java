@@ -240,6 +240,9 @@ public interface AssayProvider extends Handler<ExpProtocol>
     /** What level of re run for assay data, if any, is supported */
     ReRunSupport getReRunSupport();
 
+    /** Whether the provider can exclude rows of data */
+    boolean isExclusionSupported();
+
     /**
      * @return the data type that this run creates for its analyzed results
      */
