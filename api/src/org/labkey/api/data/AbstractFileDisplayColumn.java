@@ -84,7 +84,8 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
             String displayName = getFileName(filename);
             boolean isImage = filename.toLowerCase().endsWith(".png")
                     || filename.toLowerCase().endsWith(".jpeg")
-                    || filename.toLowerCase().endsWith(".jpg");
+                    || filename.toLowerCase().endsWith(".jpg")
+                    || filename.toLowerCase().endsWith(".gif");
 
             if (url != null && thumbnail && isImage)
             {
@@ -96,10 +97,10 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
                 StringBuilder thumbnailHtml = new StringBuilder();
                 thumbnailHtml.append("<img style=\"display:block; height:auto; width:100%; max-width: 32px; vertical-align:middle\"");
                 thumbnailHtml.append(" src=\"").append(PageFlowUtil.filter(url)).append("\"");
-                thumbnailHtml.append(" title=\"").append(displayName).append("\"");
+                thumbnailHtml.append(" title=\"").append(PageFlowUtil.filter(displayName)).append("\"");
                 thumbnailHtml.append("\" />");
 
-                out.write(PageFlowUtil.helpPopup(displayName, popupHtml.toString(), true, thumbnailHtml.toString(), 310, url == null ? null : "window.location = '" + url + "'"));
+                out.write(PageFlowUtil.helpPopup(displayName, popupHtml.toString(), true, thumbnailHtml.toString(), 310, "window.location = '" + url + "'"));
             }
             else
             {
