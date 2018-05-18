@@ -785,6 +785,7 @@ experiment/resources/schemas/dbscripts/postgresql/exp-17.30-17.31.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-17.30-18.10.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-18.10-18.11.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-18.11-18.12.sql -text
+experiment/resources/schemas/dbscripts/postgresql/exp-18.12-18.13.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-create.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-drop.sql -text
 experiment/resources/schemas/dbscripts/postgresql/obsolete/deleteOrphans.sql -text
@@ -838,6 +839,7 @@ experiment/resources/schemas/dbscripts/sqlserver/exp-17.30-17.31.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-17.30-18.10.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-18.10-18.11.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-18.11-18.12.sql -text
+experiment/resources/schemas/dbscripts/sqlserver/exp-18.12-18.13.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-create.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-drop.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/obsolete/deleteOrphans.sql -text
@@ -898,6 +900,7 @@ experiment/src/org/labkey/experiment/DataURLRelativizer.java -text
 experiment/src/org/labkey/experiment/DefaultCustomPropertyRenderer.java -text
 experiment/src/org/labkey/experiment/DerivedSamplePropertyHelper.java -text
 experiment/src/org/labkey/experiment/DotGraph.java -text
+experiment/src/org/labkey/experiment/ExcludeConfirm.jsp -text
 experiment/src/org/labkey/experiment/ExpDataFileListener.java -text
 experiment/src/org/labkey/experiment/ExperimentAuditProvider.java -text
 experiment/src/org/labkey/experiment/ExperimentModule.java -text
@@ -954,6 +957,8 @@ experiment/src/org/labkey/experiment/api/ExpDataImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpDataInputTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpDataRunInputImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpDataTableImpl.java -text
+experiment/src/org/labkey/experiment/api/ExpExclusionMapTableImpl.java -text
+experiment/src/org/labkey/experiment/api/ExpExclusionTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpExperimentImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpExperimentTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpFilesTableImpl.java -text

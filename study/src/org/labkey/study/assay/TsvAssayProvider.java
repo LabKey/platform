@@ -246,6 +246,12 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     }
 
     @Override
+    public boolean isExclusionSupported()
+    {
+        return true;
+    }
+
+    @Override
     public boolean supportsFlagColumnType(ExpProtocol.AssayDomainTypes type)
     {
         return type== ExpProtocol.AssayDomainTypes.Result;

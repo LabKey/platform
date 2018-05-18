@@ -1026,4 +1026,26 @@
             <column columnName="runId"/>
         </columns>
     </table>
+    <table tableName="Exclusions" tableDbType="TABLE">
+        <columns>
+            <column columnName="RowId"/>
+            <column columnName="RunId"/>
+            <column columnName="Comment"/>
+            <column columnName="Created"/>
+            <column columnName="CreatedBy"/>
+            <column columnName="Modified"/>
+            <column columnName="ModifiedBy"/>
+        </columns>
+    </table>
+    <table tableName="ExclusionMaps" tableDbType="TABLE">
+        <columns>
+            <column columnName="RowId"/>
+            <column columnName="ExclusionId"/>
+            <column columnName="DataRowId"/>
+            <column columnName="Created"/>
+            <column columnName="CreatedBy"/>
+            <column columnName="Modified"/>
+            <column columnName="ModifiedBy"/>
+        </columns>
+    </table>
 </tables>

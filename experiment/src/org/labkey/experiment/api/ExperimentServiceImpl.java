@@ -96,6 +96,8 @@ import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.exp.query.ExpDataClassTable;
 import org.labkey.api.exp.query.ExpDataInputTable;
 import org.labkey.api.exp.query.ExpDataTable;
+import org.labkey.api.exp.query.ExpExclusionMapTable;
+import org.labkey.api.exp.query.ExpExclusionTable;
 import org.labkey.api.exp.query.ExpMaterialInputTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpProtocolApplicationTable;
@@ -103,6 +105,7 @@ import org.labkey.api.exp.query.ExpRunGroupMapTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSampleSetTable;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.exp.xar.XarConstants;
@@ -1074,6 +1077,16 @@ public class ExperimentServiceImpl implements ExperimentService
     public ExpDataTable createFilesTable(String name, UserSchema schema)
     {
         return new ExpFilesTableImpl(name, schema);
+    }
+
+    public ExpExclusionTable createExclusionTable(String name, UserSchema schema)
+    {
+        return new ExpExclusionTableImpl(name, schema);
+    }
+
+    public ExpExclusionMapTable createExclusionMapTable(String name, UserSchema schema)
+    {
+        return new ExpExclusionMapTableImpl(name, schema);
     }
 
     private String getNamespacePrefix(Class<? extends ExpObject> clazz)
@@ -3034,6 +3047,16 @@ public class ExperimentServiceImpl implements ExperimentService
     public TableInfo getTinfoAssayQCFlag()
     {
         return getExpSchema().getTable("AssayQCFlag");
+    }
+
+    public TableInfo getTinfoExclusion()
+    {
+        return getExpSchema().getTable("Exclusions");
+    }
+
+    public TableInfo getTinfoExclusionMap()
+    {
+        return getExpSchema().getTable("ExclusionMaps");
     }
 
     @Override
@@ -6615,6 +6638,39 @@ public class ExperimentServiceImpl implements ExperimentService
         {
             listener.afterMaterialCreated(materials, container, user);
         }
+    }
+
+    @Override
+    public void createExclusionEvent(Integer runId, Set<String> rowIds, String comment, User user, Container container)
+    {
+        ExpSchema expSchema = new ExpSchema(user, container);
+        ExpTable exclusionEventsTi = expSchema.getTable(ExpSchema.TableType.Exclusions);
+        ExpTable exclusionMapsTi = expSchema.getTable(ExpSchema.TableType.ExclusionMaps);
+
+        Map<String, Object> eventRow = new CaseInsensitiveHashMap<>();
+        eventRow.put("RunId", runId);
+        eventRow.put("Comment", comment);
+        Map<String, Object> result = Table.insert(user, exclusionEventsTi, eventRow);
+
+        for (String rowId : rowIds)
+        {
+            Map<String, Object> row = new CaseInsensitiveHashMap<>();
+            row.put("ExclusionId", result.get("RowId"));
+            row.put("DataRowId", rowId);
+            Table.insert(user, exclusionMapsTi, row);
+        }
+    }
+
+    @Override
+    public ActionURL getExclusionURL(Container container, AssayProvider provider, int rowId, String runId, String returnUrl)
+    {
+        ActionURL url = new ActionURL(ExperimentController.ExcludeRowsAction.class, container)
+        .addParameter("provider", provider.getName())
+        .addParameter("protocolRowId", rowId)
+        .addParameter("runId", runId)
+        .addParameter("returnUrl", returnUrl);
+
+        return url;
     }
 
     public static class TestCase extends Assert

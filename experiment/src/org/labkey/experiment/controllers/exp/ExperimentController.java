@@ -118,7 +118,11 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.study.assay.AssayFileWriter;
+import org.labkey.api.study.assay.AssayProtocolSchema;
+import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.query.AssayBaseQueryView;
+import org.labkey.api.study.query.ResultsQueryView;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
@@ -193,6 +197,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Writer;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
@@ -5949,6 +5954,171 @@ public class ExperimentController extends SpringActionController
                 ExperimentServiceImpl.get().rebuildAllEdges();
             }
             return success();
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class ExcludeRowsAction extends FormViewAction<ExclusionEventForm>
+    {
+        @Override
+        public void validateCommand(ExclusionEventForm form, Errors errors)
+        {
+
+        }
+
+        @Override
+        public boolean handlePost(ExclusionEventForm exclusionEventForm, BindException errors) throws Exception
+        {
+            if (!exclusionEventForm.isUpdate())
+                return false;
+
+            Set<String> rows = DataRegionSelection.getSelected(getViewContext(), exclusionEventForm.getDataRegionSelectionKey(), true, false);
+            ExperimentService.get().createExclusionEvent(exclusionEventForm.getRunId(), rows, exclusionEventForm.getComment(), getUser(), getContainer());
+
+            DataRegionSelection.clearAll(getViewContext(), exclusionEventForm.getDataRegionSelectionKey());
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(ExclusionEventForm form)
+        {
+            if (form.getReturnURL() != null)
+            {
+                try
+                {
+                    return new URLHelper(form.getReturnURL());
+                }
+                catch (URISyntaxException e)
+                {
+                    return null;
+                }
+            }
+            return null;
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+
+        @Override
+        public ModelAndView getView(ExclusionEventForm exclusionEventForm, boolean reshow, BindException errors) throws Exception
+        {
+            Set<String> rows = null;
+            if ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
+                rows = DataRegionSelection.getSelected(getViewContext(), exclusionEventForm.getDataRegionSelectionKey(), true, false);
+            if (rows == null || rows.isEmpty())
+                return new HtmlView("No data rows selected.  " + PageFlowUtil.textLink("back", "javascript:back()"));
+
+            QuerySettings settings = new QuerySettings(getViewContext(), "Excluded Rows");
+            ExpProtocol protocol = ExperimentService.get().getExpProtocol(Integer.parseInt(getViewContext().getActionURL().getParameter("protocolRowId")));
+            if (protocol == null)
+                return new HtmlView("Unable to find experiment protocol. " + PageFlowUtil.textLink("back", "javascript:back()"));
+            AssayProvider provider = AssayService.get().getProvider(protocol);
+            if (provider == null)
+                return new HtmlView("Unable to find assay provider. " + PageFlowUtil.textLink("back", "javascript:back()"));
+
+            AssayProtocolSchema schema = provider.createProtocolSchema(getViewContext().getUser(), getViewContext().getContainer(), protocol, null);
+            settings.setSchemaName(schema.getPath().toString());
+            settings.setQueryName("Data");
+            final Set<Integer> finalRows = rows.stream().map(Integer::parseInt).collect(Collectors.toSet());
+            ResultsQueryView queryView = new ResultsQueryView(protocol, getViewContext(), settings)
+            {
+                @Override
+                public DataView createDataView()
+                {
+                    DataView view = super.createDataView();
+                    view.getDataRegion().setShowFilters(false);
+                    view.getDataRegion().setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
+                    SimpleFilter filter = (SimpleFilter) view.getRenderContext().getBaseFilter();
+                    if (null == filter)
+                    {
+                        filter = new SimpleFilter();
+                        view.getRenderContext().setBaseFilter(filter);
+                    }
+                    filter.addInClause(FieldKey.fromParts("RowId"), new ArrayList<>(finalRows));
+                    return view;
+                }
+            };
+
+            queryView.setShowDetailsColumn(false);
+            exclusionEventForm.setQueryView(queryView);
+            exclusionEventForm.setDataRegionSelectionKey(DataRegionSelection.getSelectionKeyFromRequest(getViewContext()));
+            exclusionEventForm.setRunId(Integer.parseInt(getViewContext().getActionURL().getParameter("runId")));
+            exclusionEventForm.setReturnURL(getViewContext().getActionURL().getParameter("returnUrl"));
+            return new JspView<>("/org/labkey/experiment/ExcludeConfirm.jsp", exclusionEventForm, errors);
+        }
+
+    }
+
+    public static class ExclusionEventForm
+    {
+        private String dataRegionSelectionKey;
+        private Integer runId;
+        private String comment;
+        private String returnURL;
+        private AssayBaseQueryView queryView;
+        private boolean update;
+
+        public String getDataRegionSelectionKey()
+        {
+            return dataRegionSelectionKey;
+        }
+
+        public void setDataRegionSelectionKey(String dataRegionSelectionKey)
+        {
+            this.dataRegionSelectionKey = dataRegionSelectionKey;
+        }
+
+        public Integer getRunId()
+        {
+            return runId;
+        }
+
+        public void setRunId(Integer runId)
+        {
+            this.runId = runId;
+        }
+
+        public String getComment()
+        {
+            return comment;
+        }
+
+        public void setComment(String comment)
+        {
+            this.comment = comment;
+        }
+
+        public String getReturnURL()
+        {
+            return returnURL;
+        }
+
+        public void setReturnURL(String returnURL)
+        {
+            this.returnURL = returnURL;
+        }
+
+        public AssayBaseQueryView getQueryView()
+        {
+            return queryView;
+        }
+
+        public void setQueryView(AssayBaseQueryView queryView)
+        {
+            this.queryView = queryView;
+        }
+
+        public boolean isUpdate()
+        {
+            return update;
+        }
+
+        public void setUpdate(boolean update)
+        {
+            this.update = update;
         }
     }
 
