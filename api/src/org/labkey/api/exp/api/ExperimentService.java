@@ -460,6 +460,10 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     TableInfo getTinfoMaterialAliasMap();
 
+    TableInfo getTinfoExclusion();
+
+    TableInfo getTinfoExclusionMap();
+
     ExpSampleSet ensureDefaultSampleSet();
 
     ExpSampleSet ensureActiveSampleSet(Container container);
