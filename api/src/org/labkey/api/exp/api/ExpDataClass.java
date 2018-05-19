@@ -78,4 +78,7 @@ public interface ExpDataClass extends ExpObject
 
     ActionURL urlFor(Class<? extends Controller> actionClass, Container c);
 
+    /** Override to signal that we never throw BatchValidationExceptions */
+    @Override
+    void save(User user);
 }

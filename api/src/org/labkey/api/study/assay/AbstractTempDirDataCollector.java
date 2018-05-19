@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.util.NetworkDrive;
 
@@ -232,6 +233,10 @@ public abstract class AbstractTempDirDataCollector<ContextType extends AssayRunU
             FileUtils.deleteDirectory(tempDir);
         }
         catch (IOException e)
+        {
+            throw new ExperimentException(e);
+        }
+        catch (BatchValidationException e)
         {
             throw new ExperimentException(e);
         }

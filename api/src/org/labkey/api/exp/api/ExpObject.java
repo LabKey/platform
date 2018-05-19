@@ -23,6 +23,7 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
@@ -64,7 +65,7 @@ public interface ExpObject extends Identifiable, Comparable<ExpObject>
     User getModifiedBy();
     Date getModified();
 
-    void save(User user);
+    void save(User user) throws BatchValidationException;
     void delete(User user);
 
     /**

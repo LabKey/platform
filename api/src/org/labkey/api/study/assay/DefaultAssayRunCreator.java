@@ -56,6 +56,7 @@ import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.qc.DataTransformer;
 import org.labkey.api.qc.TransformDataHandler;
 import org.labkey.api.qc.TransformResult;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
@@ -359,21 +360,16 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             AssayService.get().ensureUniqueBatchName(batch, context.getProtocol(), context.getUser());
 
-            List<ValidationException> errors = ExperimentService.get().onRunDataCreated(context.getProtocol(), run, context.getContainer(), context.getUser());
-            if (!errors.isEmpty())
-            {
-                StringBuilder errorMessage = new StringBuilder();
-                for (ValidationException e : errors)
-                {
-                    errorMessage.append(e.getMessage()).append("\n");
-                }
-                throw new ExperimentException(errorMessage.toString());
-            }
+            ExperimentService.get().onRunDataCreated(context.getProtocol(), run, context.getContainer(), context.getUser());
 
             ExperimentService.get().syncRunEdges(run);
 
             transaction.commit();
             return batch;
+        }
+        catch (BatchValidationException e)
+        {
+            throw new ExperimentException(e);
         }
     }
 
@@ -720,7 +716,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             {
                 material = matches.get(0);
             }
-            else if (matches.size() > 1)
+            else
             {
                 Logger logger = context.getLogger() != null ? context.getLogger() : LOG;
                 logger.warn("More than one sample found for sample name '" + sampleName + "'");

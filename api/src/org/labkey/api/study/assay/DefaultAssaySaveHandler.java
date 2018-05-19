@@ -49,13 +49,13 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.xar.LsidUtils;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -216,77 +216,84 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
             run.setComments(runJsonObject.getString(ExperimentJSONConverter.COMMENT));
         }
 
-        handleStandardProperties(context, runJsonObject, run, _provider.getRunDomain(protocol).getProperties());
-
-        if (runJsonObject.has(AssayJSONConverter.DATA_ROWS) ||
-                runJsonObject.has(ExperimentJSONConverter.DATA_INPUTS) ||
-                runJsonObject.has(ExperimentJSONConverter.MATERIAL_INPUTS))
+        try
         {
-            JSONArray dataRows;
-            JSONArray dataInputs;
-            JSONArray materialInputs;
-            JSONArray dataOutputs;
-            JSONArray materialOutputs;
+            handleStandardProperties(context, runJsonObject, run, _provider.getRunDomain(protocol).getProperties());
 
-            JSONObject serializedRun = null;
-            if (!runJsonObject.has(AssayJSONConverter.DATA_ROWS))
+            if (runJsonObject.has(AssayJSONConverter.DATA_ROWS) ||
+                    runJsonObject.has(ExperimentJSONConverter.DATA_INPUTS) ||
+                    runJsonObject.has(ExperimentJSONConverter.MATERIAL_INPUTS))
             {
-                // Client didn't post the rows so reuse the values that are currently attached to the run
-                // Inefficient but easy
-                serializedRun = AssayJSONConverter.serializeRun(run, _provider, protocol, context.getUser());
-                dataRows = serializedRun.getJSONArray(AssayJSONConverter.DATA_ROWS);
-            }
-            else
-            {
-                dataRows = runJsonObject.getJSONArray(AssayJSONConverter.DATA_ROWS);
-            }
+                JSONArray dataRows;
+                JSONArray dataInputs;
+                JSONArray materialInputs;
+                JSONArray dataOutputs;
+                JSONArray materialOutputs;
 
-            if (!runJsonObject.has(ExperimentJSONConverter.DATA_INPUTS))
-            {
-                if (serializedRun == null)
+                JSONObject serializedRun = null;
+                if (!runJsonObject.has(AssayJSONConverter.DATA_ROWS))
+                {
+                    // Client didn't post the rows so reuse the values that are currently attached to the run
+                    // Inefficient but easy
                     serializedRun = AssayJSONConverter.serializeRun(run, _provider, protocol, context.getUser());
-                dataInputs = serializedRun.getJSONArray(ExperimentJSONConverter.DATA_INPUTS);
-            }
-            else
-            {
-                dataInputs = runJsonObject.getJSONArray(ExperimentJSONConverter.DATA_INPUTS);
-            }
+                    dataRows = serializedRun.getJSONArray(AssayJSONConverter.DATA_ROWS);
+                }
+                else
+                {
+                    dataRows = runJsonObject.getJSONArray(AssayJSONConverter.DATA_ROWS);
+                }
 
-            if (!runJsonObject.has(ExperimentJSONConverter.MATERIAL_INPUTS))
-            {
-                if (serializedRun == null)
-                    serializedRun = AssayJSONConverter.serializeRun(run, _provider, protocol, context.getUser());
-                materialInputs = serializedRun.getJSONArray(ExperimentJSONConverter.MATERIAL_INPUTS);
-            }
-            else
-            {
-                materialInputs = runJsonObject.getJSONArray(ExperimentJSONConverter.MATERIAL_INPUTS);
-            }
+                if (!runJsonObject.has(ExperimentJSONConverter.DATA_INPUTS))
+                {
+                    if (serializedRun == null)
+                        serializedRun = AssayJSONConverter.serializeRun(run, _provider, protocol, context.getUser());
+                    dataInputs = serializedRun.getJSONArray(ExperimentJSONConverter.DATA_INPUTS);
+                }
+                else
+                {
+                    dataInputs = runJsonObject.getJSONArray(ExperimentJSONConverter.DATA_INPUTS);
+                }
 
-            if (!runJsonObject.has(ExperimentJSONConverter.DATA_OUTPUTS))
-            {
-                if (serializedRun == null)
-                    serializedRun = AssayJSONConverter.serializeRun(run, _provider, protocol, context.getUser());
-                dataOutputs = serializedRun.getJSONArray(ExperimentJSONConverter.DATA_OUTPUTS);
-            }
-            else
-            {
-                dataOutputs = runJsonObject.getJSONArray(ExperimentJSONConverter.DATA_OUTPUTS);
-            }
+                if (!runJsonObject.has(ExperimentJSONConverter.MATERIAL_INPUTS))
+                {
+                    if (serializedRun == null)
+                        serializedRun = AssayJSONConverter.serializeRun(run, _provider, protocol, context.getUser());
+                    materialInputs = serializedRun.getJSONArray(ExperimentJSONConverter.MATERIAL_INPUTS);
+                }
+                else
+                {
+                    materialInputs = runJsonObject.getJSONArray(ExperimentJSONConverter.MATERIAL_INPUTS);
+                }
 
-            if (!runJsonObject.has(ExperimentJSONConverter.MATERIAL_OUTPUTS))
-            {
-                if (serializedRun == null)
-                    serializedRun = AssayJSONConverter.serializeRun(run, _provider, protocol, context.getUser());
-                materialOutputs = serializedRun.getJSONArray(ExperimentJSONConverter.MATERIAL_OUTPUTS);
-            }
-            else
-            {
-                materialOutputs = runJsonObject.getJSONArray(ExperimentJSONConverter.MATERIAL_OUTPUTS);
-            }
+                if (!runJsonObject.has(ExperimentJSONConverter.DATA_OUTPUTS))
+                {
+                    if (serializedRun == null)
+                        serializedRun = AssayJSONConverter.serializeRun(run, _provider, protocol, context.getUser());
+                    dataOutputs = serializedRun.getJSONArray(ExperimentJSONConverter.DATA_OUTPUTS);
+                }
+                else
+                {
+                    dataOutputs = runJsonObject.getJSONArray(ExperimentJSONConverter.DATA_OUTPUTS);
+                }
 
-            handleProtocolApplications(context, protocol, batch, run, dataInputs, dataRows, materialInputs, runJsonObject, dataOutputs, materialOutputs);
-            ExperimentService.get().onRunDataCreated(protocol, run, context.getContainer(), context.getUser());
+                if (!runJsonObject.has(ExperimentJSONConverter.MATERIAL_OUTPUTS))
+                {
+                    if (serializedRun == null)
+                        serializedRun = AssayJSONConverter.serializeRun(run, _provider, protocol, context.getUser());
+                    materialOutputs = serializedRun.getJSONArray(ExperimentJSONConverter.MATERIAL_OUTPUTS);
+                }
+                else
+                {
+                    materialOutputs = runJsonObject.getJSONArray(ExperimentJSONConverter.MATERIAL_OUTPUTS);
+                }
+
+                handleProtocolApplications(context, protocol, batch, run, dataInputs, dataRows, materialInputs, runJsonObject, dataOutputs, materialOutputs);
+                ExperimentService.get().onRunDataCreated(protocol, run, context.getContainer(), context.getUser());
+            }
+        }
+        catch (BatchValidationException e)
+        {
+            throw new ExperimentException(e);
         }
 
         ExperimentService.get().syncRunEdges(run);
@@ -304,7 +311,7 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
         }
     }
 
-    private void handleStandardProperties(ViewContext context, JSONObject jsonObject, ExpObject object, List<? extends DomainProperty> dps) throws ValidationException
+    private void handleStandardProperties(ViewContext context, JSONObject jsonObject, ExpObject object, List<? extends DomainProperty> dps) throws ValidationException, BatchValidationException
     {
         if (jsonObject.has(ExperimentJSONConverter.NAME))
         {

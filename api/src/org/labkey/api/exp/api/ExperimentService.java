@@ -62,6 +62,7 @@ import org.labkey.api.gwt.client.model.GWTPropertyValidator;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -658,9 +659,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     JSONArray convertPropertyValidatorsToJson(GWTPropertyDescriptor pd);
 
-    List<ValidationException> onBeforeRunCreated(ExpProtocol protocol, ExpRun run, Container container, User user);
+    void onBeforeRunSaved(ExpProtocol protocol, ExpRun run, Container container, User user) throws BatchValidationException;
 
-    List<ValidationException> onRunDataCreated(ExpProtocol protocol, ExpRun run, Container container, User user);
+    void onRunDataCreated(ExpProtocol protocol, ExpRun run, Container container, User user) throws BatchValidationException;
 
     void onMaterialsCreated(List<? extends ExpMaterial> materials, Container container, User user);
 

@@ -23,6 +23,7 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpressionFactory;
 
 import java.util.List;
@@ -154,4 +155,8 @@ public interface ExpSampleSet extends ExpObject
      * @return LSID that is prepared for use as a material in this Sample Set.
      */
     Lsid.LsidBuilder generateSampleLSID();
+
+    /** Override to signal that we never throw BatchValidationExceptions */
+    @Override
+    void save(User user);
 }

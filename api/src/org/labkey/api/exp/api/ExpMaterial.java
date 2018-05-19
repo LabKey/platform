@@ -18,6 +18,7 @@ package org.labkey.api.exp.api;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.security.User;
 
 import java.util.Map;
 
@@ -35,4 +36,8 @@ public interface ExpMaterial extends ExpProtocolOutput
 
     /** @return the search document id for this material */
     String getDocumentId();
+
+    /** Override to signal that we never throw BatchValidationExceptions */
+    @Override
+    void save(User user);
 }

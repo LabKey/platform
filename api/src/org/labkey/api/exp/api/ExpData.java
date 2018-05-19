@@ -81,4 +81,8 @@ public interface ExpData extends ExpProtocolOutput
      * Delete the data, optionally including any runs using this Data as an input.
      */
     void delete(User user, boolean deleteRunsUsingData);
+
+    /** Override to signal that we never throw BatchValidationExceptions */
+    @Override
+    void save(User user);
 }

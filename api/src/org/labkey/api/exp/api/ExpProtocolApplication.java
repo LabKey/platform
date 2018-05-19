@@ -91,6 +91,8 @@ public interface ExpProtocolApplication extends ExpObject
     void setEndTime(Date date);
 
     void setRecordCount(Integer recordCount);
-    
+
+    /** Override to signal that we never throw BatchValidationExceptions */
+    @Override
     void save(User user);
 }

@@ -15,6 +15,7 @@
  */
 package org.labkey.api.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.validation.Errors;
 
@@ -34,7 +35,9 @@ import java.util.Map;
  */
 public class BatchValidationException extends Exception
 {
+    @Nullable
     Map<String, Object> extraContext;
+    @NotNull
     List<ValidationException> rowErrors;
 
     public BatchValidationException()
@@ -43,10 +46,10 @@ public class BatchValidationException extends Exception
         this.rowErrors = Collections.synchronizedList(new ArrayList<ValidationException>());
     }
 
-    public BatchValidationException(List<ValidationException> rowErrors, Map<String, Object> extraContext)
+    public BatchValidationException(@Nullable List<ValidationException> rowErrors, @Nullable Map<String, Object> extraContext)
     {
         super();
-        this.rowErrors = rowErrors;
+        this.rowErrors = Collections.synchronizedList(rowErrors == null ? new ArrayList<>() : rowErrors);
         this.extraContext = extraContext;
     }
 
@@ -66,6 +69,7 @@ public class BatchValidationException extends Exception
         return rowErrors.size() > 0;
     }
 
+    @NotNull
     public List<ValidationException> getRowErrors()
     {
         return rowErrors;
@@ -84,7 +88,7 @@ public class BatchValidationException extends Exception
             vex.addToErrors(errorsTarget);
     }
 
-    public void setExtraContext(Map<String, Object> extraContext)
+    public void setExtraContext(@Nullable Map<String, Object> extraContext)
     {
         this.extraContext = extraContext;
     }

@@ -121,4 +121,8 @@ public interface ExpProtocol extends ExpObject
 
     void setApplicationType(ApplicationType type);
     void setDescription(String description);
+
+    /** Override to signal that we never throw BatchValidationExceptions */
+    @Override
+    void save(User user);
 }

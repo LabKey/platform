@@ -17,6 +17,7 @@ package org.labkey.api.exp.api;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 
@@ -37,15 +38,13 @@ public interface ExperimentListener
     { }
 
     // called before the experiment run is created (and saved)
-    default List<ValidationException> beforeRunCreated(Container container, User user, ExpProtocol protocol, ExpRun run)
+    default void beforeRunCreated(Container container, User user, ExpProtocol protocol, ExpRun run) throws BatchValidationException
     {
-        return Collections.emptyList();
     }
 
     // called after run data is uploaded
-    default List<ValidationException> afterResultDataCreated(Container container, User user, ExpRun run, ExpProtocol protocol)
+    default void afterResultDataCreated(Container container, User user, ExpRun run, ExpProtocol protocol) throws BatchValidationException
     {
-        return Collections.emptyList();
     }
 
     // called before the experiment run is deleted

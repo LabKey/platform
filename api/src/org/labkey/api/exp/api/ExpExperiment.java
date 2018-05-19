@@ -17,6 +17,7 @@
 package org.labkey.api.exp.api;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.security.User;
 
 import java.util.List;
@@ -70,4 +71,8 @@ public interface ExpExperiment extends ExpObject
     String getComments();
     /** Stored in the exp.experimentrun table */
     void setComments(String comments);
+
+    /** Override to signal that we never throw BatchValidationExceptions */
+    @Override
+    void save(User user);
 }
