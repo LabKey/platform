@@ -40,6 +40,7 @@ import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.XMLBeanTaskFactoryFactory;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayDataCollector;
@@ -484,7 +485,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
             tx.commit();
         }
-        catch (ExperimentException | ValidationException e)
+        catch (ExperimentException | ValidationException | BatchValidationException e)
         {
             throw new PipelineJobException("Failed to save experiment run in the database", e);
         }

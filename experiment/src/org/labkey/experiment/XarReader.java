@@ -58,6 +58,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.util.DateUtil;
@@ -373,8 +374,15 @@ public class XarReader extends AbstractXarImporter
 
         for (ExpRun loadedRun : _loadedRuns)
         {
-            ExperimentService.get().onRunDataCreated(loadedRun.getProtocol(), loadedRun, getContainer(), getUser());
-            ExperimentService.get().syncRunEdges(loadedRun);
+            try
+            {
+                ExperimentService.get().onRunDataCreated(loadedRun.getProtocol(), loadedRun, getContainer(), getUser());
+                ExperimentService.get().syncRunEdges(loadedRun);
+            }
+            catch (BatchValidationException e)
+            {
+                throw new ExperimentException(e);
+            }
         }
     }
 

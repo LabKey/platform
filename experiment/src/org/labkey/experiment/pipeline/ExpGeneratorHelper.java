@@ -36,6 +36,7 @@ import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.pipeline.TaskId;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.FileUtil;
@@ -249,7 +250,7 @@ public class ExpGeneratorHelper
             }
             ExperimentRunGraph.clearCache(run.getContainer());
         }
-        catch (XarFormatException e)
+        catch (XarFormatException | BatchValidationException e)
         {
             throw new PipelineJobException(e);
         }
@@ -261,7 +262,7 @@ public class ExpGeneratorHelper
     }
 
     static private ExpRunImpl insertRun(PipelineJob job, Set<RecordedAction> actions, XarSource source, Map<URI, String> runOutputsWithRoles, Map<URI, String> runInputsWithRoles, ExpProtocol parentProtocol)
-        throws PipelineJobException, ValidationException
+            throws PipelineJobException, ValidationException, BatchValidationException
     {
         ExpRunImpl run = ExperimentServiceImpl.get().createExperimentRun(job.getContainer(), job.getDescription());
         run.setProtocol(parentProtocol);

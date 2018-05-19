@@ -5040,11 +5040,19 @@ public class ExperimentServiceImpl implements ExperimentService
                                                      Collection<ExpData> outputDatas, Collection<ExpData> transformedDatas, User user)
     {
         // Save all the input and output objects to make sure they've been inserted
-        saveAll(inputMaterials, user);
-        saveAll(inputDatas, user);
-        saveAll(outputMaterials, user);
-        saveAll(outputDatas, user);
-        saveAll(transformedDatas, user);
+        try
+        {
+            saveAll(inputMaterials, user);
+            saveAll(inputDatas, user);
+            saveAll(outputMaterials, user);
+            saveAll(outputDatas, user);
+            saveAll(transformedDatas, user);
+        }
+        catch (BatchValidationException e)
+        {
+            // None of these types actually throw the exception on save
+            throw new UnexpectedException(e);
+        }
 
         List<ExpData> result = new ArrayList<>();
         if (transformedDatas.isEmpty())
@@ -5057,7 +5065,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return result;
     }
 
-    private void saveAll(Iterable<? extends ExpObject> objects, User user)
+    private void saveAll(Iterable<? extends ExpObject> objects, User user) throws BatchValidationException
     {
         for (ExpObject object : objects)
         {
@@ -5199,6 +5207,10 @@ public class ExperimentServiceImpl implements ExperimentService
             addMaterialInputs(outputMaterials, protApp3._object, user);
 
             transaction.commit();
+        }
+        catch (BatchValidationException e)
+        {
+            throw new ExperimentException(e);
         }
 
         if (loadDataFiles)
@@ -6648,25 +6660,21 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public List<ValidationException> onBeforeRunCreated(ExpProtocol protocol, ExpRun run, Container container, User user)
+    public void onBeforeRunSaved(ExpProtocol protocol, ExpRun run, Container container, User user) throws BatchValidationException
     {
-        List<ValidationException> errors = new ArrayList<>();
         for (ExperimentListener listener : _listeners)
         {
-            errors.addAll(listener.beforeRunCreated(container, user, protocol, run));
+            listener.beforeRunCreated(container, user, protocol, run);
         }
-        return errors;
     }
 
     @Override
-    public List<ValidationException> onRunDataCreated(ExpProtocol protocol, ExpRun run, Container container, User user)
+    public void onRunDataCreated(ExpProtocol protocol, ExpRun run, Container container, User user) throws BatchValidationException
     {
-        List<ValidationException> errors = new ArrayList<>();
         for (ExperimentListener listener : _listeners)
         {
-            errors.addAll(listener.afterResultDataCreated(container, user, run, protocol));
+            listener.afterResultDataCreated(container, user, run, protocol);
         }
-        return errors;
     }
 
     @Override

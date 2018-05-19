@@ -57,6 +57,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.query.AbstractQueryUpdateService;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.ExprColumn;
@@ -960,6 +961,10 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 catch (ConversionException e)
                 {
                     throw new ValidationException(e.getMessage());
+                }
+                catch (BatchValidationException e)
+                {
+                    throw new QueryUpdateServiceException(e);
                 }
             }
             return getRow(user, container, oldRow);

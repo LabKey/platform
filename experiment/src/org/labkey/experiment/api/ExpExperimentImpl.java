@@ -26,8 +26,10 @@ import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UnexpectedException;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -124,7 +126,14 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
             if (this.equals(run.getBatch()))
             {
                 ((ExpRunImpl) run).setBatchId(null);
-                run.save(user);
+                try
+                {
+                    run.save(user);
+                }
+                catch (BatchValidationException e)
+                {
+                    throw new UnexpectedException(e);
+                }
             }
 
             ExperimentServiceImpl.get().auditRunEvent(user, run.getProtocol(), run, this, "The run '" + run.getName() + "' was removed from the run group '" + getName() + "'");
@@ -170,7 +179,14 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
                     if (batchId != null)
                     {
                         ((ExpRunImpl) run).setBatchId(batchId);
-                        run.save(user);
+                        try
+                        {
+                            run.save(user);
+                        }
+                        catch (BatchValidationException e)
+                        {
+                            throw new UnexpectedException(e);
+                        }
                     }
 
                     ExperimentServiceImpl.get().auditRunEvent(user, run.getProtocol(), run, this, "The run '" + run.getName() + "' was added to the run group '" + getName() + "'");

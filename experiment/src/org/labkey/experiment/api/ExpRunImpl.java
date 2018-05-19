@@ -22,13 +22,13 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.ExperimentException;
@@ -42,8 +42,10 @@ import org.labkey.api.exp.api.ExpProtocolAction;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -52,7 +54,6 @@ import org.labkey.api.study.assay.AssayFileWriter;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.experiment.DotGraph;
 import org.labkey.experiment.ExperimentRunGraph;
@@ -269,13 +270,17 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     }
 
     @Override
-    public void save(User user)
+    public void save(User user) throws BatchValidationException
     {
-        boolean newRun = getRowId() == 0;
-        ExperimentService.get().onBeforeRunCreated(getProtocol(), this, getContainer(), user);
-        save(user, ExperimentServiceImpl.get().getTinfoExperimentRun());
-        if (newRun)
-            ExperimentServiceImpl.get().auditRunEvent(user, this.getProtocol(), this, null, this.getProtocol().getName() + " run loaded");
+        try (DbScope.Transaction t = ExperimentServiceImpl.get().getExpSchema().getScope().ensureTransaction())
+        {
+            boolean newRun = getRowId() == 0;
+            ExperimentService.get().onBeforeRunSaved(getProtocol(), this, getContainer(), user);
+            save(user, ExperimentServiceImpl.get().getTinfoExperimentRun());
+            if (newRun)
+                ExperimentServiceImpl.get().auditRunEvent(user, this.getProtocol(), this, null, this.getProtocol().getName() + " run loaded");
+            t.commit();
+        }
     }
 
     @Override
