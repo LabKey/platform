@@ -88,6 +88,7 @@ public class DataColumn extends DisplayColumn
             super.setURLExpression(url);
         setLinkTarget(_boundColumn.getURLTargetWindow());
         setLinkCls(_boundColumn.getURLCls());
+        setOnClick(_boundColumn.getOnClick());
         setFormatString(_displayColumn.getFormat());
         setTsvFormatString(_displayColumn.getTsvFormatString());
         setExcelFormatString(_displayColumn.getExcelFormatString());
@@ -350,6 +351,13 @@ public class DataColumn extends DisplayColumn
                 {
                     out.write("\" class=\"");
                     out.write(linkCls);
+                }
+
+                String onClick = getOnClick();
+                if (null != onClick)
+                {
+                    out.write("\" onclick=\"");
+                    out.write(onClick);
                 }
 
                 String css = getCssStyle(ctx);

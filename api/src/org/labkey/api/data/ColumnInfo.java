@@ -440,6 +440,7 @@ public class ColumnInfo extends ColumnRenderProperties
         }
         setURLTargetWindow(col.getURLTargetWindow());
         setURLCls(col.getURLCls());
+        setOnClick(col.getOnClick());
     }
 
 

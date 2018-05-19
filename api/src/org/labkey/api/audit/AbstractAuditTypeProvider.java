@@ -378,7 +378,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
     {
         if (properties == null) return null;
 
-        Map<String,String> stringMap = new HashMap<>();
+        Map<String,String> stringMap = new LinkedHashMap<>();
         for (Map.Entry<String,?> entry :  properties.entrySet())
         {
             Object value = entry.getValue();

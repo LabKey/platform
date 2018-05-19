@@ -80,6 +80,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     protected StringExpression url;
     protected String urlTargetWindow;
     protected String urlCls;
+    protected String onClick;
     protected Set<String> importAliases = new LinkedHashSet<>();
     protected DefaultValueType _defaultValueType = null;
     protected FacetingBehaviorType facetingBehaviorType = FacetingBehaviorType.AUTOMATIC;
@@ -317,6 +318,16 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     public void setURLCls(String urlCls)
     {
         this.urlCls = urlCls;
+    }
+
+    public String getOnClick()
+    {
+        return onClick;
+    }
+
+    public void setOnClick(String onClick)
+    {
+        this.onClick = onClick;
     }
 
     public boolean isRecommendedVariable()

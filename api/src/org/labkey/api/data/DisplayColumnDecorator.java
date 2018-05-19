@@ -562,6 +562,18 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
+    public void setOnClick(String onClick)
+    {
+        _column.setOnClick(onClick);
+    }
+
+    @Override
+    public String getOnClick()
+    {
+        return _column.getOnClick();
+    }
+
+    @Override
     public String getExcelFormatString()
     {
         return _column.getExcelFormatString();

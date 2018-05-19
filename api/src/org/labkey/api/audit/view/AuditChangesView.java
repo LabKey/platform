@@ -15,7 +15,7 @@
  */
 package org.labkey.api.audit.view;
 
-import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveLinkedHashMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 
@@ -41,7 +41,7 @@ public class AuditChangesView extends HttpView
         this._comment = comment;
         if (oldData != null)
         {
-            this.oldData = new CaseInsensitiveHashMap<>(oldData);
+            this.oldData = new CaseInsensitiveLinkedHashMap<>(oldData);
         }
         else
         {
@@ -49,7 +49,7 @@ public class AuditChangesView extends HttpView
         }
         if (newData != null)
         {
-            this.newData = new CaseInsensitiveHashMap<>(newData);
+            this.newData = new CaseInsensitiveLinkedHashMap<>(newData);
         }
         else
         {

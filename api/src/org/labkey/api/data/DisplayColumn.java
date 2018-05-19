@@ -64,6 +64,7 @@ public abstract class DisplayColumn extends RenderColumn
     protected String _width = "60";
     protected String _linkTarget = null;
     protected String _linkCls = null;
+    protected String _onClick = null;
     protected String _excelFormatString = null;
     protected Format _format = null;
     protected Format _tsvFormat = null;
@@ -1224,6 +1225,16 @@ public abstract class DisplayColumn extends RenderColumn
     public String getLinkCls()
     {
         return _linkCls;
+    }
+
+    public void setOnClick(String onClick)
+    {
+        _onClick = onClick;
+    }
+
+    public String getOnClick()
+    {
+        return _onClick;
     }
 
     public String getExcelFormatString()

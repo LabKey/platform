@@ -204,6 +204,7 @@ api/src/org/labkey/api/collections/ByteArrayHashKey.java -text
 api/src/org/labkey/api/collections/CaseInsensitiveArrayListValuedMap.java -text
 api/src/org/labkey/api/collections/CaseInsensitiveHashMap.java -text
 api/src/org/labkey/api/collections/CaseInsensitiveHashSet.java -text
+api/src/org/labkey/api/collections/CaseInsensitiveLinkedHashMap.java -text
 api/src/org/labkey/api/collections/CaseInsensitiveMapWrapper.java -text
 api/src/org/labkey/api/collections/CaseInsensitiveTreeMap.java -text
 api/src/org/labkey/api/collections/CaseInsensitiveTreeSet.java -text
