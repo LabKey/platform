@@ -81,7 +81,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 /**
  * A job represents the invocation of a pipeline on a certain set out inputs. It can be monolithic (a single run() method)
@@ -523,18 +522,27 @@ abstract public class PipelineJob extends Job implements Serializable
     /**
      * Used for setting status to a custom state, which is considered to be equivalent to TaskStatus.running
      * unless it matches one of the standard states
+     * @throws CancelledException if the job was cancelled by a user and should stop execution
      */
     public boolean setStatus(@NotNull String status)
     {
         return setStatus(status, null);
     }
 
-    /** Used for setting status to one of the standard states */
+    /**
+     * Used for setting status to one of the standard states
+     * @param info more verbose detail on the job's status, such as a percent complete
+     * @throws CancelledException if the job was cancelled by a user and should stop execution
+     */
     public boolean setStatus(@NotNull TaskStatus status, @Nullable String info)
     {
         return setStatus(status.toString(), info);
     }
 
+    /**
+     * @param info more verbose detail on the job's status, such as a percent complete
+     * @throws CancelledException if the job was cancelled by a user and should stop execution
+     */
     public boolean setStatus(@NotNull String status, @Nullable String info)
     {
         return setStatus(status, info, false);
@@ -543,6 +551,7 @@ abstract public class PipelineJob extends Job implements Serializable
     /**
      * Used for setting status to a custom state, which is considered to be equivalent to TaskStatus.running
      * unless it matches one of the standard states
+     * @throws CancelledException if the job was cancelled by a user and should stop execution
      */
     public boolean setStatus(@NotNull String status, @Nullable String info, boolean allowInsert)
     {
