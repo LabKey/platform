@@ -261,6 +261,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
         return _protocolDay;
     }
 
+    @Deprecated // Use BigDecimal version instead
     public void setProtocolDay(@Nullable Double protocolDay)
     {
         _protocolDay = null == protocolDay ? null : BigDecimal.valueOf(protocolDay);

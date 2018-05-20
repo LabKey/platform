@@ -89,8 +89,11 @@ class VisitMapRecord
         _visitTagRecords = visitTagRecords;
     }
 
+    @Deprecated // Remove? Only usage is VisitMapRecordFactory, which doesn't seem to be used
     private VisitMapRecord(Map record)
     {
+        assert false : "Let Adam know that this constructor is used after all!";
+
         String range = (String)record.get("sequenceRange");
         if (null == range)
             throw new IllegalArgumentException("Sequence range is required");
@@ -236,10 +239,12 @@ class VisitMapRecord
     }
 
     // UNDONE: should have BaseObjectFactory to implement handle in terms of fromMap()
+    @Deprecated // Does not seem to be used... no code asks to instantiate VisitMapRecord.class
     private static class VisitMapRecordFactory implements ObjectFactory<VisitMapRecord>
     {
         public VisitMapRecord fromMap(Map<String, ?> m)
         {
+            assert false : "Let Adam know that this factory is used after all!";
             return new VisitMapRecord(m);
         }
 
