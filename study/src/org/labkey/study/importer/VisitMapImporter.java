@@ -30,6 +30,7 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.StudyManager.VisitAlias;
 import org.labkey.study.model.VisitDatasetType;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.VisitMapKey;
@@ -150,7 +151,7 @@ public class VisitMapImporter
         }
 
         List<VisitMapRecord> records;
-        List<StudyManager.VisitAlias> aliases;
+        List<VisitAlias> aliases;
         List<VisitTag> visitTags;
 
         records = reader.getVisitMapRecords(study.getTimepointType());
@@ -196,7 +197,7 @@ public class VisitMapImporter
         }
     }
 
-    private void saveImportAliases(User user, Study study, List<StudyManager.VisitAlias> aliases) throws ValidationException
+    private void saveImportAliases(User user, Study study, List<VisitAlias> aliases) throws ValidationException
     {
         StudyManager.getInstance().importVisitAliases(study, user, aliases);
     }
