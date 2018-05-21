@@ -210,9 +210,9 @@ public interface MarkdownService
                     "Autoconverted link https://github.com/nodeca/pica (enable linkify to see)\n";
             String expectedHtmlText = "<hr>\n" +
                     "<ul>\n" +
-                    "<li><strong><a href=\"https://nodeca.github.io/pica/demo/\">pica</a></strong> - high quality and fast image\n" +
+                    "<li><strong><a href=\"https://nodeca.github.io/pica/demo/\">pica</a></strong> - high quality and fast image<br>\n" +
                     "resize in browser.</li>\n" +
-                    "<li><strong><a href=\"https://github.com/nodeca/babelfish/\">babelfish</a></strong> - developer friendly\n" +
+                    "<li><strong><a href=\"https://github.com/nodeca/babelfish/\">babelfish</a></strong> - developer friendly<br>\n" +
                     "i18n with plurals support and easy syntax.</li>\n" +
                     "</ul>\n" +
                     "<p>You will like those projects!</p>\n" +
@@ -350,7 +350,7 @@ public interface MarkdownService
                     "<h2>Links</h2>\n" +
                     "<p><a href=\"http://dev.nodeca.com\">link text</a></p>\n" +
                     "<p><a href=\"http://nodeca.github.io/pica/demo/\" title=\"title text!\">link with title</a></p>\n" +
-                    "<p>Autoconverted link https://github.com/nodeca/pica (enable linkify to see)</p>\n";
+                    "<p>Autoconverted link <a href=\"https://github.com/nodeca/pica\">https://github.com/nodeca/pica</a> (enable linkify to see)</p>\n";
             String htmlText = markdownService.toHtml(testMdText);
             assertTrue("The MarkdownService failed to correctly translate complex markdown text to html.", expectedHtmlText.equals(htmlText));
         }
