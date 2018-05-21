@@ -331,7 +331,7 @@ public class AnnouncementManager
         };
     }
 
-    // Magic date value used to mark an annoucement that a moderator has reviewed and "disapproved" (e.g., determined to be spam).
+    // Magic date value used to mark an announcement that a moderator has reviewed and "disapproved" (e.g., determined to be spam).
     public static final Date SPAM_MAGIC_DATE = new Date(0);
 
     public static void markAsSpam(Container c, AnnouncementModel ann)
