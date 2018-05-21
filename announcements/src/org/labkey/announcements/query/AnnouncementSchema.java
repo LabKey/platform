@@ -188,7 +188,10 @@ public class AnnouncementSchema extends UserSchema
 
     private AnnouncementTable createSpamTable()
     {
-        return createFilteredAnnouncementTable(new SimpleFilter(FieldKey.fromParts("Approved"), AnnouncementManager.SPAM_MAGIC_DATE, CompareType.EQUAL));
+        AnnouncementTable spamTable = createFilteredAnnouncementTable(new SimpleFilter(FieldKey.fromParts("Approved"), AnnouncementManager.SPAM_MAGIC_DATE, CompareType.EQUAL));
+        spamTable.setTitle("Spam");
+
+        return spamTable;
     }
 
     private TableInfo createToursTable()
