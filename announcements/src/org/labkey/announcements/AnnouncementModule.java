@@ -124,7 +124,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return new ArrayList<>(Arrays.asList(
-            new AnnouncementsController.AnnoucementWebPartFactory(WEB_PART_NAME),
+            new AnnouncementsController.AnnouncementWebPartFactory(WEB_PART_NAME),
             new AlwaysAvailableWebPartFactory(WEB_PART_NAME + " List")
             {
                 public WebPartView getWebPartView(@NotNull ViewContext parentCtx, @NotNull Portal.WebPart webPart)

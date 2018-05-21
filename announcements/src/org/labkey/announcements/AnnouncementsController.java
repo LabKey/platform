@@ -2327,9 +2327,9 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    public static class AnnoucementWebPartFactory extends AlwaysAvailableWebPartFactory
+    public static class AnnouncementWebPartFactory extends AlwaysAvailableWebPartFactory
     {
-        AnnoucementWebPartFactory(String name)
+        AnnouncementWebPartFactory(String name)
         {
             super(name);
         }
@@ -2338,7 +2338,7 @@ public class AnnouncementsController extends SpringActionController
         {
             String jsp = "/org/labkey/announcements/announcementWebPartWithExpandos.jsp";
             if ("simple".equals(webPart.getPropertyMap().get("style")))
-                jsp =  "/org/labkey/announcements/announcementWebPartSimple.jsp";
+                jsp = "/org/labkey/announcements/announcementWebPartSimple.jsp";
             return new AnnouncementsController.AnnouncementWebPart(jsp, parentCtx);
         }
 
