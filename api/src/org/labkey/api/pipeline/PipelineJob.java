@@ -1005,6 +1005,18 @@ abstract public class PipelineJob extends Job implements Serializable
                 {
                     error(e.getMessage(), e);
                 }
+                catch (CancelledException e)
+                {
+                    throw e;
+                }
+                catch (RuntimeException e)
+                {
+                    error(e.getMessage(), e);
+                    ExceptionUtil.logExceptionToMothership(null, e);
+                    // Rethrow to let the standard Mule exception handler fire and deal with the job state
+                    throw e;
+
+                }
             }
             while (runStateMachine());
         }
@@ -1012,12 +1024,6 @@ abstract public class PipelineJob extends Job implements Serializable
         {
             _activeTaskStatus = TaskStatus.cancelled;
             // Don't need to do anything else, job has already been set to CANCELLED
-        }
-        catch (RuntimeException e)
-        {
-            ExceptionUtil.logExceptionToMothership(null, e);
-            // Rethrow to let the standard Mule exception handler fire and deal with the job state
-            throw e;
         }
         finally
         {
