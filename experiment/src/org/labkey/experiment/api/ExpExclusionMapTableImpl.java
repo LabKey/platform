@@ -1,19 +1,27 @@
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpExclusionMapTable;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.User;
 
+import java.sql.SQLException;
+import java.util.List;
 import java.util.Map;
 
 public class ExpExclusionMapTableImpl extends ExpTableImpl<ExpExclusionMapTable.Column> implements  ExpExclusionMapTable
@@ -68,6 +76,7 @@ public class ExpExclusionMapTableImpl extends ExpTableImpl<ExpExclusionMapTable.
         addColumn(Column.RowId);
         addColumn(Column.ExclusionId);
         addColumn(Column.DataRowId);
+        setDeleteURL(LINK_DISABLER);
     }
 
     @Override
@@ -97,6 +106,18 @@ public class ExpExclusionMapTableImpl extends ExpTableImpl<ExpExclusionMapTable.
         public UpdateService(TableInfo queryTable)
         {
             super(queryTable, ExperimentService.get().getTinfoAssayQCFlag(), _columnMapping);
+        }
+
+        @Override
+        public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow)
+        {
+            throw new UnsupportedOperationException();
         }
     }
 }

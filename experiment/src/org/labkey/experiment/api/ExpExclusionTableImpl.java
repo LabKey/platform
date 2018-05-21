@@ -1,25 +1,38 @@
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableResultSet;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpExclusionTable;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.User;
 
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 
 public class ExpExclusionTableImpl extends ExpTableImpl<ExpExclusionTable.Column> implements ExpExclusionTable
 {
     private Map<String, String> _columnMapping = new CaseInsensitiveHashMap<>();
-
     public ExpExclusionTableImpl(String name, UserSchema schema)
     {
         super(name, ExperimentServiceImpl.get().getTinfoExclusion(), schema, null);
@@ -98,7 +111,50 @@ public class ExpExclusionTableImpl extends ExpTableImpl<ExpExclusionTable.Column
     {
         public UpdateService(TableInfo queryTable)
         {
-            super(queryTable, ExperimentService.get().getTinfoAssayQCFlag(), _columnMapping);
+            super(queryTable, ExperimentService.get().getTinfoExclusion(), _columnMapping);
+        }
+
+        @Override
+        protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap) throws QueryUpdateServiceException, SQLException, InvalidKeyException
+        {
+            // Select which exclusionMapss are to be deleted
+            List<Integer> exclusionMapsToDelete = new ArrayList<>();
+            TableInfo exclusionMapsTi = ExperimentService.get().getTinfoExclusionMap();
+            for (String key : oldRowMap.keySet())
+            {
+                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ExclusionId"), (Integer) oldRowMap.get(key));
+                LinkedHashSet<ColumnInfo> cols = new LinkedHashSet<>();
+                cols.add(exclusionMapsTi.getColumn("RowId"));
+                cols.add(exclusionMapsTi.getColumn("ExclusionId"));
+                TableSelector ts = new TableSelector(exclusionMapsTi, cols, filter, null);
+                try (TableResultSet rs = ts.getResultSet(false, false))
+                {
+                    for (Map<String, Object> row : rs)
+                    {
+                        exclusionMapsToDelete.add((Integer) row.get("RowId"));
+                    }
+                }
+            }
+            for (Integer rowId : exclusionMapsToDelete)
+            {
+                SimpleFilter exclusionMapsFilter = new SimpleFilter(FieldKey.fromParts("RowId"), rowId);
+                Table.delete(exclusionMapsTi, exclusionMapsFilter);
+            }
+
+            return super.deleteRow(user, container, oldRowMap);
+        }
+
+        @Override
+        public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+        {
+
+            List<Map<String, Object>> ret = new ArrayList<>();
+            for (Map<String, Object> k : keys)
+            {
+                ret.add(this.deleteRow(user, container, k));
+            }
+
+            return ret;
         }
     }
 }
