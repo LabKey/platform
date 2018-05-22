@@ -29,6 +29,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DelegatingContainerFilter;
 import org.labkey.api.data.DisplayColumn;
@@ -94,6 +95,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.study.assay.AssayResultTable.FLAGGED_AS_EXCLUDED_COLUMN_NAME;
+
 /**
  * A child schema of AssayProviderSchema. Scoped to a single assay design (AKA ExpProtocol).
  * Exposes tables for Runs, Batches, etc.
@@ -106,6 +109,8 @@ public abstract class AssayProtocolSchema extends AssaySchema
     public static final String DATA_TABLE_NAME = "Data";
     public static final String BATCHES_TABLE_NAME = "Batches";
     public static final String QC_FLAGS_TABLE_NAME = "QCFlags";
+
+    public static final String EXCLUSION_REPORT_TABLE_NAME = "ExclusionReport";
 
     /** Legacy location for PropertyDescriptor columns is under a separate node. New location is as a top-level member of the table */
     private static final String RUN_PROPERTIES_COLUMN_NAME = "RunProperties";
@@ -564,7 +569,16 @@ public abstract class AssayProtocolSchema extends AssaySchema
     @Nullable
     protected ResultsQueryView createDataQueryView(ViewContext context, QuerySettings settings, BindException errors)
     {
-        ResultsQueryView queryView = new ResultsQueryView(_protocol, context, settings);
+        ResultsQueryView queryView = _provider.isExclusionSupported() ? new ResultsQueryView(_protocol, context, settings)
+        {
+            @Override
+            protected DataRegion createDataRegion()
+            {
+                ResultsDataRegion rgn = new ExclusionSupportedResultsDataRegion(_provider, _protocol);
+                initializeDataRegion(rgn);
+                return rgn;
+            }
+        } : new ResultsQueryView(_protocol, context, settings);
 
         if (_provider.hasCustomView(ExpProtocol.AssayDomainTypes.Result, true))
         {
@@ -580,6 +594,37 @@ public abstract class AssayProtocolSchema extends AssaySchema
         }
 
         return queryView;
+    }
+
+    public class ExclusionSupportedResultsDataRegion extends ResultsQueryView.ResultsDataRegion
+    {
+        private ColumnInfo _excludedColumn;
+
+        public ExclusionSupportedResultsDataRegion(AssayProvider provider, ExpProtocol protocol)
+        {
+            super(provider, protocol);
+        }
+
+        @Override
+        protected boolean isErrorRow(RenderContext ctx, int rowIndex)
+        {
+            return super.isErrorRow(ctx, rowIndex) ||
+                    _excludedColumn != null && Boolean.TRUE.equals(_excludedColumn.getValue(ctx));
+        }
+
+        @Override
+        public void addQueryColumns(Set<ColumnInfo> columns)
+        {
+            super.addQueryColumns(columns);
+            FieldKey fk = new FieldKey(null, FLAGGED_AS_EXCLUDED_COLUMN_NAME);
+            Map<FieldKey, ColumnInfo> newColumns = QueryService.get().getColumns(getTable(), Collections.singleton(fk), columns);
+            _excludedColumn = newColumns.get(fk);
+            if (_excludedColumn != null)
+            {
+                columns.add(_excludedColumn);
+            }
+        }
+
     }
 
     @Override

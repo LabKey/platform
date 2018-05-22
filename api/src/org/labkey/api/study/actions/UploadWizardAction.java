@@ -23,6 +23,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.RenderContext;
@@ -555,11 +556,37 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             vbox.addView(batchPropsView);
         }
 
+        if (newRunForm.getReRun() != null && newRunForm.getProvider().isExclusionSupported())
+        {
+            int exclusionCount = ExperimentService.get().getExclusionCount(newRunForm.getReRun());
+            if (exclusionCount > 0)
+            {
+                ActionURL excludeReportUrl = getExclusionReportURL(getContainer(), newRunForm.getReRun());
+                String html = "<p>The run you are replacing has " + exclusionCount + " exclusion" + (exclusionCount > 1 ? "s" : "") + ". " +
+                        "These exclusions will not be retained after the assay run is re-imported. <br>" +
+                        "Please review the <a class=\"labkey-text-link\" href=\"" +
+                        PageFlowUtil.filter(excludeReportUrl) +
+                        "\">exclusions report</a> for more information</p>";
+                HtmlView exclusionWarningView = new HtmlView(html);
+                exclusionWarningView.setTitle("Exclusions Warning");
+                vbox.addView(exclusionWarningView);
+            }
+        }
+
         if (newRunForm.isSuccessfulUploadComplete())
             vbox.addView(new HtmlView("<p class=\"labkey-header-large\">Upload successful.  Upload another run below, or click Cancel to view previously uploaded runs.</p>"));
 
         vbox.addView(insertView);
         return vbox;
+    }
+
+    private ActionURL getExclusionReportURL(Container container, ExpRun run)
+    {
+        ActionURL url = new ActionURL(AssayExclusionReportAction.class, container);
+        url.addParameter("rowId", run.getProtocol().getRowId());
+        if (run != null)
+            url.addParameter("Data.Run/RowId~eq", run.getRowId());
+        return url;
     }
 
     /** Check the assay configuration to determine if we should prompt the user to upload or otherwise specify a data file */

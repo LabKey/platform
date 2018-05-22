@@ -665,9 +665,11 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     void onMaterialsCreated(List<? extends ExpMaterial> materials, Container container, User user);
 
-    void createExclusionEvent(Integer runId, Set<String> rowIds, String comment, User user, Container container);
+    void createExclusionEvent(ExpRun run, Set<String> rowIds, String comment, User user, Container container);
 
     ActionURL getExclusionURL(Container container, AssayProvider provider, int rowId, String runId, String returnUrl);
+
+    int getExclusionCount(ExpRun run);
 
     // see org.labkey.experiment.LSIDRelativizer
     public static final String LSID_OPTION_ABSOLUTE = "ABSOLUTE";

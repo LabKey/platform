@@ -83,6 +83,7 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.actions.AssayExclusionReportAction;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.actions.DesignerAction;
 import org.labkey.api.study.actions.UploadWizardAction;
@@ -1379,6 +1380,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
         if (AuditLogService.get().isViewable())
             result.add(new NavTree("view copy-to-study history", AssayPublishService.get().getPublishHistory(viewContext.getContainer(), protocol, containerFilter)));
+
+        AssayProvider provider = AssayService.get().getProvider(protocol);
+        if (provider != null && provider.isExclusionSupported())
+        {
+            result.add(new NavTree("view excluded data", new ActionURL(AssayExclusionReportAction.class, viewContext.getContainer()).addParameter("rowId", protocol.getRowId())));
+        }
 
         return result;
     }

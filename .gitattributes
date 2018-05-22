@@ -1392,6 +1392,7 @@ api/src/org/labkey/api/study/WellGroupTemplate.java -text
 api/src/org/labkey/api/study/actions/AssayBatchDetailsAction.java -text
 api/src/org/labkey/api/study/actions/AssayBatchesAction.java -text
 api/src/org/labkey/api/study/actions/AssayDetailRedirectAction.java -text
+api/src/org/labkey/api/study/actions/AssayExclusionReportAction.java -text
 api/src/org/labkey/api/study/actions/AssayHeaderView.java -text
 api/src/org/labkey/api/study/actions/AssayResultDetailsAction.java -text
 api/src/org/labkey/api/study/actions/AssayResultsAction.java -text

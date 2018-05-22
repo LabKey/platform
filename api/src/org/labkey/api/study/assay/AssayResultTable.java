@@ -81,6 +81,9 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
 
     private static final String RUN_ID_ALIAS = "Run";
 
+    public static final String FLAGGED_AS_EXCLUDED_COLUMN_NAME = "FlaggedAsExcluded";
+    public static final String EXCLUSION_COMMENT_COLUMN_NAME = "ExclusionComment";
+
     public AssayResultTable(AssayProtocolSchema schema, boolean includeCopiedToStudyColumns)
     {
         super(StorageProvisioner.createTableInfo(schema.getProvider().getResultsDomain(schema.getProtocol())), schema);
@@ -216,6 +219,24 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         runColumn.setShownInUpdateView(false);
         addColumn(runColumn);
 
+        if (_provider.isExclusionSupported())
+        {
+            SQLFragment excludedSQL = new SQLFragment("CASE WHEN (SELECT COUNT(*) FROM (")
+                    .append(getExclusionsSQL())
+                    .append(") x) = 0 THEN ? ELSE ? END ")
+                    .add(Boolean.FALSE)
+                    .add(Boolean.TRUE);
+            ExprColumn exclusionColumn = new ExprColumn(this, FLAGGED_AS_EXCLUDED_COLUMN_NAME, excludedSQL, JdbcType.BOOLEAN);
+            exclusionColumn.setFormat("yes;no;");
+            addColumn(exclusionColumn);
+
+            SQLFragment exclusionCommentSQL = new SQLFragment("(SELECT MAX(CommentStr) FROM (")
+                    .append(getExclusionsSQL())
+                    .append(") x)");
+            ExprColumn exclusionReasonColumn = new ExprColumn(this, EXCLUSION_COMMENT_COLUMN_NAME, exclusionCommentSQL, JdbcType.VARCHAR);
+            addColumn(exclusionReasonColumn);
+        }
+
         Domain runDomain = _provider.getRunDomain(_protocol);
         for (DomainProperty prop : runDomain.getProperties())
         {
@@ -256,6 +277,26 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         }
 
         setDefaultVisibleColumns(visibleColumns);
+    }
+
+    protected SQLFragment getExclusionsSQL()
+    {
+        SQLFragment commentStatement = new SQLFragment()
+                .append("(CASE WHEN ex.Comment IS NOT NULL THEN ")
+                .append(getSqlDialect().concatenate(new SQLFragment("': '"), new SQLFragment("ex.Comment")))
+                .append(" ELSE '' END)");
+
+        return new SQLFragment()
+                .append(" SELECT ")
+                .append(getSqlDialect().concatenate(new SQLFragment("Comment"), commentStatement)).append(" AS CommentStr, ")
+                .append("\nex.Modified, ex.ModifiedBy, ex.Created, ex.CreatedBy FROM ")
+                .append(ExperimentService.get().getTinfoExclusion(), "ex").append(", ")
+                .append(ExperimentService.get().getTinfoExclusionMap(), "exmap").append(", ")
+                .append(ExperimentService.get().getTinfoData(), "d").append(", ")
+                .append(ExperimentService.get().getTinfoProtocolApplication(), "pa")
+                .append("\nWHERE ex.RowId = exmap.ExclusionId AND ex.RunId = pa.RunId AND " +
+                        "exmap.dataRowId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId AND " +
+                        "pa.RowId = d.SourceApplicationId AND d.RowId = " + ExprColumn.STR_TABLE_ALIAS + ".DataId");
     }
 
     private void configureSpecimensLookup(ColumnInfo specimenIdCol, boolean foundTargetStudyCol)
