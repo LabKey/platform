@@ -56,6 +56,13 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     public static final String SEQUENCEKEY = "sequenceNum";
     public static final double DEMOGRAPHICS_VISIT = -1;
 
+    // Sequence numbers and protocol day are currently stored as NUMERIC(15, 4); below are all the related constants.
+    private static final int PRECISION = 15;
+    private static final int MAX_SCALE = 4;
+    private static final double SCALE_FACTOR = Math.pow(10, MAX_SCALE);
+    private static final NumberFormat SEQUENCE_FORMAT = new DecimalFormat("0.####");
+    private static final MathContext ROUNDING_CONTEXT = new MathContext(PRECISION);
+
     private int _rowId = 0;
     private BigDecimal _sequenceMin = BigDecimal.ZERO;
     private BigDecimal _sequenceMax = BigDecimal.ZERO;
@@ -117,10 +124,8 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     {
         if (d == Math.round(d))
             return sb.append((long)d);
-        return sb.append(BigDecimal.valueOf((long)Math.round(d * 10000),4).toPlainString());
+        return sb.append(BigDecimal.valueOf((long)Math.round(d * SCALE_FACTOR), MAX_SCALE).toPlainString());
     }
-
-    private static final MathContext ROUNDING_CONTEXT = new MathContext(4);
 
     // TODO: Fix rounding to work with TestCase (below)
     public static StringBuilder appendSqlSequenceNum(StringBuilder sb, BigDecimal seqnum)
@@ -281,16 +286,13 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     public static double parseSequenceNum(String s)
     {
         double d = Double.parseDouble(s);
-        return Math.round(d*10000) / 10000.0;
+        return Math.round(d * SCALE_FACTOR) / SCALE_FACTOR;
     }
 
 
-    // only 4 scale digits
-    private static final NumberFormat SEQUENCE_FORMAT = new DecimalFormat("0.####");
-
     public static String formatSequenceNum(double d)
     {
-        d = Math.round(d*10000) / 10000.0;
+        d = Math.round(d * SCALE_FACTOR) / SCALE_FACTOR;
         return SEQUENCE_FORMAT.format(d);
     }
 
