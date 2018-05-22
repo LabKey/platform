@@ -230,7 +230,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
             exclusionColumn.setFormat("yes;no;");
             addColumn(exclusionColumn);
 
-            SQLFragment exclusionCommentSQL = new SQLFragment("(SELECT MAX(CommentStr) FROM (")
+            SQLFragment exclusionCommentSQL = new SQLFragment("(SELECT MAX(CAST(CommentStr AS VARCHAR)) FROM (")
                     .append(getExclusionsSQL())
                     .append(") x)");
             ExprColumn exclusionReasonColumn = new ExprColumn(this, EXCLUSION_COMMENT_COLUMN_NAME, exclusionCommentSQL, JdbcType.VARCHAR);
@@ -282,13 +282,12 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
     protected SQLFragment getExclusionsSQL()
     {
         SQLFragment commentStatement = new SQLFragment()
-                .append("(CASE WHEN ex.Comment IS NOT NULL THEN ")
-                .append(getSqlDialect().concatenate(new SQLFragment("': '"), new SQLFragment("ex.Comment")))
-                .append(" ELSE '' END)");
+                .append("(CASE WHEN ex.Comment IS NOT NULL THEN ex.Comment")
+                .append(" ELSE '' END) AS CommentStr, ");
 
         return new SQLFragment()
-                .append(" SELECT ")
-                .append(getSqlDialect().concatenate(new SQLFragment("Comment"), commentStatement)).append(" AS CommentStr, ")
+                .append("SELECT ")
+                .append(commentStatement)
                 .append("\nex.Modified, ex.ModifiedBy, ex.Created, ex.CreatedBy FROM ")
                 .append(ExperimentService.get().getTinfoExclusion(), "ex").append(", ")
                 .append(ExperimentService.get().getTinfoExclusionMap(), "exmap").append(", ")

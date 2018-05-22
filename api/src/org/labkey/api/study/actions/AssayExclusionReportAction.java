@@ -1,6 +1,8 @@
 package org.labkey.api.study.actions;
 
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.RequiresPermission;
@@ -14,6 +16,7 @@ import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
 import static org.labkey.api.study.assay.AssayProtocolSchema.EXCLUSION_REPORT_TABLE_NAME;
+import static org.labkey.api.study.assay.AssayResultTable.FLAGGED_AS_EXCLUDED_COLUMN_NAME;
 
 @RequiresPermission(ReadPermission.class)
 public class AssayExclusionReportAction extends BaseAssayAction<ProtocolIdForm>
@@ -37,6 +40,8 @@ public class AssayExclusionReportAction extends BaseAssayAction<ProtocolIdForm>
     private QueryView getExcludedQueryView(AssayProtocolSchema schema, String queryName, BindException errors)
     {
         QuerySettings settings = new QuerySettings(getViewContext(), queryName, queryName);
+        SimpleFilter exclusionFilter = new SimpleFilter(FieldKey.fromParts(FLAGGED_AS_EXCLUDED_COLUMN_NAME), true);
+        settings.setBaseFilter(exclusionFilter);
         QueryView view = new QueryView(schema, settings, errors);
         view.setTitle("Excluded Rows");
         String helpText = "Shows all of the data rows that have been marked as excluded in this folder. Data may be marked as excluded from the results views.";
