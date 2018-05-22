@@ -86,9 +86,6 @@ public class TSVProtocolSchema extends AssayProtocolSchema
     {
         FilteredTable result = new _AssayExcludedResultTable(this, false);
         result.setName(EXCLUSION_REPORT_TABLE_NAME);
-//        SimpleFilter exclusionFilter = new SimpleFilter(FieldKey.fromParts(FLAGGED_AS_EXCLUDED_COLUMN_NAME), true); //TODO
-//        result.addCondition(exclusionFilter);
-
         return result;
     }
 
@@ -112,7 +109,6 @@ public class TSVProtocolSchema extends AssayProtocolSchema
             List<FieldKey> defaultCols = new ArrayList<>(getDefaultVisibleColumns());
             defaultCols.add(FieldKey.fromParts("ExcludedBy"));
             defaultCols.add(FieldKey.fromParts("ExcludedAt"));
-            defaultCols.add(FieldKey.fromParts(FLAGGED_AS_EXCLUDED_COLUMN_NAME));
             defaultCols.add(FieldKey.fromParts(EXCLUSION_COMMENT_COLUMN_NAME));
             defaultCols.add(FieldKey.fromParts("RowId"));
             setDefaultVisibleColumns(defaultCols);
