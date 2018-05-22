@@ -96,6 +96,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DetailsView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
+import org.springframework.beans.PropertyValue;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
@@ -1384,10 +1385,39 @@ public abstract class AbstractAssayProvider implements AssayProvider
         AssayProvider provider = AssayService.get().getProvider(protocol);
         if (provider != null && provider.isExclusionSupported())
         {
-            result.add(new NavTree("view excluded data", new ActionURL(AssayExclusionReportAction.class, viewContext.getContainer()).addParameter("rowId", protocol.getRowId())));
+            ActionURL exclusionUrl = new ActionURL(AssayExclusionReportAction.class, viewContext.getContainer())
+                    .addParameter("rowId", protocol.getRowId());
+            int runId = getViewContextRunId(viewContext);
+            if (runId > 0)
+                exclusionUrl.addParameter("ExclusionReport.Run/RowId~eq", runId);
+            result.add(new NavTree("view excluded data", exclusionUrl));
         }
 
         return result;
+    }
+
+    private int getViewContextRunId(ViewContext viewContext)
+    {
+        int runId = -1;
+        PropertyValue pv = viewContext.getBindPropertyValues().getPropertyValue("Data.Run/RowId~eq");
+        if (pv != null && pv.getValue() != null)
+        {
+
+            Object value = pv.getValue();
+            if (value instanceof Integer)
+                runId = ((Integer) value).intValue();
+            else if (value instanceof String)
+            {
+                try
+                {
+                    runId = Integer.parseInt((String) value);
+                }
+                catch (NumberFormatException nfe)
+                {
+                }
+            }
+        }
+        return runId;
     }
 
     private NavTree getManageMenuNavTree(ViewContext context, ExpProtocol protocol)

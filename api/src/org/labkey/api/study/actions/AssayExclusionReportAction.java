@@ -11,6 +11,7 @@ import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayView;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
@@ -21,17 +22,19 @@ import static org.labkey.api.study.assay.AssayResultTable.FLAGGED_AS_EXCLUDED_CO
 @RequiresPermission(ReadPermission.class)
 public class AssayExclusionReportAction extends BaseAssayAction<ProtocolIdForm>
 {
+    private ExpProtocol _protocol;
+
     @Override
     public ModelAndView getView(ProtocolIdForm protocolIdForm, BindException errors) throws Exception
     {
         AssayView result = new AssayView();
 
-        ExpProtocol protocol = protocolIdForm.getProtocol();
-        AssayProvider provider = AssayService.get().getProvider(protocol);
+        this._protocol = protocolIdForm.getProtocol();
+        AssayProvider provider = AssayService.get().getProvider(this._protocol);
         if (!provider.isExclusionSupported())
             throw new NotFoundException("Exclusion report not supported for for assay type");
 
-        AssayProtocolSchema schema = provider.createProtocolSchema(getViewContext().getUser(), getViewContext().getContainer(), protocol, null);
+        AssayProtocolSchema schema = provider.createProtocolSchema(getViewContext().getUser(), getViewContext().getContainer(), this._protocol, null);
         result.addView(getExcludedQueryView(schema, EXCLUSION_REPORT_TABLE_NAME, errors));
 
         return result;
@@ -47,5 +50,12 @@ public class AssayExclusionReportAction extends BaseAssayAction<ProtocolIdForm>
         String helpText = "Shows all of the data rows that have been marked as excluded in this folder. Data may be marked as excluded from the results views.";
         view.setTitlePopupHelp("Excluded data rows", helpText);
         return view;
+    }
+
+    public NavTree appendNavTrail(NavTree root)
+    {
+        NavTree result = super.appendNavTrail(root);
+        result.addChild(_protocol.getName() + " Exclusions");
+        return result;
     }
 }

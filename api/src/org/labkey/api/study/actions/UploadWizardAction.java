@@ -582,11 +582,9 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
     private ActionURL getExclusionReportURL(Container container, ExpRun run)
     {
-        ActionURL url = new ActionURL(AssayExclusionReportAction.class, container);
-        url.addParameter("rowId", run.getProtocol().getRowId());
-        if (run != null)
-            url.addParameter("Data.Run/RowId~eq", run.getRowId());
-        return url;
+        return new ActionURL(AssayExclusionReportAction.class, container)
+                .addParameter("rowId", run.getProtocol().getRowId())
+                .addParameter("ExclusionReport.Run/RowId~eq", run.getRowId());
     }
 
     /** Check the assay configuration to determine if we should prompt the user to upload or otherwise specify a data file */
