@@ -107,6 +107,7 @@ public class TSVProtocolSchema extends AssayProtocolSchema
             addColumn(exclusionDateColumn);
 
             List<FieldKey> defaultCols = new ArrayList<>(getDefaultVisibleColumns());
+            defaultCols.add(FieldKey.fromParts("Run"));
             defaultCols.add(FieldKey.fromParts("ExcludedBy"));
             defaultCols.add(FieldKey.fromParts("ExcludedAt"));
             defaultCols.add(FieldKey.fromParts(EXCLUSION_COMMENT_COLUMN_NAME));
