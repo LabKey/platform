@@ -1029,7 +1029,13 @@
     <table tableName="Exclusions" tableDbType="TABLE">
         <columns>
             <column columnName="RowId"/>
-            <column columnName="RunId"/>
+            <column columnName="RunId">
+                <fk>
+                    <fkColumnName>RowId</fkColumnName>
+                    <fkTable>ExperimentRun</fkTable>
+                    <fkDbSchema>exp</fkDbSchema>
+                </fk>
+            </column>
             <column columnName="Comment"/>
             <column columnName="Created"/>
             <column columnName="CreatedBy"/>
@@ -1040,7 +1046,13 @@
     <table tableName="ExclusionMaps" tableDbType="TABLE">
         <columns>
             <column columnName="RowId"/>
-            <column columnName="ExclusionId"/>
+            <column columnName="ExclusionId">
+                <fk>
+                    <fkColumnName>RowId</fkColumnName>
+                    <fkTable>Exclusions</fkTable>
+                    <fkDbSchema>exp</fkDbSchema>
+                </fk>
+            </column>
             <column columnName="DataRowId"/>
             <column columnName="Created"/>
             <column columnName="CreatedBy"/>

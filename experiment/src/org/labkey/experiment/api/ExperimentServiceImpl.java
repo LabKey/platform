@@ -6687,14 +6687,16 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public void createExclusionEvent(Integer runId, Set<String> rowIds, String comment, User user, Container container)
+    public void createExclusionEvent(ExpRun run, Set<String> rowIds, String comment, User user, Container container)
     {
-        ExpSchema expSchema = new ExpSchema(user, container);
-        ExpTable exclusionEventsTi = expSchema.getTable(ExpSchema.TableType.Exclusions);
-        ExpTable exclusionMapsTi = expSchema.getTable(ExpSchema.TableType.ExclusionMaps);
+        if (run == null || rowIds == null || rowIds.size() == 0)
+            return;
+
+        TableInfo exclusionEventsTi = ExperimentService.get().getTinfoExclusion();
+        TableInfo exclusionMapsTi = ExperimentService.get().getTinfoExclusionMap();
 
         Map<String, Object> eventRow = new CaseInsensitiveHashMap<>();
-        eventRow.put("RunId", runId);
+        eventRow.put("RunId", run.getRowId());
         eventRow.put("Comment", comment);
         Map<String, Object> result = Table.insert(user, exclusionEventsTi, eventRow);
 
@@ -6705,6 +6707,11 @@ public class ExperimentServiceImpl implements ExperimentService
             row.put("DataRowId", rowId);
             Table.insert(user, exclusionMapsTi, row);
         }
+
+        String auditMsg = rowIds.size() + " data row" + (rowIds.size() > 1 ? "s have" : " has") + " been marked for exclusion for run '"  + run.getName()
+                + (StringUtils.isEmpty(comment) ? "" : ("' with comment '"  + comment))
+                + "'. RowId: " + StringUtils.join(rowIds, ",") + ".";
+        ExperimentServiceImpl.get().auditRunEvent(user, run.getProtocol(), run, null, auditMsg);
     }
 
     @Override
@@ -6717,6 +6724,22 @@ public class ExperimentServiceImpl implements ExperimentService
         .addParameter("returnUrl", returnUrl);
 
         return url;
+    }
+
+    @Override
+    public int getExclusionCount(ExpRun run)
+    {
+        SQLFragment sql = new SQLFragment()
+                .append(" SELECT COUNT(DISTINCT exmap.dataRowId) FROM ")
+                .append(ExperimentService.get().getTinfoExclusionMap(), "exmap").append(", ")
+                .append(ExperimentService.get().getTinfoExclusion(), "ex").append(", ")
+                .append(ExperimentService.get().getTinfoProtocolApplication(), "pa")
+                .append("\nWHERE ex.RowId = exmap.ExclusionId AND ex.RunId = pa.RunId AND " +
+                        "pa.ProtocolLSID = ? AND ex.RunId = ? ")
+                .add(run.getProtocol().getLSID())
+                .add(run.getRowId());
+
+        return new SqlSelector(getExpSchema(), sql).getArrayList(Integer.class).get(0);
     }
 
     public static class TestCase extends Assert

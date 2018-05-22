@@ -5960,10 +5960,15 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ExcludeRowsAction extends FormViewAction<ExclusionEventForm>
     {
+        private ExpRun run;
+
         @Override
         public void validateCommand(ExclusionEventForm form, Errors errors)
         {
+            this.run = ExperimentService.get().getExpRun(form.getRunId());
 
+            if (this.run == null)
+                errors.reject(ERROR_MSG, "Invalid RunId.");
         }
 
         @Override
@@ -5973,7 +5978,7 @@ public class ExperimentController extends SpringActionController
                 return false;
 
             Set<String> rows = DataRegionSelection.getSelected(getViewContext(), exclusionEventForm.getDataRegionSelectionKey(), true, false);
-            ExperimentService.get().createExclusionEvent(exclusionEventForm.getRunId(), rows, exclusionEventForm.getComment(), getUser(), getContainer());
+            ExperimentService.get().createExclusionEvent(this.run, rows, exclusionEventForm.getComment(), getUser(), getContainer());
 
             DataRegionSelection.clearAll(getViewContext(), exclusionEventForm.getDataRegionSelectionKey());
             return true;

@@ -23,8 +23,12 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RemappingDisplayColumnFactory;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.flag.FlagColumnRenderer;
+import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.security.User;
@@ -36,8 +40,12 @@ import org.labkey.study.controllers.assay.AssayController;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.labkey.api.study.assay.AssayResultTable.FLAGGED_AS_EXCLUDED_COLUMN_NAME;
 
 /**
  * User: jeckels
@@ -54,6 +62,61 @@ public class TSVProtocolSchema extends AssayProtocolSchema
     public FilteredTable createDataTable(boolean includeCopiedToStudyColumns)
     {
         return new _AssayResultTable(this, includeCopiedToStudyColumns);
+    }
+
+    @Override
+    public Set<String> getTableNames()
+    {
+        Set<String> result = super.getTableNames();
+        result.add(EXCLUSION_REPORT_TABLE_NAME);
+        return result;
+    }
+
+    public TableInfo createProviderTable(String name)
+    {
+        if (name.equalsIgnoreCase(EXCLUSION_REPORT_TABLE_NAME))
+        {
+            return createExclusionReportTable();
+        }
+
+        return super.createProviderTable(name);
+    }
+
+    private TableInfo createExclusionReportTable()
+    {
+        FilteredTable result = new _AssayExcludedResultTable(this, false);
+        result.setName(EXCLUSION_REPORT_TABLE_NAME);
+//        SimpleFilter exclusionFilter = new SimpleFilter(FieldKey.fromParts(FLAGGED_AS_EXCLUDED_COLUMN_NAME), true); //TODO
+//        result.addCondition(exclusionFilter);
+
+        return result;
+    }
+
+    private class _AssayExcludedResultTable extends AssayResultTable
+    {
+        _AssayExcludedResultTable(AssayProtocolSchema schema, boolean includeCopiedToStudyColumns)
+        {
+            super(schema, includeCopiedToStudyColumns);
+            SQLFragment exclusionBySQL = new SQLFragment("(SELECT MAX(ModifiedBy) FROM (")
+                    .append(getExclusionsSQL())
+                    .append(") x)");
+            ExprColumn exclusionByColumn = new ExprColumn(this, "ExcludedBy", exclusionBySQL, JdbcType.VARCHAR);
+            addColumn(exclusionByColumn);
+
+            SQLFragment exclusionDateSQL = new SQLFragment("(SELECT MAX(Modified) FROM (")
+                    .append(getExclusionsSQL())
+                    .append(") x)");
+            ExprColumn exclusionDateColumn = new ExprColumn(this, "ExcludedAt", exclusionDateSQL, JdbcType.VARCHAR);
+            addColumn(exclusionDateColumn);
+
+            List<FieldKey> defaultCols = new ArrayList<>(getDefaultVisibleColumns());
+            defaultCols.add(FieldKey.fromParts("ExcludedBy"));
+            defaultCols.add(FieldKey.fromParts("ExcludedAt"));
+            defaultCols.add(FieldKey.fromParts(FLAGGED_AS_EXCLUDED_COLUMN_NAME));
+            defaultCols.add(FieldKey.fromParts(EXCLUSION_COMMENT_COLUMN_NAME));
+            defaultCols.add(FieldKey.fromParts("RowId"));
+            setDefaultVisibleColumns(defaultCols);
+        }
     }
 
     /* the FlagColumn functionality should be in AssayResultTable

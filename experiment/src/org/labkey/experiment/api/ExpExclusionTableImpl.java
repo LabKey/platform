@@ -1,5 +1,6 @@
 package org.labkey.experiment.api;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
@@ -12,6 +13,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableResultSet;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpExclusionTable;
 import org.labkey.api.query.BatchValidationException;
@@ -26,9 +28,11 @@ import org.labkey.api.security.User;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class ExpExclusionTableImpl extends ExpTableImpl<ExpExclusionTable.Column> implements ExpExclusionTable
 {
@@ -119,29 +123,54 @@ public class ExpExclusionTableImpl extends ExpTableImpl<ExpExclusionTable.Column
         {
             // Select which exclusionMapss are to be deleted
             List<Integer> exclusionMapsToDelete = new ArrayList<>();
+            Set<String> dataRowIds = new HashSet<>();
             TableInfo exclusionMapsTi = ExperimentService.get().getTinfoExclusionMap();
+            int runId = -1;
             for (String key : oldRowMap.keySet())
             {
                 SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ExclusionId"), (Integer) oldRowMap.get(key));
                 LinkedHashSet<ColumnInfo> cols = new LinkedHashSet<>();
                 cols.add(exclusionMapsTi.getColumn("RowId"));
                 cols.add(exclusionMapsTi.getColumn("ExclusionId"));
+                cols.add(exclusionMapsTi.getColumn("DataRowId"));
                 TableSelector ts = new TableSelector(exclusionMapsTi, cols, filter, null);
                 try (TableResultSet rs = ts.getResultSet(false, false))
                 {
                     for (Map<String, Object> row : rs)
                     {
                         exclusionMapsToDelete.add((Integer) row.get("RowId"));
+                        dataRowIds.add(String.valueOf(row.get("DataRowId")));
+                    }
+                }
+
+                TableInfo exclusionTi = ExperimentService.get().getTinfoExclusion();
+                TableSelector tsExclusion = new TableSelector(exclusionTi, exclusionTi.getColumns("RunId"), new SimpleFilter(FieldKey.fromParts("RowId"), oldRowMap.get(key)), null);
+                try (TableResultSet rs = tsExclusion.getResultSet(false, false))
+                {
+                    for (Map<String, Object> row : rs)
+                    {
+                        runId = (Integer) row.get("RunId");
                     }
                 }
             }
+
             for (Integer rowId : exclusionMapsToDelete)
             {
                 SimpleFilter exclusionMapsFilter = new SimpleFilter(FieldKey.fromParts("RowId"), rowId);
                 Table.delete(exclusionMapsTi, exclusionMapsFilter);
             }
 
-            return super.deleteRow(user, container, oldRowMap);
+
+            Map<String, Object> results = super.deleteRow(user, container, oldRowMap);
+            if (runId > 0)
+            {
+                ExpRun run = ExperimentService.get().getExpRun(runId);
+                String auditMsg = "Exclusion" + (dataRowIds.size() > 1 ? "s have" : " has") + " been deleted from run '"  + run.getName()
+                        + "'. RowId unmarked for exclusion: " + StringUtils.join(dataRowIds, ",") + ".";
+                ExperimentServiceImpl.get().auditRunEvent(user, run.getProtocol(), run, null, auditMsg);
+            }
+
+            return results;
         }
 
         @Override
