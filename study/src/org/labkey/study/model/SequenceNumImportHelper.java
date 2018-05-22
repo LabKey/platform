@@ -301,8 +301,8 @@ translateToDouble:
                     map,
                     new TestSequenceVisitMap()
                     );
-            assertEquals(null, h.translateSequenceNum(null,null));
-            assertEquals(null, h.translateSequenceNum(null, parseDateTime("1 Jan 2010")));
+            assertNull(h.translateSequenceNum(null, null));
+            assertNull(h.translateSequenceNum(null, parseDateTime("1 Jan 2010")));
             assertEquals(1.0, h.translateSequenceNum(1.0,null), DELTA);
             assertEquals(1.0, h.translateSequenceNum("Enrollment",null), DELTA);
             assertEquals(9999.0000, h.translateSequenceNum("SR",null), DELTA);

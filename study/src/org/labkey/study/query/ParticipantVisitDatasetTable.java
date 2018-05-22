@@ -41,6 +41,7 @@ import org.labkey.study.model.VisitImpl;
 import org.labkey.study.visitmanager.VisitManager;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -69,9 +70,9 @@ public class ParticipantVisitDatasetTable extends VirtualTable
 
         // all visits
         VisitManager visitManager = studyManager.getVisitManager(_study);
-        TreeMap<Double, VisitImpl> visitSequenceMap = visitManager.getVisitSequenceMap();
+        Collection<VisitImpl> visits = visitManager.getVisits();
         TreeMap<Integer, VisitImpl> visitRowIdMap = new TreeMap<>();
-        for (VisitImpl v : visitSequenceMap.values())
+        for (VisitImpl v : visits)
             visitRowIdMap.put(v.getRowId(), v);
 
         // visits for this dataset

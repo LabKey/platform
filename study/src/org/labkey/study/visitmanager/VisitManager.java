@@ -57,6 +57,7 @@ import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.VisitMapKey;
 import org.labkey.study.query.StudyQuerySchema;
 
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -87,6 +88,7 @@ public abstract class VisitManager
 
     protected StudyImpl _study;
     private TreeMap<Double, VisitImpl> _sequenceMap;
+    private TreeMap<BigDecimal, VisitImpl> _sequenceMapNew;
 
     protected VisitManager(StudyImpl study)
     {
@@ -374,7 +376,7 @@ public abstract class VisitManager
      * Return a map mapping the minimum value of a visit to the visit.
      * In the case of a date-based study, this is actually a "Day" map, not a sequence map
      */
-    public TreeMap<Double, VisitImpl> getVisitSequenceMap()
+    private TreeMap<Double, VisitImpl> getVisitSequenceMap()
     {
         List<VisitImpl> visits = getStudy().getVisits(Visit.Order.DISPLAY);
         TreeMap<Double, VisitImpl> visitMap = new TreeMap<>();
@@ -383,6 +385,7 @@ public abstract class VisitManager
         return visitMap;
     }
 
+    @Deprecated // Use BigDecimal version
     public VisitImpl findVisitBySequence(double seq)
     {
         if (_sequenceMap == null)
@@ -401,6 +404,45 @@ public abstract class VisitManager
         if (!(v.getSequenceNumMinDouble() <= seq && seq <= v.getSequenceNumMaxDouble()))
             v = null;
         _sequenceMap.put(seq, v);
+        return v;
+    }
+
+    /**
+     * Return a map mapping the minimum value of a visit to the visit.
+     * In the case of a date-based study, this is actually a "Day" map, not a sequence map
+     */
+    private TreeMap<BigDecimal, VisitImpl> getVisitSequenceMapNew()
+    {
+        List<VisitImpl> visits = getStudy().getVisits(Visit.Order.DISPLAY);
+        TreeMap<BigDecimal, VisitImpl> visitMap = new TreeMap<>();
+        for (VisitImpl v : visits)
+            visitMap.put(v.getSequenceNumMin(), v);
+        return visitMap;
+    }
+
+    public Collection<VisitImpl> getVisits()
+    {
+        return getVisitSequenceMapNew().values();
+    }
+
+    public VisitImpl findVisitBySequence(BigDecimal seq)
+    {
+        if (_sequenceMapNew == null)
+            _sequenceMapNew = getVisitSequenceMapNew();
+
+        if (_sequenceMapNew.containsKey(seq))
+            return _sequenceMapNew.get(seq);
+        SortedMap<BigDecimal, VisitImpl> m = _sequenceMapNew.headMap(seq);
+        if (m.isEmpty())
+            return null;
+        BigDecimal seqMin = m.lastKey();
+        VisitImpl v = _sequenceMapNew.get(seqMin);
+        // v will be null only if we already searched for seq and didn't find it
+        if (null == v)
+            return null;
+        if (!(v.getSequenceNumMinDouble() <= seq.doubleValue() && seq.doubleValue() <= v.getSequenceNumMaxDouble()))
+            v = null;
+        _sequenceMapNew.put(seq, v);
         return v;
     }
 

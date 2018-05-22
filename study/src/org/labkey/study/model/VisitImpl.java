@@ -57,8 +57,8 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     public static final double DEMOGRAPHICS_VISIT = -1;
 
     private int _rowId = 0;
-    private BigDecimal _sequenceMin = BigDecimal.valueOf(0);
-    private BigDecimal _sequenceMax = BigDecimal.valueOf(0);
+    private BigDecimal _sequenceMin = BigDecimal.ZERO;
+    private BigDecimal _sequenceMax = BigDecimal.ZERO;
     private BigDecimal _protocolDay = null;
     private Character _typeCode;
     private Integer _visitDateDatasetid = 0;
@@ -240,17 +240,12 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
         return _sequenceMax;
     }
 
-    @Deprecated // Use BigDecimal version instead
-    public void setSequenceNumMax(double sequenceMax)
-    {
-        _sequenceMax = BigDecimal.valueOf(sequenceMax);
-    }
-
     public void setSequenceNumMax(BigDecimal sequenceMax)
     {
         _sequenceMax = sequenceMax;
     }
 
+    @Deprecated // Use getProtocolDay()
     public Double getProtocolDayDouble()
     {
         return null == _protocolDay ? null : _protocolDay.doubleValue();
@@ -259,12 +254,6 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     public BigDecimal getProtocolDay()
     {
         return _protocolDay;
-    }
-
-    @Deprecated // Use BigDecimal version instead
-    public void setProtocolDay(@Nullable Double protocolDay)
-    {
-        _protocolDay = null == protocolDay ? null : BigDecimal.valueOf(protocolDay);
     }
 
     public void setProtocolDay(@Nullable BigDecimal protocolDay)

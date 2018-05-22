@@ -16,8 +16,11 @@
 
 package org.labkey.study.importer;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.study.Visit.Type;
 
+import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.List;
 
@@ -31,9 +34,9 @@ class VisitMapRecord
 {
     private int _visitRowId = -1;
 
-    private final double _sequenceNumberMin;
-    private final double _sequenceNumberMax;
-    private final Double _protocolDay;
+    private final BigDecimal _sequenceNumberMin;
+    private final BigDecimal _sequenceNumberMax;
+    private final @Nullable BigDecimal _protocolDay;
     private final boolean _showByDefault;
     private final Type _visitType;
     private final String _visitLabel;
@@ -52,7 +55,15 @@ class VisitMapRecord
     private final String _sequenceNumHandling;
     private final List<VisitTagRecord> _visitTagRecords;
 
-    public VisitMapRecord(double sequenceNumberMin, double sequenceNumberMax, Double protocolDay, String visitType, String visitLabel, String visitDescription,
+    public VisitMapRecord(double sequenceNumberMin, double sequenceNumberMax, @Nullable Double protocolDay, String visitType, String visitLabel, String visitDescription,
+                          String cohort, int visitDatePlate, Collection<Integer> requiredPlates, Collection<Integer> optionalPlates, boolean showByDefault,
+                          int displayOrder, int chronologicalOrder, String sequenceNumHandling, List<VisitTagRecord> visitTagRecords)
+    {
+        this(BigDecimal.valueOf(sequenceNumberMin), BigDecimal.valueOf(sequenceNumberMax), null != protocolDay ? BigDecimal.valueOf(protocolDay) : null, visitType, visitLabel,
+             visitDescription, cohort, visitDatePlate, requiredPlates, optionalPlates, showByDefault, displayOrder, chronologicalOrder, sequenceNumHandling, visitTagRecords);
+    }
+
+    public VisitMapRecord(@NotNull BigDecimal sequenceNumberMin, @NotNull BigDecimal sequenceNumberMax, @Nullable BigDecimal protocolDay, String visitType, String visitLabel, String visitDescription,
                           String cohort, int visitDatePlate, Collection<Integer> requiredPlates, Collection<Integer> optionalPlates, boolean showByDefault,
                           int displayOrder, int chronologicalOrder, String sequenceNumHandling, List<VisitTagRecord> visitTagRecords)
     {
@@ -80,9 +91,9 @@ class VisitMapRecord
         _visitTagRecords = visitTagRecords;
     }
 
-    public double getSequenceNumMin()                   { return _sequenceNumberMin; }
-    public double getSequenceNumMax()                   { return _sequenceNumberMax; }
-    public Double getProtocolDay()                      { return _protocolDay; }
+    public @NotNull BigDecimal getSequenceNumMin()      { return _sequenceNumberMin; }
+    public @NotNull BigDecimal getSequenceNumMax()      { return _sequenceNumberMax; }
+    public @Nullable BigDecimal getProtocolDay()        { return _protocolDay; }
     public int getMissedNotificationPlate()             { return _missedNotificationPlate; }
     public Collection<Integer> getOptionalPlates()      { return _optionalPlates; }
     public Collection<Integer> getRequiredPlates()      { return _requiredPlates; }
@@ -123,6 +134,12 @@ class VisitMapRecord
     public int getVisitRowId()
     {
         return _visitRowId;
+    }
+
+    @Override
+    public String toString()
+    {
+        return null != _visitLabel ? _visitLabel : (_sequenceNumberMin.toString() + (_sequenceNumberMin.equals(_sequenceNumberMax) ? "" : " - " + _sequenceNumberMax.toString()));
     }
 
     public static class VisitTagRecord

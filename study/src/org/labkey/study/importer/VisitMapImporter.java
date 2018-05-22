@@ -38,7 +38,7 @@ import org.labkey.study.model.VisitTag;
 import org.labkey.study.visitmanager.VisitManager;
 
 import java.io.IOException;
-import java.sql.SQLException;
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -159,6 +159,7 @@ public class VisitMapImporter
         visitTags = reader.getVisitTags();
 
         verifyDistinctSequenceNums(records);
+//        validateSequenceNums(records);  TODO: This should replace verifyDistinctSequenceNums()
 
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
@@ -179,9 +180,10 @@ public class VisitMapImporter
         }
     }
 
+    // TODO: Fix to handle other overlap scenarios, i.e., replace with verifySequenceNums() below
     private void verifyDistinctSequenceNums(List<VisitMapRecord> records)
     {
-        Set<Double> uniqueSequenceNums = new HashSet<>();
+        Set<BigDecimal> uniqueSequenceNums = new HashSet<>();
 
         for (VisitMapRecord record : records)
         {
@@ -191,9 +193,35 @@ public class VisitMapImporter
                 throw new VisitMapImportException(errorMsg);
             uniqueSequenceNums.add(record.getSequenceNumMin());
 
-            if (record.getSequenceNumMax() != record.getSequenceNumMin() && uniqueSequenceNums.contains(record.getSequenceNumMax()))
+            if (!record.getSequenceNumMax().equals(record.getSequenceNumMin()) && uniqueSequenceNums.contains(record.getSequenceNumMax()))
                 throw new VisitMapImportException(errorMsg);
             uniqueSequenceNums.add(record.getSequenceNumMax());
+        }
+    }
+
+    // Verify that max > min and that ranges don't overlap
+    private void validateSequenceNums(List<VisitMapRecord> records)
+    {
+        if (records.isEmpty())
+            return;
+
+        // Sort by SequenceNumMin
+        records.sort((o1, o2) -> o1.getSequenceNumMin().compareTo(o2.getSequenceNumMin()));
+
+        // Initialize to less than the smallest min
+        BigDecimal max = records.get(0).getSequenceNumMin().subtract(BigDecimal.ONE);
+
+        for (VisitMapRecord r : records)
+        {
+            // This visit's min should be less than or equal to its max
+            if (r.getSequenceNumMin().compareTo(r.getSequenceNumMax()) > 0)
+                throw new VisitMapImportException("Visit " + (r.toString()) + " has a sequence number minimum that's greater than its sequence number maximum.");
+
+            // This visit's min should be greater than the previous visit's max
+            if (r.getSequenceNumMin().compareTo(max) <= 0)
+                throw new VisitMapImportException("Visit " + (r.toString()) + " range overlaps with another record in the visit map.");
+
+            max = r.getSequenceNumMax();
         }
     }
 
@@ -214,7 +242,7 @@ public class VisitMapImporter
             VisitImpl visit = visitManager.findVisitBySequence(record.getSequenceNumMin());
 
             // we're using sequenceNumMin as the key in this instance
-            if (visit != null && visit.getSequenceNumMinDouble() != record.getSequenceNumMin())
+            if (visit != null && !visit.getSequenceNumMin().equals(record.getSequenceNumMin()))
                 visit = null;
 
             if (visit == null)
@@ -250,12 +278,12 @@ public class VisitMapImporter
                     visit = _ensureMutable(visit);
                     visit.setVisitDateDatasetId(record.getVisitDatePlate());
                 }
-                if (visit.getSequenceNumMaxDouble() != record.getSequenceNumMax())
+                if (!visit.getSequenceNumMax().equals(record.getSequenceNumMax()))
                 {
                     visit = _ensureMutable(visit);
                     visit.setSequenceNumMax(record.getSequenceNumMax());
                 }
-                if (!Objects.equals(visit.getProtocolDayDouble(), record.getProtocolDay()))
+                if (!Objects.equals(visit.getProtocolDay(), record.getProtocolDay()))
                 {
                     visit = _ensureMutable(visit);
                     visit.setProtocolDay(record.getProtocolDay());

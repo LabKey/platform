@@ -1950,10 +1950,10 @@ public class StudyController extends BaseStudyController
             postedVisit.setShowByDefault(null != StringUtils.trimToNull((String)getViewContext().get("showByDefault")));
 
             // UNDONE: reshow is broken for this form, but we have to validate
-            TreeMap<Double, VisitImpl> visits = StudyManager.getInstance().getVisitManager(study).getVisitSequenceMap();
+            Collection<VisitImpl> visits = StudyManager.getInstance().getVisitManager(study).getVisits();
             boolean validRange = true;
             // make sure there is no overlapping visit
-            for (VisitImpl v : visits.values())
+            for (VisitImpl v : visits)
             {
                 if (v.getRowId() == postedVisit.getRowId())
                     continue;
