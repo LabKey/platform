@@ -224,7 +224,8 @@ translateToDouble:
 
     static class StudySequenceVisitMap implements SequenceVisitMap
     {
-        final SequenceVisitManager _svm;
+        private final SequenceVisitManager _svm;
+
         StudySequenceVisitMap(Study study)
         {
             _svm = (SequenceVisitManager)StudyManager.getInstance().getVisitManager((StudyImpl)study);

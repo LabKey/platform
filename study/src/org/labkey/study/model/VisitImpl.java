@@ -94,9 +94,9 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     public VisitImpl(Container container, @NotNull BigDecimal seqMin, @NotNull BigDecimal seqMax, String name, @Nullable Character typeCode)
     {
         setContainer(container);
-        _sequenceMin = seqMin;
-        _sequenceMax = seqMax;
-        _protocolDay = seqMin;
+        setSequenceNumMin(seqMin);
+        setSequenceNumMax(seqMax);
+        setProtocolDay(seqMin);
         _label = name;
         _typeCode = typeCode;
         _showByDefault = true;
@@ -219,6 +219,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
         return _sequenceMin.doubleValue();
     }
 
+    @Override
     public BigDecimal getSequenceNumMin()
     {
         return _sequenceMin;
@@ -226,15 +227,17 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
 
     public void setSequenceNumMin(BigDecimal sequenceMin)
     {
-        _sequenceMin = sequenceMin;
+        _sequenceMin = sequenceMin.stripTrailingZeros();
     }
 
+    @Override
     @Deprecated // Use getSequenceNumMax()
     public double getSequenceNumMaxDouble()
     {
         return _sequenceMax.doubleValue();
     }
 
+    @Override
     public BigDecimal getSequenceNumMax()
     {
         return _sequenceMax;
@@ -242,15 +245,17 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
 
     public void setSequenceNumMax(BigDecimal sequenceMax)
     {
-        _sequenceMax = sequenceMax;
+        _sequenceMax = sequenceMax.stripTrailingZeros();
     }
 
+    @Override
     @Deprecated // Use getProtocolDay()
     public Double getProtocolDayDouble()
     {
         return null == _protocolDay ? null : _protocolDay.doubleValue();
     }
 
+    @Override
     public BigDecimal getProtocolDay()
     {
         return _protocolDay;
@@ -258,7 +263,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
 
     public void setProtocolDay(@Nullable BigDecimal protocolDay)
     {
-        _protocolDay = protocolDay;
+        _protocolDay = null != protocolDay ? protocolDay.stripTrailingZeros() : null;
     }
 
     public int getRowId()
@@ -421,6 +426,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     }
 
     static _BeanObjectFactory _f = new _BeanObjectFactory();
+
     static
     {
         ObjectFactory.Registry.register(VisitImpl.class, _f);
