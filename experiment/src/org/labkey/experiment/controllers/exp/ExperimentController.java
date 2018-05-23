@@ -6004,7 +6004,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return null;
+            return appendRootNavTrail(root).addChild("Exclude rows");
         }
 
         @Override
