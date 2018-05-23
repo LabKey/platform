@@ -207,9 +207,9 @@ public class MothershipManager
 
         if (svnURL != null)
         {
-            if (svnURL.startsWith("https://hedgehog.fhcrc.org/tor/stedi/"))
+            if (svnURL.startsWith("https://svn.mgt.labkey.host/stedi/"))
             {
-                description = svnURL.substring("https://hedgehog.fhcrc.org/tor/stedi/".length());
+                description = svnURL.substring("https://svn.mgt.labkey.host/stedi/".length());
                 if (description.endsWith("/server"))
                 {
                     description = description.substring(0, description.length() - "/server".length());
