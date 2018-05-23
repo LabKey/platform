@@ -45,11 +45,13 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static org.labkey.api.security.UserManager.USER_DISPLAY_NAME_COMPARATOR;
@@ -204,12 +206,17 @@ public class MothershipManager
     private String fabricateDescription(String svnURL, Integer svnRevision)
     {
         String description = null;
+        // TODO we can possibly remove the hedgehog reference after some amount of time has lapsed.
+        List<String> hostPrefixes = Arrays.asList(
+                "https://hedgehog.fhcrc.org/tor/stedi/",
+                "https://svn.mgt.labkey.host/stedi/");
 
         if (svnURL != null)
         {
-            if (svnURL.startsWith("https://svn.mgt.labkey.host/stedi/"))
+            Optional<String> hostPrefixOption = hostPrefixes.stream().filter(svnURL::startsWith).findFirst();
+            if (hostPrefixOption.isPresent())
             {
-                description = svnURL.substring("https://svn.mgt.labkey.host/stedi/".length());
+                description = svnURL.substring(hostPrefixOption.get().length());
                 if (description.endsWith("/server"))
                 {
                     description = description.substring(0, description.length() - "/server".length());
@@ -225,12 +232,12 @@ public class MothershipManager
             }
             else
             {
-                description = description != null ? description : "UnknownSVN";
+                description =  "UnknownSVN";
             }
         }
         else
         {
-            description = description != null ? description : "NotSVN";
+            description = "NotSVN";
         }
 
         return description;
