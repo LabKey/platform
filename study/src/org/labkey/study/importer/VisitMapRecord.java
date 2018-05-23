@@ -67,9 +67,9 @@ class VisitMapRecord
                           String cohort, int visitDatePlate, Collection<Integer> requiredPlates, Collection<Integer> optionalPlates, boolean showByDefault,
                           int displayOrder, int chronologicalOrder, String sequenceNumHandling, List<VisitTagRecord> visitTagRecords)
     {
-        _sequenceNumberMin = sequenceNumberMin;
-        _sequenceNumberMax = sequenceNumberMax;
-        _protocolDay = protocolDay;
+        _sequenceNumberMin = sequenceNumberMin.stripTrailingZeros();
+        _sequenceNumberMax = sequenceNumberMax.stripTrailingZeros();
+        _protocolDay = null != protocolDay ? protocolDay.stripTrailingZeros() : null;
         _visitType = getType(visitType);
         _visitLabel = visitLabel;
         _visitDescription = visitDescription;
