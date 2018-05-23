@@ -63,7 +63,7 @@ public class AuditChangesView extends HttpView
         int modified = 0;
         PrintWriter out = response.getWriter();
 
-        out.write("<table>\n");
+        out.write("<table class=\"lk-fields-table\">\n");
         out.write("<tr class=\"labkey-wp-header\"><th colspan=\"2\" align=\"left\">Item Changes</th></tr>");
         out.write("<tr><td colspan=\"2\">Comment:&nbsp;<i>" + PageFlowUtil.filter(_comment) + "</i></td></tr>");
 
