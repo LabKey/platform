@@ -82,6 +82,7 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
     private ColumnMapper _mapper;
     private List<InferencedColumn> _inferredColumns;
     private Map<String, FieldType> _columnMap = new HashMap<String, FieldType>();
+    private static final String NO_MAPPING_COLUMN = "No mapping";
 
     public DomainImportGrid(LookupServiceAsync service, DomainType domain)
     {
@@ -293,7 +294,7 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
         public void onChange(ChangeEvent event)
         {
             String value = _cmp.getSelectedValue();
-            if (value != null)
+            if (value != null && !NO_MAPPING_COLUMN.equals(value))
                 selectMappedColumn(value, true);
 
             // reset the previous value
@@ -385,10 +386,10 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
                 selector.addChangeHandler(new ColumnMapperChangeHandler(selector));
                 
                 selector.setName(destinationColumn);
-
+                selector.addItem(NO_MAPPING_COLUMN);
                 // add an entry in the mapping dropdown for each inferred field
                 Map<String, Integer> fieldMap = new HashMap<>();
-                int idx = 0;
+                int idx = 1;
                 for (InferencedColumn column : inferredColumns)
                 {
                     String name = column.getPropertyDescriptor().getName();
