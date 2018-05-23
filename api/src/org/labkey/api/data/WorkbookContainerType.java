@@ -59,13 +59,13 @@ public class WorkbookContainerType implements ContainerType
     @Override
     public boolean canDeleteFromContainer(Container currentContainer, Container container)
     {
-        return currentContainer.getParent().equals(container);
+        return currentContainer == container || currentContainer.getParent().equals(container);
     }
 
     @Override
     public boolean canUpdateFromContainer(Container currentContainer, Container container)
     {
-        return currentContainer.getParent().equals(container);
+        return currentContainer == container || currentContainer.getParent().equals(container);
     }
 
     @Override

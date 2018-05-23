@@ -59,13 +59,13 @@ public class NormalContainerType implements ContainerType
     @Override
     public boolean canDeleteFromContainer(Container currentContainer, Container container)
     {
-        return false;
+        return currentContainer == container;
     }
 
     @Override
     public boolean canUpdateFromContainer(Container currentContainer, Container container)
     {
-        return false;
+        return currentContainer == container;
     }
 
     @Override

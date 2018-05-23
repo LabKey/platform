@@ -25,7 +25,6 @@ public interface ContainerType extends Serializable
         folderManagement,
         navVisibility,
         permissions,
-        pipelineRoot,
         properties,
         protocol,
         sharedDataTable,
@@ -80,20 +79,28 @@ public interface ContainerType extends Serializable
     boolean isConvertibleToTab();
 
     /**
+     * In general, we expect API actions to target the same container as is in the request; however, a row can sometimes
+     * specify a different container ID.  In this situation, allow the containerType of the container
+     * the row is attempting to use to determine whether this action is allowed.
+     * See Issues 15301 and 32961.
      *
      * @param currentContainer The container that is to be deleted
      * @param container the container from which updates will be made
      * @return indication of whether the current container can be deleted from the given container
      */
-    boolean canDeleteFromContainer(Container currentContainer, Container container);
+    boolean canDeleteFromContainer(@NotNull Container currentContainer, @NotNull Container container);
 
     /**
+     * In general, we expect API actions to target the same container as is in the request; however, a row can sometimes
+     * specify a different container ID.  In this situation, allow the containerType of the container
+     * the row is attempting to use to determine whether this action is allowed.
+     * See Issues 15301 and 32961.
      *
      * @param currentContainer the container that is to be updated
      * @param container the container from which updates will be made
      * @return indication of whether the current container can be deleted from the given container
      */
-    boolean canUpdateFromContainer(Container currentContainer, Container container);
+    boolean canUpdateFromContainer(@NotNull Container currentContainer, @NotNull Container container);
 
     /**
      * @return indication of whether this container should show up in folder management

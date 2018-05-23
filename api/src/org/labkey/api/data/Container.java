@@ -184,12 +184,12 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return _containerType.isConvertibleToTab();
     }
 
-    public boolean canDeleteFromContainer(Container container)
+    public boolean canDeleteFromContainer(@NotNull Container container)
     {
         return _containerType.canDeleteFromContainer(this, container);
     }
 
-    public boolean canUpdateFromContainer(Container container)
+    public boolean canUpdateFromContainer(@NotNull Container container)
     {
         return _containerType.canUpdateFromContainer(this, container);
     }
