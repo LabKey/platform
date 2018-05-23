@@ -35,7 +35,7 @@ public class AssayExclusionReportAction extends BaseAssayAction<ProtocolIdForm>
             throw new NotFoundException("Exclusion report not supported for for assay type");
 
         AssayProtocolSchema schema = provider.createProtocolSchema(getViewContext().getUser(), getViewContext().getContainer(), this._protocol, null);
-        result.addView(getExcludedQueryView(schema, EXCLUSION_REPORT_TABLE_NAME, errors));
+        result.setupViews(getExcludedQueryView(schema, EXCLUSION_REPORT_TABLE_NAME, errors), false, provider, this._protocol);
 
         return result;
     }
