@@ -122,7 +122,6 @@ public class WorkbookContainerType implements ContainerType
         switch (dataType)
         {
             case assayData:
-            case assayProtocols:
             case folderManagement:
                 return currentContainer;
             default:
