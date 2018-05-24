@@ -7411,10 +7411,10 @@ public class AdminController extends SpringActionController
     // Simple action that writes "message" parameter to the labkey log. Used by the test harness to indicate when
     // each test begins and ends. Message parameter is output as sent, except that \n is translated to newline.
     @RequiresLogin
-    public class LogAction extends SimpleViewAction<LogForm>
+    public class LogAction extends MutatingApiAction<LogForm>
     {
         @Override
-        public ModelAndView getView(LogForm logForm, BindException errors)
+        public ApiResponse execute(LogForm logForm, BindException errors)
         {
             // Could use %A0 for newline in the middle of the message, however, parameter values get trimmed so translate
             // \n to newlines to allow them at the beginning or end of the message as well.
@@ -7423,13 +7423,7 @@ public class AdminController extends SpringActionController
 
             Level level = Level.toLevel(logForm.getLevel(), Level.INFO);
             CLIENT_LOG.log(level, message);
-            return null;
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
+            return new ApiSimpleResponse("success", true);
         }
     }
 
