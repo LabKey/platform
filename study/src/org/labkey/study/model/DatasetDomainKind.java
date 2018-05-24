@@ -325,12 +325,12 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
         else if (!timepointType.isVisitBased() && getKindName().equals(VisitDatasetDomainKind.KIND_NAME))
             throw new IllegalArgumentException("Date based studies require a date based dataset domain. Please specify a kind name of : " + DateDatasetDomainKind.KIND_NAME);
 
-        DatasetDefinition def = AssayPublishManager.getInstance().createAssayDataset(user, study, name, keyPropertyName, datasetId,
-                demographics, Dataset.TYPE_STANDARD, categoryId, null, useTimeKeyField);
-
-        if (def.getDomain() != null)
+        try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
         {
-            try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
+            DatasetDefinition def = AssayPublishManager.getInstance().createAssayDataset(user, study, name, keyPropertyName, datasetId,
+                    demographics, Dataset.TYPE_STANDARD, categoryId, null, useTimeKeyField);
+
+            if (def.getDomain() != null)
             {
                 List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
                 List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
@@ -364,14 +364,14 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
                 }
                 else
                     throw new IllegalArgumentException("Failed to create domain for dataset : " + name);
-                transaction.commit();
             }
-            catch (Exception e)
-            {
-                throw new RuntimeException(e);
-            }
+            transaction.commit();
+            return study.getDataset(def.getDatasetId()).getDomain();
         }
-        return study.getDataset(def.getDatasetId()).getDomain();
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
