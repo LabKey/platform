@@ -64,14 +64,6 @@ public class TSVProtocolSchema extends AssayProtocolSchema
         return new _AssayResultTable(this, includeCopiedToStudyColumns);
     }
 
-    @Override
-    public Set<String> getTableNames()
-    {
-        Set<String> result = super.getTableNames();
-        result.add(EXCLUSION_REPORT_TABLE_NAME);
-        return result;
-    }
-
     public TableInfo createProviderTable(String name)
     {
         if (name.equalsIgnoreCase(EXCLUSION_REPORT_TABLE_NAME))
