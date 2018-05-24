@@ -2095,6 +2095,7 @@ public class ContainerManager
 
         for (ContainerListener l : list)
         {
+            LOG.debug("Deleting " + c.getPath() + ": fireDeleteContainer for " + l.getClass().getName());
             try
             {
                 l.containerDeleted(c, user);
