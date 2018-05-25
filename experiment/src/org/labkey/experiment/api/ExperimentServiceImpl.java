@@ -2596,7 +2596,7 @@ public class ExperimentServiceImpl implements ExperimentService
     public int removeEdgesForRun(int runId)
     {
         int count = Table.delete(getTinfoEdge(), new SimpleFilter("runId", runId));
-        LOG.info("Removed edges for run " + runId + "; count = " + count);
+        LOG.debug("Removed edges for run " + runId + "; count = " + count);
         return count;
     }
 
@@ -2664,7 +2664,7 @@ public class ExperimentServiceImpl implements ExperimentService
                 ExpSampleSet ss = getSampleSet(cpasType);
                 if (ss != null)
                 {
-                    LOG.info("creating exp.object.objectId for owner cpasType '" + cpasType + "' needed by child object '" + lsid + "'");
+                    LOG.debug("creating exp.object.objectId for owner cpasType '" + cpasType + "' needed by child object '" + lsid + "'");
                     ownerObjectId = OntologyManager.ensureObject(ss.getContainer(), cpasType, (Integer) null);
                 }
             }
@@ -2732,7 +2732,7 @@ public class ExperimentServiceImpl implements ExperimentService
         CPUTimer timer = new CPUTimer("sync edges");
         timer.start();
 
-        LOG.info("Rebuilding edges for runId " + runId);
+        LOG.debug("Rebuilding edges for runId " + runId);
         try (DbScope.Transaction tx = getExpSchema().getScope().ensureTransaction())
         {
             SQLFragment inputDatas = new SQLFragment()
@@ -2761,7 +2761,7 @@ public class ExperimentServiceImpl implements ExperimentService
                 removeEdgesForRun(runId);
 
             int edgeCount = fromDataLsids.size() + fromMaterialLsids.size() + toDataLsids.size() + toMaterialLsids.size();
-            LOG.info(String.format("  edge counts: input data=%d, input materials=%d, output data=%d, output materials=%d, total=%d",
+            LOG.debug(String.format("  edge counts: input data=%d, input materials=%d, output data=%d, output materials=%d, total=%d",
                     fromDataLsids.size(), fromMaterialLsids.size(), toDataLsids.size(), toMaterialLsids.size(), edgeCount));
 
             if (edgeCount > 0)
@@ -2822,7 +2822,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
             tx.commit();
             timer.stop();
-            LOG.info("  synced edges in " + timer.getDuration());
+            LOG.debug("  synced edges in " + timer.getDuration());
         }
     }
 
@@ -2832,7 +2832,7 @@ public class ExperimentServiceImpl implements ExperimentService
         {
             try (Timing t = MiniProfiler.step("delete edges"))
             {
-                LOG.info("Deleting all edges");
+                LOG.debug("Deleting all edges");
                 Table.delete(getTinfoEdge());
             }
 
@@ -2840,7 +2840,7 @@ public class ExperimentServiceImpl implements ExperimentService
                     getTinfoExperimentRun().getColumns("rowId", "lsid", "container"), null, new Sort("rowId")).getMapCollection();
             try (Timing t = MiniProfiler.step("create edges"))
             {
-                LOG.info("Rebuilding edges for " + runs.size() + " runs");
+                LOG.debug("Rebuilding edges for " + runs.size() + " runs");
                 for (Map<String, Object> run : runs)
                 {
                     Integer runId = (Integer)run.get("rowId");
@@ -2854,7 +2854,7 @@ public class ExperimentServiceImpl implements ExperimentService
             if (timing != null)
             {
                 timing.stop();
-                LOG.info("Rebuilt all edges: " + timing.getDuration() + " ms");
+                LOG.debug("Rebuilt all edges: " + timing.getDuration() + " ms");
             }
         }
     }
