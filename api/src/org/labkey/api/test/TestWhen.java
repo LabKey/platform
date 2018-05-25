@@ -24,9 +24,9 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface TestWhen
 {
-    public enum When
+    enum When
     {
-        DRT, BVT, DAILY, WEEKLY, ARGOS
+        DRT, BVT, DAILY, WEEKLY
     }
     When value() default When.DRT;
 }
