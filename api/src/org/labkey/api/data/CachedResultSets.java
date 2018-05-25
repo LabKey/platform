@@ -74,7 +74,17 @@ public class CachedResultSets
         return create(maps, maps.get(0).keySet());
     }
 
-
+    /**
+     * Create CachedResultSet from a list of maps and collection of column names. For the most flexibility, the maps may need
+     * to be case insensitive. How do you tell? If the maps have data and the keys match the columnNames, but the ResultSet rowMap
+     * values are all null.
+     * @param maps List of row data, possibly case insensitive maps
+     * @param columnNames Collection of column names
+     *
+     * TODO: A case insensitive overload of this method, but there may be performance impact for very large result sets if the implementation
+     *                    were simply to wrap each incoming map with CaseInsensitiveHashMap. For now, onus is on the caller to provide
+     *                    case insensitive maps when necessary.
+     */
     public static CachedResultSet create(List<Map<String, Object>> maps, Collection<String> columnNames)
     {
         ResultSetMetaData md = createMetaData(columnNames);
