@@ -1524,6 +1524,11 @@ public class ContainerManager
 
     private static Map<String,Integer> deletingContainers = Collections.synchronizedMap(new HashMap<String,Integer>());
 
+    public static boolean isDeleting(final Container c)
+    {
+        return deletingContainers.containsKey(c.getId());
+    }
+
     // Delete a container from the database
     public static boolean delete(final Container c, User user)
     {
