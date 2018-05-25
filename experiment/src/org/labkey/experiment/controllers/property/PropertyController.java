@@ -50,6 +50,7 @@ import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
@@ -228,15 +229,20 @@ public class PropertyController extends SpringActionController
 
             if (domainGroup != null)
             {
-                String module = jsonObj.optString("module", null);
+                String moduleName = jsonObj.optString("module", null);
                 String domainTemplate = jsonObj.optString("domainTemplate", null);
 
                 boolean createDomain = jsonObj.optBoolean("createDomain", true);
                 boolean importData = jsonObj.optBoolean("importData", true);
 
                 DomainTemplateGroup templateGroup;
-                if (module != null)
-                    templateGroup = DomainTemplateGroup.get(ModuleLoader.getInstance().getModule(module), domainGroup);
+                if (moduleName != null)
+                {
+                    Module module = ModuleLoader.getInstance().getModule(moduleName);
+                    if (module == null)
+                        throw new NotFoundException("Module '" + moduleName + "' for domain template group not found");
+                    templateGroup = DomainTemplateGroup.get(module, domainGroup);
+                }
                 else
                     templateGroup = DomainTemplateGroup.get(getContainer(), domainGroup);
 
