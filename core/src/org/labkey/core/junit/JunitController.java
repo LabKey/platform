@@ -430,6 +430,8 @@ public class JunitController extends SpringActionController
             map.put("failureCount", result.getFailureCount());
             map.put("wasSuccessful", result.wasSuccessful());
             map.put("failures", toList(result.getFailures()));
+            if (result.getIgnoreCount() > 0)
+                map.put("ignored", result.getIgnoreCount());
 
             JSONObject json = new JSONObject(map);
 
@@ -438,7 +440,7 @@ public class JunitController extends SpringActionController
             response.setStatus(status);
 
             PrintWriter out = response.getWriter();
-            response.setContentType("text/plain");
+            response.setContentType("application/json");
             response.setCharacterEncoding("utf-8");
 
             out.append(json.toString(4));
