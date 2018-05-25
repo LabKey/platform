@@ -796,8 +796,8 @@ public class AssayTest extends AbstractAssayTest
 
         //validate timepoints:
         assertElementPresent(Locator.xpath("//td[text()='Test Visit3' and following-sibling::td/a[text()='AAA07XMC-02']]"));
-        assertElementPresent(Locator.xpath("//td[text()='33' and following-sibling::td/a[text()='AAA07XMC-04']]"));
-        assertElementPresent(Locator.xpath("//td[text()='4' and following-sibling::td/a[text()='AAA07XSF-02']]"));
+        assertElementPresent(Locator.xpath("//td[text()='33.0' and following-sibling::td/a[text()='AAA07XMC-04']]"));
+        assertElementPresent(Locator.xpath("//td[text()='4.0' and following-sibling::td/a[text()='AAA07XSF-02']]"));
 
         assertElementPresent(Locator.xpath("//td[text()='Test Visit2' and following-sibling::td/a[text()='AssayTestControl1']]"));
         assertElementPresent(Locator.xpath("//td[text()='Test Visit1' and following-sibling::td/a[text()='AssayTestControl2']]"));

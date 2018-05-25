@@ -61,7 +61,7 @@
         <tr>
             <td class="labkey-form-label">Day Range&nbsp;<%=helpPopup("Day Range", "Days from start date encompassing this visit. E.g. 11-17 for Week 2")%></td>
             <td>
-                <input type="text" size="26" name="sequenceNumMin" value="<%=(int) visit.getSequenceNumMinDouble()%>">-<input type="text" size="26" name="sequenceNumMax" value="<%=(int) visit.getSequenceNumMaxDouble()%>">
+                <input type="text" size="26" name="sequenceNumMin" value="<%=visit.getSequenceNumMin().intValue()%>">-<input type="text" size="26" name="sequenceNumMax" value="<%=visit.getSequenceNumMax().intValue()%>">
             </td>
         </tr>
         <tr>
@@ -78,13 +78,13 @@
         <tr>
             <td class="labkey-form-label">VisitId/Sequence Range</td>
             <td>
-                <input type="text" size="26" name="sequenceNumMin" value="<%=visit.getSequenceNumMinDouble()%>">-<input type="text" size="26" name="sequenceNumMax" value="<%=visit.getSequenceNumMaxDouble()%>">
+                <input type="text" size="26" name="sequenceNumMin" value="<%=visit.getFormattedSequenceNumMin()%>">-<input type="text" size="26" name="sequenceNumMax" value="<%=visit.getFormattedSequenceNumMax()%>">
             </td>
         </tr>
         <tr>
             <td class="labkey-form-label">Protocol Day&nbsp;<%=helpPopup("Protocol Day", "The expected day for this visit according to the protocol, used for study alignment.")%></td>
             <td>
-                <input type="text" size="26" name="protocolDay" value="<%=null != visit.getProtocolDay() ? visit.getProtocolDay() : ""%>">
+                <input type="text" size="26" name="protocolDay" value="<%=visit.getFormattedProtocolDay()%>">
             </td>
         </tr>
 <%

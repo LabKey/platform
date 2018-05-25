@@ -52,11 +52,11 @@ import java.util.TreeSet;
 
 public class ParticipantVisitDatasetTable extends VirtualTable
 {
-    StudyImpl _study;
-    StudyQuerySchema _schema;
-    DatasetDefinition _dataset;
-    ColumnInfo _colParticipantId;
-    Map<Double,ColumnInfo> _seqColumnMap = new HashMap<>();
+    private final StudyImpl _study;
+    private final StudyQuerySchema _schema;
+    private final DatasetDefinition _dataset;
+    private final ColumnInfo _colParticipantId;
+    private final Map<Double,ColumnInfo> _seqColumnMap = new HashMap<>();
 
     public ParticipantVisitDatasetTable(StudyQuerySchema schema, DatasetDefinition dsd, ColumnInfo colParticipantId)
     {
@@ -130,7 +130,7 @@ public class ParticipantVisitDatasetTable extends VirtualTable
         for (VisitImpl visit : visitList)
         {
             boolean uniqueLabel = labelMap.get(visit.getLabel()).size() == 1;
-            boolean hasSequenceRange = visit.getSequenceNumMinDouble() != visit.getSequenceNumMaxDouble();
+            boolean hasSequenceRange = !visit.getSequenceNumMin().equals(visit.getSequenceNumMax());
 
             // add columns for each sequence, show if there is a sequence range
             for (double seq : sequenceSet)
@@ -145,7 +145,7 @@ public class ParticipantVisitDatasetTable extends VirtualTable
                 colSeq.setLabel(label);
 //                colSeq.setHidden(!hasSequenceRange);
                 addColumn(colSeq);
-                this._seqColumnMap.put(seq, colSeq);
+                _seqColumnMap.put(seq, colSeq);
             }
 
 /*

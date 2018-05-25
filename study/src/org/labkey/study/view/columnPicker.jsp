@@ -56,7 +56,7 @@ if (selectedDataset != null)
     HashMap<Integer, VisitImpl> visits = new HashMap<>();
     for (VisitImpl visit : bean.study.getVisits(Visit.Order.DISPLAY))
     {
-        if (visit.getSequenceNumMinDouble() == visit.getSequenceNumMaxDouble())
+        if (visit.getSequenceNumMin().equals(visit.getSequenceNumMax()))
             visits.put(visit.getRowId(), visit);
     }
     List<VisitDataset> datasetVisits = selectedDataset.getVisitDatasets();
@@ -74,7 +74,7 @@ if (selectedDataset != null)
 //        if (!visit.isRequired())            continue;
         if (null == visit)
             {%><!-- <%=vds.getVisitRowId()%> not found --><% continue;}
-        %><option<%=selected(bean.form.getSequenceNum() == visit.getSequenceNumMinDouble())%> value="<%=visit.getSequenceNumMinDouble()%>"><%=h(visit.getDisplayString())%></option><%
+        %><option<%=selected(bean.form.getSequenceNum() == visit.getSequenceNumMinDouble())%> value="<%=visit.getFormattedSequenceNumMin()%>"><%=h(visit.getDisplayString())%></option><%
     }
     %></select></td></tr><%
     %>

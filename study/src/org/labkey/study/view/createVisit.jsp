@@ -73,7 +73,7 @@ is uploaded along with the data. This form allows you to define a range of seque
         <tr>
             <td class="labkey-form-label"><%=h(isDateBased ? "Day Range" : "VisitId/Sequence Range")%></td>
             <td>
-                <input type="text" size="26" name="sequenceNumMin" value="<%=v.getSequenceNumMinDouble()%>">-<input type="text" size="26" name="sequenceNumMax" value="<%=v.getSequenceNumMinDouble()==v.getSequenceNumMaxDouble()?"":v.getSequenceNumMaxDouble()%>">
+                <input type="text" size="26" name="sequenceNumMin" value="<%=v.getFormattedSequenceNumMin()%>">-<input type="text" size="26" name="sequenceNumMax" value="<%=v.getSequenceNumMin().equals(v.getSequenceNumMax()) ? "" : v.getFormattedSequenceNumMax()%>">
             </td>
         </tr>
         <tr>

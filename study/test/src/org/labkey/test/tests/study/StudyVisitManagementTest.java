@@ -93,7 +93,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
         Map<String, Pair<Integer, Integer>> datasetVisitCounts = new HashMap<>();
         datasetVisitCounts.put("1 week Post-V#1", new Pair<>(7, 119));
         datasetVisitCounts.put("2 week Post-V#1", new Pair<>(33, 2));
-        datasetVisitCounts.put("411-491", new Pair<>(15, 0));
+        datasetVisitCounts.put("411.0 - 491.0", new Pair<>(15, 0));
         datasetVisitCounts.put("3 week Post-V#1", new Pair<>(6, 12));
         datasetVisitCounts.put("4 week Post-V#1", new Pair<>(17, 50));
         datasetVisitCounts.put("1 week Post-V#2", new Pair<>(3, 2));
@@ -115,7 +115,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
 
         // delete all of the rest and verify dataset/specimen data removed
         goToDeleteMultipleVisits();
-        deleteMultipleVisits(Arrays.asList("1 week Post-V#1", "2 week Post-V#1", "411-491", "3 week Post-V#1", "1 week Post-V#2"));
+        deleteMultipleVisits(Arrays.asList("1 week Post-V#1", "2 week Post-V#1", "411.0 - 491.0", "3 week Post-V#1", "1 week Post-V#2"));
         verifySpecimenDataRowCount(4); // 4 left because they do not have visit values
         verifyDatasetRowCount("APX-1", 0);
     }
@@ -186,7 +186,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
         assertElementPresent(Locator.tagContainingText("pre", "ERROR: New visit 2 week Post-V#1 overlaps existing visit 2 week Post-V#1"));
 
         // delete some visits so that the reload will have the failure case
-        deleteMultipleVisits(Arrays.asList("2 week Post-V#1", "411-491", "4 week Post-V#1", "1 week Post-V#2"));
+        deleteMultipleVisits(Arrays.asList("2 week Post-V#1", "411.0 - 491.0", "4 week Post-V#1", "1 week Post-V#2"));
 
         // test reload of the specimens only archive and check for expected error message
         importFolderArchiveWithFailureFlag(archive, true, 4, true);
@@ -214,7 +214,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
         verifyStudyVisits(definedVisits, null);
 
         // delete some visits so that the reload will have the failure case
-        deleteMultipleVisits(Arrays.asList("2 week Post-V#1", "411-491", "4 week Post-V#1", "1 week Post-V#2"));
+        deleteMultipleVisits(Arrays.asList("2 week Post-V#1", "411.0 - 491.0", "4 week Post-V#1", "1 week Post-V#2"));
 
         // enable study reloading and attempt now, which will say that studyload.txt not found
         enableStudyReloading();

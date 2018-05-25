@@ -468,6 +468,7 @@ public class StudyController extends BaseStudyController
     public class EditTypeAction extends SimpleViewAction<DatasetForm>
     {
         private Dataset _def;
+
         public ModelAndView getView(DatasetForm form, BindException errors)
         {
             StudyImpl study = getStudyRedirectIfNull();
@@ -2115,12 +2116,12 @@ public class StudyController extends BaseStudyController
 
                 for (VisitImpl visit : visits)
                 {
-                    sb.append("<tr><td>");
-                    sb.append(PageFlowUtil.filter(visit.getLabel())).append(" (").append(visit.getSequenceNumMinDouble());
-                    if (visit.getSequenceNumMaxDouble() != visit.getSequenceNumMinDouble())
-                        sb.append("-").append(visit.getSequenceNumMaxDouble());
-                    sb.append(")");
-                    sb.append("</td></tr>\n");
+                    sb.append("<tr><td>")
+                        .append(PageFlowUtil.filter(visit.getLabel()))
+                        .append(" (")
+                        .append(PageFlowUtil.filter(visit.getSequenceString()))
+                        .append(")")
+                        .append("</td></tr>\n");
                 }
 
                 sb.append("</table>\n");
@@ -2884,7 +2885,7 @@ public class StudyController extends BaseStudyController
                 throw new UnauthorizedException("User does not have permission to delete rows from this dataset");
 
             // Operate on each individually for audit logging purposes, but transact the whole thing
-            DbScope scope =  StudySchema.getInstance().getSchema().getScope();
+            DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
             try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
@@ -3017,7 +3018,7 @@ public class StudyController extends BaseStudyController
             if (subjectColName.equalsIgnoreCase(col.getName()))
             {
                 StringExpression old = col.getURLExpression();
-                ContainerContext cc = null != old && old instanceof DetailsURL ? ((DetailsURL)old).getContainerContext() : null;
+                ContainerContext cc = old instanceof DetailsURL ? ((DetailsURL)old).getContainerContext() : null;
                 DetailsURL dets = new DetailsURL(base, "participantId", col.getColumnInfo().getFieldKey());
                 dets.setContainerContext(null != cc ? cc : getContainer());
                 col.setURLExpression(dets);
@@ -4894,7 +4895,7 @@ public class StudyController extends BaseStudyController
             if (!json.has("name"))
                 throw new IllegalArgumentException("name is a required attribute.");
 
-            String folderName  = json.getString("name");
+            String folderName = json.getString("name");
             Date startDate;
             if (json.has("startDate"))
                 startDate = new Date(DateUtil.parseDateTime(json.getString("startDate")));
@@ -6588,7 +6589,7 @@ public class StudyController extends BaseStudyController
                     int id = Integer.parseInt(form.getDatasetId());
                     dataset = StudyManager.getInstance().getDatasetDefinition(study, id);
                 }
-                catch (NumberFormatException e) {}
+                catch (NumberFormatException ignored) {}
 
                 if (dataset == null)
                 {
@@ -7318,7 +7319,7 @@ public class StudyController extends BaseStudyController
             ApiSimpleResponse response = new ApiSimpleResponse();
             DatasetDefinition def;
 
-            DbScope scope =  StudySchema.getInstance().getSchema().getScope();
+            DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
             try (DbScope.Transaction transaction = scope.ensureTransaction())
             {

@@ -19,6 +19,7 @@ package org.labkey.study.importer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.study.Visit.Type;
+import org.labkey.study.model.VisitImpl;
 
 import java.math.BigDecimal;
 import java.util.Collection;
@@ -139,7 +140,7 @@ class VisitMapRecord
     @Override
     public String toString()
     {
-        return null != _visitLabel ? _visitLabel : (_sequenceNumberMin.toString() + (_sequenceNumberMin.equals(_sequenceNumberMax) ? "" : " - " + _sequenceNumberMax.toString()));
+        return null != _visitLabel ? _visitLabel : VisitImpl.getSequenceString(_sequenceNumberMin, _sequenceNumberMax);
     }
 
     public static class VisitTagRecord

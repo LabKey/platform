@@ -85,12 +85,12 @@ public class StudyTest extends StudyBaseTest
     protected static final String PARTICIPANT_VISIT_COMMENT_LABEL = "mouse visit comment";
 
     protected static final String VISIT_IMPORT_MAPPING = "Name\tSequenceNum\n" +
-        "Cycle 10\t10\n" +
-        "Vaccine 1\t201\n" +
-        "Vaccination 1\t201\n" +
-        "Soc Imp Log #%{S.3.2}\t5500\n" +
-        "ConMeds Log #%{S.3.2}\t9002\n" +
-        "All Done\t9999";
+        "Cycle 10\t10.0\n" +
+        "Vaccine 1\t201.0\n" +
+        "Vaccination 1\t201.0\n" +
+        "Soc Imp Log #%{S.3.2}\t5500.0\n" +
+        "ConMeds Log #%{S.3.2}\t9002.0\n" +
+        "All Done\t9999.0";
 
     public static final String APPEARS_AFTER_PICKER_LOAD = "Add Selected";
 
@@ -1075,7 +1075,7 @@ public class StudyTest extends StudyBaseTest
         assertEquals("Incorrect number of gray \"ConMeds Log #%{S.3.2}\" cells", 1, countTableCells("ConMeds Log #%{S.3.2}", true));
 
         // Replace custom visit mapping and verify
-        String replaceMapping = "Name\tSequenceNum\nBarBar\t4839\nFoofoo\t9732";
+        String replaceMapping = "Name\tSequenceNum\nBarBar\t4839.0\nFoofoo\t9732.0";
         clickAndWait(Locator.linkWithText("Replace Custom Mapping"));
         setFormElement(Locator.id("tsv"), replaceMapping);
         clickButton("Submit");

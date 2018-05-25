@@ -60,7 +60,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     private static final int PRECISION = 15;
     private static final int MAX_SCALE = 4;
     private static final double SCALE_FACTOR = Math.pow(10, MAX_SCALE);
-    private static final NumberFormat SEQUENCE_FORMAT = new DecimalFormat("0.####");
+    private static final NumberFormat SEQUENCE_FORMAT = new DecimalFormat("0.0###");
     private static final MathContext ROUNDING_CONTEXT = new MathContext(PRECISION);
 
     private int _rowId = 0;
@@ -113,38 +113,39 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     @Override
     public String getSequenceString()
     {
-        if (_sequenceMin.equals(_sequenceMax))
-            return VisitImpl.formatSequenceNum(_sequenceMin);
+        return getSequenceString(_sequenceMin, _sequenceMax);
+    }
+
+
+    public static String getSequenceString(BigDecimal min, BigDecimal max)
+    {
+        if (min.equals(max))
+            return formatSequenceNum(min);
         else
-            return VisitImpl.formatSequenceNum(_sequenceMin) + "-" + VisitImpl.formatSequenceNum(_sequenceMax);
+            return formatSequenceNum(min) + " - " + formatSequenceNum(max);
     }
 
 
-    public static StringBuilder appendSqlSequenceNum(StringBuilder sb, double d)
+    // Formats integers as integers; everything else at four significant digits. That's not consistent with
+    // formatSequenceNum(), but it's what we've always done when appending into SQL.
+    private static StringBuilder appendSqlSequenceNum(StringBuilder sb, BigDecimal seqnum)
     {
-        if (d == Math.round(d))
-            return sb.append((long)d);
-        return sb.append(BigDecimal.valueOf((long)Math.round(d * SCALE_FACTOR), MAX_SCALE).toPlainString());
+        if (seqnum.scale() > 0)
+            seqnum = seqnum.setScale(MAX_SCALE, RoundingMode.HALF_UP);
+
+        return sb.append(seqnum.toPlainString());
     }
 
-    // TODO: Fix rounding to work with TestCase (below)
-    public static StringBuilder appendSqlSequenceNum(StringBuilder sb, BigDecimal seqnum)
-    {
-        return sb.append(seqnum.round(ROUNDING_CONTEXT).toPlainString());
-    }
 
-    /* always formats using "." */
-    // TODO: Switch to _sequenceNumMin
     public StringBuilder appendSqlSequenceNumMin(StringBuilder sb)
     {
-        return appendSqlSequenceNum(sb, getSequenceNumMinDouble());
+        return appendSqlSequenceNum(sb, _sequenceMin);
     }
 
-    /* always formats using "." */
-    // TODO: Switch to _sequenceNumMax
+
     public StringBuilder appendSqlSequenceNumMax(StringBuilder sb)
     {
-        return appendSqlSequenceNum(sb, getSequenceNumMaxDouble());
+        return appendSqlSequenceNum(sb, _sequenceMax);
     }
 
 
@@ -235,6 +236,11 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
         _sequenceMin = sequenceMin.stripTrailingZeros();
     }
 
+    public String getFormattedSequenceNumMin()
+    {
+        return formatSequenceNum(_sequenceMin);
+    }
+
     @Override
     @Deprecated // Use getSequenceNumMax()
     public double getSequenceNumMaxDouble()
@@ -246,6 +252,11 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     public BigDecimal getSequenceNumMax()
     {
         return _sequenceMax;
+    }
+
+    public String getFormattedSequenceNumMax()
+    {
+        return formatSequenceNum(_sequenceMax);
     }
 
     public void setSequenceNumMax(BigDecimal sequenceMax)
@@ -266,6 +277,11 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
         return _protocolDay;
     }
 
+    public String getFormattedProtocolDay()
+    {
+        return null != _protocolDay ? formatSequenceNum(_protocolDay) : "";
+    }
+
     public void setProtocolDay(@Nullable BigDecimal protocolDay)
     {
         _protocolDay = null != protocolDay ? protocolDay.stripTrailingZeros() : null;
@@ -283,6 +299,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     }
 
     // only 4 scale digits
+    @Deprecated // return BigDecimal instead
     public static double parseSequenceNum(String s)
     {
         double d = Double.parseDouble(s);
@@ -290,6 +307,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     }
 
 
+    @Deprecated // use BigDecimal version instead
     public static String formatSequenceNum(double d)
     {
         d = Math.round(d * SCALE_FACTOR) / SCALE_FACTOR;
@@ -472,6 +490,12 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     }
 
 
+    public boolean isInRange(BigDecimal seqnum)
+    {
+        return _sequenceMin.compareTo(seqnum) <= 0 && _sequenceMax.compareTo(seqnum) >= 0;
+    }
+
+
     public static class TestCase extends Assert
     {
         @Test
@@ -480,11 +504,19 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
             VisitImpl v;
             Container c = JunitUtil.getTestContainer();
 
-            v = new VisitImpl(c, BigDecimal.valueOf(0), BigDecimal.valueOf(0.9999), "label", (Type)null);
+            v = new VisitImpl(c, BigDecimal.ZERO, BigDecimal.valueOf(0.9999), "label", (Type)null);
             assertEquals("0", v.appendSqlSequenceNumMin(new StringBuilder()).toString());
             assertEquals("0.9999", v.appendSqlSequenceNumMax(new StringBuilder()).toString());
+            assertTrue(v.isInRange(BigDecimal.ZERO));
+            assertTrue(v.isInRange(BigDecimal.valueOf(0.9999)));
+            assertTrue(v.isInRange(BigDecimal.valueOf(0.5)));
+            assertTrue(v.isInRange(BigDecimal.valueOf(0.75)));
+            assertFalse(v.isInRange(BigDecimal.valueOf(-0.0001)));
+            assertFalse(v.isInRange(BigDecimal.ONE));
+            assertFalse(v.isInRange(BigDecimal.valueOf(7.0)));
+            assertFalse(v.isInRange(BigDecimal.valueOf(123435.0)));
 
-            v = new VisitImpl(c, BigDecimal.valueOf(1), BigDecimal.valueOf(1.09999999999999999), "label", (Type)null);
+            v = new VisitImpl(c, BigDecimal.ONE, BigDecimal.valueOf(1.09999999999999999), "label", (Type)null);
             assertEquals("1", v.appendSqlSequenceNumMin(new StringBuilder()).toString());
             assertEquals("1.1000", v.appendSqlSequenceNumMax(new StringBuilder()).toString());
 
