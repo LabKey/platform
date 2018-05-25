@@ -3,9 +3,14 @@ package org.labkey.api.view;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.template.WarningProvider;
+import org.labkey.api.view.template.Warnings;
 
-public abstract class AbstractDismissibleWarningMessageImpl implements DismissibleWarningMessage
+public abstract class AbstractDismissibleWarningMessageImpl implements DismissibleWarningMessage, WarningProvider
 {
+    public static final String JS_METHOD_NAME = "dismissMessage";
+    public static final String BANNER_ID = "dismissableBanner";
+
     //Use with String.format(DISMISSAL_SCRIPT_FORMAT, "dismissMyWarning", PageFlowUtil.jsString(dismissURL), myMessageText, myId);
     protected final static String DISMISSAL_SCRIPT_FORMAT =
         "<script type=\"text/javascript\">\n" +
@@ -51,7 +56,17 @@ public abstract class AbstractDismissibleWarningMessageImpl implements Dismissib
      */
     public @Nullable String getMessageHtml(ViewContext viewContext)
     {
-        return getMessageHtml(viewContext, "dismissMessage", "dismissableBanner");
+        return getMessageHtml(viewContext, getJsDismissalMethodName(), getBannerId());
+    }
+
+    protected String getJsDismissalMethodName()
+    {
+        return JS_METHOD_NAME;
+    }
+
+    protected String getBannerId()
+    {
+        return BANNER_ID;
     }
 
     /**
@@ -67,4 +82,16 @@ public abstract class AbstractDismissibleWarningMessageImpl implements Dismissib
      * @return the text to display
      */
     protected abstract String getMessageText(ViewContext viewContext);
+
+    @Override
+    public void addDismissibleWarnings(Warnings warnings, ViewContext context)
+    {
+        if (showMessage(context))
+        {
+            String messageHtml = getMessageHtml(context);
+            if (!StringUtils.isEmpty(messageHtml))
+                warnings.add(messageHtml);
+        }
+    }
+
 }
