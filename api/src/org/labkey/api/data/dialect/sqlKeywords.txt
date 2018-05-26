@@ -394,6 +394,7 @@ granted
 grants
 greatest
 group
+groups
 group_replication
 grouping
 handler
@@ -780,6 +781,7 @@ privileges
 proc
 procedural
 procedure
+procedures
 processexit
 processlist
 profile
@@ -883,6 +885,7 @@ rollback
 rollup
 rotate
 routine
+routines
 routine_catalog
 routine_name
 routine_schema
