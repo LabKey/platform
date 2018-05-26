@@ -111,12 +111,18 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
             if (96 == version)
                 return new PostgreSql96Dialect();
 
-            // Any 10.x version is okay; 11.x+ gets a warning.
-            // Note: PostgreSQL version format changed from x.y.z to x.y starting with 10.0.
-            if (version >= 110 && logWarnings)
+            // PostgreSQL version format changed from x.y.z to x.y starting with 10.0... so last digit is now minor version.
+            version = version / 10;
+
+            // Any 10.x version is okay
+            if (version <= 10)
+                return new PostgreSql_10_Dialect();
+
+            // 11.x+ gets a warning.
+            if (version >= 11 && logWarnings)
                 _log.warn("LabKey Server has not been tested against " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED);
 
-            return new PostgreSql100Dialect();
+            return new PostgreSql_11_Dialect();
         }
 
         throw new DatabaseNotSupportedException(PRODUCT_NAME + " version " + databaseProductVersion + " is not supported. You must upgrade your database server installation; " + RECOMMENDED);
@@ -155,7 +161,9 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
             good("PostgreSQL", 9.4, 9.5, "", PostgreSql94Dialect.class);
             good("PostgreSQL", 9.5, 9.6, "", PostgreSql95Dialect.class);
             good("PostgreSQL", 9.6, 9.7, "", PostgreSql96Dialect.class);
-            good("PostgreSQL", 9.7, 11.0, "", PostgreSql100Dialect.class);
+            good("PostgreSQL", 9.7, 11.0, "", PostgreSql_10_Dialect.class);
+            good("PostgreSQL", 11.0, 12.0, "", PostgreSql_11_Dialect.class);
+            good("PostgreSQL", 12.0, 13.0, "", PostgreSql_11_Dialect.class);
         }
     }
 

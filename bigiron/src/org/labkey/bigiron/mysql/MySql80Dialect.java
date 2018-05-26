@@ -16,8 +16,8 @@ public class MySql80Dialect extends MySql57Dialect
 
         words.remove("sql_cache");
         words.addAll(new CsvSet("admin, columns, cube, cume_dist, dense_rank, empty, events, except, first_value, " +
-                "function, grouping, indexes, lag, last_value, lead, nth_value, ntile, of, over, parameters, percent_rank, " +
-                "rank, recursive, row, row_number, rows, system, tables, triggers, window"));
+                "function, grouping, groups, indexes, lag, last_value, lead, nth_value, ntile, of, over, parameters, percent_rank, " +
+                "rank, recursive, routines, row, row_number, rows, system, tables, triggers, window"));
 
         return words;
     }

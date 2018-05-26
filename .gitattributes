@@ -501,7 +501,6 @@ core/src/org/labkey/core/authentication/test/TestSsoProvider.java -text
 core/src/org/labkey/core/authentication/test/testSecondary.jsp -text
 core/src/org/labkey/core/authentication/test/testSso.jsp -text
 core/src/org/labkey/core/dialect/ArrayParameterInClauseGenerator.java -text
-core/src/org/labkey/core/dialect/PostgreSql100Dialect.java -text
 core/src/org/labkey/core/dialect/PostgreSql91Dialect.java -text
 core/src/org/labkey/core/dialect/PostgreSql92Dialect.java -text
 core/src/org/labkey/core/dialect/PostgreSql93Dialect.java -text
@@ -510,6 +509,8 @@ core/src/org/labkey/core/dialect/PostgreSql95Dialect.java -text
 core/src/org/labkey/core/dialect/PostgreSql96Dialect.java -text
 core/src/org/labkey/core/dialect/PostgreSqlDialectFactory.java -text
 core/src/org/labkey/core/dialect/PostgreSqlNonConformingStringHandler.java -text
+core/src/org/labkey/core/dialect/PostgreSql_10_Dialect.java -text
+core/src/org/labkey/core/dialect/PostgreSql_11_Dialect.java -text
 core/src/org/labkey/core/filters/SetCharacterEncodingFilter.java -text
 core/src/org/labkey/core/junit/JunitManager.java -text
 core/src/org/labkey/core/junit/JunitRunner.java -text
