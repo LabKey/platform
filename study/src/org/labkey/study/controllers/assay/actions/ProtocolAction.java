@@ -24,6 +24,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.permissions.DesignAssayPermission;
@@ -32,6 +33,8 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.assay.AssayServiceImpl;
 import org.springframework.validation.BindException;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -42,7 +45,7 @@ import java.util.stream.Collectors;
  * Date: 3/11/16
  */
 @Marshal(Marshaller.Jackson)
-@RequiresPermission(DesignAssayPermission.class)
+@RequiresPermission(ReadPermission.class)
 public class ProtocolAction extends ApiAction<GWTProtocol>
 {
     public ProtocolAction()
@@ -58,6 +61,22 @@ public class ProtocolAction extends ApiAction<GWTProtocol>
         {
             // UPDATE
             boolean isNew = protocol.getProtocolId() == null || protocol.getProtocolId() == 0;
+            if (isNew)
+            {
+                if (!getContainer().hasPermission(getUser(), DesignAssayPermission.class))
+                    throw new UnauthorizedException("You do not have sufficient permissions to create this assay design.");
+            }
+            else
+            {
+                ExpProtocol expProtocol = findExpProtocol(protocol);
+                if (expProtocol == null)
+                    throw new NotFoundException();
+
+                // user must have design assay permission
+                if (!expProtocol.getContainer().hasPermission(getUser(), DesignAssayPermission.class))
+                    throw new UnauthorizedException("You do not have sufficient permissions to update this assay design.");
+            }
+
             AssayServiceImpl svc = new AssayServiceImpl(getViewContext());
             GWTProtocol updated = svc.saveChanges(protocol, true);
             return success((isNew  ? "Created" : "Updated") + " assay protocol '" + updated.getName() + "'");
@@ -65,34 +84,12 @@ public class ProtocolAction extends ApiAction<GWTProtocol>
         else if (isDelete())
         {
             // DELETE
-            ExpProtocol expProtocol = null;
-            if (protocol.getProtocolId() != null)
-                expProtocol = ExperimentService.get().getExpProtocol(protocol.getProtocolId());
-            if (expProtocol == null && protocol.getName() != null)
-            {
-                AssayProvider provider = AssayService.get().getProvider(protocol.getProviderName());
-                if (provider == null)
-                    throw new NotFoundException("Assay provider '" + protocol.getProviderName() + "' not found");
-
-                List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(getContainer(), provider);
-                if (protocols.isEmpty())
-                    throw new NotFoundException("Assay protocol '" + protocol.getName() + "' not found");
-
-                protocols = protocols.stream().filter(p -> protocol.getName().equals(p.getName())).collect(Collectors.toList());
-                if (protocols.isEmpty())
-                    throw new NotFoundException("Assay protocol '" + protocol.getName() + "' not found");
-
-                if (protocols.size() > 1)
-                    throw new NotFoundException("More than one assay protocol named '" + protocol.getName() + "' was found.");
-
-                expProtocol = protocols.get(0);
-            }
+            ExpProtocol expProtocol = findExpProtocol(protocol);
             if (expProtocol == null)
                 throw new NotFoundException();
 
             // user must have both design assay AND delete permission, as this will delete both the design and uploaded data
-            //noinspection unchecked
-            if (!expProtocol.getContainer().getPolicy().hasPermissions(getUser(), DesignAssayPermission.class, DeletePermission.class))
+            if (!expProtocol.getContainer().hasPermissions(getUser(), new HashSet<>(Arrays.asList(DesignAssayPermission.class, DeletePermission.class))))
                 throw new UnauthorizedException("You do not have sufficient permissions to delete this assay design.");
 
             expProtocol.delete(getUser());
@@ -120,6 +117,33 @@ public class ProtocolAction extends ApiAction<GWTProtocol>
                 throw new ApiUsageException("Assay protocolId or providerName required");
             }
         }
+    }
+
+    private ExpProtocol findExpProtocol(GWTProtocol protocol)
+    {
+        ExpProtocol expProtocol = null;
+        if (protocol.getProtocolId() != null)
+            expProtocol = ExperimentService.get().getExpProtocol(protocol.getProtocolId());
+        if (expProtocol == null && protocol.getName() != null)
+        {
+            AssayProvider provider = AssayService.get().getProvider(protocol.getProviderName());
+            if (provider == null)
+                throw new NotFoundException("Assay provider '" + protocol.getProviderName() + "' not found");
+
+            List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(getContainer(), provider);
+            if (protocols.isEmpty())
+                throw new NotFoundException("Assay protocol '" + protocol.getName() + "' not found");
+
+            protocols = protocols.stream().filter(p -> protocol.getName().equals(p.getName())).collect(Collectors.toList());
+            if (protocols.isEmpty())
+                throw new NotFoundException("Assay protocol '" + protocol.getName() + "' not found");
+
+            if (protocols.size() > 1)
+                throw new NotFoundException("More than one assay protocol named '" + protocol.getName() + "' was found.");
+
+            expProtocol = protocols.get(0);
+        }
+        return expProtocol;
     }
 
 }
