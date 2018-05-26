@@ -1023,7 +1023,8 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         HTML html = new HTML("<span class='" + fontClass + "'></span>");
 
         DOM.setElementProperty(html.getElement(), "id", id);
-        addTooltip(html, status.getDescription());
+        if (status != FieldStatus.Existing)
+            addTooltip(html, status.getDescription());
 
         return html;
     }
