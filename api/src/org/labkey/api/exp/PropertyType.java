@@ -273,7 +273,12 @@ public enum PropertyType
                     if (value instanceof Date)
                         return value;
                     else
-                        return ConvertUtils.convert(value.toString(), Date.class);
+                    {
+                        String strVal = value.toString();
+                        if (DateUtil.isSignedDuration(strVal))
+                            strVal = JdbcType.TIMESTAMP.convert(value).toString();
+                        return ConvertUtils.convert(strVal, Date.class);
+                    }
                 }
 
                 public SimpleTypeNames.Enum getXmlBeanType()
