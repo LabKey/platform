@@ -11,7 +11,6 @@
 <labkey:errors/>
 <labkey:form action="<%=h(buildURL(ExperimentController.ExcludeRowsAction.class))%>" method="POST">
     <div>
-        <h2>Exclude rows</h2>
         <p>These rows will be marked for exclusion from this run. </p>
 
         <label for="exclude-comment" style="display: block;">Comment</label>

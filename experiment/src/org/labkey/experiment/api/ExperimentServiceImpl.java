@@ -6692,26 +6692,31 @@ public class ExperimentServiceImpl implements ExperimentService
         if (run == null || rowIds == null || rowIds.size() == 0)
             return;
 
-        TableInfo exclusionEventsTi = ExperimentService.get().getTinfoExclusion();
-        TableInfo exclusionMapsTi = ExperimentService.get().getTinfoExclusionMap();
-
-        Map<String, Object> eventRow = new CaseInsensitiveHashMap<>();
-        eventRow.put("RunId", run.getRowId());
-        eventRow.put("Comment", comment);
-        Map<String, Object> result = Table.insert(user, exclusionEventsTi, eventRow);
-
-        for (String rowId : rowIds)
+        try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction())
         {
-            Map<String, Object> row = new CaseInsensitiveHashMap<>();
-            row.put("ExclusionId", result.get("RowId"));
-            row.put("DataRowId", rowId);
-            Table.insert(user, exclusionMapsTi, row);
-        }
+            TableInfo exclusionEventsTi = ExperimentService.get().getTinfoExclusion();
+            TableInfo exclusionMapsTi = ExperimentService.get().getTinfoExclusionMap();
 
-        String auditMsg = rowIds.size() + " data row" + (rowIds.size() > 1 ? "s have" : " has") + " been marked for exclusion for run '"  + run.getName()
-                + (StringUtils.isEmpty(comment) ? "" : ("' with comment '"  + comment))
-                + "'. RowId: " + StringUtils.join(rowIds, ",") + ".";
-        ExperimentServiceImpl.get().auditRunEvent(user, run.getProtocol(), run, null, auditMsg);
+            Map<String, Object> eventRow = new CaseInsensitiveHashMap<>();
+            eventRow.put("RunId", run.getRowId());
+            eventRow.put("Comment", comment);
+            Map<String, Object> result = Table.insert(user, exclusionEventsTi, eventRow);
+
+            for (String rowId : rowIds)
+            {
+                Map<String, Object> row = new CaseInsensitiveHashMap<>();
+                row.put("ExclusionId", result.get("RowId"));
+                row.put("DataRowId", rowId);
+                Table.insert(user, exclusionMapsTi, row);
+            }
+
+            String auditMsg = rowIds.size() + " data row" + (rowIds.size() > 1 ? "s have" : " has") + " been marked for exclusion for run '"  + run.getName()
+                    + (StringUtils.isEmpty(comment) ? "" : ("' with comment '"  + comment))
+                    + "'. RowId: " + StringUtils.join(rowIds, ",") + ".";
+            ExperimentServiceImpl.get().auditRunEvent(user, run.getProtocol(), run, null, auditMsg);
+
+            transaction.commit();
+        }
     }
 
     @Override

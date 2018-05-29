@@ -67,13 +67,13 @@ public class ExpExclusionTableImpl extends ExpTableImpl<ExpExclusionTable.Column
                 return wrapColumn(alias, _rootTable.getColumn("Created"));
             case CreatedBy:
                 ColumnInfo createdByColumn = wrapColumn(alias, _rootTable.getColumn("CreatedBy"));
-                createdByColumn.setFk(new UserIdForeignKey(getUserSchema()));
+                UserIdForeignKey.initColumn(createdByColumn);
                 return createdByColumn;
             case Modified:
                 return wrapColumn(alias, _rootTable.getColumn("Modified"));
             case ModifiedBy:
                 ColumnInfo modifiedByColumn = wrapColumn(alias, _rootTable.getColumn("ModifiedBy"));
-                modifiedByColumn.setFk(new UserIdForeignKey(getUserSchema()));
+                UserIdForeignKey.initColumn(modifiedByColumn);
                 return modifiedByColumn;
         }
         throw new IllegalArgumentException("Unknown column " + column);
