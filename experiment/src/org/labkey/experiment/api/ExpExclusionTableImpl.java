@@ -165,8 +165,8 @@ public class ExpExclusionTableImpl extends ExpTableImpl<ExpExclusionTable.Column
             if (runId > 0)
             {
                 ExpRun run = ExperimentService.get().getExpRun(runId);
-                String auditMsg = "Exclusion" + (dataRowIds.size() > 1 ? "s have" : " has") + " been deleted from run '"  + run.getName()
-                        + "'. RowId unmarked for exclusion: " + StringUtils.join(dataRowIds, ",") + ".";
+                String auditMsg = "Exclusion event" + (oldRowMap.keySet().size() > 1 ? "s have" : " has") + " been deleted from run '"  + run.getName()
+                        + "'. DataRowId: " + StringUtils.join(dataRowIds, ",") + ".";
                 ExperimentServiceImpl.get().auditRunEvent(user, run.getProtocol(), run, null, auditMsg);
             }
 

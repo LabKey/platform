@@ -6712,7 +6712,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
             String auditMsg = rowIds.size() + " data row" + (rowIds.size() > 1 ? "s have" : " has") + " been marked for exclusion for run '"  + run.getName()
                     + (StringUtils.isEmpty(comment) ? "" : ("' with comment '"  + comment))
-                    + "'. RowId: " + StringUtils.join(rowIds, ",") + ".";
+                    + "'. DataRowId: " + StringUtils.join(rowIds, ",") + ".";
             ExperimentServiceImpl.get().auditRunEvent(user, run.getProtocol(), run, null, auditMsg);
 
             transaction.commit();
