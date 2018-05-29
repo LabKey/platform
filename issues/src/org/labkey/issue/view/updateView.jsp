@@ -434,7 +434,7 @@
 
     if (bean.getReturnURL() != null)
     {%>
-        <input type="hidden" name="returnUrl" value="<%=h(bean.getReturnURL())%>"/><%
+        <%= generateReturnUrlFormField(bean.getReturnURL()) %> <%
     }%>
     <input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(bean.getPrevIssue())%>">
     <input type="hidden" name="action" value="<%=h(bean.getAction().getName())%>">

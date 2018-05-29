@@ -117,7 +117,7 @@ This study was created from a vaccine study protocol with the following descript
         String grant = study.getGrant();
         List<Attachment> protocolDocs = study.getProtocolDocuments();
         ActionURL editMetadataURL = new ActionURL(StudyController.ManageStudyPropertiesAction.class, c);
-        editMetadataURL.addParameter("returnURL", getActionURL().toString());
+        editMetadataURL.addReturnURL(getActionURL());
     %>
     <script type="text/javascript">
         LABKEY.requiresCss("editInPlaceElement.css");

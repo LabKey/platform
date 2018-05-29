@@ -273,7 +273,7 @@ if (!bean.isResponse && !bean.print)
     if (bean.perm.allowDeleteMessage(announcementModel))
     {
         ActionURL deleteThread = announcementURL(c, DeleteThreadAction.class, "entityId", announcementModel.getEntityId());
-        deleteThread.addParameter("cancelUrl", bean.currentURL.getLocalURIString());
+        deleteThread.addCancelURL(bean.currentURL);
         if (bean.embedded)
         {
             URLHelper redirect = bean.currentURL.clone().deleteScopeParameters("discussion");

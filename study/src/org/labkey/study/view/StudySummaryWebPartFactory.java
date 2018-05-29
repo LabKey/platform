@@ -60,12 +60,12 @@ public class StudySummaryWebPartFactory extends BaseWebPartFactory
     {
         private Container _container;
         private StudyImpl _study;
-        private String _currentURL;
+        private ActionURL _currentURL;
 
         public StudySummaryBean(ViewContext portalCtx)
         {
             _container = portalCtx.getContainer();
-            _currentURL = portalCtx.getActionURL().getLocalURIString();
+            _currentURL = portalCtx.getActionURL();
         }
 
         public StudyImpl getStudy()
@@ -105,7 +105,7 @@ public class StudySummaryWebPartFactory extends BaseWebPartFactory
             return getStudy().getProtocolDocuments();
         }
 
-        public String getCurrentURL()
+        public ActionURL getCurrentURL()
         {
             return _currentURL;
         }
@@ -145,7 +145,7 @@ public class StudySummaryWebPartFactory extends BaseWebPartFactory
         if(portalCtx.getContainer().hasPermission(portalCtx.getUser(), AdminPermission.class))
         {
             ActionURL editMetaDataURL = new ActionURL(StudyController.ManageStudyPropertiesAction.class, portalCtx.getContainer());
-            editMetaDataURL.addParameter("returnURL",portalCtx.getActionURL().toString());
+            editMetaDataURL.addReturnURL(portalCtx.getActionURL());
             NavTree edit = new NavTree("Edit", editMetaDataURL.toString(), null, "fa fa-pencil");
             v.addCustomMenu(edit);
         }

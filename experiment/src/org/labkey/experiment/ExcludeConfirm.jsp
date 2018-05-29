@@ -22,7 +22,7 @@
 
     <input type="hidden" name="update" value="true" />
     <input type="hidden" name="runId" value="<%= bean.getRunId() %>" />
-    <input type="hidden" name="returnURL" value="<%=h(bean.getReturnURL())%>">
+    <%= generateReturnUrlFormField(bean) %>
     <input type="hidden" name="<%= h(DataRegionSelection.DATA_REGION_SELECTION_KEY) %>" value="<%= h(bean.getDataRegionSelectionKey()) %>" />
 </labkey:form>
 <br>

@@ -2253,18 +2253,6 @@ public class LoginController extends SpringActionController
     {
         private String _labkeyToken;
 
-        @Override
-        public void setReturnUrl(String s)
-        {
-            super.setReturnUrl(s);
-        }
-
-        @Override
-        public String getReturnUrl()
-        {
-            return super.getReturnUrl();
-        }
-
         public String getLabkeyToken()
         {
             return _labkeyToken;

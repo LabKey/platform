@@ -338,18 +338,14 @@ public class AnnouncementsController extends SpringActionController
             }
 
             _returnUrl = form.getReturnURLHelper();
-
-            if (null != form.getCancelUrl())
-                _cancelUrl = new URLHelper(form.getCancelUrl());
-            else
-                _cancelUrl = _returnUrl;
+            _cancelUrl = form.getCancelActionURL();
 
             return new ConfirmDeleteView(ann, getWhat(), getSettings(getContainer()));
         }
 
         public URLHelper getSuccessURL(AnnouncementDeleteForm form)
         {
-            return form.getReturnURLHelper();
+            return form.getSuccessActionURL();
         }
 
         public boolean handlePost(AnnouncementDeleteForm form, BindException errors)
@@ -1761,7 +1757,6 @@ public class AnnouncementsController extends SpringActionController
     {
         private int _rowId;
         private String _entityId;
-        private String _cancelUrl;
 
         public String getEntityId()
         {
@@ -1781,16 +1776,6 @@ public class AnnouncementsController extends SpringActionController
         public void setRowId(int rowId)
         {
             _rowId = rowId;
-        }
-
-        public String getCancelUrl()
-        {
-            return _cancelUrl;
-        }
-
-        public void setCancelUrl(String cancelUrl)
-        {
-            _cancelUrl = cancelUrl;
         }
     }
 
@@ -1935,16 +1920,6 @@ public class AnnouncementsController extends SpringActionController
                     }
                 }
             }
-        }
-
-        public ActionURL getCancelUrl()
-        {
-            String urlString = StringUtils.trimToNull((String)get(ActionURL.Param.cancelUrl.name()));
-
-            if (null == urlString)
-                return null;
-            else
-                return new ActionURL(urlString);
         }
 
         public boolean isFromDiscussion()

@@ -79,6 +79,7 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
@@ -2380,7 +2381,7 @@ public class QueryController extends SpringActionController
             // what is going on with UserSchemaAction and form binding?  Why doesn't successUrl bind?
             QueryUpdateForm form = (QueryUpdateForm)bind.getTarget();
             if (null == form.getSuccessUrl() && null != m.getPropertyValue(ActionURL.Param.successUrl.name()))
-                form.setSuccessUrl(m.getPropertyValue(ActionURL.Param.successUrl.name()).getValue().toString());
+                form.setSuccessUrl(new ReturnURLString(m.getPropertyValue(ActionURL.Param.successUrl.name()).getValue().toString()));
             return bind;
         }
 
@@ -2412,7 +2413,9 @@ public class QueryController extends SpringActionController
             if (null == form)
                 return super.getSuccessURL(null);
 
-            String str = form.getSuccessUrl();
+            String str = null;
+            if (form.getSuccessUrl() != null)
+                str = form.getSuccessUrl().toString();
             if (StringUtils.isBlank(str))
                 str = form.getReturnUrl();
 

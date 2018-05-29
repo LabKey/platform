@@ -2649,11 +2649,11 @@ public class ExperimentController extends SpringActionController
                     ActionURL url = PageFlowUtil.urlProvider(StudyUrls.class).getDatasetURL(dataset.getContainer(), dataset.getDatasetId());
                     if (dataset.canWrite(getUser()))
                     {
-                        permissionDatasetRows.add(new Pair<SecurableResource, ActionURL>(dataset, url));
+                        permissionDatasetRows.add(new Pair<>(dataset, url));
                     }
                     else
                     {
-                        noPermissionDatasetRows.add(new Pair<SecurableResource, ActionURL>(dataset, url));
+                        noPermissionDatasetRows.add(new Pair<>(dataset, url));
                     }
                 }
             }
@@ -2730,12 +2730,9 @@ public class ExperimentController extends SpringActionController
             }
         }
 
-        public ActionURL getSuccessURL(DeleteForm deleteForm)
+        public ActionURL getSuccessURL(DeleteForm form)
         {
-            ActionURL url = deleteForm.getReturnActionURL();
-            if (null != url)
-                return url;
-            return ExperimentUrlsImpl.get().getOverviewURL(getContainer());
+            return form.getSuccessActionURL(ExperimentUrlsImpl.get().getOverviewURL(getContainer()));
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -5987,18 +5984,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(ExclusionEventForm form)
         {
-            if (form.getReturnURL() != null)
-            {
-                try
-                {
-                    return new URLHelper(form.getReturnURL());
-                }
-                catch (URISyntaxException e)
-                {
-                    return null;
-                }
-            }
-            return null;
+            return form.getSuccessActionURL();
         }
 
         @Override
@@ -6051,18 +6037,17 @@ public class ExperimentController extends SpringActionController
             exclusionEventForm.setQueryView(queryView);
             exclusionEventForm.setDataRegionSelectionKey(DataRegionSelection.getSelectionKeyFromRequest(getViewContext()));
             exclusionEventForm.setRunId(Integer.parseInt(getViewContext().getActionURL().getParameter("runId")));
-            exclusionEventForm.setReturnURL(getViewContext().getActionURL().getParameter("returnUrl"));
+            exclusionEventForm.setReturnUrl(getViewContext().getActionURL().getReturnURL().getLocalURIString());
             return new JspView<>("/org/labkey/experiment/ExcludeConfirm.jsp", exclusionEventForm, errors);
         }
 
     }
 
-    public static class ExclusionEventForm
+    public static class ExclusionEventForm extends ReturnUrlForm
     {
         private String dataRegionSelectionKey;
         private Integer runId;
         private String comment;
-        private String returnURL;
         private AssayBaseQueryView queryView;
         private boolean update;
 
@@ -6094,16 +6079,6 @@ public class ExperimentController extends SpringActionController
         public void setComment(String comment)
         {
             this.comment = comment;
-        }
-
-        public String getReturnURL()
-        {
-            return returnURL;
-        }
-
-        public void setReturnURL(String returnURL)
-        {
-            this.returnURL = returnURL;
         }
 
         public AssayBaseQueryView getQueryView()

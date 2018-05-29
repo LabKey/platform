@@ -204,7 +204,7 @@ Ext4.define('File.panel.Admin', {
     onEditFileProperties : function() {
         this.onSubmit(function() {
             window.location = LABKEY.ActionURL.buildURL('fileContent', 'designer', this.containerPath, {
-                returnURL: window.location
+                returnUrl: window.location
             });
         });
     },

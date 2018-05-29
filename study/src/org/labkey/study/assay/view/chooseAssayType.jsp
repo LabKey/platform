@@ -56,7 +56,7 @@
 </p>
 <labkey:errors />
 <labkey:form method="POST">
-    <input type="hidden" name="returnURL" value="<%=h(bean.getReturnURL())%>">
+    <%= generateReturnUrlFormField(bean.getReturnURL()) %>
     <table>
         <% for (AssayProvider provider : providers) { %>
         <tr>

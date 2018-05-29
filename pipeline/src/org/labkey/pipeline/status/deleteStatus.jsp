@@ -126,6 +126,8 @@
 <labkey:errors />
 <%
     ConfirmDeleteStatusForm form = (ConfirmDeleteStatusForm)HttpView.currentModel();
+    ActionURL successUrl = form.getSuccessActionURL(new ActionURL(StatusController.BeginAction.class, getContainer()));
+    ActionURL cancelUrl = form.getCancelActionURL(successUrl);
 
     PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
 
@@ -185,12 +187,10 @@
     <input type="hidden" name="<%= h(DataRegionSelection.DATA_REGION_SELECTION_KEY) %>" value="<%= h(form.getDataRegionSelectionKey()) %>" />
 <% } %>
 
-<% if (form.getReturnUrl() != null) { %>
-    <input type="hidden" name="returnURL" value="<%= h(form.getReturnUrl()) %>"/>
+<% if (successUrl != null) { %>
+    <input type="hidden" name="<%=ActionURL.Param.successUrl%>" value="<%= h(successUrl) %>"/>
 <% } %>
 
 <%= button("Confirm Delete").submit(true) %>
-<%= text(form.getReturnUrl() == null || form.getReturnUrl().isEmpty()
-        ? button("Cancel").href(buildURL(StatusController.BeginAction.class)).toString()
-        : button("Cancel").href(form.getReturnUrl()).toString()) %>
+<%= text(button("Cancel").href(cancelUrl).toString()) %>
 </labkey:form>

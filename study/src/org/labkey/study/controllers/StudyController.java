@@ -1305,9 +1305,9 @@ public class StudyController extends BaseStudyController
             return true;
         }
 
-        public ActionURL getSuccessURL(StudyPropertiesForm studyPropertiesForm)
+        public ActionURL getSuccessURL(StudyPropertiesForm form)
         {
-            return new ActionURL(ManageStudyAction.class, getContainer());
+            return form.getSuccessActionURL(new ActionURL(ManageStudyAction.class, getContainer()));
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -5683,7 +5683,7 @@ public class StudyController extends BaseStudyController
     }
 
 
-    public static class StudyPropertiesForm
+    public static class StudyPropertiesForm extends ReturnUrlForm
     {
         private String _label;
         private TimepointType _timepointType;
@@ -5694,7 +5694,6 @@ public class StudyController extends BaseStudyController
         private String _subjectNounSingular = "Participant";
         private String _subjectNounPlural = "Participants";
         private String _subjectColumnName = "ParticipantId";
-        private String _returnURL;
         private String _assayPlan;
         private String _description;
         private String _descriptionRendererType;
@@ -5719,16 +5718,6 @@ public class StudyController extends BaseStudyController
         public void setLabel(String label)
         {
             _label = label;
-        }
-
-        public String getReturnURL()
-        {
-            return _returnURL;
-        }
-
-        public void setReturnURL(String returnURL)
-        {
-            _returnURL = returnURL;
         }
 
         public TimepointType getTimepointType()

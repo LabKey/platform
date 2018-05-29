@@ -81,6 +81,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
@@ -469,8 +470,16 @@ public class ListController extends SpringActionController
 
             for (PropertyValue value : propertyValues)
             {
-                if (value.getName().equalsIgnoreCase("returnURL"))
-                    url.addParameter("returnUrl", (String) value.getValue());
+                if (value.getName().equals(ActionURL.Param.returnUrl.toString()))
+                {
+                    url.addParameter(ActionURL.Param.returnUrl, (String) value.getValue());
+                }
+                else if (value.getName().equalsIgnoreCase(ActionURL.Param.returnUrl.toString()))
+                {
+                    if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_STRICT_RETURN_URL))
+                        throw new UnsupportedOperationException("Use 'returnUrl' instead of 'returnURL'");
+                    url.addParameter(ActionURL.Param.returnUrl, (String) value.getValue());
+                }
                 else
                     inputs.add(Pair.of(value.getName(), value.getValue().toString()));
             }
@@ -503,8 +512,16 @@ public class ListController extends SpringActionController
 
             for (PropertyValue value : getPropertyValues().getPropertyValues())
             {
-                if (value.getName().equalsIgnoreCase("returnURL"))
-                    url.addParameter("returnUrl", (String) value.getValue());
+                if (value.getName().equals(ActionURL.Param.returnUrl.toString()))
+                {
+                    url.addParameter(ActionURL.Param.returnUrl, (String) value.getValue());
+                }
+                else if (value.getName().equalsIgnoreCase(ActionURL.Param.returnUrl.toString()))
+                {
+                    if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_STRICT_RETURN_URL))
+                        throw new UnsupportedOperationException("Use 'returnUrl' instead of 'returnURL'");
+                    url.addParameter(ActionURL.Param.returnUrl, (String) value.getValue());
+                }
                 else if (value.getName().equalsIgnoreCase(list.getKeyName()) || (FORM_PREFIX + list.getKeyName()).equalsIgnoreCase(value.getName()))
                 {
                     url.addParameter(list.getKeyName(), (String) value.getValue());

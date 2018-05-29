@@ -2645,6 +2645,9 @@ public class QueryServiceImpl implements QueryService
         url.deleteParameter(ActionURL.Param.cancelUrl);
         url.deleteParameter(ActionURL.Param.redirectUrl);
         url.deleteParameter(ActionURL.Param.returnUrl);
+        url.deleteParameter("returnURL");
+        url.deleteParameter(ActionURL.Param.successUrl);
+        url.deleteParameter("srcURL");
         url.deleteParameter(CSRFUtil.csrfName);
         DetailsURL detailsURL = new DetailsURL(url);
         event.setDetailsUrl(detailsURL.toString());

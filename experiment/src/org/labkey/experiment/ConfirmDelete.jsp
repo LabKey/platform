@@ -35,12 +35,20 @@
     JspView<ConfirmDeleteView.ConfirmDeleteBean> me = (JspView<ConfirmDeleteView.ConfirmDeleteBean>) HttpView.currentView();
     ConfirmDeleteView.ConfirmDeleteBean bean = me.getModelBean();
     Container currentContainer = getContainer();
+
+    ActionURL successUrl = bean.getSuccessUrl();
+    if (successUrl == null)
+        successUrl = new ActionURL(ExperimentController.BeginAction.class, getContainer());
+
+    ActionURL cancelUrl = bean.getCancelUrl();
+    if (cancelUrl == null)
+        cancelUrl = successUrl;
 %>
 
 <% if (bean.getObjects().isEmpty())
 {
     %><p>There are no selected objects to delete.</p>
-    <%= text(bean.getReturnUrl() == null || bean.getReturnUrl().isEmpty() ? button("OK").href(buildURL(ExperimentController.BeginAction.class)).toString() : button("OK").href(bean.getReturnUrl()).toString())%><%
+    <%= text(button("OK").href(successUrl).toString())%><%
 }
 else
 { %>
@@ -172,15 +180,15 @@ else
         if (bean.getDataRegionSelectionKey() != null) { %>
             <input type="hidden" name="<%= h(DataRegionSelection.DATA_REGION_SELECTION_KEY) %>" value="<%= h(bean.getDataRegionSelectionKey()) %>" />
         <% }
-        if (bean.getReturnUrl() != null)
+        if (bean.getSuccessUrl() != null)
         { %>
-            <input type="hidden" name="returnURL" value="<%= h(bean.getReturnUrl()) %>"/>
+            <input type="hidden" name="<%=ActionURL.Param.successUrl%>" value="<%= h(bean.getSuccessUrl()) %>"/>
         <% } %>
         <input type="hidden" name="forceDelete" value="true"/>
         <% if (bean.getRunsWithoutPermission().isEmpty() && bean.getNoPermissionExtras().isEmpty() )
         { %>
             <%= button("Confirm Delete").submit(true) %>
         <% } %>
-        <%= text(bean.getReturnUrl() == null || bean.getReturnUrl().isEmpty()? button("Cancel").href(buildURL(ExperimentController.BeginAction.class)).toString() : button("Cancel").href(bean.getReturnUrl()).toString())%>
+        <%= text(button("Cancel").href(cancelUrl).toString())%>
     </labkey:form>
 <% } %>

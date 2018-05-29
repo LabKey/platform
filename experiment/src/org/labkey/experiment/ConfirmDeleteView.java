@@ -27,7 +27,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.springframework.web.servlet.mvc.Controller;
 
-import javax.servlet.ServletException;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -46,7 +45,8 @@ public class ConfirmDeleteView extends JspView<ConfirmDeleteView.ConfirmDeleteBe
         private final List<? extends ExpObject> _objects;
         private final String _objectType;
         private final Class<? extends Controller> _detailAction;
-        private String _returnURL;
+        private ActionURL _cancelUrl;
+        private ActionURL _successUrl;
         private String _dataRegionSelectionKey;
         private Integer _singleObjectRowId;
         private final String _extraNoun;
@@ -91,9 +91,14 @@ public class ConfirmDeleteView extends JspView<ConfirmDeleteView.ConfirmDeleteBe
             return _detailAction;
         }
 
-        public void setReturnUrl(String url)
+        public void setCancelUrl(ActionURL url)
         {
-            _returnURL =  url;
+            _cancelUrl = url;
+        }
+
+        public void setSuccessUrl(ActionURL url)
+        {
+            _successUrl =  url;
         }
 
         public String getExtraNoun()
@@ -111,9 +116,14 @@ public class ConfirmDeleteView extends JspView<ConfirmDeleteView.ConfirmDeleteBe
             return _noPermissionExtras;
         }
 
-        public String getReturnUrl()
+        public ActionURL getCancelUrl()
         {
-            return _returnURL;
+            return _cancelUrl;
+        }
+
+        public ActionURL getSuccessUrl()
+        {
+            return _successUrl;
         }
 
         public String getDataRegionSelectionKey()
@@ -162,7 +172,8 @@ public class ConfirmDeleteView extends JspView<ConfirmDeleteView.ConfirmDeleteBe
         }
 
         ConfirmDeleteBean bean = new ConfirmDeleteBean(runsWithPermission, runsWithoutPermission, objects, objectType, detailAction, form.getSingleObjectRowId(), extraNoun, deleteableExtras, noPermissionExtras);
-        bean.setReturnUrl(form.getReturnUrl());
+        bean.setSuccessUrl(form.getSuccessActionURL());
+        bean.setCancelUrl(form.getCancelActionURL());
         bean.setDataRegionSelectionKey(form.getDataRegionSelectionKey());
         setModelBean(bean);
     }

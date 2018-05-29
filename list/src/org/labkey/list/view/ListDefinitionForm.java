@@ -61,7 +61,9 @@ public class ListDefinitionForm extends ViewForm
     {
         setReturnUrl(srcUrl);
     }
-    
+
+    // TODO: Remove -- only override of this method
+    @Override
     public URLHelper getDefaultReturnURLHelper()
     {
             return new ActionURL(ListController.BeginAction.class, getContainer());
