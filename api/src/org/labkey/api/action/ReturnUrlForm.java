@@ -19,11 +19,11 @@ package org.labkey.api.action;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.URLException;
 
 /**
  * Simple form bean that includes a returnUrl property, typically used to send the user back to wherever the intiated an action from.
@@ -34,17 +34,41 @@ import org.labkey.api.view.URLException;
 public class ReturnUrlForm
 {
     private ReturnURLString _returnUrl;
+    private ReturnURLString _cancelUrl;
+    private ReturnURLString _successUrl;
     private String urlhash;
 
-    // Generate a hidden form field to post a return URL with the standard name used by this form
+    /**
+     * Generate a hidden form field to post a return URL with the standard name used by this form.
+     * @see org.labkey.api.jsp.JspBase#generateReturnUrlFormField(ReturnUrlForm)
+     */
     public static String generateHiddenFormField(URLHelper returnUrl)
     {
         return "<input type=\"hidden\" name=\"" + ActionURL.Param.returnUrl + "\" value=\"" + PageFlowUtil.filter(returnUrl) + "\">";
     }
 
+    /**
+     * Should not typically be used, this getter/setter pair is for Spring parameter binding.
+     * Use {@link .getReturnActionURL()} instead.
+     */
+    @Nullable
     public String getReturnUrl()
     {
         return null == _returnUrl ? null : StringUtils.trimToNull(_returnUrl.toString());
+    }
+
+    /**
+     * Should not typically be used, this getter/setter pair is for Spring parameter binding.
+     */
+    public void setReturnUrl(String s)
+    {
+        setReturnUrl(new ReturnURLString(s));
+    }
+
+    @JsonIgnore // Otherwise on deserialization, there's a conflict with the overloaded setter
+    private void setReturnUrl(ReturnURLString returnUrl)
+    {
+        _returnUrl = (null == returnUrl || returnUrl.isEmpty()) ? null : returnUrl;
     }
 
     public void setUrlhash(String urlhash)
@@ -57,49 +81,8 @@ public class ReturnUrlForm
         return this.urlhash;
     }
 
-    public void setReturnUrl(String s)
-    {
-        setReturnUrl(new ReturnURLString(s));
-    }
-
-    @JsonIgnore // Otherwise on deserialization, there's a conflict with the overloaded setter
-    private void setReturnUrl(ReturnURLString returnUrl)
-    {
-        if (null == returnUrl || returnUrl.isEmpty())
-        {
-            _returnUrl = null;
-            return;
-        }
-
-        // silently ignore non http urls
-        if (!URLHelper.isHttpURL(returnUrl.getSource()))
-            return;
-
-        // If there are multiple values of the returnUrl HTTP parameter for this request (say, both GET and
-        // POST variants), Spring will concatenate them before converting them to a ReturnURLString. Look
-        // for identical values in the string and just grab the first
-        String[] split = returnUrl.getSource().split(",");
-        if (split.length > 1)
-        {
-            boolean identical = true;
-            for (int i = 1; i < split.length; i++)
-            {
-                // See if all of the pieces are identical
-                if (!split[i].equals(split[i - 1]))
-                {
-                    identical = false;
-                    break;
-                }
-            }
-            if (identical)
-            {
-                // We appear to have dupes, so just use one of them
-                returnUrl = new ReturnURLString(split[0]);
-            }
-        }
-        _returnUrl = returnUrl;
-    }
-
+    // TODO: Remove this. There is only one override in List
+    @Deprecated
     protected URLHelper getDefaultReturnURLHelper()
     {
         return null;
@@ -108,71 +91,143 @@ public class ReturnUrlForm
     @Nullable
     public URLHelper getReturnURLHelper()
     {
-        URLHelper urlHelper = null;
-        if (null != _returnUrl)
-            urlHelper = _returnUrl.getURLHelper();
-        return null != urlHelper ? urlHelper : getDefaultReturnURLHelper();
+        return firstOf(
+                _returnUrl != null ? _returnUrl.getURLHelper() : null,
+                getDefaultReturnURLHelper());
     }
 
     @Nullable
     public ActionURL getReturnActionURL()
     {
-        try
-        {
-            // 17526
-            return null == _returnUrl ? null : _returnUrl.getActionURL();
-        }
-        catch (IllegalArgumentException e)
-        {
-            throw new URLException(_returnUrl.getSource(), "returnUrl parameter", e);
-        }
+        return null == _returnUrl ? null : _returnUrl.getActionURL();
     }
 
-    // Return the passed-in default URL if returnURL param is missing or unparseable
+    /**
+     * Get the first non-null URL from <code>returnUrl</code> or the <code>defaultURL</code> parameter.
+     */
     public ActionURL getReturnActionURL(ActionURL defaultURL)
     {
-        try
-        {
-            ActionURL url = getReturnActionURL();
-            if (null != url)
-                return url;
-        }
-        catch (URLException ignored) {}
-        return defaultURL;
+        return firstOf(getReturnActionURL(), defaultURL);
     }
 
-    // Return the passed-in default URL if returnURL param is missing or unparseable
+    /**
+     * Get the first non-null URL from <code>returnUrl</code> or the <code>defaultURL</code> parameter.
+     */
     public URLHelper getReturnURLHelper(URLHelper defaultURL)
     {
-        try
-        {
-            URLHelper url = getReturnURLHelper();
-            if (null != url)
-                return url;
-        }
-        catch (URLException ignored) {}
-        return defaultURL;
+        return firstOf(getReturnURLHelper(), defaultURL);
+    }
+
+    /**
+     * Not typically used, this getter/setter pair is for Spring parameter binding.
+     */
+    public void setCancelUrl(ReturnURLString cancelUrl)
+    {
+        _cancelUrl = cancelUrl;
+    }
+
+    /**
+     * Not typically used, this getter/setter pair is for Spring parameter binding.
+     * Use {@link .getCancelActionURL()} instead.
+     */
+    public ReturnURLString getCancelUrl()
+    {
+        return _cancelUrl;
+    }
+
+    /**
+     * Get the first non-null URL from <code>cancelUrl</code> or <code>returnUrl</code>.
+     */
+    public ActionURL getCancelActionURL()
+    {
+        return firstOf(
+                _cancelUrl != null ? _cancelUrl.getActionURL() : null,
+                getReturnActionURL());
+    }
+
+    /**
+     * Get the first non-null URL from <code>cancelUrl</code>, <code>returnUrl</code>, or the <code>defaultURL</code> parameter.
+     */
+    public ActionURL getCancelActionURL(ActionURL defaultURL)
+    {
+        return firstOf(
+                _cancelUrl != null ? _cancelUrl.getActionURL() : null,
+                getReturnActionURL(),
+                defaultURL);
+    }
+
+    /**
+     * Not typically used, this getter/setter pair is for Spring parameter binding.
+     */
+    public void setSuccessUrl(ReturnURLString successUrl)
+    {
+        _successUrl = successUrl;
+    }
+
+    /**
+     * Not typically used, this getter/setter pair is for Spring parameter binding.
+     * Use {@link .getSuccessActionURL()} instead.
+     */
+    public ReturnURLString getSuccessUrl()
+    {
+        return _successUrl;
+    }
+
+    /**
+     * Get the first non-null URL from <code>successUrl</code> or <code>returnUrl</code>.
+     */
+    public ActionURL getSuccessActionURL()
+    {
+        return firstOf(
+                _successUrl != null ? _successUrl.getActionURL() : null,
+                getReturnActionURL());
+    }
+
+    /**
+     * Get the first non-null URL from <code>successUrl</code>, <code>returnUrl</code>, or the <code>defaultURL</code> parameter.
+     */
+    public ActionURL getSuccessActionURL(ActionURL defaultURL)
+    {
+        return firstOf(
+                _successUrl != null ? _successUrl.getActionURL() : null,
+                getReturnActionURL(),
+                defaultURL);
     }
 
     // when we convert code to use ReturnUrlForm we may leave behind bookmarks using "returnURL"
     @Deprecated
     public ReturnURLString getReturnURL()
     {
+        if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_STRICT_RETURN_URL))
+            throw new UnsupportedOperationException("Use 'returnUrl' instead of 'returnURL'");
         return _returnUrl;
     }
 
     @Deprecated
     public void setReturnURL(ReturnURLString returnUrl)
     {
+        if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_STRICT_RETURN_URL))
+            throw new UnsupportedOperationException("Use 'returnUrl' instead of 'returnURL'");
         setReturnUrl(returnUrl);
     }
 
     /** Applies the return URL from this form (if any) to the given URL */
     public void propagateReturnURL(ActionURL urlNeedingParameter)
     {
-        if (getReturnUrl() != null)
+        if (getReturnURLHelper() != null)
         {
-            urlNeedingParameter.addParameter(ActionURL.Param.returnUrl, getReturnUrl().toString());
+            urlNeedingParameter.addReturnURL(getReturnURLHelper());
         }
     }
+
+
+    private static <X> X firstOf(X... urls)
+    {
+        for (X url : urls)
+            if (url != null)
+                return url;
+
+        return null;
+    }
+
 }

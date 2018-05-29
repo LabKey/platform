@@ -35,6 +35,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportIdentifier;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -273,7 +274,11 @@ public class QuerySettings
 
         String returnURL = _getParameter(ActionURL.Param.returnUrl.name());
         if (returnURL == null)
+        {
             returnURL = _getParameter("returnURL");
+            if (returnURL != null && AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_STRICT_RETURN_URL))
+                throw new UnsupportedOperationException("Use 'returnUrl' instead of 'returnURL'");
+        }
         if (returnURL == null)
             returnURL = _getParameter(QueryParam.srcURL.toString());
         if (returnURL != null)
@@ -426,7 +431,7 @@ public class QuerySettings
     }
 
     /**
-     * Returns the "returnURL" parameter or null if none.
+     * Returns the "returnUrl" parameter or null if none.
      * The url may not necessarily be an ActionURL, e.g. if served from a FileContent html page.
      */
     public URLHelper getReturnUrl()

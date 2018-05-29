@@ -303,7 +303,7 @@ public class QueryView extends WebPartView<Object>
     }
 
     /**
-     * Returns an ActionURL for the "returnURL" parameter or the current ActionURL if none.
+     * Returns an ActionURL for the "returnUrl" parameter or the current ActionURL if none.
      */
     public URLHelper getReturnURL()
     {

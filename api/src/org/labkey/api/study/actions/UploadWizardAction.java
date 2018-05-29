@@ -298,9 +298,9 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         {
             view.getDataRegion().addHiddenFormField("reRunId", form.getReRunId().toString());
         }
-        if (form.getReturnUrl() != null)
+        if (form.getReturnURLHelper() != null)
         {
-            view.getDataRegion().addHiddenFormField("returnUrl", form.getReturnUrl());
+            view.getDataRegion().addHiddenFormField(ActionURL.Param.returnUrl, form.getReturnURLHelper());
         }
 
         DisplayColumn targetStudyCol = view.getDataRegion().getDisplayColumn(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME);

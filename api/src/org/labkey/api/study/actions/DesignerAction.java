@@ -86,9 +86,9 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
         properties.put("osName", System.getProperty("os.name").toLowerCase());
         properties.put("supportsEditableResults", Boolean.toString(provider.supportsEditableResults()));
         properties.put("supportsBackgroundUpload", Boolean.toString(provider.supportsBackgroundUpload()));
-        if (form.getReturnUrl() != null)
+        if (form.getReturnURLHelper() != null)
         {
-            properties.put(ActionURL.Param.returnUrl.name(), form.getReturnUrl());
+            properties.put(ActionURL.Param.returnUrl.name(), form.getReturnURLHelper().getLocalURIString());
         }
 
         // hack for 4404 : Lookup picker performance is terrible when there are many containers

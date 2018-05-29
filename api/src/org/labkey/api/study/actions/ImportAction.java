@@ -92,9 +92,9 @@ public class ImportAction extends BaseAssayAction<ImportAction.ImportForm>
             throw new NotFoundException("Could not find assay provider " + form.getProviderName());
         }
 
-        if (form.getReturnUrl() != null)
+        if (form.getReturnURLHelper() != null)
         {
-            properties.put(ActionURL.Param.returnUrl.name(), form.getReturnUrl());
+            properties.put(ActionURL.Param.returnUrl.name(), form.getReturnURLHelper().getLocalURIString());
         }
 
         VBox result = new VBox();

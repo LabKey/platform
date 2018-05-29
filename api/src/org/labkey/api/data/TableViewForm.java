@@ -35,7 +35,9 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
@@ -799,9 +801,13 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         BindException errors = new NullSafeBindException(new BaseViewAction.BeanUtilsPropertyBindingResult(this, "form"));
 
         // handle binding of base class ReturnURLForm
-        PropertyValue pvReturn = params.getPropertyValue("returnUrl");
+        PropertyValue pvReturn = params.getPropertyValue(ActionURL.Param.returnUrl.toString());
         if (null == pvReturn)
+        {
             pvReturn = params.getPropertyValue("returnURL");
+            if (pvReturn != null && AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_STRICT_RETURN_URL))
+                throw new UnsupportedOperationException("Use 'returnUrl' instead of 'returnURL'");
+        }
         if (null != pvReturn)
         {
             try

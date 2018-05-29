@@ -48,6 +48,7 @@ import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DisplayElement;
@@ -384,6 +385,11 @@ public class DataRegion extends DisplayElement
     {
         assert buttonBarConfig != null : "Cannot add a null ButtonBarConfig";
         _buttonBarConfigs.add(buttonBarConfig);
+    }
+
+    public void addHiddenFormField(ActionURL.Param urlParam, URLHelper url)
+    {
+        addHiddenFormField(urlParam.toString(), url.getLocalURIString());
     }
 
     public void addHiddenFormField(Enum name, String value)

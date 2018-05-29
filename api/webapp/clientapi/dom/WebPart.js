@@ -210,8 +210,13 @@
                     _partConfig["webpart.title"] = _title;
                 if (_titleHref)
                     _partConfig["webpart.titleHref"] = _titleHref;
-                if (_partConfig.returnURL) {
-                    _partConfig.returnURL = encodeURI(_partConfig.returnURL);
+                if (_partConfig.returnUrl) {
+                    _partConfig.returnUrl = encodeURI(_partConfig.returnUrl);
+                }
+                else if (_partConfig.returnURL) {
+                    if (LABKEY.experimental.strictReturnUrl)
+                        throw new Error("Use 'returnUrl' instead of 'returnURL'");
+                    _partConfig.returnUrl = encodeURI(_partConfig.returnURL);
                 }
 
                 if (!_errorCallback)

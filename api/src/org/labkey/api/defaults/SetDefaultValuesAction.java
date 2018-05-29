@@ -217,7 +217,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         }
         bbar.add(new ActionButton("Cancel", _returnUrl));
         rgn.addHiddenFormField("domainId", "" + domainIdForm.getDomainId());
-        rgn.addHiddenFormField(ActionURL.Param.returnUrl, domainIdForm.getReturnUrl());
+        rgn.addHiddenFormField(ActionURL.Param.returnUrl, domainIdForm.getReturnURLHelper());
         rgn.setButtonBar(bbar);
 
         addAdditionalFormFields(domainIdForm, rgn);
@@ -254,7 +254,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
                 overrideHtml.append("These values override defaults set in the following folder:");
             overrideHtml.append("</span><br>");
             Container container = overridees.get(overridees.size() - 1);
-            appendEditURL(overrideHtml, container, domain, domainIdForm.getReturnUrl());
+            appendEditURL(overrideHtml, container, domain, domainIdForm.getReturnURLHelper());
         }
         List<Container> overriders = DefaultValueService.get().getDefaultValueOverriders(domainIdForm.getContainer(), domain);
         if (!overriders.isEmpty())
@@ -268,7 +268,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
                 overrideHtml.append("These values are overridden by defaults set in the following folder(s):");
             overrideHtml.append("</span><br>");
             for (Container container : overriders)
-                appendEditURL(overrideHtml, container, domain, domainIdForm.getReturnUrl());
+                appendEditURL(overrideHtml, container, domain, domainIdForm.getReturnURLHelper());
         }
 
         return new VBox(headerView, view, new HtmlView(overrideHtml.toString()));
@@ -305,12 +305,12 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         formDefaults.put(propName, stringValue);
     }
 
-    private void appendEditURL(StringBuilder builder, Container container, Domain domain, String returnUrl)
+    private void appendEditURL(StringBuilder builder, Container container, Domain domain, URLHelper returnUrl)
     {
         ActionURL editURL = new ActionURL(this.getClass(), container);
         editURL.addParameter("domainId", domain.getTypeId());
-        if (StringUtils.isNotEmpty(returnUrl))
-            editURL.addParameter(ActionURL.Param.returnUrl, returnUrl);
+        if (returnUrl != null)
+            editURL.addReturnURL(returnUrl);
         builder.append("<a href=\"").append(PageFlowUtil.filter(editURL.getLocalURIString())).append("\">");
         builder.append(PageFlowUtil.filter(container.getPath()));
         builder.append("</a><br>");

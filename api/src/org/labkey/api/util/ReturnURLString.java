@@ -25,9 +25,10 @@ import org.labkey.api.view.ViewServlet;
 
 
 /**
+ * Use ReturnURLString in Spring form beans to sanitize and convert Strings into ActionURL or URLHelper when binding parameters.
+ *
  * User: matthewb
  * Date: Nov 3, 2009
- * Time: 12:22:55 PM
  */
 public class ReturnURLString
 {
@@ -35,10 +36,50 @@ public class ReturnURLString
 
     public static ReturnURLString EMPTY = new ReturnURLString("");
 
-    
+    /**
+     * Constructing ReturnURLString manually isn't usually necessary.
+     * Spring will call the {@link Converter} when binding parameter to the form bean.
+     */
     public ReturnURLString(CharSequence s)
     {
-        _source = null == s ? null : String.valueOf(s);
+        _source = s == null ? null : scrub(String.valueOf(s));
+    }
+
+    public ReturnURLString(URLHelper url)
+    {
+        _source = url.getLocalURIString();
+    }
+
+    private static String scrub(String s)
+    {
+        // silently ignore non http urls
+        if (!URLHelper.isHttpURL(s))
+            return null;
+
+        // If there are multiple values of the returnUrl HTTP parameter for this request (say, both GET and
+        // POST variants), Spring will concatenate them before converting them to a ReturnURLString. Look
+        // for identical values in the string and just grab the first
+        String[] split = s.split(",");
+        if (split.length > 1)
+        {
+            boolean identical = true;
+            for (int i = 1; i < split.length; i++)
+            {
+                // See if all of the pieces are identical
+                if (!split[i].equals(split[i - 1]))
+                {
+                    identical = false;
+                    break;
+                }
+            }
+            if (identical)
+            {
+                // We appear to have dupes, so just use one of them
+                s = split[0];
+            }
+        }
+
+        return s;
     }
 
 
@@ -87,6 +128,13 @@ public class ReturnURLString
         }
     }
 
+    @Nullable
+    public ActionURL getActionURL(ActionURL defaultURL)
+    {
+        ActionURL url = getActionURL();
+        return url == null ? defaultURL : url;
+    }
+
 
     @Nullable
     public URLHelper getURLHelper()
@@ -103,6 +151,12 @@ public class ReturnURLString
         }
     }
 
+    @Nullable
+    public URLHelper getURLHelper(URLHelper defaultURL)
+    {
+        URLHelper url = getURLHelper();
+        return url == null ? defaultURL : url;
+    }
 
     public static class Converter implements org.apache.commons.beanutils.Converter
     {

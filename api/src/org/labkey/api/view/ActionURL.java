@@ -16,6 +16,8 @@
 package org.labkey.api.view;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
@@ -336,12 +338,25 @@ public class ActionURL extends URLHelper implements Cloneable
         return (ActionURL) super.replaceParameter(key, value);
     }
 
-    // Add returnURL as a parameter using standard parameter name
-    public ActionURL addReturnURL(URLHelper returnURL)
+    // Add url as a parameter using standard parameter name
+    public ActionURL addReturnURL(@NotNull URLHelper url)
     {
-        return replaceParameter(ActionURL.Param.returnUrl, returnURL.getLocalURIString());
+        return replaceParameter(Param.returnUrl, url.getLocalURIString());
     }
 
+    // Add url as a parameter using standard parameter name
+    public ActionURL addCancelURL(@NotNull URLHelper url)
+    {
+        return replaceParameter(Param.cancelUrl, url.getLocalURIString());
+    }
+
+    // Add url as a parameter using standard parameter name
+    public ActionURL addSuccessURL(@NotNull URLHelper url)
+    {
+        return replaceParameter(Param.successUrl, url.getLocalURIString());
+    }
+
+    @Nullable
     public URLHelper getReturnURL()
     {
         String returnURLStr = getParameter(ActionURL.Param.returnUrl);

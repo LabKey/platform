@@ -61,7 +61,7 @@ public abstract class AbstractConfigTypeProvider implements MessageConfigService
     @Override
     public MessageConfigService.EmailConfigForm createConfigForm(ViewContext context, MessageConfigService.PanelInfo info)
     {
-        MessageConfigService.EmailConfigForm form = new EmailConfigFormImpl();
+        EmailConfigFormImpl form = new EmailConfigFormImpl();
         form.setType(getType());
 
         form.setDefaultEmailOption(getDefaultEmailOption(context.getContainer()));
