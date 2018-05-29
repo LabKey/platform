@@ -24,13 +24,13 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RemappingDisplayColumnFactory;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.flag.FlagColumnRenderer;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayResultTable;
@@ -90,6 +90,7 @@ public class TSVProtocolSchema extends AssayProtocolSchema
                     .append(getExclusionsSQL())
                     .append(") x)");
             ExprColumn exclusionByColumn = new ExprColumn(this, "ExcludedBy", exclusionBySQL, JdbcType.VARCHAR);
+            UserIdForeignKey.initColumn(exclusionByColumn);
             addColumn(exclusionByColumn);
 
             SQLFragment exclusionDateSQL = new SQLFragment("(SELECT MAX(Modified) FROM (")
