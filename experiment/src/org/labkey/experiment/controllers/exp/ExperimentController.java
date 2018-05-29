@@ -5954,7 +5954,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public class ExcludeRowsAction extends FormViewAction<ExclusionEventForm>
     {
         private ExpRun run;
@@ -5998,7 +5998,7 @@ public class ExperimentController extends SpringActionController
         {
             Set<String> rows = null;
             if ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
-                rows = DataRegionSelection.getSelected(getViewContext(), exclusionEventForm.getDataRegionSelectionKey(), true, false);
+                rows = DataRegionSelection.getSelected(getViewContext(), exclusionEventForm.getDataRegionSelectionKey(), true, true);
             if (rows == null || rows.isEmpty())
                 return new HtmlView("No data rows selected.  " + PageFlowUtil.textLink("back", "javascript:back()"));
 
@@ -6021,6 +6021,7 @@ public class ExperimentController extends SpringActionController
                 {
                     DataView view = super.createDataView();
                     view.getDataRegion().setShowFilters(false);
+                    view.getDataRegion().setShowRecordSelectors(false);
                     view.getDataRegion().setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
                     SimpleFilter filter = (SimpleFilter) view.getRenderContext().getBaseFilter();
                     if (null == filter)
@@ -6028,14 +6029,16 @@ public class ExperimentController extends SpringActionController
                         filter = new SimpleFilter();
                         view.getRenderContext().setBaseFilter(filter);
                     }
+                    filter.addCondition(FieldKey.fromParts("Run"), exclusionEventForm.getRunId());
                     filter.addInClause(FieldKey.fromParts("RowId"), new ArrayList<>(finalRows));
                     return view;
                 }
             };
 
             queryView.setShowDetailsColumn(false);
+            DataRegionSelection.selectAll(queryView, exclusionEventForm.getDataRegionSelectionKey());
+
             exclusionEventForm.setQueryView(queryView);
-            exclusionEventForm.setDataRegionSelectionKey(DataRegionSelection.getSelectionKeyFromRequest(getViewContext()));
             exclusionEventForm.setRunId(Integer.parseInt(getViewContext().getActionURL().getParameter("runId")));
             exclusionEventForm.setReturnUrl(getViewContext().getActionURL().getReturnURL().getLocalURIString());
             return new JspView<>("/org/labkey/experiment/ExcludeConfirm.jsp", exclusionEventForm, errors);
