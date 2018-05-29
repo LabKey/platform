@@ -51,7 +51,9 @@ import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.security.User;
+import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.experiment.api.Data;
@@ -124,6 +126,14 @@ public class XarExporter
     private Logger _log;
 
     private boolean _includeXML = true;
+
+    // it is possible to export runs from different assays, for caching purposes this is the assayProvider of the current/previous run
+    AssayProvider assayProvider = null;
+    // container of current/previous run
+    Container runContainer = null;
+    // assayCallbacks corresponding to the this.assayProvider/this.runContainer
+    AssayProvider.XarCallbacks assayCallbacks = null;
+
 
     public XarExporter(LSIDRelativizer lsidRelativizer, URLRewriter urlRewriter, User user)
     {
@@ -222,7 +232,7 @@ public class XarExporter
         }
         xRun.setName(run.getName());
         PropertyCollectionType properties = getProperties(run.getLSID(), run.getContainer());
-        if (properties != null)
+        if (null != properties)
         {
             xRun.setProperties(properties);
         }
@@ -269,6 +279,23 @@ public class XarExporter
         for (ExpProtocolApplication application : ExperimentService.get().getExpProtocolApplicationsForRun(run.getRowId()))
         {
             addProtocolApplication(application, run, xApplications);
+        }
+
+        // get AssayService.get().getProvider(run).getXarCallbacks().beforeXarExportRun() with simple attempt at caching for common case
+        if (null != AssayService.get())
+        {
+            AssayProvider ap = AssayService.get().getProvider(run);
+            if (null != ap)
+            {
+                if (null == assayCallbacks || assayProvider != ap || runContainer != run.getContainer())
+                {
+                    this.assayProvider = ap;
+                    this.runContainer = run.getContainer();
+                    this.assayCallbacks = assayProvider.getXarCallbacks(_user, runContainer);
+                }
+                if (null != assayCallbacks)
+                    assayCallbacks.beforeXarExportRun(run, xRun);
+            }
         }
     }
 

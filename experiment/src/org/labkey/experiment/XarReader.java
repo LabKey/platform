@@ -60,7 +60,9 @@ import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
@@ -744,6 +746,15 @@ public class XarReader extends AbstractXarImporter
         if (protocol == null)
         {
             throw new XarFormatException("Unknown protocol " + runProtocolLSID + " referenced by ExperimentRun " + pRunLSID);
+        }
+
+        if (null != AssayService.get())
+        {
+            AssayProvider ap = AssayService.get().getProvider(protocol);
+            if (null != ap)
+            {
+                ap.getXarCallbacks(getUser(),getContainer()).beforeXarImportRun(a);
+            }
         }
 
         TableInfo tiExperimentRun = ExperimentServiceImpl.get().getTinfoExperimentRun();
