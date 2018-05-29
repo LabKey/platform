@@ -136,7 +136,7 @@ public class IndexInspector
                     String[] containerIds = doc.getValues("container");
                     String[] summarys = doc.getValues("summary");
 
-                    if (titles.length != 1 || urls.length != 1 || navtrails.length != 1 || uniqueIds.length != 1 || containerIds.length != 1 || summarys.length != 1)
+                    if (titles.length != 1 || urls.length != 1 || uniqueIds.length != 1 || containerIds.length != 1)
                     {
                         throw new IOException("Incorrect number of term values found for document " + i);
                     }
@@ -146,7 +146,10 @@ public class IndexInspector
                     Container c = ContainerManager.getForId(containerIds[0]);
                     String path = null != c ? c.getPath() : "UNKNOWN: " + containerIds[0];
 
-                    writeLine(Arrays.asList(titles[0], type, path, urls[0], navtrails[0], uniqueIds[0], String.valueOf(termCountPerDoc[i]), summarys[0]));
+                    String navtrail = navtrails != null && navtrails.length > 0 ? navtrails[0] : null;
+                    String summary = summarys != null && summarys.length > 0 ? summarys[0] : null;
+
+                    writeLine(Arrays.asList(titles[0], type, path, urls[0], navtrail, uniqueIds[0], String.valueOf(termCountPerDoc[i]), summary));
                 }
             }
             catch (IOException e)
