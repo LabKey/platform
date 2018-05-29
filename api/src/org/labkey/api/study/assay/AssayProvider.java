@@ -16,6 +16,7 @@
 
 package org.labkey.api.study.assay;
 
+import org.fhcrc.cpas.exp.xml.ExperimentRunType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -304,4 +305,22 @@ public interface AssayProvider extends Handler<ExpProtocol>
     AssayRunUploadContext.Factory<? extends AssayProvider, ? extends AssayRunUploadContext.Factory> createRunUploadFactory(ExpProtocol protocol, ViewContext context);
     AssayRunUploadContext.Factory<? extends AssayProvider, ? extends AssayRunUploadContext.Factory> createRunUploadFactory(ExpProtocol protocol, User user, Container c);
 
+
+    /* .xar.xml import/export helpers */
+
+    // return a class instead of directly implementing methods on AssayProvider so we can keep state
+    interface XarCallbacks
+    {
+        default void beforeXarExportRun(ExpRun run, ExperimentRunType xrun)
+        {
+        };
+        default void beforeXarImportRun(ExperimentRunType xrun)
+        {
+        };
+    }
+
+    default XarCallbacks getXarCallbacks(User user, Container container)
+    {
+        return new XarCallbacks(){};
+    }
 }
