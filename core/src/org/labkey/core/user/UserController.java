@@ -2358,10 +2358,6 @@ public class UserController extends SpringActionController
         private boolean _active;
         private Permission[] _permissions;
 
-        //Flag indicating inclusion of deactivated user accounts in the result set
-        //Since _active in this context seems to mean login activity not account state
-        private boolean _includeDeactivatedAccounts;
-
         public String getGroup()
         {
             return _group;
@@ -2412,7 +2408,7 @@ public class UserController extends SpringActionController
             _permissions = permission;
         }
 
-        public boolean isActive()
+        public boolean getActive()
         {
             return _active;
         }
@@ -2420,16 +2416,6 @@ public class UserController extends SpringActionController
         public void setActive(boolean active)
         {
             _active = active;
-        }
-
-        public boolean includeDeactivatedAccounts()
-        {
-            return _includeDeactivatedAccounts;
-        }
-
-        public void setIncludeDeactivatedAccounts(boolean includeDisabledUsers)
-        {
-            _includeDeactivatedAccounts = includeDisabledUsers;
         }
     }
 
@@ -2465,15 +2451,15 @@ public class UserController extends SpringActionController
                 //else, return all users in the current project
                 //we've already checked above that the current user is a system admin
                 if (container.isRoot())
-                    users = UserManager.getActiveUsers(form.includeDeactivatedAccounts());
+                    users = UserManager.getUsers(!form.getActive());
                 else
-                    users = SecurityManager.getProjectUsers(container, form.isAllMembers());
+                    users = SecurityManager.getProjectUsers(container, form.isAllMembers(), !form.getActive());
             }
 
             if (null != users)
             {
                 //trim name filter to empty so we are guaranteed a non-null string
-                //and conver to lower-case for the compare below
+                //and convert to lower-case for the compare below
                 String nameFilter = StringUtils.trimToEmpty(form.getName()).toLowerCase();
 
                 if (nameFilter.length() > 0)
@@ -2547,12 +2533,12 @@ public class UserController extends SpringActionController
             response.put("groupCaption", SecurityManager.getDisambiguatedGroupName(group));
 
             MemberType<User> userMemberType;
-            if (form.isActive())
+            if (form.getActive())
                 userMemberType = MemberType.ACTIVE_USERS;
             else
                 userMemberType = MemberType.ACTIVE_AND_INACTIVE_USERS;
 
-            // if the allMembers flag is set, then recurse and if group is users then return all site users
+            // if the allMembers flag is set, then recurse and if group is site users group then return all site users
             Collection<User> users;
             if (form.isAllMembers())
                 users = SecurityManager.getAllGroupMembers(group, userMemberType, group.isUsers());
