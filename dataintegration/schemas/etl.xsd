@@ -162,6 +162,13 @@
         </attribute>
     </complexType>
 
+    <simpleType name ="SourceOptionType">
+        <restriction base="string">
+            <enumeration value="deleteRowsAfterSelect"/>
+            <!-- TODO: This has not yet been implemented . -->
+        </restriction>
+    </simpleType>
+
     <simpleType name="TargetOptionType">
         <restriction base="string">
             <enumeration value="merge"/>
@@ -252,6 +259,14 @@
             </documentation>
           </annotation>
         </attribute>
+        <attribute name="file" type="string">
+            <annotation>
+                <documentation>
+                    Todo...
+                </documentation>
+            </annotation>
+        </attribute>
+        <attribute name="streaming" type="boolean" default="true"/>
         <attribute name="externalTaskId" type="string">
           <annotation>
             <documentation>
