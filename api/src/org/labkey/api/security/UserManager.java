@@ -54,7 +54,6 @@ import org.labkey.api.view.ViewContext;
 
 import java.beans.PropertyChangeListener;
 import java.io.File;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -425,11 +424,11 @@ public class UserManager
     @NotNull
     public static Collection<User> getActiveUsers()
     {
-        return getActiveUsers(false);
+        return getUsers(false);
     }
 
     @NotNull
-    public static Collection<User> getActiveUsers(boolean includeDeactivated)
+    public static Collection<User> getUsers(boolean includeDeactivated)
     {
         return includeDeactivated ? UserCache.getActiveAndInactiveUsers() : UserCache.getActiveUsers() ;
     }

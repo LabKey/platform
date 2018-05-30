@@ -1910,13 +1910,18 @@ public class SecurityManager
     // TODO: Why is the includeGlobal flag necessary?
     public static @NotNull List<User> getProjectUsers(Container c, boolean includeGlobal)
     {
+       return getProjectUsers(c, includeGlobal, true);
+    }
+
+    public static @NotNull List<User> getProjectUsers(Container c, boolean includeGlobal, boolean includeDeactivated)
+    {
         if (c != null && !c.isProject())
             c = c.getProject();
 
         List<Group> groups = getGroups(c, includeGlobal);
         Set<String> emails = new HashSet<>();
 
-       //get members for each group
+        //get members for each group
         ArrayList<User> projectUsers = new ArrayList<>();
         Set<User> members;
 
@@ -1926,7 +1931,7 @@ public class SecurityManager
                 continue;
 
             // TODO: currently only getting members that are users (no groups). should this be changed to get users of member groups?
-            members = getGroupMembers(g, MemberType.ACTIVE_AND_INACTIVE_USERS);
+            members = getGroupMembers(g, includeDeactivated ? MemberType.ACTIVE_AND_INACTIVE_USERS : MemberType.ACTIVE_USERS);
 
             //add this group's members to hashset
             if (!members.isEmpty())

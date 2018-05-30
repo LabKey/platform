@@ -140,7 +140,7 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
         // Site admin can impersonate any active user...
         if (null == project)
         {
-            validUsers = adminUser.hasRootAdminPermission() ? UserManager.getActiveUsers(true) : Collections.emptyList();
+            validUsers = adminUser.hasRootAdminPermission() ? UserManager.getUsers(true) : Collections.emptyList();
         }
         else if (!project.hasPermission(adminUser, AdminPermission.class))
         {
