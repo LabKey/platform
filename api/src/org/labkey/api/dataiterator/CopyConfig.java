@@ -47,7 +47,6 @@ public class CopyConfig
     protected String _sourceTimestampColumnName = null;
     protected String _sourceRunColumnName = null;
     protected List<String> _sourceColumns = null;
-    protected SourceOptions _sourceOptions = null;
     protected Integer _sourceTimeout = null;
     protected boolean _useSource = true;
     protected boolean _useFilterStrategy = true;
@@ -111,12 +110,6 @@ public class CopyConfig
         merge,
         append,
         truncate
-    }
-
-
-    public enum SourceOptions
-    {
-        deleteRowsAfterSelect
     }
 
     public enum TargetTypes
@@ -243,16 +236,6 @@ public class CopyConfig
     public void setTargetString(String targetString)
     {
         _targetString = targetString;
-    }
-
-    public SourceOptions getSourceOptions()
-    {
-        return _sourceOptions;
-    }
-
-    public void setSourceOptions(SourceOptions sourceOptions)
-    {
-        _sourceOptions = sourceOptions;
     }
 
     public TargetOptions getTargetOptions()
