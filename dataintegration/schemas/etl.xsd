@@ -90,7 +90,6 @@
                 <documentation>Override the column name set on a RunFilter incremental filter.</documentation>
             </annotation>
         </attribute>
-        <attribute name="sourceOption" type="etl:SourceOptionType" use="optional"/>
         <attribute name="remoteSource" type="string" use="optional"/>
         <attribute name="sourceTimeout" type="integer" use="optional"/>
         <attribute name="useTransaction" type="boolean" use="optional" default="true">
@@ -161,13 +160,6 @@
             </annotation>
         </attribute>
     </complexType>
-
-    <simpleType name ="SourceOptionType">
-        <restriction base="string">
-            <enumeration value="deleteRowsAfterSelect"/>
-            <!-- TODO: This has not yet been implemented . -->
-        </restriction>
-    </simpleType>
 
     <simpleType name="TargetOptionType">
         <restriction base="string">
@@ -259,14 +251,6 @@
             </documentation>
           </annotation>
         </attribute>
-        <attribute name="file" type="string">
-            <annotation>
-                <documentation>
-                    Todo...
-                </documentation>
-            </annotation>
-        </attribute>
-        <attribute name="streaming" type="boolean" default="true"/>
         <attribute name="externalTaskId" type="string">
           <annotation>
             <documentation>

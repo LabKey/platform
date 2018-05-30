@@ -122,15 +122,6 @@ public abstract class StepMetaImpl extends CopyConfig implements StepMeta
             else if (null != source.getRunColumnName())
                 setSourceRunColumnName(source.getRunColumnName());
             setUseSourceTransaction(source.getUseTransaction());
-            try
-            {
-                if (null != source.getSourceOption())
-                   setSourceOptions(CopyConfig.SourceOptions.valueOf(source.getSourceOption().toString()));
-            }
-            catch (XmlValueOutOfRangeException e)
-            {
-                throw new XmlException(TransformManager.INVALID_SOURCE_OPTION);
-            }
         }
         else
             _useSource = false;
