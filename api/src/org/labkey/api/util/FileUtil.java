@@ -21,6 +21,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cloud.CloudStoreService;
@@ -61,6 +62,7 @@ import java.util.stream.Collectors;
 public class FileUtil
 {
     private static File _tempDir = null;
+    private static Logger LOG = Logger.getLogger(FileUtil.class);
 
     public static boolean deleteDirectoryContents(File dir)
     {
@@ -273,33 +275,51 @@ public class FileUtil
 
     }
 
+    @Nullable
     public static String getAbsolutePath(Container container, Path path)
     {   // Returned string is NOT necessarily a URI (i.e. it is not encoded)
         return getAbsolutePath(container, path.toUri());
     }
-    
+
+    @Nullable
     public static String getAbsolutePath(Container container, URI uri)
     {
         if (!FileUtil.hasCloudScheme(uri))
             return new File(uri).getAbsolutePath();
         else
-            return getPathStringWithoutAccessId(CloudStoreService.get().getPathFromUrl(container, uri.toString()).toAbsolutePath().toUri());
+            return getAbsolutePathWithoutAccessIdFromCloudUrl(container, uri);
     }
 
+    @Nullable
     public static String getAbsoluteCaseSensitivePathString(Container container, URI uri)
     {
         if (!FileUtil.hasCloudScheme(uri))
             return getAbsoluteCaseSensitiveFile(new File(uri)).toURI().toString();
         else
-            return getPathStringWithoutAccessId(CloudStoreService.get().getPathFromUrl(container, uri.toString()).toAbsolutePath().toUri());
+            return getAbsolutePathWithoutAccessIdFromCloudUrl(container, uri);
     }
 
+    @Nullable
     public static Path getAbsoluteCaseSensitivePath(Container container, URI uri)
     {
         if (!FileUtil.hasCloudScheme(uri))
             return getAbsoluteCaseSensitiveFile(new File(uri)).toPath();
         else
-            return CloudStoreService.get().getPathFromUrl(container, uri.toString()).toAbsolutePath();
+            return getAbsolutePathFromCloudUrl(container, uri);
+    }
+
+    @Nullable
+    private static String getAbsolutePathWithoutAccessIdFromCloudUrl(Container container, URI uri)
+    {
+        Path path = getAbsolutePathFromCloudUrl(container, uri);
+        return null != path ? getPathStringWithoutAccessId(path.toAbsolutePath().toUri()) : null;
+    }
+
+    @Nullable
+    private static Path getAbsolutePathFromCloudUrl(Container container, URI uri)
+    {
+        Path path = CloudStoreService.get().getPathFromUrl(container, uri.toString());
+        return null != path ? path.toAbsolutePath() : null;
     }
 
     public static Path getAbsoluteCaseSensitivePath(Container container, Path path)
@@ -726,7 +746,7 @@ quickScan:
         }
         catch (NoSuchAlgorithmException e)
         {
-            Logger.getLogger(FileUtil.class).error("unexpected error", e);
+            LOG.error("unexpected error", e);
             return null;
         }
         finally
@@ -753,7 +773,7 @@ quickScan:
         }
         catch (NoSuchAlgorithmException e)
         {
-            Logger.getLogger(FileUtil.class).error("unexpected error", e);
+            LOG.error("unexpected error", e);
             return null;
         }
         finally

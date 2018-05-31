@@ -82,21 +82,25 @@ public interface CloudStoreService
     /**
      * Return nio.Path to cloud file/directory
      */
+    @Nullable
     Path getPath(Container container, String storeName, org.labkey.api.util.Path path);
 
     /**
      * Return path relative to cloud store
      */
+    @Nullable
     String getRelativePath(Container container, String storeName, String url);
 
     /**
      * Return nio.Path matching url (which has bucket, etc.)
      */
+    @Nullable
     Path getPathFromUrl(Container container, String url);
 
     /**
      * Return nio.Path for otherContainer, given a cloud url/container
      */
+    @Nullable
     Path getPathForOtherContainer(@NotNull Container container, @NotNull Container otherContainer, @NotNull String url,
                                   @NotNull org.labkey.api.util.Path path);
 
