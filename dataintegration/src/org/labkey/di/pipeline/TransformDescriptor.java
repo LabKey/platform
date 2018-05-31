@@ -638,7 +638,6 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
         private static final String UNKNOWN_CLASS = "unknown.xml";
         private static final String INVALID_CLASS = "invalid.xml";
         private static final String NO_CLASS = "noclass.xml";
-        private static final String BAD_SOURCE_OPT = "badsourceopt.xml";
         private static final String BAD_TARGET_OPT = "badtargetopt.xml";
         private static final String BAD_SOURCE = "badsource.xml";
         private static final String BAD_TARGET = "badtarget.xml";
@@ -720,7 +719,6 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             checkInvalidSyntax(getFile(DUP_ID), TransformManager.DUPLICATE_ID, true);
             checkInvalidSyntax(getFile(UNKNOWN_CLASS), TransformManager.INVALID_TYPE, true);
             checkInvalidSyntax(getFile(INVALID_CLASS), TransformManager.INVALID_TYPE, true);
-            checkInvalidSyntax(getFile(BAD_SOURCE_OPT), TransformManager.INVALID_SOURCE_OPTION, true);
             checkInvalidSyntax(getFile(BAD_TARGET_OPT), TransformManager.INVALID_TARGET_OPTION, true);
             checkInvalidSyntax(getFile(BAD_SOURCE), TransformManager.INVALID_SOURCE, true);
             checkInvalidSyntax(getFile(BAD_TARGET), TransformManager.INVALID_DESTINATION, true);
