@@ -39,5 +39,6 @@ public interface ExpDataClassDataTable extends ExpTable<ExpDataClassDataTable.Co
         Alias,
         Inputs,
         Outputs,
+        DataFileUrl
     }
 }

@@ -34,11 +34,14 @@ import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.study.assay.AssayFileWriter;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.PageFlowUtil;
@@ -248,7 +251,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         if (errors.hasErrors())
             throw errors;
 
-        File tempFile = null;
+        File dataFile = null;
         boolean hasPostData = false;
         FileStream file = null;
         String originalName = null;
@@ -259,6 +262,8 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
         String moduleName = getViewContext().getRequest().getParameter("module");
         String moduleResource = getViewContext().getRequest().getParameter("moduleResource");
+
+        String saveToPipeline = getViewContext().getRequest().getParameter("saveToPipeline");
 
         // TODO: once importData() is refactored to accept DataIteratorContext, change importIdentity into local variable
         if (getViewContext().getRequest().getParameter("importIdentity") != null)
@@ -348,10 +353,31 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                     hasPostData = true;
                     originalName = multipartfile.getOriginalFilename();
                     // can't read the multipart file twice so create temp file (12800)
-                    tempFile = File.createTempFile("~upload", multipartfile.getOriginalFilename());
-                    multipartfile.transferTo(tempFile);
-                    loader = DataLoader.get().createLoader(tempFile, multipartfile.getContentType(), _hasColumnHeaders, null, null);
-                    file = new FileAttachmentFile(tempFile, multipartfile.getOriginalFilename());
+                    dataFile = File.createTempFile("~upload", multipartfile.getOriginalFilename());
+                    PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
+                    if (null != root && Boolean.parseBoolean(saveToPipeline))
+                    {
+                        File dataFileDir = new File(root.getRootPath().getAbsolutePath() + File.separator + "QueryImportFiles");
+                        if (dataFileDir.isFile())
+                        {
+                            dataFileDir = AssayFileWriter.findUniqueFileName("QueryImportFiles", root.getRootPath());
+                            if (!dataFileDir.mkdir())
+                                throw new RuntimeException("Error attempting to create directory " + dataFileDir.getAbsolutePath()
+                                        + " for uploaded query import file " + multipartfile.getOriginalFilename());
+                        }
+                        else if (!dataFileDir.exists())
+                        {
+                            if (!dataFileDir.mkdir())
+                                throw new RuntimeException("Error attempting to create directory " + dataFileDir.getAbsolutePath()
+                                        + " for uploaded query import file " + multipartfile.getOriginalFilename());
+                        }
+
+
+                        dataFile = AssayFileWriter.findUniqueFileName(multipartfile.getOriginalFilename(), dataFileDir);
+                    }
+                    multipartfile.transferTo(dataFile);
+                    loader = DataLoader.get().createLoader(dataFile, multipartfile.getContentType(), _hasColumnHeaders, null, null);
+                    file = new FileAttachmentFile(dataFile, multipartfile.getOriginalFilename());
                 }
             }
 
@@ -387,8 +413,8 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         {
             if (null != file)
                 file.closeInputStream();
-            if (null != tempFile)
-                tempFile.delete();
+            if (null != dataFile && !Boolean.parseBoolean(saveToPipeline))
+                dataFile.delete();
         }
     }
 
