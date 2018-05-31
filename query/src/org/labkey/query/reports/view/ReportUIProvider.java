@@ -139,9 +139,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
         ChartDesignerBean chartBean = new ChartDesignerBean(settings);
         chartBean.setReportType(ChartQueryReport.TYPE);
 
-        URLHelper returnUrl = settings.getReturnUrl();
-        if (returnUrl == null)
-            returnUrl = context.getActionURL();
+        URLHelper returnUrl = settings.getReturnURLHelper(context.getActionURL());
         chartBean.setRedirectUrl(returnUrl.getLocalURIString());
 
         StudyService svc = StudyService.get();

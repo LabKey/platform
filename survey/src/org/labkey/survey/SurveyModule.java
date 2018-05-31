@@ -38,6 +38,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.survey.SurveyService;
 import org.labkey.api.survey.model.Survey;
 import org.labkey.api.survey.model.SurveyDesign;
+import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.HtmlView;
@@ -168,7 +169,7 @@ public class SurveyModule extends DefaultModule
                 return new HtmlView("Survey Designs", "The 'survey' schema is not enabled for this folder.");
 
             QuerySettings settings = schema.getSettings(context, QueryView.DATAREGIONNAME_DEFAULT, SurveyQuerySchema.SURVEY_DESIGN_TABLE_NAME);
-            settings.setReturnUrl(context.getActionURL().clone());
+            settings.setReturnUrl(new ReturnURLString(context.getActionURL().clone()));
 
             QueryView queryView = schema.createView(context, settings, errors);
             view.addView(queryView);
@@ -219,7 +220,7 @@ public class SurveyModule extends DefaultModule
                 UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), SurveyQuerySchema.SCHEMA_NAME);
                 SurveyQuerySettings settings = (SurveyQuerySettings)schema.getSettings(context, SurveyQueryView.DATA_REGION + webPart.getIndex(), SurveyQuerySchema.SURVEYS_TABLE_NAME);
                 settings.setSurveyDesignId(surveyDesign.getRowId());
-                settings.setReturnUrl(context.getActionURL().clone());
+                settings.setReturnUrl(new ReturnURLString(context.getActionURL().clone()));
 
                 // set base filter to the given survey design id
                 SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("SurveyDesignId"), surveyDesign.getRowId());

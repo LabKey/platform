@@ -74,7 +74,7 @@ public class ListQueryView extends QueryView
         if (getViewContext().hasPermission(DesignListPermission.class))
         {
             ActionURL designURL = getList().urlShowDefinition();
-            URLHelper returnURL = getSettings() != null ? getSettings().getReturnUrl() : null;
+            URLHelper returnURL = getSettings() != null ? getSettings().getReturnURLHelper() : null;
             designURL.addReturnURL(returnURL != null ? returnURL : getViewContext().getActionURL());
             ActionButton btnUpload = new ActionButton("Design", designURL);
             bar.add(btnUpload);
