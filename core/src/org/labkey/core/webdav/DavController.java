@@ -4891,6 +4891,8 @@ public class DavController extends SpringActionController
                 if (null != file && Boolean.TRUE == request.getAttribute("org.apache.tomcat.sendfile.support"))
                 {
                     String absolutePath = FileUtil.getAbsolutePath(getContainer(), file);
+                    if (null == absolutePath)
+                        _log.warn("Failed to get absolute path for '" + FileUtil.getFileName(file));
                     long length  = Files.size(file);
                     request.setAttribute("org.apache.tomcat.sendfile.filename", absolutePath);
                     request.setAttribute("org.apache.tomcat.sendfile.start", new Long(0L));
