@@ -32,6 +32,7 @@ import org.apache.lucene.util.FixedBitSet;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ContainerType;
 import org.labkey.api.module.Module;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurableResource;
@@ -82,7 +83,7 @@ class SecurityQuery extends Query
 
             for (Container c : containers)
             {
-                boolean searchable = (c.isSearchable() || c.equals(currentContainer)) && (c.isWorkbook() || c.shouldDisplay(user));
+                boolean searchable = (c.isSearchable() || c.equals(currentContainer)) && (c.isContainerFor(ContainerType.DataType.search) || c.shouldDisplay(user));
 
                 if (searchable)
                 {
