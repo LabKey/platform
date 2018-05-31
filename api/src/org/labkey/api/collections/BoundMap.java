@@ -15,6 +15,7 @@
  */
 package org.labkey.api.collections;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
@@ -146,13 +147,13 @@ public class BoundMap extends AbstractMap<String, Object> implements Serializabl
                 return previous;
             }
         }
-        catch (IllegalAccessException x)
+        catch (IllegalAccessException | InvocationTargetException x)
         {
-            throw new RuntimeException(x);
+            throw new RuntimeException("Error setting '" + key + "' with value '" + value + "': " + x.getMessage(), x);
         }
-        catch (InvocationTargetException x)
+        catch (ConversionException e)
         {
-            throw new RuntimeException(x);
+            throw new ConversionException("Error converting '" + key + "': " + e.getMessage(), e);
         }
         finally
         {

@@ -37,6 +37,7 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -79,7 +80,7 @@ public class QuerySettings
     private ShowRows _showRows = ShowRows.PAGINATED;
 
     PropertyValues _filterSort = null;
-    private URLHelper _returnURL = null;
+    private ReturnURLString _returnURL = null;
 
     private String _containerFilterName;
     private List<AnalyticsProviderItem> _analyticsProviders = new ArrayList<>();
@@ -287,7 +288,7 @@ public class QuerySettings
             {
                 URLHelper url = new URLHelper(returnURL);
                 url.setReadOnly();
-                setReturnUrl(url);
+                setReturnUrl(new ReturnURLString(url));
             }
             catch (URISyntaxException | IllegalArgumentException ignored) { }
         }
@@ -431,17 +432,34 @@ public class QuerySettings
     }
 
     /**
-     * Returns the "returnUrl" parameter or null if none.
-     * The url may not necessarily be an ActionURL, e.g. if served from a FileContent html page.
+     * Should not typically be used, this getter/setter pair is for Spring parameter binding.
+     * Use {@link .getReturnURLHelper()} instead.
      */
-    public URLHelper getReturnUrl()
+    public ReturnURLString getReturnUrl()
     {
         return _returnURL;
     }
 
-    public void setReturnUrl(URLHelper returnURL)
+    public void setReturnUrl(ReturnURLString returnURL)
     {
         _returnURL = returnURL;
+    }
+
+    /**
+     * Returns the "returnUrl" parameter or null if none.
+     * The url may not necessarily be an ActionURL, e.g. if served from a FileContent html page.
+     */
+    public URLHelper getReturnURLHelper()
+    {
+        return _returnURL == null ? null : _returnURL.getURLHelper();
+    }
+
+    public URLHelper getReturnURLHelper(URLHelper defaultURL)
+    {
+        URLHelper url = getReturnURLHelper();
+        if (url == null)
+            url = defaultURL;
+        return url;
     }
 
     public String param(QueryParam param)

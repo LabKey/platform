@@ -307,8 +307,7 @@ public class QueryView extends WebPartView<Object>
      */
     public URLHelper getReturnURL()
     {
-        URLHelper url = getSettings().getReturnUrl();
-        return url != null ? url : ViewServlet.getRequestURL();
+        return getSettings().getReturnURLHelper(ViewServlet.getRequestURL());
     }
 
     protected boolean verboseErrors()
@@ -676,9 +675,7 @@ public class QueryView extends WebPartView<Object>
 
     protected URLHelper urlRefreshQuery()
     {
-        URLHelper ret = getSettings().getReturnUrl();
-        if (null == ret)
-            ret = getSettings().getSortFilterURL();
+        URLHelper ret = getSettings().getReturnURLHelper(getSettings().getSortFilterURL());
         ret = ret.clone();
         ret.deleteParameter(param(QueryParam.queryName));
         ret.deleteParameter(param(QueryParam.viewName));
@@ -703,9 +700,11 @@ public class QueryView extends WebPartView<Object>
 
     protected URLHelper urlChangeView()
     {
-        URLHelper ret = getSettings().getReturnUrl();
+        URLHelper ret = getSettings().getReturnURLHelper();
         if (null == ret)
+        {
             ret = getSettings().getSortFilterURL();
+        }
         else if (getSettings().getDataRegionName() != null)
         {
             ret = ret.clone();
@@ -1529,9 +1528,7 @@ public class QueryView extends WebPartView<Object>
     {
         if (_customView != null && _customView.hasFilterOrSort())
         {
-            URLHelper url = getSettings().getReturnUrl();
-            if (null == url)
-                url = getSettings().getSortFilterURL();
+            URLHelper url = getSettings().getReturnURLHelper(getSettings().getSortFilterURL());
             url = url.clone();
             NavTree item;
             String label = "Apply Grid Filter";
@@ -1566,9 +1563,7 @@ public class QueryView extends WebPartView<Object>
 
             for (ContainerFilter.Type filterType : getAllowableContainerFilterTypes())
             {
-                URLHelper url = getSettings().getReturnUrl();
-                if (null == url)
-                    url = getSettings().getSortFilterURL();
+                URLHelper url = getSettings().getReturnURLHelper(getSettings().getSortFilterURL());
                 url = url.clone();
                 String propName = getDataRegionName() + DataRegion.CONTAINER_FILTER_NAME;
                 url.replaceParameter(propName, filterType.name());

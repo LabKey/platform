@@ -95,8 +95,8 @@ public class ResultsQueryView extends AssayBaseQueryView
         if (returnURL == null)
         {
             // 27693: Respect returnURL from async webpart requests
-            if (getSettings().getReturnUrl() != null)
-                returnURL = getSettings().getReturnUrl().toString();
+            if (getSettings().getReturnURLHelper() != null)
+                returnURL = getSettings().getReturnURLHelper().toString();
             else
                 returnURL = getViewContext().getActionURL().toString();
         }
