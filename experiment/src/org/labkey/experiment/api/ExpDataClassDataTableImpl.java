@@ -224,6 +224,11 @@ public class ExpDataClassDataTableImpl extends ExpProtocolOutputTableImpl<ExpDat
             case Outputs:
                 return createLineageColumn(this, alias, false);
 
+            case DataFileUrl:
+                ColumnInfo dataFileUrl = wrapColumn(alias, getRealTable().getColumn("DataFileUrl"));
+                dataFileUrl.setUserEditable(false);
+                return dataFileUrl;
+
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }
@@ -336,6 +341,8 @@ public class ExpDataClassDataTableImpl extends ExpProtocolOutputTableImpl<ExpDat
             if (isVisibleByDefault(col))
                 defaultVisible.add(FieldKey.fromParts(col.getName()));
         }
+
+        addColumn(Column.DataFileUrl);
 
         ColumnInfo colInputs = addColumn(Column.Inputs);
         addMethod("Inputs", new LineageMethod(getContainer(), colInputs, true));
