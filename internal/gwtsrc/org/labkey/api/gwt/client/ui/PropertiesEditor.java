@@ -1558,7 +1558,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             {
                 String message = messages.get(0).getMessage();
 
-                getInputEl().addClassName("labkey-textbox-error");
+                getInputEl().setClassName("labkey-textbox-error");
                 getInputEl().setTitle(message);
                 if (alert)
                     Window.alert(message);
@@ -1570,7 +1570,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                 String warning = (validator instanceof WarningValidator) ? ((WarningValidator)validator).warning(this, text) : null;
                 if (null != warning)
                 {
-                    getInputEl().addClassName("labkey-textbox-warning");
+                    getInputEl().setClassName("labkey-textbox-warning");
                     getInputEl().setTitle(warning);
                     return null; // Never alert
                 }
