@@ -27,6 +27,7 @@ public interface ContainerType extends Serializable
         permissions,
         properties,
         protocol,
+        search,
         sharedDataTable,
         tabs, // this means the container can contain tabs
         userSchema

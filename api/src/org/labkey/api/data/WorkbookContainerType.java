@@ -123,6 +123,7 @@ public class WorkbookContainerType implements ContainerType
         {
             case assayData:
             case folderManagement:
+            case search:
                 return currentContainer;
             default:
                 return currentContainer.getParent();
