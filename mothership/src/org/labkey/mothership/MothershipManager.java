@@ -232,7 +232,7 @@ public class MothershipManager
             }
             else
             {
-                description =  "UnknownSVN";
+                description = "UnknownSVN";
             }
         }
         else
