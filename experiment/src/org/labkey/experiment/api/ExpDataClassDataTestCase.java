@@ -130,7 +130,7 @@ public class ExpDataClassDataTestCase
         return ret;
     }
 
-    //@Test
+    @Test
     public void testDataClass() throws Exception
     {
         final User user = TestContext.get().getUser();
@@ -346,7 +346,7 @@ public class ExpDataClassDataTestCase
         }
     }
 
-    //@Test
+    @Test
     public void testDeriveDuringImport() throws Exception
     {
         final User user = TestContext.get().getUser();
@@ -578,7 +578,7 @@ public class ExpDataClassDataTestCase
     }
 
 
-    //@Test
+    @Test
     public void testDomainTemplate() throws Exception
     {
         final User user = TestContext.get().getUser();
@@ -647,7 +647,7 @@ public class ExpDataClassDataTestCase
 
 
     // Issue 25224: NPE trying to delete a folder with a DataClass with at least one result row in it
-    //@Test
+    @Test
     public void testContainerDelete() throws Exception
     {
         final User user = TestContext.get().getUser();
@@ -729,7 +729,7 @@ public class ExpDataClassDataTestCase
     }
 
     // Issue 26129: sqlserver maximum size of index keys must be < 900 bytes
-    //@Test
+    @Test
     public void testLargeUniqueOnSingleColumnOnly() throws ExperimentException
     {
         final User user = TestContext.get().getUser();
@@ -760,7 +760,7 @@ public class ExpDataClassDataTestCase
         }
     }
 
-    //@Test
+    @Test
     public void testLargeUnique() throws Exception
     {
         final User user = TestContext.get().getUser();

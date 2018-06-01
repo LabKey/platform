@@ -951,9 +951,13 @@ public class UploadSamplesHelper
                                                            Map<String, List<ExpMaterialImpl>> potentialParents,
                                                            MaterialImportHelper helper) throws ExperimentException, ValidationException
     {
+        RunInputOutputBean parents = null;
+
+        //
+        // legacy magic column value method
+        //
         if (source.getParentCol() != null)
         {
-            // legacy magic column value method
             Map<ExpMaterial, String> parentInputMap = new HashMap<>();
             String newParent = row.get(source.getParentCol()) == null ? null : row.get(source.getParentCol()).toString();
             if (newParent != null)
@@ -998,31 +1002,40 @@ public class UploadSamplesHelper
                 }
             }
 
-            RunInputOutputBean parents = null;
             if (!parentInputMap.isEmpty())
                 parents = new RunInputOutputBean(parentInputMap, Collections.emptyMap());
-
-            return Pair.of(parents, null);
         }
-        else
+
+        //
+        // support for mapping DataClass or SampleSet objects as a parent input using the column name format:
+        // DataInputs/<data class name> or MaterialInputs/<sample set name>. Either / or . works as a delimiter
+        //
+
+        // collect pairs of parent column names and parent values
+        Set<Pair<String, String>> parentValues = new HashSet<>();
+        for (String parentColName : parentColumns)
         {
-            // support for mapping DataClass or SampleSet objects as a parent input using the column name format:
-            // DataInputs/<data class name> or MaterialInputs/<sample set name>. Either / or . works as a delimiter
+            Object value = row.get(parentColName);
+            Set<Pair<String, String>> values = parentColumnAndNamePairs(value, parentColName);
+            if (values == null)
+                continue;
 
-            // collect pairs of parent column names and parent values
-            Set<Pair<String, String>> parentValues = new HashSet<>();
-            for (String parentColName : parentColumns)
-            {
-                Object value = row.get(parentColName);
-                Set<Pair<String, String>> values = parentColumnAndNamePairs(value, parentColName);
-                if (values == null)
-                    continue;
-
-                parentValues.addAll(values);
-            }
-
-            return resolveInputsAndOutputs(user, c, parentValues, source);
+            parentValues.addAll(values);
         }
+
+        // resolve the parent and children
+        Pair<RunInputOutputBean, RunInputOutputBean> ret = resolveInputsAndOutputs(user, c, parentValues, source);
+
+        // merge in the parents from legacy parentsCol
+        if (parents != null)
+        {
+            if (ret.first == null)
+                ret.first = parents;
+            else
+                ret.first.getMaterials().putAll(parents.getMaterials());
+        }
+
+        return ret;
     }
 
     private Set<Pair<String, String>> parentColumnAndNamePairs(Object value, String parentColName)

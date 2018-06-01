@@ -24,6 +24,8 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.api.ExpLineage;
+import org.labkey.api.exp.api.ExpLineageOptions;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
@@ -467,5 +469,70 @@ public class ExpSampleSetTestCase
         allSamples = ss.getSamples(c);
         assertEquals("Expected 5 total samples", 5, allSamples.size());
     }
+
+
+    // Issue 29060: Deriving with DataInputs and MaterialInputs on SampleSet even when Parent col is set
+    @Test
+    public void testParentColAndDataInputDerivation() throws Exception
+    {
+        final User user = TestContext.get().getUser();
+
+        // setup
+        List<GWTPropertyDescriptor> props = new ArrayList<>();
+        props.add(new GWTPropertyDescriptor("name", "string"));
+        props.add(new GWTPropertyDescriptor("data", "int"));
+        props.add(new GWTPropertyDescriptor("parent", "string"));
+
+        final ExpSampleSetImpl ss = ExperimentServiceImpl.get().createSampleSet(c, user,
+                "Samples", null, props, Collections.emptyList(),
+                0, -1, -1, 2, null, null);
+
+        // insert and derive with both 'parent' column and 'DataInputs/Samples'
+        UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
+        TableInfo table = schema.getTable("Samples");
+        QueryUpdateService svc = table.getUpdateService();
+
+        List<Map<String, Object>> rows = new ArrayList<>();
+        rows.add(CaseInsensitiveHashMap.of("name", "A", "data", 10, "parent", null));
+        rows.add(CaseInsensitiveHashMap.of("name", "B", "data", 11, "parent", "A"));
+        rows.add(CaseInsensitiveHashMap.of("name", "C", "data", 12, "parent", null, "MaterialInputs/Samples", "B"));
+        rows.add(CaseInsensitiveHashMap.of("name", "D", "data", 12, "parent", "B", "MaterialInputs/Samples", "C"));
+
+        BatchValidationException errors = new BatchValidationException();
+        List<Map<String, Object>> inserted = svc.insertRows(user, c, rows, errors, null, null);
+        assertFalse(errors.hasErrors());
+        assertEquals(4, inserted.size());
+
+        // verify
+        ExpLineageOptions opts = new ExpLineageOptions();
+        opts.setChildren(false);
+        opts.setParents(true);
+        opts.setDepth(2);
+
+        ExpMaterial A = ss.getSample(c, "A");
+        assertNotNull(A);
+        ExpLineage lineage = ExperimentService.get().getLineage(A, opts);
+        assertTrue(lineage.getMaterials().isEmpty());
+
+        ExpMaterial B = ss.getSample(c, "B");
+        assertNotNull(B);
+        lineage = ExperimentService.get().getLineage(B, opts);
+        assertEquals(1, lineage.getMaterials().size());
+        assertTrue("Expected 'B' to be derived from 'A'", lineage.getMaterials().contains(A));
+
+        ExpMaterial C = ss.getSample(c, "C");
+        assertNotNull(C);
+        lineage = ExperimentService.get().getLineage(C, opts);
+        assertEquals(1, lineage.getMaterials().size());
+        assertTrue("Expected 'C' to be derived from 'B'", lineage.getMaterials().contains(B));
+
+        ExpMaterial D = ss.getSample(c, "D");
+        assertNotNull(D);
+        lineage = ExperimentService.get().getLineage(D, opts);
+        assertEquals(2, lineage.getMaterials().size());
+        assertTrue("Expected 'D' to be derived from 'B'", lineage.getMaterials().contains(B));
+        assertTrue("Expected 'D' to be derived from 'C'", lineage.getMaterials().contains(C));
+    }
+
 
 }

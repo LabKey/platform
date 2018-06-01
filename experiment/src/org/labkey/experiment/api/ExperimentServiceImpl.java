@@ -2136,7 +2136,8 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public ExpLineage getLineage(ExpProtocolOutput start, ExpLineageOptions options)
+    @NotNull
+    public ExpLineage getLineage(@NotNull ExpProtocolOutput start, @NotNull ExpLineageOptions options)
     {
         if (isUnknownMaterial(start))
             return new ExpLineage(start);
@@ -2862,7 +2863,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
 
 
-    public boolean isUnknownMaterial(ExpProtocolOutput output)
+    public boolean isUnknownMaterial(@NotNull ExpProtocolOutput output)
     {
         return "Unknown".equals(output.getName()) &&
                 ParticipantVisit.ASSAY_RUN_MATERIAL_NAMESPACE.equals(output.getLSIDNamespacePrefix());
