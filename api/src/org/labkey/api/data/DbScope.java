@@ -32,6 +32,7 @@ import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ModuleResourceResolver;
 import org.labkey.api.module.ResourceRootProvider;
+import org.labkey.api.module.TomcatVersion;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
@@ -53,6 +54,7 @@ import java.io.IOException;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -317,6 +319,8 @@ public class DbScope
             }
             finally
             {
+                Integer maxTotal = getMaxTotal(dataSource, dsName);
+
                 // Always log the attempt, even if DatabaseNotSupportedException, etc. occurs, to help with diagnosis
                 LOG.info("Initializing DbScope with the following configuration:" +
                         "\n    DataSource Name:          " + dsName +
@@ -325,7 +329,8 @@ public class DbScope
                         "\n    Database Product Version: " + dbmd.getDatabaseProductVersion() +
                         "\n    JDBC Driver Name:         " + dbmd.getDriverName() +
                         "\n    JDBC Driver Version:      " + dbmd.getDriverVersion() +
-                        (null != _dialect ? "\n    SQL Dialect:              " + _dialect.getClass().getSimpleName() : ""));
+    (null != _dialect ? "\n    SQL Dialect:              " + _dialect.getClass().getSimpleName() : "") +
+    (null != maxTotal ? "\n    Connection Pool Size:     " + maxTotal : ""));
             }
 
             _dsName = dsName;
@@ -340,6 +345,21 @@ public class DbScope
             _props = props;
             _schemaCache = new DbSchemaCache(this);
             _tableCache = new SchemaTableInfoCache(this);
+        }
+    }
+
+    private @Nullable Integer getMaxTotal(DataSource dataSource, String name)
+    {
+        String methodName = ModuleLoader.getInstance().getTomcatVersion() == TomcatVersion.TOMCAT_7 ? "getMaxActive" : "getMaxTotal";
+
+        try
+        {
+            return (int)dataSource.getClass().getMethod(methodName).invoke(dataSource);
+        }
+        catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e)
+        {
+            LOG.error("Could not extract connection pool max size from data source \"" + name + "\"");
+            return null;
         }
     }
 
