@@ -29,7 +29,6 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
-import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.issues.IssuesListDefProvider;
@@ -80,7 +79,6 @@ import org.labkey.issue.query.IssueDefDomainKind;
 import org.labkey.issue.query.IssuesListDefTable;
 import org.labkey.issue.query.IssuesQuerySchema;
 
-import javax.servlet.ServletException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
