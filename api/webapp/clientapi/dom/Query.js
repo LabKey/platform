@@ -363,6 +363,91 @@ LABKEY.Query = new function(impl, $) {
         loadQueryColumns(COLUMN_SELECT, config.schemaName, config.queryName, config.filterFn, config.initValue);
     };
 
+    /**
+     * Bulk import data rows into a table.
+     * One of 'text', 'path', 'moduleResource', or 'file' is required and cannot be combined.
+     *
+     * @param {Object} config An object which contains the following configuration properties.
+     * @param {String} config.schemaName Name of a schema defined within the current container.
+     * @param {String} config.queryName Name of a query table associated with the chosen schema.
+     * @param {File} [config.file] A <a href='https://developer.mozilla.org/en-US/docs/DOM/File'><code>File</code></a> object or a file input element to upload to the server.
+     * @param {String} [config.text] Text to import.
+     * @param {String} [config.path] Path to resource under webdav tree. E.g. "/_webdav/MyProject/@files/data.tsv"
+     * @param {String} [config.module] Module name to use when resolving a module resource.
+     * @param {String} [config.moduleResource] A file resource within the module to import.
+     * @param {String} [config.importIdentity] When true, auto-increment key columns may be imported from the data.
+     * @param {String} [config.importLookupByAlternateKey] When true, lookup columns can be imported by their alternate keys instead of the primary key.
+     *          For example, if a column is a lookup to a SampleSet, the imported value can be the Sample's name since names must be unique within a SampleSet.
+     * @param {Function} [config.success] Function called when the "importData" function executes successfully.
+     Will be called with the following arguments:
+     An object containing success and rowCount properties.
+     * @param {Function} [config.failure]  Function called importing data fails.
+     * @param {String} [config.containerPath] The container path in which the schema and query name are defined.
+     * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
+     *       generating a timeout error (defaults to 30000).
+     * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
+     * @returns {Mixed} In client-side scripts, this method will return a transaction id
+     * for the async request that can be used to cancel the request
+     * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+     * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
+     * @example Example, importing tsv data from a module: <pre name="code" class="javascript">
+     LABKEY.Query.importData({
+             schemaName: 'lists',
+             queryName: 'People',
+             // reference to &lt;input type='file' id='file'&gt;
+             file: document.getElementById('file')
+         },
+     });</pre>
+     * @example Example, importing tsv data from a module: <pre name="code" class="javascript">
+     LABKEY.Query.importData({
+             schemaName: 'lists',
+             queryName: 'People',
+             module: 'mymodule',
+             moduleResource: '/data/lists/People.tsv'
+         },
+     });</pre>
+     */
+    impl.importData = function(config) {
+        if (!window.FormData) {
+            throw new Error('modern browser required');
+        }
+
+        var form = new FormData();
+
+        form.append('schemaName', config.schemaName);
+        form.append('queryName', config.queryName);
+        if (config.text)
+            form.append('text', config.text);
+        if (config.path)
+            form.append('path', config.path);
+        if (config.format)
+            form.append('format', config.format);
+        if (config.module)
+            form.append('module', config.module);
+        if (config.moduleResource)
+            form.append('moduleResource', config.moduleResource);
+        if (config.importIdentity)
+            form.append('importIdentity', config.importIdentity);
+        if (config.importLookupByAlternateKey)
+            form.append('importLookupByAlternateKey', config.importLookupByAlternateKey);
+
+        if (config.file) {
+            if (config.file instanceof File)
+                form.append('file', config.file);
+            else if (config.file.tagName === 'INPUT' && config.file.files.length > 0)
+                form.append('file', config.file.files[0]);
+        }
+
+        return LABKEY.Ajax.request({
+            url: LABKEY.ActionURL.buildURL('query', 'import.api', config.containerPath),
+            method: 'POST',
+            success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope, false),
+            failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
+            form: form,
+            timeout: config.timeout
+        });
+    };
+
     return impl;
 
 }(LABKEY.Query, jQuery);
