@@ -358,7 +358,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
      */
     Set<ExpData> getNearestParentDatas(ExpMaterial start);
 
-    ExpLineage getLineage(ExpProtocolOutput start, ExpLineageOptions options);
+    @NotNull
+    ExpLineage getLineage(@NotNull ExpProtocolOutput start, @NotNull ExpLineageOptions options);
 
     /**
      * The following methods return TableInfo's suitable for using in queries.
