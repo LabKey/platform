@@ -65,6 +65,7 @@ public interface ProteinService
 
     void registerProteinSearchView(QueryViewProvider<ProteinSearchForm> provider);
     void registerPeptideSearchView(QueryViewProvider<PeptideSearchForm> provider);
+    void registerProteinSearchFormView(FormViewProvider<ProteinSearchForm> provider);
 
     List<QueryViewProvider<PeptideSearchForm>> getPeptideSearchViews();
 
@@ -87,6 +88,11 @@ public interface ProteinService
         String getDataRegionName();
         @Nullable
         QueryView createView(ViewContext viewContext, FormType form, BindException errors);
+    }
+
+    interface FormViewProvider<FormType>
+    {
+        WebPartView createView(ViewContext viewContext, FormType form);
     }
 
     abstract class PeptideSearchForm extends QueryViewAction.QueryExportForm
