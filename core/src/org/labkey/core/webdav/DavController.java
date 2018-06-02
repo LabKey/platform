@@ -4888,9 +4888,9 @@ public class DavController extends SpringActionController
                 }
 
                 HttpServletRequest request = getRequest();
-                if (null != file && Boolean.TRUE == request.getAttribute("org.apache.tomcat.sendfile.support"))
+                if (null != file && !FileUtil.hasCloudScheme(file) && Boolean.TRUE == request.getAttribute("org.apache.tomcat.sendfile.support"))
                 {
-                    String absolutePath = FileUtil.getAbsolutePath(getContainer(), file);
+                    String absolutePath = file.toFile().getAbsolutePath();     // TODO: can this code be used for cloud?
                     if (null == absolutePath)
                         _log.warn("Failed to get absolute path for '" + FileUtil.getFileName(file));
                     long length  = Files.size(file);
