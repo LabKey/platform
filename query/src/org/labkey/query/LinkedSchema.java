@@ -36,6 +36,7 @@ import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.LimitedUser;
@@ -386,6 +387,11 @@ public class LinkedSchema extends ExternalSchema
 
     public static String generateLabKeySQL(TableInfo sourceTable, SQLWhereClauseSource whereClauseSource, Collection<QueryService.ParameterDecl> parameterDecls)
     {
+        if (null == sourceTable.getUserSchema())
+            throw new RuntimeValidationException("Source table '" + sourceTable.getName() + "' has no user schema");
+        if (null == sourceTable.getUserSchema().getContainer())
+            throw new RuntimeValidationException("Source table '" + sourceTable.getName() + "' has no container");
+
         StringBuilder sql = new StringBuilder();
 
         if (parameterDecls != null && !parameterDecls.isEmpty())
