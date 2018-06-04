@@ -1229,7 +1229,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
         sb.append("</table>");
         map.put("Indexing history added/updated", sb.toString());
-        map.put("Maximum allowed document size", FILE_SIZE_LIMIT);
+        map.put("Maximum allowed document size", getFileSizeLimit());
 
         return map;
     }
@@ -1305,5 +1305,11 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     public List<SecurableResource> getSecurableResources(User user)
     {
         return Collections.emptyList();
+    }
+
+    @Override
+    public long getFileSizeLimit()
+    {
+        return SearchPropertyManager.getFileSizeLimitMB() * (1024*1024);
     }
 }

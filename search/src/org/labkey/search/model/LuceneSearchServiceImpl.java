@@ -974,7 +974,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         if ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet".equals(contentType))
             size = size * 5;
 
-        return size > FILE_SIZE_LIMIT;
+        return size > getFileSizeLimit();
     }
 
 

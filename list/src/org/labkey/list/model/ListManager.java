@@ -731,7 +731,7 @@ public class ListManager implements SearchService.DocumentProvider
                     public void exec(Results results) throws StopIteratingException
                     {
                         data.append(template.eval(results.getFieldKeyRowMap())).append("\n");
-                        if (data.length() > SearchService.FILE_SIZE_LIMIT)
+                        if (data.length() > SearchService.get().getFileSizeLimit())
                             stopIterating();  // Short circuit for very large list, #25366
                     }
                 });

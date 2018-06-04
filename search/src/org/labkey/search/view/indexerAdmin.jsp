@@ -118,28 +118,41 @@ else
     }
     %>
     <p><labkey:form method="POST" action="<%=h(buildURL(SearchController.AdminAction.class))%>">
-    <table>
-        <tr><td width="800">You can change the search indexing directory type below, but this is generally not recommended. Contact
-            LabKey for assistance if full-text indexing or searching seems to have difficulty with the default setting.<br><br></td></tr>
-        <tr><td>Directory Type:
-            <select name="directoryType"><%
-                String currentDirectoryType = SearchPropertyManager.getDirectoryType();
+        <table>
+            <tr><td width="800">You can change the search indexing directory type below, but this is generally not recommended. Contact
+                LabKey for assistance if full-text indexing or searching seems to have difficulty with the default setting.<br><br></td></tr>
+            <tr><td>Directory Type:
+                <select name="directoryType"><%
+                    String currentDirectoryType = SearchPropertyManager.getDirectoryType();
 
-                for (Pair<String, String> pair : ss.getDirectoryTypes())
-                { %>
-                <option value="<%=h(pair.first)%>"<%=selected(pair.first.equals(currentDirectoryType))%>><%=h(pair.second)%></option><%
-                }
-                %>
-            </select>
-        </td></tr><%
-        if (hasAdminOpsPerms)
-        {
+                    for (Pair<String, String> pair : ss.getDirectoryTypes())
+                    { %>
+                    <option value="<%=h(pair.first)%>"<%=selected(pair.first.equals(currentDirectoryType))%>><%=h(pair.second)%></option><%
+                    }
+                    %>
+                </select>
+            </td></tr><%
+            if (hasAdminOpsPerms)
+            {
+            %>
+            <tr><td><input type="hidden" name="directory" value="1"></td></tr>
+            <tr><td><%= button("Set").submit(true) %></td></tr><%
+            }
+            %>
+        </table>
+    </labkey:form></p>
+    <p><labkey:form method="POST" action="<%=h(buildURL(SearchController.AdminAction.class))%>">
+        <table>
+            <tr><td width="800">You can change the maximum file size limit below, but this is generally not recommended and will result in additional system memory usage. We further limit <b>xlsx</b> files at 1/5 the normal max, as they are compressed at rest.<br><br></td></tr>
+            <tr><td>Indexed file size limit: <input type="number" name="fileLimitMB" value="<%=h(SearchPropertyManager.getFileSizeLimitMB())%>" /> MB</td></tr><%
+            if (hasAdminOpsPerms)
+            {
         %>
-        <tr><td><input type="hidden" name="directory" value="1"></td></tr>
-        <tr><td><%= button("Set").submit(true) %></td></tr><%
-        }
+            <tr><td><input type="hidden" name="limit" value="1"></td></tr>
+            <tr><td><%= button("Set").submit(true) %></td></tr><%
+            }
         %>
-    </table>
-    </labkey:form><%
+        </table>
+    </labkey:form></p><%
 }
 %>

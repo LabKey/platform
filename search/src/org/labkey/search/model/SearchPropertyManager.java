@@ -15,7 +15,9 @@
  */
 package org.labkey.search.model;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileUtil;
 import org.labkey.search.SearchModule;
@@ -34,6 +36,8 @@ public class SearchPropertyManager
     private static final String CRAWLER_RUNNING_STATE = "runningState";
     private static final String INDEX_PATH = "primaryIndexPath";  // Note: don't change this legacy name
     private static final String DIRECTORY_TYPE = "directoryType";
+    private static final String FILE_SIZE_LIMIT = "fileSizeLimitMB";
+
 
     public static boolean getCrawlerRunningState()
     {
@@ -67,6 +71,17 @@ public class SearchPropertyManager
     {
         String type = getProperty(DIRECTORY_TYPE);
         return null == type ? "Default" : type;
+    }
+
+    public static long getFileSizeLimitMB()
+    {
+        String limit = getProperty(FILE_SIZE_LIMIT);
+        return StringUtils.isNotBlank(limit) ? Long.valueOf(limit) : SearchService.DEFAULT_FILE_SIZE_LIMIT;
+    }
+
+    public static void setFileSizeLimitMB(Integer fileSizeLimitMB)
+    {
+        setProperty(FILE_SIZE_LIMIT, fileSizeLimitMB.toString());
     }
 
     public static void setDirectoryType(String directoryType)

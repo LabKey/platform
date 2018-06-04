@@ -127,12 +127,15 @@ public class SearchController extends SpringActionController
 
     public static class AdminForm
     {
-        public String[] _messages = {"", "Index deleted", "Index path changed", "Directory type changed"};
+        public String[] _messages = {"", "Index deleted", "Index path changed", "Directory type changed", "File size limit changed"};
         private int msg = 0;
         private boolean pause;
         private boolean start;
         private boolean delete;
         private String indexPath;
+
+        private boolean limit;
+        private int fileLimitMB;
 
         private boolean _path;
 
@@ -217,6 +220,26 @@ public class SearchController extends SpringActionController
         public void setDirectoryType(String directoryType)
         {
             _directoryType = directoryType;
+        }
+
+        public boolean isLimit()
+        {
+            return limit;
+        }
+
+        public void setLimit(boolean limit)
+        {
+            this.limit = limit;
+        }
+
+        public int getFileLimitMB()
+        {
+            return fileLimitMB;
+        }
+
+        public int setFileLimitMB(int fileLimitMB)
+        {
+            return this.fileLimitMB = fileLimitMB;
         }
     }
     
@@ -322,6 +345,14 @@ public class SearchController extends SpringActionController
                 ss.resetIndex();
                 _msgid = 3;
                 audit(getUser(), null, "(admin action)", "Directory type set to " + form.getDirectoryType());
+            }
+            else if (form.isLimit())
+            {
+                int limit = form.getFileLimitMB();
+                SearchPropertyManager.setFileSizeLimitMB(limit);
+                ss.resetIndex();
+                _msgid = 4;
+                audit(getUser(), null, "(admin action)", String.format("File size limit set to %1$s MB", limit));
             }
 
             return true;
