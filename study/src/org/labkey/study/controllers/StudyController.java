@@ -197,7 +197,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -210,7 +209,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 
 import static org.labkey.api.util.PageFlowUtil.filter;
 
@@ -6604,8 +6602,10 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresNoPermission
-    public class CheckForReload extends ManageReloadAction    // Subclassing makes it easier to redisplay errors, etc.
+
+    @RequiresLogin
+    @RequiresPermission(AdminPermission.class)
+    public class CheckForReloadAction extends ManageReloadAction    // Subclassing makes it easier to redisplay errors, etc. TODO: Switch to an ApiAction after removing UI
     {
         @Override
         public ModelAndView getView(ReloadForm form, boolean reshow, BindException errors) throws Exception
@@ -6616,17 +6616,18 @@ public class StudyController extends BaseStudyController
             try
             {
                 User user = getUser();
-                ImportOptions options = new ImportOptions(getContainer().getId(), !user.isGuest() ? user.getUserId() : null);
+                ImportOptions options = new ImportOptions(getContainer().getId(), user.getUserId());
                 options.setFailForUndefinedVisits(form.isFailForUndefinedVisits());
+                options.setSkipQueryValidation(!form.isQueryValidation());
 
                 final String source;
 
                 if (form.isUi())
-                    source = (user.isGuest() ? "an unauthenticated user" : "user \"" + user.getDisplayName(null) + "\"") + " clicking the \"Attempt Reload\" button";
+                    source = "user \"" + user.getDisplayName(null) + "\"" + " clicking the \"Attempt Reload\" button";
                 else
-                    source = "a script invoking the \"Attempt Reload\" action while " + (user.isGuest() ? "not authenticated" : "authenticated as user \"" + user.getDisplayName(null) + "\"");
+                    source = "a script invoking the \"CheckForReload\" action while authenticated as user \"" + user.getDisplayName(null) + "\"";
 
-                ReloadStatus status = task.attemptScheduledReload(options, source);
+                ReloadStatus status = task.attemptReload(options, source);
 
                 if (status.isReloadQueued() && form.isUi())
                     return HttpView.redirect(PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(getContainer()));
@@ -6652,7 +6653,6 @@ public class StudyController extends BaseStudyController
             }
         }
     }
-
 
 
     public static class ImportVisitMapForm

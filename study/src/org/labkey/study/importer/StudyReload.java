@@ -281,7 +281,7 @@ public class StudyReload
             try
             {
                 ImportOptions options = new ImportOptions(studyContainerId, null);
-                attemptScheduledReload(options, "a configured automatic reload timer");    // Ignore success messages
+                attemptReload(options, "a configured automatic reload timer");    // Ignore success messages
             }
             catch (ImportException ie)
             {
@@ -297,23 +297,19 @@ public class StudyReload
             }
         }
 
-        public StudyImpl validateStudyForReload(ImportOptions options, Container c, boolean isScheduled) throws ImportException
+        public StudyImpl validateStudyForReload(ImportOptions options, Container c) throws ImportException
         {
-                StudyImpl study = StudyManager.getInstance().getStudy(c);
+            StudyImpl study = StudyManager.getInstance().getStudy(c);
 
-                if (null == study)
-                {
-                    // Study must have been deleted
-                    if (isScheduled)
-                        cancelTimer(options.getContainerId());
-                    throw new ImportException("Study does not exist in folder " + c.getPath());
-                }
-                else
-                {
-                    if (!study.isAllowReload())
-                        return null;
-                    return study;
-                }
+            if (null == study)
+            {
+                // Study must have been deleted... but if so, timer should have been disabled
+                throw new ImportException("Study does not exist in folder " + c.getPath());
+            }
+            else
+            {
+                return study;
+            }
         }
 
         public PipeRoot validatePipeRoot(Container c) throws ImportException
@@ -336,7 +332,7 @@ public class StudyReload
                 throw new ImportException("Container " + options.getContainerId() + " does not exist");
             else
             {
-                StudyImpl study = validateStudyForReload(options, c, false);
+                StudyImpl study = validateStudyForReload(options, c);
                 if (study == null)
                     throw new ImportException("Reload failed. Can't reload a study set for no reload.");
 
@@ -344,7 +340,7 @@ public class StudyReload
             }
         }
 
-        public ReloadStatus attemptScheduledReload(ImportOptions options, String source) throws ImportException
+        public ReloadStatus attemptReload(ImportOptions options, String source) throws ImportException
         {
             Container c = ContainerManager.getForId(options.getContainerId());
 
@@ -356,7 +352,7 @@ public class StudyReload
             }
             else
             {
-                StudyImpl study = validateStudyForReload(options, c, false);
+                StudyImpl study = validateStudyForReload(options, c);
                 if (study == null)
                     throw new ImportException("Reload failed. Can't reload a study set for no reload.");
 

@@ -77,7 +77,7 @@
             </tr>
             <tr>
                 <td width=200>&nbsp;</td>
-                <td><%=allowReload ? PageFlowUtil.button("Attempt Reload Now").href(buildURL(StudyController.CheckForReload.class, "ui=1")).attributes("id=\"reloadNow\"") :
+                <td><%=allowReload ? PageFlowUtil.button("Attempt Reload Now").href(buildURL(StudyController.CheckForReloadAction.class, "ui=1")).attributes("id=\"reloadNow\"") :
                                      PageFlowUtil.button("Attempt Reload Now").href("javascript:void(0);").attributes("id=\"reloadNow\"") %></td>
             </tr>
             <tr>
