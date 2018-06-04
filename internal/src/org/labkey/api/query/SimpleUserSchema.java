@@ -84,7 +84,11 @@ public class SimpleUserSchema extends UserSchema
             // by JDBC metadata
             for (String tableName : dbschema.getTableNames())
             {
-                _available.add(dbschema.getTable(tableName).getName());
+                SchemaTableInfo table = dbschema.getTable(tableName);
+                if (null != table)
+                    _available.add(table.getName());
+                else
+                    _log.error("Schema '" + dbschema.getName() + "' provided tableName '" + tableName + "', but not actual table.");
             }
         }
     }
