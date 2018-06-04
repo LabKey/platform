@@ -253,7 +253,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
                 while (results.next())
                     block.exec(results);
             }
-            catch (StopIteratingException sie)
+            catch (StopIteratingException ignored)
             {
             }
 
