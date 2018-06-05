@@ -69,7 +69,7 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
                 itemId: 'templateArea',
                 items: [{
                     border: false,
-                    html: '<i class="fa fa-spinner fa-pulse"></i> Loading...'
+                    html: '<i class="fa fa-spinner fa-pulse"></i> loading...'
                 }]
             },{
                 xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF

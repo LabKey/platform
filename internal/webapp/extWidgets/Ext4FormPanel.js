@@ -110,7 +110,7 @@ Ext4.define('LABKEY.ext4.FormPanel', {
         this.plugins.push(Ext4.create('LABKEY.ext4.DatabindPlugin'));
 
         LABKEY.Utils.mergeIf(this, {
-            items: [{xtype: 'displayfield', value: 'Loading...'}]
+            items: [{html: '<i class="fa fa-spinner fa-pulse"></i> loading...', border: false}]
             ,bodyBorder: false
             ,bodyStyle: 'padding:5px'
             ,style: 'margin-bottom: 15px'
