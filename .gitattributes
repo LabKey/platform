@@ -1836,6 +1836,7 @@ api/webapp/clientapi/core/Security.js -text
 api/webapp/clientapi/core/Specimen.js -text
 api/webapp/clientapi/core/Utils.js -text
 api/webapp/clientapi/core/Visualization.js -text
+api/webapp/clientapi/dom/Assay.js -text
 api/webapp/clientapi/dom/Chart.js -text
 api/webapp/clientapi/dom/DataRegion.js -text
 api/webapp/clientapi/dom/Form.js -text

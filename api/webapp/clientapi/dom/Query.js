@@ -450,4 +450,4 @@ LABKEY.Query = new function(impl, $) {
 
     return impl;
 
-}(LABKEY.Query, jQuery);
+}(LABKEY.Query || new function() { return {}; }, jQuery);

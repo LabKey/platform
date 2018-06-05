@@ -31,4 +31,4 @@ LABKEY.Security = new function(impl) {
 
     return impl;
 
-}(LABKEY.Security);
+}(LABKEY.Security || new function() { return {}; });

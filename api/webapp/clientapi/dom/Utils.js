@@ -446,4 +446,4 @@ LABKEY.Utils = new function(impl, $) {
 
     return impl;
 
-}(LABKEY.Utils, jQuery);
+}(LABKEY.Utils || new function() { return {}; }, jQuery);
