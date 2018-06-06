@@ -1,4 +1,4 @@
-ext.luceneVersion="7.2.0"
+ext.luceneVersion="7.3.1"
 
 dependencies {
     external "org.apache.lucene:lucene-analyzers-common:${luceneVersion}"
