@@ -187,7 +187,7 @@ else
         <input type="hidden" name="forceDelete" value="true"/>
         <% if (bean.getRunsWithoutPermission().isEmpty() && bean.getNoPermissionExtras().isEmpty() )
         { %>
-            <%= button("Confirm Delete").submit(true) %>
+            <%= button("Confirm Delete").submit(true).disableOnClick(true) %>
         <% } %>
         <%= text(button("Cancel").href(cancelUrl).toString())%>
     </labkey:form>
