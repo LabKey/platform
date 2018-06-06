@@ -537,7 +537,7 @@ public abstract class CompareType
                 {
                     Object[] values = ((Collection)value).toArray();
                     if (values.length != 2)
-                        throw new IllegalArgumentException("Between filter on '" + fieldKey + "' column requires exactly two parameter values separated by comma instead of '" + value.toString() + "'");
+                        return new BetweenClause(fieldKey, values[0], values[0], false);
 
                     return new BetweenClause(fieldKey, values[0], values[1], false);
                 }
@@ -546,7 +546,7 @@ public abstract class CompareType
                     String s = Objects.toString(value, "");
                     String[] values = s.split(getValueSeparator());
                     if (values.length != 2)
-                        throw new IllegalArgumentException("Between filter on '" + fieldKey + "' column requires exactly two parameter values separated by comma instead of '" + value.toString() + "'");
+                        return new BetweenClause(fieldKey, values[0], values[0], false);
 
                     return new BetweenClause(fieldKey, values[0], values[1], false);
                 }
