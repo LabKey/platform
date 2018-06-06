@@ -75,7 +75,7 @@ public class JdbcMetaDataSelector
                     while (rs.next())
                         block.exec(rs);
                 }
-                catch (StopIteratingException sie)
+                catch (StopIteratingException ignored)
                 {
                 }
 
