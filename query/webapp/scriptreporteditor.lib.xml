@@ -1,5 +1,6 @@
 <libraries xmlns="http://labkey.org/clientLibrary/xml/">
     <library compileInProductionMode="true">
+        <script path="reports/ExternalEditorHelper.js"/>
         <script path="reports/ScriptReportPanel.js"/>
         <script path="reports/ScriptReportPanel.css"/>
     </library>

@@ -1897,6 +1897,7 @@ query/webapp/query/olap.js -text
 query/webapp/query/query.png -text
 query/webapp/query/testquery.js -text
 query/webapp/query/validateQueries.js -text
+query/webapp/reports/ExternalEditorHelper.js -text
 query/webapp/reports/ScriptReportPanel.css -text
 query/webapp/reports/ScriptReportPanel.js -text
 query/webapp/reports/advanced.png -text
