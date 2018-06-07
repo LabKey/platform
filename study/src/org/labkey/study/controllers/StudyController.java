@@ -965,7 +965,7 @@ public class StudyController extends BaseStudyController
             {
                 // inject the dataset status marker class, but it is up to the client to style the page accordingly
                 String statusCls = "labkey-dataset-status-" + PageFlowUtil.filter(status.toLowerCase());
-                HtmlView scriptLock = new HtmlView("<script type=\"text/javascript\">(function($) { $('table.labkey-proj').addClass(" + PageFlowUtil.jsString(statusCls) + "); })(jQuery);</script>");
+                HtmlView scriptLock = new HtmlView("<script type=\"text/javascript\">(function($) { $(LABKEY.DataRegions['Dataset'].form).addClass(" + PageFlowUtil.jsString(statusCls) + "); })(jQuery);</script>");
                 view.addView(scriptLock);
             }
 
