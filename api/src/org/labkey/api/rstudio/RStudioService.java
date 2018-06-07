@@ -17,12 +17,12 @@ package org.labkey.api.rstudio;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.reports.report.RReport;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.mvc.Controller;
@@ -33,6 +33,7 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -74,7 +75,7 @@ public interface RStudioService
         return false;
     }
 
-    default Pair<String, String> editInRStudio(File scriptFile, String entityId, ViewContext viewContext, BindException errors)
+    default Pair<String, String> editInRStudio(RReport report, ViewContext viewContext, BindException errors) throws Exception
     {
         throw new UnsupportedOperationException(NO_RSTUDIO);
     }
@@ -85,6 +86,12 @@ public interface RStudioService
     default void addRequiredLibrary(String library) {};
 
     default List<String> getRequiredLibraries() {return Collections.emptyList();};
+
+    // TODO remove after merge - begin
+    default Pair<String, String> editInRStudio(File scriptFile, String entityId, ViewContext viewContext, BindException errors)
+    {
+        throw new UnsupportedOperationException(NO_RSTUDIO);
+    }
 
     default boolean isUserEditingReportInRStudio(User user, String entityId)
     {
@@ -100,6 +107,7 @@ public interface RStudioService
     {
         return null;
     }
+    // TODO remove after merge - end
 
     /**
      * Inject javascript by converting response stream to String and inject js string to html.
@@ -133,6 +141,11 @@ public interface RStudioService
     }
 
     default HttpView getExportToRStudioView(QueryView.TextExportOptionsBean textBean)
+    {
+        return null;
+    }
+
+    default Map<String, Object> getRStudioEditorConfig(ViewContext viewContext, RReport report)
     {
         return null;
     }

@@ -146,35 +146,7 @@ public class RReport extends ExternalScriptEngineReport
         RStudioService rs = getRStudioService();
         if (rs != null)
         {
-            User user = viewContext.getUser();
-            Map<String, Object> dockerRConfig = new HashMap<>();
-            dockerRConfig.put("name", "RStudio");
-            dockerRConfig.put("finishUrl", rs.getFinishReportUrl(viewContext.getContainer()));
-            dockerRConfig.put("entityId", getEntityId());
-            boolean isEditing = rs.isUserEditingReportInRStudio(user, getEntityId());
-            dockerRConfig.put("editing", isEditing);
-            Pair<String, String> externalEditor = rs.getReportRStudioUrl(viewContext, getEntityId());
-            dockerRConfig.put("externalWindowTitle", externalEditor.getValue());
-            if (isEditing)
-            {
-                dockerRConfig.put("externalUrl", externalEditor.getKey());
-                dockerRConfig.put("redirectUrl", ReportUtil.getRunReportURL(viewContext, this, false)
-                        .addParameter("tabId", "Source"));
-            }
-
-            boolean isRDockerConfigured = false;
-            if (AppProps.getInstance().isExperimentalFeatureEnabled(RStudioService.R_DOCKER_SANDBOX))
-            {
-                ScriptEngineManager mgr = ServiceRegistry.get().getService(ScriptEngineManager.class);
-                if (mgr != null)
-                {
-                    ScriptEngine dockerREngine = mgr.getEngineByName(RStudioService.R_DOCKER_ENGINE);
-                    isRDockerConfigured = dockerREngine != null;
-                }
-            }
-            if (!isRDockerConfigured && user != null && user.isInSiteAdminGroup())
-                dockerRConfig.put("warningMsg", "'R Docker Scripting Engine' is the preferred method of running R reports created from RStudio in LabKey.");
-            return dockerRConfig;
+           return rs.getRStudioEditorConfig(viewContext, this);
         }
         return null;
     }
@@ -188,7 +160,7 @@ public class RReport extends ExternalScriptEngineReport
         {
             try
             {
-                externalEditor = rs.editInRStudio(createFilesForRStudio(context, rs.getMount()), getEntityId(), context, errors);
+                externalEditor = rs.editInRStudio(this, context, errors);
             }
             catch (Exception e)
             {
@@ -199,20 +171,6 @@ public class RReport extends ExternalScriptEngineReport
                 externalEditor = null;
         }
         return externalEditor;
-    }
-
-    private File createFilesForRStudio(ViewContext context, String remoteDir) throws Exception
-    {
-        // TODO: separate file creation into methods that return strings/streams to the methods that write files,
-        // and call those new methods instead of writing out files here
-        File inputDataFile = createInputDataFile(context);
-        RScriptEngine engine = new RDockerScriptEngine(remoteDir);
-        Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
-        bindings.put(RScriptEngine.KNITR_FORMAT, getKnitrFormat());
-        bindings.put(RScriptEngine.PANDOC_USE_DEFAULT_OUTPUT_FORMAT, isUseDefaultOutputOptions());
-        bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, getReportDir(context.getContainer().getId()).getAbsolutePath());
-        String script = createScript(engine, context, new ArrayList<>(), inputDataFile, null, true);
-        return engine.prepareScript(script);
     }
 
     public void saveFromExternalEditor(ContainerUser context, String script)
@@ -597,7 +555,7 @@ public class RReport extends ExternalScriptEngineReport
         return createScript(engine, context, outputSubst, inputDataTsv, inputParameters, false);
     }
 
-    protected String createScript(ScriptEngine engine, ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters, boolean isRStudio) throws Exception
+    public String createScript(ScriptEngine engine, ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters, boolean isRStudio) throws Exception
     {
         String script = super.createScript(engine, context, outputSubst, inputDataTsv, inputParameters, isRStudio);
         File inputData = new File(getReportDir(context.getContainer().getId()), DATA_INPUT);

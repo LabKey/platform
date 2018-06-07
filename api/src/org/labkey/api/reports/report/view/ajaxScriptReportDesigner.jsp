@@ -168,25 +168,20 @@
                 externalEditSettings = {};
                 externalEditSettings.url = <%=q(externalEditorSettings.getKey().getLocalURIString())%>;
                 externalEditSettings.name = <%=q((String) externalConfig.get("name"))%>;
-                externalEditSettings.finishUrl = <%=q(externalConfig.get("finishUrl").toString())%>;
+                externalEditSettings.finishUrl = <%=q(externalConfig.get("finishUrl") != null ? externalConfig.get("finishUrl").toString(): null)%>;
                 externalEditSettings.externalWindowTitle = <%=q(externalConfig.containsKey("externalWindowTitle") ? (String) externalConfig.get("externalWindowTitle"): "")%>;
-
-            <% if (externalConfig.containsKey("editing") && (boolean) externalConfig.get("editing")) { %>
-                externalEditSettings.isEditing = true;
                 externalEditSettings.redirectUrl = <%=q(externalConfig.containsKey("redirectUrl") ? externalConfig.get("redirectUrl").toString(): "")%>;
                 externalEditSettings.externalUrl = <%=q(externalConfig.containsKey("externalUrl") ? externalConfig.get("externalUrl").toString(): "")%>;
-           <% } %>
-
-                var externalEditWarning = '';
+                externalEditSettings.isEditing = <%=externalConfig.containsKey("editing") && (boolean) externalConfig.get("editing")%>;
+                externalEditSettings.isDocker = <%=externalConfig.get("isDocker")%>;
 
                 <% if (externalConfig.containsKey("warningMsg")) { %>
-                    externalEditWarning = <%=q((String) externalConfig.get("warningMsg"))%>;
+                    var externalEditWarning = <%=q((String) externalConfig.get("warningMsg"))%>;
+                    if (externalEditWarning)
+                    {
+                        document.getElementById('script-report-editor-msg').innerHTML = '<span class="script-report-editor-msg">' + externalEditWarning + '</span>';
+                    }
                 <% } %>
-
-                if (externalEditWarning)
-                {
-                    document.getElementById('script-report-editor-msg').innerHTML = '<span class="script-report-editor-msg">' + externalEditWarning + '</span>';
-                }
 
             <% } %>
             var panel = Ext4.create('LABKEY.ext4.ScriptReportPanel', {
