@@ -90,6 +90,14 @@ Ext4.define("LABKEY.ext4.BootstrapTabPanel", {
             // add a generated id to each item to be used in the tpl
             item.id = LABKEY.Utils.id();
 
+            // generate an id, based on the title, for the tab <a> tag to be used by automated tests
+            item.tabId = item.title ? item.title.replace(/\s/g, '') + 'Tab' : LABKEY.Utils.id();
+            var elIndex = 1, origId = item.tabId;
+            while (Ext4.get(item.tabId) !== null) {
+                item.tabId = origId + '-' + elIndex;
+                elIndex++;
+            }
+
             // set the tabCls for the active tab, if any
             if (this.activeTabId == null) {
                 if (item.active) {
@@ -124,7 +132,7 @@ Ext4.define("LABKEY.ext4.BootstrapTabPanel", {
                 this.description ? '<p>' + LABKEY.Utils.encodeHtml(this.description) + '</p>' : '',
                 '<ul class="' + navCls + '">',
                     '<tpl for=".">',
-                        '<li class="{tabCls}"><a data-toggle="' + (this.usePills ? 'pill' : 'tab') + '" href="#{id}">{title}</a></li>',
+                        '<li class="{tabCls}"><a id="{tabId}" data-toggle="' + (this.usePills ? 'pill' : 'tab') + '" href="#{id}">{title}</a></li>',
                     '</tpl>',
                 '</ul>',
                 '<div class="tab-content">',
