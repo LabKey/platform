@@ -70,6 +70,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.study.assay.FileLinkDisplayColumn;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -227,6 +228,9 @@ public class ExpDataClassDataTableImpl extends ExpProtocolOutputTableImpl<ExpDat
             case DataFileUrl:
                 ColumnInfo dataFileUrl = wrapColumn(alias, getRealTable().getColumn("DataFileUrl"));
                 dataFileUrl.setUserEditable(false);
+                DetailsURL url = new DetailsURL(new ActionURL(ExperimentController.ShowFileAction.class, getContainer()), Collections.singletonMap("rowId", "rowId"));
+                dataFileUrl.setDisplayColumnFactory(new FileLinkDisplayColumn.Factory(url, getContainer(), FieldKey.fromParts("RowId")));
+
                 return dataFileUrl;
 
             default:
