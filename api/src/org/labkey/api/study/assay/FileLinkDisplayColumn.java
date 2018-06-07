@@ -60,6 +60,7 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
     {
         private final PropertyDescriptor _pd;
         private final Container _container;
+        private final DetailsURL _detailsUrl;
 
         private final SchemaKey _schemaKey;
         private final String _queryName;
@@ -70,6 +71,7 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
         public Factory(PropertyDescriptor pd, Container c, @NotNull SchemaKey schemaKey, @NotNull String queryName, @NotNull FieldKey pkFieldKey)
         {
             _pd = pd;
+            _detailsUrl = null;
             _container = c;
             _schemaKey = schemaKey;
             _queryName = queryName;
@@ -80,11 +82,23 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
         public Factory(PropertyDescriptor pd, Container c, @NotNull FieldKey lsidColumnFieldKey)
         {
             _pd = pd;
+            _detailsUrl = null;
             _container = c;
             _schemaKey = null;
             _queryName = null;
             _pkFieldKey = null;
             _objectURIFieldKey = lsidColumnFieldKey;
+        }
+
+        public Factory(DetailsURL detailsURL, Container c, @NotNull FieldKey pkFieldKey)
+        {
+            _pd = null;
+            _detailsUrl = detailsURL;
+            _container = c;
+            _schemaKey = null;
+            _queryName = null;
+            _pkFieldKey = pkFieldKey;
+            _objectURIFieldKey = null;
         }
 
         @Override
@@ -99,7 +113,9 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
         @Override
         public DisplayColumn createRenderer(ColumnInfo col)
         {
-            if (_pkFieldKey != null)
+            if (_pd == null && _detailsUrl != null)
+                return new FileLinkDisplayColumn(col, _detailsUrl, _container, _pkFieldKey);
+            else if (_pkFieldKey != null)
                 return new FileLinkDisplayColumn(col, _pd, _container, _schemaKey, _queryName, _pkFieldKey);
             else
                 return new FileLinkDisplayColumn(col, _pd, _container, _objectURIFieldKey);
@@ -148,6 +164,15 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
             DetailsURL url = new DetailsURL(PageFlowUtil.urlProvider(CoreUrls.class).getDownloadFileLinkBaseURL(container, pd), "objectURI", objectURIFieldKey);
             setURLExpression(url);
         }
+    }
+
+    public FileLinkDisplayColumn(ColumnInfo col, DetailsURL detailsURL, Container container, @NotNull FieldKey pkFieldKey)
+    {
+        super(col);
+        _container = container;
+        _pkFieldKey = pkFieldKey;
+
+        setURLExpression(detailsURL);
     }
 
     protected Object getInputValue(RenderContext ctx)
