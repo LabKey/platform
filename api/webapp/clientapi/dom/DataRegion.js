@@ -816,6 +816,13 @@ if (!LABKEY.DataRegions) {
         rows.on('mouseleave', function() {
             $(this).removeClass('lk-row-over');
         });
+
+        // Issue 32898
+        $(document).on('click', function(event) {
+            if (!$(event.target).closest(form.find('table')).length) {
+              form.find('.lk-row-hl').removeClass('lk-row-hl');
+            }
+        });
     };
 
     /**
