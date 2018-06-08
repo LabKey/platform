@@ -311,11 +311,15 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
         }
 
         @Override
-        public ResultSet getResultSet(Connection conn) throws SQLException
+        public void prepare()
         {
             // Stash the generated SQL in case we need to log it later
             _sql = _factory.getSql();
+        }
 
+        @Override
+        public ResultSet getResultSet(Connection conn) throws SQLException
+        {
             if (null == _sql)
             {
                 return null;

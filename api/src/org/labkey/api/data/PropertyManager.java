@@ -281,6 +281,18 @@ public class PropertyManager
         Set<Object> removedKeys = null;
         private boolean _locked = false;
 
+        /** Clone the existing map, creating our own copy of the underlying data */
+        PropertyMap(PropertyMap copy)
+        {
+            super(copy);
+            _set = copy._set;
+            _user = copy._user;
+            _objectId = copy._objectId;
+            _category = copy._category;
+            _propertyEncryption = copy._propertyEncryption;
+            _store = copy._store;
+        }
+
         PropertyMap(int set, @NotNull User user, @NotNull String objectId, @NotNull String category, PropertyEncryption propertyEncryption, AbstractPropertyStore store)
         {
             _set = set;
@@ -495,7 +507,8 @@ public class PropertyManager
                     String value = toNullString(e.getValue());
                     saveValue(name, value);
                 }
-                _store.clearCache(this);
+                // Make sure that we clear the previously cached version of the map
+                transaction.addCommitTask(() -> _store.clearCache(PropertyMap.this), DbScope.CommitTaskOption.IMMEDIATE, DbScope.CommitTaskOption.POSTCOMMIT);
                 transaction.commit();
             }
         }
@@ -797,24 +810,19 @@ public class PropertyManager
             final PropertyStore store = PropertyManager.getNormalStore();
             final DbScope scope = PropertySchema.getInstance().getSchema().getScope();
 
-            JunitUtil.createRaces(new Runnable()
-            {
-                @Override
-                public void run()
+            JunitUtil.createRaces(() -> {
+                try (DbScope.Transaction transaction = scope.ensureTransaction())
                 {
-                    try (DbScope.Transaction transaction = scope.ensureTransaction())
-                    {
-                        PropertyMap map = store.getWritableProperties(c, category, true);
-                        map.put("foo", "abc");
-                        map.put("bar", "xyz");
-                        map.save();
-                        Map<String, String> newMap = store.getProperties(c, category);
-                        map = store.getWritableProperties(c, category, true);
-                        map.put("flam", "mno");
-                        map.delete();
+                    PropertyMap map = store.getWritableProperties(c, category, true);
+                    map.put("foo", "abc");
+                    map.put("bar", "xyz");
+                    map.save();
+                    Map<String, String> newMap = store.getProperties(c, category);
+                    map = store.getWritableProperties(c, category, true);
+                    map.put("flam", "mno");
+                    map.delete();
 
-                        transaction.commit();
-                    }
+                    transaction.commit();
                 }
             }, 20, 10, 30);
         }

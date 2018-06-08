@@ -28,6 +28,8 @@ import java.sql.SQLException;
  */
 public interface ResultSetFactory
 {
+    /** Do any work needed to be ready to execute the query, such as generating the SQL to run */
+    default void prepare() {}
     ResultSet getResultSet(Connection conn) throws SQLException;
     boolean shouldClose();
     void handleSqlException(SQLException e, @Nullable Connection conn);

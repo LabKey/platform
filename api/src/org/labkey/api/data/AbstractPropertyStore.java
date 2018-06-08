@@ -76,61 +76,21 @@ public abstract class AbstractPropertyStore implements PropertyStore
     @Override
     public PropertyMap getWritableProperties(User user, Container container, String category, boolean create)
     {
-        validateStore();
-        ColumnInfo setColumn = _prop.getTableInfoProperties().getColumn("Set");
-        String setSelectName = setColumn.getSelectName();   // Keyword in some dialects
-
-        SQLFragment sql = new SQLFragment("SELECT " + setSelectName + ", Encryption FROM " + _prop.getTableInfoPropertySets() +
-            " WHERE UserId = ? AND ObjectId = ? AND Category = ?", user, container, category);
-
-        Map<String, Object> map = new SqlSelector(_prop.getSchema(), sql).getMap();
-        boolean newSet = (null == map);
-        int set;
-        PropertyEncryption propertyEncryption;
-
-        if (newSet)
+        PropertyManager.PropertyMap existingMap = _cache.getProperties(user, container, category);
+        if (existingMap != null)
         {
-            if (!create)
-            {
-                return null;
-            }
+            return new PropertyMap(existingMap);
+        }
+
+        if (create)
+        {
             // Assign a dummy ID we can use later to tell if we need to insert a brand new set during save
-            set = -1;
-            propertyEncryption = getPreferredPropertyEncryption();
-        }
-        else
-        {
-            String encryptionName = (String) map.get("Encryption");
-            propertyEncryption = PropertyEncryption.getBySerializedName(encryptionName);
+            PropertyManager.PropertyMap result = new PropertyMap(-1, user, container.getId(), category, getPreferredPropertyEncryption(), this);
 
-            if (null == propertyEncryption)
-                throw new IllegalStateException("Unknown encryption name: " + encryptionName);
-
-            // map should always contain the set number
-            set = (Integer)map.get("Set");
+            return result;
         }
 
-        PropertyMap m = new PropertyMap(set, user, container.getId(), category, propertyEncryption, this);
-
-        validatePropertyMap(m);
-
-        if (newSet)
-        {
-            // A brand new set, but we might have previously cached a NULL marker and/or another thread might
-            // try to create this same set before we save.
-            _cache.remove(m);
-        }
-        else
-        {
-            // Map-filling query needed only for existing property set
-            Filter filter = new SimpleFilter(setColumn.getFieldKey(), set);
-            TableInfo tinfo = _prop.getTableInfoProperties();
-            TableSelector selector = new TableSelector(tinfo, tinfo.getColumns("Name", "Value"), filter, null);
-            fillValueMap(selector, m);
-            m.afterPropertiesSet(); // clear modified flag
-        }
-
-        return m;
+        return null;
     }
 
     @Override
@@ -243,12 +203,46 @@ public abstract class AbstractPropertyStore implements PropertyStore
         public PropertyManager.PropertyMap load(String key, Object argument)
         {
             Object[] params = (Object[])argument;
-            PropertyMap map = getWritableProperties((User)params[1], (Container)params[0], (String)params[2], false);
-            if (map != null)
+            User user = (User)params[1];
+            Container container = (Container)params[0];
+            String category = (String)params[2];
+
+            validateStore();
+            ColumnInfo setColumn = _prop.getTableInfoProperties().getColumn("Set");
+            String setSelectName = setColumn.getSelectName();   // Keyword in some dialects
+
+            SQLFragment sql = new SQLFragment("SELECT " + setSelectName + ", Encryption FROM " + _prop.getTableInfoPropertySets() +
+                    " WHERE UserId = ? AND ObjectId = ? AND Category = ?", user, container, category);
+
+            Map<String, Object> map = new SqlSelector(_prop.getSchema(), sql).getMap();
+            if (map == null)
             {
-                map.lock();
+                return null;
             }
-            return map;
+            PropertyEncryption propertyEncryption;
+
+            String encryptionName = (String) map.get("Encryption");
+            propertyEncryption = PropertyEncryption.getBySerializedName(encryptionName);
+
+            if (null == propertyEncryption)
+                throw new IllegalStateException("Unknown encryption name: " + encryptionName);
+
+            // map should always contain the set number
+            int set = (Integer)map.get("Set");
+
+            PropertyMap m = new PropertyMap(set, user, container.getId(), category, propertyEncryption, AbstractPropertyStore.this);
+
+            validatePropertyMap(m);
+
+            // Map-filling query needed only for existing property set
+            Filter filter = new SimpleFilter(setColumn.getFieldKey(), set);
+            TableInfo tinfo = _prop.getTableInfoProperties();
+            TableSelector selector = new TableSelector(tinfo, tinfo.getColumns("Name", "Value"), filter, null);
+            fillValueMap(selector, m);
+            m.afterPropertiesSet(); // clear modified flag
+
+            m.lock();
+            return m;
         }
     }
 }

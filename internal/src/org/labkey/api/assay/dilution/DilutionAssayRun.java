@@ -25,6 +25,7 @@ import org.labkey.api.assay.nab.view.RunDetailOptions;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -162,28 +163,32 @@ public abstract class DilutionAssayRun extends Luc5Assay
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), _run.getRowId());
         Map<PropertyDescriptor, Object> properties = new LinkedHashMap<>();
 
-        try (ResultSet rs = new TableSelector(runTable, selectCols.values(), filter, null).setForDisplay(true).setMaxRows(1).getResultSet())
+        // 34405 : avoid using multiple DB connections by wrapping the query in a transaction
+        try (DbScope.Transaction transaction = DilutionManager.getSchema().getScope().ensureTransaction())
         {
-            if (!rs.next())
+            try (ResultSet rs = new TableSelector(runTable, selectCols.values(), filter, null).setForDisplay(true).setMaxRows(1).getResultSet())
             {
-                throw new NotFoundException("Run " + _run.getRowId() + " was not found.");
-            }
+                if (!rs.next())
+                {
+                    throw new NotFoundException("Run " + _run.getRowId() + " was not found.");
+                }
 
-            for (Map.Entry<FieldKey, ColumnInfo> entry : selectCols.entrySet())
+                for (Map.Entry<FieldKey, ColumnInfo> entry : selectCols.entrySet())
+                {
+                    ColumnInfo column = entry.getValue();
+                    ColumnInfo displayField = column.getDisplayField();
+                    if (column.getDisplayField() != null)
+                        column = displayField;
+                    if (fieldKeys.containsKey(entry.getKey()))
+                        properties.put(fieldKeys.get(entry.getKey()), column.getValue(rs));
+                }
+                transaction.commit();
+            }
+            catch (SQLException e)
             {
-                ColumnInfo column = entry.getValue();
-                ColumnInfo displayField = column.getDisplayField();
-                if (column.getDisplayField() != null)
-                    column = displayField;
-                if (fieldKeys.containsKey(entry.getKey()))
-                    properties.put(fieldKeys.get(entry.getKey()), column.getValue(rs));
+                throw new RuntimeSQLException(e);
             }
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-
         return properties;
     }
 

@@ -252,6 +252,7 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
 
         try
         {
+            factory.prepare();
             conn = getConnection();
             rs = factory.getResultSet(conn);
 
