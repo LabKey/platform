@@ -39,11 +39,11 @@ public class PipelineRoot extends Entity
         root.copyTo(this);
 
         // PipelineRoot
-        this._pipelineRootId = root._pipelineRootId;
-        this._path = root._path;
-        this._supplementalPath = root._supplementalPath;
-        this._type = root._type;
-        this._searchable = root._searchable;
+        _pipelineRootId = root._pipelineRootId;
+        _path = root._path;
+        _supplementalPath = root._supplementalPath;
+        _type = root._type;
+        _searchable = root._searchable;
     }
 
     public void setPipelineRootId(int id)

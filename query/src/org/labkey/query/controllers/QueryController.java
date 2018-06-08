@@ -1542,7 +1542,7 @@ public class QueryController extends SpringActionController
         // "captionType" field backwards compatibility
         public void setCaptionType(ColumnHeaderType headerType)
         {
-            this._headerType = headerType;
+            _headerType = headerType;
         }
 
         public ColumnHeaderType getCaptionType()

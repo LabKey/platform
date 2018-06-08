@@ -128,12 +128,12 @@ public class XarReader extends AbstractXarImporter
 
     public void setReloadExistingRuns(boolean reloadExistingRuns)
     {
-        this._reloadExistingRuns = reloadExistingRuns;
+        _reloadExistingRuns = reloadExistingRuns;
     }
 
     public void setUseOriginalFileUrl(boolean useOriginalFileUrl)
     {
-        this._useOriginalFileUrl = useOriginalFileUrl;
+        _useOriginalFileUrl = useOriginalFileUrl;
     }
 
     public void setStrictValidateExistingSampleSet(boolean strictValidateExistingSampleSet)
@@ -143,7 +143,7 @@ public class XarReader extends AbstractXarImporter
 
     public void parseAndLoad(boolean reloadExistingRuns) throws ExperimentException
     {
-        this._reloadExistingRuns = reloadExistingRuns;
+        _reloadExistingRuns = reloadExistingRuns;
         parseAndLoad();
     }
 

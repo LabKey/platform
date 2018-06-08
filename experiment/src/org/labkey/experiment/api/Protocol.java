@@ -135,9 +135,9 @@ public class Protocol extends IdentifiableEntity
         return _outputDataDirTemplate;
     }
 
-    public void setOutputDataDirTemplate(String _outputDataDirTemplate)
+    public void setOutputDataDirTemplate(String outputDataDirTemplate)
     {
-        this._outputDataDirTemplate = _outputDataDirTemplate;
+        _outputDataDirTemplate = outputDataDirTemplate;
     }
 
     public String getOutputDataFileTemplate()

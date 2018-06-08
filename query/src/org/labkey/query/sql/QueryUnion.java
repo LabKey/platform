@@ -60,7 +60,7 @@ public class QueryUnion extends QueryRelation
     {
         this(parent._query, qunion);
         assert inFromClause == (alias != null);
-        this._query = parent._query;
+        _query = parent._query;
         _parent = parent;
         _inFromClause = inFromClause;
         setAlias(alias);

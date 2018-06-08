@@ -68,30 +68,29 @@ public class MdxQueryImpl
     }
 
     private class _MDX
-{
-    _MDX(FN fn, List<Object> arguments)
     {
-        this.fn = fn;
-        this.arguments = arguments;
-    }
-    _MDX(FN fn, Level level, List<Object> arguments)
-    {
-        this.fn = fn;
-        this.level = level;
-        this.arguments = arguments;
-    }
-    _MDX(FN fn, Level level, Object[] arguments)
-    {
-        this.fn = fn;
-        this.level = level;
-        this.arguments = new ArrayList<>(Arrays.asList(arguments));
-    }
+        _MDX(FN fn, List<Object> arguments)
+        {
+            this.fn = fn;
+            this.arguments = arguments;
+        }
+        _MDX(FN fn, Level level, List<Object> arguments)
+        {
+            this.fn = fn;
+            this.level = level;
+            this.arguments = arguments;
+        }
+        _MDX(FN fn, Level level, Object[] arguments)
+        {
+            this.fn = fn;
+            this.level = level;
+            this.arguments = new ArrayList<>(Arrays.asList(arguments));
+        }
 
-    FN  fn;
-    Level level;
-    List<Object> arguments;     // String,Member,_MDX
-}
-
+        FN  fn;
+        Level level;
+        List<Object> arguments;     // String,Member,_MDX
+    }
 
 
     _MDX _toFilterExistsExpr(_MDX levelExpr, _MDX membersExpr, String andor)
@@ -101,7 +100,7 @@ public class MdxQueryImpl
         StringBuilder filterExpr = new StringBuilder();
         for (int m=0 ; m<membersExpr.arguments.size() ; m++)
         {
-            String term = "NOT ISEMPTY(" + this._toSetString(membersExpr.arguments.get(m)) + ")";
+            String term = "NOT ISEMPTY(" + _toSetString(membersExpr.arguments.get(m)) + ")";
             filterExpr.append(opConnector).append(term);
             opConnector = op;
         }
@@ -137,8 +136,8 @@ public class MdxQueryImpl
             _MDX levelExpr = new _MDX(FN.MemberSet, l, new Object[] {l.getUniqueName() + ".members"});
             if (null == membersDef.membersQuery)
                 return levelExpr;
-            _MDX membersExpr = this._processExpr(membersDef.membersQuery);
-            return this._toFilterExistsExpr(levelExpr, membersExpr, "OR");
+            _MDX membersExpr = _processExpr(membersDef.membersQuery);
+            return _toFilterExistsExpr(levelExpr, membersExpr, "OR");
         }
     }
 
@@ -148,7 +147,7 @@ public class MdxQueryImpl
         List<Object> sets = new ArrayList<>();
         for (int e=0 ; e<expr.arguments.size() ; e++)
         {
-            _MDX set = this._processExpr(expr.arguments.get(e));
+            _MDX set = _processExpr(expr.arguments.get(e));
             sets.add(set);
         }
         if (sets.size() == 1)
@@ -175,7 +174,7 @@ public class MdxQueryImpl
         Map<String,List<Object>> setsByLevel = new TreeMap<>();
         for (int e=0 ; e<expr.arguments.size() ; e++)
         {
-            _MDX set = this._processExpr(expr.arguments.get(e));
+            _MDX set = _processExpr(expr.arguments.get(e));
             String key = null != set.level ? set.level.getUniqueName() : "-";
             if (!setsByLevel.containsKey(key))
                 setsByLevel.put(key, new ArrayList<>());
@@ -202,7 +201,7 @@ public class MdxQueryImpl
         List<Object> sets = new ArrayList<>();
         for (int e=0 ; e<expr.arguments.size() ; e++)
         {
-            _MDX set = this._processExpr(expr.arguments.get(e));
+            _MDX set = _processExpr(expr.arguments.get(e));
             sets.add(set);
         }
         if (sets.size() == 1)
@@ -218,7 +217,7 @@ public class MdxQueryImpl
         Level level = null;
         for (int e=0 ; e<expr.arguments.size() ; e++)
         {
-            _MDX set = this._processExpr(expr.arguments.get(e));
+            _MDX set = _processExpr(expr.arguments.get(e));
 
             Level next = set.level;
             if (e==0)
@@ -243,7 +242,7 @@ public class MdxQueryImpl
     }
 
 
-    _MDX  _processExpr(QubeExpr expr) throws BindException
+    private _MDX _processExpr(QubeExpr expr) throws BindException
     {
 
 //        if (Ext4.isArray(expr))
@@ -258,11 +257,11 @@ public class MdxQueryImpl
 
         switch (expr.op)
         {
-            case UNION:     return this._toUnionExpr(expr);
-            case MEMBERS:   return this._toMembersExpr(expr);
-            case INTERSECT: return this._toIntersectExpr(expr);
-            case CROSSJOIN: return this._toCrossJoinExpr(expr);
-            case XINTERSECT:return this._toSmartCrossJoinExpr(expr);
+            case UNION:     return _toUnionExpr(expr);
+            case MEMBERS:   return _toMembersExpr(expr);
+            case INTERSECT: return _toIntersectExpr(expr);
+            case CROSSJOIN: return _toCrossJoinExpr(expr);
+            case XINTERSECT:return _toSmartCrossJoinExpr(expr);
             default:
                 errors.reject(SpringActionController.ERROR_MSG, "unexpected operator: " + expr.op);
                 throw errors;
@@ -270,7 +269,7 @@ public class MdxQueryImpl
     }
 
 
-    String _toSetString(Object o)
+    private String _toSetString(Object o)
     {
         if (o instanceof CharSequence)
             return o.toString();
@@ -329,7 +328,7 @@ public class MdxQueryImpl
             if (arg instanceof CharSequence)
                 s.append((CharSequence)arg);
             else
-                s.append(this._toSetString(arg));
+                s.append(_toSetString(arg));
         }
         s.append(end);
         return s.toString();
@@ -385,18 +384,18 @@ public class MdxQueryImpl
 
         if (null != qq.onColumns)
         {
-            colmdx = this._processExpr(qq.onColumns);
-            columnset = this._toSetString(colmdx);
+            colmdx = _processExpr(qq.onColumns);
+            columnset = _toSetString(colmdx);
         }
 
         if (null != qq.onRows)
-            rowset = this._toSetString(this._processExpr(qq.onRows));
+            rowset = _toSetString(_processExpr(qq.onRows));
 
         if (null != qq.countFilters && qq.countFilters.arguments.size() > 0)
-            countFilterSet = this._toSetString(this._processExpr(qq.countFilters));
+            countFilterSet = _toSetString(_processExpr(qq.countFilters));
 
         if (null != qq.sliceFilters && qq.sliceFilters.arguments.size() > 0)
-            slice = this._toSetString(this._processExpr(qq.sliceFilters));
+            slice = _toSetString(_processExpr(qq.sliceFilters));
 
         Measure defaultMeasure = (Measure) qq.cube.getHierarchies().get("Measures").getDefaultMember();
         if (null == defaultMeasure || defaultMeasure.getName().startsWith("_"))

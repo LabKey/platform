@@ -598,8 +598,8 @@ public class JunitController extends SpringActionController
 
         TestResultView(List<Class> tests, List<Result> results)
         {
-            this._tests = tests;
-            this._results = results;
+            _tests = tests;
+            _results = results;
             for (Result result : results)
             {
                 _runCount += result.getRunCount();

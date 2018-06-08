@@ -1598,9 +1598,9 @@ public class SpecimenController extends BaseStudyController
             return _fromGroupedView;
         }
 
-        public void setFromGroupedView(boolean _fromGroupedView)
+        public void setFromGroupedView(boolean fromGroupedView)
         {
-            this._fromGroupedView = _fromGroupedView;
+            _fromGroupedView = fromGroupedView;
         }
 
         public Integer getPreferredLocation()

@@ -137,9 +137,9 @@ public class QuerySelect extends QueryRelation implements Cloneable
     QuerySelect(@NotNull Query query, QQuery root, QueryRelation parent, boolean inFromClause)
     {
         this(query, query.getSchema(), null);
-        this._parent = parent;
-        this._query = query;
-        this._inFromClause = inFromClause;
+        _parent = parent;
+        _query = query;
+        _inFromClause = inFromClause;
         initializeFromQQuery(root);
         initializeSelect();
         MemTracker.getInstance().put(this);
@@ -177,7 +177,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
 
     QueryRelation createSubquery(QQuery qquery, boolean inFromClause, String alias)
     {
-        QueryRelation sub = Query.createQueryRelation(this._query, qquery, inFromClause);
+        QueryRelation sub = Query.createQueryRelation(_query, qquery, inFromClause);
         sub._parent = this;
         if (null != alias)
             sub.setAlias(alias);
@@ -280,7 +280,7 @@ groupByLoop:
                 // Check With
                 relation = _query.lookupWithTable(QueryWith.getLegalName(getSqlDialect(), key.getName()));
 
-                if (null != relation && relation instanceof QueryWith.QueryTableWith)
+                if (relation instanceof QueryWith.QueryTableWith)
                 {
                     QueryWith.QueryTableWith queryTableWith = (QueryWith.QueryTableWith)relation;
                     if (queryTableWith.isParsingWith())
@@ -295,9 +295,8 @@ groupByLoop:
                     {
                         // Can happen in a recursive query. To be valid, WITH must be in a UNION, not in the first child of the UNION
                         // Use the tableInfo from the first child of the UNION
-                        QueryRelation parent = this._parent;
-                        if (null != parent && parent instanceof QueryUnion &&
-                                ((QueryUnion) parent)._termList.size() > 0)
+                        QueryRelation parent = _parent;
+                        if (parent instanceof QueryUnion && ((QueryUnion) parent)._termList.size() > 0)
                         {
                             TableInfo firstTableInfo = ((QueryUnion) parent)._termList.get(0).getTableInfo();
                             if (null != firstTableInfo)             // Could be null if parse error found
@@ -1777,7 +1776,7 @@ groupByLoop:
     @Override
     Collection<String> getKeyColumns()
     {
-        if (!this._resolved)
+        if (!_resolved)
             throw new IllegalStateException();
         // TODO handle multi column primary keys
         // TODO handle group by/distinct
@@ -1875,9 +1874,9 @@ groupByLoop:
         if (!getParseErrors().isEmpty())
             return Collections.emptySet();
 
-        if (this.isAggregate() || null != this._distinct)
+        if (this.isAggregate() || null != _distinct)
             return Collections.emptySet();
-        if (this._parent instanceof QueryUnion || this._parent instanceof QueryPivot)
+        if (_parent instanceof QueryUnion || _parent instanceof QueryPivot)
             return Collections.emptySet();
 
         MultiValuedMap<QueryRelation, RelationColumn> maps = new ArrayListValuedHashMap<>();
@@ -1909,7 +1908,7 @@ groupByLoop:
                 SelectColumn selectColumn = new SelectColumn(field, true);
                 selectColumn._suggestedColumn = true;
                 selectColumn._selected = true;
-                this._columns.put(selectColumn.getFieldKey(), selectColumn);
+                _columns.put(selectColumn.getFieldKey(), selectColumn);
                 ret.add(selectColumn);
             }
         }

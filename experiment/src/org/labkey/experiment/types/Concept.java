@@ -48,7 +48,7 @@ public class Concept
 
     public void setDescription(String description)
     {
-        this._description = StringUtils.trimToNull(description);
+        _description = StringUtils.trimToNull(description);
     }
 
     public String getSynonyms()
@@ -58,7 +58,7 @@ public class Concept
 
     public void setSynonyms(String synonyms)
     {
-        this._synonyms = StringUtils.trimToNull(synonyms);
+        _synonyms = StringUtils.trimToNull(synonyms);
     }
 
     public String getConcept()
@@ -68,7 +68,7 @@ public class Concept
 
     public void setConcept(String concept)
     {
-        this._concept = StringUtils.trimToNull(concept);
+        _concept = StringUtils.trimToNull(concept);
     }
 
 	public String getParent()
@@ -78,7 +78,7 @@ public class Concept
 
 	public void setParent(String concept)
 	{
-		this._concept = StringUtils.trimToNull(concept);
+		_concept = StringUtils.trimToNull(concept);
 	}
 
     public String getName()
@@ -88,7 +88,7 @@ public class Concept
 
     public void setName(String name)
     {
-        this._name = StringUtils.trimToNull(name);
+        _name = StringUtils.trimToNull(name);
     }
 
     public String getCode()
@@ -98,7 +98,7 @@ public class Concept
 
     public void setCode(String code)
     {
-        this._code = StringUtils.trimToNull(code);
+        _code = StringUtils.trimToNull(code);
     }
 
 
@@ -118,7 +118,7 @@ public class Concept
         PropertyDescriptor pd = new PropertyDescriptor();
 
         // Name
-        pd.setName(this._name);
+        pd.setName(_name);
 
         // PropertyURI
         String propertyURI = prefix + '#' + _name;
@@ -202,7 +202,7 @@ public class Concept
 
     public void setSemanticType(String semanticType)
     {
-        this._semanticType = semanticType;
+        _semanticType = semanticType;
     }
 
     public String getUmls()
@@ -212,7 +212,7 @@ public class Concept
 
     public void setUmls(String umls)
     {
-        this._umls = umls;
+        _umls = umls;
     }
 
 	public String getRangeURI()
@@ -220,9 +220,9 @@ public class Concept
 		return _rangeURI;
 	}
 
-	public void setRangeURI(String _rangeURI)
+	public void setRangeURI(String rangeURI)
 	{
-		this._rangeURI = _rangeURI;
+		_rangeURI = rangeURI;
 	}
 
 	public String getLabel()
@@ -232,6 +232,6 @@ public class Concept
 
 	public void setLabel(String label)
 	{
-		this._label = label;
+		_label = label;
 	}
 }

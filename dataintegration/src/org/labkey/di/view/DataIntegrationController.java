@@ -303,7 +303,7 @@ public class DataIntegrationController extends SpringActionController
 
         public void setType(FilterStrategy.Type type)
         {
-            this._type = type;
+            _type = type;
         }
 
         public boolean isUseDateWindow()

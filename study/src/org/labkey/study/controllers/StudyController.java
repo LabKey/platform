@@ -6296,9 +6296,9 @@ public class StudyController extends BaseStudyController
             return _visitDatePropertyName;
         }
 
-        public void setVisitDatePropertyName(String _visitDatePropertyName)
+        public void setVisitDatePropertyName(String visitDatePropertyName)
         {
-            this._visitDatePropertyName = _visitDatePropertyName;
+            _visitDatePropertyName = visitDatePropertyName;
         }
 
         public String getDescription()
@@ -7514,7 +7514,7 @@ public class StudyController extends BaseStudyController
 
         public void setAliasColumn(String aliasColumn)
         {
-            this._aliasColumn = aliasColumn;
+            _aliasColumn = aliasColumn;
         }
 
         public String getSourceColumn()
@@ -7524,7 +7524,7 @@ public class StudyController extends BaseStudyController
 
         public void setSourceColumn(String sourceColumn)
         {
-            this._sourceColumn = sourceColumn;
+            _sourceColumn = sourceColumn;
         }
 
         public String getPrefix()

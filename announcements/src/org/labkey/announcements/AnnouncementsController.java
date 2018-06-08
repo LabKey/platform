@@ -318,7 +318,7 @@ public class AnnouncementsController extends SpringActionController
         protected URLHelper _returnUrl;
         protected URLHelper _cancelUrl;
 
-        public ModelAndView getConfirmView(AnnouncementDeleteForm form, BindException errors) throws Exception
+        public ModelAndView getConfirmView(AnnouncementDeleteForm form, BindException errors)
         {
             Permissions perm = getPermissions();
 
@@ -1916,7 +1916,7 @@ public class AnnouncementsController extends SpringActionController
                     bean.setBody(body);
                     if (!getUser().isDeveloper())
                     {
-                        this._sanitizedHtml = PageFlowUtil.sanitizeHtml(body, validateErrors);
+                        _sanitizedHtml = PageFlowUtil.sanitizeHtml(body, validateErrors);
                     }
                 }
             }

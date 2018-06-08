@@ -1284,12 +1284,12 @@ public class SecurityController extends SpringActionController
 
         public void setProvider(String provider)
         {
-            this._provider = provider;
+            _provider = provider;
         }
 
         public String getProvider()
         {
-            return this._provider;
+            return _provider;
         }
 
         public void setNewUsers(String newUsers)

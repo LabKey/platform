@@ -1345,9 +1345,9 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             if (r instanceof AttachmentResource)
             {
                 AttachmentResource from = (AttachmentResource) r;
-                if (from._parent == this._parent)
+                if (from._parent == _parent)
                 {
-                    renameAttachment(this._parent, from.getName(), getName(), user);
+                    renameAttachment(_parent, from.getName(), getName(), user);
                     return;
                 }
             }

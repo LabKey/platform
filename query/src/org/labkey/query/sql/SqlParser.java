@@ -109,7 +109,7 @@ public class SqlParser
     public SqlParser(SqlDialect d, Container c)
     {
         _dialect = d;
-        this._container = c;
+        _container = c;
     }
 
     // for testing only

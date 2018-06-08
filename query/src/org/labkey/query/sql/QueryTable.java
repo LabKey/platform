@@ -253,7 +253,7 @@ public class QueryTable extends QueryRelation
         String comment = "<QueryTable";
         if (!StringUtils.isEmpty(_savedName))
             comment += " savedName='" + _savedName + "'";
-        comment += " name='" + this._tableInfo.getName() + "' class='" + this._tableInfo.getClass().getSimpleName() + "'>";
+        comment += " name='" + _tableInfo.getName() + "' class='" + _tableInfo.getClass().getSimpleName() + "'>";
         assert ret.appendComment(comment, _schema.getDbSchema().getSqlDialect());
 
         SQLFragment sql = _getSql();
@@ -283,7 +283,7 @@ public class QueryTable extends QueryRelation
         String comment = "<QueryTable";
         if (!StringUtils.isEmpty(_savedName))
             comment += " savedName='" + _savedName + "'";
-        comment += " name='" + this._tableInfo.getName() + "' class='" + this._tableInfo.getClass().getSimpleName() + "'>";
+        comment += " name='" + _tableInfo.getName() + "' class='" + _tableInfo.getClass().getSimpleName() + "'>";
         assert ret.appendComment(comment, _schema.getDbSchema().getSqlDialect());
 
         ret.append(_getSql());
@@ -458,7 +458,7 @@ public class QueryTable extends QueryRelation
             // always copy format, we don't care about preserving set/unset-ness
             to.setFormat(_col.getFormat());
             to.copyURLFrom(_col, null, null);
-            if (this._suggestedColumn)
+            if (_suggestedColumn)
             {
                 to.setHidden(true);
 //                to.setDisplayColumnFactory(ColumnInfo.NOLOOKUP_FACTORY);

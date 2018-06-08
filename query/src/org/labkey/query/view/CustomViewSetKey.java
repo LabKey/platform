@@ -33,6 +33,7 @@ import java.util.Objects;
 public class CustomViewSetKey implements Serializable
 {
     static private final String KEY = CustomViewSetKey.class.getName();
+
     private String _containerId;
     private String _queryName;
 
@@ -52,8 +53,8 @@ public class CustomViewSetKey implements Serializable
         if (!(other instanceof CustomViewSetKey))
             return false;
         CustomViewSetKey that = (CustomViewSetKey) other;
-        return Objects.equals(this._containerId, that._containerId) &&
-                Objects.equals(this._queryName, that._queryName);
+        return Objects.equals(_containerId, that._containerId) &&
+                Objects.equals(_queryName, that._queryName);
     }
 
     public int hashCode()

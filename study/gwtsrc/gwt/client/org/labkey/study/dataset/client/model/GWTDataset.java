@@ -70,7 +70,7 @@ public class GWTDataset implements IsSerializable
 
     public void setKeyPropertyName(String keyPropertyName)
     {
-        this._keyPropertyName.set(keyPropertyName);
+        _keyPropertyName.set(keyPropertyName);
     }
 
     public boolean getKeyPropertyManaged()
@@ -90,7 +90,7 @@ public class GWTDataset implements IsSerializable
 
     public void setDatasetId(int datasetId)
     {
-        this._datasetId.setInt(datasetId);
+        _datasetId.setInt(datasetId);
     }
 
     public String getName()
@@ -100,7 +100,7 @@ public class GWTDataset implements IsSerializable
 
     public void setName(String name)
     {
-        this._name.set(name);
+        _name.set(name);
     }
 
     public String getTypeURI()
@@ -110,7 +110,7 @@ public class GWTDataset implements IsSerializable
 
     public void setTypeURI(String typeURI)
     {
-        this._typeURI.set(typeURI);
+        _typeURI.set(typeURI);
     }
 
     public String getCategory()
@@ -120,7 +120,7 @@ public class GWTDataset implements IsSerializable
 
     public void setCategory(String category)
     {
-        this._category.set(category);
+        _category.set(category);
     }
 
     public String getVisitDatePropertyName()
@@ -130,7 +130,7 @@ public class GWTDataset implements IsSerializable
 
     public void setVisitDatePropertyName(String visitDatePropertyName)
     {
-        this._visitDatePropertyName.set(visitDatePropertyName);
+        _visitDatePropertyName.set(visitDatePropertyName);
     }
 
     public boolean getDemographicData()

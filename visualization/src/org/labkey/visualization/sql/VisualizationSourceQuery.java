@@ -226,9 +226,9 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
         {
             super(VisualizationSourceQuery.this.getSchema(), VisualizationSourceQuery.this.getQueryName(), pivotValue.toString() + "_" + agg.getOriginalName(), true, false);
             _originalName = agg.getOriginalName();
-            this._alias = pivotValue.toString() + "::" + agg.getAlias();
+            _alias = pivotValue.toString() + "::" + agg.getAlias();
             if (null != agg.getLabel())
-                this._label = pivotValue.toString() + " - " + agg.getLabel();
+                _label = pivotValue.toString() + " - " + agg.getLabel();
             _pivotValue = pivotValue.toString();
             // Remember the alias that the client using to refer to this column
             _clientAlias = clientAlias;

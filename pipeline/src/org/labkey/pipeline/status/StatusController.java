@@ -624,7 +624,7 @@ public class StatusController extends SpringActionController
 
         public void setFilename(String filename)
         {
-            this._filename = filename;
+            _filename = filename;
         }
 
         public boolean isDownload()

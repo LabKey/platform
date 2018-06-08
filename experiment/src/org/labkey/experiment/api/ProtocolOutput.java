@@ -45,12 +45,12 @@ public abstract class ProtocolOutput extends IdentifiableBase
 
     public void setRowId(int rowId)
     {
-        this._rowId = rowId;
+        _rowId = rowId;
     }
 
     public void setContainer(Container parent)
     {
-        this._container = parent;
+        _container = parent;
     }
 
     public Container getContainer()
@@ -65,7 +65,7 @@ public abstract class ProtocolOutput extends IdentifiableBase
 
     public void setRunId(Integer runId)
     {
-        this._runId = runId;
+        _runId = runId;
     }
 
     public Date getCreated()
@@ -75,7 +75,7 @@ public abstract class ProtocolOutput extends IdentifiableBase
 
     public void setCreated(Date created)
     {
-        this._created = created;
+        _created = created;
     }
 
     public String getCpasType()
@@ -95,7 +95,7 @@ public abstract class ProtocolOutput extends IdentifiableBase
 
     public void setSourceApplicationId(Integer sourceApplicationId)
     {
-        this._sourceApplicationId = sourceApplicationId;
+        _sourceApplicationId = sourceApplicationId;
     }
 
     public Integer getCreatedBy()
@@ -135,7 +135,7 @@ public abstract class ProtocolOutput extends IdentifiableBase
 
     public void setDescription(String description)
     {
-        this._description = description;
+        _description = description;
     }
 
     public int hashCode()

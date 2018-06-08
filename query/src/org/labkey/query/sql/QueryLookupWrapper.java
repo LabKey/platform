@@ -385,7 +385,7 @@ public class QueryLookupWrapper extends QueryRelation
                 }
                 return _fk;
             }
-            return this._wrapped.getFk();
+            return _wrapped.getFk();
         }
 
         public JdbcType getJdbcType()

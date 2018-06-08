@@ -39,7 +39,7 @@ public class Experiment extends IdentifiableEntity implements Serializable
 
     public void setHypothesis(String hypothesis)
     {
-        this._hypothesis = hypothesis;
+        _hypothesis = hypothesis;
     }
 
     public String getExperimenter()
@@ -49,7 +49,7 @@ public class Experiment extends IdentifiableEntity implements Serializable
 
     public void setExperimenter(String experimenter)
     {
-        this._experimenter = experimenter;
+        _experimenter = experimenter;
     }
 
     public String getExperimentDescriptionURL()
@@ -59,7 +59,7 @@ public class Experiment extends IdentifiableEntity implements Serializable
 
     public void setExperimentDescriptionURL(String experimentDescriptionURL)
     {
-        this._experimentDescriptionURL = experimentDescriptionURL;
+        _experimentDescriptionURL = experimentDescriptionURL;
     }
 
     public String getComments()
@@ -69,7 +69,7 @@ public class Experiment extends IdentifiableEntity implements Serializable
 
     public void setComments(String comments)
     {
-        this._comments = comments;
+        _comments = comments;
     }
 
     public String getContactId()
@@ -79,7 +79,7 @@ public class Experiment extends IdentifiableEntity implements Serializable
 
     public void setContactId(String contactId)
     {
-        this._contactId = contactId;
+        _contactId = contactId;
     }
 
     public boolean isHidden()
