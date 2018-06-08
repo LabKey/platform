@@ -183,7 +183,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
         logger.info("----- Start Batch Properties -----");
         String valueText;
 
-        for (Map.Entry<DomainProperty, String> entry : this._batchProperties.entrySet())
+        for (Map.Entry<DomainProperty, String> entry : _batchProperties.entrySet())
         {
             if(entry.getValue() == null)
                 valueText = "[Blank]";
@@ -217,7 +217,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
         else
             logger.info("\tRun Comments: " + _runComments);
 
-        for (Map.Entry<DomainProperty, String> entry : this._runProperties.entrySet())
+        for (Map.Entry<DomainProperty, String> entry : _runProperties.entrySet())
         {
             if(entry.getValue() == null)
                 valueText = "[Blank]";

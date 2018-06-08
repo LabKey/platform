@@ -34,7 +34,7 @@ public class IdentifiableBase implements Identifiable, Serializable
     public IdentifiableBase(String lsid)
     {
         this();
-        this._lsid = lsid;
+        _lsid = lsid;
     }
 
     public String getLSID()
@@ -44,7 +44,7 @@ public class IdentifiableBase implements Identifiable, Serializable
 
     public void setLSID(String lsid)
     {
-        this._lsid = lsid;
+        _lsid = lsid;
     }
 
     public void setName(String name)

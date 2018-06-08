@@ -63,11 +63,11 @@ public enum PropertyType
 
     PropertyType(String uri, boolean lookup, String display, String shortName, String jsonType)
     {
-        this._uri = uri;
-        this._lookup = lookup;
-        this._display = display;
-        this._jsonType = jsonType;
-        this._short = shortName == null ? display : shortName;
+        _uri = uri;
+        _lookup = lookup;
+        _display = display;
+        _jsonType = jsonType;
+        _short = shortName == null ? display : shortName;
     }
 
     public String getURI()

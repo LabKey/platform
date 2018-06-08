@@ -125,7 +125,7 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
         ConceptTypeRadio(String name, ConceptType type)
         {
             super(name, type.getDisplay());
-            this._type = type;
+            _type = type;
         }
     }
 
@@ -328,37 +328,37 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
         
         BaseConceptType(PropertyType type)
         {
-            this._pd.setRangeURI(type.toString());
+            _pd.setRangeURI(type.toString());
             _propertyType = type;
-            this._text = type.getDisplay();
+            _text = type.getDisplay();
         }
         BaseConceptType(String rangeURI)
         {
-            this._pd.setRangeURI(rangeURI);
+            _pd.setRangeURI(rangeURI);
             _propertyType = null==rangeURI ? null : PropertyType.fromName(rangeURI);
-            this._text = _default(null==_propertyType?null:_propertyType.getDisplay(), rangeURI);
+            _text = _default(null==_propertyType?null:_propertyType.getDisplay(), rangeURI);
         }
 
         BaseConceptType(String rangeURI, String text)
         {
-            this._pd.setRangeURI(rangeURI);
+            _pd.setRangeURI(rangeURI);
             _propertyType = PropertyType.fromName(rangeURI);
-            this._text = text;
+            _text = text;
         }
 
         BaseConceptType(String rangeURI, String text, String conceptURI)
         {
-            this._pd.setRangeURI(rangeURI);
-            this._pd.setConceptURI(conceptURI);
+            _pd.setRangeURI(rangeURI);
+            _pd.setConceptURI(conceptURI);
             _propertyType = PropertyType.fromName(rangeURI);
-            this._text = text;
+            _text = text;
         }
 
         BaseConceptType(GWTPropertyDescriptor pd, String text)
         {
             _copy(pd, _pd);
             _propertyType = PropertyType.fromName(_pd.getRangeURI());
-            this._text = text;
+            _text = text;
         }
 
         PropertyType getPropertyType()
@@ -548,7 +548,7 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
     public static PropertyEditor<ConceptType> conceptTypePropertyEditor = new PropertyEditor<ConceptType>()
     {
         @Override
-        public ConceptType parse(CharSequence text) throws ParseException
+        public ConceptType parse(CharSequence text)
         {
             return parseRawValue(text.toString());
         }

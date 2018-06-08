@@ -892,7 +892,7 @@ public class StringExpressionFactory
 
         protected StringPart parsePart(String expr)
         {
-            throw new IllegalArgumentException(this._source);
+            throw new IllegalArgumentException(_source);
         }
 
         @Override

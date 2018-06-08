@@ -175,8 +175,8 @@ import java.util.Objects;
         if (other == null || !(getClass().equals(other.getClass())))
             return false;
         QueryKey that = (QueryKey) other;
-        return strEqualsIgnoreCase(this._name, that._name) &&
-                Objects.equals(this._parent, that._parent);
+        return strEqualsIgnoreCase(_name, that._name) &&
+                Objects.equals(_parent, that._parent);
     }
 
     public int hashCode()

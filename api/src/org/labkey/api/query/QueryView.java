@@ -2898,7 +2898,7 @@ public class QueryView extends WebPartView<Object>
 
     public void setPrintView(boolean b)
     {
-        this._printView = b;
+        _printView = b;
     }
 
     public boolean isPrintView()

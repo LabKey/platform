@@ -592,9 +592,9 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
-    public void setDescription(String _description)
+    public void setDescription(String description)
     {
-        _column.setDescription(_description);
+        _column.setDescription(description);
     }
 
     @Override

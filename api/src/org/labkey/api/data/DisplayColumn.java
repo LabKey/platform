@@ -1252,9 +1252,9 @@ public abstract class DisplayColumn extends RenderColumn
         return _description;
     }
 
-    public void setDescription(String _description)
+    public void setDescription(String description)
     {
-        this._description = _description;
+        _description = description;
     }
 
     public void addDisplayClass(String className)

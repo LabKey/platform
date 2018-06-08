@@ -150,7 +150,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
     protected void setSuccessMessageSuffix(String successMessageSuffix)
     {
-        this._successMessageSuffix = successMessageSuffix;
+        _successMessageSuffix = successMessageSuffix;
     }
 
     public ModelAndView getDefaultImportView(FORM form, BindException errors)

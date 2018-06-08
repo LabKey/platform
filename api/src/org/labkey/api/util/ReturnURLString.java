@@ -143,7 +143,7 @@ public class ReturnURLString
         {
             if (StringUtils.isEmpty(_source))
                 return null;
-            return new URLHelper(this._source);
+            return new URLHelper(_source);
         }
         catch (Exception x)
         {

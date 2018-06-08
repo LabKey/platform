@@ -135,8 +135,8 @@ public class ParamReplacementSvc
 
         SubstitutionSyntax(Pattern matchPattern, Pattern escapedMatchPattern)
         {
-            this._matchPattern = matchPattern;
-            this._escapedMatchPattern = escapedMatchPattern;
+            _matchPattern = matchPattern;
+            _escapedMatchPattern = escapedMatchPattern;
         }
 
         String getReplacementStr(String replacementStr, String fullMatchedString, String paramName)
@@ -731,7 +731,7 @@ public class ParamReplacementSvc
 
         InlineTransformation(Pattern matchPattern)
         {
-            this._matchPattern = matchPattern;
+            _matchPattern = matchPattern;
         }
 
         abstract String getCommentSyntaxString(Matcher matcher);
@@ -746,5 +746,4 @@ public class ParamReplacementSvc
             return _matchPattern;
         }
     }
-
 }

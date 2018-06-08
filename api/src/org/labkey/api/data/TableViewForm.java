@@ -212,15 +212,15 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
 
         if (null != _selectedRows && _selectedRows.length > 0)
         {
-            for (String _selectedRow : _selectedRows)
-                Table.delete(_tinfo, _selectedRow);
+            for (String selectedRow : _selectedRows)
+                Table.delete(_tinfo, selectedRow);
         }
         else
         {
             Object[] pkVal = getPkVals();
             if (null != pkVal && null != pkVal[0])
                 Table.delete(_tinfo, pkVal);
-            else //Hmm, thow an exception here????
+            else //Hmm, throw an exception here????
                 _log.warn("Nothing to delete for table " + _tinfo.getName() + " on request " + _request.getRequestURI());
         }
     }

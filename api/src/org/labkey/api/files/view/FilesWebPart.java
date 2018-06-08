@@ -711,7 +711,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
         public void setHeight(int h)
         {
-            this._height = h;
+            _height = h;
         }
 
         public boolean isListing()
@@ -721,7 +721,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
         public void setListing(boolean listing)
         {
-            this._isListing = listing;
+            _isListing = listing;
         }
 
         private static final String CLOUD_PATTERN_ENCODED = "%40cloud/";

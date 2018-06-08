@@ -164,7 +164,7 @@ public class QueryLogging
 
     public void setShouldAudit(boolean shouldAudit)
     {
-        this._shouldAudit = shouldAudit;
+        _shouldAudit = shouldAudit;
     }
 
     public SelectQueryAuditProvider getSelectQueryAuditProvider()

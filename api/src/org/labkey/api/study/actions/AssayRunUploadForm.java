@@ -171,7 +171,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
 
     public void setSeverityLevel(String severityLevel)
     {
-        this._severityLevel = severityLevel;
+        _severityLevel = severityLevel;
     }
 
     public String getComments()

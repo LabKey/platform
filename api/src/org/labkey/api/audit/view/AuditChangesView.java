@@ -38,7 +38,7 @@ public class AuditChangesView extends HttpView
 
     public AuditChangesView(String comment, Map<String,String> oldData, Map<String,String> newData)
     {
-        this._comment = comment;
+        _comment = comment;
         if (oldData != null)
         {
             this.oldData = new CaseInsensitiveLinkedHashMap<>(oldData);

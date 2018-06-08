@@ -6,21 +6,22 @@ import org.labkey.api.view.WebPartFactory;
 
 public class WikiPartFactory
 {
-    public enum Privilege {
+    public enum Privilege
+    {
         ALL_USERS,
         ONLY_GUESTS,
         ONLY_REGISTERED_USERS
     }
 
-    private String _activeModuleName;
-    private WebPartFactory _factory;
-    private Privilege _privilege;
+    private final String _activeModuleName;
+    private final WebPartFactory _factory;
+    private final Privilege _privilege;
 
-    public WikiPartFactory(WebPartFactory factory, Privilege _privilege, String moduleName)
+    public WikiPartFactory(WebPartFactory factory, Privilege privilege, String moduleName)
     {
-        this._factory = factory;
-        this._privilege = _privilege;
-        this._activeModuleName = moduleName;
+        _factory = factory;
+        _privilege = privilege;
+        _activeModuleName = moduleName;
     }
 
     public WebPartFactory getWebPartFactory()

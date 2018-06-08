@@ -326,7 +326,7 @@ public class SimpleFilter implements Filter
 
         public void setSelectColumns(List<ColumnInfo> selectColumns)
         {
-            this._selectColumns = selectColumns;
+            _selectColumns = selectColumns;
         }
     }
 

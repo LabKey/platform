@@ -70,7 +70,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     // deep clone constructor
     public GWTDomain(GWTDomain<FieldType> src)
     {
-        this._ts = src._ts;
+        _ts = src._ts;
         this.domainId = src.domainId;    
         this.name = src.name;
         this.domainURI = src.domainURI;

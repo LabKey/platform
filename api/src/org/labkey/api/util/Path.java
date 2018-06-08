@@ -68,15 +68,15 @@ public class Path implements Serializable, Comparable, Iterable<String>
 
     protected Path(String[] path, int length, boolean abs, boolean dir)
     {
-        this._path = path;
-        this._length = length;
-        this._parent = new AtomicReference<>();
+        _path = path;
+        _length = length;
+        _parent = new AtomicReference<>();
         int hash = 0;
         for (int i=0 ; i<length ; i++)
             hash = hash*37 + _path[i].toLowerCase().hashCode();
-        this._hash = hash;
-        this._isAbsolute = abs;
-        this._isDirectory = dir;
+        _hash = hash;
+        _isAbsolute = abs;
+        _isDirectory = dir;
     }
 
     // Create an instance from a java.nio.file.Path
@@ -151,24 +151,24 @@ public class Path implements Serializable, Comparable, Iterable<String>
         if (!(o instanceof Path))
             return -1;
         Path other = (Path)o;
-        int shorter = Math.min(this._length, other._length);
+        int shorter = Math.min(_length, other._length);
         for (int i=0 ; i<shorter ; i++)
         {
             int c = compareName(_path[i],other._path[i]);
             if (0 != c)
                 return c;
         }
-        return this._length - other._length;
+        return _length - other._length;
     }
 
 
     public boolean endsWith(Path other)
     {
-        if (other._length > this._length)
+        if (other._length > _length)
             return false;
         for (int i=1 ; i<=other._length ; i++)
         {
-            int c = compareName(this._path[this._length-i], other._path[other._length-i]);
+            int c = compareName(_path[_length-i], other._path[other._length-i]);
             if (0 != c)
                 return false;
         }
@@ -183,11 +183,11 @@ public class Path implements Serializable, Comparable, Iterable<String>
         if (this.getClass() != other.getClass())
             return false;
         Path that = (Path)other;
-        if (this._hash != that._hash || this._length != that._length)
+        if (_hash != that._hash || _length != that._length)
             return false;
-        for (int i=this._length-1 ; i>=0 ; i--)
+        for (int i=_length-1 ; i>=0 ; i--)
         {
-            int c = compareName(this._path[i], that._path[i]);
+            int c = compareName(_path[i], that._path[i]);
             if (0 != c)
                 return false;
         }
@@ -197,7 +197,7 @@ public class Path implements Serializable, Comparable, Iterable<String>
 
     public boolean contains(String name)
     {
-        for (String p : this._path)
+        for (String p : _path)
             if (p.equals(name))
                 return true;
         return false;
@@ -297,18 +297,18 @@ public class Path implements Serializable, Comparable, Iterable<String>
     {
         if (size()==0)
             return other;
-        int shorter = Math.min(this._length, other._length);
+        int shorter = Math.min(_length, other._length);
         int i;
         for (i=0 ; i<shorter && 0==compareName(_path[i],other._path[i]); i++)
             ;
 
-        // used up all of this._path
-        if (i == this._length)
+        // used up all of _path
+        if (i == _length)
         {
-            if (this._length == other._length)
+            if (_length == other._length)
                 return emptyPath;
-            String[] path = new String[other._length - this._length];
-            System.arraycopy(other._path, this._length, path, 0, path.length);
+            String[] path = new String[other._length - _length];
+            System.arraycopy(other._path, _length, path, 0, path.length);
             return createPath(path, path.length, false, other.isDirectory());
         }
 
@@ -345,10 +345,10 @@ public class Path implements Serializable, Comparable, Iterable<String>
     {
         if (other._length == 0)
             return this;
-        String[] path = new String[this._length + other._length];
-        System.arraycopy(this._path, 0, path, 0, _length);
+        String[] path = new String[_length + other._length];
+        System.arraycopy(_path, 0, path, 0, _length);
         System.arraycopy(other._path, 0, path, _length, other._length);
-        Path ret = createPath(path, this._length + other._length, this.isAbsolute(), other.isDirectory());
+        Path ret = createPath(path, _length + other._length, this.isAbsolute(), other.isDirectory());
         if (other._length == 1)
             ret._parent.set(this);
         return ret;
@@ -381,11 +381,11 @@ public class Path implements Serializable, Comparable, Iterable<String>
 
     public boolean startsWith(Path other)
     {
-        if (other._length > this._length)
+        if (other._length > _length)
             return false;
         for (int i=0 ; i<other._length ; i++)
         {
-            int c = compareName(this._path[i], other._path[i]);
+            int c = compareName(_path[i], other._path[i]);
             if (0 != c)
                 return false;
         }

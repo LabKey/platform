@@ -51,7 +51,7 @@ public class RequiredInLine extends TaskToCommandArgs
 
     public void setAddPipelineToolsDir(boolean addPipelineToolsDir)
     {
-        this._addPipelineToolsDir = addPipelineToolsDir;
+        _addPipelineToolsDir = addPipelineToolsDir;
     }
 
     public String getSoftwarePackage()

@@ -31,7 +31,7 @@ public interface WebPartFrame
 
         public FrameConfig(String title)
         {
-            this._title = title;
+            _title = title;
         }
 
         public String _title = null;

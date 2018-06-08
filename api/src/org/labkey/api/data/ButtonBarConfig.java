@@ -167,8 +167,8 @@ public class ButtonBarConfig
         if (cfg.getScriptIncludes() != null)
             this.setScriptIncludes(Arrays.copyOfRange(cfg.getScriptIncludes(), 0 , cfg.getScriptIncludes().length));
 
-        this._hiddenStandardButtons = new HashSet<>(cfg._hiddenStandardButtons);
-        this._onRenderScript = cfg._onRenderScript;
+        _hiddenStandardButtons = new HashSet<>(cfg._hiddenStandardButtons);
+        _onRenderScript = cfg._onRenderScript;
         this.setAlwaysShowRecordSelectors(cfg.isAlwaysShowRecordSelectors());
 
         if (cfg.getItems() != null)

@@ -39,7 +39,7 @@ public class SafeFileAppender extends AppenderSkeleton
 
     public SafeFileAppender(File file)
     {
-        this._file = file;
+        _file = file;
 
         // Make sure that we try to mount the drive (if needed) before using the file
         NetworkDrive.exists(_file);

@@ -862,9 +862,9 @@ public class DataColumn extends DisplayColumn
         return _inputType;
     }
 
-    public void setInputType(String _inputType)
+    public void setInputType(String inputType)
     {
-        this._inputType = _inputType;
+        _inputType = inputType;
     }
 
     public void setBoundColumn(ColumnInfo column)

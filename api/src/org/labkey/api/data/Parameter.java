@@ -208,7 +208,7 @@ public class Parameter implements AutoCloseable
 
     public Parameter copy(PreparedStatement stmt)
     {
-        Parameter copy = new Parameter(this._name, this._uri, this._indexes, this._type);
+        Parameter copy = new Parameter(_name, _uri, _indexes, _type);
         // not actually using constant parameters yet, if we were we'd have to remember the value so we could copy it
         if (_constant)
             throw new IllegalStateException("Copying constant parameters is not yet implemented");

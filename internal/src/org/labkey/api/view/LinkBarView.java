@@ -39,7 +39,7 @@ public class LinkBarView extends WebPartView
 
     public void setDrawLine(boolean fDrawLine)
     {
-        this._drawLine = fDrawLine;
+        _drawLine = fDrawLine;
     }
 
     @Override
@@ -51,7 +51,7 @@ public class LinkBarView extends WebPartView
             out.write(PageFlowUtil.textLink(link.first, link.second) + "&nbsp;");
         }
         out.write("</td></tr>");
-        if(_drawLine)
+        if (_drawLine)
         {
             out.write("<tr><td colspan=3 class=\"labkey-title-area-line\"></td></tr>");
         }
