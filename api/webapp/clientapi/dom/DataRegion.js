@@ -807,6 +807,7 @@ if (!LABKEY.DataRegions) {
             if (e.target && e.target.tagName.toLowerCase() === 'td') {
                 $(this).siblings('tr').removeClass('lk-row-hl');
                 $(this).addClass('lk-row-hl');
+                _selClickLock = me;
             }
         });
         rows.on('mouseenter', function() {
@@ -817,12 +818,29 @@ if (!LABKEY.DataRegions) {
             $(this).removeClass('lk-row-over');
         });
 
-        // Issue 32898
-        $(document).on('click', function(event) {
-            if (!$(event.target).closest(form.find('table')).length) {
-              form.find('.lk-row-hl').removeClass('lk-row-hl');
-            }
-        });
+        if (!_selDocClick) {
+            _selDocClick = $(document).on('click', _onDocumentClick);
+        }
+    };
+
+    var _selClickLock; // lock to prevent removing a row highlight that was just applied
+    var _selDocClick; // global (shared across all Data Region instances) click event handler instance
+
+    // 32898: Clear row highlights on document click
+    var _onDocumentClick = function() {
+        if (_selClickLock) {
+            var form = _getFormSelector(_selClickLock);
+            _selClickLock = undefined;
+
+            $('.lk-row-hl').each(function() {
+                if (!form.has($(this)).length) {
+                    $(this).removeClass('lk-row-hl');
+                }
+            });
+        }
+        else {
+            $('.lk-row-hl').removeClass('lk-row-hl');
+        }
     };
 
     /**
