@@ -18,6 +18,7 @@ package org.labkey.api.module;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
+import org.apache.commons.lang3.JavaVersion;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.log4j.Appender;
@@ -870,7 +871,7 @@ public class ModuleLoader implements Filter
     /**
      * Checks Java version and throws if it's not supported.
      *
-     * Warnings for deprecated Java versions are specified in BootstrapTemplate#buildWarnings
+     * Warnings for deprecated Java versions are specified in CoreWarningProvider
      *
      * @throws ConfigurationException if Java version is not supported
      */
@@ -878,13 +879,22 @@ public class ModuleLoader implements Filter
     private void verifyJavaVersion() throws ConfigurationException
     {
         if (!SystemUtils.IS_JAVA_1_8)
-            throw new ConfigurationException("Unsupported Java runtime version: " + SystemUtils.JAVA_VERSION + ". LabKey Server requires Java 8.");
+        {
+            if (SystemUtils.isJavaVersionAtLeast(JavaVersion.JAVA_9) && AppProps.getInstance().isDevMode())
+            {
+                _log.error("LabKey Server has not been tested against Java runtime version " + SystemUtils.JAVA_VERSION + ".");
+            }
+            else
+            {
+                throw new ConfigurationException("Unsupported Java runtime version: " + SystemUtils.JAVA_VERSION + ". LabKey Server requires Java 8.");
+            }
+        }
     }
 
     /**
      * Sets the running Tomcat version, if servlet container is recognized and supported. Otherwise, version is left UNKNOWN.
      *
-     * Warnings for deprecated Tomcat versions are specified in BootstrapTemplate#buildWarnings
+     * Warnings for deprecated Tomcat versions are specified in CoreWarningProvider
      *
      * @throws ConfigurationException if Tomcat version is not supported
      */
