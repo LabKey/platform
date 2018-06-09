@@ -24,6 +24,7 @@ import org.labkey.api.data.dialect.StatementWrapper;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
 import org.springframework.dao.ConcurrencyFailureException;
+import org.springframework.jdbc.BadSqlGrammarException;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -311,64 +312,90 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
         }
 
         @Override
-        public void prepare()
+        public <T> T handleResultSet(ResultSetHandler<T> handler)
         {
-            // Stash the generated SQL in case we need to log it later
-            _sql = _factory.getSql();
-        }
-
-        @Override
-        public ResultSet getResultSet(Connection conn) throws SQLException
-        {
-            if (null == _sql)
-            {
-                return null;
-            }
-
-            DbScope scope = getScope();
-            scope.getSqlDialect().configureToDisableJdbcCaching(conn, scope, _sql);
-
-            ResultSet rs;
+            boolean success = false;
+            Connection conn = null;
+            ResultSet rs = null;
 
             try
             {
-                rs = executeQuery(conn, _sql, _scrollable, getAsyncRequest(), _factory.getStatementMaxRows());
-            }
-            catch (SQLException outer)
-            {
-                if (conn.isClosed() || !conn.getAutoCommit() || scope.isTransactionActive() || !SqlDialect.isTransactionException(outer))
-                    throw outer;
-                // retry if simple transaction exception
-                try
+                // Stash the generated SQL in case we need to log it later
+                _sql = _factory.getSql();
+
+                if (null != _sql)
                 {
-                    rs = executeQuery(conn, _sql, _scrollable, getAsyncRequest(), _factory.getStatementMaxRows());
+                    DbScope scope = getScope();
+                    conn = getConnection();
+                    scope.getSqlDialect().configureToDisableJdbcCaching(conn, scope, _sql);
+
+                    try
+                    {
+                        rs = executeQuery(conn, _sql, _scrollable, getAsyncRequest(), _factory.getStatementMaxRows());
+                    }
+                    catch (SQLException outer)
+                    {
+                        if (conn.isClosed() || !conn.getAutoCommit() || scope.isTransactionActive() || !SqlDialect.isTransactionException(outer))
+                            throw outer;
+
+                        // retry if simple transaction exception
+                        try
+                        {
+                            rs = executeQuery(conn, _sql, _scrollable, getAsyncRequest(), _factory.getStatementMaxRows());
+                        }
+                        catch (SQLException inner)
+                        {
+                            throw outer;
+                        }
+                    }
+
+                    // Just to be safe: if processResultSet() throws SQLException then caller will close the result set; if it
+                    // throws anything else, we will lose the result set, so we need to close it here.
+                    boolean close = true;
+
+                    try
+                    {
+                        _factory.processResultSet(rs);
+                        close = false;
+                    }
+                    catch (SQLException e)
+                    {
+                        close = false;
+                        throw e;
+                    }
+                    finally
+                    {
+                        if (close)
+                            close(rs, null);  // Connection will be released by caller
+                    }
                 }
-                catch (SQLException inner)
-                {
-                    throw outer;
-                }
+
+                T ret = handler.handle(rs, conn);
+                success = true;
+
+                return ret;
             }
-
-            // Just to be safe: if processResultSet() throws SQLException then caller will close the result set; if it
-            // throws anything else, we will lose the result set, so we need to close it here.
-            boolean close = true;
-
-            try
+            catch(RuntimeSQLException e)
             {
-                _factory.processResultSet(rs);
-                close = false;
-
-                return rs;
+                handleSqlException(e.getSQLException(), conn);
+                throw new IllegalStateException(getClass().getSimpleName() + ".handleSqlException() should have thrown an exception");
             }
-            catch (SQLException e)
+            catch(BadSqlGrammarException e)
             {
-                close = false;
-                throw e;
+                handleSqlException(e.getSQLException(), conn);
+                throw new IllegalStateException(getClass().getSimpleName() + ".handleSqlException() should have thrown an exception");
+            }
+            catch(SQLException e)
+            {
+                handleSqlException(e, conn);
+                throw new IllegalStateException(getClass().getSimpleName() + ".handleSqlException() should have thrown an exception");
             }
             finally
             {
-                if (close)
-                    close(rs, null);  // Connection will be released by caller
+                if (shouldClose() || !success)
+                    close(rs, conn);
+
+                afterComplete(rs);
             }
         }
 

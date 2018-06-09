@@ -20,7 +20,6 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.RowMap;
-import org.springframework.jdbc.BadSqlGrammarException;
 
 import java.lang.reflect.Array;
 import java.sql.Connection;
@@ -246,43 +245,7 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
 
     protected <T> T handleResultSet(ResultSetFactory factory, ResultSetHandler<T> handler)
     {
-        boolean success = false;
-        Connection conn = null;
-        ResultSet rs = null;
-
-        try
-        {
-            factory.prepare();
-            conn = getConnection();
-            rs = factory.getResultSet(conn);
-
-            T ret = handler.handle(rs, conn);
-            success = true;
-
-            return ret;
-        }
-        catch(RuntimeSQLException e)
-        {
-            factory.handleSqlException(e.getSQLException(), conn);
-            throw new IllegalStateException(factory.getClass().getSimpleName() + ".handleSqlException() should have thrown an exception");
-        }
-        catch(BadSqlGrammarException e)
-        {
-            factory.handleSqlException(e.getSQLException(), conn);
-            throw new IllegalStateException(factory.getClass().getSimpleName() + ".handleSqlException() should have thrown an exception");
-        }
-        catch(SQLException e)
-        {
-            factory.handleSqlException(e, conn);
-            throw new IllegalStateException(factory.getClass().getSimpleName() + ".handleSqlException() should have thrown an exception");
-        }
-        finally
-        {
-            if (factory.shouldClose() || !success)
-                close(rs, conn);
-
-            afterComplete(rs);
-        }
+        return factory.handleResultSet(handler);
     }
 
     @Override

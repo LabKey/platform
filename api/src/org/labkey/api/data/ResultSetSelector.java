@@ -58,9 +58,24 @@ public class ResultSetSelector extends NonSqlExecutingSelector<ResultSetSelector
     {
         return new ResultSetFactory() {
             @Override
-            public ResultSet getResultSet(Connection conn)
+            public <T> T handleResultSet(ResultSetHandler<T> handler)
             {
-                return _rs;
+                try
+                {
+                    return handler.handle(_rs, null);
+                }
+                catch(SQLException e)
+                {
+                    handleSqlException(e, null);
+                    throw new IllegalStateException(getClass().getSimpleName() + ".handleSqlException() should have thrown an exception");
+                }
+                finally
+                {
+                    if (shouldClose())
+                        close(_rs, null);
+
+                    afterComplete(_rs);
+                }
             }
 
             @Override

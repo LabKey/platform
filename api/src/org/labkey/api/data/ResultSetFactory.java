@@ -16,9 +16,9 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.BaseSelector.ResultSetHandler;
 
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 
 /**
@@ -28,9 +28,7 @@ import java.sql.SQLException;
  */
 public interface ResultSetFactory
 {
-    /** Do any work needed to be ready to execute the query, such as generating the SQL to run */
-    default void prepare() {}
-    ResultSet getResultSet(Connection conn) throws SQLException;
+    <T> T handleResultSet(ResultSetHandler<T> handler);
     boolean shouldClose();
     void handleSqlException(SQLException e, @Nullable Connection conn);
 }
