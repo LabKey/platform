@@ -28,16 +28,13 @@ import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AbstractBeanQueryUpdateService;
-import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
-import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserIdQueryForeignKey;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
@@ -45,9 +42,7 @@ import org.labkey.api.wiki.WikiRendererDisplayColumn;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 
-import javax.mail.MessagingException;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Map;
 
@@ -62,7 +57,7 @@ public class AnnouncementTable extends FilteredTable<AnnouncementSchema>
     public AnnouncementTable(AnnouncementSchema schema)
     {
         // Standard usage omits unapproved announcements
-        this(schema, new SimpleFilter(FieldKey.fromParts("Approved"), AnnouncementManager.SPAM_MAGIC_DATE, CompareType.GT));
+        this(schema, AnnouncementManager.IS_APPROVED_FILTER);
     }
 
     public AnnouncementTable(AnnouncementSchema schema, SimpleFilter filter)

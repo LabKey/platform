@@ -45,9 +45,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.labkey.announcements.model.AnnouncementManager.SPAM_MAGIC_DATE;
-
-
 /**
  * Bean Class for AnnouncementModel.
  */
@@ -457,7 +454,7 @@ public class AnnouncementModel extends Entity implements Serializable
 
     public boolean isSpam()
     {
-        return SPAM_MAGIC_DATE.equals(_approved);
+        return AnnouncementManager.isSpam(this);
     }
 }
 

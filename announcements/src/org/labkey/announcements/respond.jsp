@@ -19,8 +19,10 @@
 <%@ page import="org.labkey.announcements.AnnouncementsController"%>
 <%@ page import="org.labkey.announcements.AnnouncementsController.AnnouncementForm" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.BaseInsertView" %>
+<%@ page import="org.labkey.announcements.model.ModeratorReview" %>
 <%@ page import="org.labkey.api.announcements.DiscussionService" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -44,6 +46,7 @@
     AnnouncementForm form = bean.form;
 
     Container c = getContainer();
+    User user = getUser();
 
     String respondUrl = AnnouncementsController.getRespondURL(c).getEncodedLocalURIString();
     ActionURL completeUserUrl = new ActionURL(AnnouncementsController.CompleteUserAction.class, getContainer());
@@ -53,7 +56,15 @@
 <input type="hidden" name="cancelUrl" value="<%=h(bean.cancelURL)%>">
 <%=generateReturnUrlFormField(bean.cancelURL)%>
 <input type="hidden" name="fromDiscussion" value="<%=bean.fromDiscussion%>">
-<div style="max-width: 1050px;"><table style="width: 100%;" class="lk-fields-table"><%
+<div style="max-width: 1050px;">
+<table style="width: 100%;" class="lk-fields-table">
+<%
+
+ModeratorReview mr = ModeratorReview.get(settings.getModeratorReview());
+if (!mr.isApproved(c, user))
+{
+    %><tr><td colspan="3">Note: This response will not be posted immediately; it will appear after the content has been reviewed.<br><br></td></tr><%
+}
 
 if (settings.isTitleEditable())
 {

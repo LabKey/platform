@@ -146,6 +146,7 @@ public class AnnouncementManager
             ids.add(container.getId());
 
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), ids, CompareType.IN);
+        filter.addAllClauses(AnnouncementManager.IS_APPROVED_FILTER);
         Sort sort = new Sort("-Created");
 
         return new TableSelector(_comm.getTableInfoAnnouncements(), filter, sort).getCollection(AnnouncementModel.class);
@@ -157,6 +158,7 @@ public class AnnouncementManager
 
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("container"), parent.getContainerId());
         filter.addCondition(FieldKey.fromParts("parent"), parent.getEntityId());
+        filter.addAllClauses(AnnouncementManager.IS_APPROVED_FILTER);
 
         Sort sort = new Sort("Created");
 
@@ -261,7 +263,7 @@ public class AnnouncementManager
 
             ModeratorReview mr = ModeratorReview.get(getMessageBoardSettings(c).getModeratorReview());
 
-            if (mr.isApproved(c, user, ann))
+            if (mr.isApproved(c, user))
                 approve(c, user, sendEmailNotifications, ann, ann.getCreated());
             else
                 notifyModerators(c, user, ann);
@@ -331,12 +333,22 @@ public class AnnouncementManager
         };
     }
 
-    // Magic date value used to mark an announcement that a moderator has reviewed and "disapproved" (e.g., determined to be spam).
-    public static final Date SPAM_MAGIC_DATE = new Date(0);
+    // Magic date value used to mark an announcement that a moderator has reviewed and marked as spam
+    private static final Date SPAM_MAGIC_DATE = new Date(0);
+
+    // Standard filters for retrieving specific classes of messages (approved, spam, needs review)
+    public static final SimpleFilter IS_APPROVED_FILTER = new SimpleFilter(FieldKey.fromParts("Approved"), AnnouncementManager.SPAM_MAGIC_DATE, CompareType.GT);
+    public static final SimpleFilter IS_SPAM_FILTER = new SimpleFilter(FieldKey.fromParts("Approved"), AnnouncementManager.SPAM_MAGIC_DATE, CompareType.EQUAL);
+    public static final SimpleFilter REQUIRES_REVIEW_FILTER = new SimpleFilter(FieldKey.fromParts("Approved"), null, CompareType.ISBLANK);
 
     public static void markAsSpam(Container c, AnnouncementModel ann)
     {
         updateApproved(c, ann, SPAM_MAGIC_DATE);
+    }
+
+    public static boolean isSpam(AnnouncementModel ann)
+    {
+        return SPAM_MAGIC_DATE.equals(ann.getApproved());
     }
 
     // Execute direct SQL (not Table.update())... I don't think we want to change Modified or ModifiedBy. Could consider adding column for Moderator, though.

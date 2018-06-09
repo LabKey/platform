@@ -183,12 +183,12 @@ public class AnnouncementSchema extends UserSchema
 
     private AnnouncementTable createModeratorReviewTable()
     {
-        return createFilteredAnnouncementTable(new SimpleFilter(FieldKey.fromParts("Approved"), null, CompareType.ISBLANK));
+        return createFilteredAnnouncementTable(AnnouncementManager.REQUIRES_REVIEW_FILTER);
     }
 
     private AnnouncementTable createSpamTable()
     {
-        AnnouncementTable spamTable = createFilteredAnnouncementTable(new SimpleFilter(FieldKey.fromParts("Approved"), AnnouncementManager.SPAM_MAGIC_DATE, CompareType.EQUAL));
+        AnnouncementTable spamTable = createFilteredAnnouncementTable(AnnouncementManager.IS_SPAM_FILTER);
         spamTable.setTitle("Spam");
 
         return spamTable;

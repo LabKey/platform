@@ -17,8 +17,10 @@
 %>
 <%@ page import="org.labkey.announcements.AnnouncementsController"%>
 <%@ page import="org.labkey.announcements.AnnouncementsController.BaseInsertView.InsertBean"%>
+<%@ page import="org.labkey.announcements.model.ModeratorReview" %>
 <%@ page import="org.labkey.api.announcements.DiscussionService" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -41,6 +43,7 @@
     InsertBean bean = me.getModelBean();
 
     Container c = getContainer();
+    User user = getUser();
     DiscussionService.Settings settings = bean.settings;
     AnnouncementsController.AnnouncementForm form = bean.form;
     URLHelper cancelURL = bean.cancelURL;
@@ -54,7 +57,15 @@
 <input type=hidden name=fromDiscussion value="<%=bean.fromDiscussion%>">
 <input type=hidden name=allowMultipleDiscussions value="<%=bean.allowMultipleDiscussions%>">
 <table class="lk-fields-table" style="max-width: 1050px"> <!-- 13625 -->
-  <tr><td class='labkey-form-label'>Title * <%= PageFlowUtil.helpPopup("Title", "This field is required.") %></td><td colspan="2"><input type='text' size='60' maxlength="255" id="title" name='title' value="<%=h(form.get("title"))%>"></td></tr><%
+<%
+    ModeratorReview mr = ModeratorReview.get(settings.getModeratorReview());
+    if (!mr.isApproved(c, user))
+    {
+        %><tr><td colspan="3">Note: This <%=h(settings.getConversationName().toLowerCase())%> will not be posted immediately; it will appear after the content has been reviewed.<br><br></td></tr><%
+    }
+%>
+  <tr><td class='labkey-form-label'>Title * <%= PageFlowUtil.helpPopup("Title", "This field is required.") %></td><td colspan="2"><input type='text' size='60' maxlength="255" id="title" name='title' value="<%=h(form.get("title"))%>"></td></tr>
+<%
     if (settings.hasStatus())
     {
         %><tr><td class='labkey-form-label'>Status</td><td colspan="2"><%=text(bean.statusSelect)%></td></tr><%
@@ -71,7 +82,7 @@
             <td width="100%"><i><%
         if (settings.isSecure())
         {
-            %> This <%=h(settings.getConversationName().toLowerCase())%> is private; only editors and the users on this list can view it.  These users will also<%
+            %> This <%=h(settings.getConversationName().toLowerCase())%> is private; only editors and the users on this list can view it. These users will also<%
         }
         else
         {
@@ -83,7 +94,7 @@
     {
         %><tr><td class='labkey-form-label'>Expires</td><td><input type='text' size='23' name='expires' value='<%=h(form.get("expires"))%>' ></td><td width="100%"><i>By default the Expires field is set to one month from today. <br>Expired messages are not deleted, they are just no longer shown on the Portal page.</i></td></tr><%
     }
-    %>
+%>
 
     <tr>
         <td class='labkey-form-label'>Body</td>
