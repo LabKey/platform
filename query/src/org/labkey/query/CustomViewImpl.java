@@ -24,6 +24,7 @@ import org.labkey.api.data.AnalyticsProviderItem;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.FilterInfo;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
@@ -535,7 +536,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView, Ed
                 {
                     continue;
                 }
-                ColumnInfo column = new ColumnInfo(field);
+                ColumnInfo column = new ColumnInfo(field, JdbcType.OTHER);
                 column.setLabel(field.toDisplayString() + " (not found)");
                 ret.put(field, column);
             }

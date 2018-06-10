@@ -120,8 +120,8 @@ public class FilterClauseBuilder
 
             SimpleFilter filter = new SimpleFilter();
             builder.append(filter);
-            ColumnInfo column = new ColumnInfo(builder._fieldKey);
-            column.setJdbcType(jdbcType);
+            ColumnInfo column = new ColumnInfo(builder._fieldKey, jdbcType);
+
             return filter.toLabKeySQL(Collections.singletonMap(builder._fieldKey, column));
         }
 
