@@ -33,8 +33,6 @@ import org.labkey.api.data.dialect.StatementWrapper;
 import org.labkey.api.data.dialect.TableResolver;
 import org.labkey.api.util.PageFlowUtil;
 
-import javax.servlet.ServletException;
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.ResultSet;
@@ -170,7 +168,7 @@ public abstract class SasDialect extends SimpleSqlDialect
     // SAS has no database name, so override both getDatabaseName() methods and return null.
 
     @Override
-    public String getDatabaseName(String dsName, DataSource ds)
+    public String getDatabaseName(DataSourceProperties props)
     {
         return null;
     }

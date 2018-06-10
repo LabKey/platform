@@ -38,7 +38,19 @@ public class CoreWarningProvider implements WarningProvider
         }
 
         // Warn if running on a deprecated database version or some other non-fatal database configuration issue
-        DbScope.getLabKeyScope().getSqlDialect().addAdminWarningMessages(warnings);
+        DbScope labkeyScope = DbScope.getLabKeyScope();
+        labkeyScope.getSqlDialect().addAdminWarningMessages(warnings);
+
+        // Warn if running in production mode with an inadequate labkey db connection pool size
+        if (!AppProps.getInstance().isDevMode())
+        {
+            Integer maxTotal = labkeyScope.getDataSourceProperties().getMaxTotal();
+
+            if (null == maxTotal)
+                warnings.add("Could not determine the connection pool size for the labkeyDataSource; verify that the connection pool is properly configured in labkey.xml");
+            else if (maxTotal < 20)
+                warnings.add("The configured labkeyDataSource connection pool size (" + maxTotal + ") is too small for a production server! Update the configuration and restart the server.");
+        }
 
         if (!ModuleLoader.getInstance().getTomcatVersion().isSupported())
         {
