@@ -197,7 +197,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                 try
                 {
                     _log.warn("Module \"" + getName() + "\" requires a data source called \"" + dsName + "\". It's not configured, so it will be created against the primary labkey database (\"" + scope.getDatabaseName() + "\") instead.");
-                    DbScope.addScope(dsName, scope.getDataSource(), scope.getProps());
+                    DbScope.addScope(dsName, scope.getDataSource(), scope.getLabKeyProps());
                 }
                 catch (SQLException | ServletException e)
                 {

@@ -43,8 +43,7 @@ class DatabaseMaintenanceTask implements MaintenanceTask
 
         try
         {
-            SqlDialect.DataSourceProperties props = new SqlDialect.DataSourceProperties(scope.getDataSourceName(), scope.getDataSource());
-            url = props.getUrl();
+            url = scope.getDataSourceProperties().getUrl();
             log.info("Database maintenance on " + url + " started");
         }
         catch (Exception e)

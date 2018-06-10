@@ -27,6 +27,7 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.TomcatVersion;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
@@ -38,6 +39,7 @@ import org.springframework.jdbc.BadSqlGrammarException;
 import javax.servlet.ServletException;
 import javax.sql.DataSource;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -990,11 +992,10 @@ public abstract class SqlDialect
     //
     // Currently, JdbcHelper only finds the database name. It could be extended if we require querying other components or if
     // replacement/reassembly becomes necessary.
-    public String getDatabaseName(String dsName, DataSource ds) throws ServletException
+    public String getDatabaseName(DataSourceProperties props) throws ServletException
     {
         try
         {
-            DataSourceProperties props = new DataSourceProperties(dsName, ds);
             String url = props.getUrl();
             return getDatabaseName(url);
         }
@@ -1127,6 +1128,22 @@ public abstract class SqlDialect
             else
             {
                 return getProperty("getPassword");
+            }
+        }
+
+        public Integer getMaxTotal()
+        {
+            // Need to invoke a different method on Tomcat 7 vs. Tomcat 8/9
+            String methodName = ModuleLoader.getInstance().getTomcatVersion().getMaxTotalMethodName();
+
+            try
+            {
+                return callGetter(methodName);
+            }
+            catch (ServletException e)
+            {
+                LOG.error("Could not extract connection pool max size from data source \"" + _dsName + "\"");
+                return null;
             }
         }
     }

@@ -20,21 +20,28 @@ package org.labkey.api.module;
  */
 public enum TomcatVersion
 {
-    UNKNOWN(false),
-    TOMCAT_7(true),
-    TOMCAT_8(true),
-    TOMCAT_9(true);
+    UNKNOWN(false, null),
+    TOMCAT_7(true, "getMaxActive"),
+    TOMCAT_8(true, "getMaxTotal"),
+    TOMCAT_9(true, "getMaxTotal");
 
     private final boolean _supported;
+    private final String _maxTotalMethodName;
 
-    TomcatVersion(boolean supported)
+    TomcatVersion(boolean supported, String maxTotalMethodName)
     {
         _supported = supported;
+        _maxTotalMethodName = maxTotalMethodName;
     }
 
     public boolean isSupported()
     {
         return _supported;
+    }
+
+    public String getMaxTotalMethodName()
+    {
+        return _maxTotalMethodName;
     }
 
     public static TomcatVersion get(int majorVersion)

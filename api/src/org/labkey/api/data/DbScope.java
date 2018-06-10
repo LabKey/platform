@@ -25,6 +25,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.data.dialect.SqlDialect.DataSourceProperties;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -133,7 +134,8 @@ public class DbScope
     private final DbSchemaCache _schemaCache;
     private final SchemaTableInfoCache _tableCache;
     private final Map<Thread, List<TransactionImpl>> _transaction = new WeakHashMap<>();
-    private final DataSourceProperties _props;
+    private final LabKeyDataSourceProperties _labkeyProps;
+    private final DataSourceProperties _dsProps;
 
     private SqlDialect _dialect;
 
@@ -262,24 +264,31 @@ public class DbScope
         _driverVersion = null;
         _schemaCache = null;
         _tableCache = null;
-        _props = null;
+        _labkeyProps = null;
+        _dsProps = null;
     }
 
 
-    // Data source properties that administrators can specify in labkey.xml. To add support for a new property, simply
-    // add a getter & setter to this bean, and then do something with the typed value in DbScope.
-    public static class DataSourceProperties
+    /**
+     *  <p>Special LabKey-specific properties that administrators can add to labkey.xml and associate with a data source. To add support for a new property, simply
+     *  add a getter & setter to this bean, and then do something with the typed value in DbScope.</p>
+     *
+     *  <p>Example usage of these properties:</p>
+     *
+     *  <p>{@code <Parameter name="hidraDataSource:LogQueries" value="true"/>}</p>
+     */
+    public static class LabKeyDataSourceProperties
     {
         private boolean _logQueries = false;
         private String _displayName = null;
 
-        public DataSourceProperties()
+        public LabKeyDataSourceProperties()
         {
         }
 
-        private static DataSourceProperties get(Map<String, String> map)
+        private static LabKeyDataSourceProperties get(Map<String, String> map)
         {
-            return map.isEmpty() ? new DataSourceProperties() : BeanObjectFactory.Registry.getFactory(DataSourceProperties.class).fromMap(map);
+            return map.isEmpty() ? new LabKeyDataSourceProperties() : BeanObjectFactory.Registry.getFactory(LabKeyDataSourceProperties.class).fromMap(map);
         }
 
         public boolean isLogQueries()
@@ -306,11 +315,13 @@ public class DbScope
 
     // Standard DbScope constructor. Attempt a (non-pooled) connection to the datasource to gather meta data properties.
     // We don't use DbSchema or normal pooled connections here because failed connections seem to get added into the pool.
-    public DbScope(String dsName, DataSource dataSource, DataSourceProperties props) throws ServletException, SQLException
+    public DbScope(String dsName, DataSource dataSource, LabKeyDataSourceProperties props) throws ServletException, SQLException
     {
         try (Connection conn = dataSource.getConnection())
         {
             DatabaseMetaData dbmd = conn.getMetaData();
+            _dsProps = new DataSourceProperties(dsName, dataSource);
+            Integer maxTotal = _dsProps.getMaxTotal();
 
             try
             {
@@ -319,8 +330,6 @@ public class DbScope
             }
             finally
             {
-                Integer maxTotal = getMaxTotal(dataSource, dsName);
-
                 // Always log the attempt, even if DatabaseNotSupportedException, etc. occurs, to help with diagnosis
                 LOG.info("Initializing DbScope with the following configuration:" +
                         "\n    DataSource Name:          " + dsName +
@@ -336,30 +345,15 @@ public class DbScope
             _dsName = dsName;
             _displayName = null != props.getDisplayName() ? props.getDisplayName() : extractDisplayName(_dsName);
             _dataSource = dataSource;
-            _databaseName = _dialect.getDatabaseName(_dsName, _dataSource);
+            _databaseName = _dialect.getDatabaseName(_dsProps);
             _URL = dbmd.getURL();
             _databaseProductName = dbmd.getDatabaseProductName();
             _databaseProductVersion = dbmd.getDatabaseProductVersion();
             _driverName = dbmd.getDriverName();
             _driverVersion = dbmd.getDriverVersion();
-            _props = props;
+            _labkeyProps = props;
             _schemaCache = new DbSchemaCache(this);
             _tableCache = new SchemaTableInfoCache(this);
-        }
-    }
-
-    private @Nullable Integer getMaxTotal(DataSource dataSource, String name)
-    {
-        String methodName = ModuleLoader.getInstance().getTomcatVersion() == TomcatVersion.TOMCAT_7 ? "getMaxActive" : "getMaxTotal";
-
-        try
-        {
-            return (int)dataSource.getClass().getMethod(methodName).invoke(dataSource);
-        }
-        catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e)
-        {
-            LOG.error("Could not extract connection pool max size from data source \"" + name + "\"");
-            return null;
         }
     }
 
@@ -423,9 +417,14 @@ public class DbScope
         return _driverVersion;
     }
 
-    public DataSourceProperties getProps()
+    public LabKeyDataSourceProperties getLabKeyProps()
     {
-        return _props;
+        return _labkeyProps;
+    }
+
+    public DataSourceProperties getDataSourceProperties()
+    {
+        return _dsProps;
     }
 
     /**
@@ -647,11 +646,9 @@ public class DbScope
 
     public Connection getUnpooledConnection() throws SQLException
     {
-        SqlDialect.DataSourceProperties props = new SqlDialect.DataSourceProperties(_dsName, _dataSource);
-
         try
         {
-            return DriverManager.getConnection(_URL, props.getUsername(), props.getPassword());
+            return DriverManager.getConnection(_URL, _dsProps.getUsername(), _dsProps.getPassword());
         }
         catch (ServletException e)
         {
@@ -1060,7 +1057,7 @@ public class DbScope
                             dsProperties.put(name.substring(name.indexOf(':') + 1), ctx.getInitParameter(name));
                     });
 
-                    DataSourceProperties dsPropertiesBean = DataSourceProperties.get(dsProperties);
+                    LabKeyDataSourceProperties dsPropertiesBean = LabKeyDataSourceProperties.get(dsProperties);
                     if (dsName.equals(labkeyDsName) && dsPropertiesBean.isLogQueries())
                     {
                         LOG.warn("Ignoring unsupported parameter in " + AppProps.getInstance().getWebappConfigurationFilename() + " to log queries for LabKey DataSource \"" + labkeyDsName + "\"");
@@ -1096,7 +1093,7 @@ public class DbScope
     }
 
 
-    public static void addScope(String dsName, DataSource dataSource, DataSourceProperties props) throws ServletException, SQLException
+    public static void addScope(String dsName, DataSource dataSource, LabKeyDataSourceProperties props) throws ServletException, SQLException
     {
         DbScope scope = new DbScope(dsName, dataSource, props);
         scope.getSqlDialect().prepare(scope);
@@ -1120,7 +1117,7 @@ public class DbScope
     public static boolean ensureDataBase(String dsName, DataSource ds) throws ServletException
     {
         Connection conn = null;
-        SqlDialect.DataSourceProperties props = new SqlDialect.DataSourceProperties(dsName, ds);
+        DataSourceProperties props = new DataSourceProperties(dsName, ds);
 
         // Need the dialect to:
         // 1) determine whether an exception is "no database" or something else and
