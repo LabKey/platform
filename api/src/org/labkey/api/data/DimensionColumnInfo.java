@@ -26,14 +26,14 @@ import org.labkey.api.util.StringExpressionFactory;
  */
 public class DimensionColumnInfo extends ColumnInfo
 {
-    private CrosstabDimension _dimension = null;
+    private CrosstabDimension _crosstabDimension = null;
 
     public DimensionColumnInfo(CrosstabTableInfo table, CrosstabDimension dimension)
     {
         super(dimension.getSourceColumn(), table);
-        _dimension = dimension;
-        setName(_dimension.getSourceColumn().getAlias());
-        setLabel(_dimension.getSourceColumn().getLabel());
+        _crosstabDimension = dimension;
+        setName(_crosstabDimension.getSourceColumn().getAlias());
+        setLabel(_crosstabDimension.getSourceColumn().getLabel());
         setURL(StringExpressionFactory.createURL(dimension.getUrl()));
         setDimension(true);
         setFacetingBehaviorType(FacetingBehaviorType.ALWAYS_OFF);
@@ -47,12 +47,12 @@ public class DimensionColumnInfo extends ColumnInfo
 
     public FieldKey getSourceFieldKey()
     {
-        return _dimension.getSourceFieldKey();
+        return _crosstabDimension.getSourceFieldKey();
     }
 
 
     public SQLFragment getValueSql(String tableAliasName)
     {
-        return new SQLFragment(tableAliasName + "." + _dimension.getSourceColumn().getAlias());
+        return new SQLFragment(tableAliasName + "." + _crosstabDimension.getSourceColumn().getAlias());
     }
 }

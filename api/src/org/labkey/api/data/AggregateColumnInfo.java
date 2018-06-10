@@ -39,28 +39,28 @@ public class AggregateColumnInfo extends ColumnInfo
     public static final String PIVOTED_NAME_PREFIX = "PCTAGG_";
 
     private @Nullable final CrosstabMember _member;
-    private @NotNull final CrosstabMeasure _measure;
+    private @NotNull final CrosstabMeasure _crosstabMeasure;
 
-    public AggregateColumnInfo(TableInfo table, @Nullable CrosstabMember member, @NotNull CrosstabMeasure measure)
+    public AggregateColumnInfo(TableInfo table, @Nullable CrosstabMember member, @NotNull CrosstabMeasure crosstabMeasure)
     {
-        super(measure.getSourceColumn(), table);
+        super(crosstabMeasure.getSourceColumn(), table);
 
         _member = member;
-        _measure = measure;
+        _crosstabMeasure = crosstabMeasure;
 
-        setName(getColumnName(_member, _measure));
-        setLabel(_measure.getCaption());
+        setName(getColumnName(_member, _crosstabMeasure));
+        setLabel(_crosstabMeasure.getCaption());
         if (member != null)
         {
             setCrosstabColumnDimension(member.getDimensionFieldKey());
             setCrosstabColumnMember(member);
         }
 
-        if (null != measure.getUrl() && null != member)
-            setURL(StringExpressionFactory.createURL(measure.getUrl(member).getActionURL()));
+        if (null != crosstabMeasure.getUrl() && null != member)
+            setURL(StringExpressionFactory.createURL(crosstabMeasure.getUrl(member).getActionURL()));
 
         //if the agg function is something other than min or max, clear the FK
-        if(!_measure.getAggregateFunction().retainsForeignKey())
+        if (!_crosstabMeasure.getAggregateFunction().retainsForeignKey())
         {
             setFk(null);
         }
@@ -162,7 +162,7 @@ public class AggregateColumnInfo extends ColumnInfo
     @Override
     public JdbcType getJdbcType()
     {
-        return _measure.getAggregateSqlType();
+        return _crosstabMeasure.getAggregateSqlType();
     }
 
     /**
@@ -181,7 +181,7 @@ public class AggregateColumnInfo extends ColumnInfo
 
     public static String getColumnName(@Nullable CrosstabMember member, CrosstabMeasure measure)
     {
-        if(null == member)
+        if (null == member)
             return NAME_PREFIX + measure.getAggregateFunction().name() + "_" + measure.getSourceColumn().getAlias();
         else
             return PIVOTED_NAME_PREFIX + member.getValueSQLAlias(measure.getSourceColumn().getSqlDialect()) + "_"

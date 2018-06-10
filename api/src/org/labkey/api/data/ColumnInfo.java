@@ -123,33 +123,31 @@ public class ColumnInfo extends ColumnRenderProperties
     };
     public static final DisplayColumnFactory NOLOOKUP_FACTORY = colInfo -> new DataColumn(colInfo, false);
 
+    private static final Logger LOG = Logger.getLogger(ColumnInfo.class);
+    private static final Set<String> NON_EDITABLE_COL_NAMES = new CaseInsensitiveHashSet("created", "createdBy", "modified", "modifiedBy", "_ts", "entityId", "container");
 
-    private static final Logger _log = Logger.getLogger(ColumnInfo.class);
-    private static final Set<String> nonEditableColNames = new CaseInsensitiveHashSet("created", "createdBy", "modified", "modifiedBy", "_ts", "entityId", "container");
-
-    private FieldKey fieldKey;
-    private String name;
-    private String alias;
-    private String sqlTypeName;
-    private JdbcType jdbcType = null;
-    private String textAlign = null;
-    private ForeignKey fk = null;
-    private String defaultValue = null;
-    private String jdbcDefaultValue = null;  // TODO: Merge with defaultValue, see #17646
-    private boolean isAutoIncrement = false;
-    private boolean isKeyField = false;
-    private boolean isReadOnly = false;
-    private boolean isUserEditable = true;
-    private boolean isUnselectable = false;
-    private TableInfo parentTable = null;
-    protected String metaDataName = null;
-    protected String selectName = null;
-    protected ColumnInfo displayField;
-    private List<FieldKey> sortFieldKeys = null;
-    private Map<FieldKey, ColumnInfo> cachedSortColumns = new HashMap<>();
-    private List<ConditionalFormat> conditionalFormats = new ArrayList<>();
-    private List<? extends IPropertyValidator> validators = Collections.emptyList();
-
+    private FieldKey _fieldKey;
+    private String _name;
+    private String _alias;
+    private String _sqlTypeName;
+    private JdbcType _jdbcType = null;
+    private String _textAlign = null;
+    private ForeignKey _fk = null;
+    private String _defaultValue = null;
+    private String _jdbcDefaultValue = null;  // TODO: Merge with defaultValue, see #17646
+    private boolean _isAutoIncrement = false;
+    private boolean _isKeyField = false;
+    private boolean _isReadOnly = false;
+    private boolean _isUserEditable = true;
+    private boolean _isUnselectable = false;
+    private TableInfo _parentTable = null;
+    protected String _metaDataName = null;
+    protected String _selectName = null;
+    protected ColumnInfo _displayField;
+    private List<FieldKey> _sortFieldKeys = null;
+    private Map<FieldKey, ColumnInfo> _cachedSortColumns = new HashMap<>();
+    private List<ConditionalFormat> _conditionalFormats = new ArrayList<>();
+    private List<? extends IPropertyValidator> _validators = Collections.emptyList();
     private DisplayColumnFactory _displayColumnFactory = DEFAULT_FACTORY;
     private boolean _shouldLog = true;
     private boolean _lockName = false;
@@ -172,39 +170,47 @@ public class ColumnInfo extends ColumnRenderProperties
     // Always call this constructor
     public ColumnInfo(FieldKey key, TableInfo parentTable)
     {
-        this.fieldKey = key;
-        this.parentTable = parentTable;
+        _fieldKey = key;
+        _parentTable = parentTable;
         _columnLogging = new ColumnLogging(key, parentTable);
     }
 
+    @Deprecated // Pass in a type!
     public ColumnInfo(FieldKey key)
     {
-        this(key, null);
-        this.name = null;
+        this(key, (TableInfo)null);
+        _name = null;
     }
 
+    public ColumnInfo(FieldKey key, JdbcType t)
+    {
+        this(key, (TableInfo)null);
+        _name = null;
+        _jdbcType = t;
+    }
+
+    @Deprecated // Pass in a type!
     public ColumnInfo(String name)
     {
-        this(null != name ? new FieldKey(null,name) : null, null);
+        this(null != name ? new FieldKey(null, name) : null, (TableInfo)null);
 //        assert -1 == name.indexOf('/');
     }
 
     public ColumnInfo(String name, JdbcType t)
     {
-        this(null != name ? new FieldKey(null,name) : null, null);
+        this(null != name ? new FieldKey(null, name) : null, (TableInfo)null);
         if (null == name)
             return;
 //        assert -1 == name.indexOf('/');
-        jdbcType = t;
+        _jdbcType = t;
     }
 
     public ColumnInfo(String name, JdbcType t, int scale, boolean nullable)
     {
-        this(null != name ? new FieldKey(null,name) : null, null);
+        this(null != name ? new FieldKey(null, name) : null, t);
         if (null == name)
             return;
 //        assert -1 == name.indexOf('/');
-        setJdbcType(t);
         setScale(scale);
         setNullable(nullable);
     }
@@ -212,10 +218,9 @@ public class ColumnInfo extends ColumnRenderProperties
 
     public ColumnInfo(ResultSetMetaData rsmd, int col) throws SQLException
     {
-        this(new FieldKey(null, rsmd.getColumnLabel(col)), null);
-        this.setSqlTypeName(rsmd.getColumnTypeName(col));
-        this.jdbcType = JdbcType.valueOf(rsmd.getColumnType(col));
-        this.setAlias(rsmd.getColumnName(col));
+        this(new FieldKey(null, rsmd.getColumnLabel(col)), JdbcType.valueOf(rsmd.getColumnType(col)));
+        setSqlTypeName(rsmd.getColumnTypeName(col));
+        setAlias(rsmd.getColumnName(col));
     }
 
     public ColumnInfo(String name, TableInfo parentTable)
@@ -227,7 +232,7 @@ public class ColumnInfo extends ColumnRenderProperties
     public ColumnInfo(FieldKey key, TableInfo parentTable, JdbcType type)
     {
         this(key, parentTable);
-        this.setJdbcType(type);
+        setJdbcType(type);
     }
 
     public ColumnInfo(ColumnInfo from)
@@ -257,60 +262,61 @@ public class ColumnInfo extends ColumnRenderProperties
     {
         checkLocked();
         // Disallow changing the name completely -- fixing up the casing is allowed;
-        // but since fieldKey holds true name (and this.name could be null), check it there
+        // but since fieldKey holds true name (and _name could be null), check it there
         FieldKey newFieldKey = new FieldKey(null, name);
-        assert !_lockName || 0 == this.fieldKey.compareTo(newFieldKey);
-        this.fieldKey = newFieldKey;
-        this.name = null;
+        assert !_lockName || 0 == _fieldKey.compareTo(newFieldKey);
+        _fieldKey = newFieldKey;
+        _name = null;
     }
 
 
+    @Override
     public String getName()
     {
-        if (this.name == null && this.fieldKey != null)
+        if (_name == null && _fieldKey != null)
         {
-            if (this.fieldKey.getParent() == null)
-                this.name = this.fieldKey.getName();
+            if (_fieldKey.getParent() == null)
+                _name = _fieldKey.getName();
             else
-                this.name = this.fieldKey.toString();
+                _name = _fieldKey.toString();
         }
-        return this.name;
+        return _name;
     }
 
 
     public void setFieldKey(FieldKey key)
     {
         checkLocked();
-        this.fieldKey = key;
-        this.name = null;
+        _fieldKey = key;
+        _name = null;
     }
 
 
     public FieldKey getFieldKey()
     {
-        return fieldKey;
+        return _fieldKey;
     }
 
 
     // use only for debugging, will change after call to getAlias()
     public boolean isAliasSet()
     {
-        return null != this.alias;
+        return null != _alias;
     }
 
 
     public String getAlias()
     {
-        if (alias == null)
-            alias = AliasManager.makeLegalName(getFieldKey(), getSqlDialect(), false);
-        return alias;
+        if (_alias == null)
+            _alias = AliasManager.makeLegalName(getFieldKey(), getSqlDialect(), false);
+        return _alias;
     }
 
 
     public void setAlias(String alias)
     {
         checkLocked();
-        this.alias = alias;
+        _alias = alias;
     }
 
 
@@ -325,9 +331,9 @@ public class ColumnInfo extends ColumnRenderProperties
         setRequired(col.isRequiredSet());
         setAutoIncrement(col.isAutoIncrement());
         setScale(col.getScale());
-        this.sqlTypeName = col.sqlTypeName;
-        this.jdbcType = col.jdbcType;
-        this.propertyType = col.propertyType;
+        _sqlTypeName = col._sqlTypeName;
+        _jdbcType = col._jdbcType;
+        _propertyType = col._propertyType;
 
         // We intentionally do not copy "isHidden", since it is usually not applicable.
         // URL copy/rewrite is handled separately
@@ -344,9 +350,9 @@ public class ColumnInfo extends ColumnRenderProperties
     public void setExtraAttributesFrom(ColumnInfo col)
     {
         checkLocked();
-        if (col.label != null)
+        if (col._label != null)
             setLabel(col.getLabel());
-        if (col.shortLabel != null)
+        if (col._shortLabel != null)
             setShortLabel(col.getShortLabel());
         setJdbcDefaultValue(col.getJdbcDefaultValue());
         setDescription(col.getDescription());
@@ -360,14 +366,14 @@ public class ColumnInfo extends ColumnRenderProperties
         // Don't call the getter, because if it hasn't been explicitly set we want to
         // fetch the value lazily so we don't have to traverse FKs to get the display
         // field at this point.
-        setInputLength(col.inputLength);
-        setInputType(col.inputType);
+        setInputLength(col._inputLength);
+        setInputType(col._inputType);
 
         setInputRows(col.getInputRows());
         if (!isKeyField() && !col.isNullable())
             setNullable(col.isNullable());
-        setRequired(col.required);
-        setReadOnly(col.isReadOnly);
+        setRequired(col._required);
+        setReadOnly(col._isReadOnly);
         setDisplayColumnFactory(col.getDisplayColumnFactory());
         setTextAlign(col.getTextAlign());
         setWidth(col.getWidth());
@@ -391,8 +397,8 @@ public class ColumnInfo extends ColumnRenderProperties
         // Intentionally do not use set/get methods for dimension and measure, since the set/get methods
         // hide the fact that these values can be null internally. It's important to preserve the notion
         // of unset values on the new columninfo.
-        measure = col.measure;
-        dimension = col.dimension;
+        _measure = col._measure;
+        _dimension = col._dimension;
 
         setRecommendedVariable(col.isRecommendedVariable());
         setDefaultScale(col.getDefaultScale());
@@ -464,26 +470,26 @@ public class ColumnInfo extends ColumnRenderProperties
     public void setMetaDataName(String metaDataName)
     {
         checkLocked();
-        this.metaDataName = metaDataName;
+        _metaDataName = metaDataName;
     }
 
     public String getMetaDataName()
     {
-        return metaDataName;      // Actual name returned by metadata; use to query meta data or to select columns enclosed in quotes
+        return _metaDataName;      // Actual name returned by metadata; use to query meta data or to select columns enclosed in quotes
     }
 
 
     public String getSelectName()
     {
-        if (null == selectName)
+        if (null == _selectName)
         {
             if (null == getMetaDataName())
-                selectName = getSqlDialect().getColumnSelectName(getName());
+                _selectName = getSqlDialect().getColumnSelectName(getName());
             else
-                selectName = getSqlDialect().getColumnSelectName(getMetaDataName());
+                _selectName = getSqlDialect().getColumnSelectName(getMetaDataName());
         }
 
-        return selectName;
+        return _selectName;
     }
 
     public SQLFragment getValueSql(String tableAliasName)
@@ -491,29 +497,30 @@ public class ColumnInfo extends ColumnRenderProperties
         return new SQLFragment(tableAliasName + "." + getSelectName());
     }
 
+    @Override
     public String getPropertyURI()
     {
-        if (null == propertyURI && null != getParentTable())
-            propertyURI = DEFAULT_PROPERTY_URI_PREFIX + getParentTable().getSchema().getName() + "#" + getParentTable().getName() + "." + PageFlowUtil.encode(getName());
-        return propertyURI;
+        if (null == _propertyURI && null != getParentTable())
+            _propertyURI = DEFAULT_PROPERTY_URI_PREFIX + getParentTable().getSchema().getName() + "#" + getParentTable().getName() + "." + PageFlowUtil.encode(getName());
+        return _propertyURI;
     }
 
     public void setPropertyURI(String propertyURI)
     {
         checkLocked();
-        this.propertyURI = propertyURI;
+        _propertyURI = propertyURI;
     }
 
     public void setConceptURI(String conceptURI)
     {
         checkLocked();
-        this.conceptURI = conceptURI;
+        _conceptURI = conceptURI;
     }
 
     public void setRangeURI(String rangeURI)
     {
         checkLocked();
-        this.rangeURI = rangeURI;
+        _rangeURI = rangeURI;
     }
 
     public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
@@ -522,78 +529,78 @@ public class ColumnInfo extends ColumnRenderProperties
 
     public String getTableAlias(String baseAlias)
     {
-        return parentTable.getName();
+        return _parentTable.getName();
     }
 
     public SqlDialect getSqlDialect()
     {
-        if (parentTable == null)
+        if (_parentTable == null)
             return null;
-        return parentTable.getSqlDialect();
+        return _parentTable.getSqlDialect();
     }
 
 
     // Return the actual value we have stashed; use this when copying attributes, so you don't hard-code label
     public String getLabelValue()
     {
-        return label;
+        return _label;
     }
 
 
     @Override
     public String getLabel()
     {
-        if (null == label && getFieldKey() != null)
+        if (null == _label && getFieldKey() != null)
             return labelFromName(getFieldKey().getName());
-        return label;
+        return _label;
     }
 
 
     public boolean isFormatStringSet()
     {
-        return format != null;
+        return _format != null;
     }
 
     public String getTextAlign()
     {
-        if (textAlign != null)
-            return textAlign;
+        if (_textAlign != null)
+            return _textAlign;
         return isStringType() || isDateTimeType() || isBooleanType() ? "left" : "right";
     }
 
     public void setTextAlign(String textAlign)
     {
         checkLocked();
-        this.textAlign = textAlign;
+        _textAlign = textAlign;
     }
 
     public String getJdbcDefaultValue()
     {
-        return jdbcDefaultValue;
+        return _jdbcDefaultValue;
     }
 
     public void setJdbcDefaultValue(String jdbcDefaultValue)
     {
         checkLocked();
-        this.jdbcDefaultValue = jdbcDefaultValue;
+        _jdbcDefaultValue = jdbcDefaultValue;
     }
 
     public String getDefaultValue()
     {
-        return defaultValue;
+        return _defaultValue;
     }
 
     public void setDefaultValue(String defaultValue)
     {
         checkLocked();
-        this.defaultValue = defaultValue;
+        _defaultValue = defaultValue;
     }
 
     @Nullable
     public ColumnInfo getDisplayField()
     {
-        if (displayField != null)
-            return displayField;
+        if (_displayField != null)
+            return _displayField;
         ForeignKey fk = getFk();
         if (fk == null)
             return null;
@@ -614,12 +621,12 @@ public class ColumnInfo extends ColumnRenderProperties
             return Collections.singletonList(this);
 
         List<ColumnInfo> sortCols = new ArrayList<>();
-        if (sortFieldKeys != null)
+        if (_sortFieldKeys != null)
         {
             boolean foundAllInCache = true;
-            for (FieldKey sortFieldKey : sortFieldKeys)
+            for (FieldKey sortFieldKey : _sortFieldKeys)
             {
-                ColumnInfo column = cachedSortColumns.get(sortFieldKey);
+                ColumnInfo column = _cachedSortColumns.get(sortFieldKey);
                 if (column != null)
                 {
                     sortCols.add(column);
@@ -636,24 +643,24 @@ public class ColumnInfo extends ColumnRenderProperties
             }
 
             // The column may be on a separate table via a lookup, so use QueryService to resolve it
-            Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(getParentTable(), sortFieldKeys);
-            if (columns.size() != sortFieldKeys.size() || columns.values().contains(null))
+            Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(getParentTable(), _sortFieldKeys);
+            if (columns.size() != _sortFieldKeys.size() || columns.values().contains(null))
             {
                 //if we cannot resolve any of the intended columns, rather than proceed
                 // with just 1 of them, default back to the original column
                 StringBuilder msg = new StringBuilder("Unable to resolve one or more sortFieldKeys for column: " + getFieldKey() + " on table: " + (getParentTable() != null ? getParentTable().getName() : "") + ".  The fieldKeys are: ");
-                msg.append(StringUtils.join(sortFieldKeys, ","));
-                _log.warn(msg);
+                msg.append(StringUtils.join(_sortFieldKeys, ","));
+                LOG.warn(msg);
 
                 sortCols = new ArrayList<>();
                 sortCols.add(this);
             }
             else
             {
-                for (FieldKey fk : sortFieldKeys)
+                for (FieldKey fk : _sortFieldKeys)
                 {
                     ColumnInfo column = columns.get(fk);
-                    cachedSortColumns.put(fk, column);
+                    _cachedSortColumns.put(fk, column);
                     sortCols.add(column);
                 }
             }
@@ -683,6 +690,7 @@ public class ColumnInfo extends ColumnRenderProperties
         return this;
     }
 
+    @Override
     final public boolean equals(Object obj)
     {
         return super.equals(obj);
@@ -698,19 +706,19 @@ public class ColumnInfo extends ColumnRenderProperties
     public void setDisplayField(ColumnInfo field)
     {
         checkLocked();
-        displayField = field;
+        _displayField = field;
     }
 
     public void setWidth(String width)
     {
         checkLocked();
-        this.displayWidth = width;
+        _displayWidth = width;
     }
 
     public String getWidth()
     {
-        if (null != displayWidth)
-            return displayWidth;
+        if (null != _displayWidth)
+            return _displayWidth;
 
 //        This is the DisplayColumn's job to swap display type, shouldn't do this here
 //        Also, this causes table construction recursion in the case of self-join
@@ -722,11 +730,11 @@ public class ColumnInfo extends ColumnRenderProperties
 //        }
 
         if (isStringType())
-            return displayWidth = String.valueOf(Math.max(10, Math.min(getScale() * 6, 200)));
+            return _displayWidth = String.valueOf(Math.max(10, Math.min(getScale() * 6, 200)));
         else if (isDateTimeType())
-            return displayWidth = "90";
+            return _displayWidth = "90";
         else
-            return displayWidth = "60";
+            return _displayWidth = "60";
     }
 
     public TableInfo getFkTableInfo()
@@ -739,14 +747,14 @@ public class ColumnInfo extends ColumnRenderProperties
 
     public boolean isUserEditable()
     {
-        return isUserEditable;
+        return _isUserEditable;
     }
 
 
     public void setUserEditable(boolean editable)
     {
         checkLocked();
-        this.isUserEditable = editable;
+        _isUserEditable = editable;
     }
 
 
@@ -818,66 +826,67 @@ public class ColumnInfo extends ColumnRenderProperties
 
     public String getInputType()
     {
-        if (null == inputType)
+        if (null == _inputType)
         {
             if (getPropertyType() != null && getPropertyType().getInputType() != null)
-                inputType = getPropertyType().getInputType();
-            else if (isStringType() && scale > 300) // lsidtype is 255 characters
-                inputType = "textarea";
+                _inputType = getPropertyType().getInputType();
+            else if (isStringType() && _scale > 300) // lsidtype is 255 characters
+                _inputType = "textarea";
             else if ("image".equalsIgnoreCase(getSqlTypeName()))
-                inputType = "file";
+                _inputType = "file";
             else if (getJdbcType() == JdbcType.BOOLEAN)
-                inputType = "checkbox";
+                _inputType = "checkbox";
             else
-                inputType = "text";
+                _inputType = "text";
         }
-        return inputType;
+        return _inputType;
     }
 
 
     @Override
     public int getInputLength()
     {
-        if (-1 == inputLength)
+        if (-1 == _inputLength)
         {
             if (getInputType().equalsIgnoreCase("textarea"))
-                inputLength = 60;
+                _inputLength = 60;
             else
-                inputLength = scale > 40 ? 40 : scale;
+                _inputLength = _scale > 40 ? 40 : _scale;
         }
 
-        return inputLength;
+        return _inputLength;
     }
 
 
     @Override
     public int getInputRows()
     {
-        if (-1 == inputRows && isStringType())
+        if (-1 == _inputRows && isStringType())
             return 15;
-        return inputRows;
+        return _inputRows;
     }
 
+    @Override
     public boolean isAutoIncrement()
     {
-        return isAutoIncrement;
+        return _isAutoIncrement;
     }
 
     public void setAutoIncrement(boolean autoIncrement)
     {
         checkLocked();
-        isAutoIncrement = autoIncrement;
+        _isAutoIncrement = autoIncrement;
     }
 
     public boolean isReadOnly()
     {
-        return isReadOnly || isAutoIncrement || isVersionColumn();
+        return _isReadOnly || _isAutoIncrement || isVersionColumn();
     }
 
     public void setReadOnly(boolean readOnly)
     {
         checkLocked();
-        isReadOnly = readOnly;
+        _isReadOnly = readOnly;
     }
 
     public StringExpression getEffectiveURL()
@@ -904,9 +913,9 @@ public class ColumnInfo extends ColumnRenderProperties
         xmlCol.setColumnName(getName());
         if (full)
         {
-            if (fk instanceof SchemaForeignKey)
+            if (_fk instanceof SchemaForeignKey)
             {
-                SchemaForeignKey sfk = (SchemaForeignKey) fk;
+                SchemaForeignKey sfk = (SchemaForeignKey) _fk;
                 org.labkey.data.xml.ColumnType.Fk xmlFk = xmlCol.addNewFk();
                 xmlFk.setFkColumnName(sfk.getLookupColumnName());
                 xmlFk.setFkTable(sfk._tableName);
@@ -919,45 +928,45 @@ public class ColumnInfo extends ColumnRenderProperties
             }
 
             // changed the following to not invoke getters with code, and only write out non-default values
-            if (null != inputType)
-                xmlCol.setInputType(inputType);
+            if (null != _inputType)
+                xmlCol.setInputType(_inputType);
 
-            if (-1 != inputLength)
-                xmlCol.setInputLength(inputLength);
+            if (-1 != _inputLength)
+                xmlCol.setInputLength(_inputLength);
 
-            if (-1 != inputRows)
-                xmlCol.setInputRows(inputRows);
-            if (null != url)
-                xmlCol.setUrl(url.toXML());
+            if (-1 != _inputRows)
+                xmlCol.setInputRows(_inputRows);
+            if (null != _url)
+                xmlCol.setUrl(_url.toXML());
 
-            if (isReadOnly)
-                xmlCol.setIsReadOnly(isReadOnly);
-            if (!isUserEditable)
-                xmlCol.setIsUserEditable(isUserEditable);
-            if (hidden)
-                xmlCol.setIsHidden(hidden);
-            if (isUnselectable)
-                xmlCol.setIsUnselectable(isUnselectable);
-            if (null != label)
-                xmlCol.setColumnTitle(label);
-            if (nullable)
-                xmlCol.setNullable(nullable);
-            if (null != sqlTypeName)
-                xmlCol.setDatatype(sqlTypeName);
-            if (isAutoIncrement)
-                xmlCol.setIsAutoInc(isAutoIncrement);
-            if (scale != 0)
-                xmlCol.setScale(scale);
-            if (null != defaultValue)
-                xmlCol.setDefaultValue(defaultValue);
+            if (_isReadOnly)
+                xmlCol.setIsReadOnly(_isReadOnly);
+            if (!_isUserEditable)
+                xmlCol.setIsUserEditable(_isUserEditable);
+            if (_hidden)
+                xmlCol.setIsHidden(_hidden);
+            if (_isUnselectable)
+                xmlCol.setIsUnselectable(_isUnselectable);
+            if (null != _label)
+                xmlCol.setColumnTitle(_label);
+            if (_nullable)
+                xmlCol.setNullable(_nullable);
+            if (null != _sqlTypeName)
+                xmlCol.setDatatype(_sqlTypeName);
+            if (_isAutoIncrement)
+                xmlCol.setIsAutoInc(_isAutoIncrement);
+            if (_scale != 0)
+                xmlCol.setScale(_scale);
+            if (null != _defaultValue)
+                xmlCol.setDefaultValue(_defaultValue);
             if (null != getDisplayWidth())
                 xmlCol.setDisplayWidth(getDisplayWidth());
-            if (null != format)
-                xmlCol.setFormatString(format);
-            if (null != textAlign)
-                xmlCol.setTextAlign(textAlign);
-            if (null != description)
-                xmlCol.setDescription(description);
+            if (null != _format)
+                xmlCol.setFormatString(_format);
+            if (null != _textAlign)
+                xmlCol.setTextAlign(_textAlign);
+            if (null != _description)
+                xmlCol.setDescription(_description);
 
             // Note: This is only called on JDBC meta data, so we don't bother with PHI, faceting behavior, and other
             // external meta data. But perhaps this code could be shared with TableInfoWriter?
@@ -972,32 +981,32 @@ public class ColumnInfo extends ColumnRenderProperties
         if (xmlCol.isSetConceptURI())
             setConceptURI(xmlCol.getConceptURI());
         if (xmlCol.isSetRangeURI())
-            rangeURI = xmlCol.getRangeURI();
+            _rangeURI = xmlCol.getRangeURI();
 
         //Following things would exist from meta data...
         if (! merge)
         {
             PropertyType pt = null;
-            if (conceptURI != null || rangeURI != null)
-                pt = PropertyType.getFromURI(conceptURI, rangeURI, null);
+            if (_conceptURI != null || _rangeURI != null)
+                pt = PropertyType.getFromURI(_conceptURI, _rangeURI, null);
 
             // Initialize properties based on rangeURI PropertyType
             if (pt != null)
             {
-                propertyType = pt;
-                jdbcType = propertyType.getJdbcType();
-                sqlTypeName = getSqlDialect().getSqlTypeName(jdbcType);
-                inputType = propertyType.getInputType();
-                scale = propertyType.getScale();
+                _propertyType = pt;
+                _jdbcType = _propertyType.getJdbcType();
+                _sqlTypeName = getSqlDialect().getSqlTypeName(_jdbcType);
+                _inputType = _propertyType.getInputType();
+                _scale = _propertyType.getScale();
             }
 
             if (xmlCol.isSetDatatype())
             {
-                sqlTypeName = xmlCol.getDatatype();
+                _sqlTypeName = xmlCol.getDatatype();
             }
         }
 
-        if ((!merge || null == fk) && xmlCol.getFk() != null)
+        if ((!merge || null == _fk) && xmlCol.getFk() != null)
         {
             ColumnType.Fk xfk = xmlCol.getFk();
             DbSchema schema = getParentTable().getSchema();
@@ -1014,14 +1023,14 @@ public class ColumnInfo extends ColumnRenderProperties
                     displayColumnName = xfk.getFkDisplayColumnName().getStringValue();
                     useRawFKValue = xfk.getFkDisplayColumnName().getUseRawValue();
                 }
-                fk = new SchemaForeignKey(this, key.pkSchemaName, key.pkTableName, key.pkColumnNames.get(0), false, displayColumnName, useRawFKValue);
+                _fk = new SchemaForeignKey(this, key.pkSchemaName, key.pkTableName, key.pkColumnNames.get(0), false, displayColumnName, useRawFKValue);
             }
             else
             {
                 String type = xfk.getFkMultiValued();
 
                 if ("junction".equals(type))
-                    fk = new MultiValuedForeignKey(new SchemaForeignKey(this, key.pkSchemaName, key.pkTableName, key.pkColumnNames.get(0), false), xfk.getFkJunctionLookup());
+                    _fk = new MultiValuedForeignKey(new SchemaForeignKey(this, key.pkSchemaName, key.pkTableName, key.pkColumnNames.get(0), false), xfk.getFkJunctionLookup());
                 else
                     throw new UnsupportedOperationException("Non-junction multi-value columns NYI");
             }
@@ -1031,75 +1040,75 @@ public class ColumnInfo extends ColumnRenderProperties
         if (xmlCol.isSetColumnTitle())
             setLabel(xmlCol.getColumnTitle());
         if (xmlCol.isSetInputLength())
-            inputLength = xmlCol.getInputLength();
+            _inputLength = xmlCol.getInputLength();
         if (xmlCol.isSetInputRows())
-            inputRows = xmlCol.getInputRows();
+            _inputRows = xmlCol.getInputRows();
         if (xmlCol.isSetInputType())
-            inputType = xmlCol.getInputType();
+            _inputType = xmlCol.getInputType();
         if (xmlCol.isSetUrl())
             setURL(StringExpressionFactory.fromXML(xmlCol.getUrl(), false));
         if (xmlCol.isSetUrlTarget())
             setURLTargetWindow(xmlCol.getUrlTarget());
         if (xmlCol.isSetIsAutoInc())
-            isAutoIncrement = xmlCol.getIsAutoInc();
+            _isAutoIncrement = xmlCol.getIsAutoInc();
         if (xmlCol.isSetIsReadOnly())
-            isReadOnly = xmlCol.getIsReadOnly();
+            _isReadOnly = xmlCol.getIsReadOnly();
         if (xmlCol.isSetIsUserEditable())
-            isUserEditable = xmlCol.getIsUserEditable();
+            _isUserEditable = xmlCol.getIsUserEditable();
         if (xmlCol.isSetScale())
-            scale = xmlCol.getScale();
+            _scale = xmlCol.getScale();
         if (xmlCol.isSetDefaultValue())
-            defaultValue = xmlCol.getDefaultValue();
+            _defaultValue = xmlCol.getDefaultValue();
         if (xmlCol.isSetFormatString())
-            format = xmlCol.getFormatString();
+            _format = xmlCol.getFormatString();
         if (xmlCol.isSetTsvFormatString())
-            tsvFormatString = xmlCol.getTsvFormatString();
+            _tsvFormatString = xmlCol.getTsvFormatString();
         if (xmlCol.isSetExcelFormatString())
-            excelFormatString = xmlCol.getExcelFormatString();
+            _excelFormatString = xmlCol.getExcelFormatString();
         if (xmlCol.isSetTextExpression())
-            textExpression = new FieldKeyStringExpression(xmlCol.getTextExpression().getStringValue(), false, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.fromXML(xmlCol.getTextExpression().getReplaceMissing()));
+            _textExpression = new FieldKeyStringExpression(xmlCol.getTextExpression().getStringValue(), false, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.fromXML(xmlCol.getTextExpression().getReplaceMissing()));
         if (xmlCol.isSetTextAlign())
-            textAlign = xmlCol.getTextAlign();
+            _textAlign = xmlCol.getTextAlign();
         if (xmlCol.isSetPropertyURI())
-            propertyURI = xmlCol.getPropertyURI();
+            _propertyURI = xmlCol.getPropertyURI();
         if (xmlCol.isSetSortColumn())
             setSortFieldKeysFromXml(xmlCol.getSortColumn());
         if (xmlCol.isSetSortDescending())
             setSortDirection(xmlCol.getSortDescending() ? Sort.SortDirection.DESC : Sort.SortDirection.ASC);
         if (xmlCol.isSetDescription())
-            description = xmlCol.getDescription();
+            _description = xmlCol.getDescription();
         if (xmlCol.isSetIsHidden())
-            hidden = xmlCol.getIsHidden();
+            _hidden = xmlCol.getIsHidden();
         if (xmlCol.isSetShownInInsertView())
-            shownInInsertView = xmlCol.getShownInInsertView();
+            _shownInInsertView = xmlCol.getShownInInsertView();
         if (xmlCol.isSetShownInUpdateView())
-            shownInUpdateView = xmlCol.getShownInUpdateView();
+            _shownInUpdateView = xmlCol.getShownInUpdateView();
         if (xmlCol.isSetShownInDetailsView())
-            shownInDetailsView = xmlCol.getShownInDetailsView();
+            _shownInDetailsView = xmlCol.getShownInDetailsView();
         if (xmlCol.isSetDimension())
-            dimension = xmlCol.getDimension();
+            _dimension = xmlCol.getDimension();
         if (xmlCol.isSetMeasure())
-            measure = xmlCol.getMeasure();
+            _measure = xmlCol.getMeasure();
         if (xmlCol.isSetRecommendedVariable())
-            recommendedVariable = xmlCol.getRecommendedVariable();
+            _recommendedVariable = xmlCol.getRecommendedVariable();
         else if (xmlCol.isSetKeyVariable())
-            recommendedVariable = xmlCol.getKeyVariable();
+            _recommendedVariable = xmlCol.getKeyVariable();
         if (xmlCol.isSetDefaultScale())
-            defaultScale = DefaultScaleType.valueOf(xmlCol.getDefaultScale().toString());
+            _defaultScale = DefaultScaleType.valueOf(xmlCol.getDefaultScale().toString());
         if (xmlCol.isSetIsUnselectable())
-            isUnselectable = xmlCol.getIsUnselectable();
+            _isUnselectable = xmlCol.getIsUnselectable();
         if (xmlCol.isSetIsKeyField())
-            isKeyField = xmlCol.getIsKeyField();
+            _isKeyField = xmlCol.getIsKeyField();
         if (xmlCol.isSetDisplayWidth())
             setDisplayWidth(xmlCol.getDisplayWidth());
         if (xmlCol.isSetRequired())
-            required = xmlCol.getRequired();
+            _required = xmlCol.getRequired();
         if (xmlCol.isSetNullable())
-            nullable = xmlCol.getNullable();
+            _nullable = xmlCol.getNullable();
         if (xmlCol.isSetExcludeFromShifting())
-            isExcludeFromShifting = xmlCol.getExcludeFromShifting();
+            _isExcludeFromShifting = xmlCol.getExcludeFromShifting();
         if (xmlCol.isSetImportAliases())
-            importAliases.addAll(Arrays.asList(xmlCol.getImportAliases().getImportAliasArray()));
+            _importAliases.addAll(Arrays.asList(xmlCol.getImportAliases().getImportAliasArray()));
         if (xmlCol.isSetConditionalFormats())
         {
             setConditionalFormats(ConditionalFormat.convertFromXML(xmlCol.getConditionalFormats()));
@@ -1111,12 +1120,12 @@ public class ColumnInfo extends ColumnRenderProperties
         if (xmlCol.isSetProtected())  // column is removed from LabKey but need to support old archives, see spec #28920
         {
             if (xmlCol.getProtected())
-                phi = PHI.Limited;  // always convert protected to limited PHI; may be overridden by getPhi(), though
+                _phi = PHI.Limited;  // always convert protected to limited PHI; may be overridden by getPhi(), though
         }
         if (xmlCol.isSetPhi())
-            phi = PHI.valueOf(xmlCol.getPhi().toString());
+            _phi = PHI.valueOf(xmlCol.getPhi().toString());
         if (xmlCol.isSetFacetingBehavior())
-            facetingBehaviorType = FacetingBehaviorType.valueOf(xmlCol.getFacetingBehavior().toString());
+            _facetingBehaviorType = FacetingBehaviorType.valueOf(xmlCol.getFacetingBehavior().toString());
         if (xmlCol.isSetDisplayColumnFactory())
         {
             org.labkey.data.xml.ColumnType.DisplayColumnFactory xmlFactory = xmlCol.getDisplayColumnFactory();
@@ -1168,14 +1177,14 @@ public class ColumnInfo extends ColumnRenderProperties
                         }
                         else
                         {
-                            _log.error("Class is not a DisplayColumnFactory: " + displayColumnClassName);
+                            LOG.error("Class is not a DisplayColumnFactory: " + displayColumnClassName);
                         }
                         break;
                 }
             }
             catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e)
             {
-                _log.error("Can't instantiate DisplayColumnFactory: " + displayColumnClassName, e);
+                LOG.error("Can't instantiate DisplayColumnFactory: " + displayColumnClassName, e);
             }
         }
     }
@@ -1332,27 +1341,27 @@ public class ColumnInfo extends ColumnRenderProperties
         if ("VARCHAR".equalsIgnoreCase(typeName) || "CHAR".equalsIgnoreCase(typeName))
         {
             sb.append("(");
-            sb.append(scale);
+            sb.append(_scale);
             sb.append(") ");
         }
         else
             sb.append(" ");
 
         //SQL Server specific
-        if (isAutoIncrement)
+        if (_isAutoIncrement)
             sb.append("IDENTITY ");
 
-        sb.append(nullable ? "NULL" : "NOT NULL");
+        sb.append(_nullable ? "NULL" : "NOT NULL");
 
-        if (null != defaultValue)
+        if (null != _defaultValue)
         {
             sb.append(" DEFAULT ");
-            if ("CURRENT_TIMESTAMP".equals(defaultValue))
-                sb.append(defaultValue);
+            if ("CURRENT_TIMESTAMP".equals(_defaultValue))
+                sb.append(_defaultValue);
             else
             {
                 sb.append("'");
-                sb.append(defaultValue);
+                sb.append(_defaultValue);
                 sb.append("'");
             }
         }
@@ -1535,13 +1544,13 @@ public class ColumnInfo extends ColumnRenderProperties
 
     public DisplayColumn getRenderer()
     {
-        if (displayField == null || displayField == this)
+        if (_displayField == null || _displayField == this)
         {
             return getDisplayColumnFactory().createRenderer(this);
         }
         else
         {
-            return displayField.getRenderer();
+            return _displayField.getRenderer();
         }
     }
 
@@ -1574,14 +1583,14 @@ public class ColumnInfo extends ColumnRenderProperties
                     String metaDataName = reader.getName();
                     ColumnInfo col = new ColumnInfo(metaDataName, parentTable);
 
-                    col.metaDataName = metaDataName;
-                    col.selectName = dialect.getSelectNameFromMetaDataName(metaDataName);
-                    col.sqlTypeName = reader.getSqlTypeName();
-                    col.jdbcType = dialect.getJdbcType(reader.getSqlType(), reader.getSqlTypeName());
-                    col.isAutoIncrement = reader.isAutoIncrement();
-                    col.scale = reader.getScale();
-                    col.nullable = reader.isNullable();
-                    col.jdbcDefaultValue = reader.getDefault();
+                    col._metaDataName = metaDataName;
+                    col._selectName = dialect.getSelectNameFromMetaDataName(metaDataName);
+                    col._sqlTypeName = reader.getSqlTypeName();
+                    col._jdbcType = dialect.getJdbcType(reader.getSqlType(), reader.getSqlTypeName());
+                    col._isAutoIncrement = reader.isAutoIncrement();
+                    col._scale = reader.getScale();
+                    col._nullable = reader.isNullable();
+                    col._jdbcDefaultValue = reader.getDefault();
 
                     // isCalculated is typically an query-level ExprColumn, but in this case we have a real calculated column in the database
                     col.setCalculated(reader.isGeneratedColumn());
@@ -1614,10 +1623,10 @@ public class ColumnInfo extends ColumnRenderProperties
                     }
     */
 
-                    col.label = reader.getLabel();
-                    col.description = reader.getDescription();
+                    col._label = reader.getLabel();
+                    col._description = reader.getDescription();
 
-                    if (nonEditableColNames.contains(col.getPropertyName()))
+                    if (NON_EDITABLE_COL_NAMES.contains(col.getPropertyName()))
                         col.setUserEditable(false);
 
                     colMap.put(col.getName(), col);
@@ -1690,17 +1699,17 @@ public class ColumnInfo extends ColumnRenderProperties
                 String colName = key.fkColumnNames.get(i);
                 ColumnInfo col = colMap.get(colName);
 
-                if (col.fk != null)
+                if (col._fk != null)
                 {
-                    _log.warn("More than one FK defined for column " + parentTable.getName() + "." + col.getName() + ". Skipping constraint " + key.fkName);
+                    LOG.warn("More than one FK defined for column " + parentTable.getName() + "." + col.getName() + ". Skipping constraint " + key.fkName);
                     continue;
                 }
 
-                col.fk = new SchemaForeignKey(col, key.pkSchemaName, key.pkTableName, key.pkColumnNames.get(i), joinWithContainer);
+                col._fk = new SchemaForeignKey(col, key.pkSchemaName, key.pkTableName, key.pkColumnNames.get(i), joinWithContainer);
             }
             else
             {
-                _log.warn("Skipping multiple column foreign key " + key.fkName + " ON " + parentTable.getName());
+                LOG.warn("Skipping multiple column foreign key " + key.fkName + " ON " + parentTable.getName());
             }
         }
 
@@ -1712,12 +1721,12 @@ public class ColumnInfo extends ColumnRenderProperties
         String colName = col.getName();
         DbSchema schema = col.getParentTable().getSchema();
 
-        if (col.metaDataName.startsWith("_"))
+        if (col._metaDataName.startsWith("_"))
         {
             col.setHidden(true);
         }
 
-        if (col.isAutoIncrement || col.isCalculated())
+        if (col._isAutoIncrement || col.isCalculated())
         {
             col.setUserEditable(false);
             col.setShownInInsertView(false);
@@ -1755,7 +1764,7 @@ public class ColumnInfo extends ColumnRenderProperties
                 col.setLabel("Modified");
         }
 
-        if (null == col.getInputType() && col.getJdbcType().getJavaClass().equals(String.class) && col.scale > 255)
+        if (null == col.getInputType() && col.getJdbcType().getJavaClass().equals(String.class) && col._scale > 255)
         {
             col.setInputType("textarea");
         }
@@ -1797,7 +1806,7 @@ public class ColumnInfo extends ColumnRenderProperties
 
     public String getSqlTypeName()
     {
-        if (null == sqlTypeName && (propertyType != null || jdbcType != null))
+        if (null == _sqlTypeName && (_propertyType != null || _jdbcType != null))
         {
             SqlDialect d;
             if (getParentTable() == null)
@@ -1805,46 +1814,46 @@ public class ColumnInfo extends ColumnRenderProperties
             else
                 d = getParentTable().getSqlDialect();
 
-            JdbcType jt = propertyType != null ? propertyType.getJdbcType() : jdbcType;
-            sqlTypeName = d.getSqlTypeName(jt);
+            JdbcType jt = _propertyType != null ? _propertyType.getJdbcType() : _jdbcType;
+            _sqlTypeName = d.getSqlTypeName(jt);
         }
-        return sqlTypeName;
+        return _sqlTypeName;
     }
 
 
     public void setSqlTypeName(String sqlTypeName)
     {
         checkLocked();
-        this.sqlTypeName = sqlTypeName;
-        this.jdbcType = null;
+        _sqlTypeName = sqlTypeName;
+        _jdbcType = null;
     }
 
     public List<FieldKey> getSortFieldKeys()
     {
-        return sortFieldKeys;
+        return _sortFieldKeys;
     }
 
     public void setSortFieldKeys(List<FieldKey> sortFieldKeys)
     {
         checkLocked();
-        this.sortFieldKeys = sortFieldKeys;
+        _sortFieldKeys = sortFieldKeys;
     }
 
     public void setJdbcType(JdbcType type)
     {
         checkLocked();
-        this.jdbcType = type;
-        this.sqlTypeName = null;
+        _jdbcType = type;
+        _sqlTypeName = null;
     }
 
 
     public @NotNull JdbcType getJdbcType()
     {
-        if (jdbcType == null && (propertyType != null || sqlTypeName != null))
+        if (_jdbcType == null && (_propertyType != null || _sqlTypeName != null))
         {
-            if (propertyType != null)
+            if (_propertyType != null)
             {
-                jdbcType = propertyType.getJdbcType();
+                _jdbcType = _propertyType.getJdbcType();
             }
             else // we're here because sqlTypeName != null
             {
@@ -1853,27 +1862,28 @@ public class ColumnInfo extends ColumnRenderProperties
                     d = CoreSchema.getInstance().getSqlDialect();
                 else
                     d = getParentTable().getSqlDialect();
-                int type = d.sqlTypeIntFromSqlTypeName(sqlTypeName);
-                jdbcType = JdbcType.valueOf(type);
+                int type = d.sqlTypeIntFromSqlTypeName(_sqlTypeName);
+                _jdbcType = JdbcType.valueOf(type);
             }
         }
-        return jdbcType == null ? JdbcType.OTHER : jdbcType;
+        return _jdbcType == null ? JdbcType.OTHER : _jdbcType;
     }
 
 
     public ForeignKey getFk()
     {
-        return fk;
+        return _fk;
     }
 
 
     public void setFk(@Nullable ForeignKey fk)
     {
         checkLocked();
-        this.fk = fk;
+        _fk = fk;
     }
 
 
+    @Override
     public void setScale(int scale)
     {
         checkLocked();
@@ -1884,16 +1894,17 @@ public class ColumnInfo extends ColumnRenderProperties
     /** @return whether the column is part of the primary key for the table */
     public boolean isKeyField()
     {
-        return isKeyField;
+        return _isKeyField;
     }
 
 
     public void setKeyField(boolean keyField)
     {
         checkLocked();
-        isKeyField = keyField;
+        _isKeyField = keyField;
     }
 
+    @Override
     public boolean isMvEnabled()
     {
         return _mvColumnName != null;
@@ -1907,7 +1918,7 @@ public class ColumnInfo extends ColumnRenderProperties
     public void setMvColumnName(FieldKey mvColumnName)
     {
         checkLocked();
-        this._mvColumnName = mvColumnName;
+        _mvColumnName = mvColumnName;
     }
 
     public boolean isMvIndicatorColumn()
@@ -1938,26 +1949,26 @@ public class ColumnInfo extends ColumnRenderProperties
      */
     public boolean isUnselectable()
     {
-        return isUnselectable;
+        return _isUnselectable;
     }
 
     public void setIsUnselectable(boolean b)
     {
         checkLocked();
-        isUnselectable = b;
+        _isUnselectable = b;
     }
 
 
     public TableInfo getParentTable()
     {
-        return parentTable;
+        return _parentTable;
     }
 
 
     public void setParentTable(TableInfo parentTable)
     {
         checkLocked();
-        this.parentTable = parentTable;
+        _parentTable = parentTable;
         _columnLogging.setOriginalTableName(null != parentTable ? parentTable.getName() : "");
     }
 
@@ -2019,26 +2030,26 @@ public class ColumnInfo extends ColumnRenderProperties
     @NotNull
     public List<ConditionalFormat> getConditionalFormats()
     {
-        return conditionalFormats;
+        return _conditionalFormats;
     }
 
     public void setConditionalFormats(@NotNull List<ConditionalFormat> formats)
     {
         checkLocked();
-        this.conditionalFormats.clear();
-        this.conditionalFormats.addAll(formats);
+        _conditionalFormats.clear();
+        _conditionalFormats.addAll(formats);
     }
 
     @NotNull
     public List<? extends IPropertyValidator> getValidators()
     {
-        return validators;
+        return _validators;
     }
 
     public void setValidators(List<? extends IPropertyValidator> validators)
     {
         checkLocked();
-        this.validators = validators;
+        _validators = validators;
     }
 
     // TODO: fix up OORIndicator

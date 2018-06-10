@@ -46,59 +46,59 @@ import java.util.Map;
  */
 public class PropertyDescriptor extends ColumnRenderProperties implements ParameterDescription, Serializable, Cloneable
 {                           
-    private String name;
-    private String storageColumnName;
-    private int propertyId;
-    private String ontologyURI;
-    private String searchTerms;
-    private String semanticType;
-    private Container container;
-    private Container project;
-    private String lookupContainer;
-    private String lookupSchema;
-    private String lookupQuery;
-    private boolean mvEnabled;
-    private String mvIndicatorStorageColumnName;        // only valid if mvEnabled
+    private String _name;
+    private String _storageColumnName;
+    private int _propertyId;
+    private String _ontologyURI;
+    private String _searchTerms;
+    private String _semanticType;
+    private Container _container;
+    private Container _project;
+    private String _lookupContainer;
+    private String _lookupSchema;
+    private String _lookupQuery;
+    private boolean _mvEnabled;
+    private String _mvIndicatorStorageColumnName;        // only valid if mvEnabled
 
     private static final Logger LOG = Logger.getLogger(PropertyDescriptor.class);
 
     /** Entity id for the lookup's target container */
     public String getLookupContainer()
     {
-        return lookupContainer;
+        return _lookupContainer;
     }
 
     /** Entity id for the lookup's target container */
     public void setLookupContainer(String lookupContainer)
     {
-        this.lookupContainer = lookupContainer;
+        _lookupContainer = lookupContainer;
     }
 
     public String getLookupSchema()
     {
-        return lookupSchema;
+        return _lookupSchema;
     }
 
     public void setLookupSchema(String lookupSchema)
     {
-        this.lookupSchema = lookupSchema;
+        _lookupSchema = lookupSchema;
     }
 
     public String getLookupQuery()
     {
-        return lookupQuery;
+        return _lookupQuery;
     }
 
     public void setLookupQuery(String lookupQuery)
     {
-        this.lookupQuery = lookupQuery;
+        _lookupQuery = lookupQuery;
     }
 
     public PropertyDescriptor()
     {
         // property descriptors default to nullable, while columninfos do not; assign explicitly, rather than in an
         // initializer, since the 'nullable' property is shared by both classes via ColumnRenderProperties
-        this.nullable = true;
+        _nullable = true;
     }
 
     public PropertyDescriptor(ColumnInfo col, Container c)
@@ -125,61 +125,61 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
     public PropertyDescriptor(String propertyURI, PropertyType type, String name, String caption, Container container)
     {
         this();
-        this.propertyURI = propertyURI;
-        this.rangeURI = type.getTypeUri();
-        this.name = name;
-        this.label = caption;
+        _propertyURI = propertyURI;
+        _rangeURI = type.getTypeUri();
+        _name = name;
+        _label = caption;
         setContainer(container);
         setScale(type.getScale());
     }
 
     public int getPropertyId()
     {
-        return propertyId;
+        return _propertyId;
     }
 
     public void setPropertyId(int rowId)
     {
-        this.propertyId = rowId;
+        _propertyId = rowId;
     }
 
     public void setPropertyURI(String propertyURI)
     {
-        this.propertyURI = propertyURI;
+        _propertyURI = propertyURI;
     }
 
     public void setName(String name)
     {
-        this.name = name;
+        _name = name;
     }
 
     @Override
     public String getName()
     {
-        if (null == name && null != propertyURI)
+        if (null == _name && null != _propertyURI)
         {
             int pos;
-            pos = propertyURI.lastIndexOf("#");
+            pos = _propertyURI.lastIndexOf("#");
             if (pos < 0)
-                pos = propertyURI.lastIndexOf(":");
+                pos = _propertyURI.lastIndexOf(":");
 
             if (pos >= 0)
-                name = PageFlowUtil.decode(propertyURI.substring(pos + 1));
+                _name = PageFlowUtil.decode(_propertyURI.substring(pos + 1));
         }
 
-        return name;
+        return _name;
     }
 
     public String getStorageColumnName()
     {
-        return storageColumnName;
+        return _storageColumnName;
     }
 
     public void setStorageColumnName(String storageColumnName)
     {
-        this.storageColumnName = storageColumnName;
-        if (mvEnabled)
-            mvIndicatorStorageColumnName = makeMvIndicatorStorageColumnName();
+        _storageColumnName = storageColumnName;
+        if (_mvEnabled)
+            _mvIndicatorStorageColumnName = makeMvIndicatorStorageColumnName();
 
     }
 
@@ -201,22 +201,22 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
 
     public String getOntologyURI()
     {
-        return ontologyURI;
+        return _ontologyURI;
     }
 
     public void setOntologyURI(String ontologyURI)
     {
-        this.ontologyURI = ontologyURI;
+        _ontologyURI = ontologyURI;
     }
 
     public void setRangeURI(String dataTypeURI)
     {
-        this.rangeURI = dataTypeURI;
+        _rangeURI = dataTypeURI;
     }
 
     public void clearPropertyType()
     {
-        this.propertyType = null;
+        _propertyType = null;
     }
 
     @Override
@@ -230,36 +230,36 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
 
     public void setConceptURI(String conceptURI)
     {
-        this.conceptURI = conceptURI;
+        _conceptURI = conceptURI;
     }
 
     public String getSearchTerms()
     {
-        return searchTerms;
+        return _searchTerms;
     }
 
     public void setSearchTerms(String searchTerms)
     {
-        this.searchTerms = searchTerms;
+        _searchTerms = searchTerms;
     }
 
     public String getNonBlankCaption()
     {
-        if (label == null || "".equals(label.trim()))
+        if (_label == null || "".equals(_label.trim()))
         {
             return getName();
         }
-        return label;
+        return _label;
     }
 
     public String getSemanticType()
     {
-        return semanticType;
+        return _semanticType;
     }
 
     public void setSemanticType(String semanticType)
     {
-        this.semanticType = semanticType;
+        _semanticType = semanticType;
     }
 
     public DefaultValueType getDefaultValueTypeEnum()
@@ -289,27 +289,27 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
     @Override
     public String toString()
     {
-        return propertyURI + " name=" + name + " project="+  (project == null ? "null" : project.getPath()) + " container="+  (container==null ? "null" : container.getPath()) + " label=" + label + " range=" + rangeURI + " concept=" + conceptURI;
+        return _propertyURI + " name=" + _name + " project="+  (_project == null ? "null" : _project.getPath()) + " container="+  (_container ==null ? "null" : _container.getPath()) + " label=" + _label + " range=" + _rangeURI + " concept=" + _conceptURI;
     }
 
     public Container getContainer() {
-        return container;
+        return _container;
     }
 
     public void setContainer(Container container) {
-        this.container = container;
-        if (null==project)
-            project=container.getProject();
-        if (null==project)
-            project=container;
+        _container = container;
+        if (null== _project)
+            _project =container.getProject();
+        if (null== _project)
+            _project =container;
     }
 
     public Container getProject() {
-        return project;
+        return _project;
     }
 
     public void setProject(Container proj) {
-        this.project = proj;
+        _project = proj;
     }
 
     @NotNull
@@ -342,24 +342,24 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
 
     public boolean isMvEnabled()
     {
-        return mvEnabled;
+        return _mvEnabled;
     }
 
     public void setMvEnabled(boolean mvEnabled)
     {
-        if (this.mvEnabled != mvEnabled)
+        if (_mvEnabled != mvEnabled)
         {
-            if (mvEnabled && null != storageColumnName)
-                this.mvIndicatorStorageColumnName = makeMvIndicatorStorageColumnName();
+            if (mvEnabled && null != _storageColumnName)
+                _mvIndicatorStorageColumnName = makeMvIndicatorStorageColumnName();
             else
-                this.mvIndicatorStorageColumnName = null;
-            this.mvEnabled = mvEnabled;
+                _mvIndicatorStorageColumnName = null;
+            _mvEnabled = mvEnabled;
         }
     }
 
     private String makeMvIndicatorStorageColumnName()
     {
-        return storageColumnName + "_" + MvColumn.MV_INDICATOR_SUFFIX;
+        return _storageColumnName + "_" + MvColumn.MV_INDICATOR_SUFFIX;
     }
 
     /** Need the string version of this method because it's called by reflection and must match by name */
@@ -371,7 +371,7 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
     /** Need the string version of this method because it's called by reflection and must match by name */
     public void setImportAliases(String importAliases)
     {
-        this.importAliases = ColumnRenderProperties.convertToSet(importAliases);
+        _importAliases = ColumnRenderProperties.convertToSet(importAliases);
     }
 
     @Override
@@ -421,15 +421,15 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
         if (to instanceof PropertyDescriptor)
         {
             PropertyDescriptor toPD = (PropertyDescriptor)to;
-            toPD.container = container; // ?
-            toPD.project = project; // ?
-            toPD.ontologyURI = ontologyURI;
-            toPD.searchTerms = searchTerms;
-            toPD.semanticType = semanticType;
-            toPD.lookupContainer = lookupContainer;
-            toPD.lookupSchema = lookupSchema;
-            toPD.lookupQuery = lookupQuery;
-            toPD.mvEnabled = mvEnabled;
+            toPD._container = _container; // ?
+            toPD._project = _project; // ?
+            toPD._ontologyURI = _ontologyURI;
+            toPD._searchTerms = _searchTerms;
+            toPD._semanticType = _semanticType;
+            toPD._lookupContainer = _lookupContainer;
+            toPD._lookupSchema = _lookupSchema;
+            toPD._lookupQuery = _lookupQuery;
+            toPD._mvEnabled = _mvEnabled;
         }
     }
 
@@ -478,13 +478,13 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
 
     public String getMvIndicatorStorageColumnName()
     {
-        return mvIndicatorStorageColumnName;
+        return _mvIndicatorStorageColumnName;
     }
 
     // Should only be used during upgrade and bean
     public void setMvIndicatorStorageColumnName(String mvIndicatorStorageColumnName)
     {
-        this.mvIndicatorStorageColumnName = mvIndicatorStorageColumnName;
+        _mvIndicatorStorageColumnName = mvIndicatorStorageColumnName;
     }
 }
 

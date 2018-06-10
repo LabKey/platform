@@ -17,6 +17,7 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Sort.SortDirection;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
@@ -25,11 +26,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.StringExpression;
 
 import java.io.File;
-import java.math.BigDecimal;
-import java.sql.Types;
 import java.util.Date;
-import java.util.EnumSet;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -45,325 +42,325 @@ import java.util.regex.Pattern;
  */
 public abstract class ColumnRenderProperties implements ImportAliasable
 {
-    protected Sort.SortDirection sortDirection = Sort.SortDirection.ASC;
-    protected String inputType;
-    protected int inputLength = -1;
-    protected int inputRows = -1;
-    protected String displayWidth;
-    protected String format;
-    protected String excelFormatString;
-    protected String tsvFormatString;
-    protected StringExpression textExpression;
-    protected int scale = 0;
-
-    protected String propertyURI;
-    protected String conceptURI;
-    protected String rangeURI;
-    protected PropertyType propertyType;
+    protected SortDirection _sortDirection = SortDirection.ASC;
+    protected String _inputType;
+    protected int _inputLength = -1;
+    protected int _inputRows = -1;
+    protected String _displayWidth;
+    protected String _format;
+    protected String _excelFormatString;
+    protected String _tsvFormatString;
+    protected StringExpression _textExpression;
+    protected int _scale = 0;
+    protected String _propertyURI;
+    protected String _conceptURI;
+    protected String _rangeURI;
+    protected PropertyType _propertyType;
 
     // property descriptors default to nullable, while columninfos do not; PropertyDescriptor overrides this initializer
     // in its constructor:
-    protected boolean nullable = false;
-    protected boolean required = false;
-    protected String label;
+    protected boolean _nullable = false;
+    protected boolean _required = false;
+    protected String _label;
     /** The column's label, without any prefixes from parent lookups */
-    protected String shortLabel;
-    protected String description;
-    protected boolean hidden;
-    protected Boolean measure;
-    protected Boolean dimension;
-    protected Boolean recommendedVariable = false;
-    protected DefaultScaleType defaultScale = DefaultScaleType.LINEAR;
-    protected boolean shownInInsertView = true;
-    protected boolean shownInUpdateView = true;
-    protected boolean shownInDetailsView = true;
-    protected StringExpression url;
-    protected String urlTargetWindow;
-    protected String urlCls;
-    protected String onClick;
-    protected Set<String> importAliases = new LinkedHashSet<>();
+    protected String _shortLabel;
+    protected String _description;
+    protected boolean _hidden;
+    protected Boolean _measure;
+    protected Boolean _dimension;
+    protected Boolean _recommendedVariable = false;
+    protected DefaultScaleType _defaultScale = DefaultScaleType.LINEAR;
+    protected boolean _shownInInsertView = true;
+    protected boolean _shownInUpdateView = true;
+    protected boolean _shownInDetailsView = true;
+    protected StringExpression _url;
+    protected String _urlTargetWindow;
+    protected String _urlCls;
+    protected String _onClick;
+    protected Set<String> _importAliases = new LinkedHashSet<>();
     protected DefaultValueType _defaultValueType = null;
-    protected FacetingBehaviorType facetingBehaviorType = FacetingBehaviorType.AUTOMATIC;
-    protected PHI phi = PHI.NotPHI;
-    protected String redactedText = null;
-    protected Boolean isExcludeFromShifting = false;
-
-    protected FieldKey crosstabColumnDimension;
-    protected CrosstabMember crosstabColumnMember;
+    protected FacetingBehaviorType _facetingBehaviorType = FacetingBehaviorType.AUTOMATIC;
+    protected PHI _phi = PHI.NotPHI;
+    protected String _redactedText = null;
+    protected Boolean _isExcludeFromShifting = false;
+    protected FieldKey _crosstabColumnDimension;
+    protected CrosstabMember _crosstabColumnMember;
 
     public void copyTo(ColumnRenderProperties to)
     {
-        to.sortDirection = sortDirection;
+        to._sortDirection = _sortDirection;
         to.setInputType(getInputType());
         to.setInputLength(getInputLength());
         to.setInputRows(getInputRows());
-        to.nullable = nullable;
-        to.required = required;
-        to.displayWidth = displayWidth;
-        to.format = format;
-        to.excelFormatString = excelFormatString;
-        to.tsvFormatString = tsvFormatString;
-        to.textExpression = textExpression;
-        to.label = label;
-        to.shortLabel = shortLabel;
-        to.description = description;
-        to.hidden = hidden;
-        to.shownInInsertView = shownInInsertView;
-        to.shownInUpdateView = shownInUpdateView;
-        to.shownInDetailsView = shownInDetailsView;
-        to.measure = measure;
-        to.dimension = dimension;
-        to.recommendedVariable = recommendedVariable;
-        to.defaultScale = defaultScale;
-        to.url = url;
-        to.importAliases = new LinkedHashSet<>(importAliases);
-        to.facetingBehaviorType = facetingBehaviorType;
-        to.crosstabColumnMember = crosstabColumnMember;
-        to.phi = phi;
-        to.redactedText = redactedText;
-        to.isExcludeFromShifting = isExcludeFromShifting;
-        to.scale = scale;
-        to.propertyURI = propertyURI;
-        to.conceptURI = conceptURI;
-        to.rangeURI = rangeURI;
-        to.propertyType = propertyType;
+        to._nullable = _nullable;
+        to._required = _required;
+        to._displayWidth = _displayWidth;
+        to._format = _format;
+        to._excelFormatString = _excelFormatString;
+        to._tsvFormatString = _tsvFormatString;
+        to._textExpression = _textExpression;
+        to._label = _label;
+        to._shortLabel = _shortLabel;
+        to._description = _description;
+        to._hidden = _hidden;
+        to._shownInInsertView = _shownInInsertView;
+        to._shownInUpdateView = _shownInUpdateView;
+        to._shownInDetailsView = _shownInDetailsView;
+        to._measure = _measure;
+        to._dimension = _dimension;
+        to._recommendedVariable = _recommendedVariable;
+        to._defaultScale = _defaultScale;
+        to._url = _url;
+        to._importAliases = new LinkedHashSet<>(_importAliases);
+        to._facetingBehaviorType = _facetingBehaviorType;
+        to._crosstabColumnMember = _crosstabColumnMember;
+        to._phi = _phi;
+        to._redactedText = _redactedText;
+        to._isExcludeFromShifting = _isExcludeFromShifting;
+        to._scale = _scale;
+        to._propertyURI = _propertyURI;
+        to._conceptURI = _conceptURI;
+        to._rangeURI = _rangeURI;
+        to._propertyType = _propertyType;
         to._defaultValueType = _defaultValueType;
     }
 
-    public Sort.SortDirection getSortDirection()
+    public SortDirection getSortDirection()
     {
-        return sortDirection;
+        return _sortDirection;
     }
 
-    public void setSortDirection(Sort.SortDirection sortDirection)
+    public void setSortDirection(SortDirection sortDirection)
     {
-        this.sortDirection = sortDirection;
+        _sortDirection = sortDirection;
     }
 
     public String getInputType()
     {
-        return inputType;
+        return _inputType;
     }
 
     public void setInputType(String inputType)
     {
-        this.inputType = inputType;
+        _inputType = inputType;
     }
 
     public int getInputLength()
     {
-        return inputLength;
+        return _inputLength;
     }
 
     public void setInputLength(int inputLength)
     {
-        this.inputLength = inputLength;
+        _inputLength = inputLength;
     }
 
     public int getInputRows()
     {
-        return inputRows;
+        return _inputRows;
     }
 
     public void setInputRows(int inputRows)
     {
-        this.inputRows = inputRows;
+        _inputRows = inputRows;
     }
 
     public String getDisplayWidth()
     {
-        return displayWidth;
+        return _displayWidth;
     }
 
     public void setDisplayWidth(String displayWidth)
     {
-        this.displayWidth = displayWidth;
+        _displayWidth = displayWidth;
     }
 
     public String getFormat()
     {
-        return format;
+        return _format;
     }
 
     public void setFormat(String format)
     {
-        this.format = format;
+        _format = format;
     }
 
     public String getExcelFormatString()
     {
-        return excelFormatString;
+        return _excelFormatString;
     }
 
     public void setExcelFormatString(String excelFormatString)
     {
-        this.excelFormatString = excelFormatString;
+        _excelFormatString = excelFormatString;
     }
 
     public String getTsvFormatString()
     {
-        return tsvFormatString;
+        return _tsvFormatString;
     }
 
     public void setTsvFormatString(String tsvFormatString)
     {
-        this.tsvFormatString = tsvFormatString;
+        _tsvFormatString = tsvFormatString;
     }
 
     public StringExpression getTextExpression()
     {
-        return textExpression;
+        return _textExpression;
     }
 
     public void setTextExpression(StringExpression expr)
     {
-        this.textExpression = expr;
+        _textExpression = expr;
     }
 
+    @Override
     public String getLabel()
     {
-        return label;
+        return _label;
     }
 
     public void setLabel(String label)
     {
-        this.label = label;
+        _label = label;
     }
 
     public String getShortLabel()
     {
-        return shortLabel == null ? getLabel() : shortLabel;
+        return _shortLabel == null ? getLabel() : _shortLabel;
     }
 
     public void setShortLabel(String shortLabel)
     {
-        this.shortLabel = shortLabel;
+        _shortLabel = shortLabel;
     }
 
     public String getDescription()
     {
-        return description;
+        return _description;
     }
 
     public void setDescription(String description)
     {
-        this.description = description;
+        _description = description;
     }
 
     public boolean isHidden()
     {
-        return hidden;
+        return _hidden;
     }
 
     public void setHidden(boolean hidden)
     {
-        this.hidden = hidden;
+        _hidden = hidden;
     }
 
     public boolean isShownInDetailsView()
     {
-        return shownInDetailsView;
+        return _shownInDetailsView;
     }
 
     public void setShownInDetailsView(boolean shownInDetailsView)
     {
-        this.shownInDetailsView = shownInDetailsView;
+        _shownInDetailsView = shownInDetailsView;
     }
 
     public boolean isShownInInsertView()
     {
-        return shownInInsertView;
+        return _shownInInsertView;
     }
 
     public void setShownInInsertView(boolean shownInInsertView)
     {
-        this.shownInInsertView = shownInInsertView;
+        _shownInInsertView = shownInInsertView;
     }
 
     public boolean isShownInUpdateView()
     {
-        return shownInUpdateView;
+        return _shownInUpdateView;
     }
 
     public void setShownInUpdateView(boolean shownInUpdateView)
     {
-        this.shownInUpdateView = shownInUpdateView;
+        _shownInUpdateView = shownInUpdateView;
     }
 
     public StringExpression getURL()
     {
-        return this.url;
+        return _url;
     }
 
     public void setURL(StringExpression url)
     {
-        this.url = url;
+        _url = url;
     }
 
     public String getURLTargetWindow()
     {
-        return urlTargetWindow;
+        return _urlTargetWindow;
     }
 
     public void setURLTargetWindow(String urlTargetWindow)
     {
-        this.urlTargetWindow = urlTargetWindow;
+        _urlTargetWindow = urlTargetWindow;
     }
 
     public String getURLCls()
     {
-        return urlCls;
+        return _urlCls;
     }
 
     public void setURLCls(String urlCls)
     {
-        this.urlCls = urlCls;
+        _urlCls = urlCls;
     }
 
     public String getOnClick()
     {
-        return onClick;
+        return _onClick;
     }
 
     public void setOnClick(String onClick)
     {
-        this.onClick = onClick;
+        _onClick = onClick;
     }
 
     public boolean isRecommendedVariable()
     {
-        return recommendedVariable;
+        return _recommendedVariable;
     }
 
     public void setRecommendedVariable(boolean recommendedVariable)
     {
-        this.recommendedVariable = recommendedVariable;
+        _recommendedVariable = recommendedVariable;
     }
 
     public DefaultScaleType getDefaultScale()
     {
-        return defaultScale;
+        return _defaultScale;
     }
 
     public void setDefaultScale(DefaultScaleType defaultScale)
     {
-        this.defaultScale = defaultScale;
+        _defaultScale = defaultScale;
     }
 
     public void setMeasure(boolean measure)
     {
-        this.measure = measure;
+        _measure = measure;
     }
 
     public void setDimension(boolean dimension)
     {
-        this.dimension = dimension;
+        _dimension = dimension;
     }
 
     public static boolean inferIsDimension(ColumnRenderProperties col)
     {
         return inferIsDimension(col.getName(), col.isLookup(), col.isHidden());
     }
+
     public static boolean inferIsDimension(String name, boolean isLookup, boolean isHidden)
     {
         return isLookup &&
@@ -375,10 +372,10 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     public boolean isDimension()
     {
         // If dimension is unspecified/null, make a best guess based on the type of the field:
-        if (dimension == null)
+        if (_dimension == null)
             return inferIsDimension(getName(), isLookup(), isHidden());
         else
-            return dimension;
+            return _dimension;
     }
 
     public static boolean inferIsMeasure(ColumnRenderProperties col)
@@ -416,51 +413,52 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     public boolean isMeasure()
     {
         // If measure is unspecified/null, make a best guess based on the type of the field:
-        if (measure == null)
+        if (_measure == null)
             return inferIsMeasure(getName(), getLabel(), isNumericType(), isAutoIncrement(), isLookup(), isHidden());
         else
-            return measure;
+            return _measure;
     }
 
     /** value must not be null/empty */
     public boolean isNullable()
     {
-        return nullable;
+        return _nullable;
     }
 
     public void setNullable(boolean nullable)
     {
-        this.nullable = nullable;
+        _nullable = nullable;
     }
 
     /** value must not be null/empty OR a missing value indicator must be provided */
     public boolean isRequired()
     {
         // !nullable is stricter and implies required
-        return !nullable || required;
+        return !_nullable || _required;
     }
 
     /** Returns the 'raw' value of required which is useful for copying attributes.  see isRequired() */
     public boolean isRequiredSet()
     {
-        return required;
+        return _required;
     }
 
     public void setRequired(boolean required)
     {
-        this.required = required;
+        _required = required;
     }
 
+    @Override
     @NotNull
     public Set<String> getImportAliasSet()
     {
-        return importAliases;
+        return _importAliases;
     }
 
     public void setImportAliasesSet(Set<String> importAliases)
     {
         assert importAliases != null;
-        this.importAliases = importAliases;
+        _importAliases = importAliases;
     }
 
     public static String convertToString(Set<String> set)
@@ -494,26 +492,26 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     @Nullable
     public PropertyType getPropertyType()
     {
-        if (propertyType == null && getRangeURI() != null)
-            propertyType = PropertyType.getFromURI(getConceptURI(), getRangeURI(), null);
+        if (_propertyType == null && getRangeURI() != null)
+            _propertyType = PropertyType.getFromURI(getConceptURI(), getRangeURI(), null);
 
-        return propertyType;
+        return _propertyType;
     }
 
     @Override
     public String getPropertyURI()
     {
-        return propertyURI;
+        return _propertyURI;
     }
 
     public String getConceptURI()
     {
-        return conceptURI;
+        return _conceptURI;
     }
 
     public String getRangeURI()
     {
-        return rangeURI;
+        return _rangeURI;
     }
 
     @NotNull
@@ -626,71 +624,71 @@ public abstract class ColumnRenderProperties implements ImportAliasable
 
     public void setFacetingBehaviorType(FacetingBehaviorType type)
     {
-        facetingBehaviorType = type;
+        _facetingBehaviorType = type;
     }
 
     public FacetingBehaviorType getFacetingBehaviorType()
     {
-        return facetingBehaviorType;
+        return _facetingBehaviorType;
     }
 
     public FieldKey getCrosstabColumnDimension()
     {
-        return crosstabColumnDimension;
+        return _crosstabColumnDimension;
     }
 
     public void setCrosstabColumnDimension(FieldKey crosstabColumnDimension)
     {
-        this.crosstabColumnDimension = crosstabColumnDimension;
+        _crosstabColumnDimension = crosstabColumnDimension;
     }
 
     public CrosstabMember getCrosstabColumnMember()
     {
-        return crosstabColumnMember;
+        return _crosstabColumnMember;
     }
 
     public void setCrosstabColumnMember(CrosstabMember member)
     {
-        this.crosstabColumnMember = member;
+        _crosstabColumnMember = member;
     }
 
     public void setPHI(PHI phi)
     {
-        this.phi = phi;
+        _phi = phi;
     }
 
     public PHI getPHI()
     {
-        return phi;
+        return _phi;
     }
 
     public String getRedactedText()
     {
-        return redactedText;
+        return _redactedText;
     }
 
     public void setRedactedText(String redactedText)
     {
-        this.redactedText = redactedText;
+        _redactedText = redactedText;
     }
 
     public boolean isExcludeFromShifting()
     {
-        return isExcludeFromShifting;
+        return _isExcludeFromShifting;
     }
 
     public void setExcludeFromShifting(boolean isExcludeFromShifting)
     {
-        this.isExcludeFromShifting = isExcludeFromShifting;
+        _isExcludeFromShifting = isExcludeFromShifting;
     }
 
     public int getScale()
     {
-        return scale;
+        return _scale;
     }
 
     public void setScale(int scale)
     {
-        this.scale = scale;
+        _scale = scale;
     }
 }

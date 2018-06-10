@@ -48,18 +48,18 @@ public final class DomainDescriptor
     }
 
     private final Object _ts;     // for optimistic concurrency
-    private final int domainId;
+    private final int _domainId;
     private final String name;
-    private final String domainURI;
-    private final String description;
-    private final Container container;
-    private final Container project;
-    private final int titlePropertyId;
-    private final TemplateInfo templateInfo;
+    private final String _domainURI;
+    private final String _description;
+    private final Container _container;
+    private final Container _project;
+    private final int _titlePropertyId;
+    private final TemplateInfo _templateInfo;
 
     // for StorageProvisioner (currently assuming labkey scope)
-    private final String storageTableName;
-    private final String storageSchemaName;
+    private final String _storageTableName;
+    private final String _storageSchemaName;
 
     private DomainDescriptor(
             String domainURI, Container c, Container p, String name,
@@ -69,13 +69,11 @@ public final class DomainDescriptor
     )
     {
         MemTracker.getInstance().put(this);
-        this._ts = ts;
-        this.templateInfo = templateInfo;
-
-        this.description = description;
-
-        this.domainURI = domainURI;
-        this.domainId = domainId;
+        _ts = ts;
+        _templateInfo = templateInfo;
+        _description = description;
+        _domainURI = domainURI;
+        _domainId = domainId;
 
         String _name = null;
         if (null != name)
@@ -94,26 +92,25 @@ public final class DomainDescriptor
         }
         this.name = _name;
 
-        this.container = c;
+        _container = c;
 
         if (null != p)
         {
-            this.project = p;
+            _project = p;
         }
-        else if (null != this.container)
+        else if (null != _container)
         {
             // root container would return a null for project
-            this.project = container.getProject() != null ? container.getProject() : container;
+            _project = _container.getProject() != null ? _container.getProject() : _container;
         }
         else
         {
-            this.project = null /* container is null */;
+            _project = null /* container is null */;
         }
 
-        this.storageTableName = storageTableName;
-        this.storageSchemaName = storageSchemaName;
-
-        this.titlePropertyId = titlePropertyId;
+        _storageTableName = storageTableName;
+        _storageSchemaName = storageSchemaName;
+        _titlePropertyId = titlePropertyId;
     }
 
     /**
@@ -124,27 +121,27 @@ public final class DomainDescriptor
     {
         _ts = map.get("_ts");
 
-        domainURI = (String) map.get("DomainURI");
+        _domainURI = (String) map.get("DomainURI");
 
         if (map.containsKey("DomainId"))
-            domainId = (Integer) map.get("DomainId");
+            _domainId = (Integer) map.get("DomainId");
         else
-            domainId = 0;
+            _domainId = 0;
 
         name = (String) map.get("Name");
-        container = ContainerManager.getForId((String) map.get("Container"));
-        project = ContainerManager.getForId((String) map.get("Project"));
-        description = (String) map.get("Description");
-        storageSchemaName = (String) map.get("StorageSchemaName");
-        storageTableName = (String) map.get("StorageTableName");
+        _container = ContainerManager.getForId((String) map.get("Container"));
+        _project = ContainerManager.getForId((String) map.get("Project"));
+        _description = (String) map.get("Description");
+        _storageSchemaName = (String) map.get("StorageSchemaName");
+        _storageTableName = (String) map.get("StorageTableName");
 
         // This property is not stored in the database
         if (map.containsKey("titlePropertyId"))
-            titlePropertyId = (Integer) map.get("titlePropertyId");
+            _titlePropertyId = (Integer) map.get("titlePropertyId");
         else
-            titlePropertyId = 0;
+            _titlePropertyId = 0;
 
-        templateInfo = null;
+        _templateInfo = null;
     }
 
     public DomainDescriptor.Builder edit()
@@ -154,17 +151,17 @@ public final class DomainDescriptor
 
     public Container getContainer()
     {
-        return container;
+        return _container;
     }
 
     public String getDescription()
     {
-        return description;
+        return _description;
     }
 
     public int getDomainId()
     {
-        return domainId;
+        return _domainId;
     }
 
     public String getName()
@@ -174,34 +171,34 @@ public final class DomainDescriptor
 
     public String getDomainURI()
     {
-        return domainURI;
+        return _domainURI;
     }
 
     public Container getProject()
     {
-        return project;
+        return _project;
     }
 
     public int getTitlePropertyId()
     {
-        return titlePropertyId;
+        return _titlePropertyId;
     }
 
     @Nullable   // null if not provisioned
     public String getStorageTableName()
     {
-        return storageTableName;
+        return _storageTableName;
     }
 
     public String getStorageSchemaName()
     {
-        return storageSchemaName;
+        return _storageSchemaName;
     }
 
     @Nullable
     public TemplateInfo getTemplateInfo()
     {
-        return templateInfo;
+        return _templateInfo;
     }
 
     public Object get_Ts()
@@ -212,7 +209,7 @@ public final class DomainDescriptor
     @Override
     public String toString()
     {
-        return domainURI + " name=" + name + " project=" + (project == null ? "null" : project.getPath()) + " container=" + (container == null ? "null" : container.getPath());
+        return _domainURI + " name=" + name + " project=" + (_project == null ? "null" : _project.getPath()) + " container=" + (_container == null ? "null" : _container.getPath());
     }
 
     public DomainDescriptor clone()
@@ -249,7 +246,7 @@ public final class DomainDescriptor
 
     public boolean isProvisioned()
     {
-        return this.storageSchemaName != null && this.storageTableName != null;
+        return _storageSchemaName != null && _storageTableName != null;
     }
 
     public static class Builder implements org.labkey.api.data.Builder<DomainDescriptor>
@@ -376,13 +373,13 @@ public final class DomainDescriptor
 
         public Builder setTs(Object ts)
         {
-            this._ts = ts;
+            _ts = ts;
             return this;
         }
 
         public Builder set_Ts(Object ts)
         {
-            this._ts = ts;
+            _ts = ts;
             return this;
         }
     }

@@ -215,11 +215,9 @@ public class MultiValuedRenderContext extends RenderContextDecorator
             public Map<FieldKey, ColumnInfo> getFieldMap()
             {
                 Map<FieldKey, ColumnInfo> result = new HashMap<>();
-                ColumnInfo col1 = new ColumnInfo(_fk1);
-                col1.setJdbcType(JdbcType.INTEGER);
+                ColumnInfo col1 = new ColumnInfo(_fk1, JdbcType.INTEGER);
                 result.put(_fk1, col1);
-                ColumnInfo col2 = new ColumnInfo(_fk2);
-                col2.setJdbcType(JdbcType.VARCHAR);
+                ColumnInfo col2 = new ColumnInfo(_fk2, JdbcType.VARCHAR);
                 result.put(_fk2, col2);
                 return result;
             }

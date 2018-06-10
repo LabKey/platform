@@ -54,8 +54,8 @@ public class AliasedColumn extends ColumnInfo
             setLabel(null);
 
         _column = column;
-        metaDataName = column.getMetaDataName();
-        selectName = column.getSelectName();
+        _metaDataName = column.getMetaDataName();
+        _selectName = column.getSelectName();
     }
 
     public AliasedColumn(TableInfo parent, String name, ColumnInfo column)
