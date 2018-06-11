@@ -15,43 +15,54 @@
  */
 package org.labkey.core.admin.usageMetrics;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.usageMetrics.UsageMetricsProvider;
 import org.labkey.api.usageMetrics.UsageMetricsService;
+import org.labkey.api.util.MinorConfigurationException;
+import org.labkey.api.util.UsageReportingLevel;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by Tony on 2/14/2017.
  */
 public class UsageMetricsServiceImpl implements UsageMetricsService
 {
-    private final Map<String, UsageMetricsProvider> moduleUsageReports = new ConcurrentSkipListMap<>();
+    private final Map<UsageReportingLevel, Map<String, UsageMetricsProvider>> moduleUsageReports = new ConcurrentHashMap<>();
 
     @Override
-    public void registerUsageMetrics(String moduleName, UsageMetricsProvider metrics)
+    public void registerUsageMetrics(UsageReportingLevel level, String moduleName, UsageMetricsProvider metrics)
     {
-        moduleUsageReports.put(moduleName, metrics);
+        if (UsageReportingLevel.NONE == level)
+            throw new MinorConfigurationException(moduleName + " module registered metric for UsageReportingLevel NONE. This will never be sent.");
+        moduleUsageReports.computeIfAbsent(level, k -> new ConcurrentHashMap<>()).put(moduleName, metrics);
     }
 
     @Override
-    public Map<String, Map<String, Object>> getModuleUsageMetrics()
+    @Nullable
+    public Map<String, Map<String, Object>> getModuleUsageMetrics(UsageReportingLevel level)
     {
-        Map<String, Map<String, Object>> allModulesMetrics = new HashMap<>();
-        moduleUsageReports.forEach((moduleName, provider) ->
+        if (null == moduleUsageReports.get(level))
+            return null;
+        else
         {
-            try
+            Map<String, Map<String, Object>> allModulesMetrics = new HashMap<>();
+            moduleUsageReports.get(level).forEach((moduleName, provider) ->
             {
-                allModulesMetrics.put(moduleName, provider.getUsageMetrics());
-            }
-            catch (Exception e)
-            {
-                Map<String, Object> errors = allModulesMetrics.computeIfAbsent(ERRORS , k -> new HashMap<>());
-                errors.put(moduleName, e.getMessage());
-            }
-        });
+                try
+                {
+                    allModulesMetrics.put(moduleName, provider.getUsageMetrics());
+                }
+                catch (Exception e)
+                {
+                    allModulesMetrics.computeIfAbsent(ERRORS, k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER)).put(moduleName, e.getMessage());
+                }
+            });
 
-        return allModulesMetrics;
+            return allModulesMetrics;
+        }
     }
 }
