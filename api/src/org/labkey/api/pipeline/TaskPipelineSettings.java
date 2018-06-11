@@ -51,6 +51,8 @@ public class TaskPipelineSettings
 
     private boolean _useUniqueAnalysisDirectory = false;
 
+    private boolean _activeModuleRequired = true;
+
     public TaskPipelineSettings(TaskId id)
     {
         _id = id;
@@ -183,6 +185,17 @@ public class TaskPipelineSettings
     public void setUseUniqueAnalysisDirectory(boolean useUniqueAnalysisDirectory)
     {
         _useUniqueAnalysisDirectory = useUniqueAnalysisDirectory;
+    }
+
+    /**@return When true, the module providing this task must be enabled in the current container */
+    public boolean isActiveModuleRequired()
+    {
+        return _activeModuleRequired;
+    }
+
+    public void setActiveModuleRequired(boolean activeModuleRequired)
+    {
+        _activeModuleRequired = activeModuleRequired;
     }
 
     protected void parseWorkflowProcessKey()
