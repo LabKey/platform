@@ -76,6 +76,9 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
 {
     public static final String WEB_PART_NAME = "Wiki";
 
+    // package logger for use with logger-manage.view
+    private static final Logger _logPackage = Logger.getLogger(WikiModule.class.getPackage().getName());
+
     private static final Logger _log = Logger.getLogger(WikiModule.class);
 
     public String getName()
