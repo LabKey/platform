@@ -76,18 +76,6 @@ public class ConnectionWrapper implements java.sql.Connection
 
     private static final Set<ConnectionWrapper> _loggedLeaks = new HashSet<>();
 
-    /**
-     * Mapping from SPID (database process id) to the name of the most recent Java thread to use the connection
-     * Useful for checking out database deadlock problems when debugging.
-     */
-    private static final Map<Integer, String> _mostRecentSPIDThreads = new HashMap<>();
-
-    /**
-     * String representation of the map, useful because it's a pain to look through the
-     * map if you're paused in the debugger due to JVM restrictions on invoking methods when paused.
-     */
-    @SuppressWarnings({"UNUSED_SYMBOL", "FieldCanBeLocal", "UnusedDeclaration"})
-    private static String _mostRecentSPIDUsageString = "";
     private static Logger _logDefault = Logger.getLogger(ConnectionWrapper.class);
     private static boolean _explicitLogger = _logDefault.getLevel() != null || _logDefault.getParent() != null  && _logDefault.getParent().getName().equals("org.labkey.api.data");
 
@@ -107,17 +95,6 @@ public class ConnectionWrapper implements java.sql.Connection
         _connection = conn;
         _scope = scope;
         _spid = spid;
-
-        synchronized (_mostRecentSPIDThreads)
-        {
-            _mostRecentSPIDThreads.put(_spid, Thread.currentThread().getName());
-            StringBuilder sb = new StringBuilder();
-            for (Map.Entry<Integer, String> entry : _mostRecentSPIDThreads.entrySet())
-            {
-                sb.append("SPID: ").append(entry.getKey()).append(" -> ").append(entry.getValue()).append("\n");
-            }
-            _mostRecentSPIDUsageString = sb.toString();
-        }
 
         MemTracker.getInstance().put(this);
         _allocatingThreadName = Thread.currentThread().getName();
