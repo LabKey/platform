@@ -15,7 +15,9 @@
  */
 package org.labkey.api.usageMetrics;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.UsageReportingLevel;
 
 import java.util.Map;
 
@@ -38,7 +40,7 @@ public interface UsageMetricsService
         ServiceRegistry.get().registerService(UsageMetricsService.class, impl);
     }
 
-    void registerUsageMetrics(String moduleName, UsageMetricsProvider metrics);
+    void registerUsageMetrics(UsageReportingLevel level, String moduleName, UsageMetricsProvider metrics);
 
-    Map<String, Map<String, Object>> getModuleUsageMetrics();
+    @Nullable Map<String, Map<String, Object>> getModuleUsageMetrics(UsageReportingLevel level);
 }

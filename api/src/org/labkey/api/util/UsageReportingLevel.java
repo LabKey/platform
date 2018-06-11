@@ -22,7 +22,6 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.ActionsHelper;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.flow.api.FlowService;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
@@ -34,7 +33,6 @@ import java.net.URISyntaxException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Timer;
@@ -90,13 +88,7 @@ public enum UsageReportingLevel
             metrics.put("activeDayCount", UserManager.getActiveDaysCount(startDate));
             Integer averageRecentDuration = UserManager.getAverageSessionDuration(startDate);
             metrics.put("recentAvgSessionDuration", null == averageRecentDuration ? -1 : averageRecentDuration);
-
-            FlowService fs = FlowService.get();
-            if (null != fs)
-            {
-                metrics.put("flowTempTableCount", fs.getTempTableCount());
-            }
-
+            putModulesMetrics(metrics);
         }
     },
     MEDIUM
@@ -113,7 +105,8 @@ public enum UsageReportingLevel
             report.addParam("systemShortName", laf.getShortName());
             report.addParam("administratorEmail", AppProps.getInstance().getAdministratorContactEmail(true));
 
-            metrics.put("modules", getModulesStats());
+            putModulePageHits(metrics);
+            putModulesMetrics(metrics);
             metrics.put("folderTypeCounts", ContainerManager.getFolderTypeNameContainerCounts(ContainerManager.getRoot()));
 
             report.addHostName();
@@ -234,38 +227,43 @@ public enum UsageReportingLevel
         }
     }
 
-    private static Map<String, Map<String, Object>> getModulesStats()
+    protected void putModulesMetrics(Map<String, Object> runningMetrics)
     {
-        Map<String, Map<String, Object>> allModulesStats = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        UsageMetricsService svc = UsageMetricsService.get();
+        if (null != svc)
+        {
+            Map<String, Map<String, Object>> allRegisteredMetrics = svc.getModuleUsageMetrics(this);
+            if (null != allRegisteredMetrics)
+            {
+                @SuppressWarnings({"unchecked"})
+                Map<String, Map<String, Object>> modulesMap = (Map<String, Map<String, Object>>) runningMetrics.computeIfAbsent("modules", k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER));
+                allRegisteredMetrics.forEach((module, metrics) ->
+                {
+                    Map<String, Object> moduleStats = modulesMap.computeIfAbsent(module, k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER));
+                    moduleStats.putAll(metrics);
+                });
+            }
+        }
+    }
+
+    protected void putModulePageHits(Map<String, Object> runningMetrics)
+    {
+        @SuppressWarnings({"unchecked"})
+        Map<String, Map<String, Object>> allModulesStats = (Map<String, Map<String, Object>>) runningMetrics.computeIfAbsent("modules", k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER));
         try
         {
             ActionsHelper.getActionStatistics().forEach((module, controllersMap) -> {
-                Map<String, Object> controllerHitCounts = new TreeMap<>();
-                allModulesStats.put(module, controllerHitCounts);
-                controllersMap.forEach((controller, actionStatsMap) -> controllerHitCounts.put(controller,
+                Map<String, Object> moduleStats = allModulesStats.computeIfAbsent(module, k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER));
+                controllersMap.forEach((controller, actionStatsMap) -> moduleStats.put(controller,
                         actionStatsMap.values().stream().mapToLong(SpringActionController.ActionStats::getCount).sum()));
             });
         }
         catch (InstantiationException | IllegalAccessException e)
         {
             // Unlikely to hit this, but just in case, still give module list
-            ModuleLoader.getInstance().getModules().forEach(module -> allModulesStats.put(module.getName(), new HashMap<>()));
-            Map<String, Object> errors = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-            errors.put("controllerCounts", e.getMessage());
-            allModulesStats.put(UsageMetricsService.ERRORS, errors);
+            ModuleLoader.getInstance().getModules().forEach(module -> allModulesStats.computeIfAbsent(module.getName(), k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER)));
+            // And put the error in the errors section of the metrics
+            allModulesStats.computeIfAbsent(UsageMetricsService.ERRORS, k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER)).put("controllerCounts", e.getMessage());
         }
-
-        UsageMetricsService svc = UsageMetricsService.get();
-        if (null != svc)
-        {
-            svc.getModuleUsageMetrics().forEach((module, metrics) ->
-            {
-                // Add to the existing stats for the module, but don't assume ActionsHelper.getActionStatistics hit every module
-                Map<String, Object> moduleStats = allModulesStats.computeIfAbsent(module, k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER));
-                moduleStats.putAll(metrics);
-            });
-        }
-
-        return allModulesStats;
     }
 }
