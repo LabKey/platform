@@ -320,15 +320,16 @@ public class PipelineJobServiceImpl implements PipelineJobService
     @Override
     public <T extends TaskPipeline> Collection<T> getTaskPipelines(@Nullable Container container, @Nullable Class<T> inter)
     {
+        Collection<Module> allModules = ModuleLoader.getInstance().getModules();
         Collection<Module> activeModules = container == null ? ModuleLoader.getInstance().getModules() : container.getActiveModules();
         ArrayList<T> pipelineList = new ArrayList<>();
 
-        for (Module module : activeModules)
+        for (Module module : allModules)
         {
             Collection<TaskPipeline> pipelines = getTaskPipelines(module);
             for (TaskPipeline tp : pipelines)
             {
-                if (tp != null && (inter == null || inter.isInstance(tp)))
+                if (tp != null && (inter == null || inter.isInstance(tp)) && !(tp.isActiveModuleRequired() && !activeModules.contains(module)))
                     pipelineList.add((T) tp);
             }
         }

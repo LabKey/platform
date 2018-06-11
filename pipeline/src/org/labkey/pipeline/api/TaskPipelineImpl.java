@@ -52,6 +52,9 @@ public class TaskPipelineImpl<SettingsType extends TaskPipelineSettings> impleme
     /** Move the input files into a unique directory before starting analysis */
     private boolean _useUniqueAnalysisDirectory = false;
 
+    /** The module providing this task must be enabled in the current container */
+    private boolean _activeModuleRequired = true;
+
     public TaskPipelineImpl()
     {
         this(new TaskId(TaskPipeline.class));
@@ -120,6 +123,8 @@ public class TaskPipelineImpl<SettingsType extends TaskPipelineSettings> impleme
 
         _useUniqueAnalysisDirectory = settings.isUseUniqueAnalysisDirectory();
 
+        _activeModuleRequired = settings.isActiveModuleRequired();
+
         return this;
     }
 
@@ -176,5 +181,11 @@ public class TaskPipelineImpl<SettingsType extends TaskPipelineSettings> impleme
     public boolean isUseUniqueAnalysisDirectory()
     {
         return _useUniqueAnalysisDirectory;
+    }
+
+    @Override
+    public boolean isActiveModuleRequired()
+    {
+        return _activeModuleRequired;
     }
 }
