@@ -135,8 +135,10 @@
         </td>
 
         <td style="vertical-align:top;border-left:solid #DDDDDD 1px;padding-left:1em">
-                <a href="<%=h(BaseStudyController.getStudyOverviewURL(bean.getStudy().getContainer()))%>"><img src="<%=request.getContextPath()%>/_images/studyNavigator.gif" alt="Study Navigator"> </a><br>
-                <%=textLink("Study Navigator", BaseStudyController.getStudyOverviewURL(bean.getStudy().getContainer()))%><br>
+                <a href="<%=h(BaseStudyController.getStudyOverviewURL(bean.getStudy().getContainer()))%>"><img src="<%=request.getContextPath()%>/_images/studyNavigator.gif" alt="Study Navigator"> </a>
+            <%out.write("<p>");%>
+            <%=textLink("Study Navigator", BaseStudyController.getStudyOverviewURL(bean.getStudy().getContainer()))%>
+            <%out.write("</p>");%>
             <%
                 if (isAdmin)
                 {
