@@ -1027,16 +1027,21 @@ abstract public class PipelineJob extends Job implements Serializable
         }
         finally
         {
-            if (null != _localDirectory)
-            {
-                Path remoteLogFilePath = _localDirectory.cleanUpLocalDirectory();
-                if (null != remoteLogFilePath)
-                {
-                    setLogFilePath(remoteLogFilePath);
-                    setStatus(getActiveTaskStatus());       // Force writing to statusFiles
-                }
-            }
+            finallyCleanUpLocalDirectory();
+        }
+    }
 
+    // Should be called in run()'s finally by any class that overrides run(), if class uses LocalDirectory
+    protected void finallyCleanUpLocalDirectory()
+    {
+        if (null != _localDirectory)
+        {
+            Path remoteLogFilePath = _localDirectory.cleanUpLocalDirectory();
+            if (null != remoteLogFilePath)
+            {
+                setLogFilePath(remoteLogFilePath);
+                setStatus(getActiveTaskStatus());       // Force writing to statusFiles
+            }
         }
     }
 

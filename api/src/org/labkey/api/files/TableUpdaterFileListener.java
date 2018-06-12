@@ -255,7 +255,7 @@ public class TableUpdaterFileListener implements FileListener
             }
 
             SQLFragment whereClause = new SQLFragment(" WHERE ");
-            if (destPath.startsWith("file:"))
+            if (srcPath.startsWith("file:"))
             {
                 // Consider paths file:/... and file:///...
                 String srcCore = srcPath.replaceFirst("^file:/+", "/");
