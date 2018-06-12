@@ -149,4 +149,14 @@ public interface RStudioService
     {
         return null;
     }
+
+    default String getInputDataProlog(ViewContext context, RReport rReport)
+    {
+        return null;
+    }
+
+    default void saveReportSource(RReport report, String runScript, ViewContext viewContext)
+    {
+
+    }
 }

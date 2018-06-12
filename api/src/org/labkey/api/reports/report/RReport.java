@@ -317,6 +317,14 @@ public class RReport extends ExternalScriptEngineReport
             labkey.append("labkey.data <- read.table(\"inputFileTsv\", header=TRUE, sep=\"\\t\", quote=\"\\\"\", comment.char=\"\");\n");
             labkey.append("labkey.debug.endReadLabkeyData <- Sys.time();\n");
         }
+        else if (isRStudio)
+        {
+            RStudioService rs = getRStudioService();
+            if (rs != null)
+            {
+                labkey.append(rs.getInputDataProlog(context, this));
+            }
+        }
 
         labkey.append("labkey.url <- function (controller, action, list){paste(labkey.url.base,controller,labkey.url.path,action,\".view?\",paste(names(list),list,sep=\"=\",collapse=\"&\"),sep=\"\")}\n" +
             "labkey.resolveLSID <- function(lsid){paste(labkey.url.base,\"experiment/resolveLSID.view?lsid=\",lsid,sep=\"\");}\n");
@@ -384,31 +392,31 @@ public class RReport extends ExternalScriptEngineReport
                 String remotePath = rengine.getRemotePath(pipelineRoot);
                 labkey.append("labkey.remote.pipeline.root <- \"").append(remotePath).append("\"\n");
             }
-        }
 
-        // session information
-        if (context.getRequest() != null)
-        {
-            String session = PageFlowUtil.getCookieValue(context.getRequest().getCookies(), CSRFUtil.SESSION_COOKIE_NAME, null);
-            String sessionName = CSRFUtil.SESSION_COOKIE_NAME;
-            if (session == null)
+            // session information
+            if (context.getRequest() != null)
             {
-                // Issue 26957 - R report running as pipeline job doesn't inherit user when making Rlabkey calls
-                session = PageFlowUtil.getCookieValue(context.getRequest().getCookies(), SecurityManager.TRANSFORM_SESSION_ID, null);
-                if (session != null)
+                String session = PageFlowUtil.getCookieValue(context.getRequest().getCookies(), CSRFUtil.SESSION_COOKIE_NAME, null);
+                String sessionName = CSRFUtil.SESSION_COOKIE_NAME;
+                if (session == null)
                 {
-                    sessionName = SecurityManager.TRANSFORM_SESSION_ID;
+                    // Issue 26957 - R report running as pipeline job doesn't inherit user when making Rlabkey calls
+                    session = PageFlowUtil.getCookieValue(context.getRequest().getCookies(), SecurityManager.TRANSFORM_SESSION_ID, null);
+                    if (session != null)
+                    {
+                        sessionName = SecurityManager.TRANSFORM_SESSION_ID;
+                    }
+                    else
+                    {
+                        session = "";
+                    }
                 }
-                else
-                {
-                    session = "";
-                }
-            }
 
-            labkey.append("labkey.sessionCookieName = \"").append(sessionName).append("\"\n");
-            labkey.append("labkey.sessionCookieContents = \"");
-            labkey.append(session);
-            labkey.append("\"\n");
+                labkey.append("labkey.sessionCookieName = \"").append(sessionName).append("\"\n");
+                labkey.append("labkey.sessionCookieContents = \"");
+                labkey.append(session);
+                labkey.append("\"\n");
+            }
         }
 
         labkey.append(getKnitrEndChunk());
@@ -427,31 +435,70 @@ public class RReport extends ExternalScriptEngineReport
             script = script.substring(yamlScript.length());
         }
 
-        String commentLineStart = "# ";
-        String commentLineEnd = "\n";
-
-        if (getKnitrFormat() == RReportDescriptor.KnitrFormat.Html || getKnitrFormat() == RReportDescriptor.KnitrFormat.Markdown )
-        {
-            commentLineStart = "<!-- ";
-            commentLineEnd = " -->\n";
-        }
-
         String ret;
         ret =
             yamlScript +
-            (isRStudio ? (commentLineStart + "8< - - - do not edit this line - - - - - - - - - - - - - - - - - - - -" + commentLineEnd +
-                        commentLineStart + "This code is not part of your R report, changes will not be saved     " + commentLineEnd)
-                    : "") +
+            (isRStudio ? (getCommentLineStartEnd(false) + "8<" + getCommentLineStartEnd(true)) : "") +
             StringUtils.defaultString(getScriptProlog(engine, context, inputFile, inputParameters, isRStudio)) +
-            (isRStudio ? (commentLineStart + "Your report code goes below the next line                             " + commentLineEnd +
-                        commentLineStart + " - - - - do not edit this line - - - - - - - - - - - - - - - - - -  >8" + commentLineEnd)
-                    : "") +
+            (isRStudio ? (getCommentLineStartEnd(false) + ">8" + getCommentLineStartEnd(true)) : "") +
             script;
         return ret;
     }
 
+    public String getCommentLineStartEnd(boolean isEnd)
+    {
+        boolean isKnitr = getKnitrFormat() == RReportDescriptor.KnitrFormat.Html || getKnitrFormat() == RReportDescriptor.KnitrFormat.Markdown;
+        return isKnitr ? (isEnd ? " -->\n" : "<!-- ") : (isEnd ? "\n" : "# ");
+    }
 
-    String stripScriptProlog(String script)
+    public String stripScriptProlog(String script)
+    {
+        return stripScriptProlog(script, false);
+    }
+
+    /**
+     *
+     * @param script the script containing prolog
+     * @param extractProlog True to extract prolog out of script, false to extract source out of script
+     * @return
+     */
+    public String stripScriptProlog(String script, boolean extractProlog)
+    {
+        String[] lines = StringUtils.split(script, '\n');
+        int[] anchors = getPrologAnchors(script);
+        int cutstart = anchors[0], cutend = anchors[1], yamlstart = anchors[2], yamlend = anchors[3];
+
+        if (cutstart == -1 || cutend == -1)
+            return extractProlog ? null : script;
+
+        List<String> list = Arrays.asList(lines);
+
+        if (extractProlog)
+        {
+            return StringUtils.join(list.subList(cutstart, cutend + 1), "\n");
+        }
+
+        // write out lines before prolog cut 8<
+        String ret = "";
+        if (cutstart > 0)
+            ret = StringUtils.join(list.subList(0,cutstart), "\n") + "\n";
+        if (yamlstart == 0 && (yamlend > cutstart && yamlend < cutend))
+            ret += "---\n";
+        if (cutend < lines.length-1)
+        {
+            String endPrologLine = list.get(cutend);
+            int sourceStartIndex = script.indexOf(endPrologLine) + endPrologLine.length();
+            ret += script.substring(sourceStartIndex + 1); // plus 1 for newline character
+        }
+        return ret;
+    }
+
+    /**
+     *
+     * @param script
+     * @return [cutstart, cutend, yamlstart, yamlend]
+     */
+    public int[] getPrologAnchors(String script)
     {
         String[] lines = StringUtils.split(script, '\n');
         int cutstart = -1, cutend = -1;
@@ -490,25 +537,8 @@ public class RReport extends ExternalScriptEngineReport
             }
         }
 
-        if (cutstart == -1 || cutend == -1)
-            return script;
-
-        // write out lines before prolog cut 8<
-        String ret = "";
-        List<String> list = Arrays.asList(lines);
-        if (cutstart > 0)
-            ret = StringUtils.join(list.subList(0,cutstart), "\n") + "\n";
-        if (yamlstart == 0 && (yamlend > cutstart && yamlend < cutend))
-            ret += "---\n";
-        if (cutend < lines.length-1)
-        {
-            String endPrologLine = list.get(cutend);
-            int sourceStartIndex = script.indexOf(endPrologLine) + endPrologLine.length();
-            ret += script.substring(sourceStartIndex + 1); // plus 1 for newline character
-        }
-        return ret;
+        return new int[]{cutstart, cutend, yamlstart, yamlend};
     }
-
 
     // append the pipeline roots to the prolog
     public File getPipelineRoot(ViewContext context)
@@ -597,7 +627,7 @@ public class RReport extends ExternalScriptEngineReport
         return script;
     }
 
-    private String getScriptFileExtension()
+    public String getScriptFileExtension()
     {
         if (getKnitrFormat() == RReportDescriptor.KnitrFormat.Html)
             return ".Rhtml";
