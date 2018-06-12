@@ -20,7 +20,8 @@ import java.util.Map;
 /**
  * Created by Tony on 2/14/2017.
  *
- * Modules can report their own usage metrics by registering a subclass with UsageMetricsService at startup.
+ * Functional interface for modules to report their own usage metrics.
+ * Register an implementation with UsageMetricsService at module startup.
  */
 public interface UsageMetricsProvider
 {

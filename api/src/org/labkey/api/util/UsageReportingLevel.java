@@ -105,7 +105,7 @@ public enum UsageReportingLevel
             report.addParam("systemShortName", laf.getShortName());
             report.addParam("administratorEmail", AppProps.getInstance().getAdministratorContactEmail(true));
 
-            putModulePageHits(metrics);
+            putModuleControllerHits(metrics);
             putModulesMetrics(metrics);
             metrics.put("folderTypeCounts", ContainerManager.getFolderTypeNameContainerCounts(ContainerManager.getRoot()));
 
@@ -246,7 +246,7 @@ public enum UsageReportingLevel
         }
     }
 
-    protected void putModulePageHits(Map<String, Object> runningMetrics)
+    protected void putModuleControllerHits(Map<String, Object> runningMetrics)
     {
         @SuppressWarnings({"unchecked"})
         Map<String, Map<String, Object>> allModulesStats = (Map<String, Map<String, Object>>) runningMetrics.computeIfAbsent("modules", k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER));
@@ -254,7 +254,9 @@ public enum UsageReportingLevel
         {
             ActionsHelper.getActionStatistics().forEach((module, controllersMap) -> {
                 Map<String, Object> moduleStats = allModulesStats.computeIfAbsent(module, k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER));
-                controllersMap.forEach((controller, actionStatsMap) -> moduleStats.put(controller,
+                Map<String, Long> controllerStats = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+                moduleStats.put("controllerHits", controllerStats);
+                controllersMap.forEach((controller, actionStatsMap) -> controllerStats.put(controller,
                         actionStatsMap.values().stream().mapToLong(SpringActionController.ActionStats::getCount).sum()));
             });
         }
