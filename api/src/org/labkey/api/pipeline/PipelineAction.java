@@ -15,15 +15,17 @@
  */
 package org.labkey.api.pipeline;
 
-import org.labkey.api.util.FileUtil;
-import org.labkey.api.view.NavTree;
-import org.labkey.api.util.URLHelper;
-import org.json.JSONObject;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
+import org.json.JSONObject;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.NavTree;
 
 import java.io.File;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -35,21 +37,29 @@ import java.util.stream.Collectors;
 public class PipelineAction
 {
     String _description;
-    NavTree _links;
-    List<Path> _files;
-    boolean _allowMultiSelect;
-    boolean _allowEmptySelect;
+    private final NavTree _links;
+    private final List<Path> _files;
+    private final boolean _allowMultiSelect;
+    private final boolean _allowEmptySelect;
 
     /** Use NavTree to create a drop-down menu with submenus for the specified files */
     public PipelineAction(NavTree links, File[] files, boolean allowMultiSelect, boolean allowEmptySelect)
     {
-        this(links, Arrays.stream(files).map(file -> file.toPath()).collect(Collectors.toList()), allowMultiSelect, allowEmptySelect);
+        this(links, Arrays.stream(files).map(File::toPath).collect(Collectors.toList()), allowMultiSelect, allowEmptySelect);
     }
 
     public PipelineAction(NavTree links, List<Path> files, boolean allowMultiSelect, boolean allowEmptySelect)
     {
         _links = links;
-        _files = files;
+        if (files == null || files.isEmpty())
+        {
+            _files = Collections.emptyList();
+        }
+        else
+        {
+            files.sort((p1, p2) -> FileUtil.getFileName(p1).compareToIgnoreCase(FileUtil.getFileName(p2)));
+            _files = Collections.unmodifiableList(files);
+        }
         _allowMultiSelect = allowMultiSelect;
         _allowEmptySelect = allowEmptySelect;
     }
@@ -80,6 +90,7 @@ public class PipelineAction
         return _links.getText();
     }
 
+    @NotNull
     public List<Path> getFiles()
     {
         return _files;
