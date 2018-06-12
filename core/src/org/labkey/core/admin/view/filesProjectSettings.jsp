@@ -27,8 +27,12 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.core.admin.AdminController.ProjectSettingsForm.FileRootProp" %>
+<%@ page import="org.labkey.core.admin.AdminController.ProjectSettingsForm.MigrateFilesOption" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Collections" %>
+<%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -55,6 +59,11 @@
     {
         canChangeFileSettings = false;
     }
+    String currentFileRootOption =
+            FileRootProp.disable.name().equals(bean.getFileRootOption()) ? "Disabled" :
+            FileRootProp.siteDefault.name().equals(bean.getFileRootOption()) ? "Default based on project root" :
+            FileRootProp.folderOverride.name().equals(bean.getFileRootOption()) ? bean.getFolderRootPath() :
+            FileRootProp.cloudRoot.name().equals(bean.getFileRootOption()) ? "/@cloud/" + bean.getCloudRootName() : "";
 
     CloudStoreService cloud = CloudStoreService.get();
     Collection<String> storeNames = Collections.emptyList();
@@ -67,10 +76,18 @@
     boolean isFolderSetup = null != folderSetup && "true".equalsIgnoreCase(folderSetup);
     String cancelButtonText = isFolderSetup ? "Next" : "Cancel";
     String cancelButtonUrl = isFolderSetup ? getActionURL().getReturnURL().toString() : getContainer().getStartURL(getUser()).toString();
+    boolean migrating = null != bean.getConfirmMessage() && null != bean.getMigrateFilesOption() &&
+            !MigrateFilesOption.leave.name().equals(bean.getMigrateFilesOption());
+    ActionURL redirectToPipeline = urlProvider(PipelineUrls.class).urlBegin(getContainer());
 %>
 
 <%  if (bean.getConfirmMessage() != null) { %>
-        <p class="labkey-message"><%= h(bean.getConfirmMessage()) %></p>
+        <p class="labkey-message">
+            <%= h(bean.getConfirmMessage()) %>
+            <% if (null != bean.getMigrateFilesOption() && !MigrateFilesOption.leave.name().equals(bean.getMigrateFilesOption())) { %>
+                <a id="redirectToPipeline" href="<%=h(redirectToPipeline)%>">Redirecting to pipeline view in 5 seconds</a>
+            <% } %>
+        </p>
 <%  } %>
 
 <labkey:errors/>
@@ -88,34 +105,34 @@
                 <table>
                     <tr style="height: 1.75em">
                         <td><input <%=h(canChangeFileSettings ? "" : " disabled ")%>
-                                type="radio" name="fileRootOption" id="optionDisable" value="<%=AdminController.ProjectSettingsForm.FileRootProp.disable%>"
-                                <%=checked(AdminController.ProjectSettingsForm.FileRootProp.disable.name().equals(bean.getFileRootOption()))%>
-                                onclick="updateSelection();">
+                                type="radio" name="fileRootOption" id="optionDisable" value="<%=FileRootProp.disable%>"
+                                <%=checked(FileRootProp.disable.name().equals(bean.getFileRootOption()))%>
+                                onclick="updateSelection(true);">
                             Disable file sharing for this <%=h(getContainer().getContainerNoun())%></td></tr>
                     <tr style="height: 1.75em">
                         <td><input <%=h(canChangeFileSettings ? "" : " disabled ")%>
-                                type="radio" name="fileRootOption" id="optionSiteDefault" value="<%=AdminController.ProjectSettingsForm.FileRootProp.siteDefault%>"
-                                <%=checked(AdminController.ProjectSettingsForm.FileRootProp.siteDefault.name().equals(bean.getFileRootOption()))%>
-                                onclick="updateSelection();">
+                                type="radio" name="fileRootOption" id="optionSiteDefault" value="<%=FileRootProp.siteDefault%>"
+                                <%=checked(FileRootProp.siteDefault.name().equals(bean.getFileRootOption()))%>
+                                onclick="updateSelection(true);">
                             Use a default based on the project-level root
                             <input type="text" id="rootPath" size="64" disabled="true" value="<%=h(defaultRoot)%>"></td>
                     </tr>
                     <tr style="height: 1.75em">
                         <td><input <%=h(canChangeFileSettings && hasAdminOpsPerm ? "" : " disabled ")%>
-                                type="radio" name="fileRootOption" id="optionProjectSpecified" value="<%=AdminController.ProjectSettingsForm.FileRootProp.folderOverride%>"
-                                <%=checked(AdminController.ProjectSettingsForm.FileRootProp.folderOverride.name().equals(bean.getFileRootOption()))%>
-                                onclick="updateSelection();">
+                                type="radio" name="fileRootOption" id="optionProjectSpecified" value="<%=FileRootProp.folderOverride%>"
+                                <%=checked(FileRootProp.folderOverride.name().equals(bean.getFileRootOption()))%>
+                                onclick="updateSelection(true);">
                             Use a <%=text(getContainer().getContainerNoun())%>-level file root
                             <input type="text" id="folderRootPath" name="folderRootPath" size="64" value="<%=h(bean.getFolderRootPath())%>"></td>
                     </tr>
                     <% if (cloud != null) { %>
                     <tr style="height: 1.75em">
                         <td><input <%=h(canChangeFileSettings && hasAdminOpsPerm ? "" : " disabled ")%>
-                                type="radio" name="fileRootOption" id="optionCloudRoot" value="<%=AdminController.ProjectSettingsForm.FileRootProp.cloudRoot%>"
-                                <%=checked(AdminController.ProjectSettingsForm.FileRootProp.cloudRoot.name().equals(bean.getFileRootOption()))%>
-                                onclick="updateSelection();">
+                                type="radio" name="fileRootOption" id="optionCloudRoot" value="<%=FileRootProp.cloudRoot%>"
+                                <%=checked(FileRootProp.cloudRoot.name().equals(bean.getFileRootOption()))%>
+                                onclick="updateSelection(true);">
                             Use cloud-based file storage
-                            <select name="cloudRootName" id="cloudRootName">
+                            <select name="cloudRootName" id="cloudRootName" onchange="updateSelection(true);">
                                 <% for (String cloudStoreName : storeNames)
                                     if (cloud.isEnabled(cloudStoreName, getContainer()))
                                     { %>
@@ -127,6 +144,22 @@
                         </td>
                     </tr>
                     <% } %>
+                    <tr style="height: 1.75em" id="migrateFilesRow">
+                        <td>
+                            <span style="color: #FF0000">Proposed File Root change from '<%=h(currentFileRootOption)%>'.</span> Existing files:
+                            <select name="migrateFilesOption" id="migrateFilesOption" <%=h(canChangeFileSettings ? "" : " disabled ")%>>
+                                <option value="<%=MigrateFilesOption.leave%>" selected>
+                                    Not copied or moved
+                                </option>
+                                <option value="<%=MigrateFilesOption.copy%>">
+                                    Copied to new location
+                                </option>
+                                <option value="<%=MigrateFilesOption.move%>">
+                                    Moved to new location
+                                </option>
+                            </select>
+                        </td>
+                    </tr>
                 </table>
             </td>
         </tr>
@@ -145,7 +178,7 @@
     %>
 
     <table style="margin-top: 10px">
-        <tr><td colspan="10"><span><b><i> Cloud Stores</i></b></span></td></tr>
+        <tr><td colspan="10"><span><b><i>Cloud Stores</i></b></span></td></tr>
         <tr><td colspan="10">
             LabKey Server can store files in a cloud storage provider's blob store.
             Enable or disable the available cloud stores within this folder using the checkboxes below.
@@ -201,7 +234,7 @@
 </labkey:form>
 
 <script type="text/javascript">
-    function updateSelection()
+    function updateSelection(isChange)
     {
         var cloudRootName = document.getElementById('cloudRootName');
         if (document.getElementById('optionDisable').checked)
@@ -233,7 +266,23 @@
             if (cloudRootName)
                 document.getElementById('cloudRootName').style.display = '';
         }
+        var migrateFiles = document.getElementById('migrateFilesRow');
+        if (migrateFiles) {
+            if (isChange && !<%=isFolderSetup%>)
+                migrateFiles.style.display = '';
+            else
+                migrateFiles.style.display = 'none';
+        }
     }
-    updateSelection();
+
+    function redirectPipeline() {
+        setTimeout(function(){
+            window.location = "<%=h(redirectToPipeline)%>";
+        }, 5000)
+
+    }
+    updateSelection(false);
+    if (<%=migrating%>)
+        redirectPipeline();
 </script>
 

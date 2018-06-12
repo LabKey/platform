@@ -337,7 +337,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
             else
             {
                 if (form.isFileRootChanged())
-                    url.addParameter("rootSet", true);
+                    url.addParameter("rootSet", form.getMigrateFilesOption());
                 if (form.isEnabledCloudStoresChanged())
                     url.addParameter("cloudChanged", true);
             }

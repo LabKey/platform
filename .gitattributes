@@ -400,6 +400,7 @@ core/src/org/labkey/core/admin/ActionsExceptionsView.java -text
 core/src/org/labkey/core/admin/ActionsTsvWriter.java -text
 core/src/org/labkey/core/admin/ActionsView.java -text
 core/src/org/labkey/core/admin/AdminController.java -text
+core/src/org/labkey/core/admin/CopyFileRootPipelineJob.java -text
 core/src/org/labkey/core/admin/CustomizeMenuForm.java -text
 core/src/org/labkey/core/admin/FileListAction.java -text
 core/src/org/labkey/core/admin/FileSettingsForm.java -text

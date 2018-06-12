@@ -83,6 +83,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
+import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
@@ -90,6 +91,7 @@ import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
@@ -1508,6 +1510,15 @@ public class AdminController extends SpringActionController
         void setFileRootChanged(boolean changed);
 
         void setEnabledCloudStoresChanged(boolean changed);
+
+        String getMigrateFilesOption();
+
+        void setMigrateFilesOption(String migrateFilesOption);
+
+        default boolean isFolderSetup()
+        {
+            return false;
+        }
     }
 
     public interface SettingsForm
@@ -1562,6 +1573,7 @@ public class AdminController extends SpringActionController
         private String _cloudRootName;
         private boolean _fileRootChanged;
         private boolean _enabledCloudStoresChanged;
+        private String _migrateFilesOption;
 
         public enum FileRootProp
         {
@@ -1569,6 +1581,33 @@ public class AdminController extends SpringActionController
             siteDefault,
             folderOverride,
             cloudRoot
+        }
+
+        public enum MigrateFilesOption
+        {
+            leave {
+                @Override
+                public String description()
+                {
+                    return "Source files not copied or moved";
+                }
+            },
+            copy {
+                @Override
+                public String description()
+                {
+                    return "Copy source files to destination";
+                }
+            },
+            move {
+                @Override
+                public String description()
+                {
+                    return "Move source files to destination";
+                }
+            };
+
+            public abstract String description();
         }
 
         public boolean getShouldInherit()
@@ -1898,6 +1937,16 @@ public class AdminController extends SpringActionController
         public void setEnabledCloudStoresChanged(boolean enabledCloudStoresChanged)
         {
             _enabledCloudStoresChanged = enabledCloudStoresChanged;
+        }
+
+        public String getMigrateFilesOption()
+        {
+            return _migrateFilesOption;
+        }
+
+        public void setMigrateFilesOption(String migrateFilesOption)
+        {
+            _migrateFilesOption = migrateFilesOption;
         }
     }
 
@@ -5011,6 +5060,7 @@ public class AdminController extends SpringActionController
         private boolean _isFolderSetup;
         private boolean _fileRootChanged;
         private boolean _enabledCloudStoresChanged;
+        private String _migrateFilesOption;
 
         // cloud settings
         private String[] _enabledCloudStore;
@@ -5102,6 +5152,16 @@ public class AdminController extends SpringActionController
         {
             _enabledCloudStoresChanged = enabledCloudStoresChanged;
         }
+
+        public String getMigrateFilesOption()
+        {
+            return _migrateFilesOption;
+        }
+
+        public void setMigrateFilesOption(String migrateFilesOption)
+        {
+            _migrateFilesOption = migrateFilesOption;
+        }
     }
 
     @RequiresPermission(AdminPermission.class)
@@ -5138,7 +5198,7 @@ public class AdminController extends SpringActionController
                     .addReturnURL(getViewContext().getActionURL().getReturnURL());
 
             if (form.isFileRootChanged())
-                url.addParameter("rootSet", true);
+                url.addParameter("rootSet", form.getMigrateFilesOption());
             if (form.isEnabledCloudStoresChanged())
                 url.addParameter("cloudChanged", true);
             return url;
@@ -5177,7 +5237,7 @@ public class AdminController extends SpringActionController
             ActionURL url = new AdminController.AdminUrlsImpl().getFileRootsURL(getContainer());
 
             if (form.isFileRootChanged())
-                url.addParameter("rootSet", true);
+                url.addParameter("rootSet", form.getMigrateFilesOption());
             if (form.isEnabledCloudStoresChanged())
                 url.addParameter("cloudChanged", true);
             return url;
@@ -5252,9 +5312,18 @@ public class AdminController extends SpringActionController
     public static void setFileRootFromForm(ViewContext ctx, FileManagementForm form)
     {
         boolean changed = false;
+        boolean shouldCopyMove = false;
         FileContentService service = FileContentService.get();
         if (null != service)
         {
+            // If we need to copy/move files based on the FileRoot change, we need to check children that use the default and move them, too.
+            // And we need to capture the source roots for each of those, because changing this parent file root changes the child source roots.
+            ProjectSettingsForm.MigrateFilesOption migrateFilesOption = ProjectSettingsForm.MigrateFilesOption.valueOf(form.getMigrateFilesOption());
+            List<Pair<Container, Path>> sourceInfo =
+                    (ProjectSettingsForm.MigrateFilesOption.leave.equals(migrateFilesOption) || form.isDisableFileSharing()) ?
+                            Collections.emptyList() :
+                            getCopySourceInfo(service, ctx.getContainer(), form);
+
             if (form.isDisableFileSharing())
             {
                 if (!service.isFileRootDisabled(ctx.getContainer()))
@@ -5269,6 +5338,7 @@ public class AdminController extends SpringActionController
                 {
                     service.setIsUseDefaultRoot(ctx.getContainer(), true);
                     changed = true;
+                    shouldCopyMove = true;
                 }
             }
             else if (form.isCloudFileRoot())
@@ -5290,6 +5360,7 @@ public class AdminController extends SpringActionController
                         throw new RuntimeSQLException(e);
                     }
                     changed = true;
+                    shouldCopyMove = true;
                 }
             }
             else
@@ -5304,6 +5375,7 @@ public class AdminController extends SpringActionController
                         service.setIsUseDefaultRoot(ctx.getContainer(), false);
                         service.setFileRootPath(ctx.getContainer(), root);
                         changed = true;
+                        shouldCopyMove = true;
                     }
                 }
                 else
@@ -5312,8 +5384,66 @@ public class AdminController extends SpringActionController
                     changed = true;
                 }
             }
+
+            if (changed && shouldCopyMove && !ProjectSettingsForm.MigrateFilesOption.leave.equals(migrateFilesOption))
+            {
+                // Make sure we have pipeRoot before starting jobs, even though each subfolder needs to get its own
+                PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(ctx.getContainer());
+                if (null != pipeRoot)
+                {
+                    try
+                    {
+                        initiateCopyFilesPipelineJobs(service, ctx.getUser(), sourceInfo, migrateFilesOption);
+                    }
+                    catch (PipelineValidationException e)
+                    {
+                        throw new RuntimeValidationException(e);
+                    }
+                }
+                else
+                {
+                    LOG.warn("Change File Root: Can't copy or move files with no pipeline root");
+                }
+            }
         }
         form.setFileRootChanged(changed);
+    }
+
+    private static List<Pair<Container, Path>> getCopySourceInfo(FileContentService service, Container container, FileManagementForm form)
+    {
+
+        List<Pair<Container, Path>> sourceInfo = new ArrayList<>();
+        addCopySourceInfo(service, container, sourceInfo, true);
+        return sourceInfo;
+    }
+
+    private static void addCopySourceInfo(FileContentService service, Container container, List<Pair<Container, Path>> sourceInfo, boolean isRoot)
+    {
+        if (isRoot || service.isUseDefaultRoot(container))
+        {
+            Path sourceFileRootDir = service.getFileRootPath(container, FileContentService.ContentType.files);
+            if (null != sourceFileRootDir)
+                sourceInfo.add(new Pair<>(container, sourceFileRootDir));
+        }
+        for (Container childContainer : container.getChildren())
+            addCopySourceInfo(service, childContainer, sourceInfo, false);
+    }
+
+    private static void initiateCopyFilesPipelineJobs(FileContentService service, User user, List<Pair<Container, Path>> sourceInfos,
+                                                      ProjectSettingsForm.MigrateFilesOption migrateFilesOption) throws PipelineValidationException
+    {
+        for (Pair<Container, Path> sourceInfo : sourceInfos)
+        {
+            Container container = sourceInfo.first;
+            Path destFileRootDir = service.getFileRootPath(container, FileContentService.ContentType.files);
+            if (null != destFileRootDir)
+            {
+                PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(container);  // get pipeRoot for each container
+                ViewBackgroundInfo info = new ViewBackgroundInfo(container, user, null);
+                CopyFileRootPipelineJob job = new CopyFileRootPipelineJob(info, pipeRoot, sourceInfo.second, destFileRootDir, migrateFilesOption);
+                PipelineService.get().queueJob(job);
+            }
+        }
     }
 
     private static void throwIfUnauthorizedFileRootChange(ViewContext ctx, FileContentService service, FileManagementForm form)
@@ -5378,9 +5508,26 @@ public class AdminController extends SpringActionController
         FileContentService service = FileContentService.get();
         String confirmMessage = null;
         String rootSetParam = ctx.getActionURL().getParameter("rootSet");
-        boolean fileRootChanged = null != rootSetParam && "true".equalsIgnoreCase(rootSetParam);
+        boolean fileRootChanged = null != rootSetParam && !"false".equalsIgnoreCase(rootSetParam);
         String cloudChangedParam = ctx.getActionURL().getParameter("cloudChanged");
         boolean enabledCloudChanged = null != cloudChangedParam && "true".equalsIgnoreCase(cloudChangedParam);
+
+        String migrateFilesMessage = "";
+        if (fileRootChanged && !form.isFolderSetup())
+        {
+            if (ProjectSettingsForm.MigrateFilesOption.leave.name().equals(rootSetParam))
+                migrateFilesMessage = ". Existing files not copied or moved.";
+            else if (ProjectSettingsForm.MigrateFilesOption.copy.name().equals(rootSetParam))
+            {
+                migrateFilesMessage = ". Existing files copied.";
+                form.setMigrateFilesOption(rootSetParam);
+            }
+            else if (ProjectSettingsForm.MigrateFilesOption.move.name().equals(rootSetParam))
+            {
+                migrateFilesMessage = ". Existing files moved.";
+                form.setMigrateFilesOption(rootSetParam);
+            }
+        }
 
         if (service != null)
         {
@@ -5395,7 +5542,7 @@ public class AdminController extends SpringActionController
                 form.setFileRootOption(ProjectSettingsForm.FileRootProp.siteDefault.name());
                 Path root = service.getFileRootPath(ctx.getContainer());
                 if (root != null && Files.exists(root) && fileRootChanged)
-                    confirmMessage = "The file root is set to a default of: " + FileUtil.getAbsolutePath(ctx.getContainer(), root);
+                    confirmMessage = "The file root is set to a default of: " + FileUtil.getAbsolutePath(ctx.getContainer(), root) + migrateFilesMessage;
             }
             else if (!service.isCloudRoot(ctx.getContainer()))
             {
@@ -5409,7 +5556,7 @@ public class AdminController extends SpringActionController
                     if (Files.exists(root))
                     {
                         if (fileRootChanged)
-                            confirmMessage = "The file root is set to: " + absolutePath;
+                            confirmMessage = "The file root is set to: " + absolutePath + migrateFilesMessage;
                     }
                     else
                         throw new IllegalArgumentException("File root '" + root + "' does not appear to be a valid directory accessible to the server at " + ctx.getRequest().getServerName() + ".");
@@ -5422,7 +5569,7 @@ public class AdminController extends SpringActionController
                 Path root = service.getFileRootPath(ctx.getContainer());
                 if (root != null && fileRootChanged)
                 {
-                    confirmMessage = "The file root is set to: " + FileUtil.getCloudRootPathString(form.getCloudRootName());
+                    confirmMessage = "The file root is set to: " + FileUtil.getCloudRootPathString(form.getCloudRootName()) + migrateFilesMessage;
                 }
             }
         }
