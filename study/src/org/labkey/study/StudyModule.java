@@ -24,6 +24,9 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.ExperimentRunType;
@@ -75,8 +78,10 @@ import org.labkey.api.study.assay.ExperimentListenerImpl;
 import org.labkey.api.study.assay.TsvDataHandler;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.study.reports.CrosstabReportDescriptor;
+import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.SystemMaintenance;
+import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BaseWebPartFactory;
@@ -187,6 +192,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
@@ -454,6 +460,16 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                     adminNavTree.addChild(new NavTree("Manage Study", PageFlowUtil.urlProvider(StudyUrls.class).getManageStudyURL(container)));
             }
         });
+
+        UsageMetricsService svc = UsageMetricsService.get();
+        if (null != svc)
+        {
+            svc.registerUsageMetrics(UsageReportingLevel.MEDIUM, MODULE_NAME, () -> {
+                Map<String, Object> metric = new HashMap<>();
+                metric.put("studyCount", new SqlSelector(DbSchema.get("study", DbSchemaType.Module), "SELECT COUNT(*) FROM study.study").getObject(Long.class));
+                return metric;
+            });
+        }
     }
 
     @Override

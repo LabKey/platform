@@ -21,6 +21,9 @@ import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.lists.permissions.DesignListPermission;
@@ -33,7 +36,9 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.StudySerializationRegistry;
+import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.WebPartFactory;
@@ -57,8 +62,10 @@ import org.labkey.list.view.SingleListWebPartFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class ListModule extends SpringModule
@@ -135,6 +142,16 @@ public class ListModule extends SpringModule
             if (container.hasPermission(user, ReadPermission.class))
                 adminNavTree.addChild(new NavTree("Manage Lists", ListService.get().getManageListsURL(container)));
         });
+
+        UsageMetricsService svc = UsageMetricsService.get();
+        if (null != svc)
+        {
+            svc.registerUsageMetrics(UsageReportingLevel.MEDIUM, getName(), () -> {
+                Map<String, Object> metric = new HashMap<>();
+                metric.put("listCount", new SqlSelector(DbSchema.get("exp", DbSchemaType.Module), "SELECT COUNT(*) FROM exp.list").getObject(Long.class));
+                return metric;
+            });
+        }
     }
 
     @NotNull
