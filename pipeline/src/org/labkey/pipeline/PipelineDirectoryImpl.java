@@ -172,16 +172,6 @@ public class PipelineDirectoryImpl implements PipelineDirectory
 
     public void orderActions()
     {
-        // Sort each action's array of Files
-        for (PipelineAction a : _actions)
-        {
-            List<Path> f = a.getFiles();
-            if (null != f && f.size() > 1)
-            {
-                f.sort((p1, p2) -> FileUtil.getFileName(p1).compareToIgnoreCase(FileUtil.getFileName(p2)));
-            }
-        }
-
         // Sort the list of actions by size, label then first File
         _actions.sort((action1, action2) ->
         {
@@ -190,18 +180,15 @@ public class PipelineDirectoryImpl implements PipelineDirectory
                 return 0;
             List<Path> files1 = action1.getFiles();
             List<Path> files2 = action2.getFiles();
-            if (files1 == files2)
-                return 0;
-            if (files1 == null || files1.size() == 0)
-                return -1;
-            if (files2 == null || files2.size() == 0)
-                return 1;
             rc = files2.size() - files1.size();
             if (rc != 0)
                 return rc;
-            rc = FileUtil.getFileName(files1.get(0)).compareToIgnoreCase(FileUtil.getFileName(files2.get(0)));
-            if (rc != 0)
-                return rc;
+            if (!files1.isEmpty())
+            {
+                rc = FileUtil.getFileName(files1.get(0)).compareToIgnoreCase(FileUtil.getFileName(files2.get(0)));
+                if (rc != 0)
+                    return rc;
+            }
             rc = action1.getLabel().compareToIgnoreCase(action2.getLabel());
             return rc;
         });
