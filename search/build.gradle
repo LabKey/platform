@@ -20,3 +20,14 @@ dependencies {
     external "org.ccil.cowan.tagsoup:tagsoup:1.2.1"
     external "org.codelibs:jhighlight:1.0.3"
 }
+
+// TODO move resources files into resources directory to avoid this overlap
+sourceSets {
+    main {
+        resources {
+            srcDirs = ['src'] // src is included because it contains some xml and text files
+            exclude '**/*.java'
+            exclude '**/*.jsp'
+        }
+    }
+}

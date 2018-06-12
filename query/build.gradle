@@ -18,4 +18,16 @@ dependencies {
    jspCompile "org.olap4j:olap4j:${olap4jVersion}" 
 }
 
+// TODO move resources files into resources directory to avoid this overlap
+sourceSets {
+    main {
+        resources {
+            srcDirs = ['src'] // src is included because it contains some properties files
+            exclude '**/*.java'
+            exclude '**/*.jsp'
+        }
+    }
+}
+
+
 apply plugin: 'org.labkey.antlr'

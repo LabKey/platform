@@ -1,12 +1,8 @@
-dependencies {
-   external 'radeox:radeox:1.0-b2'
-}
-
 // TODO move resources files into resources directory to avoid this overlap
 sourceSets {
    main {
       resources {
-         srcDirs = ['src'] // src is included because it contains some text files
+         srcDirs = ['src'] // src is included because it contains some sql scripts
          exclude '**/*.java'
          exclude '**/*.jsp'
       }

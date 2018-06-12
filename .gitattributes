@@ -1,4 +1,5 @@
 * text=auto !eol
+announcements/build.gradle -text
 announcements/module.properties -text
 announcements/resources/schemas/comm.xml -text
 announcements/resources/schemas/dbscripts/postgresql/comm-0.00-15.10.sql -text
@@ -764,6 +765,7 @@ demo/src/org/labkey/demo/view/DemoWebPart.java -text
 demo/src/org/labkey/demo/view/bindTest.jsp -text
 demo/src/org/labkey/demo/view/bulkUpdate.jsp -text
 demo/src/org/labkey/demo/view/demoWebPart.jsp -text
+experiment/build.gradle -text
 experiment/gwtsrc/org/labkey/experiment/property/Designer.gwt.xml -text
 experiment/gwtsrc/org/labkey/experiment/property/client/Designer.java -text
 experiment/gwtsrc/org/labkey/experiment/property/client/PropertyService.java -text
@@ -2001,6 +2003,7 @@ search/src/org/labkey/search/view/indexerStats.jsp -text
 search/src/org/labkey/search/view/search.jsp -text
 search/src/org/labkey/search/view/searchStats.jsp -text
 search/src/org/labkey/search/view/testJson.jsp -text
+study/build.gradle -text
 study/gwtsrc/gwt/StudyApplication.gwt.xml -text
 study/gwtsrc/gwt/client/org/labkey/assay/designer/client/AssayDesigner.java -text
 study/gwtsrc/gwt/client/org/labkey/assay/designer/client/AssayImporter.java -text
