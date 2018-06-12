@@ -119,6 +119,12 @@ sourceSets {
       if (parent.file("${parent.projectDir}/internal/gwtsrc").exists())
         srcDirs += ["${parent.projectDir}/internal/gwtsrc"]
     }
+    // TODO move resources files into resources directory to avoid this overlap
+    resources {
+      srcDirs = ['src'] // src is included because it contains some xml and text files
+      exclude '**/*.java'
+      exclude '**/*.jsp'
+    }
   }
 }
 
