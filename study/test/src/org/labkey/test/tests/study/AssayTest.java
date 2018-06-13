@@ -22,7 +22,7 @@ import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.Assays;
-import org.labkey.test.categories.BVT;
+import org.labkey.test.categories.DailyC;
 import org.labkey.test.components.CustomizeView;
 import org.labkey.test.components.PropertiesEditor;
 import org.labkey.test.pages.AssayDesignerPage;
@@ -39,7 +39,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
-@Category({BVT.class, Assays.class})
+@Category({DailyC.class, Assays.class})
 public class AssayTest extends AbstractAssayTest
 {
     private final PortalHelper portalHelper = new PortalHelper(this);
