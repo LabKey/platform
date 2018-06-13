@@ -46,7 +46,7 @@
                 <!-- Folder reload pipeline trigger task -->
                 <bean class="org.labkey.api.pipeline.file.FileAnalysisTaskPipelineSettings">
                     <constructor-arg value="FolderReloadTask"/>
-                    <property name="description" value="Reload Folder Archive"/>
+                    <property name="description" value="Reload folder archive"/>
                     <property name="protocolObjectId" value="folder.folderArchiveReload"/>
                     <property name="protocolName" value="Folder Archive Reload"/>
                     <property name="protocolFactoryName" value="folderReload"/>
