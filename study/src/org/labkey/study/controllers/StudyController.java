@@ -32,6 +32,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.*;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.admin.notification.NotificationService;
@@ -109,6 +110,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.Dataset;
+import org.labkey.api.study.MasterPatientIndexService;
 import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -7929,6 +7931,138 @@ public class StudyController extends BaseStudyController
         public void setRefresh(boolean refresh)
         {
             _refresh = refresh;
+        }
+    }
+
+    /**
+     * Set up the site wide settings for a master patient provider
+     */
+    @RequiresPermission(AdminPermission.class)
+    public class MasterPatientProviderAction extends FormViewAction<MasterPatientProviderSettings>
+    {
+        @Override
+        public void validateCommand(MasterPatientProviderSettings form, Errors errors)
+        {
+            if (!form.isValid())
+                errors.reject(ERROR_MSG, "All required fields are not specified");
+        }
+
+        @Override
+        public ModelAndView getView(MasterPatientProviderSettings form, boolean reshow, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/study/view/masterPatientProvider.jsp", errors);
+        }
+
+        @Override
+        public boolean handlePost(MasterPatientProviderSettings form, BindException errors) throws Exception
+        {
+            if (form.getType() != null)
+            {
+                try (DbScope.Transaction transaction = StudySchema.getInstance().getScope().ensureTransaction())
+                {
+                    MasterPatientIndexService svc = MasterPatientIndexService.getProvider(form.getType());
+                    if (svc != null)
+                    {
+                        PropertyManager.PropertyMap map = PropertyManager.getNormalStore().getWritableProperties(MasterPatientProviderSettings.CATEGORY, true);
+
+                        map.put(MasterPatientProviderSettings.TYPE, form.getType());
+                        map.save();
+
+                        svc.setServerSettings(form);
+                        transaction.commit();
+                    }
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(MasterPatientProviderSettings form)
+        {
+            return PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL();
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Configure Master Patient Index");
+        }
+    }
+
+    public static class MasterPatientProviderSettings extends MasterPatientIndexService.ServerSettings
+    {
+        public static final String CATEGORY = "MASTER_PATIENT_PROVIDER";
+        public static final String TYPE = "TYPE";
+
+        private String _type;
+
+        public String getType()
+        {
+            return _type;
+        }
+
+        public void setType(String type)
+        {
+            _type = type;
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class ConfigureMasterPatientSettingsAction extends FormViewAction<MasterPatientIndexService.FolderSettings>
+    {
+        private MasterPatientIndexService _svc;
+
+        @Override
+        public void validateCommand(MasterPatientIndexService.FolderSettings form, Errors errors)
+        {
+            if (!form.isValid())
+                errors.reject(ERROR_MSG, "All required fields are not specified");
+        }
+
+        @Override
+        public ModelAndView getView(MasterPatientIndexService.FolderSettings form, boolean reshow, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/study/view/manageMasterPatientConfig.jsp", getConfiguredService(), errors);
+        }
+
+        @Override
+        public boolean handlePost(MasterPatientIndexService.FolderSettings form, BindException errors) throws Exception
+        {
+            MasterPatientIndexService svc = getConfiguredService();
+            if (svc != null)
+            {
+                svc.setFolderSettings(getContainer(), form);
+            }
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(MasterPatientIndexService.FolderSettings form)
+        {
+            return new ActionURL(ManageStudyAction.class, getContainer());
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            MasterPatientIndexService svc = getConfiguredService();
+            if (svc != null)
+                return root.addChild("Manage " + svc.getName() + " Configuration");
+            else
+                return root.addChild("Manage Master Patient Index Configuration");
+        }
+
+        private MasterPatientIndexService getConfiguredService()
+        {
+            if (_svc == null)
+            {
+                PropertyManager.PropertyMap map = PropertyManager.getNormalStore().getProperties(StudyController.MasterPatientProviderSettings.CATEGORY);
+                String type = map.get(StudyController.MasterPatientProviderSettings.TYPE);
+
+                if (type != null)
+                    _svc = MasterPatientIndexService.getProvider(type);
+            }
+            return _svc;
         }
     }
 }

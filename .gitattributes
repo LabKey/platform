@@ -2754,6 +2754,7 @@ study/src/org/labkey/study/view/manageExternalReload.jsp -text
 study/src/org/labkey/study/view/manageFilewatchers.jsp -text
 study/src/org/labkey/study/view/manageLocationTypes.jsp -text
 study/src/org/labkey/study/view/manageLocations.jsp -text
+study/src/org/labkey/study/view/manageMasterPatientConfig.jsp -text
 study/src/org/labkey/study/view/manageParticipantCategories.jsp -text
 study/src/org/labkey/study/view/manageQCStates.jsp -text
 study/src/org/labkey/study/view/manageReload.jsp -text
@@ -2764,6 +2765,7 @@ study/src/org/labkey/study/view/manageTimepoints.jsp -text
 study/src/org/labkey/study/view/manageTypes.jsp -text
 study/src/org/labkey/study/view/manageUndefinedTypes.jsp -text
 study/src/org/labkey/study/view/manageVisits.jsp -text
+study/src/org/labkey/study/view/masterPatientProvider.jsp -text
 study/src/org/labkey/study/view/mergeParticipants.jsp -text
 study/src/org/labkey/study/view/overview.jsp -text
 study/src/org/labkey/study/view/participantAll.jsp -text

@@ -470,6 +470,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 return metric;
             });
         }
+
+        AdminConsole.addLink(AdminConsole.SettingsLinkType.Premium, "Master Patient Index", new ActionURL(StudyController.MasterPatientProviderAction.class, ContainerManager.getRoot()));
     }
 
     @Override

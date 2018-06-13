@@ -324,6 +324,11 @@
                             }
                         }
                     %>
+                    <tr>
+                        <td class="lk-study-prop-label">Master Patient Index</td>
+                        <td class="lk-study-prop-desc">Configure the Master Patient Index settings for this folder</td>
+                        <td><%= textLink("Master Patient Index", new ActionURL(StudyController.ConfigureMasterPatientSettingsAction.class, getContainer())) %></td>
+                    </tr>
                 </table>
             </labkey:panel>
 
