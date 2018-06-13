@@ -50,6 +50,7 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.core.security.SecurityController;
@@ -58,6 +59,7 @@ import org.labkey.core.user.UserController;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -363,5 +365,13 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
         Integer userId = null!=oldRow ? (Integer)oldRow.get("UserId") : null!=newRow ? (Integer)newRow.get("UserId") : null;
         if (null != userId && !before)
             UserManager.fireUserPropertiesChanged(userId);
+    }
+
+    @Override
+    public @NotNull Map<String, Pair<IndexType, List<ColumnInfo>>> getUniqueIndices()
+    {
+        Map<String, Pair<IndexType, List<ColumnInfo>>> unique = new HashMap<>(super.getUniqueIndices());
+        unique.put("uq_users_email", Pair.of(IndexType.Unique, getColumns("Email")));
+        return unique;
     }
 }
