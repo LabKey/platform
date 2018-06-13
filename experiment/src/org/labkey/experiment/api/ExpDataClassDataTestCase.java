@@ -18,6 +18,7 @@ package org.labkey.experiment.api;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -66,6 +67,7 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConceptURIProperties;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.TestContext;
@@ -497,6 +499,12 @@ public class ExpDataClassDataTestCase
     @Test
     public void testDataClassFromTemplate() throws Exception
     {
+        if (!AppProps.getInstance().isDevMode()) // Skip test in production mode if necessary modules are not available
+        {
+            Assume.assumeTrue("List module is required to test data class templates", ModuleLoader.getInstance().getModule("list") != null);
+            Assume.assumeTrue("simpletest module is required to test data class templates", ModuleLoader.getInstance().getModule("simpletest") != null);
+        }
+
         final User user = TestContext.get().getUser();
         final Container sub = ContainerManager.createContainer(c, "sub2");
         final String domainName = "mydataclass";
@@ -581,6 +589,12 @@ public class ExpDataClassDataTestCase
     @Test
     public void testDomainTemplate() throws Exception
     {
+        if (!AppProps.getInstance().isDevMode()) // Skip test in production mode if necessary modules are not available
+        {
+            Assume.assumeTrue("List module is required to test domain templates", ModuleLoader.getInstance().getModule("list") != null);
+            Assume.assumeTrue("simpletest module is required to test domain templates", ModuleLoader.getInstance().getModule("simpletest") != null);
+        }
+
         final User user = TestContext.get().getUser();
         final Container sub = ContainerManager.createContainer(c, "sub3");
 
