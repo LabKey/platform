@@ -276,7 +276,7 @@ public class RReport extends ExternalScriptEngineReport
         return (Boolean)JdbcType.BOOLEAN.convert(value);
     }
 
-    protected String getKnitrBeginChunk()
+    public String getKnitrBeginChunk()
     {
         if (getKnitrFormat() == RReportDescriptor.KnitrFormat.Html)
             return "<!--begin.rcode labkey, echo=FALSE\n";
@@ -287,7 +287,7 @@ public class RReport extends ExternalScriptEngineReport
        return "";
     }
 
-    protected String getKnitrEndChunk()
+    public String getKnitrEndChunk()
     {
         if (getKnitrFormat() == RReportDescriptor.KnitrFormat.Html)
             return "end.rcode-->\n";
@@ -477,7 +477,7 @@ public class RReport extends ExternalScriptEngineReport
         {
             if (cutstart + 1 > cutend)
                 return null;
-            return StringUtils.join(list.subList(cutstart + 1, cutend), "\n");
+            return StringUtils.join(list.subList(cutstart + 1, cutend), "\n") + "\n";
         }
 
         // write out lines before prolog cut 8<
