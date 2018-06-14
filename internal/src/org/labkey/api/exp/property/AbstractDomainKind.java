@@ -150,27 +150,44 @@ public abstract class AbstractDomainKind extends DomainKind
     @Override
     public boolean hasNullValues(Domain domain, DomainProperty prop)
     {
-        SQLFragment allRowsSQL;
-        SQLFragment nonBlankRowsSQL;
+        SQLFragment allRowsSQL = new SQLFragment();
+        SQLFragment nonBlankRowsSQL = new SQLFragment();
+
+        if (getTotalAndNonBlankSql(domain, prop, allRowsSQL, nonBlankRowsSQL))
+        {
+            long totalRows = new SqlSelector(ExperimentService.get().getSchema(), allRowsSQL).getRowCount();
+            long nonBlankRows = new SqlSelector(ExperimentService.get().getSchema(), nonBlankRowsSQL).getRowCount();
+            return totalRows != nonBlankRows;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    private boolean getTotalAndNonBlankSql(Domain domain, DomainProperty prop, SQLFragment allRowsSQL, SQLFragment nonBlankRowsSQL)
+    {
         if (getStorageSchemaName() == null)
         {
             SQLFragment sqlObjectIds = sqlObjectIdsInDomain(domain);
-            allRowsSQL = new SQLFragment("SELECT exp.object.objectId FROM exp.object WHERE exp.object.objectid IN (");
+            allRowsSQL.append("SELECT exp.object.objectId FROM exp.object WHERE exp.object.objectid IN (");
             allRowsSQL.append(sqlObjectIds);
             allRowsSQL.append(")");
 
-            nonBlankRowsSQL = new SQLFragment("SELECT op.objectId FROM exp.objectproperty op WHERE ");
+            nonBlankRowsSQL.append("SELECT op.objectId FROM exp.objectproperty op WHERE ");
             nonBlankRowsSQL.append("(op.StringValue IS NOT NULL OR op.FloatValue IS NOT NULL OR ");
             nonBlankRowsSQL.append("op.DateTimeValue IS NOT NULL OR op.MVIndicator IS NULL) AND op.objectid IN (");
             nonBlankRowsSQL.append(sqlObjectIds);
             nonBlankRowsSQL.append(") AND op.PropertyId = ?");
             nonBlankRowsSQL.add(prop.getPropertyId());
+
+            return true;
         }
         else if (domain.getStorageTableName() != null)
         {
             String table = domain.getStorageTableName();
-            allRowsSQL = new SQLFragment("SELECT * FROM " + getStorageSchemaName() + "." + table);
-            nonBlankRowsSQL = new SQLFragment("SELECT * FROM " + getStorageSchemaName() + "." + table + " x WHERE ");
+            allRowsSQL.append("SELECT * FROM " + getStorageSchemaName() + "." + table);
+            nonBlankRowsSQL.append("SELECT * FROM " + getStorageSchemaName() + "." + table + " x WHERE ");
             SqlDialect dialect = CoreSchema.getInstance().getSqlDialect();
             // Issue 17183 - Postgres uses lower case column names when quoting is required
             nonBlankRowsSQL.append("x.");
@@ -185,17 +202,32 @@ public abstract class AbstractDomainKind extends DomainKind
                 nonBlankRowsSQL.append(mvColumn.getName().toLowerCase());
                 nonBlankRowsSQL.append(" IS NOT NULL");
             }
+            return true;
         }
         else
         {
             return false;
         }
-
-        long totalRows = new SqlSelector(ExperimentService.get().getSchema(), allRowsSQL).getRowCount();
-        long nonBlankRows = new SqlSelector(ExperimentService.get().getSchema(), nonBlankRowsSQL).getRowCount();
-        return totalRows != nonBlankRows;
     }
 
+    @Override
+    public boolean hasNullOrNoRows(Domain domain, DomainProperty prop)
+    {
+        SQLFragment allRowsSQL = new SQLFragment();
+        SQLFragment nonBlankRowsSQL = new SQLFragment();
+
+        if (getTotalAndNonBlankSql(domain, prop, allRowsSQL, nonBlankRowsSQL))
+        {
+            long totalRows = new SqlSelector(ExperimentService.get().getSchema(), allRowsSQL).getRowCount();
+            long nonBlankRows = new SqlSelector(ExperimentService.get().getSchema(), nonBlankRowsSQL).getRowCount();
+
+            return totalRows == 0 || nonBlankRows == 0;
+        }
+        else
+        {
+            return false;
+        }
+    }
 
     @Override
     public Set<String> getMandatoryPropertyNames(Domain domain)

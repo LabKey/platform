@@ -168,6 +168,11 @@ abstract public class DomainKind implements Handler<String>
      */
     abstract public boolean hasNullValues(Domain domain, DomainProperty prop);
 
+    /**
+     * Determines if the domain has either no rows or row which are all null
+     */
+    abstract public boolean hasNullOrNoRows(Domain domain, DomainProperty prop);
+
     public DbSchemaType getSchemaType()
     {
         return DbSchemaType.Module;

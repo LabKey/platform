@@ -3267,11 +3267,11 @@ public class OntologyManager
         });
     }
 
-    static public PropertyDescriptor updatePropertyDescriptor(User user, DomainDescriptor dd, PropertyDescriptor pdOld, PropertyDescriptor pdNew, int sortOrder) throws ChangePropertyDescriptorException
+    static public PropertyDescriptor updatePropertyDescriptor(User user, Domain domain, DomainProperty prop, DomainDescriptor dd, PropertyDescriptor pdOld, PropertyDescriptor pdNew, int sortOrder) throws ChangePropertyDescriptorException
     {
         PropertyType oldType = pdOld.getPropertyType();
         PropertyType newType = pdNew.getPropertyType();
-        if (oldType.getStorageType() != newType.getStorageType() && new TableSelector(getTinfoObjectProperty(), new SimpleFilter(FieldKey.fromParts("PropertyId"), pdOld.getPropertyId()), null).exists())
+        if (oldType.getStorageType() != newType.getStorageType() && !domain.getDomainKind().hasNullOrNoRows(domain, prop))
             throw new ChangePropertyDescriptorException("This property type cannot be changed because there are existing values.");
 
         validatePropertyDescriptor(pdNew);

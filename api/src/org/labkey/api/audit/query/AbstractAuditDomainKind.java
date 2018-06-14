@@ -265,7 +265,13 @@ public abstract class AbstractAuditDomainKind extends DomainKind
     @Override
     public boolean hasNullValues(Domain domain, DomainProperty prop)
     {
-        return false;
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean hasNullOrNoRows(Domain domain, DomainProperty prop)
+    {
+        throw new UnsupportedOperationException();
     }
 
     @Override
