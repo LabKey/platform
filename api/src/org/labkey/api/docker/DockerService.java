@@ -243,6 +243,8 @@ public interface DockerService
         private final String entityId;
         private final String lkContainer;
         private final String filename;
+//        private final boolean isReportContainer; //TODO refactor after branch merge
+        private boolean isReportContainer;
 
         public synchronized void setStatus(ContainerStatus status)
         {
@@ -279,6 +281,11 @@ public interface DockerService
             return filename;
         }
 
+        public boolean isReportContainer()
+        {
+            return isReportContainer;
+        }
+
         public static DockerContainer makeDockerContainer(
                 String name, String id, ImageConfig image, String home, String host, int port, String created,
                 Map<String, String> labels,
@@ -298,9 +305,33 @@ public interface DockerService
         public static DockerContainer makeDockerContainer(
                 String name, String id, ImageConfig image, String home, String host, int port, String created,
                 Map<String, String> labels,
+                String[] environment, boolean isReportContainer)
+        {
+            HashMap<String,String> map = new HashMap<>();
+            if (null != environment)
+            {
+                Arrays.stream(environment).forEach(s -> {
+                    int eq = s.indexOf("=");
+                    map.put(s.substring(0,eq),s.substring(eq+1));
+                });
+            }
+            return new DockerContainer(name, id, image, home, host, port, created, labels, map, isReportContainer);
+        }
+
+        public static DockerContainer makeDockerContainer(
+                String name, String id, ImageConfig image, String home, String host, int port, String created,
+                Map<String, String> labels,
                 Map<String,String> environment)
         {
             return new DockerContainer(name, id, image, home, host, port, created, labels, environment);
+        }
+
+        public static DockerContainer makeDockerContainer(
+                String name, String id, ImageConfig image, String home, String host, int port, String created,
+                Map<String, String> labels,
+                Map<String,String> environment, boolean isReportContainer)
+        {
+            return new DockerContainer(name, id, image, home, host, port, created, labels, environment, isReportContainer);
         }
 
         public DockerContainer(
@@ -334,6 +365,17 @@ public interface DockerService
             this.lkContainer = labels.get("labkey:lkContainer");
             this.filename = labels.get("labkey:filename");
         }
+
+        public DockerContainer(
+                String name, String id, ImageConfig image, String home, String host, int port, String created,
+                Map<String, String> labels,
+                Map<String,String> environment, boolean isReportContainer)
+        {
+            this(name, id, image, home, host, port, created, labels, environment);
+            this.isReportContainer = isReportContainer;
+        }
+
+
     }
 
     DockerContainer getContainer(String id);
@@ -347,6 +389,11 @@ public interface DockerService
     List<String> listVolumes();
 
     DockerContainer start(ImageConfig image, String prefix, User user, Map<String, String> labels, Map<String, String> env, Map<File, String> filesForContainer, Map<InputStream, String> streamsForContainer, List<List<String>> postStartCmds, ContainerUsage usage) throws IOException;
+
+    default DockerContainer start(ImageConfig image, String prefix, User user, Map<String, String> labels, Map<String, String> env, Map<File, String> filesForContainer, Map<InputStream, String> streamsForContainer, List<List<String>> postStartCmds, ContainerUsage usage, boolean isReportContainer) throws IOException
+    {
+        return null;
+    }
 
     String readFileFromContainer(String containerId, String filepath) throws IOException;
 
@@ -402,6 +449,7 @@ public interface DockerService
         public final User user;
         public long created = HeartBeat.currentTimeMillis();
         public long accessed = HeartBeat.currentTimeMillis();
+        private String lastEntityId;
 
         public String getHost()
         {
@@ -422,6 +470,16 @@ public interface DockerService
         {
             this.dockerContainer = dockerContainer;
             this.user = user;
+        }
+
+        public String getLastEntityId()
+        {
+            return this.lastEntityId;
+        }
+
+        public void setLastEntityId(String entityId) //TODO update
+        {
+            this.lastEntityId = entityId;
         }
     }
 

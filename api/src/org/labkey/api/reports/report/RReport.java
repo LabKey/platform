@@ -475,7 +475,9 @@ public class RReport extends ExternalScriptEngineReport
 
         if (extractProlog)
         {
-            return StringUtils.join(list.subList(cutstart, cutend + 1), "\n");
+            if (cutstart + 1 > cutend)
+                return null;
+            return StringUtils.join(list.subList(cutstart + 1, cutend), "\n");
         }
 
         // write out lines before prolog cut 8<
