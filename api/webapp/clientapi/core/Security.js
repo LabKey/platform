@@ -1117,7 +1117,9 @@ LABKEY.Security = new function()
                         }
                     }
 
-                    LABKEY.Utils.getOnSuccess(config).call(config.scope || this, data.roles, req);
+                    var fn = LABKEY.Utils.getOnSuccess(config);
+                    if (fn)
+                        fn.call(config.scope || this, data.roles, req);
 
                 }, this),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
