@@ -20,7 +20,6 @@ import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.PopupMenu;
 import org.labkey.api.view.PopupMenuView;
@@ -312,12 +311,15 @@ public class ViewServiceImpl implements ViewService
         @Override
         public void doStartTag(PrintWriter out)
         {
+            String filteredTitle = PageFlowUtil.filter(StringUtils.trimToEmpty(getConfig()._title));
             if (_devMode)
                 out.print("<!--FrameType.DIALOG-->");
             out.println("<div class=\"panel panel-default labkey-dialog-frame\">");
             out.println("<div class=\"panel-heading\">");
-            out.print("<span class=\"panel-title pull-left\">");
-            out.print(PageFlowUtil.filter(getConfig()._title));
+            out.print("<span class=\"panel-title pull-left\" title=\"");
+            out.print(filteredTitle);
+            out.print("\">");
+            out.print(filteredTitle);
             out.print("</span>");
 
             if (null != getConfig()._closeURL)
