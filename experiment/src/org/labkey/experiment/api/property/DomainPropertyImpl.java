@@ -616,7 +616,7 @@ public class DomainPropertyImpl implements DomainProperty
             _pd = OntologyManager.insertOrUpdatePropertyDescriptor(_pd, dd, sortOrder);
         else if (_pdOld != null)
         {
-            _pd = OntologyManager.updatePropertyDescriptor(user, _domain._dd, _pdOld, _pd, sortOrder);
+            _pd = OntologyManager.updatePropertyDescriptor(user, _domain, this, _domain._dd, _pdOld, _pd, sortOrder);
 
             boolean hasProvisioner = null != getDomain().getDomainKind() && null != getDomain().getDomainKind().getStorageSchemaName() && dd.getStorageTableName() != null;
 
