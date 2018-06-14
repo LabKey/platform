@@ -23,6 +23,7 @@ import org.labkey.api.attachments.Attachment;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpRun;
@@ -77,6 +78,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
 
     protected String _etag = null;
     protected Map<String, Object> _properties = null;
+    private List<ExpData> _data = null;
 
     protected AbstractWebdavResource(Path path)
     {
@@ -139,26 +141,32 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return getLastModified();
     }
 
+    @Override
     public User getCreatedBy()
     {
-        return null;
+        List<ExpData> data = getExpData();
+        return data != null && data.size() == 1 ? data.get(0).getCreatedBy() : null;
     }
+
+    public String getDescription()
+    {
+        List<ExpData> data = getExpData();
+        return data != null && data.size() == 1 ? data.get(0).getComment() : null;
+    }
+
+    @Override
+    public User getModifiedBy()
+    {
+        List<ExpData> data = getExpData();
+        return data != null && data.size() == 1 ? data.get(0).getCreatedBy() : null;
+    }
+
 
     public void setLastIndexed(long indexed, long modified)
     {
         SearchService ss = SearchService.get();
         if (isFile() && ss != null)
             ss.setLastIndexedForPath(getPath(), indexed, modified);
-    }
-
-    public User getModifiedBy()
-    {
-        return null;
-    }
-
-    public String getDescription()
-    {
-        return null;
     }
 
     public String getContentType()
@@ -454,6 +462,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return result;
     }
 
+    @NotNull
     protected List<ExpData> getExpDatasHelper(java.nio.file.Path path, Container container)
     {
         List<ExpData> list = new LinkedList<>();
@@ -641,4 +650,26 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     {
         setSearchProperty(SearchService.PROPERTY.categories,category.toString());
     }
+
+    protected List<ExpData> getExpData()
+    {
+        if (null == _data)
+        {
+            java.nio.file.Path file = getNioPath();
+            if (null != file)
+                _data = getExpDatasHelper(file, getContainer());
+            else
+                _data = Collections.emptyList();
+        }
+        return _data;
+    }
+
+    Container getContainer()
+    {
+        String id = getContainerId();
+        if (null == id)
+            return null;
+        return ContainerManager.getForId(id);
+    }
+
 }

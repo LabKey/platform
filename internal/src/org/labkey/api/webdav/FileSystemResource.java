@@ -25,8 +25,6 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -99,8 +97,6 @@ public class FileSystemResource extends AbstractWebdavResource
     WebdavResource _folder;   // containing controller used for canList()
     protected Boolean _shouldIndex = null; // null means ask parent
 
-    private boolean _dataQueried = false;
-    private List<ExpData> _data;
     private Map<String, String> _customProperties;
 
     private enum FileType { file, directory, notpresent }
@@ -599,27 +595,6 @@ public class FileSystemResource extends AbstractWebdavResource
     }
 
 
-    @Override
-    public User getCreatedBy()
-    {
-        List<ExpData> data = getExpData();
-        return data != null && data.size() == 1 ? data.get(0).getCreatedBy() : super.getCreatedBy();
-    }
-
-    public String getDescription()
-    {
-        List<ExpData> data = getExpData();
-        return data != null && data.size() == 1 ? data.get(0).getComment() : super.getDescription();
-    }
-
-    @Override
-    public User getModifiedBy()
-    {
-        List<ExpData> data = getExpData();
-        return data != null && data.size() == 1 ? data.get(0).getCreatedBy() : super.getModifiedBy();
-    }
-
-
     @NotNull @Override
     public Collection<NavTree> getActions(User user)
     {
@@ -627,29 +602,6 @@ public class FileSystemResource extends AbstractWebdavResource
             return Collections.emptyList();
 
         return getActionsHelper(user, getExpData());
-    }
-    
-
-    protected List<ExpData> getExpData()
-    {
-        if (!_dataQueried)
-        {
-            File file = getFile();
-            if (null != file)
-                _data = getExpDatasHelper(file.toPath(), getContainer());
-            else
-                _data = Collections.emptyList();
-            _dataQueried = true;
-        }
-        return _data;
-    }
-
-    Container getContainer()
-    {
-        String id = getContainerId();
-        if (null == id)
-            return null;
-        return ContainerManager.getForId(id);
     }
 
 
