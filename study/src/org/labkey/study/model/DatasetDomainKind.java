@@ -310,6 +310,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
         boolean demographics = arguments.containsKey("demographics") ? (Boolean)arguments.get("demographics") : false;
         String keyPropertyName = arguments.containsKey("keyPropertyName") ? (String)arguments.get("keyPropertyName") : null;
         boolean useTimeKeyField = arguments.containsKey("useTimeKeyField") ? (Boolean)arguments.get("useTimeKeyField") : false;
+        boolean strictFieldValidation = arguments.containsKey("strictFieldValidation") ? (Boolean)arguments.get("strictFieldValidation") : true;
 
         if (name == null)
             throw new IllegalArgumentException("Dataset name must not be null");
@@ -348,9 +349,11 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
                     {
                         if (lowerReservedNames.contains(pd.getName().toLowerCase()) || existingProperties.contains(pd.getName().toLowerCase()))
                         {
-                            throw new IllegalArgumentException("Property: " + pd.getName() + " is reserved or exists in the current domain.");
+                            if (strictFieldValidation)
+                                throw new IllegalArgumentException("Property: " + pd.getName() + " is reserved or exists in the current domain.");
                         }
-                        DomainUtil.addProperty(newDomain, pd, defaultValues, propertyUris, null);
+                        else
+                            DomainUtil.addProperty(newDomain, pd, defaultValues, propertyUris, null);
                     }
 
                     Set<PropertyStorageSpec.Index> propertyIndices = new HashSet<>();
