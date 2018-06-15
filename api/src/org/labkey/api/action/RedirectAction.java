@@ -16,6 +16,7 @@
 
 package org.labkey.api.action;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.template.PageConfig;
@@ -23,6 +24,9 @@ import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
+
+import static org.labkey.api.action.SpringActionController.ERROR_MSG;
+
 
 /**
  * Base class for action that never want to serve up a regular HTTP response page, and always
@@ -64,7 +68,11 @@ public abstract class RedirectAction<FORM> extends BaseViewAction<FORM>
 
         if (success)
         {
-            throw new RedirectException(getSuccessURL(form));
+            URLHelper s = getSuccessURL(form);
+            if (null != s)
+                throw new RedirectException(s);
+            Logger.getLogger(this.getClass()).warn("NULL redirect URL in action " + this.getClass().getName(), new NullPointerException());
+            errors.reject(ERROR_MSG, "Sorry, I seems to have lost my way and don't know where to go!");
         }
 
         return getErrorView(form, errors);
