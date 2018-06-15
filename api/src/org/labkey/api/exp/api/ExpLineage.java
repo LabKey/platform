@@ -291,9 +291,25 @@ public class ExpLineage
             // EXPERIMENTAL: Include the relatedChildSample and nearestParentData in the lineage response.
             // CONSIDER: Maybe "relatedChildSample" should be "relatedChildSampleOf" with a value of the seed's LSID.  Same for "nearestParentData"
             if (expObject instanceof ExpMaterial)
+            {
+                ExpMaterial material = (ExpMaterial) expObject;
+                if (material.getSampleSet() != null)
+                {
+                    json.put("schemaName", "samples");
+                    json.put("queryName", material.getSampleSet().getName());
+                }
                 json.put("relatedChildSample", relatedChildSample);
-            if (expObject instanceof ExpData)
+            }
+            else if (expObject instanceof ExpData)
+            {
+                ExpData data = (ExpData) expObject;
+                if (data.getDataClass() != null)
+                {
+                    json.put("schemaName", "exp.data");
+                    json.put("queryName", data.getDataClass().getName());
+                }
                 json.put("nearestParentData", nearestParentData);
+            }
         }
 
         return json;
