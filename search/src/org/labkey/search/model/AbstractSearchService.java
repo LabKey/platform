@@ -964,7 +964,10 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             WebdavResource r = i.getResource();
             if (null == r || !r.exists())
             {
-                i.complete(false);
+                _log.info("Document no longer exist, skipping: " + i._id);
+                // This is a strange case.  If this resource doesn't exist anymore, it is not really an error.
+                // see 34102: Search indexing is unreliable for wiki attachments
+                i.complete(true);
                 commitCheck(ms);
                 return;
             }
