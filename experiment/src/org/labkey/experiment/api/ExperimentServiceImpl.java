@@ -6541,53 +6541,49 @@ public class ExperimentServiceImpl implements ExperimentService
     public GWTPropertyDescriptor convertJsonToPropertyDescriptor(JSONObject obj) throws JSONException
     {
         GWTPropertyDescriptor prop = new GWTPropertyDescriptor();
-        prop.setName(obj.getString("name"));
-        prop.setRangeURI(obj.getString("rangeURI"));
 
-        // Other fields can be null
-        Integer propId = (Integer)obj.get("propertyId");
-        if (propId != null)
-            prop.setPropertyId(propId.intValue());
-
-        Boolean required = (Boolean)obj.get("required");
-        if (required != null)
-            prop.setRequired(required.booleanValue());
-
-        Boolean shownInInsertView = (Boolean)obj.get("shownInInsertView");
-        if (shownInInsertView != null)
-            prop.setShownInInsertView(shownInInsertView);
-
-        Boolean shownInUpdateView = (Boolean)obj.get("shownInUpdateView");
-        if (shownInUpdateView != null)
-            prop.setShownInUpdateView(shownInUpdateView);
-
-        Boolean shownInDetailsView = (Boolean)obj.get("shownInDetailsView");
-        if (shownInDetailsView != null)
-            prop.setShownInDetailsView(shownInDetailsView);
-
-        prop.setPropertyURI((String)obj.get("propertyURI"));
-        prop.setOntologyURI((String)obj.get("ontologyURI"));
-        prop.setDescription((String)obj.get("description"));
+        // copy over properties (listed in alphabetical order)
         prop.setConceptURI((String)obj.get("conceptURI"));
+        prop.setDefaultValue((String)obj.get("defaultValue"));
+        if (!obj.isNull("defaultValueType"))
+            prop.setDefaultValueType(DefaultValueType.valueOf((String)obj.get("defaultValueType")));
+        prop.setDescription((String)obj.get("description"));
+        if (!obj.isNull("dimension"))
+            prop.setDimension((Boolean)obj.get("dimension"));
+        prop.setFormat((String)obj.get("format"));
+        prop.setImportAliases((String)obj.get("importAliases"));
         prop.setLabel((String)obj.get("label"));
+        prop.setLookupContainer((String)obj.get("lookupContainer"));
+        prop.setLookupQuery((String)obj.get("lookupQuery"));
+        prop.setLookupSchema((String)obj.get("lookupSchema"));
+        if (!obj.isNull("measure"))
+            prop.setMeasure((Boolean)obj.get("measure"));
+        if (!obj.isNull("mvEnabled"))
+            prop.setMvEnabled((Boolean)obj.get("mvEnabled"));
+        prop.setName(obj.getString("name"));
+        prop.setOntologyURI((String)obj.get("ontologyURI"));
+        if (!obj.isNull("propertyId"))
+            prop.setPropertyId((Integer)obj.get("propertyId"));
+        prop.setPropertyURI((String)obj.get("propertyURI"));
+        prop.setRangeURI(obj.getString("rangeURI"));
+        if (!obj.isNull("recommendedVariable"))
+            prop.setRecommendedVariable((Boolean)obj.get("recommendedVariable"));
+        prop.setRedactedText((String)obj.get("redactedText"));
+        if (!obj.isNull("required"))
+            prop.setRequired((Boolean)obj.get("required"));
+        if (!obj.isNull("scale"))
+            prop.setScale((Integer)obj.get("scale"));
         prop.setSearchTerms((String)obj.get("searchTerms"));
         prop.setSemanticType((String)obj.get("semanticType"));
-        prop.setFormat((String)obj.get("format"));
-        prop.setLookupContainer((String)obj.get("lookupContainer"));
-        prop.setLookupSchema((String)obj.get("lookupSchema"));
-        prop.setLookupQuery((String)obj.get("lookupQuery"));
-        prop.setImportAliases((String)obj.get("importAliases"));
+        if (!obj.isNull("shownInDetailsView"))
+            prop.setShownInDetailsView((Boolean)obj.get("shownInDetailsView"));
+        if (!obj.isNull("shownInInsertView"))
+            prop.setShownInInsertView((Boolean)obj.get("shownInInsertView"));
+        if (!obj.isNull("shownInUpdateView"))
+            prop.setShownInUpdateView((Boolean)obj.get("shownInUpdateView"));
         prop.setURL((String)obj.get("url"));
-        prop.setRedactedText((String)obj.get("redactedText"));
-        prop.setDefaultValue((String)obj.get("defaultValue"));
 
-        String defaultValueType = ((String)obj.get("defaultValueType"));
-        if (defaultValueType != null)
-            prop.setDefaultValueType(DefaultValueType.valueOf(defaultValueType));
-
-        if (obj.has("scale"))
-            prop.setScale((Integer)obj.get("scale"));
-
+        // property validators
         JSONArray jsonValidators = obj.optJSONArray("validators");
         if(null != jsonValidators)
         {
@@ -6602,7 +6598,6 @@ public class ExperimentServiceImpl implements ExperimentService
             }
             prop.setPropertyValidators(validators);
         }
-
         return prop;
     }
 
