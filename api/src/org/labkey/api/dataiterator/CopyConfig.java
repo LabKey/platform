@@ -32,7 +32,7 @@ import java.util.Set;
  * Time: 9:19 AM
  *
  * This is a simple POJO that can be used to describe a simple copy operation.
- * Doesn't specify anything about filtering of source, etc.  However, for convienence, does
+ * Doesn't specify anything about filtering of source, etc.  However, for convenience, does
  * have a place to put name of a timestamp column.
  *
  * There are now also flags to indicate the use of a source or filterStrategy. These were
