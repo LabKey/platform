@@ -64,7 +64,7 @@ public class StudyCache
 
     public static Object get(TableInfo tinfo, Container c, Object cacheKey, CacheLoader<String, Object> loader)
     {
-        // Don't use a BlockingCache as thats can cause deadlocks when needing to do a
+        // Don't use a BlockingCache as that can cause deadlocks when needing to do a
         // load when all other DB connections are in use in threads, including one
         // that holds the BlockingCache's lock
         DatabaseCache<Object> cache2 = DbCache.getCacheGeneric(tinfo);
