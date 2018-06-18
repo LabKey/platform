@@ -96,6 +96,22 @@
             }
         };
 
+        updateIndexes = function(){
+
+            LABKEY.Ajax.request({
+                url: LABKEY.ActionURL.buildURL("study", "refreshMasterPatientIndex.api"),
+                method: "POST",
+                success: LABKEY.Utils.getCallbackWrapper(function(response)
+                {
+                    if (response.success)
+                        window.location = response.returnUrl;
+                    else if (response.message){
+                        LABKEY.Utils.alert("Update failed", response.message);
+                    }
+                })
+            });
+        };
+
         $(document).ready(function () {
 
             // load the dataset dropdown and fields (if necessary)
@@ -119,29 +135,55 @@ else
 {
 %>
 <labkey:form method="POST" layout="horizontal">
-    <%= new Select.SelectBuilder().name("schema").id("schemaNameInput").label("Schema")
+    <%= new Select.SelectBuilder().name("schema").id("schemaNameInput").label("Schema *")
             .layout(Input.Layout.HORIZONTAL)
+            .required(true)
+            .contextContent("The schema name of the query used to provide patient data to the Master Patient Index Provider")
+            .forceSmallContext(true)
             .formGroup(true)
             .disabled(true)
     %>
-    <%= new Select.SelectBuilder().name("query").id("queryNameInput").label("Query")
+    <%= new Select.SelectBuilder().name("query").id("queryNameInput").label("Query *")
             .layout(Input.Layout.HORIZONTAL)
+            .required(true)
+            .contextContent("The query used to provide patient data to the Master Patient Index Provider")
+            .forceSmallContext(true)
             .formGroup(true)
             .disabled(true)
     %>
-    <%= new Select.SelectBuilder().name("dataset").id("datasetInput").label("UID Dataset")
+
+    <%
+        if (datasetMap.isEmpty())
+        {
+    %>
+        <labkey:input type="displayfield" label="UID Dataset" value="The UID datasets are required to be of type: demographics. There are no demographics datasets configured for this study"/>
+        <labkey:input type="displayfield" label="UID Field" value=""/>
+    <%
+        } else {
+    %>
+    <%= new Select.SelectBuilder().name("dataset").id("datasetInput").label("UID Dataset *")
             .layout(Input.Layout.HORIZONTAL)
+            .required(true)
+            .contextContent("The dataset to store the universal ID returned from the Master Patient Index")
+            .forceSmallContext(true)
             .formGroup(true)
     %>
-    <%= new Select.SelectBuilder().name("fieldName").id("fieldInput").label("UID Field")
+    <%= new Select.SelectBuilder().name("fieldName").id("fieldInput").label("UID Field *")
             .layout(Input.Layout.HORIZONTAL)
+            .required(true)
+            .contextContent("The field in the dataset to store the universal ID")
+            .forceSmallContext(true)
             .formGroup(true)
     %>
+    <%
+        }
+    %>
+
     <labkey:input type="checkbox" label="Enabled" name="enabled" checked="<%=settings.isEnabled()%>"/>
 
     <labkey:button text="save" submit="true"/>
     <labkey:button text="cancel" href="<%=new ActionURL(StudyController.ManageStudyAction.class, getContainer())%>"/>
-    <labkey:button text="update now" href=""/>
+    <labkey:button text="update univeral indexes" submit="false" onclick="updateIndexes();"/>
 </labkey:form>
 
 <%  }

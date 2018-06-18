@@ -2469,6 +2469,7 @@ study/src/org/labkey/study/pipeline/DatasetImportRunnable.java -text
 study/src/org/labkey/study/pipeline/DatasetInferSchemaReader.java -text
 study/src/org/labkey/study/pipeline/DatasetJobSupport.java -text
 study/src/org/labkey/study/pipeline/FileAnalysisDatasetTask.java -text
+study/src/org/labkey/study/pipeline/MasterPatientIndexUpdateTask.java -text
 study/src/org/labkey/study/pipeline/ParticipantImportRunnable.java -text
 study/src/org/labkey/study/pipeline/SampleMindedTransform.java -text
 study/src/org/labkey/study/pipeline/SampleMindedTransformTask.java -text

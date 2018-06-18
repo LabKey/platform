@@ -58,9 +58,11 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
+import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.AbstractQueryImportAction;
@@ -113,6 +115,7 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.MasterPatientIndexService;
 import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyReloadSource;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
@@ -140,6 +143,7 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.WebPartFactory;
@@ -170,6 +174,7 @@ import org.labkey.study.importer.StudyReload.ReloadTask;
 import org.labkey.study.importer.VisitMapImporter;
 import org.labkey.study.model.*;
 import org.labkey.study.pipeline.DatasetFileReader;
+import org.labkey.study.pipeline.MasterPatientIndexUpdateTask;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.query.DatasetQuerySettings;
 import org.labkey.study.query.DatasetQueryView;
@@ -7950,7 +7955,7 @@ public class StudyController extends BaseStudyController
         @Override
         public ModelAndView getView(MasterPatientProviderSettings form, boolean reshow, BindException errors) throws Exception
         {
-            return new JspView<>("/org/labkey/study/view/masterPatientProvider.jsp", errors);
+            return new JspView<>("/org/labkey/study/view/masterPatientProvider.jsp", form, errors);
         }
 
         @Override
@@ -8022,13 +8027,13 @@ public class StudyController extends BaseStudyController
         @Override
         public ModelAndView getView(MasterPatientIndexService.FolderSettings form, boolean reshow, BindException errors) throws Exception
         {
-            return new JspView<>("/org/labkey/study/view/manageMasterPatientConfig.jsp", getConfiguredService(), errors);
+            return new JspView<>("/org/labkey/study/view/manageMasterPatientConfig.jsp", getService(), errors);
         }
 
         @Override
         public boolean handlePost(MasterPatientIndexService.FolderSettings form, BindException errors) throws Exception
         {
-            MasterPatientIndexService svc = getConfiguredService();
+            MasterPatientIndexService svc = getService();
             if (svc != null)
             {
                 svc.setFolderSettings(getContainer(), form);
@@ -8045,24 +8050,67 @@ public class StudyController extends BaseStudyController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            MasterPatientIndexService svc = getConfiguredService();
+            MasterPatientIndexService svc = getService();
             if (svc != null)
                 return root.addChild("Manage " + svc.getName() + " Configuration");
             else
                 return root.addChild("Manage Master Patient Index Configuration");
         }
 
-        private MasterPatientIndexService getConfiguredService()
+        private MasterPatientIndexService getService()
         {
             if (_svc == null)
             {
-                PropertyManager.PropertyMap map = PropertyManager.getNormalStore().getProperties(StudyController.MasterPatientProviderSettings.CATEGORY);
-                String type = map.get(StudyController.MasterPatientProviderSettings.TYPE);
-
-                if (type != null)
-                    _svc = MasterPatientIndexService.getProvider(type);
+                _svc = getConfiguredService();
             }
             return _svc;
+        }
+    }
+
+    private MasterPatientIndexService getConfiguredService()
+    {
+        PropertyManager.PropertyMap map = PropertyManager.getNormalStore().getProperties(StudyController.MasterPatientProviderSettings.CATEGORY);
+        String type = map.get(StudyController.MasterPatientProviderSettings.TYPE);
+
+        if (type != null)
+            return MasterPatientIndexService.getProvider(type);
+
+        return null;
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class RefreshMasterPatientIndexAction extends ApiAction<Object>
+    {
+        @Override
+        public ApiResponse execute(Object o, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            try
+            {
+                ViewBackgroundInfo info = new ViewBackgroundInfo(getContainer(), getUser(), getViewContext().getActionURL());
+                MasterPatientIndexService svc = getConfiguredService();
+
+                MasterPatientIndexService.FolderSettings settings = svc.getFolderSettings(getContainer());
+                if (settings.isEnabled())
+                {
+                    PipelineJob job = new MasterPatientIndexUpdateTask(info, PipelineService.get().findPipelineRoot(getContainer()), svc);
+
+                    PipelineService.get().queueJob(job);
+
+                    response.put("success", true);
+                    response.put("returnUrl", PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(getContainer()));
+                }
+                else
+                {
+                    response.put("success", false);
+                    response.put("message", "The specified configuration is not enabled.");
+                }
+            }
+            catch (PipelineValidationException e)
+            {
+                throw new IOException(e);
+            }
+            return response;
         }
     }
 }
