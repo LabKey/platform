@@ -3017,7 +3017,7 @@ if (!LABKEY.DataRegions) {
                                             return false;
                                         }
                                     }
-                                    else if (key.indexOf(skipPrefix) === 0) {
+                                    else if (key.toLowerCase().indexOf(skipPrefix.toLowerCase()) === 0) {
                                         // only skip filters, parameters, and sorts
                                         if (key === skipPrefix ||
                                                 key.indexOf('~') > 0 ||

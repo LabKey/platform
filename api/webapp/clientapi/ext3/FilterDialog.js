@@ -298,10 +298,10 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         var dr = this.getDataRegion();
         if (dr) {
             Ext.each(dr.getUserFilterArray(), function(ff) {
-                if (this.column.lookup && this.column.displayField && ff.getColumnName() == this.column.displayField) {
+                if (this.column.lookup && this.column.displayField && ff.getColumnName().toLowerCase() === this.column.displayField.toLowerCase()) {
                     filters.push(ff);
                 }
-                else if (this.column.fieldKey && ff.getColumnName() == this.column.fieldKey) {
+                else if (this.column.fieldKey && ff.getColumnName().toLowerCase() === this.column.fieldKey.toLowerCase()) {
                     filters.push(ff);
                 }
             }, this);

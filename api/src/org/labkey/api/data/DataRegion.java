@@ -2611,6 +2611,7 @@ public class DataRegion extends DisplayElement
 
             if (filter != null && filter.displayFilterText())
             {
+                Map<FieldKey, List<SimpleFilter.FilterClause>> fieldClauses = new HashMap<>();
                 for (SimpleFilter.FilterClause clause : filter.getClauses())
                 {
                     List<FieldKey> fieldKeys = clause.getFieldKeys();
@@ -2632,8 +2633,14 @@ public class DataRegion extends DisplayElement
 
                     if (filterKey != null)
                     {
-                        _contextActions.add(createFilterAction(ctx, clause, filterKey));
+                        if (!fieldClauses.containsKey(filterKey))
+                            fieldClauses.put(filterKey, new ArrayList<>());
+                        fieldClauses.get(filterKey).add(clause);
                     }
+                }
+                for (FieldKey filterKey : fieldClauses.keySet())
+                {
+                    _contextActions.add(createFilterAction(ctx, fieldClauses.get(filterKey), filterKey));
                 }
             }
         }
@@ -2650,7 +2657,7 @@ public class DataRegion extends DisplayElement
     }
 
     @NotNull
-    private ContextAction createFilterAction(RenderContext ctx, SimpleFilter.FilterClause clause, FieldKey filterKey)
+    private ContextAction createFilterAction(RenderContext ctx, List<SimpleFilter.FilterClause> clauses, FieldKey filterKey)
     {
         DisplayColumn filterColumn = getFilterColumn(filterKey);
 
@@ -2660,12 +2667,11 @@ public class DataRegion extends DisplayElement
             FieldKey colFilterKey = filterColumn.getFilterKey();
 
             if (colFilterKey != null)
-                return createFilterAction(ctx, clause, colFilterKey, filterColumn);
+                return createFilterAction(ctx, clauses, colFilterKey, filterColumn);
         }
 
         // This is copied from the original addFilterMessage
-        StringBuilder caption = new StringBuilder();
-        clause.appendFilterText(caption, new SimpleFilter.ColumnNameFormatter()
+        String caption = prepareFilterLabel(clauses, new SimpleFilter.ColumnNameFormatter()
         {
             @Override
             public String format(FieldKey fieldKey)
@@ -2695,17 +2701,16 @@ public class DataRegion extends DisplayElement
         return new ContextAction.Builder()
                 .iconCls("filter")
                 .onClose(jsObject + ".clearFilter(" + PageFlowUtil.jsString(filterKey.toString()) + "); return false;")
-                .text(caption.toString())
-                .tooltip("(Unable to edit) " + caption.toString())
+                .text(caption)
+                .tooltip("(Unable to edit) " + caption)
                 .build();
     }
 
     @NotNull
-    private ContextAction createFilterAction(RenderContext ctx, SimpleFilter.FilterClause clause, @NotNull FieldKey filterKey, DisplayColumn column)
+    private ContextAction createFilterAction(RenderContext ctx, List<SimpleFilter.FilterClause> clauses, @NotNull FieldKey filterKey, DisplayColumn column)
     {
         // Column is visible in the currently displayed region -- display with same rendered column title
-        StringBuilder caption = new StringBuilder();
-        clause.appendFilterText(caption, new SimpleFilter.ColumnNameFormatter()
+        String caption = prepareFilterLabel(clauses, new SimpleFilter.ColumnNameFormatter()
         {
             @Override
             public String format(FieldKey fieldKey)
@@ -2715,8 +2720,7 @@ public class DataRegion extends DisplayElement
             }
         });
 
-        StringBuilder tooltip = new StringBuilder();
-        clause.appendFilterText(tooltip, new SimpleFilter.ColumnNameFormatter());
+        String tooltip = prepareFilterLabel(clauses, new SimpleFilter.ColumnNameFormatter());
 
         String jsObject = getJavaScriptObjectReference();
 
@@ -2724,9 +2728,21 @@ public class DataRegion extends DisplayElement
                 .iconCls("filter")
                 .onClick(jsObject + "._openFilter(" + PageFlowUtil.jsString(filterKey.toString()) + ", arguments[0]); return false;")
                 .onClose(jsObject + ".clearFilter(" + PageFlowUtil.jsString(filterKey.toString()) + "); return false;")
-                .text(caption.toString())
-                .tooltip(tooltip.toString())
+                .text(caption)
+                .tooltip(tooltip)
                 .build();
+    }
+
+    private String prepareFilterLabel(List<SimpleFilter.FilterClause> clauses, SimpleFilter.ColumnNameFormatter formatter)
+    {
+        List<String> clauseParts = new ArrayList<>();
+        for (SimpleFilter.FilterClause clause : clauses)
+        {
+            StringBuilder sub = new StringBuilder();
+            clause.appendFilterText(sub, formatter);
+            clauseParts.add(sub.toString());
+        }
+        return StringUtils.join(clauseParts, " AND ");
     }
 
     protected Map<String, String> prepareMessages(RenderContext ctx) throws IOException
