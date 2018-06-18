@@ -62,6 +62,8 @@ import java.util.concurrent.Future;
  */
 public interface SearchService
 {
+    // create logger for package which can be set via logger-manage.view
+    Logger _packageLogger = Logger.getLogger(SearchService.class.getPackage().getName());
     Logger _log = Logger.getLogger(SearchService.class);
 
     @Deprecated //Use getFileSizeLimit() method instead
