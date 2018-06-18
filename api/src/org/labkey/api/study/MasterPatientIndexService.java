@@ -3,6 +3,7 @@ package org.labkey.api.study;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.pipeline.PipelineJob;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -51,7 +52,7 @@ public interface MasterPatientIndexService
     /**
      * Update patient index information for the specified container
      */
-    void updateIndices(Container container);
+    void updateIndices(PipelineJob pipelineJob);
 
     public static class ServerSettings
     {
