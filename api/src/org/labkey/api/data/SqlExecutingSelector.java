@@ -37,9 +37,9 @@ import java.util.Map;
 
 public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR extends SqlExecutingSelector<FACTORY, SELECTOR>> extends BaseSelector<SELECTOR>
 {
-    protected int _maxRows = Table.ALL_ROWS;
+    int _maxRows = Table.ALL_ROWS;
     protected long _offset = Table.NO_OFFSET;
-    protected @Nullable Map<String, Object> _namedParameters = null;
+    @Nullable Map<String, Object> _namedParameters = null;
 
     private @Nullable AsyncQueryRequest _asyncRequest = null;
     private @Nullable StackTraceElement[] _loggingStacktrace = null;
@@ -49,17 +49,17 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
     // optimizations won't mutate the ExecutingSelector's externally set state.
     abstract protected FACTORY getSqlFactory(boolean isResultSet);
 
-    protected SqlExecutingSelector(DbScope scope)
+    SqlExecutingSelector(DbScope scope)
     {
         this(scope, null);
     }
 
-    protected SqlExecutingSelector(DbScope scope, Connection conn)
+    private SqlExecutingSelector(DbScope scope, Connection conn)
     {
         this(scope, conn, new QueryLogging());
     }
 
-    protected SqlExecutingSelector(DbScope scope, Connection conn, @NotNull QueryLogging queryLogging)
+    SqlExecutingSelector(DbScope scope, Connection conn, @NotNull QueryLogging queryLogging)
     {
         super(scope, conn);
         _queryLogging = queryLogging;
@@ -68,7 +68,13 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
     @Override
     protected ResultSetFactory getStandardResultSetFactory()
     {
-        return new ExecutingResultSetFactory(getSqlFactory(false));
+        return getStandardResultSetFactory(true);
+    }
+
+    @Override
+    protected ResultSetFactory getStandardResultSetFactory(boolean closeResultSet)
+    {
+        return new ExecutingResultSetFactory(getSqlFactory(false), closeResultSet, false);
     }
 
     public SELECTOR setMaxRows(int maxRows)
@@ -79,7 +85,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
         return getThis();
     }
 
-    public static boolean validOffset(long offset)
+    private static boolean validOffset(long offset)
     {
         return offset >= 0;
     }
@@ -102,7 +108,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
      *  Generates the current select SQL and returns the execution plan. SQL is generated as if getResultSet() had been
      *  called, which means that TableSelector limit, offset, sort, filter, etc. are all respected.
      */
-    public Collection<String> getExecutionPlan()
+    Collection<String> getExecutionPlan()
     {
         SqlDialect dialect = getScope().getSqlDialect();
 
@@ -117,8 +123,9 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
     }
 
     /**
-     *  Convenience method that generates the select SQL and logs the execution plan to the passed in Logger (if non-null)
+     *  Convenience method that generates select SQL and logs the execution plan to the passed in Logger (if non-null)
      */
+    @SuppressWarnings("unused")
     public SELECTOR logExecutionPlan(@Nullable Logger logger)
     {
         if (null != logger)
@@ -136,16 +143,21 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
 
     protected TableResultSet getResultSet(ResultSetFactory factory, boolean cache)
     {
+        return factory.handleResultSet((rs, conn) -> wrapResultSet(rs, conn, cache, true));
+    }
+
+    @Override
+    protected TableResultSet wrapResultSet(ResultSet rs, Connection conn, boolean cache, boolean requireClose) throws SQLException
+    {
         if (cache)
         {
-            return handleResultSet(factory, (rs, conn) -> {
-                // We're handing back a ResultSet, so cache the meta data
-                return CachedResultSets.create(rs, true, _maxRows, _loggingStacktrace, getQueryLogging());
-            });
+            // Cache ResultSet and meta data
+            return CachedResultSets.create(rs, true, _maxRows, _loggingStacktrace, getQueryLogging()).setRequireClose(requireClose);
         }
         else
         {
-            return handleResultSet(factory, (rs, conn) -> new ResultSetImpl(conn, getScope(), rs, _maxRows, getQueryLogging()));
+            // Wrap with a ResultSet implementation that closes the connection when closed
+            return new ResultSetImpl(conn, getScope(), rs, _maxRows, getQueryLogging());
         }
     }
 
@@ -192,10 +204,10 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
         {
             try
             {
-                return handleResultSet(rowCountResultSetFactory, (rs, conn) -> {
+                return rowCountResultSetFactory.handleResultSet((rs, conn) -> {
                     rs.next();
                     return rs.getLong(1);
-                }).longValue();
+                });
             }
             catch (RuntimeSQLException|ConcurrencyFailureException x)
             {
@@ -218,14 +230,14 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
     {
         ResultSetFactory existsResultSetFactory = new ExecutingResultSetFactory(new ExistsSqlFactory(factory));
 
-        return handleResultSet(existsResultSetFactory, (rs, conn) -> {
+        return existsResultSetFactory.handleResultSet((rs, conn) -> {
             rs.next();
             return rs.getBoolean(1);
-        }).booleanValue();
+        });
     }
 
 
-    protected void setAsyncRequest(@Nullable AsyncQueryRequest asyncRequest)
+    void setAsyncRequest(@Nullable AsyncQueryRequest asyncRequest)
     {
         _asyncRequest = asyncRequest;
 
@@ -299,12 +311,12 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
 
         private @Nullable SQLFragment _sql = null;
 
-        protected ExecutingResultSetFactory(SqlFactory factory)
+        ExecutingResultSetFactory(SqlFactory factory)
         {
             this(factory, true, false);
         }
 
-        protected ExecutingResultSetFactory(SqlFactory factory, boolean closeResultSet, boolean scrollable)
+        ExecutingResultSetFactory(SqlFactory factory, boolean closeResultSet, boolean scrollable)
         {
             _factory = factory;
             _closeResultSet = closeResultSet;
@@ -323,6 +335,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
                 // Stash the generated SQL in case we need to log it later
                 _sql = _factory.getSql();
 
+                // Short circuit if no SQL is generated, e.g., AggregateSqlFactory
                 if (null != _sql)
                 {
                     DbScope scope = getScope();
@@ -435,9 +448,9 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
         private void initializeStatement(Statement statement, @Nullable AsyncQueryRequest asyncRequest, @Nullable Integer statementMaxRows) throws SQLException
         {
             // Don't set max rows if null or special ALL_ROWS value (we're assuming statement.getMaxRows() defaults to 0, though this isn't actually documented...)
-            if (null != statementMaxRows && Table.ALL_ROWS != statementMaxRows.intValue())
+            if (null != statementMaxRows && Table.ALL_ROWS != statementMaxRows)
             {
-                statement.setMaxRows(statementMaxRows.intValue() == Table.NO_ROWS ? 1 : statementMaxRows.intValue());
+                statement.setMaxRows(statementMaxRows == Table.NO_ROWS ? 1 : statementMaxRows);
             }
 
             if (asyncRequest != null)

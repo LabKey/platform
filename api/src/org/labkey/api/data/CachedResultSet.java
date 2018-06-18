@@ -22,7 +22,6 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.RowMap;
 import org.labkey.api.dataiterator.DataIterator;
-import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
@@ -30,7 +29,6 @@ import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewServlet;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -80,6 +78,7 @@ public class CachedResultSet implements ResultSet, TableResultSet
     private final String _threadName;
 
     private boolean _wasClosed = false;
+    private boolean _requireClose = true;
     private String _url = null;
 
     // state
@@ -150,6 +149,17 @@ public class CachedResultSet implements ResultSet, TableResultSet
         }
 
         MemTracker.getInstance().put(this);
+    }
+
+    public boolean isRequireClose()
+    {
+        return _requireClose;
+    }
+
+    public CachedResultSet setRequireClose(boolean requireClose)
+    {
+        _requireClose = requireClose;
+        return this;
     }
 
 
@@ -648,9 +658,9 @@ public class CachedResultSet implements ResultSet, TableResultSet
         {
             close();
 
-            if (AppProps.getInstance().isDevMode())
+            if (_requireClose && AppProps.getInstance().isDevMode())
             {
-                StringBuilder error = new StringBuilder("CachedResultSetImpl was not closed.");
+                StringBuilder error = new StringBuilder("CachedResultSet was not closed.");
                 if (null != _url)
                     error.append("\nURL: ").append(_url);
                 else if (_threadName != null)

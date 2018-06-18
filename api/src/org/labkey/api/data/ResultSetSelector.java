@@ -56,6 +56,12 @@ public class ResultSetSelector extends NonSqlExecutingSelector<ResultSetSelector
     @Override
     protected ResultSetFactory getStandardResultSetFactory()
     {
+        return getStandardResultSetFactory(false);
+    }
+
+    @Override
+    protected ResultSetFactory getStandardResultSetFactory(boolean closeResultSet)
+    {
         return new ResultSetFactory() {
             @Override
             public <T> T handleResultSet(ResultSetHandler<T> handler)
@@ -81,7 +87,7 @@ public class ResultSetSelector extends NonSqlExecutingSelector<ResultSetSelector
             @Override
             public boolean shouldClose()
             {
-                return _completionAction.shouldClose();
+                return closeResultSet || _completionAction.shouldClose();
             }
 
             @Override
@@ -90,6 +96,19 @@ public class ResultSetSelector extends NonSqlExecutingSelector<ResultSetSelector
                 throw getExceptionFramework().translate(getScope(), "ResultSetSelector", e);
             }
         };
+    }
+
+    @Override
+    protected TableResultSet wrapResultSet(ResultSet rs, Connection conn, boolean cache, boolean requireClose) throws SQLException
+    {
+        if (cache)
+        {
+            return CachedResultSets.create(rs, true, Table.ALL_ROWS).setRequireClose(requireClose);
+        }
+        else
+        {
+            return new ResultSetImpl(conn, getScope(), rs, Table.ALL_ROWS, getQueryLogging());
+        }
     }
 
     @Override

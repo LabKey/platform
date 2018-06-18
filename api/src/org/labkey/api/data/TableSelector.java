@@ -20,6 +20,7 @@ import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Aggregate.Result;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -39,6 +40,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFactory, TableSelector>
 {
@@ -234,6 +236,20 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     }
 
     @Override
+    public Stream<ResultSet> resultSetStream()
+    {
+        ensureStableColumnOrder("resultSetStream()");
+        return super.resultSetStream();
+    }
+
+    @Override
+    public Stream<ResultSet> uncachedResultSetStream()
+    {
+        ensureStableColumnOrder("uncachedResultSetStream()");
+        return super.uncachedResultSetStream();
+    }
+
+    @Override
     protected void forEach(ForEachBlock<ResultSet> block, ResultSetFactory factory)
     {
         ensureStableColumnOrder("forEach(ForEachBlock<ResultSet> block)");
@@ -246,7 +262,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
 
         // Same pattern as getStandardResultSetFactory(), but gives us a reference to the sql factory which we need for the column list
         TableSqlFactory sqlFactory = getSqlFactory(false);
-        handleResultSet(new ExecutingResultSetFactory(sqlFactory), (rs, conn) -> {
+        new ExecutingResultSetFactory(sqlFactory).handleResultSet((rs, conn) -> {
             Results results = new ResultsImpl(rs, sqlFactory.getSelectedColumns());
             try
             {
@@ -393,13 +409,13 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     // TODO: forEachFieldKeyMap()
 
     // TODO: Convert to return Map<FieldKey, List<Aggregate.Result>>
-    public Map<String, List<Aggregate.Result>> getAggregates(final List<Aggregate> aggregates)
+    public Map<String, List<Result>> getAggregates(final List<Aggregate> aggregates)
     {
         final AggregateSqlFactory sqlFactory = new AggregateSqlFactory(_filter, aggregates, _columns);
         ResultSetFactory resultSetFactory = new ExecutingResultSetFactory(sqlFactory);
 
-        return handleResultSet(resultSetFactory, (rs, conn) -> {
-            Map<String, List<Aggregate.Result>> results = new HashMap<>();
+        return resultSetFactory.handleResultSet((rs, conn) -> {
+            Map<String, List<Result>> results = new HashMap<>();
 
             // null == rs is the short-circuit case... SqlFactory didn't find any aggregate columns, so
             // query wasn't executed. Just return an empty map in this case.
@@ -426,10 +442,10 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
         });
     }
 
-    public Map<String, List<Aggregate.Result>> getAggregatesAsync(final List<Aggregate> aggregates, HttpServletResponse response) throws IOException
+    public Map<String, List<Result>> getAggregatesAsync(final List<Aggregate> aggregates, HttpServletResponse response) throws IOException
     {
         setLogger(ConnectionWrapper.getConnectionLogger());
-        AsyncQueryRequest<Map<String, List<Aggregate.Result>>> asyncRequest = new AsyncQueryRequest<>(response);
+        AsyncQueryRequest<Map<String, List<Result>>> asyncRequest = new AsyncQueryRequest<>(response);
         setAsyncRequest(asyncRequest);
 
         try
@@ -520,7 +536,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
             return sql;
         }
 
-        protected boolean requiresManualScrolling()
+        boolean requiresManualScrolling()
         {
             return _offset != Table.NO_OFFSET && !_table.getSqlDialect().supportsOffset();
         }
@@ -539,7 +555,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
                 _scrollOffset--;
         }
 
-        public Collection<ColumnInfo> getSelectedColumns()
+        Collection<ColumnInfo> getSelectedColumns()
         {
             return _columns;
         }
@@ -548,9 +564,9 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
 
     // Generated SQL is being used in a sub-select, so ensure no ORDER BY clause gets generated. ORDER BY is a waste of
     // time (at best) or a SQLException (on SQL Server)
-    protected class PreventSortTableSqlFactory extends TableSqlFactory
+    class PreventSortTableSqlFactory extends TableSqlFactory
     {
-        public PreventSortTableSqlFactory(Filter filter, Collection<ColumnInfo> columns)
+        PreventSortTableSqlFactory(Filter filter, Collection<ColumnInfo> columns)
         {
             // Really don't include a sort for this query
             super(filter, null, columns, 0, false);
@@ -561,7 +577,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     // This factory ignores the select columns, instead producing "SELECT 1 FROM ...", and ignores the sort.
     protected class RowCountingSqlFactory extends PreventSortTableSqlFactory
     {
-        public RowCountingSqlFactory(TableInfo table, Filter filter)
+        RowCountingSqlFactory(TableInfo table, Filter filter)
         {
             super(filter, getRowCountingSelectColumns(table));
         }
@@ -591,7 +607,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
         private final List<Aggregate> _aggregates;
         private final Map<FieldKey, ColumnInfo> _columnMap;
 
-        public AggregateSqlFactory(Filter filter, List<Aggregate> aggregates, Collection<ColumnInfo> columns)
+        AggregateSqlFactory(Filter filter, List<Aggregate> aggregates, Collection<ColumnInfo> columns)
         {
             super(filter, ensureAggregates(_table, columns, aggregates));
             _aggregates = aggregates;

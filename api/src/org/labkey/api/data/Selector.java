@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * Base-level interface for getting results from the database.
@@ -62,12 +63,70 @@ public interface Selector
 
     <T> T getObject(Class<T> clazz);
 
+    /**
+     * Returns a sequential Stream of objects representing rows from the database. Converts each result row into an object
+     * of the specified class. The Stream is backed by a cached data structure (ResultSet and Connection are closed before
+     * returning the stream), so no need to close or fully exhaust this stream. Cached streams are more convenient to use
+     * than uncached streams and should perform well in nearly all situations.
+     */
+    <T> Stream<T> stream(Class<T> clazz);
+
+    /**
+     * Returns an uncached sequential Stream of objects representing rows from the database. Converts each result row into
+     * an object of the specified class. The Stream is backed by a live ResultSet with an open Connection, so it must be
+     * closed, typically using try-with-resources. This is less convenient than a cached Stream, but useful when large
+     * results are expected.
+     *
+     * An example showing proper closing:
+     *
+     * <pre>{@code
+     *
+     * // Uncached streams must be closed to release backing resources
+     * try (Stream<User> stream = selector.uncachedStream(User.class))
+     * {
+     *     List<String> emails = stream
+     *         .map(User::getEmail)
+     *         .collect(Collectors.toList());
+     * }}</pre>
+     */
+    <T> Stream<T> uncachedStream(Class<T> clazz);
+
+    /**
+     * Returns a sequential Stream of maps representing rows from the database. Converts each result row into a {@code
+     * Map<String, Object>}. The Stream is backed by a cached data structure (ResultSet and Connection are closed before
+     * returning the stream), so no need to close or fully exhaust this stream. Cached streams are more convenient to use
+     * than uncached streams and should perform well in nearly all situations.
+     */
+    Stream<Map<String, Object>> mapStream();
+
+    /**
+     * Returns an uncached sequential Stream of maps representing rows from the database. Converts each result row into a
+     * {@code Map<String, Object>}. The Stream is backed by a live ResultSet with an open Connection, so it must be closed,
+     * typically using try-with-resources. This is less convenient than a cached Stream, but useful when large results are
+     * expected.
+     */
+    Stream<Map<String, Object>> uncachedMapStream();
+
+    /**
+     * Returns a sequential Stream that iterates a ResultSet. The Stream is backed by a cached data structure (ResultSet
+     * and Connection are closed before returning the stream), so no need to close or fully exhaust this stream. Cached
+     * streams are more convenient to use than uncached streams and should perform well in nearly all situations.
+     */
+    Stream<ResultSet> resultSetStream();
+
+    /**
+     * Returns an uncached sequential Stream that iterates a ResultSet. The Stream is backed by a live ResultSet with an
+     * open Connection, so it must be closed, typically using try-with-resources. This is less convenient than a cached
+     * Stream, but useful when large results are expected.
+     */
+    Stream<ResultSet> uncachedResultSetStream();
+
     /** Convenience method that avoids "unchecked assignment" warnings */
     Map<String, Object> getMap();
 
     void forEach(ForEachBlock<ResultSet> block);
 
-    /** Stream maps from the database. Convert each result row into a Map<String, Object> and invoke block.exec() on it. */
+    /** Streams maps from the database. Converts each result row into a {@code Map<String, Object>} and invokes {@code block.exec()} on it. */
     void forEachMap(ForEachBlock<Map<String, Object>> block);
 
     /**

@@ -47,7 +47,7 @@ public abstract class NonSqlExecutingSelector<SELECTOR extends NonSqlExecutingSe
     @Override
     public boolean exists()
     {
-        return handleResultSet(getStandardResultSetFactory(), (rs, conn) -> rs.next()).booleanValue();
+        return getStandardResultSetFactory().handleResultSet((rs, conn) -> rs.next()).booleanValue();
     }
 
     // Different semantics... never grab a new connection

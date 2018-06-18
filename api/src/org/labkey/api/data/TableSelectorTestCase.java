@@ -19,6 +19,7 @@ import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.log4j.Level;
 import org.junit.Test;
 import org.labkey.api.collections.CsvSet;
+import org.labkey.api.data.Selector.ForEachBlock;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
@@ -38,6 +39,8 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
 * User: adam
@@ -132,9 +135,7 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
         assertEquals(count, selector.getCollection(User.class).size());
 
         final MutableInt forEachCount = new MutableInt(0);
-        selector.forEach(user -> {
-            forEachCount.increment();
-        }, User.class);
+        selector.forEach(user -> forEachCount.increment(), User.class);
         assertEquals(count, forEachCount.intValue());
 
         final MutableInt forEachMapCount = new MutableInt(0);
@@ -148,6 +149,38 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
             forEachBatchCount.add(batch.size());
         }, User.class, 3);
         assertEquals(count, forEachBatchCount.intValue());
+
+        assertEquals(count, selector.stream(User.class).count());
+
+        try (Stream<User> stream = selector.uncachedStream(User.class))
+        {
+            assertEquals(count, stream.count());
+        }
+
+        assertEquals(count, selector.mapStream().count());
+
+        // Auto-closing is allowed (but not required for a Stream over cached results)
+        try (Stream<Map<String, Object>> mapStream = selector.mapStream())
+        {
+            assertEquals(count, mapStream.count());
+        }
+
+        try (Stream<Map<String, Object>> uncachedMapStream = selector.uncachedMapStream())
+        {
+            assertEquals(count, uncachedMapStream.count());
+        }
+
+        List<String> emails = selector.stream(User.class)
+            .map(User::getEmail)
+            .collect(Collectors.toList());
+        assertEquals(count, emails.size());
+
+        // findFirst() should work and shouldn't cause any problems (e.g., shouldn't log a not closed exception)
+        assertTrue(selector.stream(User.class).findFirst().isPresent());
+
+        // Get a stream and do nothing... not useful, but should be legal
+        @SuppressWarnings("unused")
+        Stream<User> unusedStream = selector.stream(User.class);
 
         // The following methods should succeed with stable ordered column lists but fail with unstable ordered column lists
 
@@ -244,6 +277,27 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
         {
             assertFalse("Expected getResults() to succeed with stable column ordering", stable);
         }
+
+        try
+        {
+            Stream<ResultSet> stream = selector.resultSetStream();
+            assertEquals(count, stream.count());
+            assertTrue("Expected resultSetStream() to fail with unstable column ordering", stable);
+        }
+        catch (IllegalStateException e)
+        {
+            assertFalse("Expected resultSetStream() to succeed with stable column ordering", stable);
+        }
+
+        try (Stream<ResultSet> stream = selector.uncachedResultSetStream())
+        {
+            assertEquals(count, stream.count());
+            assertTrue("Expected uncachedResultSetStream() to fail with unstable column ordering", stable);
+        }
+        catch (IllegalStateException e)
+        {
+            assertFalse("Expected uncachedResultSetStream() to succeed with stable column ordering", stable);
+        }
     }
 
     private <K> void testTableSelector(TableInfo table, Class<K> clazz) throws SQLException
@@ -281,7 +335,7 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
             int offset = 2;
 
             MutableInt testCount = new MutableInt(0);
-            selector.forEach(new Selector.ForEachBlock<K>()
+            selector.forEach(new ForEachBlock<K>()
             {
                 @Override
                 public void exec(K object) throws StopIteratingException

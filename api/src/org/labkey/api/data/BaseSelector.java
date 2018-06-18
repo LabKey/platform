@@ -20,20 +20,25 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.RowMap;
+import org.labkey.api.data.Table.Getter;
 
 import java.lang.reflect.Array;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * A partial, base implementation of {@link org.labkey.api.data.Selector}. This class manipulates result sets but doesn't
@@ -45,13 +50,15 @@ import java.util.function.BiFunction;
 
 public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCommand<SELECTOR> implements Selector
 {
-    protected BaseSelector(@NotNull DbScope scope, @Nullable Connection conn)
+    BaseSelector(@NotNull DbScope scope, @Nullable Connection conn)
     {
         super(scope, conn);
     }
 
     // Used by standard enumerating methods (forEach(), getArrayList()) and their callers (getArray(), getCollection(), getObject())
     abstract protected ResultSetFactory getStandardResultSetFactory();
+
+    abstract protected ResultSetFactory getStandardResultSetFactory(boolean closeResultSet);
 
     // No implementation of getResultSet(), getRowCount(), or exists() here since implementations will differ widely.
 
@@ -98,11 +105,11 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
 
     protected @NotNull <E> ArrayList<E> getArrayList(final Class<E> clazz, final ResultSetFactory factory)
     {
-        return handleResultSet(factory, new ArrayListResultSetHandler<>(clazz));
+        return factory.handleResultSet(new ArrayListResultSetHandler<>(clazz));
     }
 
     // Simple object case: Number, String, Date, etc.
-    protected @NotNull <E> ArrayList<E> createPrimitiveArrayList(ResultSet rs, @NotNull Table.Getter getter) throws SQLException
+    protected @NotNull <E> ArrayList<E> createPrimitiveArrayList(ResultSet rs, @NotNull Getter getter) throws SQLException
     {
         ArrayList<E> list = new ArrayList<>();
 
@@ -117,7 +124,7 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
     {
         private final Class<E> _clazz;
 
-        public ArrayListResultSetHandler(Class<E> clazz)
+        ArrayListResultSetHandler(Class<E> clazz)
         {
             _clazz = clazz;
         }
@@ -126,7 +133,7 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
         public ArrayList<E> handle(ResultSet rs, Connection conn) throws SQLException
         {
             final ArrayList<E> list;
-            final Table.Getter getter = Table.Getter.forClass(_clazz);
+            final Getter getter = Getter.forClass(_clazz);
 
             // If we have a Getter, then use it (simple object case: Number, String, Date, etc.)
             if (null != getter)
@@ -162,9 +169,165 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
         return getObject(clazz, getStandardResultSetFactory());
     }
 
+    @Override
+    public <T> Stream<T> stream(Class<T> clazz)
+    {
+        return getCollection(clazz).stream();  // TODO: Use uncachedStream below?
+    }
+
+    @Override
+    public <T> Stream<T> uncachedStream(Class<T> clazz)
+    {
+        return stream(rs -> {
+            final Getter getter = Getter.forClass(clazz);
+
+            // This is a simple object (Number, String, Date, etc.)
+            if (null != getter)
+            {
+                Iterator<ResultSet> iter = new SimpleResultSetIterator(rs);
+
+                return new Iterator<T>()
+                {
+                    @Override
+                    public boolean hasNext()
+                    {
+                        return iter.hasNext();
+                    }
+
+                    @Override
+                    public T next()
+                    {
+                        try
+                        {
+                            //noinspection unchecked
+                            return (T)getter.getObject(rs);
+                        }
+                        catch (SQLException e)
+                        {
+                            throw new RuntimeSQLException(e);
+                        }
+                    }
+                };
+            }
+            else
+            {
+                Iterator<Map<String, Object>> iter = new ResultSetIterator(rs);
+                ObjectFactory<T> factory = getObjectFactory(clazz);
+
+                return new Iterator<T>()
+                {
+                    @Override
+                    public boolean hasNext()
+                    {
+                        return iter.hasNext();
+                    }
+
+                    @Override
+                    public T next()
+                    {
+                        return factory.fromMap(iter.next());
+                    }
+                };
+            }
+        }, false);
+    }
+
+    @Override
+    public Stream<Map<String, Object>> mapStream()
+    {
+        return mapStream(true);
+    }
+
+    @Override
+    public Stream<Map<String, Object>> uncachedMapStream()
+    {
+        return mapStream(false);
+    }
+
+    private Stream<Map<String, Object>> mapStream(boolean cached)
+    {
+        return stream(ResultSetIterator::new, cached);
+    }
+
+    @Override
+    public Stream<ResultSet> resultSetStream()
+    {
+        return resultSetStream(true);
+    }
+
+    @Override
+    public Stream<ResultSet> uncachedResultSetStream()
+    {
+        return resultSetStream(false);
+    }
+
+    private Stream<ResultSet> resultSetStream(boolean cached)
+    {
+        return stream(SimpleResultSetIterator::new, cached);
+    }
+
+    private class SimpleResultSetIterator implements Iterator<ResultSet>
+    {
+        private final ResultSet _rs;
+
+        private SimpleResultSetIterator(ResultSet rs)
+        {
+            _rs = rs;
+        }
+
+        @Override
+        public boolean hasNext()
+        {
+            try
+            {
+                return !_rs.isLast();
+            }
+            catch (SQLException e)
+            {
+                throw getExceptionFramework().translate(getScope(), "Determining if we're at the end of a result set", e);
+            }
+        }
+
+        @Override
+        public ResultSet next()
+        {
+            try
+            {
+                _rs.next();
+                return _rs;
+            }
+            catch (SQLException e)
+            {
+                throw getExceptionFramework().translate(getScope(), "Iterating the result set", e);
+            }
+        }
+    }
+
+    private <T> Stream<T> stream(Function<ResultSet, Iterator<T>> function, boolean cached)
+    {
+        return getStandardResultSetFactory(cached).handleResultSet((incoming, conn) -> {
+            // For convenience, we don't require closing Streams over cached result sets, so set the CachedResultSet to not validate.
+            ResultSet rs = wrapResultSet(incoming, conn, cached, !cached);
+            Iterable<T> iterable = () -> function.apply(rs);
+            return StreamSupport.stream(iterable.spliterator(), false)
+                .onClose(() -> {
+                    try
+                    {
+                        rs.close();
+                    }
+                    catch (SQLException e)
+                    {
+                        throw getExceptionFramework().translate(getScope(), "Attempting to close() ResultSet and Connection", e);
+                    }
+                });
+        });
+    }
+
+    protected abstract TableResultSet wrapResultSet(ResultSet rs, Connection conn, boolean cache, boolean requireClose) throws SQLException;
+
     protected <T> T getObject(final Class<T> clazz, ResultSetFactory factory)
     {
-        List<T> list = handleResultSet(factory, new ArrayListResultSetHandler<T>(clazz) {
+        List<T> list = factory.handleResultSet(new ArrayListResultSetHandler<T>(clazz) {
             @Override
             public ArrayList<T> handle(ResultSet rs, Connection conn) throws SQLException
             {
@@ -200,7 +363,7 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
 
     protected void forEach(final ForEachBlock<ResultSet> block, ResultSetFactory factory)
     {
-        handleResultSet(factory, ((rs, conn) -> {
+        factory.handleResultSet(((rs, conn) -> {
             try
             {
                 while (rs.next())
@@ -222,7 +385,7 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
 
     private void forEachMap(final ForEachBlock<Map<String, Object>> block, ResultSetFactory factory)
     {
-        handleResultSet(factory, (rs, conn) -> {
+        factory.handleResultSet((rs, conn) -> {
             ResultSetIterator iter = new ResultSetIterator(rs);
 
             try
@@ -243,20 +406,58 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
         T handle(ResultSet rs, Connection conn) throws SQLException;
     }
 
-    protected <T> T handleResultSet(ResultSetFactory factory, ResultSetHandler<T> handler)
-    {
-        return factory.handleResultSet(handler);
-    }
-
     @Override
     public <T> void forEach(final ForEachBlock<T> block, Class<T> clazz)
     {
         forEach(block, clazz, getStandardResultSetFactory());
     }
 
+    public <T> void forEach2(final ForEachBlock<T> block, Class<T> clazz)
+    {
+        forEach2(() -> uncachedStream(clazz), block, getStandardResultSetFactory());
+    }
+
+    // Prototype general purpose forEach() built on an uncached stream (not used)
+    private <T> void forEach2(Supplier<Stream<T>> streamFactory, ForEachBlock<T> block, ResultSetFactory resultSetFactory)
+    {
+        try (Stream<T> stream = streamFactory.get())
+        {
+            stream.forEach(t-> {
+                try
+                {
+                    block.exec(t);
+                }
+                catch (SQLException | StopIteratingException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            });
+        }
+        catch (RuntimeException e)
+        {
+            try
+            {
+                throw e.getCause();
+            }
+            catch (SQLException se)
+            {
+                resultSetFactory.handleSqlException(se, null);
+            }
+            catch (StopIteratingException ignore)
+            {
+                // Mission accomplished... iterating is stopped
+            }
+            catch (Throwable throwable)
+            {
+                // Shouldn't happen... just throw the exception
+                throw e;
+            }
+        }
+    }
+
     private <T> void forEach(final ForEachBlock<T> block, Class<T> clazz, ResultSetFactory resultSetFactory)
     {
-        final Table.Getter getter = Table.Getter.forClass(clazz);
+        final Getter getter = Getter.forClass(clazz);
 
         // This is a simple object (Number, String, Date, etc.)
         if (null != getter)
@@ -344,7 +545,7 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
         }
     }
 
-    protected <T> ObjectFactory<T> getObjectFactory(Class<T> clazz)
+    private <T> ObjectFactory<T> getObjectFactory(Class<T> clazz)
     {
         ObjectFactory<T> factory = ObjectFactory.Registry.getFactory(clazz);
 
@@ -358,7 +559,7 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
     private <K, V> void fillValues(BiFunction<K, V, ?> fn)
     {
         // Using a ResultSetIterator ensures that standard type conversion happens (vs. ResultSet enumeration and rs.getObject())
-        handleResultSet(getStandardResultSetFactory(), (rs, conn) -> {
+        getStandardResultSetFactory().handleResultSet((rs, conn) -> {
             if (rs.getMetaData().getColumnCount() < 2)
                 throw new IllegalStateException("Must select at least two columns to use fillValueMap() or getValueMap()");
 
