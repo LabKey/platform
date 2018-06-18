@@ -447,7 +447,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             Container c = ContainerManager.getForId(r.getContainerId());
 
             if (null == c)
+            {
+                _log.debug("skipping item " + r.getDocumentId() + " because container is not found: " + r.getContainerId());
                 return false;
+            }
 
             try
             {
