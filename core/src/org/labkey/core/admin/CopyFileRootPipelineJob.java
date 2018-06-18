@@ -1,9 +1,11 @@
 package org.labkey.core.admin;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.LocalDirectory;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
@@ -19,17 +21,17 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class CopyFileRootPipelineJob extends PipelineJob
 {
-    private final String _sourceDir;
-    private final String _destDir;
+    private final List<Pair<Container, String>> _sourceInfos;
     private final MigrateFilesOption _migrateFilesOption;
-    CopyFileRootPipelineJob(ViewBackgroundInfo info, PipeRoot pipeRoot, Path sourceDir, Path destDir, MigrateFilesOption migrateFilesOption)
+
+    CopyFileRootPipelineJob(Container container, User user, List<Pair<Container, String>> sourceInfos, PipeRoot pipeRoot, MigrateFilesOption migrateFilesOption)
     {
-        super(null, info, pipeRoot);
-        _sourceDir = FileUtil.pathToString(sourceDir);
-        _destDir = FileUtil.pathToString(destDir);
+        super(null, new ViewBackgroundInfo(container, user, null), pipeRoot);
+        _sourceInfos = sourceInfos;
         _migrateFilesOption = migrateFilesOption;
 
 
@@ -57,32 +59,83 @@ public class CopyFileRootPipelineJob extends PipelineJob
     @Override
     public void run()
     {
+        info(getDescription() + " started");
+        long startTime = System.currentTimeMillis();
+        setStatus(TaskStatus.running);
+        TaskStatus status = TaskStatus.complete;
+        info("Migration option: " + _migrateFilesOption.description());
+
+        String foldersMessage = "Containers:\n\t" + _sourceInfos.stream().map(Pair::getKey).map(Container::getPath).collect(Collectors.joining(",\n\t"));
+        info(foldersMessage);
+
         try
         {
-            info(getDescription() + " started");
-            long startTime = System.currentTimeMillis();
-            setStatus(TaskStatus.running);
-            TaskStatus finalStatus = TaskStatus.complete;
-            info("Migration option: " + _migrateFilesOption.description());
-            info("Source: " + _sourceDir);
-            info("Destination: " + _destDir);
-
-            Path sourceDir = FileUtil.stringToPath(getContainer(), _sourceDir);
-            Path destDir = FileUtil.stringToPath(getContainer(), _destDir);
-            if (null == sourceDir || null == destDir)
+            boolean sourceIsLocalFileSystem = true;
+            FileContentService fileContentService = FileContentService.get();
+            if (null != fileContentService)
             {
-                error("Source or destination is null");
-                finalStatus = TaskStatus.error;
+                for (Pair<Container, String> sourceInfo : _sourceInfos)
+                {
+                    Container container = sourceInfo.first;
+                    Path destFileRootDir = fileContentService.getFileRootPath(container, FileContentService.ContentType.files);
+                    if (null != destFileRootDir)
+                    {
+                        Path sourceDir = FileUtil.stringToPath(sourceInfo.first, sourceInfo.second);
+                        sourceIsLocalFileSystem = sourceIsLocalFileSystem && !FileUtil.hasCloudScheme(sourceDir);
+                        status = CopyOneFolder(container, sourceDir, destFileRootDir, startTime);
+                        if (TaskStatus.error.equals(status))
+                            break;
+                    }
+                }
             }
-            else if (!Files.exists(sourceDir) || !Files.isDirectory(sourceDir))     // Source must exist
+            else
+            {
+                error("FileContentService not found");
+                status = TaskStatus.error;
+            }
+
+            if (MigrateFilesOption.move.equals(_migrateFilesOption) && sourceIsLocalFileSystem && !TaskStatus.error.equals(status))
+            {
+                //  TODO: Clean up LabKey created directories -- do this only if source was "default based on...." and we need to do it even if "Don't copy" option was selected and there were no files.
+            }
+
+            long elapsed = System.currentTimeMillis() - startTime;
+            info("Elapsed time " + elapsed / 1000 + " seconds");
+            info("Job complete");
+            setStatus(status);
+        }
+        finally
+        {
+            finallyCleanUpLocalDirectory();
+        }
+    }
+
+    private TaskStatus CopyOneFolder(Container container, Path sourceDir, Path destDir, long startTime)
+    {
+        TaskStatus status = TaskStatus.complete;
+
+        if (null == sourceDir || null == destDir)
+        {
+            error("Source or destination is null");
+            status = TaskStatus.error;
+        }
+        else
+        {
+            String sourceStr = FileUtil.pathToString(sourceDir);
+            String destStr = FileUtil.pathToString(destDir);
+            info("Container: " + container.getPath());
+            info("Source: " + (null != sourceStr ? sourceStr : "null"));
+            info("Destination: " + (null != destStr ? destStr : "null"));
+
+            if (!Files.exists(sourceDir) || !Files.isDirectory(sourceDir))     // Source must exist
             {
                 error("Source not directory: " + FileUtil.pathToString(sourceDir));
-                finalStatus = TaskStatus.error;
+                status = TaskStatus.error;
             }
             else if (Files.exists(destDir) && !Files.isDirectory(destDir))          // Dest doesn't have to exist
             {
                 error("Destination not directory: " + FileUtil.pathToString(destDir));
-                finalStatus = TaskStatus.error;
+                status = TaskStatus.error;
             }
             else
             {
@@ -116,23 +169,16 @@ public class CopyFileRootPipelineJob extends PipelineJob
                         deleteFiles(sourceDir);
                         info("Done deleting source directory");
                     }
+                    info("");
                 }
                 catch (UncheckedIOException e)
                 {
                     // Specific error should already have been logged
-                    finalStatus = TaskStatus.error;
+                    status = TaskStatus.error;
                 }
             }
-
-            long elapsed = System.currentTimeMillis() - startTime;
-            info("Elapsed time " + elapsed / 1000 + " seconds");
-            info("Job complete");
-            setStatus(finalStatus);
         }
-        finally
-        {
-            finallyCleanUpLocalDirectory();
-        }
+        return status;
     }
 
     private void getStats(Path dirPath, final Pair<Integer, Long> stats)

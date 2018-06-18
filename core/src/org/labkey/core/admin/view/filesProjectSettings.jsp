@@ -76,16 +76,14 @@
     boolean isFolderSetup = null != folderSetup && "true".equalsIgnoreCase(folderSetup);
     String cancelButtonText = isFolderSetup ? "Next" : "Cancel";
     String cancelButtonUrl = isFolderSetup ? getActionURL().getReturnURL().toString() : getContainer().getStartURL(getUser()).toString();
-    boolean migrating = null != bean.getConfirmMessage() && null != bean.getMigrateFilesOption() &&
-            !MigrateFilesOption.leave.name().equals(bean.getMigrateFilesOption());
     ActionURL redirectToPipeline = urlProvider(PipelineUrls.class).urlBegin(getContainer());
 %>
 
 <%  if (bean.getConfirmMessage() != null) { %>
         <p class="labkey-message">
             <%= h(bean.getConfirmMessage()) %>
-            <% if (null != bean.getMigrateFilesOption() && !MigrateFilesOption.leave.name().equals(bean.getMigrateFilesOption())) { %>
-                <a id="redirectToPipeline" href="<%=h(redirectToPipeline)%>">Redirecting to pipeline view in 5 seconds</a>
+            <% if (null != bean.getMigrateFilesOption() && !MigrateFilesOption.leave.name().equals(bean.getMigrateFilesOption()) && !FileRootProp.disable.name().equals(bean.getFileRootOption())) { %>
+                <a id="redirectToPipeline" href="<%=h(redirectToPipeline)%>">View Copy Files Pipeline Job</a>
             <% } %>
         </p>
 <%  } %>
@@ -275,14 +273,6 @@
         }
     }
 
-    function redirectPipeline() {
-        setTimeout(function(){
-            window.location = "<%=h(redirectToPipeline)%>";
-        }, 5000)
-
-    }
     updateSelection(false);
-    if (<%=migrating%>)
-        redirectPipeline();
 </script>
 

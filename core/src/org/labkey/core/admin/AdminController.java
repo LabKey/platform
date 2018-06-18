@@ -5319,10 +5319,10 @@ public class AdminController extends SpringActionController
             // If we need to copy/move files based on the FileRoot change, we need to check children that use the default and move them, too.
             // And we need to capture the source roots for each of those, because changing this parent file root changes the child source roots.
             ProjectSettingsForm.MigrateFilesOption migrateFilesOption = ProjectSettingsForm.MigrateFilesOption.valueOf(form.getMigrateFilesOption());
-            List<Pair<Container, Path>> sourceInfo =
+            List<Pair<Container, String>> sourceInfos =
                     (ProjectSettingsForm.MigrateFilesOption.leave.equals(migrateFilesOption) || form.isDisableFileSharing()) ?
                             Collections.emptyList() :
-                            getCopySourceInfo(service, ctx.getContainer(), form);
+                            getCopySourceInfo(service, ctx.getContainer());
 
             if (form.isDisableFileSharing())
             {
@@ -5393,7 +5393,7 @@ public class AdminController extends SpringActionController
                 {
                     try
                     {
-                        initiateCopyFilesPipelineJobs(service, ctx.getUser(), sourceInfo, migrateFilesOption);
+                        initiateCopyFilesPipelineJobs(ctx, sourceInfos, pipeRoot, migrateFilesOption);
                     }
                     catch (PipelineValidationException e)
                     {
@@ -5409,41 +5409,37 @@ public class AdminController extends SpringActionController
         form.setFileRootChanged(changed);
     }
 
-    private static List<Pair<Container, Path>> getCopySourceInfo(FileContentService service, Container container, FileManagementForm form)
+    private static List<Pair<Container, String>> getCopySourceInfo(FileContentService service, Container container)
     {
 
-        List<Pair<Container, Path>> sourceInfo = new ArrayList<>();
+        List<Pair<Container, String>> sourceInfo = new ArrayList<>();
         addCopySourceInfo(service, container, sourceInfo, true);
         return sourceInfo;
     }
 
-    private static void addCopySourceInfo(FileContentService service, Container container, List<Pair<Container, Path>> sourceInfo, boolean isRoot)
+    private static void addCopySourceInfo(FileContentService service, Container container, List<Pair<Container, String>> sourceInfo, boolean isRoot)
     {
         if (isRoot || service.isUseDefaultRoot(container))
         {
             Path sourceFileRootDir = service.getFileRootPath(container, FileContentService.ContentType.files);
             if (null != sourceFileRootDir)
-                sourceInfo.add(new Pair<>(container, sourceFileRootDir));
+            {
+                String pathStr = FileUtil.pathToString(sourceFileRootDir);
+                if (null != pathStr)
+                    sourceInfo.add(new Pair<>(container, pathStr));
+                else
+                    throw new RuntimeValidationException("Unexpected error converting path to string");
+            }
         }
         for (Container childContainer : container.getChildren())
             addCopySourceInfo(service, childContainer, sourceInfo, false);
     }
 
-    private static void initiateCopyFilesPipelineJobs(FileContentService service, User user, List<Pair<Container, Path>> sourceInfos,
+    private static void initiateCopyFilesPipelineJobs(ViewContext ctx, List<Pair<Container, String>> sourceInfos, PipeRoot pipeRoot,
                                                       ProjectSettingsForm.MigrateFilesOption migrateFilesOption) throws PipelineValidationException
     {
-        for (Pair<Container, Path> sourceInfo : sourceInfos)
-        {
-            Container container = sourceInfo.first;
-            Path destFileRootDir = service.getFileRootPath(container, FileContentService.ContentType.files);
-            if (null != destFileRootDir)
-            {
-                PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(container);  // get pipeRoot for each container
-                ViewBackgroundInfo info = new ViewBackgroundInfo(container, user, null);
-                CopyFileRootPipelineJob job = new CopyFileRootPipelineJob(info, pipeRoot, sourceInfo.second, destFileRootDir, migrateFilesOption);
-                PipelineService.get().queueJob(job);
-            }
-        }
+        CopyFileRootPipelineJob job = new CopyFileRootPipelineJob(ctx.getContainer(), ctx.getUser(), sourceInfos, pipeRoot, migrateFilesOption);
+        PipelineService.get().queueJob(job);
     }
 
     private static void throwIfUnauthorizedFileRootChange(ViewContext ctx, FileContentService service, FileManagementForm form)
