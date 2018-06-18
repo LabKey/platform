@@ -18,6 +18,7 @@ package org.labkey.api.webdav;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentDirectory;
+import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.files.FileContentService;
@@ -263,6 +264,8 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver
                         String rawFolderName = folderNamesMap.get(name);
                         try
                         {
+                            FileContentService fileContentService = FileContentService.get();
+                            boolean isCloudRoot = null != fileContentService && fileContentService.isCloudRoot(parentContainer);
                             for (java.nio.file.Path path : Files.list(fileRootFile).collect(Collectors.toList()))
                             {
                                 String pathFileName = FileUtil.getFileName(path);
@@ -270,9 +273,20 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver
                                     (!Files.isDirectory(path) && StringUtils.equals(name, pathFileName)))
                                 {
                                     if (!FileUtil.hasCloudScheme(path))
+                                    {
                                         return new FileSystemResource(this, name, path.toFile(), parentContainer.getPolicy());
-                                    //else
-                                    //    return ...;    // TODO cloud file
+                                    }
+                                    else if (isCloudRoot)
+                                    {
+                                        CloudStoreService cloudStoreService = CloudStoreService.get();
+                                        if (null != cloudStoreService)
+                                        {
+                                            WebdavResource resource = cloudStoreService.getWebFilesResource(this, parentContainer, name);
+                                            if (null != resource)
+                                                return resource;
+                                        }
+                                        break;
+                                    }
                                 }
                             }
                         }

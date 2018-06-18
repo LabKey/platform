@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
+import org.labkey.api.webdav.WebdavResource;
 
 import java.nio.file.Path;
 import java.util.Collection;
@@ -104,4 +105,9 @@ public interface CloudStoreService
     Path getPathForOtherContainer(@NotNull Container container, @NotNull Container otherContainer, @NotNull String url,
                                   @NotNull org.labkey.api.util.Path path);
 
+    @Nullable
+    default WebdavResource getWebFilesResource(@NotNull WebdavResource parent, @NotNull Container container, @NotNull String name)
+    {
+        return null;
+    }
 }
