@@ -53,6 +53,9 @@ import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.LookAndFeelResourceAttachmentParent;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.AuditTypeEvent;
+import org.labkey.api.audit.provider.ContainerAuditProvider;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.CacheStats;
 import org.labkey.api.cache.TrackingCache;
@@ -5405,8 +5408,19 @@ public class AdminController extends SpringActionController
                     LOG.warn("Change File Root: Can't copy or move files with no pipeline root");
                 }
             }
+
+            form.setFileRootChanged(changed);
+            if (changed && null != ctx.getUser())
+            {
+                setFormAndConfirmMessage(ctx.getContainer(), form, true, false, migrateFilesOption.name(), ctx.getRequest().getServerName());
+                String comment = (ctx.getContainer().isProject() ? "Project " : "Folder ") + ctx.getContainer().getPath() + ": " + form.getConfirmMessage();
+                AuditTypeEvent event = new AuditTypeEvent(ContainerAuditProvider.CONTAINER_AUDIT_EVENT, ctx.getContainer().getId(), comment);
+                if (ctx.getContainer().getProject() != null)
+                    event.setProjectId(ctx.getContainer().getProject().getId());
+
+                AuditLogService.get().addEvent(ctx.getUser(), event);
+            }
         }
-        form.setFileRootChanged(changed);
     }
 
     private static List<Pair<Container, String>> getCopySourceInfo(FileContentService service, Container container)
@@ -5501,53 +5515,59 @@ public class AdminController extends SpringActionController
 
     public static void setFormAndConfirmMessage(ViewContext ctx, FileManagementForm form) throws IllegalArgumentException
     {
-        FileContentService service = FileContentService.get();
-        String confirmMessage = null;
         String rootSetParam = ctx.getActionURL().getParameter("rootSet");
         boolean fileRootChanged = null != rootSetParam && !"false".equalsIgnoreCase(rootSetParam);
         String cloudChangedParam = ctx.getActionURL().getParameter("cloudChanged");
         boolean enabledCloudChanged = null != cloudChangedParam && "true".equalsIgnoreCase(cloudChangedParam);
+        setFormAndConfirmMessage(ctx.getContainer(), form, fileRootChanged, enabledCloudChanged, rootSetParam, ctx.getRequest().getServerName());
+    }
+
+    public static void setFormAndConfirmMessage(Container container, FileManagementForm form, boolean fileRootChanged, boolean enabledCloudChanged,
+                                                String migrateFilesOption, String serverName) throws IllegalArgumentException
+    {
+        FileContentService service = FileContentService.get();
+        String confirmMessage = null;
 
         String migrateFilesMessage = "";
         if (fileRootChanged && !form.isFolderSetup())
         {
-            if (ProjectSettingsForm.MigrateFilesOption.leave.name().equals(rootSetParam))
+            if (ProjectSettingsForm.MigrateFilesOption.leave.name().equals(migrateFilesOption))
                 migrateFilesMessage = ". Existing files not copied or moved.";
-            else if (ProjectSettingsForm.MigrateFilesOption.copy.name().equals(rootSetParam))
+            else if (ProjectSettingsForm.MigrateFilesOption.copy.name().equals(migrateFilesOption))
             {
                 migrateFilesMessage = ". Existing files copied.";
-                form.setMigrateFilesOption(rootSetParam);
+                form.setMigrateFilesOption(migrateFilesOption);
             }
-            else if (ProjectSettingsForm.MigrateFilesOption.move.name().equals(rootSetParam))
+            else if (ProjectSettingsForm.MigrateFilesOption.move.name().equals(migrateFilesOption))
             {
                 migrateFilesMessage = ". Existing files moved.";
-                form.setMigrateFilesOption(rootSetParam);
+                form.setMigrateFilesOption(migrateFilesOption);
             }
         }
 
         if (service != null)
         {
-            if (service.isFileRootDisabled(ctx.getContainer()))
+            if (service.isFileRootDisabled(container))
             {
                 form.setFileRootOption(ProjectSettingsForm.FileRootProp.disable.name());
                 if (fileRootChanged)
-                    confirmMessage = "File sharing has been disabled for this " + ctx.getContainer().getContainerNoun();
+                    confirmMessage = "File sharing has been disabled for this " + container.getContainerNoun();
             }
-            else if (service.isUseDefaultRoot(ctx.getContainer()))
+            else if (service.isUseDefaultRoot(container))
             {
                 form.setFileRootOption(ProjectSettingsForm.FileRootProp.siteDefault.name());
-                Path root = service.getFileRootPath(ctx.getContainer());
+                Path root = service.getFileRootPath(container);
                 if (root != null && Files.exists(root) && fileRootChanged)
-                    confirmMessage = "The file root is set to a default of: " + FileUtil.getAbsolutePath(ctx.getContainer(), root) + migrateFilesMessage;
+                    confirmMessage = "The file root is set to a default of: " + FileUtil.getAbsolutePath(container, root) + migrateFilesMessage;
             }
-            else if (!service.isCloudRoot(ctx.getContainer()))
+            else if (!service.isCloudRoot(container))
             {
-                Path root = service.getFileRootPath(ctx.getContainer());
+                Path root = service.getFileRootPath(container);
 
                 form.setFileRootOption(ProjectSettingsForm.FileRootProp.folderOverride.name());
                 if (root != null)
                 {
-                    String absolutePath = FileUtil.getAbsolutePath(ctx.getContainer(), root);
+                    String absolutePath = FileUtil.getAbsolutePath(container, root);
                     form.setFolderRootPath(absolutePath);
                     if (Files.exists(root))
                     {
@@ -5555,14 +5575,14 @@ public class AdminController extends SpringActionController
                             confirmMessage = "The file root is set to: " + absolutePath + migrateFilesMessage;
                     }
                     else
-                        throw new IllegalArgumentException("File root '" + root + "' does not appear to be a valid directory accessible to the server at " + ctx.getRequest().getServerName() + ".");
+                        throw new IllegalArgumentException("File root '" + root + "' does not appear to be a valid directory accessible to the server at " + serverName + ".");
                 }
             }
             else
             {
                 form.setFileRootOption(ProjectSettingsForm.FileRootProp.cloudRoot.name());
-                form.setCloudRootName(service.getCloudRootName(ctx.getContainer()));
-                Path root = service.getFileRootPath(ctx.getContainer());
+                form.setCloudRootName(service.getCloudRootName(container));
+                Path root = service.getFileRootPath(container);
                 if (root != null && fileRootChanged)
                 {
                     confirmMessage = "The file root is set to: " + FileUtil.getCloudRootPathString(form.getCloudRootName()) + migrateFilesMessage;
