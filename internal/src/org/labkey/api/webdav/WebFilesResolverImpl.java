@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class WebFilesResolverImpl extends AbstractWebdavResolver
 {
@@ -183,9 +184,9 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver
                 java.nio.file.Path fileRootFolder = getFileRootFile(container);
                 if (fileRootFolder != null)
                 {
-                    try
+                    try (Stream<java.nio.file.Path> list = Files.list(fileRootFolder))
                     {
-                        Files.list(fileRootFolder).forEach(path ->
+                        list.forEach(path ->
                         {
                             String rawFileName = FileUtil.getFileName(path);
                             if (Files.isDirectory(path))
@@ -266,26 +267,29 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver
                         {
                             FileContentService fileContentService = FileContentService.get();
                             boolean isCloudRoot = null != fileContentService && fileContentService.isCloudRoot(parentContainer);
-                            for (java.nio.file.Path path : Files.list(fileRootFile).collect(Collectors.toList()))
+                            try (Stream<java.nio.file.Path> list = Files.list(fileRootFile))
                             {
-                                String pathFileName = FileUtil.getFileName(path);
-                                if ((Files.isDirectory(path) && StringUtils.equals(rawFolderName, pathFileName)) ||
-                                    (!Files.isDirectory(path) && StringUtils.equals(name, pathFileName)))
+                                for (java.nio.file.Path path : list.collect(Collectors.toList()))
                                 {
-                                    if (!FileUtil.hasCloudScheme(path))
+                                    String pathFileName = FileUtil.getFileName(path);
+                                    if ((Files.isDirectory(path) && StringUtils.equals(rawFolderName, pathFileName)) ||
+                                        (!Files.isDirectory(path) && StringUtils.equals(name, pathFileName)))
                                     {
-                                        return new FileSystemResource(this, name, path.toFile(), parentContainer.getPolicy());
-                                    }
-                                    else if (isCloudRoot)
-                                    {
-                                        CloudStoreService cloudStoreService = CloudStoreService.get();
-                                        if (null != cloudStoreService)
+                                        if (!FileUtil.hasCloudScheme(path))
                                         {
-                                            WebdavResource resource = cloudStoreService.getWebFilesResource(this, parentContainer, name);
-                                            if (null != resource)
-                                                return resource;
+                                            return new FileSystemResource(this, name, path.toFile(), parentContainer.getPolicy());
                                         }
-                                        break;
+                                        else if (isCloudRoot)
+                                        {
+                                            CloudStoreService cloudStoreService = CloudStoreService.get();
+                                            if (null != cloudStoreService)
+                                            {
+                                                WebdavResource resource = cloudStoreService.getWebFilesResource(this, parentContainer, name);
+                                                if (null != resource)
+                                                    return resource;
+                                            }
+                                            break;
+                                        }
                                     }
                                 }
                             }

@@ -54,6 +54,7 @@ import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * User: jeckels
@@ -148,13 +149,16 @@ public class FileUtil
         // Will replace existing files
         if (!Files.exists(destPath))
             Files.createDirectory(destPath);
-        for (Path srcChild : Files.list(srcPath).collect(Collectors.toList()))
+        try (Stream<Path> list = Files.list(srcPath))
         {
-            Path destChild = destPath.resolve(getFileName(srcChild));
-            if (Files.isDirectory(srcChild))
-                copyDirectory(srcChild, destChild);
-            else
-                Files.copy(srcChild, destChild, StandardCopyOption.REPLACE_EXISTING);
+            for (Path srcChild : list.collect(Collectors.toList()))
+            {
+                Path destChild = destPath.resolve(getFileName(srcChild));
+                if (Files.isDirectory(srcChild))
+                    copyDirectory(srcChild, destChild);
+                else
+                    Files.copy(srcChild, destChild, StandardCopyOption.REPLACE_EXISTING);
+            }
         }
     }
 
