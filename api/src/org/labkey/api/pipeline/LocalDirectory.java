@@ -176,6 +176,7 @@ public class LocalDirectory implements Serializable
         {
             if (null != _logFile && Files.exists(_logFile.toPath()))
             {
+                // Copy file back to the cloud
                 remoteLogFilePath = _pipeRoot.resolveToNioPath(_logFile.getName());
                 if (null != remoteLogFilePath)
                 {

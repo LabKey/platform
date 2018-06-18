@@ -30,7 +30,6 @@ import org.labkey.api.cache.TransactionCache;
 import org.labkey.api.util.Filter;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.Set;
 
 /**
@@ -394,7 +393,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
             }
 
             @Override
-            protected ConnectionWrapper _getConnection(Logger log)
+            protected ConnectionWrapper getPooledConnection(Logger log)
             {
                 return new ConnectionWrapper(null, null, null, log)
                 {

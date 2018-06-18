@@ -541,7 +541,7 @@ public class DbScope
         // try/finally ensures that closeConnection() works even if setAutoCommit() throws 
         try
         {
-            conn = _getConnection(null);
+            conn = getPooledConnection(null);
             // we expect connections coming from the cache to be at a low transaction isolation level
             // if not then we probably didn't reset after a previous commit/abort
             //assert Connection.TRANSACTION_READ_COMMITTED >= conn.getTransactionIsolation();
@@ -631,16 +631,16 @@ public class DbScope
         Transaction t = getCurrentTransaction();
 
         if (null == t)
-            return _getConnection(log);
+            return getPooledConnection(log);
         else
             return t.getConnection();
     }
 
 
-    // Get a fresh connection directly from the pool... not part of the current transaction, etc.
+    /** Get a fresh connection directly from the pool... not part of the current transaction, etc. */
     public Connection getPooledConnection() throws SQLException
     {
-        return _getConnection(null);
+        return getPooledConnection(null);
     }
 
 
@@ -800,7 +800,7 @@ public class DbScope
 
     private static final int spidUnknown = -1;
 
-    protected ConnectionWrapper _getConnection(@Nullable Logger log) throws SQLException
+    protected ConnectionWrapper getPooledConnection(@Nullable Logger log) throws SQLException
     {
         Connection conn;
 
@@ -1620,8 +1620,10 @@ public class DbScope
         }
     }
 
-    // Represents a single database transaction. Holds onto the Connection, the temporary caches to use during that
-    // transaction, and the tasks to run immediately after commit to update the shared caches with removals.
+    /**
+     * Represents a single database transaction. Holds onto the Connection, the temporary caches to use during that
+     * transaction, and the tasks to run immediately after commit to update the shared caches with removals.
+     */
     protected class TransactionImpl implements Transaction
     {
         private final String id = GUID.makeGUID();
