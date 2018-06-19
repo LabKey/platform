@@ -10,6 +10,7 @@
 <%@ page import="org.labkey.pipeline.PipelineController" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.stream.Collectors" %>
+<%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -19,10 +20,10 @@
         dependencies.add("internal/jQuery");
     }
 %>
-
 <%
     HttpView<PipelineController.PipelineTriggerForm> me = (HttpView<PipelineController.PipelineTriggerForm>) HttpView.currentView();
     PipelineController.PipelineTriggerForm bean = me.getModelBean();
+    String docLink = new HelpTopic("fileWatcher").getHelpTopicHref();
 
     Map<String, FileAnalysisTaskPipeline> triggerConfigTasks = PipelineJobService.get().getTaskPipelines(getContainer())
             .stream()
@@ -44,7 +45,7 @@
     <div class="alert alert-info">
         <h3>There are no pipeline trigger types available on this server.</h3>
         <hr>
-        <p>Premium edition subscribers have access to powerful <a class="alert-link" href="https://www.labkey.org/Documentation/wiki-page.view?name=fileWatcher">file watcher</a>
+        <p>Premium edition subscribers have access to powerful <a class="alert-link" href="<%=h(docLink)%>">file watcher</a>
             triggers that can automatically initiate pipeline tasks.</p>
         <p>In addition to this feature, premium editions of LabKey Server provide professional support and advanced functionality to help teams maximize the value of the platform.</p>
         <br>
@@ -63,7 +64,7 @@
                 <a href="#details" class="list-group-item">Details</a>
                 <a href="#configuration" class="list-group-item">Configuration</a>
             </div>
-            <a class="list-group-item" style="margin-top: 2em" target="_blank" href="https://www.labkey.org/Documentation/wiki-page.view?name=fileWatcher">
+            <a class="list-group-item" style="margin-top: 2em" target="_blank" href="<%=h(docLink)%>">
                 Documentation &nbsp; &nbsp;<i class="fa fa-external-link" aria-hidden="true"></i>
             </a>
         </div>

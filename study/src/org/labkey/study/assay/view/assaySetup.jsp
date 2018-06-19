@@ -20,14 +20,11 @@
 <%@ page import="org.labkey.api.pipeline.PipelineService" %>
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.study.permissions.DesignAssayPermission" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.assay.AssayManager" %>
-<%@ page import="org.labkey.study.controllers.assay.AssayController" %>
-<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
-<%@ page import="org.labkey.study.xml.impl.AssayDefinitionImpl" %>
-<%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -66,6 +63,6 @@
         Please ask an administrator for assistance.
     <% } %>
 <p class="labkey-indented">
-    Assay data cannot be uploaded until you configure a <a target="_blank" href="https://www.labkey.org/Documentation/wiki-page.view?name=pipelineSetup">pipeline root</a>
+    Assay data cannot be uploaded until you configure a <%=helpLink("pipelineSetup", "pipeline root")%>
     directory that will contain the files uploaded as part of assays.
 <% } %>

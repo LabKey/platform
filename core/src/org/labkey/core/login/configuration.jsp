@@ -16,6 +16,7 @@
  */
 %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
+<%@ page import="org.labkey.api.jsp.JspBase" %>
 <%@ page import="org.labkey.api.security.AuthenticationManager" %>
 <%@ page import="org.labkey.api.security.AuthenticationProvider" %>
 <%@ page import="org.labkey.api.security.AuthenticationProvider.PrimaryAuthenticationProvider" %>
@@ -45,7 +46,7 @@
 </style>
 
 <labkey:panel title="Installed primary authentication providers">
-    <% appendProviders(out, primary, urls, canEdit); %>
+    <% appendProviders(out, primary, urls, canEdit, this); %>
 </labkey:panel>
 
 <%
@@ -53,7 +54,7 @@
     {
 %>
         <labkey:panel title="Installed secondary authentication providers">
-            <% appendProviders(out, secondary, urls, canEdit); %>
+            <% appendProviders(out, secondary, urls, canEdit, this); %>
         </labkey:panel>
 <%
     }
@@ -176,7 +177,7 @@
 <%=button("Done").href(urlProvider(AdminUrls.class).getAdminConsoleURL())%>
 
 <%!
-    private static void appendProviders(JspWriter out, Collection<? extends AuthenticationProvider> providers, LoginUrls urls, Boolean canEdit) throws IOException
+    private static void appendProviders(JspWriter out, Collection<? extends AuthenticationProvider> providers, LoginUrls urls, Boolean canEdit, JspBase jspBase) throws IOException
     {
         out.write("<table class=\"labkey-data-region-legacy labkey-show-borders\">");
 
@@ -215,10 +216,9 @@
                 }
                 else if (AuthenticationManager.isAcceptOnlyFicamProviders() && !authProvider.isFicamApproved())
                 {
-
                       out.write("Not Available");
                       out.write(PageFlowUtil.helpPopup("Not Available",
-                              authProvider.getName() + " cannot be enabled because it is not FICAM approved. Please go to the <a target=\"_blank\" href=\"https://www.labkey.org/Documentation/wiki-page.view?name=complianceSettings#Accounts\">Compliance Settings</a> page to disable this control.",
+                              authProvider.getName() + " cannot be enabled because it is not FICAM approved. Please go to the Compliance Settings page to disable this control " + jspBase.helpLink("complianceSettings#3rd", "(more info)") + ".",
                               true, 500));
                 }
                 else
