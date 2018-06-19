@@ -310,7 +310,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                 return PipelineService.get().savePipelineSetup(getViewContext(), form, errors);
             else
             {
-                AdminController.setFileRootFromForm(getViewContext(), form);
+                AdminController.setFileRootFromForm(getViewContext(), form, errors);
             }
         }
 

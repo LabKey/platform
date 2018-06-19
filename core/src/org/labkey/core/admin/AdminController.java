@@ -172,6 +172,7 @@ import java.lang.management.MemoryPoolMXBean;
 import java.lang.management.MemoryUsage;
 import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -5276,7 +5277,7 @@ public class AdminController extends SpringActionController
         }
         else
         {
-            setFileRootFromForm(getViewContext(), form);
+            setFileRootFromForm(getViewContext(), form, errors);
             setEnabledCloudStores(getViewContext(), form, errors);
             return !errors.hasErrors();
         }
@@ -5312,7 +5313,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    public static void setFileRootFromForm(ViewContext ctx, FileManagementForm form)
+    public static void setFileRootFromForm(ViewContext ctx, FileManagementForm form, BindException errors)
     {
         boolean changed = false;
         boolean shouldCopyMove = false;
@@ -5372,13 +5373,22 @@ public class AdminController extends SpringActionController
                 String root = StringUtils.trimToNull(form.getFolderRootPath());
                 if (root != null)
                 {
-                    Path currentFileRootPath = service.getFileRootPath(ctx.getContainer());
-                    if (null == currentFileRootPath || !root.equalsIgnoreCase(currentFileRootPath.toAbsolutePath().toString()))
+                    URI uri = FileUtil.createUri(root);
+                    Path path = FileUtil.getPath(ctx.getContainer(), uri);
+                    if (null == path || !Files.exists(path))
                     {
-                        service.setIsUseDefaultRoot(ctx.getContainer(), false);
-                        service.setFileRootPath(ctx.getContainer(), root);
-                        changed = true;
-                        shouldCopyMove = true;
+                        errors.reject(ERROR_MSG, "File root '" + root + "' does not appear to be a valid directory accessible to the server at " + ctx.getRequest().getServerName() + ".");
+                    }
+                    else
+                    {
+                        Path currentFileRootPath = service.getFileRootPath(ctx.getContainer());
+                        if (null == currentFileRootPath || !root.equalsIgnoreCase(currentFileRootPath.toAbsolutePath().toString()))
+                        {
+                            service.setIsUseDefaultRoot(ctx.getContainer(), false);
+                            service.setFileRootPath(ctx.getContainer(), root);
+                            changed = true;
+                            shouldCopyMove = true;
+                        }
                     }
                 }
                 else
@@ -5388,37 +5398,40 @@ public class AdminController extends SpringActionController
                 }
             }
 
-            if (changed && shouldCopyMove && !ProjectSettingsForm.MigrateFilesOption.leave.equals(migrateFilesOption))
+            if (!errors.hasErrors())
             {
-                // Make sure we have pipeRoot before starting jobs, even though each subfolder needs to get its own
-                PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(ctx.getContainer());
-                if (null != pipeRoot)
+                if (changed && shouldCopyMove && !ProjectSettingsForm.MigrateFilesOption.leave.equals(migrateFilesOption))
                 {
-                    try
+                    // Make sure we have pipeRoot before starting jobs, even though each subfolder needs to get its own
+                    PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(ctx.getContainer());
+                    if (null != pipeRoot)
                     {
-                        initiateCopyFilesPipelineJobs(ctx, sourceInfos, pipeRoot, migrateFilesOption);
+                        try
+                        {
+                            initiateCopyFilesPipelineJobs(ctx, sourceInfos, pipeRoot, migrateFilesOption);
+                        }
+                        catch (PipelineValidationException e)
+                        {
+                            throw new RuntimeValidationException(e);
+                        }
                     }
-                    catch (PipelineValidationException e)
+                    else
                     {
-                        throw new RuntimeValidationException(e);
+                        LOG.warn("Change File Root: Can't copy or move files with no pipeline root");
                     }
                 }
-                else
+
+                form.setFileRootChanged(changed);
+                if (changed && null != ctx.getUser())
                 {
-                    LOG.warn("Change File Root: Can't copy or move files with no pipeline root");
+                    setFormAndConfirmMessage(ctx.getContainer(), form, true, false, migrateFilesOption.name());
+                    String comment = (ctx.getContainer().isProject() ? "Project " : "Folder ") + ctx.getContainer().getPath() + ": " + form.getConfirmMessage();
+                    AuditTypeEvent event = new AuditTypeEvent(ContainerAuditProvider.CONTAINER_AUDIT_EVENT, ctx.getContainer().getId(), comment);
+                    if (ctx.getContainer().getProject() != null)
+                        event.setProjectId(ctx.getContainer().getProject().getId());
+
+                    AuditLogService.get().addEvent(ctx.getUser(), event);
                 }
-            }
-
-            form.setFileRootChanged(changed);
-            if (changed && null != ctx.getUser())
-            {
-                setFormAndConfirmMessage(ctx.getContainer(), form, true, false, migrateFilesOption.name(), ctx.getRequest().getServerName());
-                String comment = (ctx.getContainer().isProject() ? "Project " : "Folder ") + ctx.getContainer().getPath() + ": " + form.getConfirmMessage();
-                AuditTypeEvent event = new AuditTypeEvent(ContainerAuditProvider.CONTAINER_AUDIT_EVENT, ctx.getContainer().getId(), comment);
-                if (ctx.getContainer().getProject() != null)
-                    event.setProjectId(ctx.getContainer().getProject().getId());
-
-                AuditLogService.get().addEvent(ctx.getUser(), event);
             }
         }
     }
@@ -5519,11 +5532,11 @@ public class AdminController extends SpringActionController
         boolean fileRootChanged = null != rootSetParam && !"false".equalsIgnoreCase(rootSetParam);
         String cloudChangedParam = ctx.getActionURL().getParameter("cloudChanged");
         boolean enabledCloudChanged = null != cloudChangedParam && "true".equalsIgnoreCase(cloudChangedParam);
-        setFormAndConfirmMessage(ctx.getContainer(), form, fileRootChanged, enabledCloudChanged, rootSetParam, ctx.getRequest().getServerName());
+        setFormAndConfirmMessage(ctx.getContainer(), form, fileRootChanged, enabledCloudChanged, rootSetParam);
     }
 
     public static void setFormAndConfirmMessage(Container container, FileManagementForm form, boolean fileRootChanged, boolean enabledCloudChanged,
-                                                String migrateFilesOption, String serverName) throws IllegalArgumentException
+                                                String migrateFilesOption) throws IllegalArgumentException
     {
         FileContentService service = FileContentService.get();
         String confirmMessage = null;
@@ -5574,8 +5587,6 @@ public class AdminController extends SpringActionController
                         if (fileRootChanged)
                             confirmMessage = "The file root is set to: " + absolutePath + migrateFilesMessage;
                     }
-                    else
-                        throw new IllegalArgumentException("File root '" + root + "' does not appear to be a valid directory accessible to the server at " + serverName + ".");
                 }
             }
             else
