@@ -33,8 +33,9 @@ import java.util.Map;
  */
 public class HelpTopic
 {
-    private static String TARGET_NAME = "labkeyHelp"; // LabKey help should always appear in the same tab/window
-    private static String HELP_VERSION = Formats.f1.format(Constants.getPreviousReleaseVersion());
+    private static final String TARGET_NAME = "labkeyHelp"; // LabKey help should always appear in the same tab/window
+    private static final String HELP_VERSION = Formats.f1.format(Constants.getPreviousReleaseVersion());
+    private static final String HELP_LINK_PREFIX = "https://www.labkey.org/Documentation/" + HELP_VERSION + "/wiki-page.view?name=";
 
     @JavaRuntimeVersion // Update this link whenever we require a new major Java version so we always point at the current docs
     private static final String JDK_JAVADOC_BASE_URL = "http://docs.oracle.com/javase/8/docs/api/";
@@ -54,9 +55,14 @@ public class HelpTopic
         return getHelpTopicHref();
     }
 
+    public static String getHelpLinkPrefix()
+    {
+        return HELP_LINK_PREFIX;
+    }
+
     public String getHelpTopicHref()
     {
-        return "https://www.labkey.org/Documentation/" + HELP_VERSION + "/wiki-page.view?name=" + _topic;
+        return HELP_LINK_PREFIX + _topic;
     }
 
     // Create a simple link (just an <a> tag with plain mixed case text, no graphics) that links to the help topic, displays

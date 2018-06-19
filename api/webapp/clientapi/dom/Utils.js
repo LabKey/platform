@@ -444,6 +444,32 @@ LABKEY.Utils = new function(impl, $) {
         }
     };
 
+    /**
+     * Returns a string containing an absolute URL to a specific labkey.org documentation page. Modeled after HelpTopic.java getHelpTopicHref().
+     * <li>topic (required) The documentation page name</li>
+     */
+    impl.getHelpTopicHref = function(topic)
+    {
+        return LABKEY.helpLinkPrefix + topic;
+    };
+
+    /**
+     * Returns a string containing a well-formed html anchor that opens a link to a specific labkey.org documentation
+     * page in a separate tab, using the standard target name. Modeled after HelpTopic.java getSimpleLinkHtml().
+     * <li>topic (required) The documentation page name</li>
+     * <li>displayText (required) The text to display inside the anchor</li>
+     */
+    impl.getSimpleLinkHtml = function(topic, displayText)
+    {
+        return '<a href="' + LABKEY.Utils.encodeHtml(LABKEY.Utils.getHelpTopicHref(topic)) + '" target="labkeyHelp">' + LABKEY.Utils.encodeHtml(displayText) + "</a>";
+        // This would work, but the styling is not ideal for inline links
+        // return LABKEY.Utils.textLink({
+        //     text: displayText,
+        //     href: LABKEY.Utils.getHelpTopicHref(topic),
+        //     target : 'labkeyHelp'
+        // });
+    };
+
     return impl;
 
 }(LABKEY.Utils || new function() { return {}; }, jQuery);
