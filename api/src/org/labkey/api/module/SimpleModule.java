@@ -26,7 +26,6 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.SqlScriptRunner.SqlScriptException;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -37,7 +36,6 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ConfigurationException;
-import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartFactory;
@@ -169,11 +167,9 @@ public class SimpleModule extends SpringModule
 
     @NotNull
     @Override
-    public Collection<String> getSummary(Container c)
+    public Collection<String> getSummary(Container c, User user)
     {
         Collection<String> summary = new LinkedList<>();
-
-        User user = HttpView.currentContext().getUser();
 
         Filter containerFilter = SimpleFilter.createContainerFilter(c);
         Filter folderFilter = new SimpleFilter(new FieldKey(null, "Folder"), c);

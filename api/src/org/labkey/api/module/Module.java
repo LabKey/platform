@@ -183,9 +183,10 @@ public interface Module extends Comparable<Module>
 
     /**
      * @param c container in which the items would be stored
+     * @param user
      * @return description of the objects that this module has stored in the container
      */
-    @NotNull Collection<String> getSummary(Container c);
+    Collection<String> getSummary(Container c, User user);
 
     /**
      * Returns a map of pageflow to controller class (for example, "wiki" -> WikiController) whose

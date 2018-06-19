@@ -394,9 +394,9 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
 
-    @Override
     @NotNull
-    public Collection<String> getSummary(Container c)
+    @Override
+    public Collection<String> getSummary(Container c, User user)
     {
         return Collections.emptyList();
     }
