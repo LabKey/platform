@@ -111,18 +111,6 @@
   </tbody>
 </table>
 
-<%-- HTML5 datalist: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/datalist --%>
-<datalist id="levelsList">
-  <option value="OFF">OFF
-  <option value="FATAL">FATAL
-  <option value="ERROR">ERROR
-  <option value="WARN">WARN
-  <option value="INFO">INFO
-  <option value="DEBUG">DEBUG
-  <option value="TRACE">TRACE
-  <option value="ALL">ALL
-</datalist>
-
 <script type="text/javascript">
 (function ()
 {
@@ -325,13 +313,18 @@
         {
             var initialValue = target.parentNode.dataset.level;
 
-            var input = document.createElement("input");
-            input.type = "text";
-            input.setAttribute("list", "levelsList");
-            input.size = 7;
-            input.value = initialValue;
-            input.addEventListener('blur', onLevelInputBlur, false);
-            input.style.fontSize = '11px';
+            var select = document.createElement("select");
+            addOption(select, 'OFF', initialValue);
+            addOption(select, 'FATAL', initialValue);
+            addOption(select, 'ERROR', initialValue);
+            addOption(select, 'WARN', initialValue);
+            addOption(select, 'INFO', initialValue);
+            addOption(select, 'DEBUG', initialValue);
+            addOption(select, 'TRACE', initialValue);
+            addOption(select, 'ALL', initialValue);
+
+            select.addEventListener('blur', onLevelInputBlur, false);
+            select.style.fontSize = '11px';
 
             // remove level classes
             target.classList.remove('level-inherited');
@@ -340,8 +333,18 @@
 
             // remove all content and add the <select>
             target.innerHTML = "";
-            target.appendChild(input);
+            target.appendChild(select);
         }
+    }
+
+    function addOption(select, text, initialValue)
+    {
+        var option = document.createElement("option");
+        option.innerText = text;
+        option.setAttribute('value', text);
+        if (text === initialValue)
+            option.setAttribute('selected', 'true');
+        select.append(option);
     }
 
     function onLevelInputBlur(evt)
