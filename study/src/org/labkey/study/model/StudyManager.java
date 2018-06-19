@@ -2876,7 +2876,7 @@ public class StudyManager
                 "WHERE Container=? AND DatasetId=?", study.getContainer(), ds.getDatasetId());
 
         // UNDONE: This is broken
-        // this._datasetHelper.delete(ds);
+        // _datasetHelper.delete(ds);
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute("DELETE FROM " + StudySchema.getInstance().getTableInfoDataset() + "\n" +
                 "WHERE Container=? AND DatasetId=?", study.getContainer(), ds.getDatasetId());
         _datasetHelper.clearCache(study.getContainer());

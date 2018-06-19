@@ -228,7 +228,7 @@ public class QueryWith
 
         public void setRelation(QueryRelation relation)
         {
-            this._relation = relation;
+            _relation = relation;
         }
 
         public void clearCTESet()

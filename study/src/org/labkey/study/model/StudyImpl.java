@@ -503,7 +503,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     public void setLsid(String lsid)
     {
         verifyMutability();
-        this._lsid = lsid;
+        _lsid = lsid;
     }
 
     public Integer getDefaultPipelineQCState()

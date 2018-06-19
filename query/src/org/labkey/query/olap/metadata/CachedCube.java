@@ -453,7 +453,7 @@ public class CachedCube extends MetadataElementBase implements Cube
             this.memberType = Type.REGULAR;
             childMembers = isLeaf ? null : new ArrayList<Member>();
             _properties = null;
-            this._parent = parent;
+            _parent = parent;
             if (null != parent)
                 parent.childMembers.add(this);
         }

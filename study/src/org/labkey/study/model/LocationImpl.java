@@ -111,7 +111,7 @@ public class LocationImpl extends AbstractStudyEntity<LocationImpl> implements L
     public void setEndpoint(Boolean endpoint)
     {
         verifyMutability();
-        this._endpoint = endpoint != null ? endpoint : Boolean.FALSE;
+        _endpoint = endpoint != null ? endpoint : Boolean.FALSE;
     }
 
     public Boolean isRepository()

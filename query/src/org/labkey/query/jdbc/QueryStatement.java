@@ -41,7 +41,7 @@ public class QueryStatement implements Statement
 
     QueryStatement(QueryConnection conn)
     {
-        this._conn = conn;
+        _conn = conn;
     }
 
     @Override

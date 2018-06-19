@@ -281,8 +281,8 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
         {
             _mean = data[0];
             _stdDev = Double.NaN;
-            this._min = data[0];
-            this._max = data[0];
+            _min = data[0];
+            _max = data[0];
             return;
         }
 
@@ -297,8 +297,8 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
                 max = d;
         }
         _mean /= n;
-        this._min = min;
-        this._max = max;
+        _min = min;
+        _max = max;
 
         // calculate the sum of squares
         double sum = 0;

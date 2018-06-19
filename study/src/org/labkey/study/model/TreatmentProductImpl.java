@@ -206,7 +206,7 @@ public class TreatmentProductImpl implements TreatmentProduct
 
     public void setProductDoseRoute(String productDoseRoute)
     {
-        this._productDoseRoute = productDoseRoute;
+        _productDoseRoute = productDoseRoute;
     }
 
     public String getProductDoseRoute()

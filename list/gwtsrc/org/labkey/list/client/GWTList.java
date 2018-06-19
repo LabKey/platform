@@ -106,7 +106,7 @@ public class GWTList implements IsSerializable
 //
 //    public void setTypeURI(String typeURI)
 //    {
-//        this._typeURI.set(typeURI);
+//        _typeURI.set(typeURI);
 //    }
 
     public String getDescription()

@@ -591,7 +591,7 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
     //        int translateColumn(final int index, Map<?, ?> map, boolean strict)
     //        {
     //            ColumnInfo existing = getColumnInfo(index);
-    //            Callable origCallable = this._outputColumns.get(index).getValue();
+    //            Callable origCallable = _outputColumns.get(index).getValue();
     //            RemapColumn remapColumn = new RemapColumn(origCallable, map, strict);
     //            return replaceOrAddColumn(index, existing, remapColumn);
     //        }
