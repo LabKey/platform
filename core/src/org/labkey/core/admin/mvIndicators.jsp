@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="java.util.Map.Entry" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -90,7 +91,7 @@
                         // Now write out what those settings are
                         out.write(": ");
                         boolean needComma = false;
-                        for (Map.Entry<String, String> mvEntry : MvUtil.getIndicatorsAndLabels(linkContainer).entrySet())
+                        for (Entry<String, String> mvEntry : MvUtil.getIndicatorsAndLabels(linkContainer).entrySet())
                         {
                             String indicator = mvEntry.getKey();
                             String label = mvEntry.getValue();
@@ -124,26 +125,18 @@
 
                         <%
                             Map<String, String> mvIndicatorsAndLabels = MvUtil.getIndicatorsAndLabels(definingContainer);
-                            for (Map.Entry<String, String> entry : mvIndicatorsAndLabels.entrySet())
+                            for (Entry<String, String> entry : mvIndicatorsAndLabels.entrySet())
                             {
                                 String indicator = entry.getKey();
                                 String label = entry.getValue();
                                 if (label == null)
                                     label = "";
-
                         %>
-
                         <tr id="rowId<%=++rowId%>">
-                            <td><img style="margin-right: 8px; cursor: pointer" src="<%=getContextPath()%>/_images/partdelete.gif"
-                                     alt="delete" onclick="removeRow(<%=rowId%>);"></td>
-                            <td><input name="mvIndicators" type="TEXT" size=3
-                                       id="mvIndicators<%=rowId%>" value="<%=h(indicator)%>">
-                            </td>
-                            <td><input name="mvLabels" type="TEXT" size=60
-                                       value="<%=h(label)%>">
-                            </td>
+                            <td><img style="margin-right: 8px; cursor: pointer" src="<%=getWebappURL("_images/partdelete.gif")%>" alt="delete" onclick="removeRow(<%=rowId%>);"></td>
+                            <td><input name="mvIndicators" type="TEXT" size=3 id="mvIndicators<%=rowId%>" value="<%=h(indicator)%>"></td>
+                            <td><input name="mvLabels" type="TEXT" size=60 value="<%=h(label)%>"></td>
                         </tr>
-
                         <%
                             }
                         %>
@@ -179,7 +172,7 @@
 
         var cellLeft = row.insertCell(0);
         var imgNode = document.createElement('img');
-        imgNode.src = '<%=getContextPath()%>/_images/partdelete.gif';
+        imgNode.src = '<%=getWebappURL("_images/partdelete.gif")%>';
         imgNode.setAttribute("onclick", 'removeRow(' + maxRowId + ');');
         imgNode.setAttribute("alt", "delete");
         imgNode.setAttribute("style", "margin-right: 8px; cursor: pointer");

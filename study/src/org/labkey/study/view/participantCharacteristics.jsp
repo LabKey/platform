@@ -111,8 +111,7 @@
             <a title="Click to expand/collapse"
                href="<%=new ActionURL(StudyController.ExpandStateNotifyAction.class, study.getContainer()).addParameter("datasetId", Integer.toString(datasetId)).addParameter("id", Integer.toString(bean.getDatasetId()))%>"
                onclick="return LABKEY.Utils.toggleLink(this, true);">
-                <img src="<%=getContextPath()%>/_images/<%= text(expanded ? "minus.gif" : "plus.gif") %>"
-                     alt="Click to expand/collapse">
+                <img src="<%=getWebappURL("_images/" + text(expanded ? "minus.gif" : "plus.gif"))%>" alt="Click to expand/collapse">
                 <%=h(dataset.getDisplayString())%>
             </a><%
             if (null != StringUtils.trimToNull(dataset.getDescription()))

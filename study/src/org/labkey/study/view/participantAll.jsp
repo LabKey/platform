@@ -39,6 +39,7 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.study.Dataset" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
@@ -54,6 +55,7 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.StudySchema" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ExpandStateNotifyAction" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
 <%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="org.labkey.study.model.QCState" %>
@@ -67,12 +69,12 @@
 <%@ page import="java.util.Date" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.HashSet" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.TreeMap" %>
 <%@ page import="java.util.TreeSet" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -334,10 +336,9 @@
 <tr class="labkey-header">
     <th nowrap align="left" class="labkey-expandable-row-header">
         <a title="Click to expand/collapse"
-           href="<%=new ActionURL(StudyController.ExpandStateNotifyAction.class, study.getContainer()).addParameter("datasetId", Integer.toString(datasetId)).addParameter("id", Integer.toString(bean.getDatasetId()))%>"
-           onclick="return toggleIfReady(this, true);">
-            <img src="<%=getContextPath()%>/_images/<%= text(expanded ? "minus.gif" : "plus.gif") %>"
-                 alt="Click to expand/collapse">
+            href="<%=new ActionURL(ExpandStateNotifyAction.class, study.getContainer()).addParameter("datasetId", Integer.toString(datasetId)).addParameter("id", Integer.toString(bean.getDatasetId()))%>"
+            onclick="return toggleIfReady(this, true);">
+            <img src="<%=getWebappURL("_images/" + (expanded ? "minus.gif" : "plus.gif"))%>" alt="Click to expand/collapse">
             <%=h(dataset.getDisplayString())%>
         </a><%
         if (null != StringUtils.trimToNull(dataset.getDescription()))
@@ -577,14 +578,14 @@
         List<ColumnInfo> cols = t.getColumns();
         // Use all of the columns in the default view of the dataset, which might include columns from the assay side if
         // the data was linked
-        Set<FieldKey> keys = new java.util.LinkedHashSet<>(t.getDefaultVisibleColumns());
+        Set<FieldKey> keys = new LinkedHashSet<>(t.getDefaultVisibleColumns());
         for (ColumnInfo c : cols)
             keys.add(c.getFieldKey());
         return QueryService.get().getColumns(t, keys);
     }
 
 
-    static CaseInsensitiveHashSet skipColumns = new CaseInsensitiveHashSet(
+    static final CaseInsensitiveHashSet skipColumns = new CaseInsensitiveHashSet(
             "lsid", "sourcelsid", "sequencenum", "qcstate", "participantid",
             "visitrowid", "dataset", "participantsequencenum", "created", "modified", "createdby", "modifiedby", "participantvisit",
             "container", "_key", "datasets", "folder");

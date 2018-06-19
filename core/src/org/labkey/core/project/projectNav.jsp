@@ -15,15 +15,15 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page import="java.util.HashSet" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     // Create Project URL
@@ -149,7 +149,7 @@
         {
 %>
 <div class="project-menu-buttons">
-    <span class="button-icon"><a href="<%=createProjectURL%>" title="New Project"><img src="<%=getContextPath()%>/_images/icon_projects_add.png" alt="New Project" /></a></span>
+    <span class="button-icon"><a href="<%=createProjectURL%>" title="New Project"><img src="<%=getWebappURL("_images/icon_projects_add.png")%>" alt="New Project" /></a></span>
 </div>
 <%
         }

@@ -50,7 +50,7 @@
 <style type="text/css">
 
     .bmenu {
-        background-image: url(<%=getContextPath() + "/_icons/exe.png"%>) !important;
+        background-image: url(<%=getWebappURL("_icons/exe.png")%>) !important;
     }
 
 </style>

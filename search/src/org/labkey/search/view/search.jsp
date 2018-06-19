@@ -131,7 +131,7 @@
                 }
             }
         }
-        catch (Exception x)
+        catch (Exception ignored)
         {
         }
 
@@ -260,9 +260,8 @@
         {
             parseException = html;
         }
-        catch (IOException e)
+        catch (IOException ignored)
         {
-
         }
         catch (SearchMisconfiguredException e)
         {
@@ -551,7 +550,7 @@
             %>
             <div class="labkey-search-result">
                 <h4>
-                    <img style="vertical-align: top;" src="<%=getContextPath()%>/_icons/folder.gif"/>
+                    <img style="vertical-align: top;" src="<%=getWebappURL("_icons/folder.gif")%>"/>
                     <a href="<%=h(hit.url)%>"><%=h(hit.title)%></a>
                 </h4>
                 <%

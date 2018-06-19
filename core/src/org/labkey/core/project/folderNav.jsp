@@ -36,6 +36,20 @@
     {
         dependencies.add("internal/jQuery");
     }
+
+    public _HtmlString getTrailSeparator()
+    {
+        return _hs("&nbsp;/&nbsp;");
+    }
+
+    public _HtmlString getTrailLink(Container c, User u)
+    {
+        if (c.hasPermission(u, ReadPermission.class))
+        {
+            return _hs("<a href=\"" + h(c.getStartURL(u)) +"\">" + h(c.getTitle()) + "</a>" + getTrailSeparator());
+        }
+        return _hs("<span>" + h(c.getTitle()) + "</span>" + getTrailSeparator());
+    }
 %>
 <%
     JspView<FolderNavigationForm> me = (JspView<FolderNavigationForm>) HttpView.currentView();
@@ -54,23 +68,8 @@
     createFolderURL.addParameter(ActionURL.Param.returnUrl, startURL.toString());
 
     ActionURL folderManagementURL = PageFlowUtil.urlProvider(AdminUrls.class).getManageFoldersURL(c);
+    if (size > 1) { // Only show the nav trail if subfolders exist
 %>
-<%!
-    public _HtmlString getTrailSeparator()
-    {
-        return _hs("&nbsp;/&nbsp;");
-    }
-
-    public _HtmlString getTrailLink(Container c, User u)
-    {
-        if (c.hasPermission(u, ReadPermission.class))
-        {
-            return _hs("<a href=\"" + h(c.getStartURL(u)) +"\">" + h(c.getTitle()) + "</a>" + getTrailSeparator());
-        }
-        return _hs("<span>" + h(c.getTitle()) + "</span>" + getTrailSeparator());
-    }
-%>
-<% if (size > 1) { // Only show the nav trail if subfolders exist %>
     <div class="folder-trail">
         <%
             if (size < 5)

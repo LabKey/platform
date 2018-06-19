@@ -126,7 +126,7 @@ else
         {
             ActionURL downloadURL = WikiController.getDownloadURL(getContainer(), wiki, a.getName());
 
-        %><a href="<%=h(downloadURL)%>"><img src="<%=getContextPath()%><%=h(a.getFileIcon())%>">&nbsp;<%=h(a.getName())%></a><br><%
+        %><a href="<%=h(downloadURL)%>"><img src="<%=getWebappURL(a.getFileIcon())%>">&nbsp;<%=h(a.getName())%></a><br><%
         }
     }
 }

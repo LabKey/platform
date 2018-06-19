@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -62,13 +63,17 @@ if (!bean.embedded && null != announcementModel.getDiscussionSrcURL())
 }
 
 if (!bean.print && null != discussionSrc)
-{ %>
-    <p></p><img src="<%=getContextPath()%>/_images/exclaim.gif">&nbsp;This is a <%=h(settings.getConversationName().toLowerCase())%> about another page. <%=textLink("view page", discussionSrc.getLocalURIString())%><%
+{
+    %><p></p><img src="<%=getWebappURL("_images/exclaim.gif")%>">&nbsp;This is a <%=h(settings.getConversationName().toLowerCase())%> about another page. <%=textLink("view page", discussionSrc.getLocalURIString())%><%
 }
 
 if (announcementModel.isSpam())
-{ %>
-    <p></p><img src="<%=getContextPath()%>/_images/exclaim.gif">&nbsp;This <%=h(settings.getConversationName().toLowerCase())%> is marked as spam.<%
+{
+    %><p></p><img src="<%=getWebappURL("_images/exclaim.gif")%>">&nbsp;This <%=h(settings.getConversationName().toLowerCase())%> is marked as spam.<%
+}
+else if (null == announcementModel.getApproved() && c.hasPermission(user, AdminPermission.class))
+{
+    %><p></p><img src="<%=getWebappURL("_images/exclaim.gif")%>">&nbsp;This <%=h(settings.getConversationName().toLowerCase())%> requires moderator review.<%
 }
 %>
 

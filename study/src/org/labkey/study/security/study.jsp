@@ -87,7 +87,7 @@ Any user with READ access to this folder may view some summary data.  However, a
         <th><input <%=h(warning)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.READ_ALL.getParamName())%>"<%=checked(GroupSecurityType.READ_ALL == gt)%>></th>
         <th><input <%=h(warning)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.PER_DATASET.getParamName())%>"<%=checked(GroupSecurityType.PER_DATASET == gt)%>></th>
         <th><input <%=h(clear)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.NONE.getParamName())%>"<%=checked(GroupSecurityType.NONE == gt)%>></th><%
-        %><td id="<%=h(inputName)%>$WARN" style="display:<%=h(!hasFolderRead && (hasReadAllPerm || hasReadSomePerm)?"inline":"none")%>;"><img src="<%=getContextPath()%>/_images/exclaim.gif" alt="group does not have folder read permissions" title="group does not have folder read permissions"></td><%
+        %><td id="<%=h(inputName)%>$WARN" style="display:<%=h(!hasFolderRead && (hasReadAllPerm || hasReadSomePerm)?"inline":"none")%>;"><img src="<%=getWebappURL("_images/exclaim.gif")%>" alt="group does not have folder read permissions" title="group does not have folder read permissions"></td><%
         %></tr><%
     }
     %></table>
