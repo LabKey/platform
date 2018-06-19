@@ -21,6 +21,8 @@
             testPageOffset: testPageOffset,
             testParameterizedQueries: testParameterizedQueries,
             testRemovableFilters: testRemovableFilters,
+            testMultiClausesFilter: testMultiClausesFilter,
+            testCaseInsensitiveFilterField: testCaseInsensitiveFilterField,
             testHidePagingCount: testHidePagingCount,
             testShowAllTotalRows: testShowAllTotalRows,
             testGetBaseFilters: testGetBaseFilters,
@@ -65,6 +67,10 @@
 
             var id = '#' + region.domId;
             return $(id + ' tr.labkey-row').size() + $(id + ' tr.labkey-alternate-row').size();
+        }
+
+        function getFilterMessageBoxCount() {
+            return $('div.lk-region-context-action').size();
         }
 
         function resetVariables() {
@@ -485,6 +491,71 @@
                             }
                             else {
                                 LABKEY.Utils.signalWebDriverTest("testRemovableFilters");
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function testMultiClausesFilter() {
+            new LABKEY.QueryWebPart({
+                title: 'Single filter text with multiple clauses',
+                schemaName: 'Samples',
+                queryName: 'sampleDataTest1',
+                renderTo: RENDERTO,
+                removeableFilters: [
+                    LABKEY.Filter.create('sort', 60, LABKEY.Filter.Types.GREATER_THAN),
+                    LABKEY.Filter.create('sort', 90, LABKEY.Filter.Types.LESS_THAN)
+                ],
+                failure: function() {
+                    alert('Failed test: Single filter text with multiple clauses.');
+                },
+                listeners: {
+                    render: function (qwp) {
+                        var filterCount = getFilterMessageBoxCount();
+                        if (filterCount === 1) {
+                            LABKEY.Utils.signalWebDriverTest("testMultiClausesFilter");
+                        }
+                        else {
+                            alert('Failed test: filter text with multiple clauses is not displayed as expected.');
+                        }
+                    }
+                }
+            });
+        }
+
+        function testCaseInsensitiveFilterField() {
+            var initialLoad = true;
+            new LABKEY.QueryWebPart({
+                title: 'Filter field name case insensitive',
+                schemaName: 'Samples',
+                queryName: 'sampleDataTest1',
+                renderTo: RENDERTO,
+                removeableFilters: [
+                    LABKEY.Filter.create('sORt', 60)
+                ],
+                failure: function() {
+                    alert('Failed test: Filter field name case insensitive.');
+                },
+                listeners: {
+                    render: function(qwp) {
+                        debugger;
+                        if (initialLoad) {
+                            initialLoad = false;
+                            var filterCount = getFilterMessageBoxCount();
+                            if (filterCount !== 1) {
+                                alert('Failed test: Filter field name case insensitive.');
+                            }
+                            $('div.lk-region-context-action i.fa-close')[0].click();
+                        }
+                        else {
+                            var filterCount = getFilterMessageBoxCount(qwp);
+                            if (filterCount !== 0) {
+                                alert('Failed test: Filter field name case insensitive.');
+                            }
+                            else {
+                                LABKEY.Utils.signalWebDriverTest("testCaseInsensitiveFilterField");
                             }
                         }
                     }
