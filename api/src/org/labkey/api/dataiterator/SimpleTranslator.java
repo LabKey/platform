@@ -1261,7 +1261,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     {
         super.debugLogInfo(sb);
 
-        this._outputColumns.stream()
+        _outputColumns.stream()
             .forEach(p ->
             {
                 sb.append("    " + p.first.getName() + " " + p.second.getClass().getSimpleName() + "\n");

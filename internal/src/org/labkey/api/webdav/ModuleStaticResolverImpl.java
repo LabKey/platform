@@ -374,8 +374,8 @@ public class ModuleStaticResolverImpl implements WebdavResolver
         StaticResource(WebdavResource parent, Path path, List<File> files, List<WebdavResource> addl)
         {
             super(path);
-            this._parent = parent;
-            this._files = files;
+            _parent = parent;
+            _files = files;
             _additional = addl;
         }
 

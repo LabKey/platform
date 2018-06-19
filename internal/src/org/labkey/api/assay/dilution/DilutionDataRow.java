@@ -138,7 +138,7 @@ public class DilutionDataRow
 
     public void setDilutionOrder(Integer dilutionOrder)
     {
-        this._dilutionOrder = dilutionOrder;
+        _dilutionOrder = dilutionOrder;
     }
 
     public Double getDilution()
@@ -148,7 +148,7 @@ public class DilutionDataRow
 
     public void setDilution(Double dilution)
     {
-        this._dilution = dilution;
+        _dilution = dilution;
     }
 
     public Double getMin()
@@ -158,7 +158,7 @@ public class DilutionDataRow
 
     public void setMin(Double min)
     {
-        this._min = min;
+        _min = min;
     }
 
     public Double getMax()
@@ -168,7 +168,7 @@ public class DilutionDataRow
 
     public void setMax(Double max)
     {
-        this._max = max;
+        _max = max;
     }
 
     public Double getMean()
@@ -178,7 +178,7 @@ public class DilutionDataRow
 
     public void setMean(Double mean)
     {
-        this._mean = mean;
+        _mean = mean;
     }
 
     public Double getStddev()
@@ -188,7 +188,7 @@ public class DilutionDataRow
 
     public void setStddev(Double stddev)
     {
-        this._stddev = stddev;
+        _stddev = stddev;
     }
 
     public Double getMinDilution()
@@ -198,7 +198,7 @@ public class DilutionDataRow
 
     public void setMinDilution(Double minDilution)
     {
-        this._minDilution = minDilution;
+        _minDilution = minDilution;
     }
 
     public Double getMaxDilution()
@@ -208,7 +208,7 @@ public class DilutionDataRow
 
     public void setMaxDilution(Double maxDilution)
     {
-        this._maxDilution = maxDilution;
+        _maxDilution = maxDilution;
     }
 
     public int getPlateNumber()
@@ -218,7 +218,7 @@ public class DilutionDataRow
 
     public void setPlateNumber(int plateNumber)
     {
-        this._plateNumber = plateNumber;
+        _plateNumber = plateNumber;
     }
 
     public String getContainer()

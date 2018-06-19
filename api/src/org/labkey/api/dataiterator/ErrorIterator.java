@@ -48,9 +48,9 @@ public class ErrorIterator extends AbstractDataIterator
     ErrorIterator(DataIterator di, DataIteratorContext context, boolean errorEvenIfEmpty, ValidationException x)
     {
         super(context);
-        this._it = di;
-        this._errorIfEmpty = errorEvenIfEmpty;
-        this._error = x;
+        _it = di;
+        _errorIfEmpty = errorEvenIfEmpty;
+        _error = x;
     }
 
     @Override

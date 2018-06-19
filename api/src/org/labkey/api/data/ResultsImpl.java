@@ -153,30 +153,6 @@ public class ResultsImpl implements Results, DataIterator
     }
 
 
-    // TODO: Remove... not used
-//    public ResultsImpl(ResultsImpl rs)
-//    {
-//        this._rs = rs._rs;
-//        this._fieldMap = rs._fieldMap;
-//        this._fieldIndexMap = rs._fieldIndexMap;
-//    }
-//
-//
-//    public ResultsImpl wrap(Results rs)
-//    {
-//        if (rs instanceof ResultsImpl)
-//        {
-//            return new ResultsImpl((ResultsImpl)rs);
-//        }
-//        else
-//        {
-//            return new ResultsImpl(rs.getResultSet(), rs.getFieldMap());
-//        }
-//    }
-//
-//
-
-
     @Override
     public ColumnInfo getColumn(int i)
     {

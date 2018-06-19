@@ -82,10 +82,10 @@ public class CopyConfig
 
     public CopyConfig(String sourceSchema, String source, String targetSchema, String target)
     {
-        this._sourceSchema = SchemaKey.decode(sourceSchema);
-        this._sourceQuery = source;
-        this._targetSchema = SchemaKey.decode(targetSchema);
-        this._targetQuery = target;
+        _sourceSchema = SchemaKey.decode(sourceSchema);
+        _sourceQuery = source;
+        _targetSchema = SchemaKey.decode(targetSchema);
+        _targetQuery = target;
     }
 
     /**
@@ -135,7 +135,7 @@ public class CopyConfig
 
     public void setSourceSchema(SchemaKey sourceSchema)
     {
-        this._sourceSchema = sourceSchema;
+        _sourceSchema = sourceSchema;
     }
 
     public String getSourceQuery()
@@ -145,7 +145,7 @@ public class CopyConfig
 
     public void setSourceQuery(String sourceQuery)
     {
-        this._sourceQuery = sourceQuery;
+        _sourceQuery = sourceQuery;
     }
 
     public String getSourceTimestampColumnName()
@@ -155,7 +155,7 @@ public class CopyConfig
 
     public void setSourceTimestampColumnName(String sourceTimestampColumnName)
     {
-        this._sourceTimestampColumnName = sourceTimestampColumnName;
+        _sourceTimestampColumnName = sourceTimestampColumnName;
     }
 
     public String getSourceRunColumnName()
@@ -195,7 +195,7 @@ public class CopyConfig
 
     public void setTargetSchema(SchemaKey targetSchema)
     {
-        this._targetSchema = targetSchema;
+        _targetSchema = targetSchema;
     }
 
     public String getTargetQuery()
@@ -205,7 +205,7 @@ public class CopyConfig
 
     public void setTargetQuery(String targetQuery)
     {
-        this._targetQuery = targetQuery;
+        _targetQuery = targetQuery;
     }
 
     public String getSourceContainerFilter()

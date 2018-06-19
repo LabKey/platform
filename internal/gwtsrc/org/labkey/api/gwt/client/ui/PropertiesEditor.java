@@ -337,12 +337,12 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
     public void setSchemaName(String schemaName)
     {
-        this._schemaName = schemaName;
+        _schemaName = schemaName;
     }
 
     public void setQueryName(String queryName)
     {
-        this._queryName = queryName;
+        _queryName = queryName;
     }
 
     protected int getExtraPropertiesHeight()

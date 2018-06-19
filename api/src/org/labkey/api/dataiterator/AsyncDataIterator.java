@@ -95,10 +95,9 @@ public class AsyncDataIterator implements DataIterator
     {
         synchronized (partner._itLock)
         {
-            this._itLock = partner._itLock;
-            this._it = partner._it;
-//            this._findMap = partner._findMap;
-            this._queue = partner._queue;
+            _itLock = partner._itLock;
+            _it = partner._it;
+            _queue = partner._queue;
             _partnerCount = partner._partnerCount;
             int count = _partnerCount.incrementAndGet();
             assert count > 1;

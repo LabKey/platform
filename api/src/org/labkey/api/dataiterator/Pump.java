@@ -37,16 +37,16 @@ public class Pump implements Runnable
 
     public Pump(DataIterator it, DataIteratorContext context)
     {
-        this._it = it;
-        this._context = context;
-        this._errors = context.getErrors();
+        _it = it;
+        _context = context;
+        _errors = context.getErrors();
     }
 
     public Pump(DataIteratorBuilder builder,  DataIteratorContext context)
     {
-        this._builder = builder;
-        this._context = context;
-        this._errors = context.getErrors();
+        _builder = builder;
+        _context = context;
+        _errors = context.getErrors();
     }
 
     public void setProgress(ListImportProgress progress)

@@ -103,9 +103,10 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
           @Nullable Set<String> keyColumns, @Nullable Set<String> addlSkipColumns, @Nullable Set<String> dontUpdate)
     {
         super(data, null, context);
-        this._table = table;
-        this._c = c;
-        this._insertOption = context.getInsertOption();
+
+        _table = table;
+        _c = c;
+        _insertOption = context.getInsertOption();
 
         if (null != addlSkipColumns)
             _skipColumnNames.addAll(addlSkipColumns);
