@@ -21,6 +21,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.view.UnauthorizedException;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -78,9 +79,9 @@ public class ApiKeyManager
         if (user.isGuest())
             throw new IllegalStateException("Can't create an API key for a guest");
 
-        // If impersonating, create an API key for the impersonating admin. Admins can't create an API key for an impersonated user.
+        // Disallow API key creation while impersonating, #34580
         if (user.isImpersonated())
-            user = user.getImpersonationContext().getAdminUser();
+            throw new UnauthorizedException("Can't create an API key while impersonating");
 
         String apiKey = "apikey|" + GUID.makeHash();
 
