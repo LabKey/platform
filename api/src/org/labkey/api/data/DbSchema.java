@@ -588,15 +588,15 @@ public class DbSchema
             {
                 m.put("IntNotNull", 1);
                 m = Table.update(ctx.getUser(), testTable, m, rowId);
-                assertTrue("Update is consistent in transaction?", (Integer) m.get("IntNotNull") == 1);
+                assertEquals("Update is consistent in transaction?", 1, (int)m.get("IntNotNull"));
             }
 
             //noinspection unchecked
             Map<String, Object>[] maps = new TableSelector(testTable, filter, null).getMapArray();
-            assertTrue(maps.length == 1);
+            assertEquals(1, maps.length);
             m = maps[0];
 
-            assertTrue("Rollback did not appear to work.", (Integer) m.get("IntNotNull") == 0);
+            assertEquals("Rollback did not appear to work.", 0, (int)m.get("IntNotNull"));
 
             Table.delete(testTable, rowId);
         }
@@ -769,7 +769,7 @@ public class DbSchema
         {
             assertNotNull(test);
             assertTrue(test.getTableNames().size() > 20);
-            assertTrue("\"" + requestedName + "\" schema does not match \"" + expected.getDisplayName() + "\" schema", test == expected);
+            assertSame("\"" + requestedName + "\" schema does not match \"" + expected.getDisplayName() + "\" schema", test, expected);
         }
     }
 
