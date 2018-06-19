@@ -23,7 +23,9 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ExperimentException;
@@ -32,6 +34,7 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.DefaultExperimentDataHandler;
 import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainAuditProvider;
@@ -52,7 +55,11 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.HttpView;
@@ -92,11 +99,14 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.labkey.api.exp.api.ExperimentService.MODULE_NAME;
 
 /**
  * User: phussey (Peter Hussey)
@@ -111,7 +121,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
     public String getName()
     {
-        return ExperimentService.MODULE_NAME;
+        return MODULE_NAME;
     }
 
     public double getVersion()
@@ -288,11 +298,12 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         AuditLogService.get().registerAuditType(new ExperimentAuditProvider());
         AuditLogService.get().registerAuditType(new SampleSetAuditProvider());
 
-        if (null != FileContentService.get())
+        FileContentService fileContentService = FileContentService.get();
+        if (null != fileContentService)
         {
-            FileContentService.get().addFileListener(new ExpDataFileListener());
-            FileContentService.get().addFileListener(new TableUpdaterFileListener(ExperimentService.get().getTinfoExperimentRun(), "FilePathRoot", TableUpdaterFileListener.Type.filePath, "RowId"));
-            FileContentService.get().addFileListener(new FileLinkFileListener());
+            fileContentService.addFileListener(new ExpDataFileListener());
+            fileContentService.addFileListener(new TableUpdaterFileListener(ExperimentService.get().getTinfoExperimentRun(), "FilePathRoot", TableUpdaterFileListener.Type.filePath, "RowId"));
+            fileContentService.addFileListener(new FileLinkFileListener());
         }
         ContainerManager.addContainerListener(new ContainerManager.AbstractContainerListener()
                                               {
@@ -323,6 +334,45 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         }
 
         AttachmentService.get().registerAttachmentType(ExpDataClassType.get());
+
+        UsageMetricsService svc = UsageMetricsService.get();
+        if (null != svc)
+        {
+            svc.registerUsageMetrics(UsageReportingLevel.MEDIUM, MODULE_NAME, () -> {
+                Map<String, Object> results = new HashMap<>();
+                if (AssayService.get() != null)
+                {
+                    Map<String, Object> assayMetrics = new HashMap<>();
+                    SQLFragment baseRunSQL = new SQLFragment("SELECT COUNT(*) FROM ").append(ExperimentService.get().getTinfoExperimentRun(), "r").append(" WHERE lsid LIKE ?");
+                    SQLFragment baseProtocolSQL = new SQLFragment("SELECT COUNT(*) FROM ").append(ExperimentService.get().getTinfoProtocol(), "p").append(" WHERE lsid LIKE ? AND ApplicationType = ?");
+                    for (AssayProvider assayProvider : AssayService.get().getAssayProviders())
+                    {
+                        Map<String, Object> protocolMetrics = new HashMap<>();
+
+                        // Run count across all assay designs of this type
+                        SQLFragment runSQL = new SQLFragment(baseRunSQL);
+                        runSQL.add(Lsid.namespaceLikeString(assayProvider.getRunLSIDPrefix()));
+                        protocolMetrics.put("runCount", new SqlSelector(ExperimentService.get().getSchema(), runSQL).getObject(Long.class));
+
+                        // Number of assay designs of this type
+                        SQLFragment protocolSQL = new SQLFragment(baseProtocolSQL);
+                        protocolSQL.add(assayProvider.getProtocolPattern());
+                        protocolSQL.add(ExpProtocol.ApplicationType.ExperimentRun.toString());
+                        protocolMetrics.put("protocolCount", new SqlSelector(ExperimentService.get().getSchema(), protocolSQL).getObject(Long.class));
+
+                        // Primary implementation class
+                        protocolMetrics.put("implementingClass", assayProvider.getClass());
+
+                        assayMetrics.put(assayProvider.getName(), protocolMetrics);
+                    }
+                    results.put("assay", assayMetrics);
+                }
+
+                results.put("sampleSetCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.materialsource").getObject(Long.class));
+
+                return results;
+            });
+        }
     }
 
     @NotNull
@@ -414,19 +464,15 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 //        if (c == ContainerManager.getSharedContainer())
 //            OntologyManager.indexConcepts(task);
 
-        Runnable r = new Runnable()
-        {
-            public void run()
+        Runnable r = () -> {
+            for (ExpMaterialImpl material : ExperimentServiceImpl.get().getIndexableMaterials(c, modifiedSince))
             {
-                for (ExpMaterialImpl material : ExperimentServiceImpl.get().getIndexableMaterials(c, modifiedSince))
-                {
-                    material.index(task);
-                }
+                material.index(task);
+            }
 
-                for (ExpDataImpl data : ExperimentServiceImpl.get().getIndexableData(c, modifiedSince))
-                {
-                    data.index(task);
-                }
+            for (ExpDataImpl data : ExperimentServiceImpl.get().getIndexableData(c, modifiedSince))
+            {
+                data.index(task);
             }
         };
         task.addRunnable(r, SearchService.PRIORITY.bulk);
