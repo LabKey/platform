@@ -255,16 +255,16 @@ LABKEY.ext.Utils = new function() {
          * @param {Object} config Describes the GridView's properties.
          * @param {String} config.schemaName Name of a schema defined within the current
          *                 container.  Example: 'study'.  See also: <a class="link"
-         href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+         href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
          How To Find schemaName, queryName &amp; viewName</a>.
          * @param {String} config.queryName Name of a query defined within the specified schema
          *                 in the current container.  Example: 'SpecimenDetail'. See also: <a class="link"
-         href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+         href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
          How To Find schemaName, queryName &amp; viewName</a>.
          * @param {String} [config.containerPath] The container path in which the schemaName and queryName are defined.
          * @param {String} [config.viewName] Name of a custom view defined over the specified query.
          *                 in the current container. Example: 'SpecimenDetail'.  See also: <a class="link"
-         href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+         href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
          How To Find schemaName, queryName &amp; viewName</a>.
          * @param {Object} [config.allowNull] If specified, this configuration will be used to insert a blank
          *                 entry as the first entry in the store.

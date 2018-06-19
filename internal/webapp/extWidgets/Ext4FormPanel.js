@@ -12,11 +12,11 @@ Ext4.namespace('LABKEY.ext4');
  * which constructs a form panel, configured based on the query's metadata.
  *
  * <p>If you use any of the LabKey APIs that extend Ext APIs, you must either make your code open source or
- * <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=extDevelopment">purchase an Ext license</a>.</p>
+ * <a href="https://www.labkey.org/Documentation/wiki-page.view?name=extDevelopment">purchase an Ext license</a>.</p>
  *            <p>Additional Documentation:
  *              <ul>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=javascriptTutorial">LabKey JavaScript API Tutorial</a></li>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=labkeyExt">Tips for Using Ext to Build LabKey Views</a></li>
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=javascriptTutorial">LabKey JavaScript API Tutorial</a></li>
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=labkeyExt">Tips for Using Ext to Build LabKey Views</a></li>
  *              </ul>
  *           </p>
  * @constructor

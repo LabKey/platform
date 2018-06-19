@@ -21,8 +21,8 @@
  * @namespace The Experiment static class allows you to create hidden run groups and other experiment-related functionality.
  *            <p>Additional Documentation:
  *              <ul>
- *                  <li><a href='https://www.labkey.org/wiki/home/Documentation/page.view?name=moduleassay'>LabKey File-Based Assays</a></li>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=experiment">LabKey Experiment</a></li>
+ *                  <li><a href='https://www.labkey.org/Documentation/wiki-page.view?name=moduleassay'>LabKey File-Based Assays</a></li>
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=experiment">LabKey Experiment</a></li>
  *              </ul>
  *           </p>
  */
@@ -174,7 +174,7 @@ LABKEY.Experiment = new function()
          * <li><b>response</b> The original response
          * </ul>
          * @param {object} [config.scope] A scoping object for the success and error callback functions (default to this).
-         * @see The <a href='https://www.labkey.org/wiki/home/Documentation/page.view?name=moduleassay'>Module Assay</a> documentation for more information.
+         * @see The <a href='https://www.labkey.org/Documentation/wiki-page.view?name=moduleassay'>Module Assay</a> documentation for more information.
          * @static
          */
         loadBatch : function (config)
@@ -219,7 +219,7 @@ LABKEY.Experiment = new function()
          * <li><b>response</b> The original response
          * </ul>
          * @param {object} [config.scope] A scoping object for the success and error callback functions (default to this).
-         * @see The <a href='https://www.labkey.org/wiki/home/Documentation/page.view?name=moduleassay'>Module Assay</a> documentation for more information.
+         * @see The <a href='https://www.labkey.org/Documentation/wiki-page.view?name=moduleassay'>Module Assay</a> documentation for more information.
          * @static
          */
         loadBatches : function (config)
@@ -271,7 +271,7 @@ LABKEY.Experiment = new function()
          * <ul>
          * <li><b>response</b> The original response
          * </ul>
-         * @see The <a href='https://www.labkey.org/wiki/home/Documentation/page.view?name=moduleassay'>Module Assay</a> documentation for more information.
+         * @see The <a href='https://www.labkey.org/Documentation/wiki-page.view?name=moduleassay'>Module Assay</a> documentation for more information.
          * @static
          */
         saveBatch : function (config)
@@ -301,7 +301,7 @@ LABKEY.Experiment = new function()
          * <ul>
          * <li><b>response</b> The original response
          * </ul>
-         * @see The <a href='https://www.labkey.org/wiki/home/Documentation/page.view?name=moduleassay'>Module Assay</a> documentation for more information.
+         * @see The <a href='https://www.labkey.org/Documentation/wiki-page.view?name=moduleassay'>Module Assay</a> documentation for more information.
          * @static
          */
         saveBatches : function (config)
@@ -409,7 +409,7 @@ if (typeof LABKEY.Exp == "undefined")
  * In a Java representation of these same classes, ExpObject is an abstract class.
  *            <p>Additional Documentation:
  *              <ul>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=experiment">LabKey Experiment</a></li>
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=experiment">LabKey Experiment</a></li>
  *              </ul>
  *           </p>
  * @memberOf LABKEY.Exp
@@ -452,7 +452,7 @@ LABKEY.Exp.ExpObject = function (config) {
  * while a run would be an instance.
  *            <p>Additional Documentation:
  *              <ul>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=experiment">LabKey Experiment</a></li>
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=experiment">LabKey Experiment</a></li>
  *              </ul>
  *           </p>
  * @extends LABKEY.Exp.ExpObject
@@ -600,8 +600,8 @@ LABKEY.Exp.Protocol.prototype.constructor = LABKEY.Exp.Protocol;
  * </p>
  *            <p>Additional Documentation:
  *              <ul>
- *                  <li><a href='https://www.labkey.org/wiki/home/Documentation/page.view?name=moduleassay'>LabKey File-Based Assays</a></li>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=experiment">LabKey Experiment</a></li>
+ *                  <li><a href='https://www.labkey.org/Documentation/wiki-page.view?name=moduleassay'>LabKey File-Based Assays</a></li>
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=experiment">LabKey Experiment</a></li>
  *              </ul>
  *           </p>
  * @extends LABKEY.Exp.ExpObject
@@ -654,7 +654,7 @@ LABKEY.Exp.ProtocolApplication.prototype.constructor = LABKEY.Exp.ProtocolApplic
  * (e.g., its volume, number of cells, color, etc.).
  *            <p>Additional Documentation:
  *              <ul>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=experiment">LabKey Experiment</a></li>
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=experiment">LabKey Experiment</a></li>
  *              </ul>
  *           </p>
  * @extends LABKEY.Exp.ExpObject
@@ -852,7 +852,7 @@ LABKEY.Exp.ProtocolOutput.prototype.constructor = LABKEY.Exp.ProtocolOutput;
  * the private LABKEY.Exp.ProtocolOutput object.
  *            <p>Additional Documentation:
  *              <ul>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=experiment">LabKey Experiment</a></li>
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=experiment">LabKey Experiment</a></li>
  *              </ul>
  *           </p>
  * @extends LABKEY.Exp.ProtocolOutput
@@ -886,8 +886,8 @@ LABKEY.Exp.Material.prototype.constructor = LABKEY.Exp.Material;
  * </p>
  *            <p>Additional Documentation:
  *              <ul>
- *                  <li><a href='https://www.labkey.org/wiki/home/Documentation/page.view?name=moduleassay'>LabKey File-Based Assays</a></li>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=experiment">LabKey Experiment</a></li>
+ *                  <li><a href='https://www.labkey.org/Documentation/wiki-page.view?name=moduleassay'>LabKey File-Based Assays</a></li>
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=experiment">LabKey Experiment</a></li>
  *              </ul>
  *           </p>
  *

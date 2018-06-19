@@ -38,7 +38,7 @@
  * </ul>
  *            <p>Additional Documentation:
  *              <ul>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=security">LabKey Security and Accounts</a></li>
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=security">LabKey Security and Accounts</a></li>
  *              </ul>
  *           </p>
  * @example

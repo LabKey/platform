@@ -22,8 +22,8 @@
  *            Additionally, builds a URL from a controller and an action.
  *            <p>Additional Documentation:
  *              <ul>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=url">LabKey URLs</a></li>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=tutorialActionURL">Tutorial: Basics: Building URLs and Filters</a></li>
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=url">LabKey URLs</a></li>
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=tutorialActionURL">Tutorial: Basics: Building URLs and Filters</a></li>
  *              </ul>
  *           </p>
  */

@@ -568,12 +568,12 @@ public class AssayDesignerMainPanel extends AbstractDesignerMainPanel implements
                     "Transform scripts run before the assay data is imported and can reshape the data file to match " +
                     "the expected import format. " +
                     "For help writing a transform script refer to the " +
-                    "<a href=\"https://www.labkey.org/wiki/home/Documentation/page.view?name=programmaticQC\" target=\"_blank\">Programmatic Quality Control & Transformations</a> guide.</div>" +
+                    "<a href=\"https://www.labkey.org/Documentation/wiki-page.view?name=programmaticQC\" target=\"_blank\">Programmatic Quality Control & Transformations</a> guide.</div>" +
                     "<br><div>The extension of the script file " +
                     "identifies the script engine that will be used to run the validation script. For example, " +
                     "a script named test.pl will be run with the Perl scripting engine. The scripting engine must be " +
                     "configured on the Views and Scripting page in the Admin Console. For additional information refer to " +
-                    "the <a href=\"https://www.labkey.org/wiki/home/Documentation/page.view?name=configureScripting\" target=\"_blank\">help documentation</a>.</div>"));
+                    "the <a href=\"https://www.labkey.org/Documentation/wiki-page.view?name=configureScripting\" target=\"_blank\">help documentation</a>.</div>"));
             table.getFlexCellFormatter().setStyleName(row, 0, "labkey-form-label");
             table.setWidget(row, 0, transformNamePanel);
 
@@ -649,7 +649,7 @@ public class AssayDesignerMainPanel extends AbstractDesignerMainPanel implements
                         "identifies the script engine that will be used to run the validation script. For example, " +
                         "a script named test.pl will be run with the Perl scripting engine. The scripting engine must be " +
                         "configured on the Views and Scripting page in the Admin Console. For additional information refer to " +
-                        "the <a href=\"https://www.labkey.org/wiki/home/Documentation/page.view?name=configureScripting\" target=\"_blank\">help documentation</a>.</div>"));
+                        "the <a href=\"https://www.labkey.org/Documentation/wiki-page.view?name=configureScripting\" target=\"_blank\">help documentation</a>.</div>"));
                 table.setWidget(row, 0, validationPanel);
                 table.getFlexCellFormatter().setStyleName(row, 0, "labkey-form-label");
 

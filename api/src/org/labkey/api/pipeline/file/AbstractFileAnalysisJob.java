@@ -450,7 +450,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
      *
      * @see FileAnalysisTaskPipeline#isWriteJobInfoFile()
      * @see org.labkey.api.qc.TsvDataExchangeHandler
-     * @link https://www.labkey.org/wiki/home/Documentation/page.view?name=runProperties
+     * @link https://www.labkey.org/Documentation/wiki-page.view?name=runProperties
      */
     private void writeJobInfoTSV(File file) throws IOException
     {

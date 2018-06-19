@@ -28,7 +28,7 @@
  *
  *            <p>Additional Documentation:
  *              <ul>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=propertyFields">LabKey Dataset Domain Fields</a></li>
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=propertyFields">LabKey Dataset Domain Fields</a></li>
  *              </ul>
  *           </p>
 */
@@ -93,7 +93,7 @@ LABKEY.Domain = new function()
 
         /**
          * Create a new domain with the given kind, domainDesign, and options or
-         * specify a <a href='https://www.labkey.org/home/Documentation/wiki-page.view?name=domainTemplates'>domain template</a> to use for the domain creation.
+         * specify a <a href='https://www.labkey.org/Documentation/wiki-page.view?name=domainTemplates'>domain template</a> to use for the domain creation.
          * Not all domain kinds can be created through this API.  Currently supported domain kinds are:
          * "IntList", "VarList", "SampleSet", and "DataClass".
          *
@@ -129,7 +129,7 @@ LABKEY.Domain.create({
   }
 });
 </pre>
-         * @example Create domain from a <a href='https://www.labkey.org/wiki/home/Documentation/page.view?name=domainTemplate'>domain template</a>:
+         * @example Create domain from a <a href='https://www.labkey.org/Documentation/wiki-page.view?name=domainTemplate'>domain template</a>:
 <pre name="code" class="xml">
 LABKEY.Domain.create({
   module: "mymodule",

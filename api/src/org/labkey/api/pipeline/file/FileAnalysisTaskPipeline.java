@@ -76,7 +76,7 @@ public interface FileAnalysisTaskPipeline extends TaskPipeline<FileAnalysisTaskP
      *
      * @see org.labkey.api.pipeline.file.AbstractFileAnalysisJob#writeJobInfoTSV(java.io.File)
      * @see org.labkey.api.qc.TsvDataExchangeHandler
-     * @link https://www.labkey.org/wiki/home/Documentation/page.view?name=runProperties
+     * @link https://www.labkey.org/Documentation/wiki-page.view?name=runProperties
      * @return
      */
     boolean isWriteJobInfoFile();

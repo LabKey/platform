@@ -22,31 +22,31 @@
      * @description Chart class to create and render live charts and imagemaps.
      *            <p>Additional Documentation:
      *              <ul>
-     *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=charts">LabKey Chart Views</a></li>
+     *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=charts">LabKey Chart Views</a></li>
      *              </ul>
      *            </p>
      * @class Chart class to create and render live charts and imagemaps.
      *            <p>Additional Documentation:
      *              <ul>
-     *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=charts">LabKey Chart Views</a></li>
+     *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=charts">LabKey Chart Views</a></li>
      *              </ul>
      *            </p>
      * @constructor
      * @param {Object} config Describes the chart's properties.
      * @param {String} config.schemaName Name of a schema defined within the current
      *                 container.  Example: 'study'.  See also: <a class="link"
-     href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+     href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
      How To Find schemaName, queryName &amp; viewName</a>.
      * @param {String} config.queryName Name of a query table associated with the
      *                 chosen schema. Details below. Example: The name of one of
      *                 the study demo datasets: 'Physical Exam'.  See also: <a class="link"
-     href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+     href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
      How To Find schemaName, queryName &amp; viewName</a>.
      * @param {String} [config.viewName] Name of a custom view associated with the
      *                 chosen query. Details below. Example: The name of a custom
      *                 view for the 'Physical Exam' study demo dataset: 'Custom Grid
      *                 View: Join for Cohort Views'. See also: <a class="link"
-     href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+     href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
      How To Find schemaName, queryName &amp; viewName</a>.
      * @param {String} config.renderTo Element on the page where the chart will render.
      * @param {String} [config.renderImageMapTo] Element on the page where the imagemap will render.
@@ -78,7 +78,7 @@
      *               To the JSON object for the config.imageMapCallback function.
      * @param {String} [config.containerPath] The container path in which the data for this chart is defined. If not supplied,
      *                  the current container path will be used.
-     * @example Example #1 uses the "Physical Exam" dataset in the <a href = "https://www.labkey.org/Project/home/Study/demo/start.view?">Demo Study</a>
+     * @example Example #1 uses the "Physical Exam" dataset in the <a href = "https://www.labkey.org/home/Demos/Study/demo/project-begin.view">Demo Study</a>
      * to plot a simple chart with one y-value:
      <pre name="code" class="xml">
      &lt;script type="text/javascript"&gt;

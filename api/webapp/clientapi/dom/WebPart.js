@@ -25,12 +25,12 @@
      * use the {@link LABKEY.QueryWebPart} class instead.
      *            <p>Additional Documentation:
      *              <ul>
-     *                  <li><a href= "https://www.labkey.org/wiki/home/Documentation/page.view?name=webPartConfig">
+     *                  <li><a href= "https://www.labkey.org/Documentation/wiki-page.view?name=webPartConfig">
      Web Part Configuration Properties</a></li>
-     *                  <li><a href= "https://www.labkey.org/wiki/home/Documentation/page.view?name=webPartInventoryWikiSimple">
+     *                  <li><a href= "https://www.labkey.org/Documentation/wiki-page.view?name=webPartInventoryWikiSimple">
      List of LabKey Web Parts</a></li>
-     *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=javascriptTutorial">LabKey JavaScript API Tutorial</a> and
-     *                      <a href="https://www.labkey.org/wiki/home/Study/demo/page.view?name=reagentRequest">Demo</a></li>
+     *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=javascriptTutorial">LabKey JavaScript API Tutorial</a> and
+     *                      <a href="https://www.labkey.org/home/Study/demo/wiki-page.view?name=reagentRequest">Demo</a></li>
      *              </ul>
      *           </p>
      *
@@ -58,7 +58,7 @@
      *                  Note that titles are not displayed when config.frame is set to "none".
      * @param {Object} [config.partConfig] Object containing name/value pairs that will be sent to the server as configuration
      *               	parameters for the web part. Each web part defines its own set of config parameters. See the
-     * 					<a href= https://www.labkey.org/wiki/home/Documentation/page.view?name=webPartConfig>
+     * 					<a href= https://www.labkey.org/Documentation/wiki-page.view?name=webPartConfig>
      Web Part Configuration Properties</a> page for further information on these name/value pairs.
      * @param {boolean} [config.suppressRenderErrors] If true, no alert will appear if there is a problem rendering the QueryWebpart. This is most often encountered if page configuration changes between the time when a request was made and the content loads. Defaults to false.
      * @param {Function} [config.success] Callback function that will be executed after the web part content as been inserted into the page.
@@ -79,7 +79,7 @@
 		})
      wikiWebPartRenderer.render();
      &lt;/script&gt;  </pre></code>
-     * @example Example for a Report web part, from the Reagent Request <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=reagentRequestConfirmation">Tutorial</a> and <a href="https://www.labkey.org/wiki/home/Study/demo/page.view?name=Confirmation">Demo</a>: <pre name="code" class="xml">
+     * @example Example for a Report web part, from the Reagent Request <a href="https://www.labkey.org/Documentation/wiki-page.view?name=reagentRequestConfirmation">Tutorial</a> and <a href="https://www.labkey.org/home/Study/demo/wiki-page.view?name=Confirmation">Demo</a>: <pre name="code" class="xml">
      &lt;div id='reportDiv'&gt;Loading...&lt;/div&gt;
      &lt;script type="text/javascript"&gt;
      // This snippet draws a histogram of the current user's requests.

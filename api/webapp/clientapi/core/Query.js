@@ -25,12 +25,12 @@
  *		{@link LABKEY.Query.deleteRows} are not available for all tables and queries.
  *            <p>Additional Documentation:
  *              <ul>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=labkeySql">
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=labkeySql">
  *                      LabKey SQL Reference</a></li>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
  *                      How To Find schemaName, queryName &amp; viewName</a></li>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=javascriptTutorial">LabKey JavaScript API Tutorial</a> and
- *                      <a href="https://www.labkey.org/wiki/home/Study/demo/page.view?name=reagentRequest">Demo</a></li>
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=javascriptTutorial">LabKey JavaScript API Tutorial</a> and
+ *                      <a href="https://www.labkey.org/home/Study/demo/wiki-page.view?name=reagentRequest">Demo</a></li>
  *              </ul>
  *           </p>
  */
@@ -164,7 +164,7 @@ LABKEY.Query = new function()
 
         /**
          * Execute arbitrary LabKey SQL. For more information, see the
-         * <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=labkeySql">
+         * <a href="https://www.labkey.org/Documentation/wiki-page.view?name=labkeySql">
          * LabKey SQL Reference</a>.
          * @param config An object which contains the following configuration properties.
          * @param {String} config.schemaName name of the schema to query.
@@ -208,7 +208,7 @@ LABKEY.Query = new function()
          * @param {Object} [config.parameters] Map of name (string)/value pairs for the values of parameters if the SQL
          *        references underlying queries that are parameterized. For example, the following passes two parameters to the query: {'Gender': 'M', 'CD4': '400'}.
          *        The parameters are written to the request URL as follows: query.param.Gender=M&query.param.CD4=400.  For details on parameterized SQL queries, see
-         *        <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=paramsql">Parameterized SQL Queries</a>.
+         *        <a href="https://www.labkey.org/Documentation/wiki-page.view?name=paramsql">Parameterized SQL Queries</a>.
          * @param {Double} [config.requiredVersion] If not set, or set to "8.3", the success handler will be passed a {@link LABKEY.Query.SelectRowsResults}
          *       object. If set to "9.1" the success handler will be passed a {@link LABKEY.Query.ExtendedSelectRowsResults}
          *       object. If greater than 13.2 the success handler will be passed a {@link LABKEY.Query.Response} object.
@@ -225,7 +225,7 @@ LABKEY.Query = new function()
          * for the async request that can be used to cancel the request
          * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
          * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
-         * @example Example, from the Reagent Request Confirmation <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=reagentRequestConfirmation">Tutorial</a> and <a href="https://www.labkey.org/wiki/home/Study/demo/page.view?name=Confirmation">Demo</a>: <pre name="code" class="xml">
+         * @example Example, from the Reagent Request Confirmation <a href="https://www.labkey.org/Documentation/wiki-page.view?name=reagentRequestConfirmation">Tutorial</a> and <a href="https://www.labkey.org/home/Study/demo/wiki-page.view?name=Confirmation">Demo</a>: <pre name="code" class="xml">
          // This snippet extracts a table of UserID, TotalRequests and
          // TotalQuantity from the "Reagent Requests" list.
          // Upon success, the writeTotals function (not included here) uses the
@@ -310,10 +310,10 @@ LABKEY.Query = new function()
         * Select rows.
         * @param {Object} config An object which contains the following configuration properties.
         * @param {String} config.schemaName Name of a schema defined within the current container. See also: <a class="link"
-					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+					href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
         * @param {String} config.queryName Name of a query table associated with the chosen schema. See also: <a class="link"
-					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+					href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
         * @param {Function} config.success
 				Function called when the "selectRows" function executes successfully.
@@ -345,7 +345,7 @@ LABKEY.Query = new function()
         * @param {Object} [config.parameters] Map of name (string)/value pairs for the values of parameters if the SQL
         *        references underlying queries that are parameterized. For example, the following passes two parameters to the query: {'Gender': 'M', 'CD4': '400'}.
         *        The parameters are written to the request URL as follows: query.param.Gender=M&query.param.CD4=400.  For details on parameterized SQL queries, see
-        *        <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=paramsql">Parameterized SQL Queries</a>.
+        *        <a href="https://www.labkey.org/Documentation/wiki-page.view?name=paramsql">Parameterized SQL Queries</a>.
         * @param {String} [config.sort]  String description of the sort.  It includes the column names
         *       listed in the URL of a sorted data region (with an optional minus prefix to indicate
         *       descending order). In the case of a multi-column sort, up to three column names can be
@@ -534,10 +534,10 @@ LABKEY.Query = new function()
          * Select Distinct Rows
          * @param {Object} config An object which contains the following configuration properties.
          * @param {String} config.schemaName Name of a schema defined within the current container. See also: <a class="link"
-                        href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+                        href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
                         How To Find schemaName, queryName &amp; viewName</a>.
          * @param {String} config.queryName Name of a query table associated with the chosen schema.  See also: <a class="link"
-                        href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+                        href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
                         How To Find schemaName, queryName &amp; viewName</a>.
          * @param {String} config.column A single column for which the distinct results will be requested. This column
          *              must exist within the specified query.
@@ -547,7 +547,7 @@ LABKEY.Query = new function()
          * @param {Object} [config.parameters] Map of name (string)/value pairs for the values of parameters if the SQL
          *        references underlying queries that are parameterized. For example, the following passes two parameters to the query: {'Gender': 'M', 'CD4': '400'}.
          *        The parameters are written to the request URL as follows: query.param.Gender=M&query.param.CD4=400.  For details on parameterized SQL queries, see
-         *        <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=paramsql">Parameterized SQL Queries</a>.
+         *        <a href="https://www.labkey.org/Documentation/wiki-page.view?name=paramsql">Parameterized SQL Queries</a>.
          * @param {Array} [config.filterArray] Array of objects created by {@link LABKEY.Filter.create}.
          * @param {String} [config.viewName] Name of a view to use.  This is potentially important if this view contains filters on the data.
          * @param {Function} config.success
@@ -673,10 +673,10 @@ LABKEY.Query = new function()
         * Update rows.
         * @param {Object} config An object which contains the following configuration properties.
         * @param {String} config.schemaName Name of a schema defined within the current container. See also: <a class="link"
-					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+					href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
         * @param {String} config.queryName Name of a query table associated with the chosen schema.  See also: <a class="link"
-					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+					href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
         * @param {Array} config.rows Array of record objects in which each object has a property for each field.
         *               The row array must include the primary key column values and values for
@@ -715,10 +715,10 @@ LABKEY.Query = new function()
         * @param {Array} config.commands An array of all of the update/insert/delete operations to be performed.
         * Each command has the following structure:
         * @param {String} config.commands[].schemaName Name of a schema defined within the current container. See also: <a class="link"
-					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+					href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
         * @param {String} config.commands[].queryName Name of a query table associated with the chosen schema.  See also: <a class="link"
-					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+					href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
         * @param {String} config.commands[].command Name of the command to be performed. Must be one of "insert", "update", or "delete".
         * @param {Array} config.commands[].rows An array of data for each row to be changed. See {@link LABKEY.Query.insertRows},
@@ -798,10 +798,10 @@ LABKEY.Query = new function()
         * Insert rows.
         * @param {Object} config An object which contains the following configuration properties.
         * @param {String} config.schemaName Name of a schema defined within the current container.  See also: <a class="link"
-					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+					href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
         * @param {String} config.queryName Name of a query table associated with the chosen schema. See also: <a class="link"
-					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+					href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
         * @param {Array} config.rows Array of record objects in which each object has a property for each field.
         *                  The row data array must include all column values except for the primary key column.
@@ -824,7 +824,7 @@ LABKEY.Query = new function()
          * for the async request that can be used to cancel the request
          * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
          * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
-        * @example Example, from the Reagent Request <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=reagentRequestForm">Tutorial</a> and <a href="https://www.labkey.org/wiki/home/Study/demo/page.view?name=reagentRequest">Demo</a>: <pre name="code" class="xml">
+        * @example Example, from the Reagent Request <a href="https://www.labkey.org/Documentation/wiki-page.view?name=reagentRequestForm">Tutorial</a> and <a href="https://www.labkey.org/home/Study/demo/wiki-page.view?name=reagentRequest">Demo</a>: <pre name="code" class="xml">
          // This snippet inserts data from the ReagentReqForm into a list.
          // Upon success, it moves the user to the confirmation page and
          // passes the current user's ID to that page.
@@ -844,7 +844,7 @@ LABKEY.Query = new function()
              }],
              successCallback: function(data){
                  window.location =
-                    '/wiki/home/Study/demo/page.view?name=confirmation&userid='
+                    '/home/Study/demo/wiki-page.view?name=confirmation&userid='
                     + LABKEY.Security.currentUser.id;
              },
          });  </pre>
@@ -863,10 +863,10 @@ LABKEY.Query = new function()
         * Delete rows.
         * @param {Object} config An object which contains the following configuration properties.
         * @param {String} config.schemaName Name of a schema defined within the current container. See also: <a class="link"
-					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+					href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
         * @param {String} config.queryName Name of a query table associated with the chosen schema. See also: <a class="link"
-					href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+					href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
 					How To Find schemaName, queryName &amp; viewName</a>.
         * @param {Object} [config.extraContext] <b>Experimental:</b> Optional extra context object passed into the transformation/validation script environment.
         * @param {Function} config.success Function called when the "deleteRows" function executes successfully.
@@ -945,10 +945,10 @@ LABKEY.Query = new function()
          * Build and return an object suitable for passing to the
          * <a href = "http://www.extjs.com/deploy/dev/docs/?class=Ext.Ajax">Ext.Ajax</a> 'params' configuration property.
          * @param {string} schemaName Name of a schema defined within the current container.  See also: <a class="link"
-         href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+         href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
          How To Find schemaName, queryName &amp; viewName</a>.
          * @param {string} queryName Name of a query table associated with the chosen schema.   See also: <a class="link"
-         href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+         href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
          How To Find schemaName, queryName &amp; viewName</a>.
          * @param {LABKEY.Filter[]} [filterArray] Array of objects created by {@link LABKEY.Filter.create}.
          * @param {string} [sort]  String description of the sort.  It includes the column names
@@ -2372,7 +2372,7 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
             processed asynchronously.
  *            <p>Additional Documentation:
  *              <ul>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
  *                      How To Find schemaName, queryName &amp; viewName</a></li>
  *              </ul>
  *           </p>
@@ -2475,10 +2475,10 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
             processed asynchronously.
   *            <p>Additional Documentation:
   *              <ul>
-  *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+  *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
   *                      How To Find schemaName, queryName &amp; viewName</a></li>
-  *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=javascriptTutorial">LabKey JavaScript API Tutorial</a> and
-  *                      <a href="https://www.labkey.org/wiki/home/Study/demo/page.view?name=reagentRequest">Demo</a></li>
+  *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=javascriptTutorial">LabKey JavaScript API Tutorial</a> and
+  *                      <a href="https://www.labkey.org/home/Study/demo/wiki-page.view?name=reagentRequest">Demo</a></li>
   *              </ul>
   *           </p>
 * @example For example:
@@ -2556,7 +2556,7 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
            processed asynchronously.
  *            <p>Additional Documentation:
  *              <ul>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
  *                      How To Find schemaName, queryName &amp; viewName</a></li>
  *              </ul>
  *           </p>
@@ -2572,7 +2572,7 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
 * @name   query.schemaName
 * @description   Contains the same schemaName the client passed to the
             calling function. See <a class="link"
-            href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+            href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
             How To Find schemaName, queryName &amp; viewName</a>.
 * @type   String
 */
@@ -2581,7 +2581,7 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
 * @name   query.queryName
 * @description   Contains the same queryName the client passed
             to the calling function. See
-            <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+            <a href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
             How To Find schemaName, queryName &amp; viewName</a>.
 * @type   String
 */
@@ -2589,7 +2589,7 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
 /**
 * @name    query.viewName
 * @description 	Name of a valid custom view for the chosen queryName. See
-            <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+            <a href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
             How To Find schemaName, queryName &amp; viewName</a>.
 * @type    String
 */
@@ -2646,10 +2646,10 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
 * @class  Lookup metadata about a single field.
  *            <p>Additional Documentation:
  *              <ul>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
  *                      How To Find schemaName, queryName &amp; viewName</a></li>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=javascriptTutorial">LabKey JavaScript API Tutorial</a> and
- *                      <a href="https://www.labkey.org/wiki/home/Study/demo/page.view?name=reagentRequest">Demo</a></li>
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=javascriptTutorial">LabKey JavaScript API Tutorial</a> and
+ *                      <a href="https://www.labkey.org/home/Study/demo/wiki-page.view?name=reagentRequest">Demo</a></li>
  *              </ul>
  *           </p>
  * @see LABKEY.Query.FieldMetaData
@@ -2710,10 +2710,10 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
 * @class  Metadata about a single field.
  *            <p>Additional Documentation:
  *              <ul>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
  *                      How To Find schemaName, queryName &amp; viewName</a></li>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=javascriptTutorial">LabKey JavaScript API Tutorial</a> and
- *                      <a href="https://www.labkey.org/wiki/home/Study/demo/page.view?name=reagentRequest">Demo</a></li>
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=javascriptTutorial">LabKey JavaScript API Tutorial</a> and
+ *                      <a href="https://www.labkey.org/home/Study/demo/wiki-page.view?name=reagentRequest">Demo</a></li>
  *              </ul>
  *           </p>
  * @see LABKEY.Query.selectRows
@@ -2946,10 +2946,10 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
             processed asynchronously.
  *            <p>Additional Documentation:
  *              <ul>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
  *                      How To Find schemaName, queryName &amp; viewName</a></li>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=javascriptTutorial">LabKey JavaScript API Tutorial</a> and
- *                      <a href="https://www.labkey.org/wiki/home/Study/demo/page.view?name=reagentRequest">Demo</a></li>
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=javascriptTutorial">LabKey JavaScript API Tutorial</a> and
+ *                      <a href="https://www.labkey.org/home/Study/demo/wiki-page.view?name=reagentRequest">Demo</a></li>
  *              </ul>
  *           </p>
 * @see LABKEY.Query.selectRows
@@ -3049,7 +3049,7 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
             {@link LABKEY.Query.selectRows} if config.requiredVersion is set to "9.1".
   *            <p>Additional Documentation:
   *              <ul>
-  *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+  *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
   *                      How To Find schemaName, queryName &amp; viewName</a></li>
   *              </ul>
   *           </p>
@@ -3154,9 +3154,9 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
 /**
  * Execute arbitrary LabKey SQL and export the results to Excel or TSV. After this method is
  * called, the user will be prompted to accept a file from the server, and most browsers will allow
- * the user to either save it or open it in an apporpriate application.
+ * the user to either save it or open it in an appropriate application.
  * For more information, see the
- * <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=labkeySql">
+ * <a href="https://www.labkey.org/Documentation/wiki-page.view?name=labkeySql">
  * LabKey SQL Reference</a>.
  *
  * @memberOf LABKEY.Query

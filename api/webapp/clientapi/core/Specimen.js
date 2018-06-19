@@ -21,8 +21,8 @@
  * @namespace Specimen static class to retrieve and update specimen and specimen request information.
  *            <p>Additional Documentation:
  *              <ul>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=manageSpecimens">Specimen Management for Administrators</a></li>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=specimens">Specimen User Guide</a></li>
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=manageSpecimens">Specimen Management for Administrators</a></li>
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=specimens">Specimen User Guide</a></li>
  *              </ul>
  *           </p>
  */
@@ -483,8 +483,8 @@ LABKEY.Specimen = new function()
  * @class   Location class to describe the shape and fields of a specimen location.
  *            <p>Additional Documentation:
  *              <ul>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=manageSpecimens">Specimen Management for Administrators</a></li>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=specimens">Specimen User Guide</a></li>
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=manageSpecimens">Specimen Management for Administrators</a></li>
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=specimens">Specimen User Guide</a></li>
  *              </ul>
  *           </p>
  */
@@ -567,8 +567,8 @@ LABKEY.Specimen = new function()
  * @class   Request class to describe the shape and fields of a specimen request.
  *            <p>Additional Documentation:
  *              <ul>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=manageSpecimens">Specimen Management for Administrators</a></li>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=specimens">Specimen User Guide</a></li>
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=manageSpecimens">Specimen Management for Administrators</a></li>
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=specimens">Specimen User Guide</a></li>
  *              </ul>
  *           </p>
  * @see LABKEY.Specimen.Location
@@ -641,8 +641,8 @@ LABKEY.Specimen = new function()
  * @class  Vial class to describe the shape and fields of a specimen vial.
  *            <p>Additional Documentation:
  *              <ul>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=manageSpecimens">Specimen Management for Administrators</a></li>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=specimens">Specimen User Guide</a></li>
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=manageSpecimens">Specimen Management for Administrators</a></li>
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=specimens">Specimen User Guide</a></li>
  *              </ul>
  *           </p>
  * @see LABKEY.Specimen.Location

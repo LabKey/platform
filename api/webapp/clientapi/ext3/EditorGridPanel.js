@@ -27,10 +27,10 @@ Ext.namespace('LABKEY', 'LABKEY.ext');
  * which can provide editable grid views of data in the LabKey server. If the current user has appropriate permissions,
  * the user may edit data, save changes, insert new rows, or delete rows.</p>
  * <p>If you use any of the LabKey APIs that extend Ext APIs, you must either make your code open source or
- * <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=extDevelopment">purchase an Ext license</a>.</p>
+ * <a href="https://www.labkey.org/Documentation/wiki-page.view?name=extDevelopment">purchase an Ext license</a>.</p>
  *            <p>Additional Documentation:
  *              <ul>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=javascriptTutorial">Tutorial: Create Applications with the JavaScript API</a></li>
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=javascriptTutorial">Tutorial: Create Applications with the JavaScript API</a></li>
  *              </ul>      
  *           </p>
  * @constructor

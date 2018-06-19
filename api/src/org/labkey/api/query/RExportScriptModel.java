@@ -127,7 +127,7 @@ public class RExportScriptModel extends ExportScriptModel
             sb.append("# This script makes use of the LabKey Remote API for R package (Rlabkey), which can be obtained via CRAN").append("\n");
             sb.append("# using the package name \"Rlabkey\". The Rlabkey package also depends on the \"rjson\" and \"rCurl\" packages.").append("\n");
             sb.append("#").append("\n");
-            sb.append("# See https://www.labkey.org/wiki/home/Documentation/page.view?name=rAPI for more information.").append("\n");
+            sb.append("# See https://www.labkey.org/Documentation/wiki-page.view?name=rAPI for more information.").append("\n");
             sb.append("\n");
             sb.append("library(Rlabkey)").append("\n");
             sb.append("\n");

@@ -150,7 +150,7 @@ public class HttpsUtil
                 URL testURL = new URL(helper.getURIString());
                 Pair<String, Integer> sslResult = HttpsUtil.testSslUrl(testURL,
                     "This LabKey Server instance is configured to require secure connections on port " + redirectPort + ", but it does not appear to be responding " +
-                    "to HTTPS requests at " + testURL + ". Please see https://www.labkey.org/wiki/home/Documentation/page.view?name=stagingServerTips for " +
+                    "to HTTPS requests at " + testURL + ". Please see https://www.labkey.org/Documentation/wiki-page.view?name=stagingServerTips for " +
                     "details about how to turn off the SSL redirect settings in the database.");
 
                 // Non-null indicates that some problem occurred... throw it so we log it

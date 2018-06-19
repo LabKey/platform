@@ -40,15 +40,15 @@
   * @param {Object} config Describes the GridView's properties.
   * @param {Object} config.schemaName Name of a schema defined within the current
   *                 container.  Example: 'study'.  See also: <a class="link"
-                    href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+                    href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
                     How To Find schemaName, queryName &amp; viewName</a>.
   * @param {Object} config.queryName Name of a query defined within the specified schema
   *                 in the current container.  Example: 'SpecimenDetail'. See also: <a class="link"
-                    href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+                    href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
                     How To Find schemaName, queryName &amp; viewName</a>.
   * @param {Object} [config.viewName] Name of a custom view defined over the specified query.
   *                 in the current container. Example: 'SpecimenDetail'.  See also: <a class="link"
-                    href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+                    href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
                     How To Find schemaName, queryName &amp; viewName</a>.
   * @param {String} config.renderTo Name of the div in which to place the grid.
   * @param {Bool} config.editable Whether the grid should be made editable.  Note that

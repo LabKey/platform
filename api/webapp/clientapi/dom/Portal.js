@@ -23,9 +23,9 @@
      * @class Portal class to allow programmatic administration of portal pages.
      *            <p>Additional Documentation:
      *              <ul>
-     *                  <li><a href= "https://www.labkey.org/wiki/home/Documentation/page.view?name=projects">Project and Folder Administration</a></li>
-     *                  <li><a href= "https://www.labkey.org/wiki/home/Documentation/page.view?name=addModule">Add Web Parts</a></li>
-     *                  <li><a href= "https://www.labkey.org/wiki/home/Documentation/page.view?name=manageWebParts">Manage Web Parts</a></li>
+     *                  <li><a href= "https://www.labkey.org/Documentation/wiki-page.view?name=projects">Project and Folder Administration</a></li>
+     *                  <li><a href= "https://www.labkey.org/Documentation/wiki-page.view?name=addModule">Add Web Parts</a></li>
+     *                  <li><a href= "https://www.labkey.org/Documentation/wiki-page.view?name=manageWebParts">Manage Web Parts</a></li>
      *              </ul>
      *           </p>
      */

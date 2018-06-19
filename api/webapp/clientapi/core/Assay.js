@@ -21,7 +21,7 @@
  * @namespace Assay static class to retrieve read-only assay definitions.
  *            <p>Additional Documentation:
  *              <ul>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=createDatasetViaAssay">LabKey Assays</a></li>
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=createDatasetViaAssay">LabKey Assays</a></li>
  *              </ul>
  *           </p>
  * @see LABKEY.Experiment
@@ -655,7 +655,7 @@ LABKEY.Assay = new function()
             'get' methods passes its success callback function an array of AssayDesigns.
  *            <p>Additional Documentation:
  *              <ul>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=createDatasetViaAssay">LabKey Assays</a></li>
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=createDatasetViaAssay">LabKey Assays</a></li>
  *              </ul>
  *           </p>
 */

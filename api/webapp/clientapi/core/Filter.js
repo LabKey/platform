@@ -22,8 +22,8 @@
   * @namespace  Filter static class to describe and create filters.
   *            <p>Additional Documentation:
   *              <ul>
-  *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=filteringData">Filter via the LabKey UI</a></li>
-  *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=tutorialActionURL">Tutorial: Basics: Building URLs and Filters</a></li>
+  *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=filteringData">Filter via the LabKey UI</a></li>
+  *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=tutorialActionURL">Tutorial: Basics: Building URLs and Filters</a></li>
   *              </ul>
   *           </p>
  * @property {Object} Types Types static class to describe different types of filters.
@@ -723,14 +723,14 @@ LABKEY.Filter = new function()
 *            type of filter is identified and operates.  See {@link LABKEY.Filter}.
  *            <p>Additional Documentation:
  *              <ul>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=filteringData">Filter via the LabKey UI</a></li>
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=filteringData">Filter via the LabKey UI</a></li>
  *              </ul>
  *           </p>
 * @class  Static class that defines the functions that describe how a particular
 *            type of filter is identified and operates.  See {@link LABKEY.Filter}.
  *            <p>Additional Documentation:
  *              <ul>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=filteringData">Filter via the LabKey UI</a></li>
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=filteringData">Filter via the LabKey UI</a></li>
  *              </ul>
  *           </p>
 */

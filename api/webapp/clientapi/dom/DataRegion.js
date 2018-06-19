@@ -4289,13 +4289,13 @@ if (!LABKEY.DataRegions) {
      * which can be used for other types of web parts.
      *              <p>Additional Documentation:
      *              <ul>
-     *                  <li><a href= "https://www.labkey.org/wiki/home/Documentation/page.view?name=webPartConfig">
+     *                  <li><a href= "https://www.labkey.org/Documentation/wiki-page.view?name=webPartConfig">
      *  				        Web Part Configuration Properties</a></li>
-     *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+     *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
      *                      How To Find schemaName, queryName &amp; viewName</a></li>
-     *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=javascriptTutorial">LabKey JavaScript API Tutorial</a> and
-     *                      <a href="https://www.labkey.org/wiki/home/Study/demo/page.view?name=reagentRequest">Demo</a></li>
-     *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=labkeySql">
+     *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=javascriptTutorial">LabKey JavaScript API Tutorial</a> and
+     *                      <a href="https://www.labkey.org/home/Study/demo/wiki-page.view?name=reagentRequest">Demo</a></li>
+     *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=labkeySql">
      *                      LabKey SQL Reference</a></li>
      *              </ul>
      *           </p>
@@ -4407,7 +4407,7 @@ if (!LABKEY.DataRegions) {
      * @param {Object} [config.parameters] Map of name (string)/value pairs for the values of parameters if the SQL
      * references underlying queries that are parameterized. For example, the following passes two parameters to the query: {'Gender': 'M', 'CD4': '400'}.
      * The parameters are written to the request URL as follows: query.param.Gender=M&query.param.CD4=400.  For details on parameterized SQL queries, see
-     * <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=paramsql">Parameterized SQL Queries</a>.
+     * <a href="https://www.labkey.org/Documentation/wiki-page.view?name=paramsql">Parameterized SQL Queries</a>.
      * @param {Array} [config.aggregates] An array of aggregate definitions. The objects in this array should have the properties:
      * <ul>
      *     <li><b>column:</b> The name of the column to be aggregated.</li>

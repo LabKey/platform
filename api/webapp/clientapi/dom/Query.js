@@ -51,7 +51,7 @@ LABKEY.Query = new function(impl, $) {
      * called, the user will be prompted to accept a file from the server, and most browsers will allow
      * the user to either save it or open it in an appropriate application.
      * For more information, see the
-     * <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=labkeySql">
+     * <a href="https://www.labkey.org/Documentation/wiki-page.view?name=labkeySql">
      * LabKey SQL Reference</a>.
      * @param config An object which contains the following configuration properties.
      * @param {String} config.schemaName name of the schema to query.

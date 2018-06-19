@@ -13,10 +13,10 @@
  * used with data-bound user interface widgets, such as the Ext.grid.Panel.
  *
  * <p>If you use any of the LabKey APIs that extend Ext APIs, you must either make your code open source or
- * <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=extDevelopment">purchase an Ext license</a>.</p>
+ * <a href="https://www.labkey.org/Documentation/wiki-page.view?name=extDevelopment">purchase an Ext license</a>.</p>
  *            <p>Additional Documentation:
  *              <ul>
- *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=javascriptTutorial">Tutorial: Create Applications with the JavaScript API</a></li>
+ *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=javascriptTutorial">Tutorial: Create Applications with the JavaScript API</a></li>
  *              </ul>
  *           </p>
  * @augments Ext.data.Store
