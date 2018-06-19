@@ -1060,7 +1060,7 @@ public class QueryController extends SpringActionController
             }
             catch (XmlException e)
             {
-                throw new RuntimeException(e);
+                throw new RuntimeValidationException(e);
             }
         }
 
