@@ -205,10 +205,10 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 
     @NotNull
     @Override
-    public Collection<String> getSummary(Container c)
+    public Collection<String> getSummary(Container c, User user)
     {
         /* @todo: return running jobs. */
-        return super.getSummary(c);
+        return super.getSummary(c, user);
     }
 
     public void containerCreated(Container c, User user)

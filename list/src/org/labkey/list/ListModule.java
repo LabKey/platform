@@ -156,7 +156,7 @@ public class ListModule extends SpringModule
 
     @NotNull
     @Override
-    public Collection<String> getSummary(Container c)
+    public Collection<String> getSummary(Container c, User user)
     {
         Collection<String> results = new ArrayList<>();
         Collection<ListDef> lists = ListManager.get().getLists(c);

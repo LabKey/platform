@@ -35,7 +35,7 @@
 This will delete all study data in this folder.
 <ul>
 <%
-Collection<String> summaries = ModuleLoader.getInstance().getCurrentModule().getSummary(getStudy().getContainer());
+Collection<String> summaries = ModuleLoader.getInstance().getCurrentModule().getSummary(getStudy().getContainer(), getUser());
 for (String s : summaries)
 {
 %>

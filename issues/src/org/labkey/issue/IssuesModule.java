@@ -149,7 +149,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
 
     @NotNull
     @Override
-    public Collection<String> getSummary(Container c)
+    public Collection<String> getSummary(Container c, User user)
     {
         Collection<String> list = new LinkedList<>();
         long count = IssueManager.getIssueCount(c);

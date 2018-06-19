@@ -50,6 +50,7 @@ import org.labkey.api.rss.RSSService;
 import org.labkey.api.rss.RSSServiceImpl;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.Role;
@@ -217,9 +218,9 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         return PageFlowUtil.set(CommSchema.getInstance().getSchemaName());
     }
 
-    @Override
     @NotNull
-    public Collection<String> getSummary(Container c)
+    @Override
+    public Collection<String> getSummary(Container c, User user)
     {
         List<String> list = new ArrayList<>(1);
         long count = AnnouncementManager.getMessageCount(c);

@@ -62,7 +62,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
 import org.labkey.api.view.BaseWebPartFactory;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
@@ -376,14 +375,12 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     }
 
     @NotNull
-    public Collection<String> getSummary(Container c)
+    public Collection<String> getSummary(Container c, User user)
     {
         Collection<String> list = new LinkedList<>();
         int runGroupCount = ExperimentService.get().getExperiments(c, null, false, true).size();
         if (runGroupCount > 0)
             list.add("" + runGroupCount + " Run Group" + (runGroupCount > 1 ? "s" : ""));
-
-        User user = HttpView.currentContext().getUser();
 
         Set<ExperimentRunType> runTypes = ExperimentService.get().getExperimentRunTypes(c);
         for (ExperimentRunType runType : runTypes)
