@@ -90,6 +90,7 @@ import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.study.assay.pipeline.AssayRunAsyncContext;
 import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -1134,7 +1135,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 }
                 else
                     throw new ExperimentException("Script engine for the extension : " + ext + " has not been registered.\nFor documentation about how to configure a " +
-                            "scripting engine, paste this link into your browser: \"https://www.labkey.org/Documentation/wiki-page.view?name=configureScripting\".");
+                            "scripting engine, paste this link into your browser: \"" + new HelpTopic("configureScripting") + "\".");
             }
             else
                 throw new ExperimentException("The transform script '" + scriptFile.getPath() + "' is invalid or does not exist");
