@@ -511,6 +511,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     return view;
                 }
             },
+            // TODO: Delete this? I see no usages
             new BaseWebPartFactory("ProjectNav")
             {
                 public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
