@@ -288,7 +288,9 @@ public class FileUtil
     @Nullable
     public static String getAbsolutePath(Container container, URI uri)
     {
-        if (!FileUtil.hasCloudScheme(uri))
+        if (!uri.isAbsolute())
+            return null;
+        else if (!FileUtil.hasCloudScheme(uri))
             return new File(uri).getAbsolutePath();
         else
             return getAbsolutePathWithoutAccessIdFromCloudUrl(container, uri);
@@ -297,7 +299,9 @@ public class FileUtil
     @Nullable
     public static String getAbsoluteCaseSensitivePathString(Container container, URI uri)
     {
-        if (!FileUtil.hasCloudScheme(uri))
+        if (!uri.isAbsolute())
+            return null;
+        else if (!FileUtil.hasCloudScheme(uri))
             return getAbsoluteCaseSensitiveFile(new File(uri)).toURI().toString();
         else
             return getAbsolutePathWithoutAccessIdFromCloudUrl(container, uri);
@@ -306,7 +310,9 @@ public class FileUtil
     @Nullable
     public static Path getAbsoluteCaseSensitivePath(Container container, URI uri)
     {
-        if (!FileUtil.hasCloudScheme(uri))
+        if (!uri.isAbsolute())
+            return null;
+        else if (!FileUtil.hasCloudScheme(uri))
             return getAbsoluteCaseSensitiveFile(new File(uri)).toPath();
         else
             return getAbsolutePathFromCloudUrl(container, uri);
@@ -334,9 +340,12 @@ public class FileUtil
             return path.toAbsolutePath();
     }
 
+    @Nullable
     public static Path getPath(Container container, URI uri)
     {
-        if (!FileUtil.hasCloudScheme(uri))
+        if (!uri.isAbsolute())
+            return null;
+        else if (!FileUtil.hasCloudScheme(uri))
             return new File(uri).toPath();
         else
             return CloudStoreService.get().getPathFromUrl(container, uri.toString());
@@ -418,6 +427,7 @@ public class FileUtil
         return FileContentService.CLOUD_ROOT_PREFIX + "/" + cloudName;
     }
 
+    @Nullable
     private static String getPathStringWithoutAccessId(URI uri)
     {
         if (null != uri)
