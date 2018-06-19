@@ -244,7 +244,7 @@
                     cls: 'labkey-wizard-header'
                 },{
                     html: 'Hover to learn more about each folder type. '
-                        + LABKEY.Utils.textLink({text: 'Folder Help', href: 'https://www.labkey.org/wiki/Documentation/page.view?name=foldertypes', target: '_blank'})
+                        + LABKEY.Utils.textLink({text: 'Folder Help', href: 'https://www.labkey.org/Documentation/wiki-page.view?name=foldertypes', target: '_blank'})
                 },{
                     xtype: 'radiogroup',
                     columns: 1,

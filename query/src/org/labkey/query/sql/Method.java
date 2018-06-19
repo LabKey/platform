@@ -422,7 +422,7 @@ public abstract class Method
 
         // ========== Methods above this line have been documented ==========
         // Put new methods below this line and move above after they're documented, i.e.,
-        // added to https://www.labkey.org/wiki/home/Documentation/page.view?name=labkeySql
+        // added to https://www.labkey.org/Documentation/wiki-page.view?name=labkeySql
 
     }
 

@@ -218,7 +218,7 @@
 
                       out.write("Not Available");
                       out.write(PageFlowUtil.helpPopup("Not Available",
-                              authProvider.getName() + " cannot be enabled because it is not FICAM approved. Please go to the <a target=\"_blank\" href=\"https://www.labkey.org/home/Documentation/wiki-page.view?name=complianceSettings#Accounts\">Compliance Settings</a> page to disable this control.",
+                              authProvider.getName() + " cannot be enabled because it is not FICAM approved. Please go to the <a target=\"_blank\" href=\"https://www.labkey.org/Documentation/wiki-page.view?name=complianceSettings#Accounts\">Compliance Settings</a> page to disable this control.",
                               true, 500));
                 }
                 else

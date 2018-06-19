@@ -154,7 +154,7 @@
             <xs:annotation>
                 <xs:documentation xmlns="http://www.w3.org/1999/xhtml">
                     Indicates the type of repository.
-                    See <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=manageSpecimens" target="_top">Manage Specimens</a>.
+                    See <a href="https://www.labkey.org/Documentation/wiki-page.view?name=manageSpecimens" target="_top">Manage Specimens</a>.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

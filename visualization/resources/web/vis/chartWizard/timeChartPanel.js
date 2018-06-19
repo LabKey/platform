@@ -264,12 +264,12 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                         text: 'Reports and Visualizations',
                         iconCls: 'fa fa-table',
                         hrefTarget: '_blank',
-                        href: 'https://www.labkey.org/wiki/home/Documentation/page.view?name=reportsAndViews'
+                        href: 'https://www.labkey.org/Documentation/wiki-page.view?name=reportsAndViews'
                     },{
                         text: 'Time Charts',
                         iconCls: 'fa fa-line-chart',
                         hrefTarget: '_blank',
-                        href: 'https://www.labkey.org/wiki/home/Documentation/page.view?name=timeChart'
+                        href: 'https://www.labkey.org/Documentation/wiki-page.view?name=timeChart'
                     }]
                 }
             });

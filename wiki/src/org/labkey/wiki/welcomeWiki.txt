@@ -1,20 +1,20 @@
 <p>To learn more about using the platform, please visit one of the community resources freely available on
-<b><a href="http://www.labkey.org">labkey.org</a></b>:</p>
+<b><a href="https://www.labkey.org">labkey.org</a></b>:</p>
 <ul>
-    <li><a href="https://www.labkey.org/Documentation/project-begin.view?">Documentation</a></li>
+    <li><a href="https://www.labkey.org/Documentation/project-begin.view">Documentation</a></li>
     <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=tutorials">Tutorials</a></li>
     <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=dev">Developer Guide</a></li>
-    <li><a href="https://www.labkey.org/home/Support/project-begin.view?">Community Forums</a></li>
+    <li><a href="https://www.labkey.org/home/Support/project-begin.view">Community Forums</a></li>
 </ul>
 
 <p>
-If you need further assistance, <b><a href="http://www.labkey.com">LabKey</a></b> provides professional support,
+If you need further assistance, <b><a href="https://www.labkey.com">LabKey</a></b> provides professional support,
 customization and development. Please <a href="https://www.labkey.com/company/contact-us">contact us</a>.
 </p>
 
-<p>Thanks for installing LabKey Server. </p>
+<p>Thanks for installing LabKey Server.</p>
 
 <p>Regards,</p>
 
 <p>The LabKey Team<br/>
-<a href="http://www.labkey.com">www.labkey.com</a></p>
+<a href="https://www.labkey.com">www.labkey.com</a></p>

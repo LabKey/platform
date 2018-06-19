@@ -375,9 +375,9 @@
                 Intended for use when the ETL's source query is a parameterized SQL query.
                 Parameter values placed here are passed into the SQL query.
                 For details see
-                https://www.labkey.org/wiki/home/Documentation/page.view?name=paramsql
+                https://www.labkey.org/Documentation/wiki-page.view?name=paramsql
                 and
-                https://www.labkey.org/wiki/home/Documentation/page.view?name=etlSamples#param
+                https://www.labkey.org/Documentation/wiki-page.view?name=etlSamples#param
             </documentation>
         </annotation>
         <sequence minOccurs="0" maxOccurs="unbounded">
@@ -523,7 +523,7 @@
                 (destination) level. If the same column is specified both globally and in an individual step,
                 that step will receive the value defined at the step level.
                 The form of these are the same as for source query parameters. See
-                https://www.labkey.org/wiki/home/Documentation/page.view?name=etlSamples#param
+                https://www.labkey.org/Documentation/wiki-page.view?name=etlSamples#param
             </documentation>
         </annotation>
         <sequence minOccurs="1" maxOccurs="unbounded">

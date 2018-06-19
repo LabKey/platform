@@ -66,6 +66,6 @@
         Please ask an administrator for assistance.
     <% } %>
 <p class="labkey-indented">
-    Assay data cannot be uploaded until you configure a <a target="_blank" href="https://www.labkey.org/wiki/home/Documentation/page.view?name=pipelineSetup">pipeline root</a>
+    Assay data cannot be uploaded until you configure a <a target="_blank" href="https://www.labkey.org/Documentation/wiki-page.view?name=pipelineSetup">pipeline root</a>
     directory that will contain the files uploaded as part of assays.
 <% } %>

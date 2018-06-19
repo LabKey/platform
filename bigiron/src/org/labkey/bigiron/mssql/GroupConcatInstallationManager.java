@@ -88,13 +88,13 @@ public class GroupConcatInstallationManager extends AbstractClrInstallationManag
     @Override
     protected String getInstallationExceptionMsg()
     {
-        return "Failure installing GROUP_CONCAT aggregate function. This function is required for optimal operation of this server. Contact LabKey if you need assistance installing this function, or see https://www.labkey.org/wiki/home/Documentation/page.view?name=groupconcatinstall";
+        return "Failure installing GROUP_CONCAT aggregate function. This function is required for optimal operation of this server. Contact LabKey if you need assistance installing this function, or see https://www.labkey.org/Documentation/wiki-page.view?name=groupconcatinstall";
     }
 
     @Override
     protected String getUninstallationExceptionMsg()
     {
-        return "Failure uninstalling the existing GROUP_CONCAT aggregate function, which means it can't be upgraded to the latest version. Contact LabKey if you need assistance installing the newest version of this function, or see https://www.labkey.org/wiki/home/Documentation/page.view?name=groupconcatinstall";
+        return "Failure uninstalling the existing GROUP_CONCAT aggregate function, which means it can't be upgraded to the latest version. Contact LabKey if you need assistance installing the newest version of this function, or see https://www.labkey.org/Documentation/wiki-page.view?name=groupconcatinstall";
     }
 
     @Override
