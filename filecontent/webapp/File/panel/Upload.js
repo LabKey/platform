@@ -467,7 +467,7 @@ Ext4.define('File.panel.Upload', {
         else {
             html = "Your web browser doesn't support drag and drop uploading of files.<br>" +
                     "You can upgrade your web browser or upload multiple files using an external " +
-                    "<a target=_blank href='https://www.labkey.org/Documentation/wiki-page.view?name=webdav'>WebDAV client</a>.";
+                    LABKEY.Utils.getSimpleLinkHtml('webdav', 'WebDAV client') + ".";
         }
 
         this.multiUpload = Ext4.create('Ext.panel.Panel', {
@@ -499,13 +499,13 @@ Ext4.define('File.panel.Upload', {
             'To upload files from your desktop to LabKey Server, drag-and-drop them onto the file area.',
             '<p>',
             'You can also use ',
-            '<a target=_blank href="https://www.labkey.org/Documentation/wiki-page.view?name=webdav">WebDAV</a> ',
-                    'to transfer files to and from this folder using the Mac Finder, ' +
-                    'Windows Explorer or file transfer programs like <a target=_blank href="http://cyberduck.io/">CyberDuck</a>. The WebDav URL for this folder is:',
+            LABKEY.Utils.getSimpleLinkHtml('webdav', 'WebDAV'),
+            'to transfer files to and from this folder using the Mac Finder, ' +
+            'Windows Explorer or file transfer programs like <a target=_blank href="http://cyberduck.io/">CyberDuck</a>. The WebDav URL for this folder is:',
             '</p>',
-                    '<textarea style="font-family:monospace" readonly wrap="hard" cols="62" rows="3" size=' + url.length + '>' + Ext4.util.Format.htmlEncode(url) + '</textarea>',
+            '<textarea style="font-family:monospace" readonly wrap="hard" cols="62" rows="3" size=' + url.length + '>' + Ext4.util.Format.htmlEncode(url) + '</textarea>',
             '<p>For more information on transferring files, please see the',
-            '<a target="_blank" href="https://www.labkey.org/Documentation/wiki-page.view?name=fileUpload">file upload</a>',
+            LABKEY.Utils.getSimpleLinkHtml('fileUpload', 'file upload'),
             'help documentation.</p>'
         ];
 

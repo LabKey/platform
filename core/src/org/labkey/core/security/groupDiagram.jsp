@@ -37,12 +37,12 @@
         {
             render("This feature is not supported on older versions of Internet Explorer. " +
                 "Please upgrade to the latest version of Internet Explorer, or switch to using Firefox, Chrome, or Safari. " +
-                "See <a href='https://www.labkey.org/Documentation/wiki-page.view?name=supportedBrowsers' target='browserVersions'>this page</a> for more information.");
+                "See " + LABKEY.Utils.getSimpleLinkHtml('supported', 'this page') + " for more information.");
         }
         else if (Ext4.isGecko2 || Ext4.isGecko3)
         {
             render("This feature is not supported on older versions of Firefox; please upgrade to the latest version of Firefox. " +
-                "See <a href='https://www.labkey.org/Documentation/wiki-page.view?name=supportedBrowsers' target='browserVersions'>this page</a> for more information.");
+                "See " + LABKEY.Utils.getSimpleLinkHtml('supported', 'this page') + " for more information.");
         }
         else
         {

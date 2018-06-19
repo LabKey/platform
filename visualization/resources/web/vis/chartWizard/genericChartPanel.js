@@ -213,27 +213,27 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         text: 'Reports and Visualizations',
                         iconCls: 'fa fa-table',
                         hrefTarget: '_blank',
-                        href: 'https://www.labkey.org/Documentation/wiki-page.view?name=reportsAndViews'
+                        href: LABKEY.Utils.getHelpTopicHref('reportsAndViews')
                     },{
                         text: 'Bar Plots',
                         iconCls: 'fa fa-bar-chart',
                         hrefTarget: '_blank',
-                        href: 'https://www.labkey.org/Documentation/wiki-page.view?name=barchart'
+                        href: LABKEY.Utils.getHelpTopicHref('barchart')
                     },{
                         text: 'Box Plots',
                         iconCls: 'fa fa-sliders fa-rotate-90',
                         hrefTarget: '_blank',
-                        href: 'https://www.labkey.org/Documentation/wiki-page.view?name=boxplot'
+                        href: LABKEY.Utils.getHelpTopicHref('boxplot')
                     },{
                         text: 'Pie Charts',
                         iconCls: 'fa fa-pie-chart',
                         hrefTarget: '_blank',
-                        href: 'https://www.labkey.org/Documentation/wiki-page.view?name=piechart'
+                        href: LABKEY.Utils.getHelpTopicHref('piechart')
                     },{
                         text: 'Scatter Plots',
                         iconCls: 'fa fa-area-chart',
                         hrefTarget: '_blank',
-                        href: 'https://www.labkey.org/Documentation/wiki-page.view?name=scatterplot'
+                        href: LABKEY.Utils.getHelpTopicHref('scatterplot')
                     }]
                 }
             });
