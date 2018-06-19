@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.action.ReturnUrlForm" %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
@@ -30,7 +31,6 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.security.SecurityController" %>
 <%@ page import="static org.apache.commons.lang3.StringUtils.stripEnd" %>
-<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -92,21 +92,31 @@ configured to expire, and they can be revoked), but a valid API key provides com
 <%
     if (apiKeys)
     {
-        int expiration = AppProps.getInstance().getApiKeyExpirationSeconds();
-        final String expirationMessage;
-
-        if (-1 == expiration)
+        if (getUser().isImpersonated())
         {
-            expirationMessage = "never expire, although administrators can revoke them manually.";
+
+%>
+<div class="labkey-message">API keys aren't available while you're impersonating.</div><br/>
+<%
         }
         else
         {
-            String duration = DateUtil.formatDuration(expiration * 1000L);
-            duration = StringUtils.replaceEach(duration, new String[]{"s", "d"}, new String[]{" seconds", " days"});
-            expirationMessage = "expire after " + duration + "; administrators can also revoke API keys before they expire.";
-        }
+            int expiration = AppProps.getInstance().getApiKeyExpirationSeconds();
+
+            final String expirationMessage;
+
+            if (-1 == expiration)
+            {
+                expirationMessage = "never expire, although administrators can revoke them manually.";
+            }
+            else
+            {
+                String duration = DateUtil.formatDuration(expiration * 1000L);
+                duration = StringUtils.replaceEach(duration, new String[]{"s", "d"}, new String[]{" seconds", " days"});
+                expirationMessage = "expire after " + duration + "; administrators can also revoke API keys before they expire.";
+            }
 %>
-This server allows API keys. <%=text("They are currently configured to " + expirationMessage)%> (For example, if an API key is accidentally revealed
+This server allows API keys. They are currently configured to <%=text(expirationMessage)%> (For example, if an API key is accidentally revealed
 to others.) API keys are appropriate for authenticating ad hoc interactions within statistical tools (e.g., R, RStudio, SAS) or programming languages
 (e.g., Java, Python), as well authenticating API use from automated scripts.
 <br/><br/>
@@ -117,7 +127,6 @@ to others.) API keys are appropriate for authenticating ad hoc interactions with
     <%=button("Copy to clipboard").id("apikey-token-copy").attributes("data-clipboard-target=\"#apikey-token\"") %>
 </labkey:form>
 
-<br/>
 <div id="apikey-rusage" style="display: none">
     <br/>
     <h3>R usage</h3>
@@ -133,6 +142,7 @@ to others.) API keys are appropriate for authenticating ad hoc interactions with
 </div>
 <br/><br/>
 <%
+        }
     }
 
     if (sessionKeys)
@@ -151,7 +161,6 @@ compliance requirements where interactions require specifying current role &amp;
     <%=button("Copy to clipboard").id("session-token-copy").attributes("data-clipboard-target=\"#session-token\"") %>
 </labkey:form>
 
-<br/>
 <div id="session-rusage" style="display: none">
 <br/>
 <h3>R usage</h3>
