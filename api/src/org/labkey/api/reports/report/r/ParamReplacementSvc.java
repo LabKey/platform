@@ -38,6 +38,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.apache.commons.lang3.StringUtils.startsWith;
+import static org.labkey.api.reports.report.ScriptEngineReport.DATA_INPUT;
 import static org.labkey.api.reports.report.ScriptEngineReport.INPUT_FILE_TSV;
 
 /**
@@ -342,6 +343,8 @@ public class ParamReplacementSvc
      */
     public String processInputReplacement(String script, String replacementParam, String replacementValue, boolean isRStudio)
     {
+        if (isRStudio && replacementValue == null)
+            replacementValue = DATA_INPUT;
         String commentProcessedScript = processInputReplacement(script, replacementParam, replacementValue, SubstitutionSyntax.COMMENT);
         if (isRStudio)
             return commentProcessedScript; // script has already been transformed from inline to comment, if any

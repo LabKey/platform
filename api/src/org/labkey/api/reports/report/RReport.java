@@ -565,10 +565,10 @@ public class RReport extends ExternalScriptEngineReport
     }
 
     @Override
-    protected String processInputReplacement(ScriptEngine engine, String script, File inputFile, boolean isRStudio)
+    protected String processInputReplacement(ScriptEngine engine, String script, @Nullable File inputFile, boolean isRStudio)
     {
         RScriptEngine rengine = (RScriptEngine) engine;
-        String remotePath = rengine.getRemotePath(inputFile);
+        String remotePath = inputFile == null ? null : rengine.getRemotePath(inputFile);
         return ParamReplacementSvc.get().processInputReplacement(script, INPUT_FILE_TSV, remotePath, isRStudio);
     }
 

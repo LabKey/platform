@@ -19,6 +19,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -664,7 +665,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
             script = concatScriptProlog(engine, context, script == null ? "" : script, inputFile, inputParameters, isRStudio);
         if (!StringUtils.isEmpty(script))
         {
-            if (inputFile != null)
+            if (inputFile != null || isRStudio)
                 script = processInputReplacement(engine, script, inputFile, isRStudio);
             script = processOutputReplacements(engine, script, outputSubst, context, isRStudio);
         }
@@ -686,9 +687,9 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         return StringUtils.defaultString(getScriptProlog(engine, context, inputFile, inputParameters)) + script;
     }
 
-    protected String processInputReplacement(ScriptEngine engine, String script, File inputFile, boolean isRStudio)
+    protected String processInputReplacement(ScriptEngine engine, String script, @Nullable File inputFile, boolean isRStudio)
     {
-        return ParamReplacementSvc.get().processInputReplacement(script, INPUT_FILE_TSV, inputFile.getAbsolutePath().replaceAll("\\\\", "/"), isRStudio);
+        return ParamReplacementSvc.get().processInputReplacement(script, INPUT_FILE_TSV, inputFile == null ? null : inputFile.getAbsolutePath().replaceAll("\\\\", "/"), isRStudio);
     }
 
     protected String processOutputReplacements(ScriptEngine engine, String script, List<ParamReplacement> replacements, @NotNull ContainerUser context, boolean isRStudio) throws Exception
