@@ -33,7 +33,6 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.survey.SurveyService;
@@ -122,7 +121,7 @@ public class SurveyModule extends DefaultModule
 
     @NotNull
     @Override
-    public Collection<String> getSummary(Container c, User user)
+    public Collection<String> getSummary(Container c)
     {
         Collection<String> results = new ArrayList<>();
 

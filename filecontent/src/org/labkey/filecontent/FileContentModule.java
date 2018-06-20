@@ -29,7 +29,6 @@ import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.WebPartFactory;
@@ -86,7 +85,7 @@ public class FileContentModule extends DefaultModule
 
     @NotNull
     @Override
-    public Collection<String> getSummary(Container c, User user)
+    public Collection<String> getSummary(Container c)
     {
         List<String> result = new ArrayList<>();
         FileContentService service = FileContentService.get();

@@ -201,8 +201,7 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
     }
 
     @NotNull
-    @Override
-    public Collection<String> getSummary(Container c, User user)
+    public Collection<String> getSummary(Container c)
     {
         Collection<String> list = new LinkedList<>();
         try

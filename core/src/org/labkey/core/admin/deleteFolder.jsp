@@ -86,7 +86,7 @@
     if (showFinalConfirmation)
     {
         // Simplify the confirmation message in this case
-        boolean singleEmptyContainer = !c.hasChildren() && ModuleLoader.getInstance().getModuleSummaries(c, user).isEmpty();
+        boolean singleEmptyContainer = !c.hasChildren() && ModuleLoader.getInstance().getModuleSummaries(c).isEmpty();
 
         if (!singleEmptyContainer)
         {
@@ -97,7 +97,7 @@
 
             for (Container container : containers)
             {
-                Collection<String> messages = ModuleLoader.getInstance().getModuleSummaries(container, user);
+                Collection<String> messages = ModuleLoader.getInstance().getModuleSummaries(container);
 
                 %><li><%=h(container.getPath().substring(1))%><%
 
