@@ -16,6 +16,9 @@ Ext4.namespace('LABKEY.ext4');
  * @param {String} [config.usePills] True to use pills instead of tabs. Defaults to false.
  * @param {String} [config.stacked] True to stack the tabs/pills vertically. Defaults to false.
  * @param {String} [config.justified] True to horizontally justify the tabs/pills. Defaults to false.
+ * @param {String} [config.updateHistory] True to have bootstrap panel update url history. Defaults to true.
+ * @param {Function} [config.changeHandler] Callback function on tab change. Parameters: tab.
+ * @param {Function} [config.resizeHandler] Callback function on tab content resize. Parameters: cmp, width, height, oldWidth, oldHeight.
  * @example &lt;script type="text/javascript"&gt;
     Ext4.onReady(function(){
 
@@ -69,6 +72,7 @@ Ext4.define("LABKEY.ext4.BootstrapTabPanel", {
     tabPadding: '10px 10px 0 0', // default per tab padding
     items: null, // array of tab element items
     tabTokenPrefix: 'tab=',
+    updateHistory: true,
 
     usePills: false, // change from bootstrap nav-tabs to nav-pills
     stacked: false, // vertically stack the tabs/pills
@@ -127,7 +131,7 @@ Ext4.define("LABKEY.ext4.BootstrapTabPanel", {
         }
 
         this.tpl = [
-            '<div>',
+            '<div' + (this.listId ? ' id=' + this.listId : '') + '>',
                 this.title ? '<h3>' + LABKEY.Utils.encodeHtml(this.title) + '</h3>' : '',
                 this.description ? '<p>' + LABKEY.Utils.encodeHtml(this.description) + '</p>' : '',
                 '<ul class="' + navCls + '">',
@@ -150,7 +154,7 @@ Ext4.define("LABKEY.ext4.BootstrapTabPanel", {
         this.callParent(arguments);
 
         // delayed task to help with layout / resizing of components as tabs change
-        this.delayedLayout = new Ext.util.DelayedTask(function() {
+        this.delayedLayout = new Ext4.util.DelayedTask(function() {
             var item = this.findItemForActiveTabId();
             if (item && item.container) {
                 item.container.doLayout();
@@ -171,12 +175,27 @@ Ext4.define("LABKEY.ext4.BootstrapTabPanel", {
         }, this);
     },
 
+    setActiveTab: function(tabId) {
+        // clear old active
+        var active = this.findItemForActiveTabId();
+        active.tabCls = '';
+
+        // Add active to new tabId
+        this.activeTabId = tabId;
+        active = this.findItemForActiveTabId();
+        active.tabCls = 'active';
+    },
+
     ensureContainerForActiveTab: function() {
         var item = this.findItemForActiveTabId();
+        var initializing = false;
         if (item != null && !item.container) {
+            var me = this;
+            initializing = true;
             item.container = Ext4.create('Ext.container.Container', {
                 renderTo: item.id,
                 padding: this.tabPadding,
+                cls: (this.containerCls ? this.containerCls : ''),
                 defaults: {
                     border: false,
                     bodyStyle: 'background-color: transparent;'
@@ -186,20 +205,38 @@ Ext4.define("LABKEY.ext4.BootstrapTabPanel", {
                         if (item.items) {
                             cmp.add(item.items);
                         }
+
                         if (Ext4.isFunction(item.onReady)) {
                             item.onReady.call(item.scope || this, cmp);
+                        }
+                    },
+                    resize: function(cmp, width, height, oldWidth, oldHeight) {
+                        if (Ext4.isFunction(me.resizeHandler)) {
+                            me.resizeHandler.call(item.scope || this, cmp, width, height, oldWidth, oldHeight);
                         }
                     }
                 }
             });
         }
 
+        if (Ext4.isFunction(this.changeHandler)) {
+            var scope;
+            if (item && item.scope) { // scope set in the item
+                scope = item.scope;
+            } else {
+                scope = this.scope;
+            }
+            this.changeHandler.call(scope, item, initializing);
+        }
+
         // if the item has an itemId, add to the hash
-        if (item.itemId) {
+        if (this.updateHistory && item && item.itemId) {
             Ext4.util.History.add(this.tabTokenPrefix + item.itemId);
         }
 
-        this.delayedLayout.delay(500);
+        if (this.delayedLayout !== false) {
+            this.delayedLayout.delay(500);
+        }
     },
 
     findItemForActiveTabId: function() {
