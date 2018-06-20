@@ -19,11 +19,13 @@
 <%@ page import="org.labkey.api.cloud.CloudUrls" %>
 <%@ page import="org.labkey.api.files.FileContentService" %>
 <%@ page import="org.labkey.api.files.FileUrls" %>
+<%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
@@ -31,8 +33,6 @@
 <%@ page import="org.labkey.core.admin.AdminController.ProjectSettingsForm.MigrateFilesOption" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Collections" %>
-<%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -83,7 +83,7 @@
         <p class="labkey-message">
             <%= h(bean.getConfirmMessage()) %>
             <% if (null != bean.getMigrateFilesOption() && !MigrateFilesOption.leave.name().equals(bean.getMigrateFilesOption()) && !FileRootProp.disable.name().equals(bean.getFileRootOption())) { %>
-                <a id="redirectToPipeline" href="<%=h(redirectToPipeline)%>">View Copy Files Pipeline Job</a>
+                <a id="redirectToPipeline" class="labkey-text-link" href="<%=h(redirectToPipeline)%>">View Pipeline Job</a>
             <% } %>
         </p>
 <%  } %>
@@ -164,7 +164,7 @@
         <% if (hasAdminOpsPerm && !isFolderSetup) { %>
         <tr>
             <td>
-                <a id="manageAdditionalFileRoots" href="<%=h(urlProvider(FileUrls.class).urlShowAdmin(getContainer()))%>">Manage Additional File Roots</a>
+                <a id="manageAdditionalFileRoots" class="labkey-text-link" href="<%=h(urlProvider(FileUrls.class).urlShowAdmin(getContainer()))%>">Manage Additional File Roots</a>
             </td>
         </tr>
         <% } %>
