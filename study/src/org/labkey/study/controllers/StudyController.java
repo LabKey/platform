@@ -6007,7 +6007,7 @@ public class StudyController extends BaseStudyController
 
     public static class StudyChartReport extends ChartQueryReport
     {
-        private static final String TYPE = "Study.chartReport";
+        public static final String TYPE = "Study.chartReport";
 
         public String getType()
         {

@@ -22,6 +22,7 @@ import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.collections.Sets;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -54,6 +55,7 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityManager;
@@ -470,6 +472,15 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 metric.put("datasetCount", new SqlSelector(DbSchema.get("study", DbSchemaType.Module), "SELECT COUNT(*) FROM study.dataset").getObject(Long.class));
                 return metric;
             });
+
+            Set chartViewTypes = Sets.newCaseInsensitiveHashSet(ChartQueryReport.TYPE, StudyChartQueryReport.TYPE, ChartReportView.TYPE, ChartReportView.DatasetChartReport.TYPE, StudyController.StudyChartReport.TYPE);
+
+            svc.registerUsageMetrics(UsageReportingLevel.MEDIUM, MODULE_NAME, () -> Collections.singletonMap("chartViews", Collections.unmodifiableMap(
+                ContainerManager.getAllChildren(ContainerManager.getRoot()).stream()
+                    .flatMap(c->ReportService.get().getReports(null, c).stream())
+                    .filter(r->chartViewTypes.contains(r.getType()))
+                    .collect(Collectors.groupingBy(Report::getType, Collectors.counting())))
+            ));
         }
 
         AdminConsole.addLink(AdminConsole.SettingsLinkType.Premium, "Master Patient Index", new ActionURL(StudyController.MasterPatientProviderAction.class, ContainerManager.getRoot()));
