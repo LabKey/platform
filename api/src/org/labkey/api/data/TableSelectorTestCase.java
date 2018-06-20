@@ -152,9 +152,21 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
 
         assertEquals(count, selector.stream(User.class).count());
 
+        // Test uncached stream of beans
         try (Stream<User> stream = selector.uncachedStream(User.class))
         {
-            assertEquals(count, stream.count());
+            List<String> emails = stream
+                .map(User::getEmail)
+                .collect(Collectors.toList());
+            assertEquals(count, emails.size());
+        }
+
+        // Test uncached stream of simple object (different code path than bean case above)
+        try (Stream<String> stream = selector.uncachedStream(String.class))
+        {
+            List<String> emails = stream
+                .collect(Collectors.toList());
+            assertEquals(count, emails.size());
         }
 
         assertEquals(count, selector.mapStream().count());
