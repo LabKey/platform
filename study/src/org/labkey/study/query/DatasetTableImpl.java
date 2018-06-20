@@ -17,6 +17,7 @@
 package org.labkey.study.query;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.compliance.TableRules;
@@ -101,6 +102,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 {
     public static final String QCSTATE_ID_COLNAME = "QCState";
     public static final String QCSTATE_LABEL_COLNAME = "QCStateLabel";
+    private static final Logger LOG = Logger.getLogger(DatasetTableImpl.class);
 
     private final @NotNull DatasetDefinition _dsd;
 
@@ -923,22 +925,30 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                 }
                 else
                 {
-                    overlayMetadataIfExists(_dsd.getLabel(), schema, errors);
+                    if(overlayMetadataIfExists(_dsd.getLabel(), schema, errors))
+                        LOG.warn("Rename the file - " + _dsd.getLabel() + ".query.xml to - " + _dsd.getName());
                 }
                 if (!tableName.equalsIgnoreCase(_dsd.getName()) && !tableName.equalsIgnoreCase(_dsd.getLabel()))
                 {
                     // TableName different than both name and label, so overlay it if found
-                    overlayMetadataIfExists(tableName, schema, errors);
+                    if(overlayMetadataIfExists(tableName, schema, errors))
+                        LOG.warn("Rename the file - " + _dsd.getLabel() + ".query.xml to - " + _dsd.getName());
                 }
             }
         }
     }
 
-    private void overlayMetadataIfExists(String tableName, UserSchema schema, Collection<QueryException> errors)
+    private boolean overlayMetadataIfExists(String tableName, UserSchema schema, Collection<QueryException> errors)
     {
         Collection<TableType> metadata = QueryService.get().findMetadataOverride(schema, tableName, false, false, errors, null);
+        boolean foundTitle = false;
+
         if (null != metadata)
+        {
             overlayMetadata(metadata, schema, errors);
+            foundTitle = true;
+        }
+        return foundTitle;
     }
 
     private class QCStateDisplayColumn extends DataColumn
