@@ -26,6 +26,7 @@ import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.trigger.TriggerConfiguration;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -180,13 +181,13 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
 
     TableInfo getJobsTable(User user, Container container);
 
-    TableInfo getTriggersTable(User user, Container container);
-
     boolean runFolderImportJob(Container c, User user, ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot, ImportOptions options);
 
     Integer getJobId(User u, Container c, String jobGUID);
 
     FileAnalysisProperties getFileAnalysisProperties(Container c, String taskId, String path);
+
+    void saveTriggerConfig(Container c, User user, TriggerConfiguration config) throws Exception;
 
     class FileAnalysisProperties
     {
