@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data.triggers;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
@@ -30,9 +31,7 @@ import javax.script.ScriptException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * User: kevink
@@ -42,6 +41,8 @@ import java.util.Set;
  */
 public class ScriptTriggerFactory implements TriggerFactory
 {
+    private static final Logger LOG = Logger.getLogger(ScriptTriggerFactory.class);
+
     @Override
     @NotNull
     public Collection<Trigger> createTrigger(Container c, TableInfo table, Map<String, Object> extraContext)
@@ -64,6 +65,13 @@ public class ScriptTriggerFactory implements TriggerFactory
         if (svc == null)
             return Collections.emptyList();
 
+        return getDefaultTriggers(c, table, svc);
+    }
+
+    @NotNull
+    private Collection<Trigger> getDefaultTriggers(Container c, TableInfo table, @NotNull ScriptService svc) throws ScriptException
+    {
+
         final String schemaName = table.getPublicSchemaName();
         final String name = table.getName();
         final String title = table.getTitle();
@@ -71,50 +79,48 @@ public class ScriptTriggerFactory implements TriggerFactory
         if (schemaName == null || name == null)
             return Collections.emptyList();
 
-        return checkPaths(c, table, svc, getDefaultPaths(schemaName, name, title));
-    }
-
-    private Set<Path> getDefaultPaths(String schemaName, String name, String title)
-    {
         // Create legal path name
         Path pathNew = QueryService.MODULE_QUERIES_PATH.append(
                 FileUtil.makeLegalName(schemaName),
                 FileUtil.makeLegalName(name) + ".js");
+        Collection<Trigger> scripts = new ArrayList<>(checkPaths(c, table, svc, pathNew));
 
         // For backwards compat with 10.2
         Path pathOld = QueryService.MODULE_QUERIES_PATH.append(
                 schemaName.replaceAll("\\W", "_"),
                 name.replaceAll("\\W", "_") + ".js");
-
-        Set<Path> paths = new HashSet<>();
-        paths.add(pathNew);
-        paths.add(pathOld);
+        scripts.addAll(checkPaths(c, table, svc, pathOld));
 
         if (null != title && !name.equals(title))
         {
             Path pathLabel = QueryService.MODULE_QUERIES_PATH.append(
                     FileUtil.makeLegalName(schemaName),
                     FileUtil.makeLegalName(title) + ".js");
-            paths.add(pathLabel);
+
+            Collection<Trigger> titleTriggers = checkPaths(c, table, svc, pathLabel);
+            scripts.addAll(titleTriggers);
+
+            if (!titleTriggers.isEmpty())
+                LOG.warn("Rename the file from using title - " + title + ".js to use table name - " + name);
+
         }
 
-        return paths;
+        return scripts;
     }
 
-    protected Collection<Trigger> checkPaths(Container c, TableInfo table, @NotNull ScriptService svc, Set<Path> paths) throws ScriptException
+    @NotNull
+    protected Collection<Trigger> checkPaths(Container c, TableInfo table, @NotNull ScriptService svc, Path path) throws ScriptException
     {
         Collection<Trigger> scripts = new ArrayList<>();
 
         for (Module m : c.getActiveModules())
         {
-            for (Path p : paths)
-            {
-                ScriptReference script = svc.compile(m, p);
-                if (script != null)
-                    scripts.add(new ScriptTrigger(c, table, script));
-            }
-        }
+            ScriptReference script = svc.compile(m, path);
+            if (script != null)
+                scripts.add(new ScriptTrigger(c, table, script));
 
+        }
         return scripts;
     }
+
 }
