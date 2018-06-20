@@ -313,7 +313,7 @@
             Ext4.Ajax.request(
                     {
                         method: 'MKCOL',
-                        url: config.path + "?pageId="+this.pageId,
+                        url: LABKEY.ActionURL.encodePath(config.path) + "?pageId="+this.pageId,
                         success: function (response, options)
                         {
                             var success = false;
