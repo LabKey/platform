@@ -527,7 +527,7 @@ public class ExceptionUtil
                 return true;
             }
             // Bug 15371
-            if (ex.getClass().equals(IOException.class) && ex.getMessage() != null && ex.getMessage().contains("disconnected client"))
+            if (ex.getClass().equals(IOException.class) && ex.getMessage() != null && (ex.getMessage().contains("disconnected client") || ex.getMessage().contains("Socket read failed")))
             {
                 return true;
             }
