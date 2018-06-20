@@ -98,7 +98,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         if (!getContainer().hasPermission(getUser(), DesignListPermission.class))
             throw new UnauthorizedException();
         if (list.getListId() != 0)
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Attempting to create list " + list.getName() + " with list id " + list.getListId() + " as a new list.");
         if (list.getName().length() > ListEditorService.MAX_NAME_LENGTH)
             throw new ListImportException("List name cannot be longer than " + ListEditorService.MAX_NAME_LENGTH + " characters");
 
