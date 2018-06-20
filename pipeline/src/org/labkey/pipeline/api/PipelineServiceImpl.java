@@ -58,6 +58,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
+import org.labkey.api.trigger.TriggerConfiguration;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.TestContext;
@@ -668,9 +669,9 @@ public class PipelineServiceImpl implements PipelineService
     }
 
     @Override
-    public TableInfo getTriggersTable(User user, Container container)
+    public void saveTriggerConfig(Container c, User user, TriggerConfiguration config) throws Exception
     {
-        return new PipelineQuerySchema(user, container).getTable(PipelineQuerySchema.TRIGGER_CONFIGURATIONS_TABLE_NAME);
+        PipelineManager.insertOrUpdateTriggerConfiguration(user, c, config);
     }
 
     @Override

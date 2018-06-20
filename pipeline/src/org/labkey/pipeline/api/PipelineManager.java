@@ -48,11 +48,14 @@ import org.labkey.api.pipeline.trigger.PipelineTriggerRegistry;
 import org.labkey.api.pipeline.trigger.PipelineTriggerType;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.trigger.TriggerConfiguration;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.ExceptionUtil;
@@ -648,30 +651,38 @@ public class PipelineManager
         }
     }
 
-    public static boolean insertOrUpdateTriggerConfiguration(User user, Container container, Map<String, Object> row) throws Exception
+    public static boolean insertOrUpdateTriggerConfiguration(User user, Container container, TriggerConfiguration config) throws Exception
     {
-        TableInfo ti = PipelineService.get().getTriggersTable(user, container);
-        QueryUpdateService qus = ti.getUpdateService();
-        List<Map<String, Object>> rowList = new LinkedList<>();
-        rowList.add(row);
-
-        if (qus != null)
+        UserSchema schema = QueryService.get().getUserSchema(user, container, PipelineSchema.getInstance().getSchemaName());
+        if (schema != null)
         {
-            if (row.get("RowId") != null)
+            TableInfo tableInfo = schema.getTable(PipelineQuerySchema.TRIGGER_CONFIGURATIONS_TABLE_NAME);
+            if (tableInfo != null)
             {
-                rowList = qus.updateRows(user, container, rowList, null, null, null);
-            }
-            else
-            {
-                rowList = qus.insertRows(user, container, rowList, new BatchValidationException(), null, null);
+                Map<String, Object> row = config.getRow();
+                QueryUpdateService qus = tableInfo.getUpdateService();
+                List<Map<String, Object>> rowList = new LinkedList<>();
+                rowList.add(row);
+                if (qus != null)
+                {
+                    if (row.get("RowId") != null)
+                    {
+                        rowList = qus.updateRows(user, container, rowList, null, null, null);
+                    }
+                    else
+                    {
+                        rowList = qus.insertRows(user, container, rowList, new BatchValidationException(), null, null);
+                    }
+                }
+                return rowList.size() > 0;
             }
         }
-
-        return rowList.size() > 0;
+        return false;
     }
 
-    public static void validateTriggerConfiguration(Map<String, Object> row, Container container, Errors errors)
+    public static void validateTriggerConfiguration(TriggerConfiguration config, Container container, Errors errors)
     {
+        Map<String, Object> row = config.getRow();
         Integer rowId = row.get("RowId") != null ? (Integer) row.get("RowId") : null;
         String name = getStringFromRow(row, "Name");
         String type = getStringFromRow(row, "Type");

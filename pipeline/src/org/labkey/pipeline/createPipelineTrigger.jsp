@@ -1,16 +1,14 @@
-<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.pipeline.PipelineJobService" %>
-<%@ page import="org.labkey.api.pipeline.TaskPipeline" %>
 <%@ page import="org.labkey.api.pipeline.file.FileAnalysisTaskPipeline" %>
 <%@ page import="org.labkey.api.pipeline.trigger.PipelineTriggerRegistry" %>
 <%@ page import="org.labkey.api.pipeline.trigger.PipelineTriggerType" %>
+<%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page import="org.labkey.api.util.element.TextArea" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.pipeline.PipelineController" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.stream.Collectors" %>
-<%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -239,8 +237,6 @@
                     </div>
                 </div>
 
-                <labkey:input type="hidden" name="configJson" id="configJSON"/>
-                <labkey:input type="hidden" name="customConfigJson" id="customConfigJSON"/>
                 <labkey:input type="hidden" name="rowId" value="<%=h(bean.getRowId())%>"/>
                 <labkey:input type="hidden" name="returnUrl" value="<%=h(bean.getReturnUrl())%>"/>
 
@@ -278,16 +274,7 @@
         <%
         }
 
-        if (StringUtils.isNotEmpty(bean.getConfigJson()) && !bean.getConfigJson().equalsIgnoreCase("{}"))
-        {%>
-            var configObj = JSON.parse(<%=q(bean.getConfigJson())%>);
-            processConfigJson(configObj);
-
-            var customConfigObj = JSON.parse(<%=q(bean.getCustomConfigJson())%>);
-            processCustomConfigJson(customConfigObj);
-        <%
-        }
-        else if (bean.getRowId() != null) {
+        if (bean.getRowId() != null) {
         %>
             function onSuccess(data) {
                 var row = data.rows[0];
@@ -423,52 +410,33 @@
 
 
         $("#btnSubmit").on('click', (function() {
-            var standardObj = {};
-            var customObj = {};
+            var data = {};
+            $("#pipelineForm").serializeArray().map(function(x){
 
-            //build the configuration object
-            $('.lk-pipeline-input').each(function(i, elem) {
-                if (elem.nodeName === "INPUT" || elem.nodeName === "TEXTAREA") {
-                    if (elem.getAttribute("type") === "checkbox") {
-                        standardObj[elem.getAttribute("name")] = elem.checked;
+                if (!data[x.name])
+                    data[x.name] = x.value;
+                else {
+                    if (!$.isArray(data[x.name])){
+                        var prev = data[x.name];
+                        data[x.name] = [prev];
                     }
-                    else if (elem.getAttribute("name") === "quiet"){
-                        standardObj[elem.getAttribute("name")] = elem.value * 1000;
-                    } else if (elem.value) {
-                        standardObj[elem.getAttribute("name")] = elem.value
-                    }
+                    data[x.name].push(x.value);
                 }
             });
 
-            var enabledCheck = $('#pipeline-enabled-check')[0];
-            standardObj[enabledCheck.name] = enabledCheck.checked;
-
-            var recursiveCheck = $('#pipeline-recursive-check')[0];
-            standardObj[recursiveCheck.name] = recursiveCheck.checked;
-
-            var paramObj = {};
-            var prefix = "pipeline, ";
-            $('.lk-pipeline-param-input').each(function(i, elem) {
-                if (elem.value) {
-                    var k = prefix + elem.getAttribute("name");
-                    paramObj[k] = elem.value;
-                }
+            LABKEY.Ajax.request({
+                url : LABKEY.ActionURL.buildURL("pipeline", "savePipelineTrigger.api"),
+                method : 'POST',
+                jsonData : data,
+                success: LABKEY.Utils.getCallbackWrapper(function(response)
+                {
+                    if (response.success)
+                        window.location = response.returnUrl;
+                }),
+                failure: LABKEY.Utils.getCallbackWrapper(function(exceptionInfo) {
+                    LABKEY.Utils.alert('Error', 'Unable to save the pipeline trigger configuration for the following reason: ' + exceptionInfo.exception);
+                }, this, true)
             });
-            standardObj["parameters"] = paramObj;
-
-            //build the custom configuration object
-            $('.lk-pipeline-customParam-group').each(function(i, elem) {
-                var key = elem.getElementsByClassName("lk-pipeline-custom-key")[0].value;
-                var value = elem.getElementsByClassName("lk-pipeline-custom-value")[0].value;
-                if (value) {
-                    customObj[key] = value;
-                }
-            });
-
-            $('#configJSON').val(JSON.stringify(standardObj));
-            $('#customConfigJSON').val(JSON.stringify(customObj));
-
-            $("#pipelineForm").submit();
         }));
 
         function setHelpText(taskId) {

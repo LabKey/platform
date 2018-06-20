@@ -22,6 +22,7 @@ import org.json.JSONArray;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.FormArrayList;
 import org.labkey.api.action.FormViewAction;
@@ -80,6 +81,7 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.trigger.TriggerConfiguration;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
@@ -107,6 +109,7 @@ import org.labkey.pipeline.api.PipelineManager;
 import org.labkey.pipeline.api.PipelineServiceImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
 import org.labkey.pipeline.status.StatusController;
+import org.springframework.beans.MutablePropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -1520,43 +1523,12 @@ public class PipelineController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class CreatePipelineTriggerAction extends FormViewAction<PipelineTriggerForm>
+    public class CreatePipelineTriggerAction extends SimpleViewAction<PipelineTriggerForm>
     {
         String _title = "Create Pipeline Trigger";
 
         @Override
-        public URLHelper getSuccessURL(PipelineTriggerForm form)
-        {
-            if (form.getReturnUrl() != null)
-            {
-                try
-                {
-                    return new URLHelper(form.getReturnUrl());
-                }
-                catch (URISyntaxException e)
-                {
-                    return getContainer().getStartURL(getUser());
-                }
-            }
-
-            return getContainer().getStartURL(getUser());
-        }
-
-        @Override
-        public void validateCommand(PipelineTriggerForm form, Errors errors)
-        {
-            PipelineManager.validateTriggerConfiguration(form.getRow(), getContainer(), errors);
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            setHelpTopic("fileWatcher");
-            return root.addChild(_title);
-        }
-
-        @Override
-        public ModelAndView getView(PipelineTriggerForm form, boolean reshow, BindException errors)
+        public ModelAndView getView(PipelineTriggerForm form, BindException errors) throws Exception
         {
             if (form.getRowId() != null)
                 _title = "Update Pipeline Trigger";
@@ -1568,44 +1540,76 @@ public class PipelineController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(PipelineTriggerForm form, BindException errors)
+        public NavTree appendNavTrail(NavTree root)
         {
-            if (!errors.hasErrors())
-            {
-                try
-                {
-                    return PipelineManager.insertOrUpdateTriggerConfiguration(getUser(), getContainer(), form.getRow());
-                }
-                catch (Exception e)
-                {
-                    return false;
-                }
-            }
-            return false;
+            setHelpTopic("fileWatcher");
+            return root.addChild(_title);
         }
     }
 
-    public static class PipelineTriggerForm
+    @RequiresPermission(AdminOperationsPermission.class)
+    public class SavePipelineTriggerAction extends ApiAction<PipelineTriggerForm>
     {
-        private Integer rowId;
-        private String returnUrl;
-
-        private String name;
-        private String description;
-        private String type;
-        private boolean enabled;
-        private String pipelineTask;
-        private String configJson;
-        private String customConfigJson;
-
-        public Integer getRowId()
+        @Override
+        public void validateForm(PipelineTriggerForm form, Errors errors)
         {
-            return rowId;
+            PipelineManager.validateTriggerConfiguration(form, getContainer(), errors);
         }
 
-        public void setRowId(Integer rowId)
+        @Override
+        public Object execute(PipelineTriggerForm form, BindException errors) throws Exception
         {
-            this.rowId = rowId;
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            URLHelper url;
+
+            PipelineService.get().saveTriggerConfig(getContainer(), getUser(), form);
+            if (form.getReturnUrl() != null)
+            {
+                try
+                {
+                    url = new URLHelper(form.getReturnUrl());
+                }
+                catch (URISyntaxException e)
+                {
+                    url = getContainer().getStartURL(getUser());
+                }
+            }
+            else
+                url = getContainer().getStartURL(getUser());
+
+            response.put("success", true);
+            response.put("returnUrl", url.toString());
+
+            return response;
+        }
+    }
+
+    public static class PipelineTriggerForm extends TriggerConfiguration implements CustomApiForm
+    {
+        private String returnUrl;
+
+        @Override
+        public void bindProperties(Map<String, Object> props)
+        {
+            MutablePropertyValues params = new MutablePropertyValues(props);
+            BaseViewAction.defaultBindParameters(this, "form", params);
+
+            Object assayProvider = props.get("assay provider");
+            if (assayProvider != null)
+                setAssayProvider(String.valueOf(assayProvider));
+
+            Object customParamKey = props.get("customParamKey");
+            if (customParamKey instanceof JSONArray)
+            {
+                for (Object o : ((JSONArray)customParamKey).toArray())
+                    _customParamKey.add(String.valueOf(o));
+            }
+            Object customParamValue = props.get("customParamValue");
+            if (customParamValue instanceof JSONArray)
+            {
+                for (Object o : ((JSONArray)customParamValue).toArray())
+                    _customParamValue.add(String.valueOf(o));
+            }
         }
 
         public String getReturnUrl()
@@ -1616,91 +1620,6 @@ public class PipelineController extends SpringActionController
         public void setReturnUrl(String returnUrl)
         {
             this.returnUrl = returnUrl;
-        }
-
-        public String getName()
-        {
-            return name;
-        }
-
-        public void setName(String name)
-        {
-            this.name = name;
-        }
-
-        public String getDescription()
-        {
-            return description;
-        }
-
-        public void setDescription(String description)
-        {
-            this.description = description;
-        }
-
-        public String getType()
-        {
-            return type;
-        }
-
-        public void setType(String triggerType)
-        {
-            this.type = triggerType;
-        }
-
-        public boolean isEnabled()
-        {
-            return enabled;
-        }
-
-        public void setEnabled(boolean enabled)
-        {
-            this.enabled = enabled;
-        }
-
-        public String getPipelineTask()
-        {
-            return pipelineTask;
-        }
-
-        public void setPipelineTask(String pipelineTask)
-        {
-            this.pipelineTask = pipelineTask;
-        }
-
-        public String getConfigJson()
-        {
-            return configJson;
-        }
-
-        public void setConfigJson(String configJson)
-        {
-            this.configJson = configJson;
-        }
-
-        public String getCustomConfigJson()
-        {
-            return customConfigJson;
-        }
-
-        public void setCustomConfigJson(String customConfigJson)
-        {
-            this.customConfigJson = customConfigJson;
-        }
-
-        public Map<String, Object> getRow()
-        {
-            Map<String, Object> row = new HashMap<>();
-            row.put("RowId", getRowId());
-            row.put("Name", getName());
-            row.put("Description", getDescription());
-            row.put("Type", getType());
-            row.put("PipelineId", getPipelineTask());
-            row.put("Enabled", isEnabled());
-            row.put("Configuration", getConfigJson());
-            row.put("CustomConfiguration", getCustomConfigJson());
-
-            return row;
         }
     }
 
