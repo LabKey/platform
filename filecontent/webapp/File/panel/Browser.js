@@ -1268,6 +1268,15 @@ Ext4.define('File.panel.Browser', {
         this.fileStore.on('load', function() {
             this.onSelection(this.getGrid(), this.getGridSelection());
         }, this, {single: true});
+        this.fileStore.on('beforeload', function () {
+            this.getGrid().setLoading(true);
+        }, this);
+        this.fileStore.on('load', function () {
+            this.getGrid().setLoading(false);
+        }, this);
+        this.fileStore.on('refresh', function(store) {
+            LABKEY.Utils.signalWebDriverTest("file-list-updated", store.getTotalCount());
+        }, this);
 
         return this.fileStore;
     },
@@ -2259,6 +2268,7 @@ Ext4.define('File.panel.Browser', {
             border: false,
             viewConfig: {
                 emptyText: '<span style="margin-left: 5px; opacity: 0.3;"><i>No Files Found</i></span>',
+                loadMask: false, // Handle masking manually
 
                 // https://www.sencha.com/forum/showthread.php?263392-Two-Infinite-Scrolling-grids-PageMap-error
                 handleMouseOverOrOut: function(e) {
@@ -2309,6 +2319,11 @@ Ext4.define('File.panel.Browser', {
             hideHeaders: !this.showColumnHeaders,
             listeners : {
                 beforerender : function(g) { this.grid = g; },
+                afterrender : function(g) {
+                    if (g.getStore().totalCount === undefined) { // totalCount is undefined until first load
+                        g.setLoading(true);
+                    }
+                },
                 selectionchange : this.onSelection,
                 itemdblclick : function(g, rec) {
                     if (rec && rec.data) {
