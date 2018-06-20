@@ -1684,12 +1684,12 @@ public class ModuleLoader implements Filter
     }
 
     // CONSIDER: ModuleUtil.java
-    public Collection<String> getModuleSummaries(Container c, User user)
+    public Collection<String> getModuleSummaries(Container c)
     {
         LinkedList<String> list = new LinkedList<>();
 
         for (Module m : _modules)
-            list.addAll(m.getSummary(c, user));
+            list.addAll(m.getSummary(c));
 
         return list;
     }

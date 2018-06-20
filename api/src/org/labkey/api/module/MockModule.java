@@ -202,7 +202,8 @@ public class MockModule implements Module
     }
 
     @Override
-    public Collection<String> getSummary(Container c, User user)
+    @NotNull
+    public Collection<String> getSummary(Container c)
     {
         return Collections.emptyList();
     }
