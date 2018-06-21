@@ -23,6 +23,8 @@ import org.labkey.api.security.Encryption;
 import org.labkey.api.security.User;
 
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 /**
  * User: adam
@@ -244,5 +246,15 @@ public abstract class AbstractPropertyStore implements PropertyStore
             m.lock();
             return m;
         }
+    }
+
+    @Override
+    public final Stream<Container> streamMatchingContainers(User user, String category)
+    {
+        SQLFragment sql = new SQLFragment("SELECT ObjectId FROM " + _prop.getTableInfoPropertySets() + " WHERE UserId = ? AND Category = ?", user, category);
+
+        return new SqlSelector(_prop.getSchema(), sql).uncachedStream(String.class)
+            .map(ContainerManager::getForId)
+            .filter(Objects::nonNull);
     }
 }
