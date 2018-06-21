@@ -15,6 +15,7 @@
  */
 package org.labkey.di.steps;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.di.TaskRefTask;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
@@ -45,9 +46,9 @@ public class TaskRefTransformStep extends TransformTask
     }
 
     @Override
-    public List<ValidationError> preFlightCheck()
+    public List<ValidationError> preFlightCheck(Container c)
     {
-        return _meta.getTaskInstance().preFlightCheck();
+        return _meta.getTaskInstance().preFlightCheck(c);
     }
 
     @Override

@@ -19,6 +19,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.springframework.validation.BindException;
 
 /**
  * User: Dax
@@ -27,9 +28,9 @@ import org.labkey.api.query.UserSchema;
   */
 public class TransformHistoryView extends QueryView
 {
-    public TransformHistoryView(UserSchema schema, QuerySettings settings)
+    public TransformHistoryView(UserSchema schema, QuerySettings settings, BindException errors)
     {
-        super(schema, settings);
+        super(schema, settings, errors);
         settings.setBaseSort(new Sort("-DateRun"));
     }
 }

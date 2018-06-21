@@ -17,6 +17,7 @@ package org.labkey.di.steps;
 
 import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.Container;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 import org.labkey.api.di.TaskRefTaskImpl;
 import org.labkey.api.pipeline.PipelineJob;
@@ -53,7 +54,7 @@ public class QueueJobTask extends TaskRefTaskImpl
         // Default to requeue self if no transformId set
         if (null == _transformId)
             _transformId = transformJob.getTransformDescriptor().getId();
-        ScheduledPipelineJobDescriptor newEtl = TransformManager.get().getDescriptor(_transformId);
+        ScheduledPipelineJobDescriptor newEtl = TransformManager.get().getDescriptor(_transformId, job.getContainer());
         if (newEtl == null)
             throw new NotFoundException(_transformId);
         TransformJobContext context = transformJob.getTransformJobContext();
@@ -101,7 +102,7 @@ public class QueueJobTask extends TaskRefTaskImpl
     }
 
     @Override
-    public List<ValidationError> preFlightCheck()
+    public List<ValidationError> preFlightCheck(Container c)
     {
         // Validate existence of the etl to be queued
         List<ValidationError> errors = new ArrayList<>();
@@ -109,7 +110,7 @@ public class QueueJobTask extends TaskRefTaskImpl
         {
             try
             {
-                if (null == TransformManager.get().getDescriptor(_transformId))
+                if (null == TransformManager.get().getDescriptor(_transformId, c))
                 {
                     errors.add(new SimpleValidationError(QueueJobTask.class.getSimpleName() + ": Can't find ETL to be queued: " + _transformId));
                 }

@@ -16,6 +16,7 @@
 package org.labkey.di.pipeline;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.data.Container;
 import org.labkey.api.di.ScheduledPipelineJobContext;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 import org.labkey.api.pipeline.PipelineJob;
@@ -24,7 +25,6 @@ import org.labkey.api.util.UnexpectedException;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
 
 
 /**
@@ -45,9 +45,9 @@ public class TransformQuartzJobRunner implements Job
     @Override
     public void execute(JobExecutionContext context)
     {
-        ScheduledPipelineJobDescriptor d = getDescriptorFromJobDetail(context);
         ScheduledPipelineJobContext infoTemplate = ScheduledPipelineJobContext.getFromQuartzJobDetail(context);
         ScheduledPipelineJobContext info = infoTemplate.clone();
+        ScheduledPipelineJobDescriptor d = getDescriptorFromJobDetail(context, info.getContainer());
 
         if (d.isPending(info) && !d.isAllowMultipleQueuing())
         {
@@ -95,7 +95,7 @@ public class TransformQuartzJobRunner implements Job
     }
 
 
-    public static ScheduledPipelineJobDescriptor getDescriptorFromJobDetail(JobExecutionContext jobExecutionContext)
+    public static ScheduledPipelineJobDescriptor getDescriptorFromJobDetail(JobExecutionContext jobExecutionContext, Container c)
     {
         JobDataMap map = jobExecutionContext.getJobDetail().getJobDataMap();
         Object result = map.get(ScheduledPipelineJobDescriptor.class.getName());
@@ -106,6 +106,6 @@ public class TransformQuartzJobRunner implements Job
             if (result == null)
                 throw new IllegalArgumentException("No ScheduledPipelineJobDescriptor found!");
         }
-        return ((TransformDescriptor) result).getDescriptorFromCache();
+        return ((TransformDescriptor) result).getDescriptorFromCache(c);
     }
 }

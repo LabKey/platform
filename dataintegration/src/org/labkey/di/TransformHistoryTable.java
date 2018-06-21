@@ -61,7 +61,7 @@ public class TransformHistoryTable extends TransformBaseTable
         Map<String, String> params = new HashMap<>();
         params.put("transformRunId", "TransformRunId");
         params.put("transformId", colName);
-        DetailsURL detailsUrl = new DetailsURL(new ActionURL(DataIntegrationController.viewTransformDetailsAction.class, null), params);
+        DetailsURL detailsUrl = new DetailsURL(new ActionURL(DataIntegrationController.ViewTransformDetailsAction.class, null), params);
         transformId.setURL(detailsUrl);
 
         // Add links to job and experiment run details
