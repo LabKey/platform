@@ -160,15 +160,17 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
                         watchedPath = (Path)watchKey.watchable();
                         PathListenerManager plm = _listenerMap.get(watchedPath);
 
-                        // Should not happen, but this may help narrow down cause of #26934
-                        if (null == plm)
-                            throw new IllegalStateException("Received a file watcher event from " + watchedPath + " but its PathListenerManager was null!");
-
-                        for (WatchEvent<?> watchEvent : watchKey.pollEvents())
+                        // Not sure how this would happen (_listenerMap.remove() below is likely involved... could it be
+                        // multiple threads racing with the same WatchKey which also simultaneously becomes invalid?),
+                        // but #26934 shows occasional examples.
+                        if (null != plm)
                         {
-                            @SuppressWarnings("unchecked")
-                            WatchEvent<Path> event = (WatchEvent<Path>)watchEvent;
-                            plm.fireEvents(event, watchedPath);
+                            for (WatchEvent<?> watchEvent : watchKey.pollEvents())
+                            {
+                                @SuppressWarnings("unchecked")
+                                WatchEvent<Path> event = (WatchEvent<Path>) watchEvent;
+                                plm.fireEvents(event, watchedPath);
+                            }
                         }
                     }
                     catch (Throwable e)  // Make sure throwables don't kill the background thread
