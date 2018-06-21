@@ -49,6 +49,7 @@ for (TransformConfiguration c : configurationsList)
     configurationsMap.put(c.getTransformId(), c);
 
 // It's possible to have configurations for transforms whose modules are inactive, so make sure we get those
+// And also, we may now have user defined transforms in the database
 Collection<ScheduledPipelineJobDescriptor> descriptorsList = TransformManager.get().getDescriptors(getContainer());
 TreeMap<String,ScheduledPipelineJobDescriptor> descriptorsMap = new TreeMap<>();
 for (ScheduledPipelineJobDescriptor d : descriptorsList)
@@ -60,7 +61,7 @@ for (TransformConfiguration c : configurationsList)
 {
     if (!descriptorsMap.containsKey(c.getTransformId()))
     {
-        ScheduledPipelineJobDescriptor d = TransformManager.get().getDescriptor(c.getTransformId());
+        ScheduledPipelineJobDescriptor d = TransformManager.get().getDescriptor(c.getTransformId(), getContainer());
         if (null != d && d.isStandalone())
             descriptorsMap.put(d.getId(), d);
     }
@@ -477,7 +478,7 @@ for (ScheduledPipelineJobDescriptor descriptor : sortedDescriptors)
         boolean enableControls = !PENDING.equalsIgnoreCase(configuration.getLastStatus());
         %><tr transformId="<%=h(descriptor.getId())%>" class="<%=getShadeRowClass(1 == row % 2)%>">
         <td><%=h(descriptor.getName())%></td>
-        <td><%=h(descriptor.getModuleName())%></td>
+        <td><%=h(descriptor.isUserDefined() ? "User Defined" : descriptor.getModuleName())%></td>
         <td><%=h(descriptor.getScheduleDescription())%></td>
         <td><input type=checkbox onchange="onEnabledChanged(this,<%=q(descriptor.getId())%>)" <%=checked(configuration.isEnabled())%>></td>
         <%--<td><input type=checkbox--%>
@@ -526,4 +527,4 @@ for (ScheduledPipelineJobDescriptor descriptor : sortedDescriptors)
 </div>
 
 <br>
-<div><%= button("View Processed Jobs").href(DataIntegrationController.viewJobsAction.class, getContainer()) %></div>
+<div><%= button("View Processed Jobs").href(DataIntegrationController.ViewJobsAction.class, getContainer()) %></div>

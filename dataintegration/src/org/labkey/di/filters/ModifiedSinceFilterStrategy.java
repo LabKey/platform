@@ -37,7 +37,6 @@ import org.labkey.di.data.TransformProperty;
 import org.labkey.di.pipeline.TransformConfiguration;
 import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.pipeline.TransformManager;
-import org.labkey.di.pipeline.TransformUtils;
 import org.labkey.di.steps.StepMeta;
 import org.labkey.etl.xml.FilterType;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -130,7 +129,7 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
         _tsCol = _table.getColumn(timestampColumnName);
         if (null == _tsCol)
             throw new ConfigurationException("Column not found: " + _config.getSourceQuery() + "." + timestampColumnName);
-        if (TransformUtils.isRowversionColumn(_tsCol) || _tsCol.getJdbcType().isInteger())
+        if (TransformManager.isRowversionColumn(_tsCol) || _tsCol.getJdbcType().isInteger())
             _useRowversionForSelect = true;
     }
 
@@ -145,7 +144,7 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
             _deletedQueryTsCol = _deletedRowsTinfo.getColumn(timestampColumnName);
             if (null == _deletedQueryTsCol)
                 throw new ConfigurationException("Column not found: " + _deletedRowsTinfo.getName() + "." + timestampColumnName);
-            if (TransformUtils.isRowversionColumn(_deletedQueryTsCol) || _deletedQueryTsCol.getJdbcType().isInteger())
+            if (TransformManager.isRowversionColumn(_deletedQueryTsCol) || _deletedQueryTsCol.getJdbcType().isInteger())
                 _useRowversionForDelete = true;
         }
     }

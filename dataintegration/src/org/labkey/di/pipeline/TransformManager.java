@@ -23,8 +23,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.Constants;
+import org.labkey.api.cache.BlockingCache;
+import org.labkey.api.cache.CacheLoader;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -36,9 +41,11 @@ import org.labkey.api.data.ParameterDescriptionImpl;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.dataiterator.CopyConfig;
 import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.di.ScheduledPipelineJobContext;
@@ -54,8 +61,10 @@ import org.labkey.api.module.ModuleResourceCaches.CacheId;
 import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
+import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
+import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
@@ -82,6 +91,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.di.DataIntegrationQuerySchema;
+import org.labkey.di.EtlDef;
 import org.labkey.di.VariableMap;
 import org.labkey.di.VariableMapImpl;
 import org.labkey.di.filters.FilterStrategy;
@@ -133,6 +143,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
@@ -148,7 +159,9 @@ public class TransformManager implements DataIntegrationService
     private static final Logger LOG = Logger.getLogger(TransformManager.class);
     private static final String JOB_GROUP_NAME = "org.labkey.di.pipeline.ETLManager";
     private static final String DIR_NAME = "etls";
-    private static final ModuleResourceCache<Map<String, ScheduledPipelineJobDescriptor>> DESCRIPTOR_CACHE = ModuleResourceCaches.create("ETL job descriptors", new DescriptorCacheHandler(), ResourceRootProvider.getStandard(new Path(DIR_NAME)));
+    private static final ModuleResourceCache<Map<String, ScheduledPipelineJobDescriptor>> MODULE_DESCRIPTOR_CACHE = ModuleResourceCaches.create("ETL job descriptors (module defined)", new DescriptorCacheHandler(), ResourceRootProvider.getStandard(new Path(DIR_NAME)));
+    private static final BlockingCache<Container, Map<String, ScheduledPipelineJobDescriptor>> DB_DESCRIPTOR_CACHE = CacheManager.getBlockingCache(Constants.getMaxContainers(), CacheManager.DAY, "ETL job descriptors (db)", new EtlDefCacheLoader());
+
     private static final String JOB_PENDING_MSG = "Not queuing job because ETL is already pending";
 
     private Map<String, StepProvider> _providers = new CaseInsensitiveHashMap<>();
@@ -163,8 +176,66 @@ public class TransformManager implements DataIntegrationService
     {
     }
 
+    private static class EtlDefCacheLoader implements CacheLoader<Container, Map<String, ScheduledPipelineJobDescriptor>>
+    {
+        @Override
+        public Map<String, ScheduledPipelineJobDescriptor> load(Container c, @Nullable Object argument)
+        {
+            Map<String, ScheduledPipelineJobDescriptor> map = new HashMap<>();
+            SimpleFilter filter = SimpleFilter.createContainerFilter(c);
 
-    @Nullable TransformDescriptor parseETL(Resource resource, Module module)
+            map.putAll(new TableSelector(DataIntegrationQuerySchema.getEtlDefTableInfo(), filter, null)
+                    .getCollection(EtlDef.class)
+                    .stream()
+                    .map(EtlDef::getDescriptor)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toMap(TransformDescriptor::getId, d -> d)));
+
+            return map.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(map);
+        }
+    }
+
+    public synchronized void etlDefChanged(EtlDef def, Container c, User u, EtlDef.Change change)
+    {
+        etlDefsChanged(Collections.singleton(def), c, u, change);
+    }
+
+    public synchronized void etlDefsChanged(Set<EtlDef> defs, Container c, User u, EtlDef.Change change)
+    {
+        if (change != EtlDef.Change.Insert)
+        {
+            defs.forEach(def ->
+            {
+                TransformConfiguration config = get().getTransformConfigurations(c)
+                        .stream()
+                        .filter(cfg -> cfg.getTransformId().equalsIgnoreCase(def.getConfigId()))
+                        .findFirst()
+                        .orElse(null);
+                if (null != config && config.isEnabled())
+                {
+                    if (change == EtlDef.Change.Update)
+                    {
+                        config.setEnabled(false);
+                        get().saveTransformConfiguration(u, config);
+                    }
+                    ScheduledPipelineJobDescriptor descriptor = DB_DESCRIPTOR_CACHE.get(c).get(def.getConfigId());
+                    get().unschedule(descriptor, c, u);
+                }
+                final TaskId pipelineId = new TaskId(def.getModule().getName(), TaskId.Type.pipeline, def.getConfigId(), 0);
+                PipelineJobService.get().removeTaskPipeline(pipelineId);
+            });
+        }
+        DB_DESCRIPTOR_CACHE.remove(c);
+    }
+
+    public synchronized void containerDeleted(Container container)
+    {
+        unscheduleAll(container);
+        DB_DESCRIPTOR_CACHE.remove(container);
+    }
+
+    @Nullable
+    public TransformDescriptor parseETL(Resource resource, Module module)
     {
         try
         {
@@ -180,7 +251,7 @@ public class TransformManager implements DataIntegrationService
     }
 
 
-    TransformDescriptor parseETLThrow(Resource resource, Module module) throws IOException, XmlException, XmlValidationException
+    public TransformDescriptor parseETLThrow(Resource resource, Module module) throws IOException, XmlException, XmlValidationException
     {
         FilterStrategy.Factory defaultFactory = null;
         Long interval = null;
@@ -200,78 +271,78 @@ public class TransformManager implements DataIntegrationService
                 throw new IOException("Unable to get InputStream from " + resource);
             }
 
-            XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
-            options.setValidateStrict();
-            EtlDocument document = EtlDocument.Factory.parse(inputStream, options);
-            EtlType etlXml = document.getEtl();
+        XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
+        options.setValidateStrict();
+        EtlDocument document = EtlDocument.Factory.parse(inputStream, options);
+        EtlType etlXml = document.getEtl();
 
-            // handle default transform
-            FilterType ft = etlXml.getIncrementalFilter();
-            if (null != ft)
-                defaultFactory = createFilterFactory(ft);
-            if (null == defaultFactory)
-                defaultFactory = new SelectAllFilterStrategy.Factory(null);
+        // handle default transform
+        FilterType ft = etlXml.getIncrementalFilter();
+        if (null != ft)
+            defaultFactory = createFilterFactory(ft);
+        if (null == defaultFactory)
+            defaultFactory = new SelectAllFilterStrategy.Factory(null);
 
-            // schedule
-            if (null != etlXml.getSchedule())
+        // schedule
+        if (null != etlXml.getSchedule())
+        {
+            if (null != etlXml.getSchedule().getPoll())
             {
-                if (null != etlXml.getSchedule().getPoll())
-                {
-                    String s = etlXml.getSchedule().getPoll().getInterval();
-                    if (StringUtils.isNumeric(s))
-                        interval = Long.parseLong(s) * 60 * 1000;
-                    else
-                        interval = DateUtil.parseDuration(s);
-                }
-                else if (null != etlXml.getSchedule().getCron())
-                {
-                    try
-                    {
-                        cron = new CronExpression(etlXml.getSchedule().getCron().getExpression());
-                    }
-                    catch (ParseException x)
-                    {
-                        throw new XmlException("Could not parse cron expression: " + etlXml.getSchedule().getCron().getExpression(), x);
-                    }
-                }
+                String s = etlXml.getSchedule().getPoll().getInterval();
+                if (StringUtils.isNumeric(s))
+                    interval = Long.parseLong(s) * 60 * 1000;
+                else
+                    interval = DateUtil.parseDuration(s);
             }
-
-            Map<ParameterDescription, Object> constants = new LinkedHashMap<>();
-            if (null != etlXml.getConstants())
+            else if (null != etlXml.getSchedule().getCron())
             {
-                populateParameterMap(etlXml.getConstants().getColumnArray(), constants);
-            }
-
-            TransformsType transforms = etlXml.getTransforms();
-            boolean hasGateStep = false;
-            if (null != transforms)
-            {
-                TransformType[] transformTypes = transforms.getTransformArray();
-                for (TransformType t : transformTypes)
+                try
                 {
-                    StepMeta meta = buildTransformStepMeta(t, stepIds, constants, etlXml.getName());
-                    stepMetaDatas.add(meta);
-                    if (meta.isGating())
-                        hasGateStep = true;
+                    cron = new CronExpression(etlXml.getSchedule().getCron().getExpression());
+                }
+                catch (ParseException x)
+                {
+                    throw new XmlException("Could not parse cron expression: " + etlXml.getSchedule().getCron().getExpression(), x);
                 }
             }
+        }
 
-            Map<ParameterDescription,Object> declaredVariables = new LinkedHashMap<>();
-            if (null != etlXml.getParameters())
+        Map<ParameterDescription, Object> constants = new LinkedHashMap<>();
+        if (null != etlXml.getConstants())
+        {
+            populateParameterMap(etlXml.getConstants().getColumnArray(), constants);
+        }
+
+        TransformsType transforms = etlXml.getTransforms();
+        boolean hasGateStep = false;
+        if (null != transforms)
+        {
+            TransformType[] transformTypes = transforms.getTransformArray();
+            for (TransformType t : transformTypes)
             {
-                populateParameterMap(etlXml.getParameters().getParameterArray(), declaredVariables);
+                StepMeta meta = buildTransformStepMeta(t, stepIds, constants, etlXml.getName());
+                stepMetaDatas.add(meta);
+                if (meta.isGating())
+                    hasGateStep = true;
             }
+        }
 
-            Map<String, String> pipelineParameters = new LinkedHashMap<>();
-            if (null != etlXml.getPipelineParameters())
+        Map<ParameterDescription,Object> declaredVariables = new LinkedHashMap<>();
+        if (null != etlXml.getParameters())
+        {
+            populateParameterMap(etlXml.getParameters().getParameterArray(), declaredVariables);
+        }
+
+        Map<String, String> pipelineParameters = new LinkedHashMap<>();
+        if (null != etlXml.getPipelineParameters())
+        {
+            for (PipelineParameterType xmlPipeParam : etlXml.getPipelineParameters().getParameterArray())
             {
-                for (PipelineParameterType xmlPipeParam : etlXml.getPipelineParameters().getParameterArray())
-                {
-                    pipelineParameters.put(xmlPipeParam.getName(), xmlPipeParam.getValue());
-                }
+                pipelineParameters.put(xmlPipeParam.getName(), xmlPipeParam.getValue());
             }
+        }
 
-            // XmlSchema validate the document after we've attempted to parse it since we can provide better error messages.
+        // XmlSchema validate the document after we've attempted to parse it since we can provide better error messages.
             XmlBeansUtil.validateXmlDocument(document, "ETL '" + resource.getPath() + "'");
 
             return new TransformDescriptor(configId, etlXml, module.getName(), interval, cron, defaultFactory, stepMetaDatas, declaredVariables, hasGateStep, pipelineParameters, constants);
@@ -304,7 +375,7 @@ public class TransformManager implements DataIntegrationService
         return FileUtil.getBaseName(filename);
     }
 
-    String createConfigId(Module module, String configName)
+    public String createConfigId(Module module, String configName)
     {
         return "{" + module.getName() + "}/" + configName;
     }
@@ -384,18 +455,26 @@ public class TransformManager implements DataIntegrationService
     @NotNull
     public Collection<ScheduledPipelineJobDescriptor> getDescriptors(Container c)
     {
+        final List<ScheduledPipelineJobDescriptor> descriptors = new ArrayList<>(getModuleEtlDescriptors(c));
+        descriptors.addAll(DB_DESCRIPTOR_CACHE.get(c).values());
+        return Collections.unmodifiableCollection(descriptors);
+    }
+
+    @NotNull
+    private Collection<ScheduledPipelineJobDescriptor> getModuleEtlDescriptors(Container c)
+    {
         final Collection<ScheduledPipelineJobDescriptor> descriptors;
 
         if (!c.isRoot())
         {
-            descriptors = DESCRIPTOR_CACHE.streamResourceMaps(c)
+            descriptors = MODULE_DESCRIPTOR_CACHE.streamResourceMaps(c)
                 .map(Map::values)
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
         }
         else
         {
-            descriptors = DESCRIPTOR_CACHE.streamAllResourceMaps()
+            descriptors = MODULE_DESCRIPTOR_CACHE.streamAllResourceMaps()
                 .flatMap(map -> map.values().stream())
                 .filter(ScheduledPipelineJobDescriptor::isSiteScope)
                 .collect(Collectors.toList());
@@ -404,13 +483,20 @@ public class TransformManager implements DataIntegrationService
         return Collections.unmodifiableCollection(descriptors);
     }
 
-    @Nullable
-    public ScheduledPipelineJobDescriptor getDescriptor(String configId)
+    public ScheduledPipelineJobDescriptor getDescriptor(String configId, Container c)
     {
         CacheId id = parseConfigId(configId);
+        ScheduledPipelineJobDescriptor descriptor = null;
         Module module = id.getModule();
-
-        return null != module ? DESCRIPTOR_CACHE.getResourceMap(module).get(configId) : null;
+        if (null != module)
+        {
+            descriptor = MODULE_DESCRIPTOR_CACHE.getResourceMap(module).get(configId);
+            if (null == descriptor && EtlDef.DECLARING_MODULE_NAME.equals(module.getName()))
+            {
+                descriptor = DB_DESCRIPTOR_CACHE.get(c).get(configId);
+            }
+        }
+        return descriptor;
     }
 
     synchronized Integer runNowPipeline(ScheduledPipelineJobDescriptor descriptor, Container container, User user,
@@ -595,7 +681,7 @@ public class TransformManager implements DataIntegrationService
     }
 
 
-    public synchronized void unscheduleAll(Container container)
+    private synchronized void unscheduleAll(Container container)
     {
         try
         {
@@ -755,44 +841,34 @@ public class TransformManager implements DataIntegrationService
 
         new SqlSelector(schema, sql).forEach((TransformConfiguration config) ->
         {
-            CacheId id = parseConfigId(config.getTransformId());
-            Module module = id.getModule();
-            ScheduledPipelineJobDescriptor descriptor;
-
-            // Issue 30051. If module, descriptor (xml), or container no longer exist, delete the configuration. If the descriptor is
-            // now standalone == false, disable the configuration and don't schedule.
-            if (null == module) // Module has been deleted or renamed
+            Container c = ContainerManager.getForId(config.getContainerId());
+            if (null == c) // This should never happen, as there's a container listener to purge the TransformConfiguration table
             {
                 deleteConfiguration(config.getRowId());
             }
             else
             {
-                descriptor = DESCRIPTOR_CACHE.getResourceMap(module).get(config.getTransformId());
+                ScheduledPipelineJobDescriptor descriptor = getDescriptor(config.getTransformId(), c);
+
+                // Issue 30051. If module, descriptor (xml), or container no longer exist, delete the configuration. If the descriptor is
+                // now standalone == false, disable the configuration and don't schedule.
                 if (null == descriptor)
                 {
                     deleteConfiguration(config.getRowId());
                 }
-                else
+                else if (config.isEnabled())
                 {
-                    Container c = ContainerManager.getForId(config.getContainerId());
-                    if (null == c) // This should never happen, as there's a container listener to purge the TransformConfiguration table
-                    {
-                        deleteConfiguration(config.getRowId());
-                    }
-                    else if (config.isEnabled())
-                    {
-                        // CONSIDER explicit runAs user
-                        int runAsUserId = config.getModifiedBy();
-                        User runAsUser = UserManager.getUser(runAsUserId);
+                    // CONSIDER explicit runAs user
+                    int runAsUserId = config.getModifiedBy();
+                    User runAsUser = UserManager.getUser(runAsUserId);
 
-                        if (descriptor.isStandalone())
-                        {
-                            schedule(descriptor, c, runAsUser, config.isVerboseLogging());
-                        }
-                        else
-                        {
-                            disableConfiguration(runAsUser, config);
-                        }
+                    if (descriptor.isStandalone())
+                    {
+                        schedule(descriptor, c, runAsUser, config.isVerboseLogging());
+                    }
+                    else
+                    {
+                        disableConfiguration(runAsUser, config);
                     }
                 }
             }
@@ -904,7 +980,7 @@ public class TransformManager implements DataIntegrationService
     public Map<String, String> truncateTargets(String id, User user, Container c)
     {
         int deletedRows = 0;
-        TransformDescriptor etl = (TransformDescriptor)getDescriptor(id);
+        TransformDescriptor etl = (TransformDescriptor)getDescriptor(id, c);
         Map<String, String> retMap = new HashMap<>();
         StringBuilder errorBuilder = new StringBuilder();
         if(etl != null)
@@ -974,6 +1050,11 @@ public class TransformManager implements DataIntegrationService
         return retMap;
     }
 
+    public static boolean isRowversionColumn(ColumnInfo c)
+    {
+        return c.getJdbcType().equals(JdbcType.BINARY) && "timestamp".equals(c.getSqlTypeName());
+    }
+
     //
     // DataIntegrationService
     //
@@ -1001,7 +1082,7 @@ public class TransformManager implements DataIntegrationService
     @Override
     public Integer runTransformNow(Container c, User u, String transformId) throws PipelineJobException, NotFoundException
     {
-        ScheduledPipelineJobDescriptor etl = getDescriptor(transformId);
+        ScheduledPipelineJobDescriptor etl = getDescriptor(transformId, c);
         if (etl == null)
             throw new NotFoundException(transformId);
         return runNowPipeline(etl, c, u, new LinkedHashMap<>());
@@ -1092,7 +1173,7 @@ public class TransformManager implements DataIntegrationService
                 }
 
                 @Override
-                public ScheduledPipelineJobDescriptor getDescriptorFromCache()
+                public ScheduledPipelineJobDescriptor getDescriptorFromCache(Container c)
                 {
                     return this;
                 }
@@ -1146,6 +1227,7 @@ public class TransformManager implements DataIntegrationService
            }
            catch (InterruptedException x)
            {
+               //
            }
         }
 
@@ -1154,7 +1236,7 @@ public class TransformManager implements DataIntegrationService
         public void testModuleResourceCache()
         {
             // Load all the ETL descriptors to ensure no exceptions
-            int descriptorCount = DESCRIPTOR_CACHE.streamAllResourceMaps()
+            int descriptorCount = MODULE_DESCRIPTOR_CACHE.streamAllResourceMaps()
                 .mapToInt(Map::size)
                 .sum();
 
@@ -1165,12 +1247,12 @@ public class TransformManager implements DataIntegrationService
             Module simpleTest = ModuleLoader.getInstance().getModule("simpletest");
 
             if (null != simpleTest)
-                assertEquals("ETL descriptors from the simpletest module", 2, DESCRIPTOR_CACHE.getResourceMap(simpleTest).size());
+                assertEquals("ETL descriptors from the simpletest module", 2, MODULE_DESCRIPTOR_CACHE.getResourceMap(simpleTest).size());
 
             Module etlTest = ModuleLoader.getInstance().getModule("ETLTest");
 
             if (null != etlTest)
-                assertEquals("ETL descriptors from the ETLTest module", 60, DESCRIPTOR_CACHE.getResourceMap(etlTest).size());
+                assertEquals("ETL descriptors from the ETLTest module", 60, MODULE_DESCRIPTOR_CACHE.getResourceMap(etlTest).size());
         }
     }
 

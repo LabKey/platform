@@ -29,12 +29,15 @@ import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.BaseWebPartFactory;
+import org.labkey.api.view.FolderManagement;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.SimpleWebPartFactory;
@@ -58,6 +61,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -75,7 +79,7 @@ public class DataIntegrationModule extends DefaultModule implements ContainerLis
 
     public double getVersion()
     {
-        return 18.10;
+        return 18.11;
     }
 
     protected void init()
@@ -121,6 +125,13 @@ public class DataIntegrationModule extends DefaultModule implements ContainerLis
                 return metric;
             });
         }
+
+        FolderManagement.addTab("ETLs", "etls", container ->
+                                container.hasActiveModuleByName(NAME) &&
+                                !container.isRoot() &&
+                                container.hasPermission(Objects.requireNonNull(HttpView.currentContext()).getUser(), AdminPermission.class),
+                DataIntegrationController.CustomTransformsAction.class);
+
     }
 
 
@@ -208,9 +219,11 @@ public class DataIntegrationModule extends DefaultModule implements ContainerLis
         DbSchema di = DataIntegrationQuerySchema.getSchema();
         try (DbScope.Transaction transaction = di.getScope().ensureTransaction())
         {
-            TransformManager.get().unscheduleAll(c);
+            TransformManager.get().containerDeleted(c);
+
             ContainerUtil.purgeTable(di.getTable("TransformRun"), c, null);
             ContainerUtil.purgeTable(di.getTable("TransformConfiguration"), c, null);
+            ContainerUtil.purgeTable(di.getTable("EtlDef"), c, null);
             transaction.commit();
         }
     }

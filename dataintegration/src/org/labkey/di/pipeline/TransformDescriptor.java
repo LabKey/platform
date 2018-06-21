@@ -136,6 +136,8 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
     private final FilterStrategy.Factory _defaultFactory;
     private final ArrayList<StepMeta> _stepMetaDatas;
 
+    private boolean _userDefined;
+
     TransformDescriptor(String id, String name, String moduleName)
     {
         this(id, name, null, moduleName, null, null, null, null, null, false, false, true, false, false, null, null, null, null);
@@ -325,7 +327,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             for (StepMeta stepMeta : _stepMetaDatas)
             {
                 TransformTask step = stepMeta.getProvider().createStepInstance(null, null, stepMeta, (TransformJobContext)context);
-                validationErrors.addAll(step.preFlightCheck());
+                validationErrors.addAll(step.preFlightCheck(c));
                 if (!hasWork && validationErrors.isEmpty())
                     hasWork = step.hasWork();
             }
@@ -599,9 +601,9 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
     }
 
     @Override
-    public ScheduledPipelineJobDescriptor getDescriptorFromCache()
+    public ScheduledPipelineJobDescriptor getDescriptorFromCache(Container c)
     {
-        return TransformManager.get().getDescriptor(getId());
+        return TransformManager.get().getDescriptor(getId(), c);
     }
 
     @Override
@@ -625,6 +627,17 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
     public Map<ParameterDescription, Object> getConstants()
     {
         return Collections.unmodifiableMap(_constants);
+    }
+
+    public void setUserDefined(boolean userDefined)
+    {
+        _userDefined = userDefined;
+    }
+
+    @Override
+    public boolean isUserDefined()
+    {
+        return _userDefined;
     }
 
     public static class TestCase extends Assert

@@ -35,7 +35,7 @@
             (JspView<DataIntegrationController.TransformViewForm>) HttpView.currentView();
     DataIntegrationController.TransformViewForm f = me.getModelBean();
     String transformId = f.getTransformId();
-    ScheduledPipelineJobDescriptor descriptor = TransformManager.get().getDescriptor(transformId);
+    ScheduledPipelineJobDescriptor descriptor = TransformManager.get().getDescriptor(transformId, getContainer());
 %>
 <script type="text/javascript">
     Ext4.onReady(function()

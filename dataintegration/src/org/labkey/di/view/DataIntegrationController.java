@@ -15,45 +15,78 @@
  */
 package org.labkey.di.view;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlException;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.data.BeanViewForm;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.ParameterDescription;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.di.DataIntegrationUrls;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineStatusUrls;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryUrls;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.FolderManagement;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewForm;
+import org.labkey.di.DataIntegrationQuerySchema;
+import org.labkey.di.EtlDef;
 import org.labkey.di.filters.FilterStrategy;
 import org.labkey.di.pipeline.TransformConfiguration;
+import org.labkey.di.pipeline.TransformDescriptor;
 import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.pipeline.TransformManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
+
+import static org.labkey.di.DataIntegrationQuerySchema.ETL_DEF_TABLE_NAME;
 
 /**
  * User: jeckels
@@ -77,7 +110,7 @@ public class DataIntegrationController extends SpringActionController
         @Override
         public ActionURL getViewJobsURL(Container container)
         {
-            return new ActionURL(viewJobsAction.class, container);
+            return new ActionURL(ViewJobsAction.class, container);
         }
     }
 
@@ -108,7 +141,7 @@ public class DataIntegrationController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class viewJobsAction extends SimpleViewAction
+    public class ViewJobsAction extends SimpleViewAction
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -125,7 +158,7 @@ public class DataIntegrationController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class viewTransformHistoryAction extends SimpleViewAction<TransformViewForm>
+    public class ViewTransformHistoryAction extends SimpleViewAction<TransformViewForm>
     {
         private String _displayName;
 
@@ -168,7 +201,7 @@ public class DataIntegrationController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class viewTransformDetailsAction extends viewTransformHistoryAction
+    public class ViewTransformDetailsAction extends ViewTransformHistoryAction
     {
         @Override
         public ModelAndView getView(TransformViewForm form, BindException errors)
@@ -197,14 +230,17 @@ public class DataIntegrationController extends SpringActionController
         {
             this.transformId = id;
         }
+
         public String getTransformId()
         {
             return this.transformId;
         }
+
         public void setTransformRunId(Integer id)
         {
             this.transformRunId = id;
         }
+
         public Integer getTransformRunId()
         {
             return this.transformRunId;
@@ -229,6 +265,7 @@ public class DataIntegrationController extends SpringActionController
         {
             this.transformId = id;
         }
+
         public String getTransformId()
         {
             return this.transformId;
@@ -238,6 +275,7 @@ public class DataIntegrationController extends SpringActionController
         {
             this.verboseLogging = verbose;
         }
+
         public Boolean isVerboseLogging()
         {
             return this.verboseLogging;
@@ -247,6 +285,7 @@ public class DataIntegrationController extends SpringActionController
         {
             this.enabled = enabled;
         }
+
         public Boolean isEnabled()
         {
             return this.enabled;
@@ -317,19 +356,19 @@ public class DataIntegrationController extends SpringActionController
         }
     }
 
-    static ScheduledPipelineJobDescriptor getDescriptor(TransformViewForm form)
+    ScheduledPipelineJobDescriptor getDescriptor(TransformViewForm form)
     {
-        return TransformManager.get().getDescriptor(form.getTransformId());
+        return TransformManager.get().getDescriptor(form.getTransformId(), getContainer());
     }
 
-    static ScheduledPipelineJobDescriptor getDescriptor(TransformConfigurationForm form)
+    ScheduledPipelineJobDescriptor getDescriptor(TransformConfigurationForm form)
     {
-        return TransformManager.get().getDescriptor(form.getTransformId());
+        return TransformManager.get().getDescriptor(form.getTransformId(), getContainer());
     }
 
     public static void registerAdminConsoleLinks()
     {
-        AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "etl- all job histories", new ActionURL(viewJobsAction.class, ContainerManager.getRoot()), ReadPermission.class);
+        AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "etl- all job histories", new ActionURL(ViewJobsAction.class, ContainerManager.getRoot()), ReadPermission.class);
         AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "etl- run site scope etls", new ActionURL(BeginAction.class, ContainerManager.getRoot()), ReadPermission.class);
     }
 
@@ -349,25 +388,18 @@ public class DataIntegrationController extends SpringActionController
         @Override
         public ApiResponse execute(TransformConfigurationForm form, BindException errors)
         {
-            ViewContext context = getViewContext();
             boolean shouldStartStop = false;
 
             ScheduledPipelineJobDescriptor etl = getDescriptor(form);
             if (null == etl)
                 throw new NotFoundException(form.getTransformId());
 
-            TransformConfiguration config = null;
-            List<TransformConfiguration> configs = TransformManager.get().getTransformConfigurations(context.getContainer());
-            for (TransformConfiguration c : configs)
-            {
-                if (c.getTransformId().equalsIgnoreCase(form.getTransformId()))
-                {
-                    config = c;
-                    break;
-                }
-            }
-            if (null == config)
-                config = new TransformConfiguration(etl, context.getContainer());
+            TransformConfiguration config = TransformManager.get().getTransformConfigurations(getContainer())
+                    .stream()
+                    .filter(c -> c.getTransformId().equalsIgnoreCase(form.getTransformId()))
+                    .findFirst()
+                    .orElse(new TransformConfiguration(etl, getContainer()));
+
             if (null != form.isEnabled())
             {
                 boolean enabling = form.isEnabled() && etl.isStandalone();
@@ -376,7 +408,7 @@ public class DataIntegrationController extends SpringActionController
             }
             if (null != form.isVerboseLogging())
                 config.setVerboseLogging(form.isVerboseLogging());
-            config = TransformManager.get().saveTransformConfiguration(context.getUser(), config);
+            config = TransformManager.get().saveTransformConfiguration(getUser(), config);
 
             if (shouldStartStop)
             {
@@ -391,7 +423,7 @@ public class DataIntegrationController extends SpringActionController
             }
 
             JSONObject ret = new JSONObject();
-            ret.put("success",true);
+            ret.put("success", true);
             ret.put("result", config.toJSON(null));
             return new ApiSimpleResponse(ret);
         }
@@ -422,12 +454,12 @@ public class DataIntegrationController extends SpringActionController
             else
             {
                 // pull variables off the URL
-                Map<ParameterDescription,Object> params = new LinkedHashMap<>();
-                for (ParameterDescription pd : (Set<ParameterDescription>)etl.getDeclaredVariables().keySet())
+                Map<ParameterDescription, Object> params = new LinkedHashMap<>();
+                for (ParameterDescription pd : (Set<ParameterDescription>) etl.getDeclaredVariables().keySet())
                 {
                     String q = getViewContext().getRequest().getParameter(pd.getName());
                     if (null != q)
-                        params.put(pd,q);
+                        params.put(pd, q);
                 }
 
                 TransformJobContext context = (TransformJobContext) etl.getJobContext(getContainer(), getUser(), params);
@@ -448,12 +480,12 @@ public class DataIntegrationController extends SpringActionController
                 ActionURL pipelineURL = jobId == null ? null : PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlDetails(getContainer(), jobId);
                 status = null == pipelineURL ? "No work" : "Queued";
                 if (null != pipelineURL)
-                    ret.put("pipelineURL",pipelineURL.toString());
+                    ret.put("pipelineURL", pipelineURL.toString());
                 if (null != jobId)
                     ret.put("jobId", jobId.toString());
             }
 
-            ret.put("success",true);
+            ret.put("success", true);
             ret.put("status", status);
             return new ApiSimpleResponse(ret);
         }
@@ -498,7 +530,7 @@ public class DataIntegrationController extends SpringActionController
                 status = "ETL state reset";
             }
             JSONObject ret = new JSONObject();
-            ret.put("success",true);
+            ret.put("success", true);
             ret.put("status", status);
             return new ApiSimpleResponse(ret);
         }
@@ -539,7 +571,7 @@ public class DataIntegrationController extends SpringActionController
                     ret.put("error", error);
                     ret.put("status", "");
                 }
-                else if(rows != null)
+                else if (rows != null)
                 {
                     ret.put("success", true);
                     ret.put("deletedRows", rows);
@@ -549,6 +581,333 @@ public class DataIntegrationController extends SpringActionController
             }
 
             return new ApiSimpleResponse(ret);
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class CustomTransformsAction extends FolderManagement.FolderManagementViewAction
+    {
+        @Override
+        protected HttpView getTabView()
+        {
+            DataIntegrationQuerySchema schema = new DataIntegrationQuerySchema(getUser(), getContainer());
+            final QuerySettings settings = new QuerySettings(getViewContext(), "transforms", ETL_DEF_TABLE_NAME);
+            return schema.createView(getViewContext(), settings, null);
+        }
+    }
+
+    public static class EtlDefinitionForm extends BeanViewForm<EtlDef>
+    {
+        private boolean _readOnly = false;
+
+        public EtlDefinitionForm()
+        {
+            super(EtlDef.class, DataIntegrationQuerySchema.getEtlDefTableInfo());
+        }
+
+        public boolean isReadOnly()
+        {
+            return _readOnly;
+        }
+
+        public void setReadOnly(boolean readOnly)
+        {
+            _readOnly = readOnly;
+        }
+
+        public void validate(Errors errors)
+        {
+            EtlDef def = getBean();
+
+            try
+            {
+                TransformDescriptor descriptor = def.getDescriptorThrow();
+                if (descriptor.isSiteScope())
+                {
+                    errors.reject(ERROR_MSG, "Site-scoped ETLs can only be defined in module resources. If you need a site-scoped ETL, please contact your site administrator.");
+                }
+                if (TransformManager.get().getDescriptors(getContainer()).stream()
+                        .anyMatch(cachedDescriptor ->
+                                cachedDescriptor.getModuleName().equals(descriptor.getModuleName())
+                                        && cachedDescriptor.getName().equals(descriptor.getName())))
+                {
+                    errors.reject(ERROR_MSG, "An ETL with that name is already defined in this folder");
+                }
+                if (!errors.hasErrors())
+                {
+                    setTypedValue("name", descriptor.getName());
+                    setTypedValue("description", descriptor.getDescription());
+                }
+            }
+            catch (IOException | XmlException | XmlValidationException e)
+            {
+                errors.reject(ERROR_MSG, e.getMessage());
+            }
+        }
+
+        @Override
+        public void refreshFromDb()
+        {
+            super.refreshFromDb();
+            setTypedValue("definition", getBean().getPretyPrintDefinition());
+        }
+    }
+
+    private ActionURL getDefinitionsQueryUrl()
+    {
+        return ModuleLoader.getInstance().getUrlProvider(QueryUrls.class).urlExecuteQuery(getContainer(), DataIntegrationQuerySchema.SCHEMA_NAME, DataIntegrationQuerySchema.ETL_DEF_TABLE_NAME);
+    }
+
+    protected abstract class AbstractEtlDefinitionAction extends FormViewAction<EtlDefinitionForm>
+    {
+        @Override
+        public void validateCommand(EtlDefinitionForm form, Errors errors)
+        {
+            form.validate(errors);
+        }
+
+        @Override
+        public ModelAndView getView(EtlDefinitionForm form, boolean reshow, BindException errors)
+        {
+            if (null != form.getTypedValue("EtlDefId"))
+            {
+                form.refreshFromDb();
+            }
+
+            EtlDef def;
+            try
+            {
+                def = form.getBean();
+            }
+            catch (ConversionException e)
+            {
+                throw new NotFoundException();
+            }
+
+            if (null != def.getContainerId() && !getContainer().equals(def.lookupContainer()))
+                throw new UnauthorizedException();
+
+            if (null == form.getReturnUrl())
+                form.setReturnUrl(getDefinitionsQueryUrl().getLocalURIString());
+
+            return new JspView<>("/org/labkey/di/view/etlDefinition.jsp", form, errors);
+        }
+
+        protected abstract void doAction(EtlDefinitionForm form, Errors errors) throws SQLException;
+
+        @Override
+        public boolean handlePost(EtlDefinitionForm form, BindException errors) throws Exception
+        {
+            if (errors.hasErrors())
+                return false;
+
+            try
+            {
+                doAction(form, errors);
+            }
+            catch (RuntimeSQLException e)
+            {
+                if (e.isConstraintException())
+                {
+                    errors.reject(ERROR_MSG, "An ETL with that name is already defined in this folder");
+                    return false;
+                }
+
+                throw e;
+            }
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(EtlDefinitionForm form)
+        {
+            return form.getReturnURLHelper() != null ? form.getReturnActionURL() : getDefinitionsQueryUrl();
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root.addChild("Edit Custom ETL Definition");
+            return root;
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class CreateDefinitionAction extends AbstractEtlDefinitionAction
+    {
+        @Override
+        protected void doAction(EtlDefinitionForm form, Errors errors) throws SQLException
+        {
+            form.doInsert();
+            TransformManager.get().etlDefChanged(form.getBean(), getContainer(), getUser(), EtlDef.Change.Insert);
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class EditDefinitionAction extends AbstractEtlDefinitionAction
+    {
+        @Override
+        protected void doAction(EtlDefinitionForm form, Errors errors) throws SQLException
+        {
+            form.doUpdate();
+            TransformManager.get().etlDefChanged(form.getBean(), getContainer(), getUser(), EtlDef.Change.Update);
+        }
+    }
+
+    public static Collection<String> getEnabledTransformIds(Container container, Collection<EtlDef> etlDefs)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("Enabled"), true);
+        filter.addInClause(FieldKey.fromString("TransformId"), etlDefs.stream().map(EtlDef::getConfigId).collect(Collectors.toSet()));
+        return new TableSelector(DataIntegrationQuerySchema.getTransformConfigurationTableInfo(), Collections.singleton("TransformId"), filter, null).getCollection(String.class);
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class DefinitionDetailsAction extends SimpleViewAction<EtlDefinitionForm>
+    {
+
+        @Override
+        public ModelAndView getView(EtlDefinitionForm form, BindException errors) throws Exception
+        {
+            form.refreshFromDb();
+            form.setReadOnly(true);
+            if (null == form.getReturnUrl())
+                form.setReturnUrl(getDefinitionsQueryUrl().getLocalURIString());
+
+            return new JspView<>("/org/labkey/di/view/etlDefinition.jsp", form, errors);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Custom ETL Definition");
+        }
+    }
+
+
+    public static class DeleteDefinitionsForm extends ViewForm implements DataRegionSelection.DataSelectionKeyForm
+    {
+        private String _dataRegionSelectionKey;
+        private boolean confirmed;
+        private Set<EtlDef> defs;
+        private Map<String, Boolean> selectedNames;
+        private Set<Integer> etlDefIds;
+
+        @Override
+        public String getDataRegionSelectionKey()
+        {
+            return _dataRegionSelectionKey;
+        }
+
+        @Override
+        public void setDataRegionSelectionKey(String key)
+        {
+            _dataRegionSelectionKey = key;
+        }
+
+        public boolean isConfirmed()
+        {
+            return confirmed;
+        }
+
+        public void setConfirmed(boolean confirmed)
+        {
+            this.confirmed = confirmed;
+        }
+
+        public Set<EtlDef> getDefs()
+        {
+            return defs;
+        }
+
+        public Set<Integer> getEtlDefIds()
+        {
+            return etlDefIds;
+        }
+
+        public void setEtlDefIds(String etlDefIds)
+        {
+            try
+            {
+                this.etlDefIds = new ObjectMapper().readValue(etlDefIds, Set.class);
+            }
+            catch (IOException e)
+            {
+                // TODO: ???
+            }
+        }
+
+        public List<String> getSelectedNames(boolean enabled)
+        {
+            if (null == selectedNames)
+                return Collections.emptyList();
+            return selectedNames.entrySet().stream()
+                    .filter(def -> def.getValue().booleanValue() == enabled)
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toList());
+        }
+
+        public void loadEtlDefs(Set<Integer> etlDefIds)
+        {
+            defs = new HashSet<>();
+            SimpleFilter filter = SimpleFilter.createContainerFilter(getContainer());
+            filter.addInClause(FieldKey.fromString("EtlDefId"), etlDefIds);
+            defs.addAll(new TableSelector(DataIntegrationQuerySchema.getEtlDefTableInfo(), filter, null).getCollection(EtlDef.class));
+        }
+
+        public void loadFromSelection()
+        {
+            etlDefIds = DataRegionSelection.getSelectedIntegers(getViewContext(), false);
+            loadEtlDefs(etlDefIds);
+            selectedNames = new TreeMap<>();
+            selectedNames.putAll(defs.stream()
+                    .collect(Collectors.toMap(EtlDef::getName, d -> getEnabledTransformIds(getContainer(), defs).contains(d.getConfigId()))));
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class DeleteDefinitionsAction extends FormViewAction<DeleteDefinitionsForm>
+    {
+        @Override
+        public boolean handlePost(DeleteDefinitionsForm form, BindException errors) throws Exception
+        {
+            if (!form.isConfirmed())
+                return false;
+
+            Table.delete(DataIntegrationQuerySchema.getEtlDefTableInfo(), new SimpleFilter().addInClause(FieldKey.fromParts("EtlDefId"), form.getEtlDefIds()));
+            TransformManager.get().etlDefsChanged(form.getDefs(), getContainer(), getUser(), EtlDef.Change.Delete);
+            DataRegionSelection.clearAll(getViewContext());
+            return true;
+        }
+
+        @Override
+        public void validateCommand(DeleteDefinitionsForm form, Errors errors)
+        {
+            if (form.isConfirmed())
+                form.loadEtlDefs(form.getEtlDefIds());
+            else
+                form.loadFromSelection();
+
+            if (form.getEtlDefIds().size() > form.getDefs().size())
+                throw new NotFoundException("Not all selected ETL definitions found in this container.");
+        }
+
+        @Override
+        public ModelAndView getView(DeleteDefinitionsForm form, boolean reshow, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/di/view/confirmDeleteDefinitions.jsp", form, errors);
+        }
+
+        @Override
+        public @NotNull URLHelper getSuccessURL(DeleteDefinitionsForm form)
+        {
+            return null != form.getReturnURLHelper() ? form.getReturnURLHelper() : getDefinitionsQueryUrl();
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Confirm ETL Definition Deletion");
         }
     }
 }
