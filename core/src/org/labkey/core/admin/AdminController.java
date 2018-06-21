@@ -8215,7 +8215,7 @@ public class AdminController extends SpringActionController
     {
         public void validateCommand(TabActionForm form, Errors errors)
         {
-            Container tabContainer = getContainer().getContainerFor(ContainerType.DataType.tabs);
+            Container tabContainer = getContainer().getContainerFor(ContainerType.DataType.tabParent);
             if(tabContainer.getFolderType() == FolderType.NONE)
             {
                 errors.reject(ERROR_MSG, "Cannot add tabs to custom folder types.");
@@ -8286,7 +8286,7 @@ public class AdminController extends SpringActionController
                 return response;
             }
 
-            Container container = getContainer().getContainerFor(ContainerType.DataType.tabs);
+            Container container = getContainer().getContainerFor(ContainerType.DataType.tabParent);
             String name = form.getTabName();
             String caption = form.getTabName();
 
@@ -8320,7 +8320,7 @@ public class AdminController extends SpringActionController
     {
         public void validateCommand(TabActionForm form, Errors errors)
         {
-            CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>(Portal.getPages(getContainer().getContainerFor(ContainerType.DataType.tabs), true));
+            CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>(Portal.getPages(getContainer().getContainerFor(ContainerType.DataType.tabParent), true));
 
             if (form.getTabPageId() == null)
             {
@@ -8336,7 +8336,7 @@ public class AdminController extends SpringActionController
         public ApiResponse execute(TabActionForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            Container tabContainer = getContainer().getContainerFor(ContainerType.DataType.tabs);
+            Container tabContainer = getContainer().getContainerFor(ContainerType.DataType.tabParent);
 
             validateCommand(form, errors);
             if (errors.hasErrors())
@@ -8386,7 +8386,7 @@ public class AdminController extends SpringActionController
         public ApiResponse execute(MoveTabForm form, BindException errors)
         {
             final Map<String, Object> properties = new HashMap<>();
-            Container tabContainer = getContainer().getContainerFor(ContainerType.DataType.tabs);
+            Container tabContainer = getContainer().getContainerFor(ContainerType.DataType.tabParent);
             CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>(Portal.getPages(tabContainer, true));
             Portal.PortalPage tab = pages.get(form.getPageId());
 
@@ -8507,7 +8507,7 @@ public class AdminController extends SpringActionController
     {
         public void validateCommand(TabActionForm form, Errors errors)
         {
-            Container tabContainer = getContainer().getContainerFor(ContainerType.DataType.tabs);
+            Container tabContainer = getContainer().getContainerFor(ContainerType.DataType.tabParent);
 
             if (tabContainer.getFolderType() == FolderType.NONE)
             {
@@ -8579,7 +8579,7 @@ public class AdminController extends SpringActionController
                 return response;
             }
 
-            Container container = getContainer().getContainerFor(ContainerType.DataType.tabs);
+            Container container = getContainer().getContainerFor(ContainerType.DataType.tabParent);
             CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>(Portal.getPages(container, true));
             Portal.PortalPage page = pages.get(form.getTabPageId());
             page.setCaption(form.getTabName());

@@ -383,7 +383,7 @@ public class AssayManager implements AssayService
         return PROTOCOL_CACHE.get(container, null, (c, argument) ->
         {
             // Build up a set of containers so that we can query them all at once
-            Set<Container> containers = c.getContainersFor(ContainerType.DataType.assayProtocols);
+            Set<Container> containers = c.getContainersFor(ContainerType.DataType.protocol);
 
             List<? extends ExpProtocol> protocols = ExperimentService.get().getExpProtocols(containers.toArray(new Container[containers.size()]));
             List<ExpProtocol> result = new ArrayList<>();
