@@ -187,7 +187,7 @@ if (typeof LABKEY == "undefined")
                     'It is recommended that a callback be provided as it will be called once',
                     methodName + '() can guarantee your resource is loaded.',
                     (files ? '\nRequested: "' + files.toString() + '"' : ''),
-                    '\nSee ' + LABKEY.Utils.getHelpTopicHref('scriptdepend#requiresScript')
+                    (LABKEY.Utils && isFunction(LABKEY.Utils.getHelpTopicHref)) ? '\nSee ' + LABKEY.Utils.getHelpTopicHref('scriptdepend#requiresScript') : ''
                 ].join(' '));
 
                 // do not spam usage warning
