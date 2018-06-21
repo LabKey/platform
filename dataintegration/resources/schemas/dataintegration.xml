@@ -51,26 +51,4 @@
             <column columnName="ModifiedBy"/>
         </columns>
     </table>
-    <table tableName="EtlDef" tableDbType="TABLE">
-        <columns>
-            <column columnName="EtlDefId">
-                <isHidden>true</isHidden>
-            </column>
-            <column columnName="Container">
-                <isHidden>true</isHidden>
-            </column>
-            <column columnName="EntityId">
-                <isHidden>true</isHidden>
-            </column>
-            <column columnName="Name"/>
-            <column columnName="Description"/>
-            <column columnName="Definition">
-                <isHidden>true</isHidden>
-            </column>
-            <column columnName="Created"/>
-            <column columnName="CreatedBy"/>
-            <column columnName="Modified"/>
-            <column columnName="ModifiedBy"/>
-        </columns>
-    </table>
 </tables>

@@ -31,10 +31,9 @@ import org.labkey.api.di.columnTransform.ColumnTransform;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.util.HeartBeat;
-import org.labkey.di.pipeline.TransformManager;
 import org.labkey.di.pipeline.TransformPipelineJob;
+import org.labkey.di.pipeline.TransformUtils;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -86,10 +85,15 @@ public class TransformDataIteratorBuilder implements DataIteratorBuilder
     }
 
     // LabKey built-in columns, other than container, are allowed to pass through from source
-    private static final CaseInsensitiveHashSet passThroughAllowedColumns =
-            new CaseInsensitiveHashSet(Arrays.stream(SimpleTranslator.SpecialColumn.values())
-            .filter(c -> !SimpleTranslator.SpecialColumn.Container.equals(c))
-            .map(Enum::name).collect(Collectors.toSet()));
+    private static final CaseInsensitiveHashSet passThroughAllowedColumns = new CaseInsensitiveHashSet();
+    static
+    {
+        for (SimpleTranslator.SpecialColumn c : SimpleTranslator.SpecialColumn.values())
+        {
+            if (!SimpleTranslator.SpecialColumn.Container.equals(c))
+                passThroughAllowedColumns.add(c.name());
+        }
+    }
 
     @Override
     public DataIterator getDataIterator(DataIteratorContext context)
@@ -134,7 +138,7 @@ public class TransformDataIteratorBuilder implements DataIteratorBuilder
         for (int i=1 ; i<=in.getColumnCount() ; i++)
         {
             ColumnInfo c = in.getColumnInfo(i);
-            if (diColumns.contains(c.getName()) || TransformManager.isRowversionColumn(c) || constantNames.contains(c.getName()))
+            if (diColumns.contains(c.getName()) || TransformUtils.isRowversionColumn(c) || constantNames.contains(c.getName()))
                 continue;
             // Add any transforms for this source column
             if (_columnTransforms.containsKey(c.getColumnName()))

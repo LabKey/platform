@@ -663,7 +663,6 @@ core/webpack/style.config.js -text
 dataintegration/module.properties -text
 dataintegration/resources/schemas/dataintegration.xml -text
 dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-0.00-15.30.sql -text
-dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-18.10-18.11.sql -text
 dataintegration/resources/schemas/dbscripts/postgresql/obsolete/dataintegration-0.00-13.10.sql -text
 dataintegration/resources/schemas/dbscripts/postgresql/obsolete/dataintegration-0.00-13.20.sql -text
 dataintegration/resources/schemas/dbscripts/postgresql/obsolete/dataintegration-0.00-13.30.sql -text
@@ -675,7 +674,6 @@ dataintegration/resources/schemas/dbscripts/postgresql/obsolete/dataintegration-
 dataintegration/resources/schemas/dbscripts/postgresql/obsolete/dataintegration-15.20-15.30.sql -text
 dataintegration/resources/schemas/dbscripts/postgresql/obsolete/dataintegration-15.21-15.22.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-0.00-15.30.sql -text
-dataintegration/resources/schemas/dbscripts/sqlserver/dataintegration-18.10-18.11.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/obsolete/dataintegration-0.00-13.10.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/obsolete/dataintegration-0.00-13.20.sql -text
 dataintegration/resources/schemas/dbscripts/sqlserver/obsolete/dataintegration-0.00-13.30.sql -text
@@ -689,7 +687,6 @@ dataintegration/resources/schemas/dbscripts/sqlserver/obsolete/dataintegration-1
 dataintegration/schemas/etl.xsd -text
 dataintegration/src/org/labkey/di/DataIntegrationModule.java -text
 dataintegration/src/org/labkey/di/DataIntegrationQuerySchema.java -text
-dataintegration/src/org/labkey/di/EtlDef.java -text
 dataintegration/src/org/labkey/di/TransformBaseTable.java -text
 dataintegration/src/org/labkey/di/TransformDataIteratorBuilder.java -text
 dataintegration/src/org/labkey/di/TransformHistoryTable.java -text
@@ -722,6 +719,7 @@ dataintegration/src/org/labkey/di/pipeline/TransformQuartzJobRunner.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformRun.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformTask.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformTaskFactory.java -text
+dataintegration/src/org/labkey/di/pipeline/TransformUtils.java -text
 dataintegration/src/org/labkey/di/steps/CubeMaintenanceTask.java -text
 dataintegration/src/org/labkey/di/steps/ExternalPipelineTaskMeta.java -text
 dataintegration/src/org/labkey/di/steps/ExternalPipelineTaskProvider.java -text
@@ -749,10 +747,7 @@ dataintegration/src/org/labkey/di/steps/TestTaskProvider.java -text
 dataintegration/src/org/labkey/di/steps/TestTaskRefTask.java -text
 dataintegration/src/org/labkey/di/steps/TruncateTransformStep.java -text
 dataintegration/src/org/labkey/di/view/DataIntegrationController.java -text
-dataintegration/src/org/labkey/di/view/EtlDefQueryView.java -text
 dataintegration/src/org/labkey/di/view/ProcessJobsView.java -text
-dataintegration/src/org/labkey/di/view/confirmDeleteDefinitions.jsp -text
-dataintegration/src/org/labkey/di/view/etlDefinition.jsp -text
 dataintegration/src/org/labkey/di/view/transformConfiguration.jsp -text
 dataintegration/src/org/labkey/di/view/transformDetails.jsp -text
 dataintegration/src/org/labkey/di/view/transformHistory.jsp -text

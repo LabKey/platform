@@ -699,9 +699,8 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
      * parsed, some checks are dependent on parsing order, a cache being fully populated, or some other necessary app
      * configuration.
      * TODO: There are other existing checks in steps' hasWork() and doWork() method chains. Convert those to use this mechanism.
-     * @param c The container in which the job will be queued
      */
-    public List<ValidationError> preFlightCheck(Container c)
+    public List<ValidationError> preFlightCheck()
     {
         return Collections.emptyList();
     }
