@@ -470,17 +470,18 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 Map<String, Object> metric = new HashMap<>();
                 metric.put("studyCount", new SqlSelector(DbSchema.get("study", DbSchemaType.Module), "SELECT COUNT(*) FROM study.study").getObject(Long.class));
                 metric.put("datasetCount", new SqlSelector(DbSchema.get("study", DbSchemaType.Module), "SELECT COUNT(*) FROM study.dataset").getObject(Long.class));
+
+                // Add counts for old-style, JFreeChart "Chart Views"
+                Set chartViewTypes = Sets.newCaseInsensitiveHashSet(ChartQueryReport.TYPE, StudyChartQueryReport.TYPE, ChartReportView.TYPE, ChartReportView.DatasetChartReport.TYPE, StudyController.StudyChartReport.TYPE);
+                metric.put("chartViews", Collections.unmodifiableMap(
+                    ContainerManager.getAllChildren(ContainerManager.getRoot()).stream()
+                        .flatMap(c->ReportService.get().getReports(null, c).stream())
+                        .filter(r->chartViewTypes.contains(r.getType()))
+                        .collect(Collectors.groupingBy(Report::getType, Collectors.counting())))
+                );
+
                 return metric;
             });
-
-            Set chartViewTypes = Sets.newCaseInsensitiveHashSet(ChartQueryReport.TYPE, StudyChartQueryReport.TYPE, ChartReportView.TYPE, ChartReportView.DatasetChartReport.TYPE, StudyController.StudyChartReport.TYPE);
-
-            svc.registerUsageMetrics(UsageReportingLevel.MEDIUM, MODULE_NAME, () -> Collections.singletonMap("chartViews", Collections.unmodifiableMap(
-                ContainerManager.getAllChildren(ContainerManager.getRoot()).stream()
-                    .flatMap(c->ReportService.get().getReports(null, c).stream())
-                    .filter(r->chartViewTypes.contains(r.getType()))
-                    .collect(Collectors.groupingBy(Report::getType, Collectors.counting())))
-            ));
         }
 
         AdminConsole.addLink(AdminConsole.SettingsLinkType.Premium, "Master Patient Index", new ActionURL(StudyController.MasterPatientProviderAction.class, ContainerManager.getRoot()));
