@@ -46,9 +46,9 @@ public interface DataIntegrationService
     void registerStepProviders();
     @Nullable Integer runTransformNow(Container c, User u, String transformId) throws PipelineJobException, NotFoundException;
 
-    RemoteConnection getRemoteConnection(String name, Container c, @Nullable Logger log);
+    public RemoteConnection getRemoteConnection(String name, Container c, @Nullable Logger log);
 
-    class RemoteConnection
+    public static class RemoteConnection
     {
         public Connection connection;
         public String remoteContainer;
