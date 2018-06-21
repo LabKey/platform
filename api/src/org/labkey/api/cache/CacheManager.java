@@ -48,6 +48,8 @@ public class CacheManager
     public static final long MINUTE = DateUtils.MILLIS_PER_MINUTE;
     public static final long HOUR = DateUtils.MILLIS_PER_HOUR;
     public static final long DAY = DateUtils.MILLIS_PER_DAY;
+    public static final long WEEK = DAY * 7;
+    public static final long MONTH = DAY * 30;
     public static final long YEAR = DAY * 365;
 
     public static final long DEFAULT_TIMEOUT = HOUR;
