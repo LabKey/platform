@@ -17,6 +17,7 @@ package org.labkey.api.di;
 
 import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
@@ -76,9 +77,10 @@ public interface TaskRefTask
 
     /**
      * A validation step called at job time, before queuing the job
+     * @param c The container in which the job would be queued
      * @return Any errors which should prevent queuing the job
      */
-    default List<ValidationError> preFlightCheck()
+    default List<ValidationError> preFlightCheck(Container c)
     {
         return Collections.emptyList();
     }
