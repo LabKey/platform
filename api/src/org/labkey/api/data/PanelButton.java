@@ -37,6 +37,7 @@ public class PanelButton extends ActionButton
     private static final int VERTICAL_TAB_HEIGHT = 28;
     private static final int MIN_HEIGHT = VERTICAL_TAB_HEIGHT * 4;
 
+    private final String _panelName;
     private int _height;
     private boolean _justified;
     private boolean _tabAlignTop;
@@ -45,12 +46,13 @@ public class PanelButton extends ActionButton
 
     public PanelButton(String caption, String dataRegionName)
     {
-        this(caption, dataRegionName, MIN_HEIGHT);
+        this(caption.toLowerCase(), caption, dataRegionName, MIN_HEIGHT);
     }
 
-    public PanelButton(String caption, String dataRegionName, int minHeight)
+    public PanelButton(String panelName, String caption, String dataRegionName, int minHeight)
     {
         super(caption, DataRegion.MODE_GRID, ActionButton.Action.LINK);
+        _panelName = panelName;
         _dataRegionName = dataRegionName;
         _height = minHeight;
         setId("PanelButtonContent" + String.valueOf(System.identityHashCode(this)));
@@ -77,11 +79,16 @@ public class PanelButton extends ActionButton
                 .dropdown(true)
                 .href("javascript:void(0)")
                 .iconCls(getIconCls())
-                .onClick("(function(el) { " + DataRegion.getJavaScriptObjectReference(_dataRegionName) + ".showButtonPanel(el); })(this);")
+                .onClick("(function(el) { " + DataRegion.getJavaScriptObjectReference(_dataRegionName) + ".toggleButtonPanelHandler(el); })(this);")
                 .attributes(attributes)
                 .toString();
 
         out.write(btn);
+        // register panel with friendly name as well as ID
+        out.write("\n<script>" +
+                "LABKEY.DataRegion.registerPane(" + PageFlowUtil.jsString(_dataRegionName) + ", function(dr) {\n" + // see DataRegion.js#_defaultShow()
+                "     dr.publishPanel(" + PageFlowUtil.jsString(panelId) + ",null,null,null,null,"+ PageFlowUtil.jsString(_panelName) + ");\n" +
+                "});</script>\n");
         out.write("<div id=\"" + panelId + "\" name=\"" + getCaption() + "-panel\" "
                 + "class=\"tabbable" + (!_tabAlignTop ? " tabs-left" : "") + "\" style=\"display: none;\">");
 
@@ -90,7 +97,7 @@ public class PanelButton extends ActionButton
         for (Map.Entry<String, HttpView> entry : _subpanels.entrySet())
         {
             String entryId = PageFlowUtil.filter(id + entry.getKey());
-            out.write("<li" + (active ? " class=\"active\"" : "") + "><a href=\"#" + entryId + "\" data-toggle=\"tab\">" + PageFlowUtil.filter(entry.getKey()) + "</a></li>");
+            out.write("<li" + (active ? " class=\"active\"" : "") + "><a data-tabName=\"" + PageFlowUtil.filter(entry.getKey().toLowerCase()) + "\" href=\"#" + entryId + "\" data-toggle=\"tab\">" + PageFlowUtil.filter(entry.getKey()) + "</a></li>");
             active = false;
         }
         out.write("</ul>");

@@ -1239,7 +1239,7 @@ public class QueryView extends WebPartView<Object>
                 buttonText += " / Sign Data";
         }
 
-        PanelButton button = new PanelButton(buttonText, getDataRegionName(), 132);
+        PanelButton button = new PanelButton("export", buttonText, getDataRegionName(), 132);
         button.setActionName("export");     // #32594: API can set a buttonConfig including "export"; since the caption may differ, add action so BuiltinButtonConfig can figure it out
         ActionURL xlsURL = urlFor(QueryAction.exportRowsExcel);
         ActionURL xlsxURL = urlFor(QueryAction.exportRowsXLSX);

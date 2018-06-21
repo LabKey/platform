@@ -2126,13 +2126,17 @@ if (!LABKEY.DataRegions) {
         });
     };
 
-    LABKEY.DataRegion.prototype.publishPanel = function(panelId, panel, showFn, hideFn, scope) {
+    // TODO this is a pretty bad prototype, consider using config parameter with backward compat option
+    LABKEY.DataRegion.prototype.publishPanel = function(panelId, panel, showFn, hideFn, scope, friendlyName) {
         this.panelConfigurations[panelId] = {
+            panelId: panelId,
             panel: panel,
             show: $.isFunction(showFn) ? showFn : _defaultShow,
             hide: $.isFunction(hideFn) ? hideFn : _defaultHide,
             scope: scope
         };
+        if (friendlyName !== panelId)
+            this.panelConfigurations[friendlyName] = this.panelConfigurations[panelId];
         return this;
     };
 
@@ -2183,7 +2187,7 @@ if (!LABKEY.DataRegions) {
         this.hideMessage(true);
 
         this.hidePanel(function() {
-            this.activePanelId = panelId;
+            this.activePanelId = config.panelId;
 
             // ensure the ribbon is visible
             var ribbon = _getDrawerSelector(this);
@@ -2260,7 +2264,7 @@ if (!LABKEY.DataRegions) {
 
         for (i = 0; i < params.length; i++) {
             p = params[i][0];
-            if (p.indexOf(this.name + '.') == 0) {
+            if (p.indexOf(this.name + '.') === 0) {
                 for (k=0; k < keys.length; k++) {
                     if (p.indexOf(keys[k] + '~') > -1) {
                         skips.push(p);
@@ -2285,7 +2289,7 @@ if (!LABKEY.DataRegions) {
 
         for (i = 0; i < params.length; i++) {
             p = params[i][0];
-            if (p.indexOf(this.name + '.') == 0) {
+            if (p.indexOf(this.name + '.') === 0) {
                 if (p.indexOf(COHORT_LABEL) > -1 || p.indexOf(ADV_COHORT_LABEL) > -1 || p.indexOf(COHORT_ENROLLED) > -1 || p.indexOf(ADV_COHORT_ENROLLED)) {
                     skips.push(p);
                 }
@@ -2379,20 +2383,41 @@ if (!LABKEY.DataRegions) {
 
     /**
      * Show a ribbon panel.
+     *
+     * first arg can be button on the button bar or target panel id/configuration
      */
-    LABKEY.DataRegion.prototype.showButtonPanel = function(panelButton) {
 
-        var ribbon = _getDrawerSelector(this),
-            panelId = $(panelButton).attr('panel-toggle'),
-            panelSel;
+    LABKEY.DataRegion.prototype.toggleButtonPanelHandler = function(panelButton) {
+        _toggleButtonPanelthis( this, $(panelButton).attr('panel-toggle'), null, true);
+    };
+
+    LABKEY.DataRegion.prototype.showButtonPanel = function(panel, optionalTab) {
+        _toggleButtonPanel(this, panel, optionalTab, false);
+    };
+
+    LABKEY.DataRegion.prototype.toggleButtonPanel = function(panel, optionalTab) {
+        _toggleButtonPanel(this, panel, optionalTab, true);
+    };
+
+    var _toggleButtonPanel = function(dr, panel, optionalTab, toggle) {
+        var ribbon = _getDrawerSelector(dr);
+        // first check if this is a named panel instead of a button element
+        var panelId, panelSel;
+        if (typeof panel === 'string' && dr.getPanelConfiguration(panel))
+            panelId = dr.getPanelConfiguration(panel).panelId;
+        else
+            panelId = panel;
 
         if (panelId) {
 
             panelSel = $('#' + panelId);
 
             // allow for toggling the state
-            if (panelId === this.activePanelId) {
-                this.hideButtonPanel();
+            if (panelId === dr.activePanelId) {
+                if (toggle) {
+                    dr.hideButtonPanel();
+                    return;
+                }
             }
             else {
                 // determine if the content needs to be moved to the ribbon
@@ -2401,11 +2426,18 @@ if (!LABKEY.DataRegions) {
                 }
 
                 // determine if this panel has been registered
-                if (!this.getPanelConfiguration(panelId)) {
-                    this.publishPanel(panelId);
+                if (!dr.getPanelConfiguration(panelId)) {
+                    dr.publishPanel(panelId, panelId);
                 }
 
-                this.showPanel(panelId);
+                dr.showPanel(panelId);
+            }
+            if (optionalTab)
+            {
+                var t = panelSel.find('a[data-toggle="tab"][href="#' + optionalTab + '"]');
+                if (!t.length)
+                    t = panelSel.find('a[data-toggle="tab"][data-tabName="' + optionalTab + '"]');
+                t.tab('show');
             }
         }
     };
