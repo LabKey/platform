@@ -15,7 +15,9 @@
  */
 package org.labkey.core.admin.usageMetrics;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.usageMetrics.UsageMetricsProvider;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.MinorConfigurationException;
@@ -23,22 +25,27 @@ import org.labkey.api.util.UsageReportingLevel;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * Created by Tony on 2/14/2017.
  */
 public class UsageMetricsServiceImpl implements UsageMetricsService
 {
-    private final Map<UsageReportingLevel, Map<String, UsageMetricsProvider>> moduleUsageReports = new ConcurrentHashMap<>();
+    private static Logger LOG = Logger.getLogger(UsageMetricsServiceImpl.class);
+
+    private final Map<UsageReportingLevel, Map<String, Set<UsageMetricsProvider>>> moduleUsageReports = new ConcurrentHashMap<>();
 
     @Override
     public void registerUsageMetrics(UsageReportingLevel level, String moduleName, UsageMetricsProvider metrics)
     {
         if (UsageReportingLevel.NONE == level)
             throw new MinorConfigurationException(moduleName + " module registered metric for UsageReportingLevel NONE. This will never be sent.");
-        moduleUsageReports.computeIfAbsent(level, k -> new ConcurrentHashMap<>()).put(moduleName, metrics);
+        moduleUsageReports.computeIfAbsent(level, k -> new ConcurrentHashMap<>())
+                .computeIfAbsent(moduleName, k -> new ConcurrentHashSet<>()).add(metrics);
     }
 
     @Override
@@ -50,11 +57,26 @@ public class UsageMetricsServiceImpl implements UsageMetricsService
         else
         {
             Map<String, Map<String, Object>> allModulesMetrics = new HashMap<>();
-            moduleUsageReports.get(level).forEach((moduleName, provider) ->
+            moduleUsageReports.get(level).forEach((moduleName, providers) ->
             {
                 try
                 {
-                    allModulesMetrics.put(moduleName, provider.getUsageMetrics());
+                    Map<String, Object> moduleMetrics = allModulesMetrics.computeIfAbsent(moduleName, k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER));
+                    providers.forEach(provider ->
+                    {
+                        Map<String, Object> providerMetrics = provider.getUsageMetrics();
+                        Set<String> duplicateKeys = providerMetrics.keySet()
+                                .stream()
+                                .filter(moduleMetrics::containsKey)
+                                .collect(Collectors.toSet());
+                        if (duplicateKeys.isEmpty())
+                            moduleMetrics.putAll(provider.getUsageMetrics());
+                        else
+                        {
+                            String message = (moduleName + " module has duplicate metric names registered by multiple UsageMetricProviders. Duplicate names: " + duplicateKeys);
+                            LOG.error(message);
+                        }
+                    });
                 }
                 catch (Exception e)
                 {
