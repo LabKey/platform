@@ -49,7 +49,7 @@ public class TabContainerType extends NormalContainerType implements ContainerTy
         {
             case fileRoot:
             case folderManagement:
-            case tabs:
+            case tabParent:
                 return currentContainer.getParent();
             default:
                 return currentContainer;

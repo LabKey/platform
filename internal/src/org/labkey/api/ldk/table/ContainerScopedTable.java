@@ -322,7 +322,7 @@ public class ContainerScopedTable<SchemaType extends UserSchema> extends CustomP
                 return exists;
             }
 
-            Container target = c.getContainerFor(ContainerType.DataType.userSchema);
+            Container target = c.getContainerFor(ContainerType.DataType.sharedSchemaOwner);
             SimpleFilter filter = new SimpleFilter(FieldKey.fromString(_pseudoPk), key, CompareType.EQUAL);
             filter.addClause(ContainerFilter.CURRENT.createFilterClause(_rootTable.getSchema(), getContainerFieldKey(), target));
             TableSelector ts = new TableSelector(_rootTable, Collections.singleton(_pseudoPk), filter, null);

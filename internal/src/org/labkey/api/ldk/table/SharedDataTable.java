@@ -16,8 +16,8 @@
 package org.labkey.api.ldk.table;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerType;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.SimpleUserSchema;
@@ -50,6 +50,6 @@ public class SharedDataTable<SchemaType extends UserSchema> extends SimpleUserSc
     @Override
     public ContainerFilter getContainerFilter()
     {
-        return new ContainerFilter.CurrentPlusExtras(getUserSchema().getUser(), getUserSchema().getContainer().getContainersFor(ContainerType.DataType.sharedDataTable).toArray(new Container[0]));
+        return new ContainerFilter.CurrentPlusExtras(getUserSchema().getUser(), ContainerManager.getSharedContainer(), getUserSchema().getContainer().getContainerFor(ContainerType.DataType.sharedSchemaOwner));
     }
 }

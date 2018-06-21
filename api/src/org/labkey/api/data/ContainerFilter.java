@@ -32,6 +32,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.GUID;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -79,12 +80,16 @@ public abstract class ContainerFilter
     /**
      * If we can't find the name, we default to CURRENT
      */
-    public static ContainerFilter getContainerFilterByName(String name, User user)
+    @NotNull
+    public static ContainerFilter getContainerFilterByName(@Nullable String name, @NotNull User user)
     {
         Type type = Type.Current;
         try
         {
-            type = Type.valueOf(name);
+            if (name != null)
+            {
+                type = Type.valueOf(name);
+            }
         }
         catch (IllegalArgumentException e)
         {
@@ -508,12 +513,15 @@ public abstract class ContainerFilter
 
     public static class CurrentPlusExtras extends ContainerFilterWithUser
     {
-        private final Container[] _extraContainers;
+        private final Collection<Container> _extraContainers;
 
         public CurrentPlusExtras(User user, Container... extraContainers)
         {
             super(user);
-            _extraContainers = extraContainers;
+
+            //Note: dont force upstream code to consider this
+            _extraContainers = Arrays.asList(extraContainers);
+            _extraContainers.removeIf(c -> c.getContainerType().isDuplicatedInContainerFilter());
         }
 
         @Override
@@ -664,7 +672,7 @@ public abstract class ContainerFilter
         @Override
         public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
-            Set<Container> containers = currentContainer.getContainersFor(ContainerType.DataType.assayProtocols);
+            Set<Container> containers = currentContainer.getContainersFor(ContainerType.DataType.protocol);
             return containers.stream()
                     .filter(container -> container.hasPermission(_user, perm, roles))
                     .map(Container::getEntityId)

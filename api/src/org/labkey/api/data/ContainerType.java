@@ -15,7 +15,6 @@ public interface ContainerType extends Serializable
      */
     enum DataType
     {
-        assayProtocols,
         assayData,
         customQueryViews,
         dataspace,
@@ -28,9 +27,8 @@ public interface ContainerType extends Serializable
         properties,
         protocol,
         search,
-        sharedDataTable,
-        tabs, // this means the container can contain tabs
-        userSchema
+        tabParent, // this means the container can contain tabs
+        sharedSchemaOwner  // this is used in several cases where certain kinds of UserSchema tables make records visible in both a parent and specific children
     }
 
     enum TitleContext

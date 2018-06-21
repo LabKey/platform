@@ -3,12 +3,12 @@ package org.labkey.api.data;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.ImportContext;
 
+import java.util.Arrays;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
-import static org.labkey.api.data.ContainerType.DataType.assayProtocols;
 import static org.labkey.api.data.ContainerType.DataType.protocol;
-import static org.labkey.api.data.ContainerType.DataType.sharedDataTable;
 
 public class WorkbookContainerType implements ContainerType
 {
@@ -121,12 +121,21 @@ public class WorkbookContainerType implements ContainerType
     {
         switch (dataType)
         {
-            case assayData:
+            //The intent is that outside of these blacklisted actions, return the current container (parent otherwise)
+            case customQueryViews:
+            case domainDefinitions:
+            case dataspace:
+            case fileAdmin:
+            case navVisibility:
+            case permissions:
+            case properties:
+            case protocol:
             case folderManagement:
-            case search:
-                return currentContainer;
-            default:
+            case fileRoot:
+            case tabParent:
                 return currentContainer.getParent();
+            default:
+                return currentContainer;
         }
     }
 
@@ -136,7 +145,7 @@ public class WorkbookContainerType implements ContainerType
     {
         Set<Container> containers = new LinkedHashSet<>();
 
-        if (dataType == assayProtocols)
+        if (dataType == protocol)
         {
             containers.add(currentContainer);
             Container project = currentContainer.getProject();
@@ -148,18 +157,7 @@ public class WorkbookContainerType implements ContainerType
             containers.add(currentContainer.getParent());
             containers.add(ContainerManager.getSharedContainer());
         }
-        else if (dataType == protocol)
-        {
-            containers.add(currentContainer);
-            containers.add(currentContainer.getProject());
-            containers.add(ContainerManager.getSharedContainer());
-            containers.add(currentContainer.getParent());
-        }
-        else if (dataType == sharedDataTable)
-        {
-            containers.add(ContainerManager.getSharedContainer());
-            containers.add(currentContainer.getParent());
-        }
+
         return containers;
     }
 }

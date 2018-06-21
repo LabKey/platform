@@ -6,9 +6,7 @@ import org.labkey.api.admin.ImportContext;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import static org.labkey.api.data.ContainerType.DataType.assayProtocols;
 import static org.labkey.api.data.ContainerType.DataType.protocol;
-import static org.labkey.api.data.ContainerType.DataType.sharedDataTable;
 
 public class NormalContainerType implements ContainerType
 {
@@ -128,7 +126,7 @@ public class NormalContainerType implements ContainerType
     {
         Set<Container> containers = new LinkedHashSet<>();
 
-        if (dataType == assayProtocols)
+        if (dataType == protocol)
         {
             containers.add(currentContainer);
             Container project = currentContainer.getProject();
@@ -136,16 +134,7 @@ public class NormalContainerType implements ContainerType
                 containers.add(project);
             containers.add(ContainerManager.getSharedContainer());
         }
-        else if (dataType == protocol)
-        {
-            containers.add(currentContainer);
-            containers.add(currentContainer.getProject());
-            containers.add(ContainerManager.getSharedContainer());
-        }
-        else if (dataType == sharedDataTable)
-        {
-            containers.add(ContainerManager.getSharedContainer());
-        }
+
         return containers;
     }
 }
