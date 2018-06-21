@@ -92,7 +92,7 @@ Ext4.onReady(function() {
     Ext4.applyIf(config, {
         containerTypes: 'project',
         containerFilter: 'CurrentAndSiblings',
-        containerPath: LABKEY.Security.getHomeContainer(),
+        containerPath: !config.containerTypes || config.containerTypes === 'project' ? LABKEY.Security.getHomeContainer() : null,
         hideCreateButton: false,
         iconSize: 'large',
         labelPosition: 'bottom',
@@ -110,12 +110,12 @@ Ext4.onReady(function() {
         if (LABKEY.Security.getSharedContainer())
             filterArray.push(LABKEY.Filter.create('name', LABKEY.Security.getSharedContainer(), LABKEY.Filter.Types.NOT_EQUAL));
 
-        if (panel.containerFilter == 'CurrentAndFirstChildren') {
+        if (panel.containerFilter === 'CurrentAndFirstChildren') {
             //NOTE: path is not directly filterable, so we settle for Client-side filtering
-            panel.store.on('load', function() {
-                var path = this.containerPath;
-                this.filterBy(function(rec) {
-                    return rec.get('Path') != path;
+            panel.store.on('load', function () {
+                var path = this.containerPath || LABKEY.Security.currentContainer.path;
+                this.filterBy(function (rec) {
+                    return rec.get('Path') !== path;
                 })
             }, null, {single: true});
         }
@@ -271,15 +271,20 @@ Ext4.onReady(function() {
                                 checked: panel.containerTypes && panel.containerTypes.match(/project/),
                                 name: 'folderTypes'
                             },{
+                                boxLabel: 'Subfolders',
+                                inputValue: 'subfolders',
+                                checked: panel.containerTypes && panel.containerTypes.match(/folder/) && !panel.store.containerPath,
+                                name: 'folderTypes'
+                            },{
                                 boxLabel: 'Specific Folder',
                                 inputValue: 'folder',
-                                checked: panel.containerTypes && !panel.containerTypes.match(/project/),
+                                checked: panel.containerTypes && panel.containerTypes.match(/folder/) && panel.store.containerPath,
                                 name: 'folderTypes'
                             },{
                                 xtype: 'labkey-combo',
                                 itemId: 'containerPath',
                                 width: 200,
-                                disabled: panel.containerTypes && panel.containerTypes.match(/project/),
+                                disabled: panel.containerTypes && !panel.containerTypes.match(/folder/) || !panel.store.containerPath,
                                 displayField: 'Path',
                                 valueField: 'EntityId',
                                 initialValue: panel.store.containerPath,
@@ -307,13 +312,13 @@ Ext4.onReady(function() {
                             },{
                                 xtype: 'checkbox',
                                 boxLabel: 'Include Direct Children Only',
-                                disabled: panel.containerTypes && panel.containerTypes.match(/project/),
+                                disabled: (panel.containerTypes && panel.containerTypes.match(/project/)) || !panel.store.containerPath,
                                 checked: (panel.store.containerFilter == 'CurrentAndFirstChildren'),
                                 itemId: 'directDescendants'
                             },{
                                 xtype: 'checkbox',
                                 boxLabel: 'Include Workbooks',
-                                disabled: panel.containerTypes && panel.containerTypes.match(/project/),
+                                disabled: (panel.containerTypes && panel.containerTypes.match(/project/)) || !panel.store.containerPath,
                                 checked: (panel.containerTypes.match(/project/) || panel.containerTypes.match(/workbook/)),
                                 itemId: 'includeWorkbooks'
                             },{
@@ -342,12 +347,19 @@ Ext4.onReady(function() {
                         handler: function(btn) {
                             var mode = btn.up('window').down('#folderTypes').getValue().folderTypes;
 
-                            if(mode == 'project'){
+                            if(mode === 'project'){
                                 panel.store.containerFilter = 'CurrentAndSiblings';
                                 panel.containerTypes = 'project';
                                 panel.store.containerPath = LABKEY.Security.getHomeContainer();
                                 panel.store.filterArray = panel.getFilterArray(panel);
                                 panel.noun = 'Project';
+                            }
+                            else if(mode === 'subfolders'){
+                                panel.store.containerFilter = 'CurrentAndFirstChildren';
+                                panel.containerTypes = 'folder';
+                                panel.store.containerPath = null;
+                                panel.store.filterArray = panel.getFilterArray(panel);
+                                panel.noun = 'Folder';
                             }
                             else {
                                 var container = btn.up('window').down('#containerPath').getValue();

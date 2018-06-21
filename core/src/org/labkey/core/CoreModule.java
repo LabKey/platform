@@ -511,6 +511,32 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     return view;
                 }
             },
+            new AlwaysAvailableWebPartFactory("Subfolders")
+            {
+                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
+                {
+                    JspView<WebPart> view = new JspView<>("/org/labkey/core/project/projects.jsp", webPart);
+
+                    if (webPart.getPropertyMap().isEmpty())
+                    {
+                        // Configure to show subfolders if not previously configured
+                        webPart.getPropertyMap().put("title", "Subfolders");
+                        webPart.getPropertyMap().put("containerFilter", ContainerFilter.Type.CurrentAndFirstChildren.name());
+                        webPart.getPropertyMap().put("containerTypes", "folder");
+                    }
+
+                    String title = webPart.getPropertyMap().get("title");
+                    view.setTitle(title);
+
+                    if (portalCtx.hasPermission(getClass().getName(), AdminPermission.class))
+                    {
+                        NavTree customize = new NavTree("");
+                        customize.setScript("customizeProjectWebpart(" + webPart.getRowId() + ", \'" + webPart.getPageId() + "\', " + webPart.getIndex() + ");");
+                        view.setCustomize(customize);
+                    }
+                    return view;
+                }
+            },
             // TODO: Delete this? I see no usages
             new BaseWebPartFactory("ProjectNav")
             {
