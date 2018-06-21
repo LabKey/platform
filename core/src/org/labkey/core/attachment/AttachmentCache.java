@@ -44,7 +44,7 @@ import java.util.Set;
 public class AttachmentCache
 {
     private static final Set<String> ATTACHMENT_COLUMNS = new CsvSet("Parent, Container, DocumentName, DocumentSize, DocumentType, Created, CreatedBy, LastIndexed");
-    private static final StringKeyCache<Map<String, Attachment>> _cache = CacheManager.getStringKeyCache(20000, CacheManager.DAY, "Attachments");
+    private static final StringKeyCache<Map<String, Attachment>> CACHE = CacheManager.getStringKeyCache(100000, CacheManager.MONTH, "Attachments");
 
     private static final CacheLoader<String, Map<String, Attachment>> LOADER = (key, attachmentParent) ->
     {
@@ -66,19 +66,19 @@ public class AttachmentCache
 
     static @NotNull Map<String, Attachment> getAttachments(AttachmentParent parent)
     {
-        return _cache.get(getKey(parent), parent, LOADER);
+        return CACHE.get(getKey(parent), parent, LOADER);
     }
 
 
     static void removeAttachments(AttachmentParent parent)
     {
-        _cache.remove(getKey(parent));
+        CACHE.remove(getKey(parent));
     }
 
 
     static void removeAttachments(Container c)
     {
-        _cache.removeUsingPrefix(c.getId());
+        CACHE.removeUsingPrefix(c.getId());
     }
 
 
