@@ -9,28 +9,8 @@ Ext4.define('LABKEY.ext4.ExternalEditorHelper', {
     showMaskOnFormLoad: function(cmp) {
         if (this.externalEditSettings) {
             if (this.externalEditSettings.isEditing === true) {
-                if (this.externalEditSettings.isDocker) {
-                    LABKEY.Utils.signalWebDriverTest("external-edit-url", this.externalEditSettings.externalUrl);
-                    this.showExternalEditingDialog((this.externalEditSettings));
-                }
-                else { // Don't know for sure if RStudio Pro report window is open in current session
-                    var isEditing = false;
-                    var selfWindowName = 'lk' + (new Date()).getTime(); //a unique window name for current window
-                    window.name = selfWindowName;
-                    var tmpWin = window.open('', this.externalEditSettings.externalWindowTitle);
-                    if (tmpWin) {
-                        var href = tmpWin.location.href;
-                        // if temp window href is desired externalUrl, temp window is the target external window.
-                        if (href.indexOf(this.externalEditSettings.externalUrl) !== -1) // if RStudio report
-                            isEditing = true;
-                        else if(href === 'about:blank')
-                            tmpWin.close();
-                    }
-                    if (tmpWin)
-                        tmpWin.open('', selfWindowName).focus();
-                    if (isEditing)
-                        this.showExternalEditingDialog((this.externalEditSettings));
-                }
+                LABKEY.Utils.signalWebDriverTest("external-edit-url", this.externalEditSettings.externalUrl);
+                this.showExternalEditingDialog((this.externalEditSettings));
             }
         }
     },
@@ -75,7 +55,7 @@ Ext4.define('LABKEY.ext4.ExternalEditorHelper', {
     openExternalEditor : function (o) {
         this.readOnly = true;
         this.codeMirror.readOnly = true;
-        var externalEditWindow = this.openWindowOnce(o.externalUrl, o.externalWindowTitle);
+        var externalEditWindow = this.openWindowOnce(o.externalUrl, o.externalWindowTitle, this.externalEditSettings.finishUrl, o.entityId, o.redirectUrl);
         if (!externalEditWindow)
             return;
 
@@ -83,7 +63,7 @@ Ext4.define('LABKEY.ext4.ExternalEditorHelper', {
         this.showExternalEditingDialog(o);
     },
 
-    openWindowOnce: function(url, windowName) {
+    openWindowOnce: function(url, windowName, finishUrl, entityId, returnUrl) {
         // open a blank windowName window
         // or get the reference to the existing windowName window
         if (this.externalEditWindow && this.externalEditWindow.window && !this.externalEditWindow.window.closed) {
@@ -110,7 +90,39 @@ Ext4.define('LABKEY.ext4.ExternalEditorHelper', {
             });
         }
         LABKEY.Utils.signalWebDriverTest("external-edit-url", url);
+        if (finishUrl && entityId) {
+            var me = this;
+            window.finishEditing = function()
+            {
+                me._finishEditing(finishUrl, entityId, returnUrl);
+            };
+        }
+
         return this.externalEditWindow;
+    },
+
+    _finishEditing: function(finishUrl, entityId, returnUrl) {
+        Ext4.Ajax.request(
+                {
+                    method: "POST",
+                    url: finishUrl,
+                    params: {
+                        returnUrl: returnUrl,
+                        entityId: entityId
+                    },
+                    success : function(resp, opt) {
+                        var o = Ext4.decode(resp.responseText);
+
+                        if (o.success) {
+                            window.location = o.redirectUrl;
+                        }
+                        else {
+                            LABKEY.Utils.displayAjaxErrorResponse(resp, opt);
+                        }
+                    },
+                    failure : LABKEY.Utils.displayAjaxErrorResponse
+                }
+        );
     },
 
     showExternalEditingDialog: function(config)
@@ -193,27 +205,7 @@ Ext4.define('LABKEY.ext4.ExternalEditorHelper', {
                     }
 
                     new Ext4.util.DelayedTask(function() {
-                        Ext4.Ajax.request(
-                                {
-                                    method: "POST",
-                                    url: me.externalEditSettings.finishUrl,
-                                    params: {
-                                        returnUrl: config.redirectUrl,
-                                        entityId: config.entityId
-                                    },
-                                    success : function(resp, opt) {
-                                        var o = Ext4.decode(resp.responseText);
-
-                                        if (o.success) {
-                                            window.location = o.redirectUrl;
-                                        }
-                                        else {
-                                            LABKEY.Utils.displayAjaxErrorResponse(resp, opt);
-                                        }
-                                    },
-                                    failure : LABKEY.Utils.displayAjaxErrorResponse
-                                }
-                        );
+                        this._finishEditing(me.externalEditSettings.finishUrl, config.entityId, config.redirectUrl);
                     }, me).delay(5000); // wait to stop RStudio docker container to allow buffer for saveAndClose
 
                 }
