@@ -55,5 +55,10 @@ public interface ScheduledPipelineJobDescriptor<C extends ContainerUser>
     PipelineJob getPipelineJob(C context) throws PipelineJobException;
     boolean isPending(ContainerUser context);
 
-    ScheduledPipelineJobDescriptor getDescriptorFromCache();
+    ScheduledPipelineJobDescriptor getDescriptorFromCache(Container c);
+
+    default boolean isUserDefined()
+    {
+        return false;
+    }
 }
