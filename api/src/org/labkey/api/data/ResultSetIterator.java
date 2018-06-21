@@ -28,20 +28,17 @@ import java.util.Map;
  */
 public class ResultSetIterator implements Iterator<Map<String, Object>>
 {
-    private final ResultSet _rs;
+    private final ResultSetIteratorHelper _iter;
     private final ResultSetRowMapFactory _factory;
-
-    private boolean _didNext = false;
-    private boolean _hasNext = false;
 
     public ResultSetIterator(ResultSet rs)
     {
-        _rs = rs;
+        _iter = new ResultSetIteratorHelper(rs);
 
         try
         {
             // Note: If _rs is a CachedResultSet then this method returns a simple, pass-through factory
-            _factory = ResultSetRowMapFactory.create(_rs);
+            _factory = ResultSetRowMapFactory.create(rs);
         }
         catch (SQLException e)
         {
@@ -53,14 +50,7 @@ public class ResultSetIterator implements Iterator<Map<String, Object>>
     {
         try
         {
-            // This used to be simply !_rs.isLast(), but that fails in some edge cases (e.g., no rows)
-            if (!_didNext)
-            {
-                _hasNext = _rs.next();
-                _didNext = true;
-            }
-
-            return _hasNext;
+            return _iter.hasNext();
         }
         catch (SQLException e)
         {
@@ -72,22 +62,11 @@ public class ResultSetIterator implements Iterator<Map<String, Object>>
     {
         try
         {
-            if (!_didNext)
-            {
-                _rs.next();
-            }
-            _didNext = false;
-
-            return _factory.getRowMap(_rs);
+            return _factory.getRowMap(_iter.next());
         }
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
         }
     }
-
-    public void remove()
-    {
-        throw new UnsupportedOperationException("Can't remove row when iterating");
-    }
-} 
+}

@@ -15,10 +15,12 @@
  */
 package org.labkey.api.data;
 
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.junit.Test;
 
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.stream.Stream;
 
 /**
  * User: adam
@@ -32,6 +34,14 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
     {
         SqlSelector selector = new SqlSelector(CoreSchema.getInstance().getSchema(), "SELECT RowId, Body FROM comm.Announcements");
         test(selector, TestClass.class);
+
+        // Test zero rows case
+        try (Stream<Integer> stream = new SqlSelector(CoreSchema.getInstance().getSchema(), "SELECT RowId FROM comm.Announcements WHERE 1 = 0").uncachedStream(Integer.class))
+        {
+            MutableInt count = new MutableInt(0);
+            stream.forEach(id -> count.increment());
+            assertEquals(0, count.intValue());
+        };
 
         try
         {

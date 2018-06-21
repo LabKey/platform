@@ -268,17 +268,16 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
 
 
     /**
-     * As the name suggests, this is a very simple Iterator wrapper around a ResultSet that simply returns the ResultSet
-     * on each call to {@code next()}. (Compare with {@link ResultSetIterator}, which returns a {@code Map<String, Object>}
-     * on each call to {@code next()}).
+     * A very simple Iterator that returns the ResultSet on each call to {@code next()}. (Compare with {@link ResultSetIterator},
+     * which returns a {@code Map<String, Object>} on each call to {@code next()}).
      */
     private class SimpleResultSetIterator implements Iterator<ResultSet>
     {
-        private final ResultSet _rs;
+        private final ResultSetIteratorHelper _iter;
 
         private SimpleResultSetIterator(ResultSet rs)
         {
-            _rs = rs;
+            _iter = new ResultSetIteratorHelper(rs);
         }
 
         @Override
@@ -286,7 +285,7 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
         {
             try
             {
-                return !_rs.isLast();
+                return _iter.hasNext();
             }
             catch (SQLException e)
             {
@@ -299,8 +298,7 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
         {
             try
             {
-                _rs.next();
-                return _rs;
+                return _iter.next();
             }
             catch (SQLException e)
             {
