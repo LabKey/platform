@@ -360,6 +360,8 @@ if (!LABKEY.DataRegions) {
 
                 showExportButtons: undefined,
 
+                showRStudioButton: undefined,
+
                 showImportDataButton: undefined,
 
                 showInsertNewButton: undefined,
@@ -3582,6 +3584,7 @@ if (!LABKEY.DataRegions) {
                 'showDeleteButton',
                 'showDetailsColumn',
                 'showExportButtons',
+                'showRStudioButton',
                 'showImportDataButton',
                 'showInsertNewButton',
                 'showPagination',
@@ -4382,6 +4385,7 @@ if (!LABKEY.DataRegions) {
      * @param {boolean} [config.showDeleteButton] Show a "Delete" button in the button bar (default true).
      * @param {boolean} [config.showReports] If true, show reports on the Views menu (default true).
      * @param {boolean} [config.showExportButtons] Show the export button menu in the button bar (default true).
+     * @param {boolean} [config.showRStudioButton] Show the export to RStudio button menu in the button bar.  Requires export button to work. (default false).
      * @param {boolean} [config.showBorders] Render the table with borders (default true).
      * @param {boolean} [config.showSurroundingBorder] Render the table with a surrounding border (default true).
      * @param {boolean} [config.showRecordSelectors] Render the select checkbox column (default undefined, meaning they will be shown if the query is updatable by the current user).

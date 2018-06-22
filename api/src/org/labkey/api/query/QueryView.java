@@ -42,6 +42,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ResourceURL;
@@ -136,6 +137,9 @@ public class QueryView extends WebPartView<Object>
     private String _importURL;
     private String _deleteURL;
 
+    private boolean _hasExportRStudioPanel = false;
+
+
     public static void register(ExportScriptFactory factory)
     {
         register(factory, false);
@@ -185,6 +189,7 @@ public class QueryView extends WebPartView<Object>
     private Report _report;
 
     private boolean _showExportButtons = true;
+    private boolean _showRStudioButton = false; // might want show by default if rstudio is configured
     private boolean _showInsertNewButton = true;
     private boolean _showImportDataButton = true;
     private boolean _showDeleteButton = true;
@@ -894,7 +899,23 @@ public class QueryView extends WebPartView<Object>
                 }
                 bar.add(b);
             }
+
+            ActionButton rs = createExportToRStudioButton();
+            if (null != rs)
+                bar.add(rs);
         }
+    }
+
+    @Nullable ActionButton createExportToRStudioButton()
+    {
+        ActionButton rstudio = new ActionButton("RStudio");
+        String script = DataRegion.getJavaScriptObjectReference(getDataRegionName()) + ".toggleButtonPanel('export','rstudio'); return false;";
+        rstudio.setScript(script, false);
+        rstudio.setVisible(showRStudioButton());
+        rstudio.setEnabled(_hasExportRStudioPanel);
+        rstudio.setDisplayModes(DataRegion.MODE_GRID);
+        rstudio.setDisplayPermission(ReadPermission.class);
+        return rstudio;
     }
 
     @Nullable
@@ -1305,6 +1326,7 @@ public class QueryView extends WebPartView<Object>
         if (exportView == null)
             return;
         exportButton.addSubPanel("RStudio", exportView);
+        _hasExportRStudioPanel = true;
     }
 
 
@@ -2859,6 +2881,17 @@ public class QueryView extends WebPartView<Object>
     public boolean showExportButtons()
     {
         return _showExportButtons;
+    }
+
+    public boolean showRStudioButton()
+    {
+        return _showRStudioButton;
+    }
+
+    /** Currently requires showExportButtons(), or button will not be enabled */
+    public void setShowRStudioButton(boolean showRStudioButton)
+    {
+        _showRStudioButton = showRStudioButton;
     }
 
     public void setShowDetailsColumn(boolean showDetailsColumn)
