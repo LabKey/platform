@@ -29,7 +29,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
@@ -84,30 +83,22 @@ public class LogManager
 
         if (provider != null)
         {
-            try
-            {
-                Container c = ContainerManager.getForId(type.getContainer());
+            Container c = ContainerManager.getForId(type.getContainer());
 
-                UserSchema schema = AuditLogService.getAuditLogSchema(user, c != null ? c : ContainerManager.getRoot());
+            UserSchema schema = AuditLogService.getAuditLogSchema(user, c != null ? c : ContainerManager.getRoot());
 
                 if (schema != null)
                 {
                     TableInfo table = schema.getTable(provider.getEventName(), false);
 
-                    if (table instanceof DefaultAuditTypeTable)
-                    {
-                        // consider using etl data iterator for inserts
-                        type = validateFields(provider, type);
-                        TableInfo dbTable = ((DefaultAuditTypeTable)table).getRealTable();
-                        K ret = Table.insert(user, dbTable, type);
-                        return ret;
-                    }
+                if (table instanceof DefaultAuditTypeTable)
+                {
+                    // consider using etl data iterator for inserts
+                    type = validateFields(provider, type);
+                    TableInfo dbTable = ((DefaultAuditTypeTable)table).getRealTable();
+                    K ret = Table.insert(user, dbTable, type);
+                    return ret;
                 }
-            }
-            catch (RuntimeSQLException x)
-            {
-                if (!x.isConstraintException())
-                    throw x;
             }
         }
         return null;
