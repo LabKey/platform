@@ -41,12 +41,14 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.SimpleValidationError;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -382,6 +384,64 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         }
     }
 
+
+    public class ContainerColumn implements Supplier
+    {
+        final UserSchema us;
+        final TableInfo tableInfo;
+        final String containerId;
+        final int idx;
+
+        final Set<Object> allowableContainers = new HashSet<>();
+
+        public ContainerColumn(UserSchema us, TableInfo tableInfo, String containerId, int idx)
+        {
+            this.us = us;
+            this.tableInfo = tableInfo;
+            this.containerId = containerId;
+            this.idx = idx;
+        }
+
+        @Override
+        public Object get()
+        {
+            // Related to: Issues 15301 and 32961: allow workbooks records to be deleted/updated from the parent container
+            Object rowContainerVal = idx > 0 ? _data.get(idx) : null;
+            if (rowContainerVal != null && us != null)
+            {
+                if (rowContainerVal instanceof Container)
+                {
+                    rowContainerVal = ((Container)rowContainerVal).getId();
+                }
+
+                if (allowableContainers.contains(rowContainerVal))
+                {
+                    return rowContainerVal;
+                }
+
+                Container rowContainer = UserSchema.translateRowSuppliedContainer(rowContainerVal, us.getContainer(), us.getUser(), tableInfo, UpdatePermission.class);
+                if (rowContainer != null)
+                {
+                    if (!this.us.getContainer().allowRowMutationForContainer(rowContainer))
+                    {
+                        getRowError().addError(new SimpleValidationError("Row is not from the correct container: " + rowContainerVal));
+                    }
+                    else
+                    {
+                        allowableContainers.add(rowContainerVal);
+                    }
+
+                    return rowContainer.getId();
+                }
+                else
+                {
+                    getRowError().addError(new SimpleValidationError("Unknown container: " + rowContainerVal));
+                }
+            }
+
+            return containerId;
+        }
+    }
 
     public static class ConstantColumn implements Supplier
     {
@@ -1044,7 +1104,6 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         final String containerId = null == c ? null : c.getId();
         final Integer userId = null == user ? 0 : user.getUserId();
 
-        Supplier containerCallable = new ConstantColumn(containerId);
         Supplier userCallable = new ConstantColumn(userId);
         Supplier tsCallable = new TimestampColumn();
         Supplier guidCallable = new GuidColumn();
@@ -1056,6 +1115,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
         boolean allowTargetContainers = context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.TargetMultipleContainers);
 
+        String containerFieldKeyName = target.getContainerFieldKey() == null ? null : target.getContainerFieldKey().getName();
+        Supplier containerCallable = containerFieldKeyName != null && outputCols.containsKey(containerFieldKeyName) ? new ContainerColumn(target.getUserSchema(), target, containerId, outputCols.get(containerFieldKeyName)) : new ConstantColumn(containerId);
         addBuiltinColumn(SpecialColumn.Container, allowTargetContainers, target, inputCols, outputCols, containerCallable);
         addBuiltinColumn(SpecialColumn.CreatedBy,  allowPassThrough, target, inputCols, outputCols, userCallable, context);
         addBuiltinColumn(SpecialColumn.ModifiedBy, allowPassThrough, target, inputCols, outputCols, userCallable, context);

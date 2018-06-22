@@ -23,6 +23,8 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ContainerType;
 import org.labkey.api.data.CrosstabTableInfo;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
@@ -30,6 +32,7 @@ import org.labkey.api.data.UserSchemaCustomizer;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.FileUtil;
@@ -665,5 +668,70 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     public boolean hasRegisteredSchemaLinks()
     {
         return this.hasRegisteredSchemaLinks;
+    }
+
+    /**
+     * This provides a single method to translate a the value supplied on a row for container into a
+     * proper Container object.  We accept: the containerId, containerPath or a Container object.
+     * If a value is supplied but cannot be resolved to a valid container then null is returned.
+     */
+    @Nullable
+    public static Container translateRowSuppliedContainer(Object rowContainerVal, Container c, User u, TableInfo ti, Class<? extends Permission> clazz)
+    {
+        Container ret;
+        if (rowContainerVal == null)
+        {
+            return null;
+        }
+        else if (rowContainerVal instanceof Container)
+        {
+            ret = (Container)rowContainerVal;
+        }
+        else
+        {
+            ret = ContainerManager.getForId(String.valueOf(rowContainerVal));
+            if (ret == null)
+            {
+                ret = ContainerManager.getForPath(String.valueOf(rowContainerVal));
+            }
+        }
+
+        if (ret != null && !ret.equals(c))
+        {
+            verifyPermissionsForContainer(ret, c, u, ti, clazz);
+        }
+
+        return ret;
+    }
+
+    private static void verifyPermissionsForContainer(@NotNull Container rowContainer, Container originalContainer, User u, TableInfo ti, Class<? extends Permission> clazz)
+    {
+        Container permissionContainer = rowContainer.getContainerFor(ContainerType.DataType.permissions);
+
+        // If a row supplies an alternate container, it is possible that permisions differ.  TableInfo can supply custom permissions.
+        // If the effective permission container for the row-level container is actually the same as the original table (which is currently always true, such as Workbook->Parent,
+        // then just defer to the original TableInfo.  If this is not the case, attempt to construct a new TableInfo and fail if we cannot do this.
+        boolean hasPermission = false;
+        if (originalContainer.equals(permissionContainer))
+        {
+            hasPermission = ti.hasPermission(u, clazz);
+        }
+        else if (ti.getUserSchema() != null)
+        {
+            UserSchema us = QueryService.get().getUserSchema(u, permissionContainer, ti.getUserSchema().getSchemaPath());
+            if (us != null)
+            {
+                TableInfo rowTi = us.getTable(ti.getName());
+                if (rowTi != null)
+                {
+                    hasPermission = rowTi.hasPermission(u, clazz);
+                }
+            }
+        }
+
+        if (!hasPermission)
+        {
+            throw new UnauthorizedException("Insufficient permissions for folder: " + rowContainer.getPath());
+        }
     }
 }

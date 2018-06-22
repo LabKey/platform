@@ -184,14 +184,15 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return _containerType.isConvertibleToTab();
     }
 
-    public boolean canDeleteFromContainer(@NotNull Container container)
+    /**
+     * This behavior is related to Issue 15301.  In general, we expect API actions to target the same container as that request; however,
+     * on insert/update/delete a row can sometimes specify a different container ID.  In this situation, allow the containerType of the container
+     * the row is attempting to use to determine whether this CRUD action is allowed.
+     * @param targetContainer The targetContainer, typically supplied by a row
+     */
+    public boolean allowRowMutationForContainer(Container targetContainer)
     {
-        return _containerType.canDeleteFromContainer(this, container);
-    }
-
-    public boolean canUpdateFromContainer(@NotNull Container container)
-    {
-        return _containerType.canUpdateFromContainer(this, container);
+        return targetContainer != null && targetContainer.getContainerType().allowRowMutationFromContainer(this, targetContainer);
     }
 
     public boolean canAdminFolder()

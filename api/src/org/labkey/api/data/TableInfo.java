@@ -533,6 +533,16 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
     ContainerContext getContainerContext();
 
     /**
+     * Return the FieldKey of the Container column for this table.
+     * If the value is non-null then getContainerContext() will
+     * return a FieldKeyContext using the container FieldKey.
+     *
+     * @return FieldKey of the Container column.
+     */
+    @Nullable
+    public FieldKey getContainerFieldKey();
+
+    /**
      * Returns whether this table supports audit tracking of insert, updates and deletes by implementing the
      * AuditConfigurable interface.
      */

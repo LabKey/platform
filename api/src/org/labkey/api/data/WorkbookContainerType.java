@@ -57,15 +57,10 @@ public class WorkbookContainerType implements ContainerType
     }
 
     @Override
-    public boolean canDeleteFromContainer(@NotNull Container currentContainer, @NotNull Container container)
+    public boolean allowRowMutationFromContainer(Container primaryContainer, Container targetContainer)
     {
-        return currentContainer.equals(container) || currentContainer.getParent().equals(container);
-    }
-
-    @Override
-    public boolean canUpdateFromContainer(@NotNull Container currentContainer, @NotNull Container container)
-    {
-        return currentContainer.equals(container) || currentContainer.getParent().equals(container);
+        //Issue 15301: allow workbooks records to be deleted/updated from the parent container
+        return primaryContainer.equals(targetContainer) || targetContainer.getParent().equals(primaryContainer);
     }
 
     @Override

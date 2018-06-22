@@ -55,15 +55,9 @@ public class NormalContainerType implements ContainerType
     }
 
     @Override
-    public boolean canDeleteFromContainer(@NotNull Container currentContainer, @NotNull Container container)
+    public boolean allowRowMutationFromContainer(Container primaryContainer, Container targetContainer)
     {
-        return currentContainer.equals(container);
-    }
-
-    @Override
-    public boolean canUpdateFromContainer(@NotNull Container currentContainer, @NotNull Container container)
-    {
-        return currentContainer.equals(container);
+        return primaryContainer.equals(targetContainer);
     }
 
     @Override

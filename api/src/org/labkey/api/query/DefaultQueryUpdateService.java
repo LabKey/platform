@@ -31,6 +31,10 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.view.UnauthorizedException;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -252,7 +256,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     {
         aliasColumns(_columnMapping, row);
         convertTypes(container, row);
-        setSpecialColumns(user, container, getDbTable(), row);
+        setSpecialColumns(container, row, user, InsertPermission.class);
         return _insert(user, container, row);
     }
 
@@ -350,17 +354,21 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         }
 
         convertTypes(container, rowStripped);
-        setSpecialColumns(user, container, getDbTable(), row);
+        setSpecialColumns(container, row, user, UpdatePermission.class);
 
-        Object rowContainer = row.get("container");
-        if (rowContainer != null)
+        if (row.get("container") != null)
         {
-            if (oldRow == null)
-                throw new UnauthorizedException("The existing row was not found");
-
-            Object oldContainer = new CaseInsensitiveHashMap<>(oldRow).get("container");
-            if (null != oldContainer && !rowContainer.equals(oldContainer))
-                throw new UnauthorizedException("The row is from the wrong container.");
+            Container rowContainer = UserSchema.translateRowSuppliedContainer(row.get("container"), container, user, getQueryTable(), UpdatePermission.class);
+            if (rowContainer == null)
+            {
+                throw new ValidationException("Unknown container: " + row.get("container"));
+            }
+            else
+            {
+                Container oldContainer = UserSchema.translateRowSuppliedContainer(new CaseInsensitiveHashMap<>(oldRow).get("container"), container, user, getQueryTable(), UpdatePermission.class);
+                if (null != oldContainer && !rowContainer.equals(oldContainer))
+                    throw new UnauthorizedException("The row is from the wrong container.");
+            }
         }
 
         Map<String,Object> updatedRow = _update(user, container, rowStripped, oldRow, oldRow == null ? getKeys(row) : getKeys(oldRow));
@@ -464,12 +472,11 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         if (container != null && getDbTable().getColumn("container") != null)
         {
             // UNDONE: 9077: check container permission on each row before delete
-            Object oldContainer = new CaseInsensitiveHashMap(oldRowMap).get("container");
-            if (null != oldContainer && !container.getId().equals(oldContainer))
+            Container rowContainer = UserSchema.translateRowSuppliedContainer(new CaseInsensitiveHashMap<>(oldRowMap).get("container"), container, user, getQueryTable(), DeletePermission.class);
+            if (null != rowContainer && !container.getId().equals(rowContainer))
             {
                 //Issue 15301: allow workbooks records to be deleted/updated from the parent container
-                Container rowContainer = ContainerManager.getForId((String)oldContainer);
-                if (rowContainer != null && rowContainer.canDeleteFromContainer(container))
+                if (container.allowRowMutationForContainer(rowContainer))
                     container = rowContainer;
                 else
                     throw new UnauthorizedException("The row is from the wrong container.");
@@ -587,22 +594,22 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     /**
      * Override this method to alter the row before insert or update.
      * For example, you can automatically adjust certain column values based on context.
-     * @param user The current user
      * @param container The current container
-     * @param table The table to be updated
      * @param row The row data
+     * @param user The current user
+     * @param clazz A permission class to test
      */
-    protected void setSpecialColumns(User user, Container container, TableInfo table, Map<String,Object> row)
+    protected void setSpecialColumns(Container container, Map<String,Object> row, User user, Class<? extends Permission> clazz)
     {
         if (null != container)
         {
             //Issue 15301: allow workbooks records to be deleted/updated from the parent container
             if (row.get("container") != null)
             {
-                Container rowContainer = ContainerManager.getForId((String)row.get("container"));
-                if (rowContainer != null && rowContainer.canUpdateFromContainer(container))
+                Container rowContainer = UserSchema.translateRowSuppliedContainer(row.get("container"), container, user, getQueryTable(), clazz);
+                if (rowContainer != null && container.allowRowMutationForContainer(rowContainer))
                 {
-                    return;
+                    return;  //accept the row-provided value
                 }
 
             }

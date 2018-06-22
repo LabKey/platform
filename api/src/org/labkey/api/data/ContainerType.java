@@ -78,28 +78,13 @@ public interface ContainerType extends Serializable
     boolean isConvertibleToTab();
 
     /**
-     * In general, we expect API actions to target the same container as is in the request; however, a row can sometimes
-     * specify a different container ID.  In this situation, allow the containerType of the container
-     * the row is attempting to use to determine whether this action is allowed.
-     * See Issues 15301 and 32961.
-     *
-     * @param currentContainer The container that is to be deleted
-     * @param container the container from which updates will be made
-     * @return indication of whether the current container can be deleted from the given container
+     * In certain situations, it is permissible to insert/update/delete rows into both the parent container and another container (such as a child workbook) in a single batch,
+     * if the rows specify that child workbook ID.  See issues 15301 and 32961
+     * @param primaryContainer the primary container, typically where the request originated (i.e. an API request or UserSchema)
+     * @param targetContainer the container which the row is attempting to act upon (insert/update/delete)
+     * @return indication of whether the current container can be updated or deleted from the given container
      */
-    boolean canDeleteFromContainer(@NotNull Container currentContainer, @NotNull Container container);
-
-    /**
-     * In general, we expect API actions to target the same container as is in the request; however, a row can sometimes
-     * specify a different container ID.  In this situation, allow the containerType of the container
-     * the row is attempting to use to determine whether this action is allowed.
-     * See Issues 15301 and 32961.
-     *
-     * @param currentContainer the container that is to be updated
-     * @param container the container from which updates will be made
-     * @return indication of whether the current container can be deleted from the given container
-     */
-    boolean canUpdateFromContainer(@NotNull Container currentContainer, @NotNull Container container);
+    boolean allowRowMutationFromContainer(Container primaryContainer, Container targetContainer);
 
     /**
      * @return indication of whether this container should show up in folder management
