@@ -480,7 +480,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                         .collect(Collectors.groupingBy(Report::getType, Collectors.counting())))
                 );
 
-                metric.put("studyReloadCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Study WHERE AllowReload AND ReloadInterval > 0").getObject(Long.class));
+                metric.put("studyReloadCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Study WHERE AllowReload = ? AND ReloadInterval > ?", true, 0).getObject(Long.class));
 
                 return metric;
             });
