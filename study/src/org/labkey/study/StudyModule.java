@@ -473,12 +473,14 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
                 // Add counts for old-style, JFreeChart "Chart Views"
                 Set chartViewTypes = Sets.newCaseInsensitiveHashSet(ChartQueryReport.TYPE, StudyChartQueryReport.TYPE, ChartReportView.TYPE, ChartReportView.DatasetChartReport.TYPE, StudyController.StudyChartReport.TYPE);
-                metric.put("chartViews", Collections.unmodifiableMap(
+                metric.put("chartViewCounts", Collections.unmodifiableMap(
                     ContainerManager.getAllChildren(ContainerManager.getRoot()).stream()
                         .flatMap(c->ReportService.get().getReports(null, c).stream())
                         .filter(r->chartViewTypes.contains(r.getType()))
                         .collect(Collectors.groupingBy(Report::getType, Collectors.counting())))
                 );
+
+                metric.put("studyReloadCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Study WHERE AllowReload AND ReloadInterval > 0").getObject(Long.class));
 
                 return metric;
             });
