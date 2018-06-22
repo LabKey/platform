@@ -2388,7 +2388,7 @@ if (!LABKEY.DataRegions) {
      */
 
     LABKEY.DataRegion.prototype.toggleButtonPanelHandler = function(panelButton) {
-        _toggleButtonPanelthis( this, $(panelButton).attr('panel-toggle'), null, true);
+        _toggleButtonPanel( this, $(panelButton).attr('panel-toggle'), null, true);
     };
 
     LABKEY.DataRegion.prototype.showButtonPanel = function(panel, optionalTab) {
