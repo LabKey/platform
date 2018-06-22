@@ -14,6 +14,7 @@
             testFilterArray: testFilterArray,
             testSort: testSort,
             testHideButtons: testHideButtons,
+            testRStudioButtons: testRStudioButtons,
             testHideColumns: testHideColumns,
             testPagingConfig: testPagingConfig,
             testSetPaging: testSetPaging,
@@ -151,7 +152,14 @@
                 queryName: 'sampleDataTest1',
                 renderTo: RENDERTO,
                 success: function() {
-                    LABKEY.Utils.signalWebDriverTest("testQueryOnly");
+                    // TODO: verify default buttons?
+                    var rs = $("a.labkey-button:contains('RStudio')");
+                    if (rs.length) {
+                        alert('RStudio is a not a default button');
+                    }
+                    else {
+                        LABKEY.Utils.signalWebDriverTest("testQueryOnly");
+                    }
                 },
                 failure: function() {
                     alert('Failed test: Show default view for query sampleDataTest');
@@ -235,6 +243,41 @@
                 }
             });
         }
+
+        function testRStudioButtons() {
+            new LABKEY.QueryWebPart({
+                title: 'Show RStudio button',
+                schemaName: 'Samples',
+                queryName: 'sampleDataTest1',
+                showExportButtons: true,
+                showRStudioButton: true,
+                showInsertNewButton: false,
+                showPagination: false,
+                allowChooseQuery: false,
+                allowChooseView: false,
+                showReports: false,
+                showDeleteButton: false,
+                // buttonBar : {items: ["export", "rstudio"]},
+                renderTo: RENDERTO,
+                success: function() {
+                    var bbar = $("#" + RENDERTO + " div.labkey-button-bar");
+                    var rs = bbar.find("a.labkey-button:contains('RStudio')");
+                    var ex = bbar.find("a.labkey-button[title='Export / Sign Data']");
+                    if (rs.length !== 1) {
+                    }
+                    if (ex.length !== 1) {
+                        alert('Failed to find Export');
+                    }
+                    else {
+                        LABKEY.Utils.signalWebDriverTest("testRStudioButtons");
+                    }
+                },
+                failure: function() {
+                    alert('Failed test: Rstudio buttons');
+                }
+            });
+        }
+
 
         function testHideColumns() {
             new LABKEY.QueryWebPart({
