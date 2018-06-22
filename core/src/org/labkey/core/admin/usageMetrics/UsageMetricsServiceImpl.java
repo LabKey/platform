@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.usageMetrics.UsageMetricsProvider;
 import org.labkey.api.usageMetrics.UsageMetricsService;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MinorConfigurationException;
 import org.labkey.api.util.UsageReportingLevel;
 
@@ -81,6 +82,7 @@ public class UsageMetricsServiceImpl implements UsageMetricsService
                 catch (Exception e)
                 {
                     allModulesMetrics.computeIfAbsent(ERRORS, k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER)).put(moduleName, e.getMessage());
+                    ExceptionUtil.logExceptionToMothership(null, e);
                 }
             });
 
