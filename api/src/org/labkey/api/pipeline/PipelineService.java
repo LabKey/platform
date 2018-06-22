@@ -187,6 +187,7 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
 
     FileAnalysisProperties getFileAnalysisProperties(Container c, String taskId, String path);
 
+    TriggerConfiguration getTriggerConfig(Container c, String name);
     void saveTriggerConfig(Container c, User user, TriggerConfiguration config) throws Exception;
 
     class FileAnalysisProperties

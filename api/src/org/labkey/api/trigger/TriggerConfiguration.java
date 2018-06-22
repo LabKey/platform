@@ -2,30 +2,34 @@ package org.labkey.api.trigger;
 
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
+import org.labkey.api.data.Entity;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
-public class TriggerConfiguration
+public class TriggerConfiguration extends Entity
 {
     private Integer _rowId;
     private String _name;
     private String _description;
     private String _type;
-    private String _pipelineTask;
+    private String _pipelineId;
     private String _username;
     private String _assayProvider;
     private String _location;
     private String _filePattern;
     private int _quiet;
     private String _copy;
+    private String _move;
     private String _parameterFunction;
     private boolean _enabled;
     private boolean _recursive;
     protected List<String> _customParamKey = new ArrayList<>();
     protected List<String> _customParamValue = new ArrayList<>();
+    private Date _lastChecked;
+    private String _configuration;
+    private String _customConfiguration;
 
     public Integer getRowId()
     {
@@ -67,14 +71,14 @@ public class TriggerConfiguration
         _type = type;
     }
 
-    public String getPipelineTask()
+    public String getPipelineId()
     {
-        return _pipelineTask;
+        return _pipelineId;
     }
 
-    public void setPipelineTask(String pipelineTask)
+    public void setPipelineId(String pipelineId)
     {
-        _pipelineTask = pipelineTask;
+        _pipelineId = pipelineId;
     }
 
     public String getUsername()
@@ -137,6 +141,16 @@ public class TriggerConfiguration
         _copy = copy;
     }
 
+    public String getMove()
+    {
+        return _move;
+    }
+
+    public void setMove(String move)
+    {
+        _move = move;
+    }
+
     public String getParameterFunction()
     {
         return _parameterFunction;
@@ -187,61 +201,123 @@ public class TriggerConfiguration
         _customParamValue = customParamValue;
     }
 
-    public String getConfigurationJSON()
-    {
-        JSONObject json = new JSONObject();
-
-        addIfNotNull(json, "name", getName());
-        addIfNotNull(json, "description", getDescription());
-        addIfNotNull(json, "location", getLocation());
-        addIfNotNull(json, "filePattern", getFilePattern());
-        addIfNotNull(json, "quiet", getQuiet() * 1000);
-        addIfNotNull(json, "copy", getCopy());
-        addIfNotNull(json, "parameterFunction", getParameterFunction());
-        addIfNotNull(json, "enabled", isEnabled());
-        addIfNotNull(json, "recursive", isRecursive());
-
-        JSONObject params = new JSONObject();
-        params.put("pipeline, username", getUsername());
-        if (!StringUtils.isEmpty(getAssayProvider()))
-            params.put("pipeline, assay provider", getAssayProvider());
-
-        json.put("parameters", params);
-
-        return json.toString();
-    }
-
     private void addIfNotNull(JSONObject json, String key, Object value)
     {
         if (value != null)
             json.put(key, value);
     }
 
-    public String getCustomConfigurationJSON()
+    public Date getLastChecked()
     {
-        assert _customParamKey.size() == _customParamValue.size();
-        JSONObject json = new JSONObject();
-        int i=0;
-
-        for (String key : _customParamKey)
-        {
-            json.put(key, _customParamValue.get(i++));
-        }
-        return json.toString();
+        return _lastChecked;
     }
 
-    public Map<String, Object> getRow()
+    public void setLastChecked(Date lastChecked)
     {
-        Map<String, Object> row = new HashMap<>();
-        row.put("RowId", getRowId());
-        row.put("Name", getName());
-        row.put("Description", getDescription());
-        row.put("Type", getType());
-        row.put("PipelineId", getPipelineTask());
-        row.put("Enabled", isEnabled());
-        row.put("Configuration", getConfigurationJSON());
-        row.put("CustomConfiguration", getCustomConfigurationJSON());
+        _lastChecked = lastChecked;
+    }
 
-        return row;
+    public String getConfiguration()
+    {
+        if (_configuration == null)
+        {
+            JSONObject json = new JSONObject();
+
+            addIfNotNull(json, "name", getName());
+            addIfNotNull(json, "description", getDescription());
+            addIfNotNull(json, "location", getLocation());
+            addIfNotNull(json, "filePattern", getFilePattern());
+            addIfNotNull(json, "quiet", getQuiet() * 1000);
+            addIfNotNull(json, "copy", getCopy());
+            addIfNotNull(json, "move", getMove());
+            addIfNotNull(json, "parameterFunction", getParameterFunction());
+            addIfNotNull(json, "enabled", isEnabled());
+            addIfNotNull(json, "recursive", isRecursive());
+
+            JSONObject params = new JSONObject();
+            params.put("pipeline, username", getUsername());
+            if (!StringUtils.isEmpty(getAssayProvider()))
+                params.put("pipeline, assay provider", getAssayProvider());
+
+            json.put("parameters", params);
+
+            _configuration = json.toString();
+        }
+        return _configuration;
+    }
+
+    public void setConfiguration(String configuration)
+    {
+        // parse the JSON object
+        JSONObject json = new JSONObject(configuration);
+
+        if (json.has("name"))
+            setName(json.getString("name"));
+        if (json.has("description"))
+            setDescription(json.getString("description"));
+        if (json.has("location"))
+            setLocation(json.getString("location"));
+        if (json.has("filePattern"))
+            setFilePattern(json.getString("filePattern"));
+        if (json.has("quiet"))
+            setQuiet(json.getInt("quiet"));
+        if (json.has("copy"))
+            setCopy(json.getString("copy"));
+        if (json.has("move"))
+            setMove(json.getString("move"));
+        if (json.has("parameterFunction"))
+            setParameterFunction(json.getString("parameterFunction"));
+        if (json.has("enabled"))
+            setEnabled(json.getBoolean("enabled"));
+        if (json.has("recursive"))
+            setRecursive(json.getBoolean("recursive"));
+
+        if (json.has("parameters"))
+        {
+            JSONObject parameters = json.getJSONObject("parameters");
+
+            if (parameters.has("pipeline, username"))
+                setUsername(parameters.getString("pipeline, username"));
+            if (parameters.has("pipeline, assay provider"))
+                setAssayProvider(parameters.getString("pipeline, assay provider"));
+        }
+        _configuration = configuration;
+    }
+
+    public String getCustomConfiguration()
+    {
+        if (_customConfiguration == null)
+        {
+            assert _customParamKey.size() == _customParamValue.size();
+            JSONObject json = new JSONObject();
+            int i=0;
+
+            for (String key : _customParamKey)
+            {
+                json.put(key, _customParamValue.get(i++));
+            }
+            _customConfiguration = json.toString();
+        }
+        return _customConfiguration;
+    }
+
+    public void setCustomConfiguration(String customConfiguration)
+    {
+        // parse the JSON object
+        JSONObject json = new JSONObject(customConfiguration);
+        List<String> keys = new ArrayList<>();
+        List<String> values = new ArrayList<>();
+
+        json.forEach((key, value) -> {
+            keys.add(key);
+            values.add(String.valueOf(value));
+        });
+
+        if (!keys.isEmpty())
+        {
+            setCustomParamKey(keys);
+            setCustomParamValue(values);
+        }
+        _customConfiguration = customConfiguration;
     }
 }
