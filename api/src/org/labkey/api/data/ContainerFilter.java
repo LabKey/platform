@@ -520,7 +520,7 @@ public abstract class ContainerFilter
             super(user);
 
             //Note: dont force upstream code to consider this
-            _extraContainers = Arrays.asList(extraContainers);
+            _extraContainers = new ArrayList<>(Arrays.asList(extraContainers));
             _extraContainers.removeIf(c -> c.getContainerType().isDuplicatedInContainerFilter());
         }
 
