@@ -87,7 +87,6 @@ import org.labkey.security.xml.roleAssignment.RoleAssignmentType;
 import org.labkey.security.xml.roleAssignment.RoleAssignmentsType;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -417,7 +416,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         }
     }
 
-    public Report _getInstance(ReportDB r)
+    public @Nullable Report _getInstance(ReportDB r)
     {
         if (r != null)
         {

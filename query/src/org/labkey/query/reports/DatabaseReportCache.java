@@ -61,12 +61,17 @@ public class DatabaseReportCache
 
             new TableSelector(CoreSchema.getInstance().getTableInfoReport(), SimpleFilter.createContainerFilter(c, "ContainerId"), null).forEach(reportDB -> {
                 Report report = svc._getInstance(reportDB);
-                rowIdMap.put(reportDB.getRowId(), report);
-                entityIdMap.put(reportDB.getEntityId(), report);
-                reportKeyMap.put(reportDB.getReportKey(), report);
 
-                if ((reportDB.getFlags() & ReportDescriptor.FLAG_INHERITABLE) != 0)
-                    inheritableReports.add(report);
+                // Reports can be null if type is unknown (e.g., defining module disappears)
+                if (null != report)
+                {
+                    rowIdMap.put(reportDB.getRowId(), report);
+                    entityIdMap.put(reportDB.getEntityId(), report);
+                    reportKeyMap.put(reportDB.getReportKey(), report);
+
+                    if ((reportDB.getFlags() & ReportDescriptor.FLAG_INHERITABLE) != 0)
+                        inheritableReports.add(report);
+                }
             }, ReportDB.class);
 
             _rowIdMap = Collections.unmodifiableMap(rowIdMap);
