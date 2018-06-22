@@ -5338,7 +5338,7 @@ public class AdminController extends SpringActionController
             }
             else if (form.hasSiteDefaultRoot())
             {
-                if (!service.isUseDefaultRoot(ctx.getContainer()))
+                if (service.isFileRootDisabled(ctx.getContainer()) || !service.isUseDefaultRoot(ctx.getContainer()))
                 {
                     service.setIsUseDefaultRoot(ctx.getContainer(), true);
                     changed = true;
