@@ -64,6 +64,7 @@
             FileRootProp.siteDefault.name().equals(bean.getFileRootOption()) ? "Default based on project root" :
             FileRootProp.folderOverride.name().equals(bean.getFileRootOption()) ? bean.getFolderRootPath() :
             FileRootProp.cloudRoot.name().equals(bean.getFileRootOption()) ? "/@cloud/" + bean.getCloudRootName() : "";
+    boolean isCurrentFileRootOptionDisable = FileRootProp.disable.name().equals(bean.getFileRootOption());
 
     CloudStoreService cloud = CloudStoreService.get();
     Collection<String> storeNames = Collections.emptyList();
@@ -235,7 +236,8 @@
     function updateSelection(isChange)
     {
         var cloudRootName = document.getElementById('cloudRootName');
-        if (document.getElementById('optionDisable').checked)
+        var optionDisableChecked = document.getElementById('optionDisable').checked;
+        if (optionDisableChecked)
         {
             document.getElementById('folderRootPath').style.display = 'none';
             document.getElementById('rootPath').style.display = 'none';
@@ -266,7 +268,7 @@
         }
         var migrateFiles = document.getElementById('migrateFilesRow');
         if (migrateFiles) {
-            if (isChange && !<%=isFolderSetup%>)
+            if (isChange && !optionDisableChecked && !<%=isFolderSetup || isCurrentFileRootOptionDisable%>)
                 migrateFiles.style.display = '';
             else
                 migrateFiles.style.display = 'none';
