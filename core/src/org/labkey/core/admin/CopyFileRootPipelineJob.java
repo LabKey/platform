@@ -82,9 +82,8 @@ public class CopyFileRootPipelineJob extends PipelineJob
                     {
                         Path sourceDir = FileUtil.stringToPath(sourceInfo.first, sourceInfo.second);
                         sourceIsLocalFileSystem = sourceIsLocalFileSystem && !FileUtil.hasCloudScheme(sourceDir);
-                        status = CopyOneFolder(container, sourceDir, destFileRootDir, startTime);
-                        if (TaskStatus.error.equals(status))
-                            break;
+                        TaskStatus oneFolderStatus = CopyOneFolder(container, sourceDir, destFileRootDir, startTime);
+                        status = updateIfError(status, oneFolderStatus);   // Remember there was an error, but continue with other folders
                     }
                 }
             }
@@ -143,14 +142,14 @@ public class CopyFileRootPipelineJob extends PipelineJob
                 {
                     // Count files and sum sizes
                     Pair<Integer, Long> stats = new Pair<>(new Integer(0), new Long(0));
-                    getStats(sourceDir, stats);
+                    status = updateIfError(status, getStats(sourceDir, stats));
                     info("Source directory has " + stats.first + " files (" + stats.second + " total bytes)");
 
                     setStatus(TaskStatus.running, "Copying files");
                     info("Copying directory '" + FileUtil.pathToString(sourceDir) + "'");
                     List<Long> lastLogTime = new ArrayList<>();
                     lastLogTime.add(startTime);
-                    copyFiles(sourceDir, destDir, lastLogTime, stats, new Pair<>(stats.first, stats.second));
+                    status = updateIfError(status, copyFiles(sourceDir, destDir, lastLogTime, stats, new Pair<>(stats.first, stats.second)));
                     info("Done copying");
 
                     FileContentService fileContentService = FileContentService.get();
@@ -160,9 +159,12 @@ public class CopyFileRootPipelineJob extends PipelineJob
                         fileContentService.fireFileMoveEvent(sourceDir, destDir, getUser(), getContainer());
                     }
                     else
+                    {
                         error("FileContentService not available to call fireFileMoveEvent");
+                        status = TaskStatus.error;
+                    }
 
-                    if (MigrateFilesOption.move.equals(_migrateFilesOption))
+                    if (MigrateFilesOption.move.equals(_migrateFilesOption) && !TaskStatus.error.equals(status))
                     {
                         setStatus(TaskStatus.running, "Deleting files");
                         info("Deleting source directory");
@@ -170,6 +172,11 @@ public class CopyFileRootPipelineJob extends PipelineJob
                         info("Done deleting source directory");
                     }
                     info("");
+                }
+                catch (IllegalArgumentException e)
+                {
+                    error("Error processing folder", e);
+                    status = TaskStatus.error;
                 }
                 catch (UncheckedIOException e)
                 {
@@ -181,17 +188,19 @@ public class CopyFileRootPipelineJob extends PipelineJob
         return status;
     }
 
-    private void getStats(Path dirPath, final Pair<Integer, Long> stats)
+    private TaskStatus getStats(Path dirPath, final Pair<Integer, Long> stats)
     {
         setStatus(TaskStatus.running, "Getting stats");
         try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(dirPath))
         {
-            dirStream.forEach(path -> {
+            for (Path path : dirStream)
+            {
                 try
                 {
                     if (Files.isDirectory(path))
                     {
-                        getStats(path, stats);
+                        if (TaskStatus.error.equals(getStats(path, stats)))
+                            return TaskStatus.error;
                     }
                     else
                     {
@@ -199,21 +208,22 @@ public class CopyFileRootPipelineJob extends PipelineJob
                         stats.second += Files.size(path);
                     }
                 }
-                catch (IOException e)
+                catch (IllegalArgumentException | IOException e)
                 {
                     error("Error getting source directory stats", e);
-                    throw new UncheckedIOException(e);
+                    return TaskStatus.error;
                 }
-            });
+            }
         }
-        catch (IOException e)
+        catch (IllegalArgumentException | IOException e)
         {
-            error("Error getting directory stream for '" + FileUtil.pathToString(dirPath) + "'", e);
-            throw new UncheckedIOException(e);
+            error("Error getting directory stream for source directory", e);
+            return TaskStatus.error;
         }
+        return TaskStatus.complete;
     }
 
-    private void copyFiles(Path sourceDir, Path destDir, List<Long> lastStatTime, final Pair<Integer, Long> stats, final Pair<Integer, Long> origStats)
+    private TaskStatus copyFiles(Path sourceDir, Path destDir, List<Long> lastStatTime, final Pair<Integer, Long> stats, final Pair<Integer, Long> origStats)
     {
         if (!Files.exists(destDir))
         {
@@ -221,25 +231,27 @@ public class CopyFileRootPipelineJob extends PipelineJob
             {
                 Files.createDirectory(destDir);
             }
-            catch (IOException e)
+            catch (IllegalArgumentException | IOException e)
             {
-                error("Error creating destination directory '" + FileUtil.pathToString(destDir) + "'", e);
-                throw new UncheckedIOException(e);
+                error("Error creating destination directory destination directory", e);
+                return TaskStatus.error;
             }
         }
 
+        TaskStatus status = TaskStatus.complete;
         try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(sourceDir))
         {
-            dirStream.forEach(sourceChild -> {
-                String pathString = FileUtil.pathToString(sourceChild);
+            for (Path sourceChild : dirStream)
+            {
                 try
                 {
+                    String pathString = FileUtil.pathToString(sourceChild);
                     Path destChild = destDir.resolve(FileUtil.getFileName(sourceChild));
                     if (Files.isDirectory(sourceChild))
                     {
                         setStatus(TaskStatus.running, "Copying files");
                         info("Copying directory '" + pathString + "'");
-                        copyFiles(sourceChild, destChild, lastStatTime, stats, origStats);
+                        status = updateIfError(status, copyFiles(sourceChild, destChild, lastStatTime, stats, origStats));
                     }
                     else
                     {
@@ -250,20 +262,21 @@ public class CopyFileRootPipelineJob extends PipelineJob
                         stats.second -= Files.size(sourceChild);
                         logStatTime(lastStatTime, stats, origStats);
                     }
+                    setStatus(TaskStatus.running, "Done copying '" + pathString + "'");
                 }
-                catch (IOException e)
+                catch (IllegalArgumentException | IOException e)
                 {
                     error("Copy error", e);
-                    throw new UncheckedIOException(e);
+                    status = TaskStatus.error;
                 }
-                setStatus(TaskStatus.running, "Done copying '" + pathString + "'");
-            });
+            }
         }
-        catch (IOException e)
+        catch (IllegalArgumentException | IOException e)
         {
-            error("Error getting directory stream for '" + FileUtil.pathToString(sourceDir) + "'", e);
-            throw new UncheckedIOException(e);
+            error("Error getting directory stream for source directory", e);
+            return TaskStatus.error;
         }
+        return status;
     }
 
     private void logStatTime(List<Long> lastStatTime, final Pair<Integer, Long> stats, final Pair<Integer, Long> origStats)
@@ -304,7 +317,7 @@ public class CopyFileRootPipelineJob extends PipelineJob
         }
         catch (IOException e)
         {
-            error("Error getting directory stream for '" + FileUtil.pathToString(dirPath) + "'", e);
+            error("Error getting directory stream for destination directory", e);
             throw new UncheckedIOException(e);
         }
         try
@@ -316,5 +329,10 @@ public class CopyFileRootPipelineJob extends PipelineJob
             error("Error deleting directory '" + FileUtil.pathToString(dirPath) + "'", e);
             throw new UncheckedIOException(e);
         }
+    }
+
+    protected TaskStatus updateIfError(TaskStatus current, TaskStatus update)
+    {
+        return TaskStatus.error.equals(update) ? update : current;
     }
 }
