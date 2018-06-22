@@ -669,6 +669,12 @@ public class PipelineServiceImpl implements PipelineService
     }
 
     @Override
+    public TriggerConfiguration getTriggerConfig(Container c, String name)
+    {
+        return PipelineManager.getTriggerConfiguration(c, name);
+    }
+
+    @Override
     public void saveTriggerConfig(Container c, User user, TriggerConfiguration config) throws Exception
     {
         PipelineManager.insertOrUpdateTriggerConfiguration(user, c, config);

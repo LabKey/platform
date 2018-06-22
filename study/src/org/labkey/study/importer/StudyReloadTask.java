@@ -1,5 +1,6 @@
 package org.labkey.study.importer;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.ImportOptions;
@@ -21,6 +22,8 @@ import java.util.Map;
 
 public class StudyReloadTask extends PipelineJob.Task<StudyReloadTask.Factory>
 {
+    public static final String SKIP_QUERY_VALIDATION = "skipQueryValidation";
+    public static final String FAIL_FOR_UNDEFINED_VISITS = "failForUndefinedVisits";
 
     private StudyReloadTask(StudyReloadTask.Factory factory, PipelineJob job)
     {
@@ -41,6 +44,12 @@ public class StudyReloadTask extends PipelineJob.Task<StudyReloadTask.Factory>
         try
         {
             ImportOptions options = new ImportOptions(containerId, job.getUser().getUserId());
+
+            if (params.containsKey(SKIP_QUERY_VALIDATION))
+                options.setSkipQueryValidation(BooleanUtils.toBoolean(params.get(SKIP_QUERY_VALIDATION)));
+            if (params.containsKey(FAIL_FOR_UNDEFINED_VISITS))
+                options.setFailForUndefinedVisits(BooleanUtils.toBoolean(params.get(FAIL_FOR_UNDEFINED_VISITS)));
+
             options.setAnalysisDir(support.getDataDirectory());
             StudyReload.ReloadStatus status = reloadTask.attemptTriggeredReload(options, "a configured study reload filewatcher");
             job.setStatus(status.getMessage());

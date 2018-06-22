@@ -29,6 +29,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Filter;
+import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -651,6 +652,16 @@ public class PipelineManager
         }
     }
 
+    public static TriggerConfiguration getTriggerConfiguration(Container container, String name)
+    {
+        TableInfo tinfo = PipelineSchema.getInstance().getTableInfoTriggerConfigurations();
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(FieldKey.fromParts("Container"), container);
+        filter.addCondition(FieldKey.fromParts("Name"), name);
+
+        return new TableSelector(tinfo, filter, null).getObject(TriggerConfiguration.class);
+    }
+
     public static boolean insertOrUpdateTriggerConfiguration(User user, Container container, TriggerConfiguration config) throws Exception
     {
         UserSchema schema = QueryService.get().getUserSchema(user, container, PipelineSchema.getInstance().getSchemaName());
@@ -659,20 +670,22 @@ public class PipelineManager
             TableInfo tableInfo = schema.getTable(PipelineQuerySchema.TRIGGER_CONFIGURATIONS_TABLE_NAME);
             if (tableInfo != null)
             {
-                Map<String, Object> row = config.getRow();
+                if (config.getRowId() != null)
+                    config.beforeUpdate(user);
+                else
+                    config.beforeInsert(user, container.getId());
+                ObjectFactory factory = ObjectFactory.Registry.getFactory(TriggerConfiguration.class);
+                Map<String, Object> row = factory.toMap(config, null);
+
                 QueryUpdateService qus = tableInfo.getUpdateService();
                 List<Map<String, Object>> rowList = new LinkedList<>();
                 rowList.add(row);
                 if (qus != null)
                 {
                     if (row.get("RowId") != null)
-                    {
                         rowList = qus.updateRows(user, container, rowList, null, null, null);
-                    }
                     else
-                    {
                         rowList = qus.insertRows(user, container, rowList, new BatchValidationException(), null, null);
-                    }
                 }
                 return rowList.size() > 0;
             }
@@ -682,12 +695,11 @@ public class PipelineManager
 
     public static void validateTriggerConfiguration(TriggerConfiguration config, Container container, Errors errors)
     {
-        Map<String, Object> row = config.getRow();
-        Integer rowId = row.get("RowId") != null ? (Integer) row.get("RowId") : null;
-        String name = getStringFromRow(row, "Name");
-        String type = getStringFromRow(row, "Type");
-        String pipelineId = getStringFromRow(row, "PipelineId");
-        boolean isEnabled = Boolean.parseBoolean(row.get("Enabled").toString());
+        Integer rowId = config.getRowId();
+        String name = config.getName();
+        String type = config.getType();
+        String pipelineId = config.getPipelineId();
+        boolean isEnabled = config.isEnabled();
 
         // validate that the config name is unique for this container
         if (StringUtils.isNotEmpty(name))
@@ -740,17 +752,11 @@ public class PipelineManager
         }
 
         // validate that the configuration values parse as valid JSON
-        Object configuration = row.get("Configuration");
-        validateConfigJson(triggerType, configuration, pipelineId, isEnabled, errors);
+        validateConfigJson(triggerType, config.getConfiguration(), pipelineId, isEnabled, errors);
 
-        Object customConfiguration = row.get("CustomConfiguration");
+        Object customConfiguration = config.getCustomConfiguration();
         if (customConfiguration != null && !customConfiguration.toString().equals(""))
             validateConfigJson(triggerType, customConfiguration, pipelineId, isEnabled, errors, true);
-    }
-
-    private static String getStringFromRow(Map<String, Object> row, String key)
-    {
-        return row.get(key) != null ? row.get(key).toString() : null;
     }
 
     private static void validateConfigJson(PipelineTriggerType triggerType, Object configuration,  String pipelineId, boolean isEnabled, Errors errors)

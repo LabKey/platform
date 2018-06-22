@@ -1587,6 +1587,7 @@ public class PipelineController extends SpringActionController
     public static class PipelineTriggerForm extends TriggerConfiguration implements CustomApiForm
     {
         private String returnUrl;
+        private String _pipelineTask;
 
         @Override
         public void bindProperties(Map<String, Object> props)
@@ -1620,6 +1621,16 @@ public class PipelineController extends SpringActionController
         public void setReturnUrl(String returnUrl)
         {
             this.returnUrl = returnUrl;
+        }
+
+        public String getPipelineTask()
+        {
+            return _pipelineTask;
+        }
+
+        public void setPipelineTask(String pipelineTask)
+        {
+            _pipelineTask = pipelineTask;
         }
     }
 

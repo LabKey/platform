@@ -8,6 +8,7 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.pipeline.PipelineController" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="java.util.function.Function" %>
 <%@ page import="java.util.stream.Collectors" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -28,9 +29,13 @@
             .filter(FileAnalysisTaskPipeline.class::isInstance)
             .map(FileAnalysisTaskPipeline.class::cast)
             .filter(FileAnalysisTaskPipeline::isAllowForTriggerConfiguration)
-            .collect(Collectors.toMap(FileAnalysisTaskPipeline -> FileAnalysisTaskPipeline.getId().getName(),
-                    FileAnalysisTaskPipeline -> (FileAnalysisTaskPipeline) PipelineJobService.get().getTaskPipeline(FileAnalysisTaskPipeline.getId())));
+            .collect(Collectors.toMap(FileAnalysisTaskPipeline -> FileAnalysisTaskPipeline.getId().getName(), Function.identity()));
 
+    // would appear on the URL param
+    if (bean.getPipelineTask() != null && triggerConfigTasks.containsKey(bean.getPipelineTask()))
+    {
+        bean.setPipelineId(triggerConfigTasks.get(bean.getPipelineTask()).getId().toString());
+    }
     final String HELP_TEXT = "Fields marked with an asterisk * are required. ";
 %>
 <style type="text/css">
@@ -123,20 +128,20 @@
                         Pipeline Task *
                     </label>
                     <div class="col-sm-9 col-lg-10">
-                        <select name="pipelineTask" class="form-control" id="pipelineTaskSelect">
+                        <select name="pipelineId" class="form-control" id="pipelineTaskSelect">
                             <%
-                                if (bean.getPipelineTask() == null)
+                                if (bean.getPipelineId() == null)
                                 {
                                     %> <option disabled selected value style="display: none"> </option><%
                                 }
-                                for (String key : triggerConfigTasks.keySet())
+                                for (FileAnalysisTaskPipeline pipeline : triggerConfigTasks.values())
                                 {
                                     boolean selected = false;
-                                    String pipeTask = bean.getPipelineTask();
-                                    if (pipeTask != null)
-                                        selected = pipeTask.substring(pipeTask.lastIndexOf(":")+1, pipeTask.length()).equalsIgnoreCase(key);
+                                    String pipelineId = bean.getPipelineId();
+                                    if (pipelineId != null)
+                                        selected = pipeline.getId().toString().equals(pipelineId);
                             %>
-                            <option <%=selected(selected)%> value="<%=text(triggerConfigTasks.get(key).getId().toString())%>"><%=text(triggerConfigTasks.get(key).getDescription())%></option>
+                            <option <%=selected(selected)%> value="<%=text(pipeline.getId().toString())%>"><%=text(pipeline.getDescription())%></option>
                             <%
                                 }
                             %>
@@ -265,9 +270,9 @@
         <%
         }
 
-        if (triggerConfigTasks.get(bean.getPipelineTask()) != null)
+        if (bean.getPipelineId() != null)
         {
-            String taskStr = triggerConfigTasks.get(bean.getPipelineTask()).getId().toString();
+            String taskStr = bean.getPipelineId();
         %>
             setHelpText(<%=q(taskStr)%>);
             handleMoveField(<%=q(taskStr)%>);
@@ -299,7 +304,7 @@
 
                 var task = row.PipelineTask;
                 if (task) {
-                    $("select[name='pipelineTask'] option").map(function () {
+                    $("select[name='pipelineId'] option").map(function () {
                         if ($(this).text() === task) {
                             setHelpText(this.value);
                             handleMoveField(this.value);
