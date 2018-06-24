@@ -169,10 +169,20 @@ Ext4.define("LABKEY.ext4.BootstrapTabPanel", {
         // add listener for other tab activate/show changes
         Ext4.each(Ext4.query('a[data-toggle="' + (this.usePills ? 'pill' : 'tab') + '"]'), function(el) {
             Ext4.get(el).on('click', function(evt, target) {
+                if (this.clearBetweenClicks)
+                    this.removeContent();
+
                 this.activeTabId = target.href.substring(target.href.lastIndexOf('#')+1);
                 this.ensureContainerForActiveTab();
             }, this);
         }, this);
+    },
+
+    removeContent: function() {
+        var item = this.findItemForActiveTabId();
+        if (item && item.container) {
+            item.container.items.items[0].removeAll();
+        }
     },
 
     setActiveTab: function(tabId) {
