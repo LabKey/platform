@@ -18,6 +18,8 @@ package org.labkey.study;
 
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.attachments.AttachmentService;
@@ -197,6 +199,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -754,6 +757,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         set.add(StudyManager.AssayScheduleTestCase.class);
         set.add(AssayManager.TestCase.class);
         set.add(VisitImpl.TestCase.class);
+        set.add(StudyModule.TestCase.class);
 
         return set;
     }
@@ -813,5 +817,20 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         }
 
         return ret;
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testUsageMetrics()
+        {
+            List<String> metricNames = Arrays.asList("studyCount",
+                    "datasetCount",
+                    "studyReloadCount",
+                    "chartViewCounts");
+            assertTrue("Mothership report missing expected metrics",
+                    UsageReportingLevel.MothershipReportTestHelper.getModuleMetrics(UsageReportingLevel.MEDIUM, MODULE_NAME)
+                    .keySet().containsAll(metricNames));
+        }
     }
 }
