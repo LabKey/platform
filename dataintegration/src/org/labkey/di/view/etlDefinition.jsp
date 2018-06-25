@@ -82,7 +82,7 @@
     }
 </style>
 
-<h4><%=h(newDef ? "New Definition" : "Definition: \"" + def.getName() + "\"")%></h4>
+<h4 id="name"><%=h(newDef ? "New Definition" : "Definition: \"" + def.getName() + "\"")%></h4>
 <% if (enabled) { %>
     <p>Warning: This ETL has been enabled and is scheduled to run. Modifying it will unschedule it from future runs, and it must be reenabled.</p>
 <% } %>

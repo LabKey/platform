@@ -629,7 +629,8 @@ public class DataIntegrationController extends SpringActionController
                 if (TransformManager.get().getDescriptors(getContainer()).stream()
                         .anyMatch(cachedDescriptor ->
                                 cachedDescriptor.getModuleName().equals(descriptor.getModuleName())
-                                        && cachedDescriptor.getName().equals(descriptor.getName())))
+                                        && cachedDescriptor.getName().equals(descriptor.getName())
+                                        && !cachedDescriptor.getId().equals(descriptor.getId())))
                 {
                     errors.reject(ERROR_MSG, "An ETL with that name is already defined in this folder");
                 }

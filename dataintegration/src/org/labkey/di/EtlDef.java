@@ -3,6 +3,7 @@ package org.labkey.di;
 import org.apache.commons.io.IOUtils;
 import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Entity;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -48,7 +49,7 @@ import java.io.StringWriter;
 public class EtlDef extends Entity
 {
     public static final String DECLARING_MODULE_NAME = DataIntegrationModule.NAME;
-    private int _etlDefId;
+    private int _etlDefId = -1;
     private String _name;
     private String _description;
     private String _definition;
@@ -96,6 +97,7 @@ public class EtlDef extends Entity
         _definition = definition;
     }
 
+    @Nullable
     public TransformDescriptor getDescriptor()
     {
         TransformDescriptor descriptor = TransformManager.get().parseETL(getResource(), getModule());
@@ -124,7 +126,7 @@ public class EtlDef extends Entity
 
     public String getConfigName()
     {
-        return "User_Defined_" + (null == getName() ? "Edit In Progress" : ("EtlDefId_" + getEtlDefId()));
+        return "User_Defined_" + (getEtlDefId() > 0 ? ("EtlDefId_" + getEtlDefId()) : "Edit In Progress");
     }
 
     public String getConfigId()
