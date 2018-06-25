@@ -33,12 +33,18 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="java.util.Collection" %>
+<%@ page import="org.labkey.api.util.HelpTopic" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <%
+    Collection<MasterPatientIndexService> services = MasterPatientIndexService.getProviders();
     MasterPatientIndexService service = (MasterPatientIndexService) HttpView.currentView().getModelBean();
-    MasterPatientIndexService.FolderSettings settings = service.getFolderSettings(getContainer());
+    MasterPatientIndexService.FolderSettings settings = service != null ? service.getFolderSettings(getContainer()) : new MasterPatientIndexService.FolderSettings();
+    String docLink = new HelpTopic("empi").getHelpTopicHref();
 
     ObjectMapper jsonMapper = new ObjectMapper();
     Map<String, List<String>> datasetMap = new HashMap<>();
@@ -125,11 +131,30 @@
 </script>
 
 <labkey:errors/>
-<%  if (service == null) {
+<%  if (services.isEmpty()) {
 %>
-<p>
-    A Master Patient Index Provider has not been configured yet or is not available in this LabKey installation.
-</p>
+    <div class="alert alert-info">
+        <h1 class="fa fa-star-o"> Premium Feature</h1>
+        <h3>Enterprise Master Patient Index integration is a premium feature and is not available with your current edition of LabKey Server.</h3>
+        <hr>
+        <p>Premium edition subscribers have the ability to integrate with an Enterprise Master Patient Index, using EMPI IDs to
+            create an authoritative connection between LabKey-housed data and a patient's master index record.</p>
+        <p><a class="alert-link" href="<%=h(docLink)%>" target="_blank">Learn more <i class="fa fa-external-link"></i></a></p>
+        <p>In addition to this feature, premium editions of LabKey Server provide professional support and advanced functionality to help teams maximize the value of the platform.</p>
+        <br>
+        <p><a class="alert-link" href="https://www.labkey.com/platform/go-premium/" target="_blank">Learn more about premium editions <i class="fa fa-external-link"></i></a></p>
+    </div>
+<%  }
+    else if (service == null) {
+%>
+    <div class="alert alert-info">
+        <h3>Enterprise Master Patient Index integration is not configured for your LabKey Server.</h3>
+        <hr>
+        <p>Premium edition subscribers have the ability to integrate with an Enterprise Master Patient Index, using EMPI IDs to
+            create an authoritative connection between LabKey-housed data and a patient's master index record. An administrator will
+            need to set up the initial connection to a Master Patient Index Provider through the Admin Panel.</p>
+        <p><a class="alert-link" href="<%=PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL()%>" target="_blank">Configure <i class="fa fa-external-link"></i></a></p>
+    </div>
 <%  }
 else
 {
@@ -183,7 +208,7 @@ else
 
     <labkey:button text="save" submit="true"/>
     <labkey:button text="cancel" href="<%=new ActionURL(StudyController.ManageStudyAction.class, getContainer())%>"/>
-    <labkey:button text="update univeral indexes" submit="false" onclick="updateIndexes();"/>
+    <labkey:button text="update master indexes" submit="false" onclick="updateIndexes();"/>
 </labkey:form>
 
 <%  }
