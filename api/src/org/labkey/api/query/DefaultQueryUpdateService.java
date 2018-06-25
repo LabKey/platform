@@ -555,7 +555,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     }
 
 
-    protected void convertTypes(Container c, Map<String,Object> row) throws QueryUpdateServiceException, ValidationException
+    protected void convertTypes(Container c, Map<String,Object> row) throws ValidationException
     {
         for (ColumnInfo col : getDbTable().getColumns())
         {
@@ -585,6 +585,10 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                 {
                     String type = ColumnInfo.getFriendlyTypeName(col.getJdbcType().getJavaClass());
                     throw new ValidationException("Unable to convert value \'" + value.toString() + "\' to " + type, col.getName());
+                }
+                catch (QueryUpdateServiceException e)
+                {
+                    throw new ValidationException("Save file link failed: " + col.getName());
                 }
             }
         }
