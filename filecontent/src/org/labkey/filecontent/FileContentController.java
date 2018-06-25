@@ -900,7 +900,7 @@ public class FileContentController extends SpringActionController
 
             try {
                 qus.updateRows(getUser(), getContainer(), _files, null, null, null);
-                response.put("success", true);
+                response.put("success", !errors.hasErrors());
             }
             catch (QueryUpdateServiceException e)
             {

@@ -149,9 +149,17 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors,
                                                 @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
     {
-        for (Map<String, Object> row : rows)
+        try
         {
-            aliasColumns(getColumnMapping(), row);
+            for (Map<String, Object> row : rows)
+            {
+                aliasColumns(getColumnMapping(), row);
+                convertTypes(container, row);
+            }
+        }
+        catch (ValidationException e)
+        {
+            errors.addRowError(e);
         }
 
         DataIteratorContext context = getDataIteratorContext(errors, InsertOption.INSERT, configParameters);
