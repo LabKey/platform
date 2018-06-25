@@ -153,6 +153,8 @@ public class Query
     final private Map<String, QueryRelation> _withTables = new LinkedCaseInsensitiveMap<>();   // Queries in With stmt
     private boolean _hasRecursiveWith = false;
     private Map<String, TableType> _metadataTableMap = null;
+    private QueryRelation _withFirstTerm = null;
+    private boolean _parsingWith = false;
 
     public Query(@NotNull QuerySchema schema)
     {
@@ -644,6 +646,26 @@ public class Query
     public Set<QueryTable.TableColumn> getInvolvedTableColumns()
     {
         return _involvedTableColumns;
+    }
+
+    public QueryRelation getWithFirstTerm()
+    {
+        return _withFirstTerm;
+    }
+
+    public void setWithFirstTerm(QueryRelation withFirstTerm)
+    {
+        _withFirstTerm = withFirstTerm;
+    }
+
+    public boolean isParsingWith()
+    {
+        return _parsingWith;
+    }
+
+    public void setParsingWith(boolean parsingWith)
+    {
+        _parsingWith = parsingWith;
     }
 
 
@@ -1521,6 +1543,7 @@ public class Query
         new SqlTest("WITH peeps1 AS (SELECT * FROM R), peeps AS (SELECT * FROM peeps1 UNION ALL SELECT * FROM peeps WHERE (1=0)) SELECT * FROM peeps", -1, 84),
         new SqlTest("WITH peeps1 AS (SELECT * FROM R), peeps AS (SELECT * FROM peeps1 UNION ALL SELECT * FROM peeps WHERE (1=0)), peeps2 AS (SELECT * FROM peeps) SELECT * FROM peeps2", -1, 84),
         new SqlTest("WITH peeps1 AS (SELECT * FROM R), peeps AS (SELECT * FROM peeps1 UNION ALL SELECT * FROM peeps WHERE (1=0)) SELECT p.* FROM R JOIN peeps p ON p.rowId = R.rowId", -1, 84),
+        new SqlTest("WITH peeps1 AS (SELECT * FROM R), peeps AS (SELECT * FROM peeps1 UNION ALL SELECT * FROM (SELECT * FROM peeps) q WHERE (1=0)) SELECT p.* FROM R JOIN peeps p ON p.rowId = R.rowId", -1, 84),
         new SqlTest("WITH \"P 1\" AS (SELECT * FROM R), \"P 2\" AS (SELECT seven, twelve, day, month, date, duration, guid FROM \"P 1\") SELECT * FROM \"P 2\"", 7, 84),
         new SqlTest("WITH \"P 1\" AS (SELECT * FROM Folder.qtest.lists.S), \"P 2\" AS (SELECT seven, twelve, day, month, date, duration, guid FROM \"P 1\") SELECT * FROM \"P 2\"", 7, 84),
         new SqlTest("WITH peeps1 AS (SELECT * FROM Folder.qtest.lists.S)," +
@@ -1588,6 +1611,7 @@ public class Query
         new FailTest("WITH peeps AS (SELECT * FROM peeps1), peeps1 AS (SELECT * FROM R) SELECT * FROM peeps"),    // Forward reference
         new FailTest("WITH peeps1 AS (SELECT * FROM R), peeps AS (SELECT * FROM peeps1 UNION ALL SELECT * FROM peeps WHERE (1=0) UNION ALL SELECT * FROM peeps WHERE (1=0)) SELECT * FROM peeps"),  // Can't have 2 recursive references
         new FailTest("WITH peeps AS (SELECT * FROM R), peeps2 AS (SELECT seven FROM peeps UNION ALL SELECT date FROM peeps) SELECT * FROM peeps2"),   // Column type mismatch
+        new FailTest("WITH peeps2 AS (SELECT seven FROM R UNION SELECT seven FROM S WHERE S.seven IN (SELECT seven FROM peeps2) ) SELECT * FROM peeps2"),
 
         // UNDONE: should work since R.seven and seven are the same
         new FailTest("SELECT R.seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0, 1, 2, 3, 4, 5, 6)"),

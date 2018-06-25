@@ -59,6 +59,7 @@ public class QueryWith
                                     Query.parseError(errors, aliasKey + " was specified more than once in With.", expr);
                                 else
                                 {
+                                    _query.setParsingWith(true);
                                     QueryTableWith queryTable = new QueryTableWith(_query, _query.getSchema(), legalName, cteKey, withInfo.getCteToken());
                                     _query.putWithTable(legalName, queryTable);
 
@@ -76,6 +77,8 @@ public class QueryWith
                                     {
                                         _query.removeWithTable(legalName);
                                     }
+                                    _query.setParsingWith(false);
+                                    _query.setWithFirstTerm(null);
                                 }
                             }
                         }

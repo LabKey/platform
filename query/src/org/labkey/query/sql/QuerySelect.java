@@ -295,16 +295,15 @@ groupByLoop:
                     {
                         // Can happen in a recursive query. To be valid, WITH must be in a UNION, not in the first child of the UNION
                         // Use the tableInfo from the first child of the UNION
-                        QueryRelation parent = _parent;
-                        if (parent instanceof QueryUnion && ((QueryUnion) parent)._termList.size() > 0)
+                        if (_inFromClause && null != _query.getWithFirstTerm())
                         {
-                            TableInfo firstTableInfo = ((QueryUnion) parent)._termList.get(0).getTableInfo();
+                            TableInfo firstTableInfo = _query.getWithFirstTerm().getTableInfo();
                             if (null != firstTableInfo)             // Could be null if parse error found
                                 queryTableWith.setTableInfo(firstTableInfo);
                         }
                         if (getParseErrors().isEmpty())
                         {
-                            if (null != parent && null != queryTableWith.getTableInfo())
+                            if (null != queryTableWith.getTableInfo())
                             {
                                 _query.setHasRecursiveWith(true);
                             }

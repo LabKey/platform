@@ -92,6 +92,8 @@ public class QueryUnion extends QueryRelation
                 QuerySelect select = new QuerySelect(_query, (QQuery)n, this, true);
                 select._queryText = null; // see issue 23918, we don't want to repeat the source sql for each term in devMode
                 select.markAllSelected(qunion);
+                if (_query.isParsingWith() && _termList.isEmpty())
+                    _query.setWithFirstTerm(select);
                 _termList.add(select);
             }
             else if (n instanceof QUnion && canFlatten(_qunion.getTokenType(),n.getTokenType()))
