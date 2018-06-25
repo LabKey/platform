@@ -19,6 +19,7 @@ package org.labkey.api.util;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.time.DateUtils;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.ActionsHelper;
 import org.labkey.api.data.ContainerManager;
@@ -28,6 +29,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.util.Calendar;
@@ -35,6 +37,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.TreeMap;
@@ -266,6 +269,47 @@ public enum UsageReportingLevel
             ModuleLoader.getInstance().getModules().forEach(module -> allModulesStats.computeIfAbsent(module.getName(), k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER)));
             // And put the error in the errors section of the metrics
             allModulesStats.computeIfAbsent(UsageMetricsService.ERRORS, k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER)).put("controllerCounts", e.getMessage());
+        }
+    }
+
+    /**
+     * Helper for integration tests
+     */
+    public static class MothershipReportTestHelper
+    {
+        public static MothershipReport getReport(UsageReportingLevel level)
+        {
+            MothershipReport report = UsageReportingLevel.generateReport(level, MothershipReport.Target.test);
+            if (null == report && level.doGeneration())
+                throw new ApiUsageException("No report generated for level " + level.toString());
+            else
+                return report;
+        }
+
+        public static Map<String, String> getReportParams(UsageReportingLevel level)
+        {
+            return Objects.requireNonNull(getReport(level)).getParams();
+        }
+
+        public static Map<String, Object> getMetrics(UsageReportingLevel level)
+        {
+            try
+            {
+                @SuppressWarnings({"unchecked"})
+                Map<String, Object> metrics = new ObjectMapper().readValue(Objects.requireNonNull(getReportParams(level)).get("jsonMetrics"), Map.class);
+                return metrics;
+            }
+            catch (IOException e)
+            {
+                throw new ApiUsageException("Exception deserializing json string that was just serialized. This should never happen.", e);
+            }
+        }
+
+        public static Map<String, Object> getModuleMetrics(UsageReportingLevel level, String moduleName)
+        {
+            @SuppressWarnings({"unchecked"})
+            Map<String, Object> moduleMetrics = (Map<String, Object>) ((Map<String, Object>) getMetrics(level).get("modules")).get(moduleName);
+            return moduleMetrics;
         }
     }
 }
