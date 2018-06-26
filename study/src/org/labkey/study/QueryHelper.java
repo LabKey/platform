@@ -70,35 +70,30 @@ public class QueryHelper<K extends StudyCachable>
         if (sortString != null)
             cacheId += "; sort = " + sortString;
 
-        CacheLoader<String, Object> loader = new CacheLoader<String, Object>()
-        {
-            @Override
-            public Object load(String key, Object argument)
+        CacheLoader<String, Object> loader = (key, argument) -> {
+            SimpleFilter filter = null;
+
+            if(null != filterArg)
             {
-                SimpleFilter filter = null;
-
-                if(null != filterArg)
-                {
-                    filter = filterArg;
-                }
-                else if(null != getTableInfo().getColumn("container"))
-                {
-                    filter = SimpleFilter.createContainerFilter(c);
-                }
-
-                if (null != filter && !filter.hasContainerEqualClause())
-                    filter.addCondition(FieldKey.fromParts("Container"), c);
-
-                Sort sort = null;
-                if (sortString != null)
-                    sort = new Sort(sortString);
-                List<K> objs = new TableSelector(getTableInfo(), filter, sort).getArrayList(_objectClass);
-                // Make both the objects and the list itself immutable so that we don't end up with a corrupted
-                // version in the cache
-                for (StudyCachable obj : objs)
-                    obj.lock();
-                return Collections.unmodifiableList(objs);
+                filter = filterArg;
             }
+            else if(null != getTableInfo().getColumn("container"))
+            {
+                filter = SimpleFilter.createContainerFilter(c);
+            }
+
+            if (null != filter && !filter.hasContainerEqualClause())
+                filter.addCondition(FieldKey.fromParts("Container"), c);
+
+            Sort sort = null;
+            if (sortString != null)
+                sort = new Sort(sortString);
+            List<K> objs = new TableSelector(getTableInfo(), filter, sort).getArrayList(_objectClass);
+            // Make both the objects and the list itself immutable so that we don't end up with a corrupted
+            // version in the cache
+            for (StudyCachable obj : objs)
+                obj.lock();
+            return Collections.unmodifiableList(objs);
         };
         return (List<K>)StudyCache.get(getTableInfo(), c, cacheId, loader);
     }

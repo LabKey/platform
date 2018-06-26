@@ -265,7 +265,6 @@ public abstract class SnapshotDependency
             {
                 ParticipantCategoryImpl category = (ParticipantCategoryImpl)sourceData.getValue();
                 List<QuerySnapshotDefinition> dependencies = new ArrayList<>();
-                List<Integer> groups = new ArrayList<>();
 
                 // check if container is still valid
                 if (isContainerValid(sourceData.getContainer()))
