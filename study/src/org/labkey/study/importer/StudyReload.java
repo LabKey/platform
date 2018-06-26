@@ -18,7 +18,6 @@ package org.labkey.study.importer;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.ImportException;
@@ -258,7 +257,7 @@ public class StudyReload
     }
 
 
-    @Nullable
+    @NotNull
     public static PipeRoot getPipelineRoot(Container c)
     {
         PipeRoot root = PipelineService.get().findPipelineRoot(c);
@@ -288,7 +287,7 @@ public class StudyReload
                 Container c = ContainerManager.getForId(studyContainerId);
                 String message = null != c ? " in folder " + c.getPath() : "";
 
-                LOG.error("Study reload failed: " + message, ie);
+                LOG.error("Study reload failed" + message, ie);
             }
             catch (Throwable t)
             {
@@ -297,7 +296,7 @@ public class StudyReload
             }
         }
 
-        public StudyImpl validateStudyForReload(ImportOptions options, Container c) throws ImportException
+        public StudyImpl validateStudyForReload(Container c) throws ImportException
         {
             StudyImpl study = StudyManager.getInstance().getStudy(c);
 
@@ -332,9 +331,9 @@ public class StudyReload
                 throw new ImportException("Container " + options.getContainerId() + " does not exist");
             else
             {
-                StudyImpl study = validateStudyForReload(options, c);
+                StudyImpl study = validateStudyForReload(c);
                 if (study == null)
-                    throw new ImportException("Reload failed. Can't reload a study set for no reload.");
+                    throw new ImportException("Reload failed. Study doesn't exist.");
 
                 return reloadStudy(study, options, source, null, study.getLastReload());
             }
@@ -352,9 +351,9 @@ public class StudyReload
             }
             else
             {
-                StudyImpl study = validateStudyForReload(options, c);
+                StudyImpl study = validateStudyForReload(c);
                 if (study == null)
-                    throw new ImportException("Reload failed. Can't reload a study set for no reload.");
+                    throw new ImportException("Reload failed. Study doesn't exist.");
 
                 PipeRoot root = validatePipeRoot(c);
                 File studyload = root.resolvePath(STUDY_LOAD_FILENAME);
