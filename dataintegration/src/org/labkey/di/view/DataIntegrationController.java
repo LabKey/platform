@@ -760,8 +760,9 @@ public class DataIntegrationController extends SpringActionController
         @Override
         protected void doAction(EtlDefinitionForm form, Errors errors) throws SQLException
         {
+            EtlDef def = form.getBean();
             form.doUpdate();
-            TransformManager.get().etlDefChanged(form.getBean(), getContainer(), getUser(), EtlDef.Change.Update);
+            TransformManager.get().etlDefChanged(def, getContainer(), getUser(), EtlDef.Change.Update);
         }
     }
 
