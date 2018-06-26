@@ -655,8 +655,7 @@ public class PipelineManager
     public static TriggerConfiguration getTriggerConfiguration(Container container, String name)
     {
         TableInfo tinfo = PipelineSchema.getInstance().getTableInfoTriggerConfigurations();
-        SimpleFilter filter = new SimpleFilter();
-        filter.addCondition(FieldKey.fromParts("Container"), container);
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition(FieldKey.fromParts("Name"), name);
 
         return new TableSelector(tinfo, filter, null).getObject(TriggerConfiguration.class);
