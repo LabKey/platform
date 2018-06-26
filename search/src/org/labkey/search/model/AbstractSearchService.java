@@ -1066,7 +1066,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         
         List<SearchCategory> cats = _readonlyCategories;
         List<SearchCategory> usedCats = new ArrayList<>();
-        List<String> requestedCats = Arrays.asList(categories.split(" "));
+        List<String> requestedCats = Arrays.asList(categories.split("\\+"));
         for (SearchCategory cat : cats)
         {
             for (String usedCat : requestedCats)
