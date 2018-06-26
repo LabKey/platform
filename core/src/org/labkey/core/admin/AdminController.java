@@ -983,17 +983,30 @@ public class AdminController extends SpringActionController
             });
 
             String jarRegEx = "^([\\w-\\.]+\\.jar)\\|";
+            StringBuilder errorSource = new StringBuilder();
 
-            addCreditsViews(views, modules, "jars.txt", "JAR", "webapp", null, Module::getJarFilenames, jarRegEx);
+            addCreditsViews(views, modules, "jars.txt", "JAR", "webapp", null, Module::getJarFilenames, jarRegEx, errorSource);
 
-            views.addView(new CreditsView("/core/resources/credits/tomcat_jars.txt", getCreditsFile(ModuleLoader.getInstance().getCoreModule(), "tomcat_jars.txt"), getTomcatJars(), "Tomcat JAR", "/external/lib/tomcat directory", null, jarRegEx));
+            Module core = ModuleLoader.getInstance().getCoreModule();
+            addCreditsViews(views, Collections.singletonList(core), "tomcat_jars.txt", "Tomcat JAR", "/build/staging/tomcat-lib directory", null, m->getTomcatJars(), jarRegEx, errorSource);
 
-            addCreditsViews(views, modules, "scripts.txt", "Script, Icon and Font");
-            addCreditsViews(views, modules, "source.txt", "Java Source Code");
-            addCreditsViews(views, modules, "executables.txt", "Executable");
+            addCreditsViews(views, modules, "scripts.txt", "Script, Icon and Font", errorSource);
+            addCreditsViews(views, modules, "source.txt", "Java Source Code", errorSource);
+            addCreditsViews(views, modules, "executables.txt", "Executable", errorSource);
 
             if (AppProps.getInstance().isDevMode() || MothershipReport.usedInstaller())
-                addCreditsViews(views, modules, "installer.txt", "Executable", null, "the Graphical Windows Installer for ", null, null);
+                addCreditsViews(views, modules, "installer.txt", "Executable", null, "the Graphical Windows Installer for ", null, null, errorSource);
+
+            if (errorSource.length() > 0)
+            {
+                WikiService wikiService = WikiService.get();
+                if (null != wikiService)
+                {
+                    // Copy all the warnings to the top
+                    String html = wikiService.getFormattedHtml(WikiRendererType.RADEOX, errorSource.toString());
+                    views.addView(new HtmlView(html), 0);
+                }
+            }
 
             return views;
         }
@@ -1005,13 +1018,13 @@ public class AdminController extends SpringActionController
     }
 
 
-    private void addCreditsViews(VBox views, List<Module> modules, String creditsFile, String fileType) throws IOException
+    private void addCreditsViews(VBox views, List<Module> modules, String creditsFile, String fileType, StringBuilder errorSource) throws IOException
     {
-        addCreditsViews(views, modules, creditsFile, fileType, null, null, null, null);
+        addCreditsViews(views, modules, creditsFile, fileType, null, null, null, null, errorSource);
     }
 
 
-    private void addCreditsViews(VBox views, List<Module> modules, String creditsFile, String fileType, @Nullable String foundWhere, @Nullable String descriptionPrefix, @Nullable Function<Module, Collection<String>> filenameProvider, @Nullable String wikiSourceSearchPattern) throws IOException
+    private void addCreditsViews(VBox views, List<Module> modules, String creditsFile, String fileType, @Nullable String foundWhere, @Nullable String descriptionPrefix, @Nullable Function<Module, Collection<String>> filenameProvider, @Nullable String wikiSourceSearchPattern, @NotNull StringBuilder errorSource) throws IOException
     {
         for (Module module : modules)
         {
@@ -1024,8 +1037,9 @@ public class AdminController extends SpringActionController
 
             if (null != wikiSource || (null != filenames && !filenames.isEmpty()))
             {
-                HttpView moduleJS = new CreditsView(creditsFile, wikiSource, filenames, fileType, foundWhere, (null != descriptionPrefix ? descriptionPrefix : "") + "the " + module.getName() + " Module", wikiSourceSearchPattern);
-                views.addView(moduleJS);
+                CreditsView credits = new CreditsView(creditsFile, wikiSource, filenames, fileType, foundWhere, (null != descriptionPrefix ? descriptionPrefix : "") + "the " + module.getName() + " Module", wikiSourceSearchPattern);
+                views.addView(credits);
+                errorSource.append(credits.getErrors());
             }
         }
     }
@@ -1033,17 +1047,26 @@ public class AdminController extends SpringActionController
 
     private static class CreditsView extends WebPartView
     {
-        private final String WIKI_LINE_SEP = "\r\n\r\n";
+        private final static String WIKI_LINE_SEP = "\r\n\r\n";
+
+        private final String _component;
+
         private String _html;
+        private String _errors = "";
 
         CreditsView(String creditsFilename, @Nullable String wikiSource, @Nullable Collection<String> filenames, String fileType, String foundWhere, String component, String wikiSourceSearchPattern)
         {
             super(fileType + " Files Distributed with " + (null == component ? "LabKey" : component));
 
+            _component = StringUtils.trimToEmpty(component);
+
             // If both wikiSource and filenames are null there can't be a problem.
             // trims/empty check allow for problem reporting if one is null but not the other.
             if (null != filenames)
-                wikiSource = StringUtils.trimToEmpty(wikiSource) + getErrors(wikiSource, creditsFilename, filenames, fileType, foundWhere, wikiSourceSearchPattern);
+            {
+                _errors = getErrors(wikiSource, creditsFilename, filenames, fileType, foundWhere, wikiSourceSearchPattern);
+                wikiSource = StringUtils.trimToEmpty(wikiSource) + _errors;
+            }
 
             if (StringUtils.isNotEmpty(wikiSource))
             {
@@ -1059,7 +1082,13 @@ public class AdminController extends SpringActionController
         }
 
 
-        private String getErrors(String wikiSource, String creditsFilename, Collection<String> filenames, String fileType, String foundWhere, String wikiSourceSearchPattern)
+        private @NotNull String getErrors()
+        {
+            return _errors;
+        }
+
+
+        private @NotNull String getErrors(String wikiSource, String creditsFilename, Collection<String> filenames, String fileType, String foundWhere, String wikiSourceSearchPattern)
         {
             Set<String> documentedFilenames = new CaseInsensitiveTreeSet();
 
@@ -1078,11 +1107,15 @@ public class AdminController extends SpringActionController
             Set<String> documentedFilenamesCopy = new HashSet<>(documentedFilenames);
             documentedFilenames.removeAll(filenames);
             filenames.removeAll(documentedFilenamesCopy);
+            Collection<String> filenames2 = new CaseInsensitiveTreeSet(filenames);
+            filenames2.removeIf(name->name.startsWith("."));
             for (String name : filenames.toArray(new String[filenames.size()]))
                 if (name.startsWith(".")) filenames.remove(name);
 
-            String undocumentedErrors = filenames.isEmpty() ? "" : WIKI_LINE_SEP + "**WARNING: The following " + fileType + " file" + (filenames.size() > 1 ? "s were" : " was") + " found in your " + foundWhere + " but "+ (filenames.size() > 1 ? "are" : " is") + " not documented in " + creditsFilename + ":**\\\\" + StringUtils.join(filenames.iterator(), "\\\\");
-            String missingErrors = documentedFilenames.isEmpty() ? "" : WIKI_LINE_SEP + "**WARNING: The following " + fileType + " file" + (documentedFilenames.size() > 1 ? "s are" : " is") + " documented in " + creditsFilename + " but " + (documentedFilenames.size() > 1 ? " were" : " was") + " not found in your " + foundWhere + ":**\\\\" + StringUtils.join(documentedFilenames.iterator(), "\\\\");
+            assert filenames2.equals(filenames);
+
+            String undocumentedErrors = filenames.isEmpty() ? "" : WIKI_LINE_SEP + "**WARNING: The following " + fileType + " file" + (filenames.size() > 1 ? "s were" : " was") + " found in your " + foundWhere + " but "+ (filenames.size() > 1 ? "are" : "is") + " not documented in " + _component + " " + creditsFilename + ":**\\\\" + StringUtils.join(filenames.iterator(), "\\\\");
+            String missingErrors = documentedFilenames.isEmpty() ? "" : WIKI_LINE_SEP + "**WARNING: The following " + fileType + " file" + (documentedFilenames.size() > 1 ? "s are" : " is") + " documented in " + _component + " " + creditsFilename + " but " + (documentedFilenames.size() > 1 ? "were" : "was") + " not found in your " + foundWhere + ":**\\\\" + StringUtils.join(documentedFilenames.iterator(), "\\\\");
 
             return undocumentedErrors + missingErrors;
         }
@@ -1110,7 +1143,8 @@ public class AdminController extends SpringActionController
         if (!AppProps.getInstance().isDevMode())
             return null;
 
-        File tomcat = new File(AppProps.getInstance().getProjectRoot(), "external/lib/tomcat");
+        // Note: Keep this path in sync with gradlePlugin StagingExtension.groovy
+        File tomcat = new File(AppProps.getInstance().getProjectRoot(), "build/staging/tomcat-lib");
 
         if (!tomcat.exists())
             return null;
@@ -1118,6 +1152,7 @@ public class AdminController extends SpringActionController
         Set<String> filenames = new CaseInsensitiveTreeSet();
 
         addAllChildren(tomcat, filenames);
+        filenames.remove("labkeyBootstrap.jar");  // Don't need credits for LabKey's class loader
 
         return filenames;
     }
@@ -1420,7 +1455,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(SiteSettingsForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(SiteSettingsForm form, boolean reshow, BindException errors)
         {
             SiteSettingsBean bean = new SiteSettingsBean(form.isUpgradeInProgress(), form.isTestInPage());
 
@@ -9165,7 +9200,7 @@ public class AdminController extends SpringActionController
     public class SuspiciousAction extends SimpleViewAction<Object>
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             Collection<BlacklistFilter.Suspicious> list = BlacklistFilter.reportSuspicious();
             StringBuilder sb = new StringBuilder();
