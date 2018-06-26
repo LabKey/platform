@@ -6400,14 +6400,14 @@ public class ExperimentServiceImpl implements ExperimentService
         Map<String, List<ExpMaterialImpl>> potentialParents = new HashMap<>();
         for (ExpSampleSetImpl sampleSet : getSampleSets(container, user, true))
         {
-            for (ExpMaterialImpl expMaterial : sampleSet.getSamples())
+            List<ExpMaterialImpl> samples = new ArrayList<>(sampleSet.getSamples());
+            if (!container.equals(sampleSet.getContainer()))
             {
-                List<ExpMaterialImpl> matchingSamples = potentialParents.get(expMaterial.getName());
-                if (matchingSamples == null)
-                {
-                    matchingSamples = new LinkedList<>();
-                    potentialParents.put(expMaterial.getName(), matchingSamples);
-                }
+                samples.addAll(sampleSet.getSamples(container));
+            }
+            for (ExpMaterialImpl expMaterial : samples)
+            {
+                List<ExpMaterialImpl> matchingSamples = potentialParents.computeIfAbsent(expMaterial.getName(), k -> new LinkedList<>());
                 matchingSamples.add(expMaterial);
             }
         }

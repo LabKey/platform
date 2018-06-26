@@ -978,7 +978,7 @@ public class UploadSamplesHelper
                         for (ExpMaterial material : helper._materials)
                         {
                             List<ExpMaterialImpl> possibleDuplicates = potentialParents.get(material.getName());
-                            assert possibleDuplicates != null && !possibleDuplicates.isEmpty() : "There should be at least one material with the same name";
+                            assert possibleDuplicates != null && !possibleDuplicates.isEmpty() : "There should be at least one material with the same name, but found no matches for " + material.getName();
                             if (possibleDuplicates != null)
                             {
                                 for (int i = 0; i < possibleDuplicates.size(); i++)
