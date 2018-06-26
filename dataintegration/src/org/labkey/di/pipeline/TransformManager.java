@@ -15,6 +15,7 @@
  */
 package org.labkey.di.pipeline;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
@@ -241,7 +242,7 @@ public class TransformManager implements DataIntegrationService
         {
             return parseETLThrow(resource, module);
         }
-        catch (XmlValidationException|XmlException|IOException|IllegalArgumentException e)
+        catch (XmlValidationException|XmlException|IOException|IllegalArgumentException | ConversionException e)
         {
             String message = e instanceof XmlValidationException ? ((XmlValidationException)e).getDetails() : e.getMessage();
             LOG.warn("ETL Config: Unable to parse " + resource + " : " + message);

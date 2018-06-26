@@ -49,6 +49,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
@@ -82,6 +83,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -640,9 +642,17 @@ public class DataIntegrationController extends SpringActionController
                     setTypedValue("description", descriptor.getDescription());
                 }
             }
-            catch (IOException | XmlException | XmlValidationException e)
+            catch (Exception e)
             {
                 errors.reject(ERROR_MSG, e.getMessage());
+                // These are known exception types coming from malformed etl xml. Any other exception, we want to know about.
+                if (!(XmlException.class.isAssignableFrom(e.getClass())
+                        || XmlValidationException.class.isAssignableFrom(e.getClass())
+                        || ConversionException.class.isAssignableFrom(e.getClass())))
+                {
+                    ExceptionUtil.logExceptionToMothership(getRequest(), e);
+                }
+
             }
         }
 
@@ -656,7 +666,7 @@ public class DataIntegrationController extends SpringActionController
 
     private ActionURL getDefinitionsQueryUrl()
     {
-        return ModuleLoader.getInstance().getUrlProvider(QueryUrls.class).urlExecuteQuery(getContainer(), DataIntegrationQuerySchema.SCHEMA_NAME, DataIntegrationQuerySchema.ETL_DEF_TABLE_NAME);
+        return Objects.requireNonNull(ModuleLoader.getInstance().getUrlProvider(QueryUrls.class)).urlExecuteQuery(getContainer(), DataIntegrationQuerySchema.SCHEMA_NAME, DataIntegrationQuerySchema.ETL_DEF_TABLE_NAME);
     }
 
     protected abstract class AbstractEtlDefinitionAction extends FormViewAction<EtlDefinitionForm>

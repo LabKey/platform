@@ -299,7 +299,20 @@
 
 
     <complexType name="PollType">
-        <attribute name="interval" type="string" use="required"/>
+        <attribute name="interval" type="string" use="required">
+            <annotation>
+                <documentation>
+                    Run the ETL at the specified interval, for example, 2h to run every two hours.
+                    Valid intervals are:
+                    y: Years
+                    m: Months, if day or hour is specified
+                    d: Days
+                    h: Hours
+                    m: Minutes, if no day or hour is specified
+                    s: Seconds
+                </documentation>
+            </annotation>
+        </attribute>
     </complexType>
 
 
