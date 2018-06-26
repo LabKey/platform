@@ -637,12 +637,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         Map<Container, List<QuerySnapshotDefinition>> deferredStudies = _coalesceMap.get(sourceData.getContainer());
         for (QuerySnapshotDefinition snapshotDef : getDependencies(sourceData))
         {
-            List<QuerySnapshotDefinition> deferredQuerySnapshots = deferredStudies.get(snapshotDef.getContainer());
-            if (deferredQuerySnapshots == null)
-            {
-                deferredQuerySnapshots = new LinkedList<>();
-                deferredStudies.put(snapshotDef.getContainer(), deferredQuerySnapshots);
-            }
+            List<QuerySnapshotDefinition> deferredQuerySnapshots = deferredStudies.computeIfAbsent(snapshotDef.getContainer(), k -> new LinkedList<>());
             deferredQuerySnapshots.add(snapshotDef);
         }
     }
@@ -679,22 +674,19 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 while (true)
                 {
                     SnapshotDependency.SourceDataType data = QUEUE.take();
-                    if (data != null)
+                    try
                     {
-                        try
+                        List<QuerySnapshotDefinition> dependencies = getDependencies(data);
+                        for (QuerySnapshotDefinition snapshotDef : dependencies)
                         {
-                            List<QuerySnapshotDefinition> dependencies = getDependencies(data);
-                            for (QuerySnapshotDefinition snapshotDef : dependencies)
-                            {
-                                LOG.info("Scheduling update of snapshot data : " + snapshotDef.getName());
-                                autoUpdateSnapshot(snapshotDef);
-                            }
+                            LOG.info("Scheduling update of snapshot data : " + snapshotDef.getName());
+                            autoUpdateSnapshot(snapshotDef);
                         }
-                        catch (Throwable e)
-                        {
-                            LOG.error(e);
-                            ExceptionUtil.logExceptionToMothership(null, e);
-                        }
+                    }
+                    catch (Throwable e)
+                    {
+                        LOG.error(e);
+                        ExceptionUtil.logExceptionToMothership(null, e);
                     }
                 }
             }
@@ -717,8 +709,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
     // Unfortunately complex generics here.  In English, the container key of the outer map is the source
     // container where the dataset change events are generated.  The value is a map from the study that
     // contains the snapshot datasets to a list of snapshots that need to be refreshed.
-    private static final Map<Container, Map<Container, List<QuerySnapshotDefinition>>> _coalesceMap =
-            new HashMap<>();
+    private static final Map<Container, Map<Container, List<QuerySnapshotDefinition>>> _coalesceMap = new HashMap<>();
 
     public void pauseUpdates(Container sourceContainer)
     {
