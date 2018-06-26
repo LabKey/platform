@@ -364,8 +364,13 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     @Override
     public String getPHILoggingComment()
     {
-        return getPHIDataLoggingColumns().stream().map(FieldKey::getName)
-                .collect(Collectors.joining(", ", "PHI accessed in list. Data shows ", "."));
+/*        return getPHIDataLoggingColumns().stream().map(FieldKey::getName)                        // TODO; restore map if we can get it to work again
+                .collect(Collectors.joining(", ", "PHI accessed in list. Data shows ", "."));         */
+        List<String> names = new ArrayList<>();
+        getPHIDataLoggingColumns().forEach(fieldKey -> {
+            names.add(fieldKey.getName());
+        });
+        return names.stream().collect(Collectors.joining(", ", "PHI accessed in list. Data shows ", "."));
     }
 
     /**
