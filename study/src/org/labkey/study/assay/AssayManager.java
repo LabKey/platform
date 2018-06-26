@@ -65,6 +65,7 @@ import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayColumnInfoRenderer;
 import org.labkey.api.study.assay.AssayHeaderLinkProvider;
 import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayResultsHeaderProvider;
 import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
@@ -127,6 +128,7 @@ public class AssayManager implements AssayService
 
     private final List<AssayProvider> _providers = new CopyOnWriteArrayList<>();
     private final List<AssayHeaderLinkProvider> _headerLinkProviders = new CopyOnWriteArrayList<>();
+    private final List<AssayResultsHeaderProvider> _resultsHeaderLinkProviders = new CopyOnWriteArrayList<>();
     private final List<AssayColumnInfoRenderer> _assayColumnInfoRenderers = new CopyOnWriteArrayList<>();
 
     /**
@@ -348,6 +350,20 @@ public class AssayManager implements AssayService
     {
         return Collections.unmodifiableList(_headerLinkProviders);
     }
+
+    @Override
+    public void registerAssayResultsHeaderProvider(AssayResultsHeaderProvider provider)
+    {
+        _resultsHeaderLinkProviders.add(provider);
+    }
+
+    @Override
+    public @NotNull
+    List<AssayResultsHeaderProvider> getAssayResultsHeaderProviders()
+    {
+        return Collections.unmodifiableList(_resultsHeaderLinkProviders);
+    }
+
 
     @Override
     public void registerAssayColumnInfoRenderer(AssayColumnInfoRenderer renderer)
