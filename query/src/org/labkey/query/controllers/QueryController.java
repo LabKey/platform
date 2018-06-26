@@ -1279,6 +1279,13 @@ public class QueryController extends SpringActionController
             else
                 _tableName = ti.getSelectName();
 
+            if (null == _tableName)
+            {
+                TableInfo tableInfo = schema.getTable(ti.getName());
+                if (null != tableInfo)
+                    _tableName = tableInfo.getMetaDataName();
+            }
+
             ActionURL url = new ActionURL(RawSchemaMetaDataAction.class, getContainer());
             url.addParameter("schemaName", _schemaName);
 
@@ -1296,44 +1303,52 @@ public class QueryController extends SpringActionController
 
             SqlDialect dialect = scope.getSqlDialect();
 
-            VBox result = new VBox();
-            HttpView scopeInfo = new ScopeView("Scope and Schema Information", scope, _schemaName, url, _tableName);
-
-            result.addView(scopeInfo);
-
-            try (JdbcMetaDataLocator locator = dialect.getJdbcMetaDataLocator(scope, _schemaName, _tableName))
+            if (null != _tableName)
             {
-                JdbcMetaDataSelector columnSelector = new JdbcMetaDataSelector(locator,
-                        (dbmd, l) -> dbmd.getColumns(l.getCatalogName(), l.getSchemaName(), l.getTableName(), null));
-                result.addView(new ResultSetView(CachedResultSets.create(columnSelector.getResultSet(), true, Table.ALL_ROWS), "Table Meta Data"));
+                VBox result = new VBox();
+                HttpView scopeInfo = new ScopeView("Scope and Schema Information", scope, _schemaName, url, _tableName);
 
-                JdbcMetaDataSelector pkSelector = new JdbcMetaDataSelector(locator,
-                        (dbmd, l) -> dbmd.getPrimaryKeys(l.getCatalogName(), l.getSchemaName(), l.getTableName()));
-                result.addView(new ResultSetView(CachedResultSets.create(pkSelector.getResultSet(), true, Table.ALL_ROWS), "Primary Key Meta Data"));
+                result.addView(scopeInfo);
 
-                if (dialect.canCheckIndices(ti))
+                try (JdbcMetaDataLocator locator = dialect.getJdbcMetaDataLocator(scope, _schemaName, _tableName))
                 {
-                    JdbcMetaDataSelector indexSelector = new JdbcMetaDataSelector(locator,
-                            (dbmd, l) -> dbmd.getIndexInfo(l.getCatalogName(), l.getSchemaName(), l.getTableName(), false, false));
-                    result.addView(new ResultSetView(CachedResultSets.create(indexSelector.getResultSet(), true, Table.ALL_ROWS), "Other Index Meta Data"));
+                    JdbcMetaDataSelector columnSelector = new JdbcMetaDataSelector(locator,
+                            (dbmd, l) -> dbmd.getColumns(l.getCatalogName(), l.getSchemaName(), l.getTableName(), null));
+                    result.addView(new ResultSetView(CachedResultSets.create(columnSelector.getResultSet(), true, Table.ALL_ROWS), "Table Meta Data"));
+
+                    JdbcMetaDataSelector pkSelector = new JdbcMetaDataSelector(locator,
+                            (dbmd, l) -> dbmd.getPrimaryKeys(l.getCatalogName(), l.getSchemaName(), l.getTableName()));
+                    result.addView(new ResultSetView(CachedResultSets.create(pkSelector.getResultSet(), true, Table.ALL_ROWS), "Primary Key Meta Data"));
+
+                    if (dialect.canCheckIndices(ti))
+                    {
+                        JdbcMetaDataSelector indexSelector = new JdbcMetaDataSelector(locator,
+                                (dbmd, l) -> dbmd.getIndexInfo(l.getCatalogName(), l.getSchemaName(), l.getTableName(), false, false));
+                        result.addView(new ResultSetView(CachedResultSets.create(indexSelector.getResultSet(), true, Table.ALL_ROWS), "Other Index Meta Data"));
+                    }
+
+                    JdbcMetaDataSelector ikSelector = new JdbcMetaDataSelector(locator,
+                            (dbmd, l) -> dbmd.getImportedKeys(l.getCatalogName(), l.getSchemaName(), l.getTableName()));
+                    result.addView(new ResultSetView(CachedResultSets.create(ikSelector.getResultSet(), true, Table.ALL_ROWS), "Imported Keys Meta Data"));
+
+                    JdbcMetaDataSelector ekSelector = new JdbcMetaDataSelector(locator,
+                            (dbmd, l) -> dbmd.getExportedKeys(l.getCatalogName(), l.getSchemaName(), l.getTableName()));
+                    result.addView(new ResultSetView(CachedResultSets.create(ekSelector.getResultSet(), true, Table.ALL_ROWS), "Exported Keys Meta Data"));
                 }
-
-                JdbcMetaDataSelector ikSelector = new JdbcMetaDataSelector(locator,
-                        (dbmd, l) -> dbmd.getImportedKeys(l.getCatalogName(), l.getSchemaName(), l.getTableName()));
-                result.addView(new ResultSetView(CachedResultSets.create(ikSelector.getResultSet(), true, Table.ALL_ROWS), "Imported Keys Meta Data"));
-
-                JdbcMetaDataSelector ekSelector = new JdbcMetaDataSelector(locator,
-                        (dbmd, l) -> dbmd.getExportedKeys(l.getCatalogName(), l.getSchemaName(), l.getTableName()));
-                result.addView(new ResultSetView(CachedResultSets.create(ekSelector.getResultSet(), true, Table.ALL_ROWS), "Exported Keys Meta Data"));
+                return result;
             }
-
-            return result;
+            else
+            {
+                errors.reject(ERROR_MSG, "Raw metadata not accessible for table " + ti.getName());
+                return new SimpleErrorView(errors);
+            }
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
             (new SchemaAction(_form)).appendNavTrail(root);
-            root.addChild("JDBC Meta Data For Table \"" + _schemaName + "." + _tableName + "\"");
+            if (null != _tableName)
+                root.addChild("JDBC Meta Data For Table \"" + _schemaName + "." + _tableName + "\"");
             return root;
         }
     }
