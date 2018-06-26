@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.security.User;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.ViewContext;
 
 import java.util.Collections;
 import java.util.List;
@@ -32,6 +33,12 @@ public interface AssayHeaderLinkProvider
 
     @NotNull
     default List<NavTree> getManageAssayDesignLinks(ExpProtocol protocol, Container container, User user)
+    {
+        return Collections.emptyList();
+    }
+
+    @NotNull
+    default List<NavTree> getLinks(AssayProvider provider, ExpProtocol protocol, ViewContext viewContext)
     {
         return Collections.emptyList();
     }

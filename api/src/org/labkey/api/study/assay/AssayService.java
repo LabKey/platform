@@ -158,6 +158,18 @@ public interface AssayService
     @NotNull List<AssayHeaderLinkProvider> getAssayHeaderLinkProviders();
 
     /**
+     * Register a provider that will add text links to the assay results header link display.
+     * @param provider the provider that will determine which links to add based on a given ExpProtocol
+     */
+    void registerAssayResultsHeaderProvider(AssayResultsHeaderProvider provider);
+
+    /**
+     * Returns the list of registered providers which can add links to the assay results header link listing.
+     * @return the list of registered providers
+     */
+    @NotNull List<AssayResultsHeaderProvider> getAssayResultsHeaderProviders();
+
+    /**
      * Register a renderer to be used on the assay insert form to customize the input field.
      * @param renderer the renderer that will determine the display of the input field based on the column info.
      */

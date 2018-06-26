@@ -1383,42 +1383,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         if (AuditLogService.get().isViewable())
             result.add(new NavTree("view copy-to-study history", AssayPublishService.get().getPublishHistory(viewContext.getContainer(), protocol, containerFilter)));
 
-        AssayProvider provider = AssayService.get().getProvider(protocol);
-        if (provider != null && provider.isExclusionSupported())
-        {
-            ActionURL exclusionUrl = new ActionURL(AssayExclusionReportAction.class, viewContext.getContainer())
-                    .addParameter("rowId", protocol.getRowId());
-            int runId = getViewContextRunId(viewContext);
-            if (runId > 0)
-                exclusionUrl.addParameter("ExclusionReport.Run/RowId~eq", runId);
-            result.add(new NavTree("view excluded data", exclusionUrl));
-        }
-
         return result;
-    }
-
-    private int getViewContextRunId(ViewContext viewContext)
-    {
-        int runId = -1;
-        PropertyValue pv = viewContext.getBindPropertyValues().getPropertyValue("Data.Run/RowId~eq");
-        if (pv != null && pv.getValue() != null)
-        {
-
-            Object value = pv.getValue();
-            if (value instanceof Integer)
-                runId = ((Integer) value).intValue();
-            else if (value instanceof String)
-            {
-                try
-                {
-                    runId = Integer.parseInt((String) value);
-                }
-                catch (NumberFormatException nfe)
-                {
-                }
-            }
-        }
-        return runId;
     }
 
     private NavTree getManageMenuNavTree(ViewContext context, ExpProtocol protocol)

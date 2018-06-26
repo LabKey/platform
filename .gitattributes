@@ -1577,6 +1577,7 @@ api/src/org/labkey/api/study/assay/AssayPublishService.java -text
 api/src/org/labkey/api/study/assay/AssayQCFlagColumn.java -text
 api/src/org/labkey/api/study/assay/AssayResultTable.java -text
 api/src/org/labkey/api/study/assay/AssayResultUpdateService.java -text
+api/src/org/labkey/api/study/assay/AssayResultsHeaderProvider.java -text
 api/src/org/labkey/api/study/assay/AssayResultsView.java -text
 api/src/org/labkey/api/study/assay/AssayRunCreator.java -text
 api/src/org/labkey/api/study/assay/AssayRunDatabaseContext.java -text

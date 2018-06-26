@@ -181,15 +181,12 @@ public class ResultsQueryView extends AssayBaseQueryView
                 bar.add(button);
             }
 
-            if (_provider.isExclusionSupported() && runId != null)
+            // give the registered AssayResultsHeaderProvider a chance to include links
+            for (AssayResultsHeaderProvider headerLinkProvider : AssayService.get().getAssayResultsHeaderProviders())
             {
-                ActionURL excludeUrl = ExperimentService.get().getExclusionURL(getContainer(), _provider, _protocol.getRowId(), runId, getContextURL());
-                ActionButton excludeButton = new ActionButton(excludeUrl, "Exclude");
-                excludeButton.setTooltip("Mark the selected rows as excluded data.");
-                excludeButton.setDisplayPermission(UpdatePermission.class);
-                excludeButton.setRequiresSelection(true);
-                bar.add(excludeButton);
+                bar.addAll(headerLinkProvider.getButtons(_provider, _protocol, getViewContext(), runId));
             }
+
         }
     }
 
