@@ -26,7 +26,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.NamedObjectList;
-import org.labkey.api.data.JdbcMetaDataSelector.JdbcMetaDataResultSetFactory;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.ForeignKeyResolver;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
@@ -54,7 +53,6 @@ import org.labkey.data.xml.PropertiesType;
 import java.beans.Introspector;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -1565,14 +1563,7 @@ public class ColumnInfo extends ColumnRenderProperties
 
         try (JdbcMetaDataLocator locator = dialect.getJdbcMetaDataLocator(scope, schemaName, parentTable.getMetaDataName()))
         {
-            JdbcMetaDataSelector columnSelector = new JdbcMetaDataSelector(locator, new JdbcMetaDataResultSetFactory()
-            {
-                @Override
-                public ResultSet getResultSet(DatabaseMetaData dbmd, JdbcMetaDataLocator locator) throws SQLException
-                {
-                    return dbmd.getColumns(locator.getCatalogName(), locator.getSchemaName(), locator.getTableName(), columnNamePattern);
-                }
-            });
+            JdbcMetaDataSelector columnSelector = new JdbcMetaDataSelector(locator, (dbmd, loc) -> dbmd.getColumns(loc.getCatalogName(), loc.getSchemaName(), loc.getTableName(), columnNamePattern));
 
             try (ResultSet rsCols = columnSelector.getResultSet())
             {

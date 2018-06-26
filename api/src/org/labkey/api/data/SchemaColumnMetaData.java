@@ -217,7 +217,7 @@ public class SchemaColumnMetaData
 
     private void loadColumnsFromMetaData(SchemaTableInfo ti) throws SQLException
     {
-        ColumnInfo.createFromDatabaseMetaData(ti.getSchema().getName(), ti, null /** all columns **/)
+        ColumnInfo.createFromDatabaseMetaData(ti.getSchema().getName(), ti, null /* all columns */)
             .forEach(this::addColumn);
     }
 

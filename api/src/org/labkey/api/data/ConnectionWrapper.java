@@ -38,7 +38,6 @@ import java.sql.NClob;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.RowIdLifetime;
-import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
 import java.sql.SQLWarning;
 import java.sql.SQLXML;
@@ -47,7 +46,6 @@ import java.sql.Statement;
 import java.sql.Struct;
 import java.text.DateFormat;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -332,7 +330,7 @@ public class ConnectionWrapper implements java.sql.Connection
         // if it's already been closed instead of doing a no-op
         if (null != _connection && !isClosed())
         {
-            /** For debugging issue 23044, look for connections that are set to be autoCommit but the driver thinks are mid-transaction */
+            /* For debugging issue 23044, look for connections that are set to be autoCommit but the driver thinks are mid-transaction */
             Connection connection = DbScope.getDelegate(_connection);
             if (connection != null && connection.getAutoCommit() && "org.postgresql.jdbc4.Jdbc4Connection".equals(connection.getClass().getName()))
             {

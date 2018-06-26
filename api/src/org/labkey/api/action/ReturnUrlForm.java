@@ -26,7 +26,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 
 /**
- * Simple form bean that includes a returnUrl property, typically used to send the user back to wherever the intiated an action from.
+ * Simple form bean that includes a returnUrl property, typically used to send the user back to the page where they initiated the action.
  * Often subclassed to add usage-specific additional properties.
  * User: adam
  * Date: Nov 22, 2007
@@ -36,7 +36,7 @@ public class ReturnUrlForm
     private ReturnURLString _returnUrl;
     private ReturnURLString _cancelUrl;
     private ReturnURLString _successUrl;
-    private String urlhash;
+    private String _urlhash;
 
     /**
      * Generate a hidden form field to post a return URL with the standard name used by this form.
@@ -71,14 +71,15 @@ public class ReturnUrlForm
         _returnUrl = (null == returnUrl || returnUrl.isEmpty()) ? null : returnUrl;
     }
 
+    @SuppressWarnings("unused")
     public void setUrlhash(String urlhash)
     {
-        this.urlhash = urlhash;
+        _urlhash = urlhash;
     }
 
     public String getUrlhash()
     {
-        return this.urlhash;
+        return _urlhash;
     }
 
     // TODO: Remove this. There is only one override in List
