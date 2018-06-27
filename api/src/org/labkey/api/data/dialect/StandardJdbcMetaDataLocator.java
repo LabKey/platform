@@ -39,14 +39,18 @@ public class StandardJdbcMetaDataLocator implements JdbcMetaDataLocator
     private final String _schemaName;
     private final String _tableNamePattern;
 
-    public StandardJdbcMetaDataLocator(DbScope scope, String schemaName, @Nullable String tableNamePattern) throws SQLException
+    public StandardJdbcMetaDataLocator(DbScope scope, String schemaName, @Nullable String tableNamePattern, Connection conn) throws SQLException
     {
         _scope = scope;
-        _conn = scope.getConnection();
+        _conn = conn;
         _dbmd = _conn.getMetaData();
-
         _schemaName = schemaName;
         _tableNamePattern = tableNamePattern;
+    }
+
+    public StandardJdbcMetaDataLocator(DbScope scope, String schemaName, @Nullable String tableNamePattern) throws SQLException
+    {
+        this(scope, schemaName, tableNamePattern, scope.getConnection());
     }
 
     @Override
