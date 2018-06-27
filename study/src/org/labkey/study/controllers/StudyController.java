@@ -154,6 +154,7 @@ import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.CohortFilterFactory;
+import org.labkey.study.MasterPatientIndexMaintenanceTask;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.StudyFolderType;
 import org.labkey.study.StudyModule;
@@ -8036,6 +8037,7 @@ public class StudyController extends BaseStudyController
             MasterPatientIndexService svc = getService();
             if (svc != null)
             {
+                form.setReloadUser(getUser().getUserId());
                 svc.setFolderSettings(getContainer(), form);
             }
             return true;
@@ -8061,21 +8063,10 @@ public class StudyController extends BaseStudyController
         {
             if (_svc == null)
             {
-                _svc = getConfiguredService();
+                _svc = MasterPatientIndexMaintenanceTask.getConfiguredService();
             }
             return _svc;
         }
-    }
-
-    private MasterPatientIndexService getConfiguredService()
-    {
-        PropertyManager.PropertyMap map = PropertyManager.getNormalStore().getProperties(StudyController.MasterPatientProviderSettings.CATEGORY);
-        String type = map.get(StudyController.MasterPatientProviderSettings.TYPE);
-
-        if (type != null)
-            return MasterPatientIndexService.getProvider(type);
-
-        return null;
     }
 
     @RequiresPermission(AdminPermission.class)
@@ -8088,7 +8079,7 @@ public class StudyController extends BaseStudyController
             try
             {
                 ViewBackgroundInfo info = new ViewBackgroundInfo(getContainer(), getUser(), getViewContext().getActionURL());
-                MasterPatientIndexService svc = getConfiguredService();
+                MasterPatientIndexService svc = MasterPatientIndexMaintenanceTask.getConfiguredService();
 
                 MasterPatientIndexService.FolderSettings settings = svc.getFolderSettings(getContainer());
                 if (settings.isEnabled())

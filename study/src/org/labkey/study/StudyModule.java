@@ -436,6 +436,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         SystemMaintenance.addTask(new PurgeParticipantsMaintenanceTask());
         SystemMaintenance.addTask(new SpecimenRefreshMaintainanceTask());
         SystemMaintenance.addTask(new DefragmentParticipantVisitIndexesTask());
+        SystemMaintenance.addTask(new MasterPatientIndexMaintenanceTask());
 
         FolderSerializationRegistry folderRegistry = FolderSerializationRegistry.get();
         if (null != folderRegistry)
