@@ -63,7 +63,7 @@ public abstract class SnapshotDependency
         if (c != null)
         {
             // Skip if container is gone or in the process of being deleted, #34234
-            return ContainerManager.getForId(c.getId()) != null && !ContainerManager.isDeleting(c);
+            return ContainerManager.exists(c);
         }
         return false;
     }
