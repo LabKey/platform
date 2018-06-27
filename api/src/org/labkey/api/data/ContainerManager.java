@@ -1621,9 +1621,10 @@ public class ContainerManager
          return c.equals(getRoot()) || c.equals(getHomeContainer()) || c.equals(getSharedContainer());
     }
 
+    // Has Container been deleted or is it in the process of being deleted?
     public static boolean exists(Container c)
     {
-        return null != getForId(c.getEntityId());
+        return null != getForId(c.getEntityId()) && !ContainerManager.isDeleting(c);
     }
 
     public static void deleteAll(Container root, User user) throws UnauthorizedException
