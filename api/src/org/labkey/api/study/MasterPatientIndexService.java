@@ -54,7 +54,7 @@ public interface MasterPatientIndexService
      */
     void updateIndices(PipelineJob pipelineJob);
 
-    public static class ServerSettings
+    class ServerSettings
     {
         private String _url;
         private String _username;
@@ -96,13 +96,14 @@ public interface MasterPatientIndexService
         }
     }
 
-    public static class FolderSettings
+    class FolderSettings
     {
         private String _schema;             // the schema name of the query used to provide patient information
         private String _query;              // the name of the query used to provide patient information
         private String _dataset;            // the name of the dataset to hold the universal patient index ID
         private String _fieldName;          // the name of the field to store the universal patient index ID
         private boolean _enabled;
+        private int _reloadUser;
 
         public String getSchema()
         {
@@ -152,6 +153,16 @@ public interface MasterPatientIndexService
         public void setEnabled(boolean enabled)
         {
             _enabled = enabled;
+        }
+
+        public int getReloadUser()
+        {
+            return _reloadUser;
+        }
+
+        public void setReloadUser(int reloadUser)
+        {
+            _reloadUser = reloadUser;
         }
 
         public boolean isValid()
