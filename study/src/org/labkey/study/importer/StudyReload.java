@@ -380,7 +380,8 @@ public class StudyReload
         public ReloadStatus reloadStudy(StudyImpl study, ImportOptions options, String source, Long lastModified, Date lastReload) throws ImportException
         {
             options.addMessage("Study reload was initiated by " + source);
-            options.setSkipQueryValidation(!study.isValidateQueriesAfterImport());
+            if (study.isAllowReload())
+                options.setSkipQueryValidation(!study.isValidateQueriesAfterImport());
 
             // Check for valid reload user
             User reloadUser = options.getUser();
