@@ -28,9 +28,9 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.UnexpectedException;
 
 import javax.script.ScriptException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.Map;
 
 /**
@@ -83,7 +83,7 @@ public class ScriptTriggerFactory implements TriggerFactory
         Path pathNew = QueryService.MODULE_QUERIES_PATH.append(
                 FileUtil.makeLegalName(schemaName),
                 FileUtil.makeLegalName(name) + ".js");
-        Collection<Trigger> scripts = new ArrayList<>(checkPaths(c, table, svc, pathNew));
+        Collection<Trigger> scripts = new LinkedHashSet<>(checkPaths(c, table, svc, pathNew));
 
         // For backwards compat with 10.2
         Path pathOld = QueryService.MODULE_QUERIES_PATH.append(
@@ -111,7 +111,7 @@ public class ScriptTriggerFactory implements TriggerFactory
     @NotNull
     protected Collection<Trigger> checkPaths(Container c, TableInfo table, @NotNull ScriptService svc, Path path) throws ScriptException
     {
-        Collection<Trigger> scripts = new ArrayList<>();
+        Collection<Trigger> scripts = new LinkedHashSet<>();
 
         for (Module m : c.getActiveModules())
         {

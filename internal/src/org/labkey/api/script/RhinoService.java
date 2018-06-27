@@ -93,6 +93,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -458,6 +459,23 @@ class ScriptReferenceImpl implements ScriptReference
     public Object invokeFn(Object thiz, String name, Object... args) throws ScriptException, NoSuchMethodException
     {
         return invokeFn(Object.class, thiz, name, args);
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ScriptReferenceImpl that = (ScriptReferenceImpl) o;
+        return Objects.equals(_module, that._module) &&
+                Objects.equals(_path, that._path);
+    }
+
+    @Override
+    public int hashCode()
+    {
+
+        return Objects.hash(_module, _path);
     }
 }
 

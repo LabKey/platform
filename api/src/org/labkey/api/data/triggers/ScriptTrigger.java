@@ -34,6 +34,7 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Implements a trigger for table operations backed by JavaScript code.
@@ -214,5 +215,23 @@ import java.util.Map;
         {
             return true;
         }
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ScriptTrigger that = (ScriptTrigger) o;
+        return Objects.equals(_container, that._container) &&
+                Objects.equals(_table, that._table) &&
+                Objects.equals(_script, that._script);
+    }
+
+    @Override
+    public int hashCode()
+    {
+
+        return Objects.hash(_container, _table, _script);
     }
 }
