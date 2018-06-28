@@ -180,7 +180,7 @@ Ext4.define("LABKEY.ext4.BootstrapTabPanel", {
 
     removeContent: function() {
         var item = this.findItemForActiveTabId();
-        if (item && item.container) {
+        if (item && item.container && item.container.items && item.container.items.items && item.container.items.items.length > 0) {
             item.container.items.items[0].removeAll();
         }
     },
