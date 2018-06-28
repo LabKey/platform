@@ -237,6 +237,8 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
      * @return A collection of WebPartFactories
      */
     protected abstract @NotNull Collection<? extends WebPartFactory> createWebPartFactories();
+
+    /** @return true if this module has SQL upgrade scripts that should be run as part of startup */
     public abstract boolean hasScripts();
 
     final public void startup(ModuleContext moduleContext)
