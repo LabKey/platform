@@ -179,6 +179,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -2440,7 +2441,9 @@ public class ReportsController extends SpringActionController
         {
             super.initializeForm(form, report);
 
-            form.setLinkUrl(report.getURL().toString());
+            URL url = report.getURL();
+            if (null != url)
+                form.setLinkUrl(url.toString());
             form.setTargetNewWindow(null != report.getRunReportTarget());
         }
 

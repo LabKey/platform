@@ -66,7 +66,8 @@ public class LinkReport extends BaseRedirectReport
         }
         catch (Exception e)
         {
-            ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.ResolveURL, url.toString(), false);
+            if (null != url)
+                ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.ResolveURL, url.toString(), false);
             ExceptionUtil.logExceptionToMothership(null, e);
         }
         

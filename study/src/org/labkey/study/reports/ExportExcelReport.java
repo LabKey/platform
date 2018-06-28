@@ -43,7 +43,6 @@ import org.labkey.study.query.DatasetQueryView;
 import org.labkey.study.query.StudyQuerySchema;
 import org.springframework.validation.BindException;
 
-import javax.servlet.ServletException;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -84,7 +83,6 @@ public class ExportExcelReport extends RedirectReport
     {
         ActionURL url = new ActionURL(ReportsController.ExportExcelAction.class, c);
         url.addParameter("reportId", getReportId().toString());
-
 
         return url.toString();
     }
