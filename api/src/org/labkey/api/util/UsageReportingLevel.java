@@ -106,7 +106,7 @@ public enum UsageReportingLevel
      * Per policy, this should not capture the names of specific objects like container names, dataset names, etc.
      *
      * Also per policy, this should not capture metrics at a container or other similar granularity. For example,
-     * metrics should not break down the number of lists defined in each folder (even if that folder was deidentified.
+     * metrics should not break down the number of lists defined in each folder (even if that folder was deidentified).
      */
     MEDIUM
     {
