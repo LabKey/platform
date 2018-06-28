@@ -264,18 +264,31 @@ public class RunDetailsHeaderView extends AssayHeaderView
 
     private NavTree getQCMenu()
     {
-        NavTree qcMenu = new NavTree("View QC");
-
-        // must be an administrator to access the QC workflow
-        if (_container.hasPermission(_user, AdminPermission.class))
+        try
         {
-            NavTree excludedDataMenu = new NavTree("Review/QC Data", ((DilutionAssayProvider)_provider).getAssayQCRunURL(_viewContext, _run));
-            qcMenu.addChild(excludedDataMenu);
-        }
-        NavTree excludedDataMenu = new NavTree("View Excluded Data", ((DilutionAssayProvider)_provider).getAssayQCRunURL(_viewContext, _run).addParameter("edit", false));
-        qcMenu.addChild(excludedDataMenu);
+            // QC workflow currently only works for single virus configurations
+            DilutionAssayRun assay = ((DilutionAssayProvider)_provider).getDataHandler().getAssayResults(_run, _user);
+            boolean disable = assay.getVirusNames().size() > 1;
 
-        return qcMenu;
+            NavTree qcMenu = new NavTree("View QC");
+
+            // must be an administrator to access the QC workflow
+            if (_container.hasPermission(_user, AdminPermission.class))
+            {
+                NavTree excludedDataMenu = new NavTree("Review/QC Data", ((DilutionAssayProvider)_provider).getAssayQCRunURL(_viewContext, _run));
+                excludedDataMenu.setDisabled(disable);
+                qcMenu.addChild(excludedDataMenu);
+            }
+            NavTree excludedDataMenu = new NavTree("View Excluded Data", ((DilutionAssayProvider)_provider).getAssayQCRunURL(_viewContext, _run).addParameter("edit", false));
+            excludedDataMenu.setDisabled(disable);
+            qcMenu.addChild(excludedDataMenu);
+
+            return qcMenu;
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     private boolean containsSampleProperties(String[] names)
