@@ -302,23 +302,25 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         if (null != fileContentService)
         {
             fileContentService.addFileListener(new ExpDataFileListener());
-            fileContentService.addFileListener(new TableUpdaterFileListener(ExperimentService.get().getTinfoExperimentRun(), "FilePathRoot", TableUpdaterFileListener.Type.filePath, "RowId"));
+            fileContentService.addFileListener(new TableUpdaterFileListener(ExperimentService.get().getTinfoExperimentRun(), "FilePathRoot", TableUpdaterFileListener.Type.fileRootPath, "RowId"));
             fileContentService.addFileListener(new FileLinkFileListener());
         }
-        ContainerManager.addContainerListener(new ContainerManager.AbstractContainerListener()
-                                              {
-                                                  public void containerDeleted(Container c, User user)
-                                                  {
-                                                      try
-                                                      {
-                                                          ExperimentService.get().deleteAllExpObjInContainer(c, user);
-                                                      }
-                                                      catch (ExperimentException ee)
-                                                      {
-                                                          throw new RuntimeException(ee);
-                                                      }
-                                                  }
-                                              },
+        ContainerManager.addContainerListener(
+                new ContainerManager.AbstractContainerListener()
+                {
+                    @Override
+                    public void containerDeleted(Container c, User user)
+                    {
+                        try
+                        {
+                        ExperimentService.get().deleteAllExpObjInContainer(c, user);
+                        }
+                        catch (ExperimentException ee)
+                        {
+                        throw new RuntimeException(ee);
+                        }
+                    }
+                },
                 // This is in the Last group because when a container is deleted,
                 // the Experiment listener needs to be called after the Study listener,
                 // because Study needs the metadata held by Experiment to delete properly.
