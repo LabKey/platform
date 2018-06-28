@@ -1268,12 +1268,14 @@ Ext4.define('File.panel.Browser', {
         this.fileStore.on('load', function() {
             this.onSelection(this.getGrid(), this.getGridSelection());
         }, this, {single: true});
-        this.fileStore.on('beforeload', function () {
-            this.getGrid().setLoading(true);
-        }, this);
-        this.fileStore.on('load', function () {
-            this.getGrid().setLoading(false);
-        }, this);
+        if (!this.showFolderTreeOnly) {
+            this.fileStore.on('beforeload', function () {
+                this.getGrid().setLoading(true);
+            }, this);
+            this.fileStore.on('load', function () {
+                this.getGrid().setLoading(false);
+            }, this);
+        }
         this.fileStore.on('refresh', function(store) {
             LABKEY.Utils.signalWebDriverTest("file-list-updated", store.getTotalCount());
         }, this);
