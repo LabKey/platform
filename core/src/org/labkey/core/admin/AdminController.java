@@ -1088,7 +1088,7 @@ public class AdminController extends SpringActionController
         }
 
 
-        private @NotNull String getErrors(String wikiSource, String creditsFilename, Collection<String> filenames, String fileType, String foundWhere, String wikiSourceSearchPattern)
+        private @NotNull String getErrors(String wikiSource, String creditsFilename, Collection<String> foundFilenames, String fileType, String foundWhere, String wikiSourceSearchPattern)
         {
             Set<String> documentedFilenames = new CaseInsensitiveTreeSet();
 
@@ -1105,16 +1105,12 @@ public class AdminController extends SpringActionController
             }
 
             Set<String> documentedFilenamesCopy = new HashSet<>(documentedFilenames);
-            documentedFilenames.removeAll(filenames);
-            filenames.removeAll(documentedFilenamesCopy);
-            Collection<String> filenames2 = new CaseInsensitiveTreeSet(filenames);
-            filenames2.removeIf(name->name.startsWith("."));
-            for (String name : filenames.toArray(new String[filenames.size()]))
-                if (name.startsWith(".")) filenames.remove(name);
+            documentedFilenames.removeAll(foundFilenames);
+            foundFilenames.removeAll(documentedFilenamesCopy);
+            Collection<String> undocumented = new CaseInsensitiveTreeSet(foundFilenames);
+            undocumented.removeIf(name->name.startsWith("."));
 
-            assert filenames2.equals(filenames);
-
-            String undocumentedErrors = filenames.isEmpty() ? "" : WIKI_LINE_SEP + "**WARNING: The following " + fileType + " file" + (filenames.size() > 1 ? "s were" : " was") + " found in your " + foundWhere + " but "+ (filenames.size() > 1 ? "are" : "is") + " not documented in " + _component + " " + creditsFilename + ":**\\\\" + StringUtils.join(filenames.iterator(), "\\\\");
+            String undocumentedErrors = foundFilenames.isEmpty() ? "" : WIKI_LINE_SEP + "**WARNING: The following " + fileType + " file" + (undocumented.size() > 1 ? "s were" : " was") + " found in your " + foundWhere + " but "+ (foundFilenames.size() > 1 ? "are" : "is") + " not documented in " + _component + " " + creditsFilename + ":**\\\\" + StringUtils.join(foundFilenames.iterator(), "\\\\");
             String missingErrors = documentedFilenames.isEmpty() ? "" : WIKI_LINE_SEP + "**WARNING: The following " + fileType + " file" + (documentedFilenames.size() > 1 ? "s are" : " is") + " documented in " + _component + " " + creditsFilename + " but " + (documentedFilenames.size() > 1 ? "were" : "was") + " not found in your " + foundWhere + ":**\\\\" + StringUtils.join(documentedFilenames.iterator(), "\\\\");
 
             return undocumentedErrors + missingErrors;
