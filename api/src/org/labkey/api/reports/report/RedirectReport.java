@@ -81,12 +81,12 @@ public abstract class RedirectReport extends AbstractReport
         getDescriptor().setProperty(REDIRECT_URL, redirectUrl);
     }
 
-    public String getUrl(Container c)
+    public @Nullable String getUrl(Container c)
     {
         return getDescriptor().getProperty(REDIRECT_URL);
     }
 
-    public URL getURL()
+    public @Nullable URL getURL()
     {
         String urlString = getUrl(null);
         if (urlString == null)

@@ -583,7 +583,6 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
     protected boolean shouldSerialize(String propName)
     {
         if (Prop.returnUrl.name().equals(propName)  ||
-            Prop.redirectUrl.name().equals(propName)  ||
             Prop.reportId.name().equals(propName)   ||
             Prop.serializedReportName.name().equals(propName))
             return false;
