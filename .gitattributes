@@ -1884,6 +1884,7 @@ api/src/org/labkey/api/visualization/VisualizationUrls.java -text
 api/src/org/labkey/api/webdav/AbstractDocumentResource.java -text
 api/src/org/labkey/api/webdav/AbstractWebdavResource.java -text
 api/src/org/labkey/api/webdav/AbstractWebdavResourceCollection.java -text
+api/src/org/labkey/api/webdav/DavException.java -text
 api/src/org/labkey/api/webdav/DirectRequest.java -text
 api/src/org/labkey/api/webdav/HistoryImpl.java -text
 api/src/org/labkey/api/webdav/SimpleDocumentResource.java -text
@@ -1891,6 +1892,7 @@ api/src/org/labkey/api/webdav/WebdavResolver.java -text
 api/src/org/labkey/api/webdav/WebdavResource.java -text
 api/src/org/labkey/api/webdav/WebdavResourceReadOnly.java -text
 api/src/org/labkey/api/webdav/WebdavService.java -text
+api/src/org/labkey/api/webdav/WebdavStatus.java -text
 api/src/org/labkey/api/webdav/permissions/SeeFilePathsPermission.java -text
 api/src/org/labkey/api/wiki/FormattedHtml.java -text
 api/src/org/labkey/api/wiki/MacroProvider.java -text
