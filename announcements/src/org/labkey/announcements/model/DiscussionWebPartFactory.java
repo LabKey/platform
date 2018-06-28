@@ -103,6 +103,9 @@ public class DiscussionWebPartFactory extends BaseWebPartFactory
         }
 
         WebPartView view = DiscussionService.get().getDiscussionArea(c, user, currentURL, entityId, pageURL, newDiscussionTitle, allowMultipleDiscussions, true);
+        if (view == null)
+            throw new WebPartConfigurationException(this, "object-level discussions may not be enabled in project settings");
+
         view.setTitle("Discussion");
         view.setFrame(WebPartView.FrameType.PORTAL);
 
