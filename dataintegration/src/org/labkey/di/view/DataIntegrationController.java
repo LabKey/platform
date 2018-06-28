@@ -660,7 +660,7 @@ public class DataIntegrationController extends SpringActionController
         public void refreshFromDb()
         {
             super.refreshFromDb();
-            setTypedValue("definition", getBean().getPretyPrintDefinition());
+            setTypedValue("definition", getBean().getPrettyPrintDefinition());
         }
     }
 
@@ -779,7 +779,7 @@ public class DataIntegrationController extends SpringActionController
     {
 
         @Override
-        public ModelAndView getView(EtlDefinitionForm form, BindException errors) throws Exception
+        public ModelAndView getView(EtlDefinitionForm form, BindException errors)
         {
             form.refreshFromDb();
             form.setReadOnly(true);
@@ -845,7 +845,8 @@ public class DataIntegrationController extends SpringActionController
             }
             catch (IOException e)
             {
-                // TODO: ???
+                ExceptionUtil.logExceptionToMothership(_request, e);
+                this.etlDefIds = Collections.emptySet();
             }
         }
 
@@ -881,7 +882,7 @@ public class DataIntegrationController extends SpringActionController
     public class DeleteDefinitionsAction extends FormViewAction<DeleteDefinitionsForm>
     {
         @Override
-        public boolean handlePost(DeleteDefinitionsForm form, BindException errors) throws Exception
+        public boolean handlePost(DeleteDefinitionsForm form, BindException errors)
         {
             if (!form.isConfirmed())
                 return false;
@@ -905,7 +906,7 @@ public class DataIntegrationController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(DeleteDefinitionsForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(DeleteDefinitionsForm form, boolean reshow, BindException errors)
         {
             return new JspView<>("/org/labkey/di/view/confirmDeleteDefinitions.jsp", form, errors);
         }

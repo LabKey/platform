@@ -128,8 +128,7 @@ public class DataIntegrationModule extends DefaultModule implements ContainerLis
 
         FolderManagement.addTab("ETLs", "etls", container ->
                                 container.hasActiveModuleByName(NAME) &&
-                                !container.isRoot() &&
-                                container.hasPermission(Objects.requireNonNull(HttpView.currentContext()).getUser(), AdminPermission.class),
+                                !container.isRoot(),
                 DataIntegrationController.CustomTransformsAction.class);
 
     }

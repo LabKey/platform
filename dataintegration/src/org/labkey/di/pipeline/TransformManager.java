@@ -182,15 +182,11 @@ public class TransformManager implements DataIntegrationService
         @Override
         public Map<String, ScheduledPipelineJobDescriptor> load(Container c, @Nullable Object argument)
         {
-            Map<String, ScheduledPipelineJobDescriptor> map = new HashMap<>();
-            SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-
-            map.putAll(new TableSelector(DataIntegrationQuerySchema.getEtlDefTableInfo(), filter, null)
-                    .getCollection(EtlDef.class)
-                    .stream()
+            Map<String, ScheduledPipelineJobDescriptor> map = new TableSelector(DataIntegrationQuerySchema.getEtlDefTableInfo(), SimpleFilter.createContainerFilter(c), null)
+                    .stream(EtlDef.class)
                     .map(EtlDef::getDescriptor)
                     .filter(Objects::nonNull)
-                    .collect(Collectors.toMap(TransformDescriptor::getId, d -> d)));
+                    .collect(Collectors.toMap(TransformDescriptor::getId, d -> d));
 
             return map.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(map);
         }

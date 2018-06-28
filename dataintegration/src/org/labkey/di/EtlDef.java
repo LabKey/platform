@@ -136,7 +136,7 @@ public class EtlDef extends Entity
         return _configId;
     }
 
-    public String getPretyPrintDefinition()
+    public String getPrettyPrintDefinition()
     {
         String formattedXml = getDefinition();
         try

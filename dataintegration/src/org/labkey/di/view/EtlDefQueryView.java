@@ -29,11 +29,11 @@ public class EtlDefQueryView extends QueryView
 
     private void init()
     {
-        setTitle("Custom ETLs");
+        setTitle("Custom ETL Definitions");
         setShowExportButtons(false);
         setShowReports(false);
         setShowImportDataButton(false);
-        ActionURL detailsUrl = new ActionURL(DataIntegrationController.DefinitionDetailsAction.class, getContainer());//.addReturnURL(getReturnURL());
+        ActionURL detailsUrl = new ActionURL(DataIntegrationController.DefinitionDetailsAction.class, getContainer());
         setDetailsURL(new DetailsURL(detailsUrl, Collections.singletonMap("etlDefId", FieldKey.fromString("etlDefId"))).toString());
     }
 

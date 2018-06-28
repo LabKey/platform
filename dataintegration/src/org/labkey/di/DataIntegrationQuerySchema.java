@@ -34,10 +34,8 @@ import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.DeletePermission;
-import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.di.view.DataIntegrationController;
@@ -215,10 +213,10 @@ public class DataIntegrationQuerySchema extends SimpleUserSchema
         @Override
         public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
         {
-            if (perm == InsertPermission.class || perm == UpdatePermission.class || perm == DeletePermission.class)
-                return getContainer().hasPermission(user, AdminPermission.class);
-            else
+            if (perm == ReadPermission.class)
                 return super.hasPermission(user, perm);
+            else
+                return getContainer().hasPermission(user, AdminPermission.class);
         }
     }
 }
