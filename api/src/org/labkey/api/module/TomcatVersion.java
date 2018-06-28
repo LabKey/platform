@@ -22,8 +22,8 @@ public enum TomcatVersion
 {
     UNKNOWN(false, null),
     TOMCAT_7_0(true, "getMaxActive"),
-    TOMCAT_8_0(true, "getMaxTotal"),
-    TOMCAT_8_5(false, "getMaxTotal"),
+    TOMCAT_8_0(false, "getMaxTotal"),
+    TOMCAT_8_5(true, "getMaxTotal"),
     TOMCAT_9_0(true, "getMaxTotal");
 
     private final boolean _supported;
