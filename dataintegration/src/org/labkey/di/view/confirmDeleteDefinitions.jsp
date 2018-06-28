@@ -35,9 +35,9 @@
     <% if (!enabledSelected.isEmpty()) {
         String enabledWarnText = "Warning: ";
         if (enabledSelected.size() == 1)
-            enabledWarnText += "This definition has been enabled and is scheduled to run. Deleting it will also unschedule it from any future runs.";
+            enabledWarnText += "This definition has been enabled and is scheduled to run. If it is deleted, it will also be unscheduled and removed from any future runs.";
         else
-            enabledWarnText += "These definitions have been enabled and are scheduled to run. Deleting them will also unschedule them from any future runs.";
+            enabledWarnText += "These definitions have been enabled and are scheduled to run. If they are deleted, they will also be unscheduled and removed from any future runs.";
      %>
     <p><%=h(enabledWarnText)%></p>
     <ul>
