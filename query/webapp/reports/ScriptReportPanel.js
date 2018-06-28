@@ -386,6 +386,8 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                         boxLabel : 'Use default output_format options (experimental, leave this checked)&nbsp;' +
                         '<span data-qtip="html_document_base(keep_md=TRUE, self_contained=FALSE, fig_caption=TRUE, theme=NULL, css=NULL, smart=TRUE, highlight=&quot;default&quot;)"><i class="fa fa-question-circle-o"></i></span>',
                         checked : this.reportConfig.useDefaultOutputFormat !== false},
+                    // checkbox requires SpringActionController.FIELD_MARKER=='@' to handle 'clear' correctly
+                    {name : '@useDefaultOutputFormat', xtype : 'hidden'},
                     { xtype : 'label',
                       html : 'Dependencies&nbsp;' +
                               '<span data-qtip="Add a semi-colon delimited list of javascript, CSS, or library dependencies here."><i class="fa fa-question-circle-o"></i></span>'},
