@@ -130,6 +130,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.ReplacedRunFilter;
 import org.labkey.api.thumbnail.ThumbnailService;
+import org.labkey.api.usageMetrics.UsageMetricsProvider;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.*;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
@@ -876,6 +877,20 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         AuthenticationManager.populateSettingsWithStartupProps();
         AnalyticsServiceImpl.populateSettingsWithStartupProps();
+
+        UsageMetricsService.get().registerUsageMetrics(UsageReportingLevel.LOW, getName(), new UsageMetricsProvider()
+        {
+            @Override
+            public Map<String, Object> getUsageMetrics()
+            {
+                Map<String, Object> results = new HashMap<>();
+                Map<String, Object> javaInfo = new HashMap<>();
+                javaInfo.put("java.vendor", System.getProperty("java.vendor"));
+                javaInfo.put("java.vm.name", System.getProperty("java.vendor"));
+                results.put("javaRuntime", javaInfo);
+                return results;
+            }
+        });
     }
 
     @Override
