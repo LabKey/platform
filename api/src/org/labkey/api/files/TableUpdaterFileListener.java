@@ -67,6 +67,14 @@ public class TableUpdaterFileListener implements FileListener
         String get(Path f);
         /** @return the file path separator (typically '/' or '\' */
         String getSeparatorSuffix();
+        default boolean doChildren()
+        {
+            return !Type.fileRootPath.equals(this);
+        }
+        default boolean matchFileName()
+        {
+            return Type.fileRootPath.equals(this);
+        }
     }
 
     public enum Type implements PathGetter
@@ -109,6 +117,32 @@ public class TableUpdaterFileListener implements FileListener
             public String get(File f)
             {
                 return f.getPath();
+            }
+
+            @Override
+            public String getSeparatorSuffix()
+            {
+                return File.separator;
+            }
+        },
+
+        /** field has root of file path, but need to match with filename in "name" field */
+        fileRootPath
+        {
+            @Override
+            public String get(Path path)
+            {
+                Path parent = path.getParent();
+                if (FileUtil.hasCloudScheme(parent))
+                    return FileUtil.pathToString(parent) + getSeparatorSuffix();
+                else
+                    return parent.toFile().getPath() + getSeparatorSuffix();
+            }
+
+            @Override
+            public String get(File f)
+            {
+                return f.getParentFile().getPath() + getSeparatorSuffix();
             }
 
             @Override
@@ -225,6 +259,13 @@ public class TableUpdaterFileListener implements FileListener
         singleEntrySQL.add(destPath);
         singleEntrySQL.add(srcPath);
 
+        if (_pathGetter.matchFileName())
+        {
+            String fileName = FileUtil.getFileName(src);
+            if (null != fileName)
+                singleEntrySQL.append(" AND Name = ?").add(fileName);
+        }
+
         int rows = -1;
         for (int retry=0 ; retry<2 ; retry++)
         {
@@ -243,7 +284,7 @@ public class TableUpdaterFileListener implements FileListener
 
         // Skip attempting to fix up child paths if we know that the entry is a file. If it's not (either it's a
         // directory or it doesn't exist), then try to fix up child records
-        if (!Files.exists(dest) || Files.isDirectory(dest))
+        if (_pathGetter.doChildren() && (!Files.exists(dest) || Files.isDirectory(dest)))
         {
             if (!srcPath.endsWith(_pathGetter.getSeparatorSuffix()))
             {
