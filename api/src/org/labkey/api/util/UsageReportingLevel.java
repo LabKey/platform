@@ -69,6 +69,7 @@ public enum UsageReportingLevel
             return null;
         }
     },
+    /** Captures only very basic user and container count information */
     LOW
     {
         @Override
@@ -94,6 +95,19 @@ public enum UsageReportingLevel
             putModulesMetrics(metrics);
         }
     },
+    /**
+     * Captures Site Settings info to help identify the organization running the install, and more detailed stats
+     * about how many items exist or actions have been invoked.
+     *
+     * May capture site-wide usage information, including counts for certain data types, such as assay designs,
+     * reports of a specific type, or lists. May also capture the number of times a certain feature was used in a
+     * given time window, such as since the server was last restarted.
+     *
+     * Per policy, this should not capture the names of specific objects like container names, dataset names, etc.
+     *
+     * Also per policy, this should not capture metrics at a container or other similar granularity. For example,
+     * metrics should not break down the number of lists defined in each folder (even if that folder was deidentified.
+     */
     MEDIUM
     {
         @Override
