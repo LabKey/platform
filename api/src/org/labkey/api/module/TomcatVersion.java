@@ -21,9 +21,10 @@ package org.labkey.api.module;
 public enum TomcatVersion
 {
     UNKNOWN(false, null),
-    TOMCAT_7(true, "getMaxActive"),
-    TOMCAT_8(true, "getMaxTotal"),
-    TOMCAT_9(true, "getMaxTotal");
+    TOMCAT_7_0(true, "getMaxActive"),
+    TOMCAT_8_0(true, "getMaxTotal"),
+    TOMCAT_8_5(false, "getMaxTotal"),
+    TOMCAT_9_0(true, "getMaxTotal");
 
     private final boolean _supported;
     private final String _maxTotalMethodName;
@@ -44,13 +45,14 @@ public enum TomcatVersion
         return _maxTotalMethodName;
     }
 
-    public static TomcatVersion get(int majorVersion)
+    public static TomcatVersion get(int majorVersion, int minorVersion)
     {
-        switch (majorVersion)
+        switch (majorVersion * 10 + minorVersion)
         {
-            case (7): return TomcatVersion.TOMCAT_7;
-            case (8): return TomcatVersion.TOMCAT_8;
-            case (9): return TomcatVersion.TOMCAT_9;
+            case 70: return TomcatVersion.TOMCAT_7_0;
+            case 80: return TomcatVersion.TOMCAT_8_0;
+            case 85: return TomcatVersion.TOMCAT_8_5;
+            case 90: return TomcatVersion.TOMCAT_9_0;
             default: return TomcatVersion.UNKNOWN;
         }
     }

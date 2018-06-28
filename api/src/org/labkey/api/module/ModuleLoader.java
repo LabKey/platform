@@ -910,7 +910,9 @@ public class ModuleLoader implements Filter
             if (majorVersion < 7)
                 throw new ConfigurationException("Unsupported Tomcat version: " + serverInfo + ". LabKey Server requires Apache Tomcat 7 or above.");
 
-            _tomcatVersion = TomcatVersion.get(majorVersion);
+            int minorVersion = Integer.valueOf(versionParts[1]);
+
+            _tomcatVersion = TomcatVersion.get(majorVersion, minorVersion);
         }
     }
 
