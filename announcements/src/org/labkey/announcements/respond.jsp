@@ -63,7 +63,7 @@
 ModeratorReview mr = ModeratorReview.get(settings.getModeratorReview());
 if (!mr.isApproved(c, user))
 {
-    %><tr><td colspan="3">Note: This response will not be posted immediately; it will appear after the content has been reviewed.<br><br></td></tr><%
+    %><tr><td colspan="3"><span class="labkey-message">Note: This response will not be posted immediately; it will appear after the content has been reviewed.</span><br><br></td></tr><%
 }
 
 if (settings.isTitleEditable())

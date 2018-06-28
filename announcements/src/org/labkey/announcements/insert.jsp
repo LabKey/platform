@@ -61,7 +61,7 @@
     ModeratorReview mr = ModeratorReview.get(settings.getModeratorReview());
     if (!mr.isApproved(c, user))
     {
-        %><tr><td colspan="3">Note: This <%=h(settings.getConversationName().toLowerCase())%> will not be posted immediately; it will appear after the content has been reviewed.<br><br></td></tr><%
+        %><tr><td colspan="3"><span class="labkey-message">Note: This <%=h(settings.getConversationName().toLowerCase())%> will not be posted immediately; it will appear after the content has been reviewed.</span><br><br></td></tr><%
     }
 %>
   <tr><td class='labkey-form-label'>Title * <%= PageFlowUtil.helpPopup("Title", "This field is required.") %></td><td colspan="2"><input type='text' size='60' maxlength="255" id="title" name='title' value="<%=h(form.get("title"))%>"></td></tr>
