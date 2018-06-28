@@ -21,7 +21,10 @@ import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
@@ -38,8 +41,10 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.survey.SurveyService;
 import org.labkey.api.survey.model.Survey;
 import org.labkey.api.survey.model.SurveyDesign;
+import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -60,16 +65,19 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 public class SurveyModule extends DefaultModule
 {
+    private static final String NAME = "Survey";
+
     @Override
     public String getName()
     {
-        return "Survey";
+        return NAME;
     }
 
     @Override
@@ -117,6 +125,18 @@ public class SurveyModule extends DefaultModule
     {
         // add a container listener so we'll know when our container is deleted:
         ContainerManager.addContainerListener(new SurveyContainerListener());
+
+        // gather usage metrics for surveys
+        UsageMetricsService svc = UsageMetricsService.get();
+        if (null != svc)
+        {
+            svc.registerUsageMetrics(UsageReportingLevel.MEDIUM, NAME, () -> {
+                Map<String, Object> metric = new HashMap<>();
+                metric.put("surveyDesigns", new SqlSelector(DbSchema.get("survey", DbSchemaType.Module), "SELECT COUNT(*) FROM survey.SurveyDesigns").getObject(Long.class));
+                metric.put("surveys", new SqlSelector(DbSchema.get("survey", DbSchemaType.Module), "SELECT COUNT(*) FROM survey.Surveys").getObject(Long.class));
+                return metric;
+            });
+        }
     }
 
     @NotNull
