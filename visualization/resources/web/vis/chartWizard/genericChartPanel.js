@@ -117,8 +117,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     resize: function(p)
                     {
                         // only re-render after the initial chart rendering
-                        if (this.hasChartData())
+                        if (this.hasChartData()) {
+                            this.clearMessagePanel();
                             this.requestRender();
+                        }
                     }
                 }
             });
@@ -1755,10 +1757,14 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.clearWarningText();
         this.getViewPanel().removeAll();
         if (clearMessages) {
-            this.getViewPanel().suspendEvents();
-            this.getMsgPanel().removeAll();
-            this.getViewPanel().resumeEvents();
+            this.clearMessagePanel();
         }
+    },
+
+    clearMessagePanel : function() {
+        this.getViewPanel().suspendEvents();
+        this.getMsgPanel().removeAll();
+        this.getViewPanel().resumeEvents();
     },
 
     clearWarningText : function()
