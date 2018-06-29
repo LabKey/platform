@@ -314,6 +314,8 @@ public class QueryModule extends DefaultModule
             summaryStatisticRegistry.register(Aggregate.BaseType.MIN);
             summaryStatisticRegistry.register(Aggregate.BaseType.MAX);
         }
+
+        QueryManager.registerUsageMetrics(getName());
     }
 
     @Override

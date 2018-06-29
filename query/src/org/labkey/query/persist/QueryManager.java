@@ -16,6 +16,8 @@
 
 package org.labkey.query.persist;
 
+import org.apache.commons.collections4.Bag;
+import org.apache.commons.collections4.bag.HashBag;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -28,6 +30,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerType;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.FilterInfo;
 import org.labkey.api.data.JsonWriter;
 import org.labkey.api.data.SimpleFilter;
@@ -48,6 +51,8 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.usageMetrics.UsageMetricsService;
+import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.query.ExternalSchema;
 import org.labkey.query.ExternalSchemaDocumentProvider;
@@ -65,6 +70,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 
 public class QueryManager
@@ -935,6 +942,24 @@ public class QueryManager
             }
 
             //queryErrors.addAll(validateColumn(c, user, container));
+        }
+    }
+
+    public static void registerUsageMetrics(String moduleName)
+    {
+        UsageMetricsService svc = UsageMetricsService.get();
+        if (null != svc)
+        {
+            svc.registerUsageMetrics(UsageReportingLevel.MEDIUM, moduleName, () -> {
+                Bag<String> bag = DbScope.getDbScopes().stream()
+                        .filter(scope -> !scope.isLabKeyScope()).map(DbScope::getDatabaseProductName)
+                        .collect(Collectors.toCollection(HashBag::new));
+
+                Map<String, Object> statsMap = bag.uniqueSet().stream()
+                        .collect(Collectors.toMap(Function.identity(), bag::getCount));
+
+                return Collections.singletonMap("externalDatasources", statsMap);
+            });
         }
     }
 }
