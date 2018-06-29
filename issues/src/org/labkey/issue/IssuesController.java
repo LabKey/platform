@@ -794,6 +794,16 @@ public class IssuesController extends SpringActionController
                             if (!attachmentFiles.isEmpty())
                                 AttachmentService.get().addAttachments(new CommentAttachmentParent(changeSummary.getComment()), attachmentFiles, getUser());
                         }
+
+                        final String assignedTo = UserManager.getDisplayName(issue.getAssignedTo(), getUser());
+                        String change;
+                        if (issue.getAssignedTo() != null)
+                            change = "opened and assigned to " + assignedTo;
+                        else
+                            change = "opened";
+
+                        changeSummary.sendUpdateEmail(getContainer(), getUser(), issuesForm.getComment(),
+                                new DetailsAction(issue, getViewContext()).getURL(), change, getAttachmentFileList());
                     }
                 }
 
