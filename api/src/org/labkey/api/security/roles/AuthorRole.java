@@ -29,7 +29,8 @@ public class AuthorRole extends AbstractRole
 {
     public AuthorRole()
     {
-        super("Author", "Authors may read and add information in some cases, but may update and delete only information they added.",
+        super("Author", "Authors may read and add information in some cases, but may update and delete only information they added. Supported for only " +
+                        "Message Boards and Issues. See the online documentation for details.",
                 ReadPermission.class,
                 ReadSomePermission.class,
                 InsertPermission.class,
