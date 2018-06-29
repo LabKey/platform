@@ -168,21 +168,8 @@ public class StatementDataIterator extends AbstractDataIterator
                 if (null != to)
                 {
                     FieldKey mvName = col.getMvColumnName();
-                    Parameter mv = null;
-                    if (null != mvName)
-                    {
-                        mv = stmt.getParameter(mvName.getName());
-                        if (null == mv && this instanceof TableInsertDataIterator)
-                        {
-                            // Issue #33549: MV columns with spaces in the name (both lists and datasets)
-                            // Iterator makes SQL stmt from table, but munges names (see Parameter), so we need to match that to find them.
-                            // TableInsertDataIterator is the only non-test subclass of StatementDataIterator
-                            TableInsertDataIterator tidi = (TableInsertDataIterator)this;
-                            ColumnInfo mvColumn = tidi._table.getColumn(mvName);
-                            mv = stmt.getParameter(ColumnInfo.jdbcRsNameFromName(mvColumn.getMetaDataName()));
-                        }
-                    }
-                    bindings.add(new Triple(_data.getSupplier(i), to, mv));
+                    bindings.add(new Triple(_data.getSupplier(i), to,
+                                            (null != mvName ? getMvParameter(stmt, mvName) : null)));
                 }
             }
             _bindings[set] = bindings.toArray(new Triple[bindings.size()]);
@@ -236,6 +223,12 @@ public class StatementDataIterator extends AbstractDataIterator
         if (null != _keyColumnInfo.get(i))
             return _keyColumnInfo.get(i);
         return _data.getColumnInfo(i);
+    }
+
+    @Nullable
+    protected Parameter getMvParameter(@NotNull Parameter.ParameterMap stmt, @NotNull FieldKey mvFieldKey)
+    {
+        return stmt.getParameter(mvFieldKey.getName());
     }
 
     private boolean _firstNext = true;

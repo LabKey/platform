@@ -16,6 +16,7 @@
 
 package org.labkey.api.dataiterator;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -239,6 +240,21 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         init();
     }
 
+    @Override
+    @Nullable
+    protected Parameter getMvParameter(@NotNull Parameter.ParameterMap stmt, @NotNull FieldKey mvFieldKey)
+    {
+        Parameter mv = super.getMvParameter(stmt, mvFieldKey);
+        if (null == mv)
+        {
+            // Issue #33549: MV columns with spaces in the name (both lists and datasets)
+            // Iterator makes SQL stmt from table, but munges names (see Parameter), so we need to match that to find them.
+            ColumnInfo mvColumn = _table.getColumn(mvFieldKey);
+            if (null != mvColumn)
+                mv = stmt.getParameter(ColumnInfo.jdbcRsNameFromName(mvColumn.getMetaDataName()));
+        }
+        return mv;
+    }
 
     boolean _closed = false;
 
