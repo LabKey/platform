@@ -1,6 +1,4 @@
-<%@ page import="org.labkey.api.query.QueryUrls" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -60,7 +58,7 @@
             lineWrapping : true,
             autofocus : true
         });
-        LABKEY.codemirror.RegisterEditorInstance('etlDefinition', this.codeMirror);
+        LABKEY.codemirror.RegisterEditorInstance('etlDefinition', this.definitionEditor);
         if (<%=form.isReadOnly()%>)
         {
             this.definitionEditor.options.readOnly = "nocursor";

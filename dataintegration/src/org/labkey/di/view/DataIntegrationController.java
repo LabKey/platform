@@ -33,6 +33,7 @@ import org.labkey.api.data.BeanViewForm;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
@@ -634,7 +635,7 @@ public class DataIntegrationController extends SpringActionController
                                         && cachedDescriptor.getName().equals(descriptor.getName())
                                         && !cachedDescriptor.getId().equals(descriptor.getId())))
                 {
-                    errors.reject(ERROR_MSG, "An ETL with that name is already defined in this folder");
+                    errors.reject(ERROR_MSG, "An ETL with that name is already defined in this folder.");
                 }
                 if (!errors.hasErrors())
                 {
@@ -720,7 +721,7 @@ public class DataIntegrationController extends SpringActionController
             {
                 if (e.isConstraintException())
                 {
-                    errors.reject(ERROR_MSG, "An ETL with that name is already defined in this folder");
+                    errors.reject(ERROR_MSG, "An ETL with that name is already defined in this folder.");
                     return false;
                 }
 
@@ -761,8 +762,12 @@ public class DataIntegrationController extends SpringActionController
         protected void doAction(EtlDefinitionForm form, Errors errors) throws SQLException
         {
             EtlDef def = form.getBean();
-            form.doUpdate();
-            TransformManager.get().etlDefChanged(def, getContainer(), getUser(), EtlDef.Change.Update);
+            try (DbScope.Transaction tx = DataIntegrationQuerySchema.getSchema().getScope().ensureTransaction())
+            {
+                form.doUpdate();
+                TransformManager.get().etlDefChanged(def, getContainer(), getUser(), EtlDef.Change.Update);
+                tx.commit();
+            }
         }
     }
 
@@ -887,8 +892,12 @@ public class DataIntegrationController extends SpringActionController
             if (!form.isConfirmed())
                 return false;
 
-            Table.delete(DataIntegrationQuerySchema.getEtlDefTableInfo(), new SimpleFilter().addInClause(FieldKey.fromParts("EtlDefId"), form.getEtlDefIds()));
-            TransformManager.get().etlDefsChanged(form.getDefs(), getContainer(), getUser(), EtlDef.Change.Delete);
+            try (DbScope.Transaction tx = DataIntegrationQuerySchema.getSchema().getScope().ensureTransaction())
+            {
+                Table.delete(DataIntegrationQuerySchema.getEtlDefTableInfo(), new SimpleFilter().addInClause(FieldKey.fromParts("EtlDefId"), form.getEtlDefIds()));
+                TransformManager.get().etlDefsChanged(form.getDefs(), getContainer(), getUser(), EtlDef.Change.Delete);
+                tx.commit();
+            }
             DataRegionSelection.clearAll(getViewContext());
             return true;
         }

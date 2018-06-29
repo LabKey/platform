@@ -210,11 +210,8 @@ public class TransformManager implements DataIntegrationService
                         .orElse(null);
                 if (null != config && config.isEnabled())
                 {
-                    if (change == EtlDef.Change.Update)
-                    {
-                        config.setEnabled(false);
-                        get().saveTransformConfiguration(u, config);
-                    }
+                    config.setEnabled(false);
+                    get().saveTransformConfiguration(u, config);
                     ScheduledPipelineJobDescriptor descriptor = DB_DESCRIPTOR_CACHE.get(c).get(def.getConfigId());
                     get().unschedule(descriptor, c, u);
                 }
@@ -450,7 +447,7 @@ public class TransformManager implements DataIntegrationService
     }
 
     @NotNull
-    public Collection<ScheduledPipelineJobDescriptor> getDescriptors(Container c)
+    synchronized public Collection<ScheduledPipelineJobDescriptor> getDescriptors(Container c)
     {
         final List<ScheduledPipelineJobDescriptor> descriptors = new ArrayList<>(getModuleEtlDescriptors(c));
         descriptors.addAll(DB_DESCRIPTOR_CACHE.get(c).values());
@@ -480,7 +477,7 @@ public class TransformManager implements DataIntegrationService
         return Collections.unmodifiableCollection(descriptors);
     }
 
-    public ScheduledPipelineJobDescriptor getDescriptor(String configId, Container c)
+    synchronized public ScheduledPipelineJobDescriptor getDescriptor(String configId, Container c)
     {
         CacheId id = parseConfigId(configId);
         ScheduledPipelineJobDescriptor descriptor = null;

@@ -25,7 +25,7 @@
 <% } else { %>
     <p>Are you sure you want to delete the following ETL definition<%=h(form.getEtlDefIds().size()!=1 ? "s" : "")%>?</p>
     <% if (!disabledSelected.isEmpty()) { %>
-    <ul>
+    <ul id="unscheduledEtls">
         <% for (String name : disabledSelected) { %>
             <li><%=h(name)%></li>
         <%} %>
@@ -40,7 +40,7 @@
             enabledWarnText += "These definitions have been enabled and are scheduled to run. If they are deleted, they will also be unscheduled and removed from any future runs.";
      %>
     <p><%=h(enabledWarnText)%></p>
-    <ul>
+    <ul id="scheduledEtls">
         <% for (String name : enabledSelected) { %>
             <li><%=h(name)%></li>
         <%} %>
