@@ -86,20 +86,25 @@ public class UserManager
 
     public static final Comparator<User> USER_DISPLAY_NAME_COMPARATOR = Comparator.comparing(User::getFriendlyName, String.CASE_INSENSITIVE_ORDER);
 
-    //
-    // UserListener
-    //
-
+    /**
+     * Listener for user account related notifications. Typically registered during a module's startup via a call to
+     * {@link #addUserListener(UserListener)}
+     */
     public interface UserListener extends PropertyChangeListener
     {
+        /** Fires when a user account is first created */
         void userAddedToSite(User user);
 
+        /** Fires when a user account is being completely deleted from the server */
         void userDeletedFromSite(User user);
 
+        /** Fires when a user account is being disabled, which prevents them from logging in but retains information associated with their account */
         void userAccountDisabled(User user);
 
+        /** Fires when a user account is being enabled, which allows them to log in again */
         void userAccountEnabled(User user);
 
+        /** Fires when a user's information has been changed, such as their first name */
         default void userPropertiesUpdated(int userid)
         {
         }
@@ -108,6 +113,7 @@ public class UserManager
     // Thread-safe list implementation that allows iteration and modifications without external synchronization
     private static final List<UserListener> _listeners = new CopyOnWriteArrayList<>();
 
+    /** Adds a listener to be notified when user account actions happen */
     public static void addUserListener(UserListener listener)
     {
         _listeners.add(listener);
@@ -562,15 +568,19 @@ public class UserManager
         return null;
     }
 
-
+    /** Record that a user logged in */
     public static void updateLogin(User user)
     {
         SQLFragment sql = new SQLFragment("UPDATE " + CORE.getTableInfoUsersData() + " SET LastLogin = ? WHERE UserId = ?", new Date(), user.getUserId());
         new SqlExecutor(CORE.getSchema()).execute(sql);
     }
 
-
-    public static void updateUser(User currentUser, User toUpdate)
+    /**
+     * Updates a user's basic account information
+     * @param currentUser user to use to determine the display name for the user to be updated
+     * @param toUpdate the user object that is being updated
+     */
+    public static void updateUser(@Nullable User currentUser, User toUpdate)
     {
         Map<String, Object> typedValues = new HashMap<>();
         typedValues.put("phone", PageFlowUtil.formatPhoneNo(toUpdate.getPhone()));
@@ -578,7 +588,7 @@ public class UserManager
         typedValues.put("pager", PageFlowUtil.formatPhoneNo(toUpdate.getPager()));
         typedValues.put("im", toUpdate.getIM());
 
-        if (!currentUser.isGuest())
+        if (currentUser != null && !currentUser.isGuest())
             typedValues.put("displayName", toUpdate.getDisplayName(currentUser));
 
         typedValues.put("firstName", toUpdate.getFirstName());
