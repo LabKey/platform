@@ -292,8 +292,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
             }
         }
 
-        // TODO: write an audit log event
-        //props.writeAuditLogEvent(getViewContext().getUser(), props.getOldProperties());
+        // Note that audit logging happens via the attachment code, so we don't log separately here
 
         // Bump the look & feel revision so browsers retrieve the new logo, custom stylesheet, etc.
         WriteableAppProps.incrementLookAndFeelRevisionAndSave();
