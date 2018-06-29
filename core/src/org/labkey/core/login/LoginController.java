@@ -479,7 +479,7 @@ public class LoginController extends SpringActionController
             try
             {
                 List<Pair<String, String>> extraParameters = form.getExtraParametersList();
-                SecurityManager.addSelfRegisteredUser(getViewContext(), email, extraParameters);
+                SecurityManager.addSelfRegisteredUser(getViewContext(), email, extraParameters, form.getProvider());
             }
             catch (ConfigurationException e)
             {
@@ -499,6 +499,7 @@ public class LoginController extends SpringActionController
         private String emailConfirmation;
         private boolean isConfirmation;
         private String kaptchaText;
+        private String _provider = null;
 
         public void setEmail(String email)
         {
@@ -538,6 +539,16 @@ public class LoginController extends SpringActionController
         public void setKaptchaText(String kaptchaText)
         {
             this.kaptchaText = kaptchaText;
+        }
+
+        public void setProvider(String provider)
+        {
+            this._provider = provider;
+        }
+
+        public String getProvider()
+        {
+            return this._provider;
         }
     }
 

@@ -49,6 +49,7 @@ import java.net.URISyntaxException;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -288,6 +289,17 @@ public class PipeRootImpl implements PipeRoot
         {
             return root;
         }
+
+        for (int i = 1; i < getRootURIs().size(); i++)
+        {
+            URI rootURI = getRootURIs().get(i);
+            // Try the supplemental roots as well
+            if (URIUtil.isDescendant(rootURI, file.toUri()))
+            {
+                return Paths.get(rootURI);
+            }
+        }
+
         return null;
     }
 
@@ -609,7 +621,7 @@ public class PipeRootImpl implements PipeRoot
             }
             if (_uris.size() > 1)
             {
-                form.setSupplementalPath(_uris.get(0).getPath());
+                form.setSupplementalPath(_uris.get(1).getPath());
             }
 
             form.setSearchable(isSearchable());
