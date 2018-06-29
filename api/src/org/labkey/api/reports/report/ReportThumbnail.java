@@ -20,12 +20,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.reports.Report;
 
 /**
+ * Helper for serializing/deserializing thumbnails and custom icons
  * User: dax
  * Date: 12/12/13
- */
-
-/**
- * Helper for serializing/deserializing thumbnails and custom icons
  */
 public abstract class ReportThumbnail
 {
