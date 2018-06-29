@@ -76,6 +76,12 @@ public class GWTTabLoader
                 Window.alert("Cannot redefine mandatory field '" + name + "'");
                 return false;
             }
+            // don't include reserved names in the inferred set
+            if (propertiesEditor.getDomain().getReservedFieldNames().contains(name.toLowerCase()))
+            {
+                continue;
+            }
+
             String label = row.get("label");
             if (!PropertiesEditorUtil.isLegalName(name))
             {
