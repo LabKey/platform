@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.PkMetaDataReader;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
@@ -198,16 +199,23 @@ public class SchemaColumnMetaData
                     columnCount++;
                     String colName = reader.getName();
                     ColumnInfo colInfo = getColumn(colName);
-                    assert null != colInfo;
 
-                    colInfo.setKeyField(true);
-                    int keySeq = reader.getKeySeq();
+                    if (null != colInfo)
+                    {
+                        colInfo.setKeyField(true);
+                        int keySeq = reader.getKeySeq();
 
-                    // If we don't have sequence information (e.g., SAS doesn't return it) then use 1-based counter as a backup
-                    if (0 == keySeq)
-                        keySeq = columnCount;
+                        // If we don't have sequence information (e.g., SAS doesn't return it) then use 1-based counter as a backup
+                        if (0 == keySeq)
+                            keySeq = columnCount;
 
-                    pkMap.put(keySeq, colName);
+                        pkMap.put(keySeq, colName);
+                    }
+                    else
+                    {
+                        // Logging to help track down #33924
+                        ExceptionUtil.logExceptionToMothership(null, new IllegalStateException("Can't resolve column name \"" + colName + "\" in schema \"" + schemaName + "\" in a " + scope.getDatabaseProductName() + " database. Valid names in _colMap: " + _colMap.keySet().toString()));
+                    }
                 }
             }
         }
