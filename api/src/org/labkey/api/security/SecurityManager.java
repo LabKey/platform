@@ -2824,6 +2824,11 @@ public class SecurityManager
 
     public static void addSelfRegisteredUser(ViewContext context, ValidEmail email, @Nullable List<Pair<String, String>> extraParameters) throws Exception
     {
+        addSelfRegisteredUser(context, email, extraParameters, null);
+    }
+
+    public static void addSelfRegisteredUser(ViewContext context, ValidEmail email, @Nullable List<Pair<String, String>> extraParameters, @Nullable String registrationProviderName) throws Exception
+    {
         User currentUser = context.getUser();
         SecurityManager.NewUserStatus newUserStatus = SecurityManager.addUser(email, currentUser);
 
@@ -2832,7 +2837,7 @@ public class SecurityManager
         {
             try
             {
-                SecurityManager.sendRegistrationEmail(context, email, null, newUserStatus, extraParameters);
+                SecurityManager.sendRegistrationEmail(context, email, null, newUserStatus, extraParameters, registrationProviderName, true);
                 UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system via self-registration.  Verification email was sent successfully.");
             }
             catch (ConfigurationException e)
