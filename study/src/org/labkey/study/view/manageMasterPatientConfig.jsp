@@ -86,6 +86,7 @@
 
             datasetSelect.on('change', function (event, ds) {
                 loadFields(ds || event.target.value);
+                LABKEY.setDirty(true);
             });
         };
 
@@ -100,22 +101,31 @@
                     fieldSelect.append($('<option>', { value: field,  text: field,  selected: (field == selected)}));
                 });
             }
+
+            fieldSelect.on('change', function (event, ds) {
+                LABKEY.setDirty(true);
+            });
         };
 
         updateIndexes = function(){
 
-            LABKEY.Ajax.request({
-                url: LABKEY.ActionURL.buildURL("study", "refreshMasterPatientIndex.api"),
-                method: "POST",
-                success: LABKEY.Utils.getCallbackWrapper(function(response)
-                {
-                    if (response.success)
-                        window.location = response.returnUrl;
-                    else if (response.message){
-                        LABKEY.Utils.alert("Update failed", response.message);
-                    }
-                })
-            });
+            if (LABKEY.isDirty()){
+                LABKEY.Utils.alert("Update failed", "You have unsaved changes on this page, you must first save your changes before you can update identifiers.");
+            }
+            else {
+                LABKEY.Ajax.request({
+                    url: LABKEY.ActionURL.buildURL("study", "refreshMasterPatientIndex.api"),
+                    method: "POST",
+                    success: LABKEY.Utils.getCallbackWrapper(function(response)
+                    {
+                        if (response.success)
+                            window.location = response.returnUrl;
+                        else if (response.message){
+                            LABKEY.Utils.alert("Update failed", response.message);
+                        }
+                    })
+                });
+            }
         };
 
         $(document).ready(function () {
@@ -125,6 +135,8 @@
             if (selectedDataset){
                 loadFields(selectedDataset, selectedField);
             }
+
+            window.onbeforeunload = LABKEY.beforeunload(LABKEY.isDirty());
         });
 
     })(jQuery);
@@ -159,7 +171,7 @@
 else
 {
 %>
-<labkey:form method="POST" layout="horizontal">
+<labkey:form method="POST" layout="horizontal" onsubmit="LABKEY.setSubmit(true);">
     <%= new Select.SelectBuilder().name("schema").id("schemaNameInput").label("Schema *")
             .layout(Input.Layout.HORIZONTAL)
             .required(true)
@@ -204,11 +216,11 @@ else
         }
     %>
 
-    <labkey:input type="checkbox" label="Enabled" name="enabled" checked="<%=settings.isEnabled()%>"/>
+    <labkey:input type="checkbox" label="Enabled" name="enabled" checked="<%=settings.isEnabled()%>" onChange="LABKEY.setDirty(true);"/>
 
     <labkey:button text="save" submit="true"/>
-    <labkey:button text="cancel" href="<%=new ActionURL(StudyController.ManageStudyAction.class, getContainer())%>"/>
-    <labkey:button text="update master indexes" submit="false" onclick="updateIndexes();"/>
+    <labkey:button text="cancel" href="<%=new ActionURL(StudyController.ManageStudyAction.class, getContainer())%>" onclick="LABKEY.setSubmit(true);"/>
+    <labkey:button text="update patient identifiers" submit="false" onclick="updateIndexes();"/>
 </labkey:form>
 
 <%  }

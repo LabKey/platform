@@ -7995,6 +7995,42 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    @RequiresPermission(AdminPermission.class)
+    public class TestMasterPatientProviderAction extends ApiAction<MasterPatientProviderSettings>
+    {
+        @Override
+        public void validateForm(MasterPatientProviderSettings form, Errors errors)
+        {
+            if (!form.isValid())
+                errors.reject(ERROR_MSG, "All required fields are not specified");
+        }
+
+        @Override
+        public Object execute(MasterPatientProviderSettings form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            if (form.getType() != null)
+            {
+                MasterPatientIndexService svc = MasterPatientIndexService.getProvider(form.getType());
+                if (svc != null)
+                {
+                    if (svc.checkServerSettings(form))
+                    {
+                        response.put("success", true);
+                        response.put("message", "The specified settings are valid.");
+                    }
+                    else
+                    {
+                        response.put("success", false);
+                        response.put("message", "The specified settings are not valid.");
+                    }
+                }
+            }
+            return response;
+        }
+    }
+
     public static class MasterPatientProviderSettings extends MasterPatientIndexService.ServerSettings
     {
         public static final String CATEGORY = "MASTER_PATIENT_PROVIDER";

@@ -56,6 +56,45 @@
     }
 %>
 
+<script type="application/javascript">
+
+    (function($){
+        testConnection = function(){
+
+            var params = {
+                type : $("select[name='type']").val(),
+                url : $("input[name='url']").val(),
+                username : $("input[name='username']").val(),
+                password : $("input[name='password']").val()
+            };
+
+            console.log(params);
+
+            LABKEY.Ajax.request({
+                url: LABKEY.ActionURL.buildURL("study", "testMasterPatientProvider.api"),
+                method: "POST",
+                jsonData : params,
+                success: LABKEY.Utils.getCallbackWrapper(function(response)
+                {
+                    if (response.success)
+                        LABKEY.Utils.alert("Connection succeeded", response.message);
+                    else if (response.message){
+                        LABKEY.Utils.alert("Connection failed", response.message);
+                    }
+                }),
+                failure: LABKEY.Utils.getCallbackWrapper(function(response)
+                {
+                    LABKEY.Utils.alert("Connection failed", response.exception);
+                })
+            });
+        };
+
+        $(document).ready(function () {
+            window.onbeforeunload = LABKEY.beforeunload(LABKEY.isDirty());
+        });
+
+    })(jQuery);
+</script>
 
 <labkey:errors/>
 <%  if (services.isEmpty()) {
@@ -75,17 +114,18 @@
     else
     {
 %>
-    <labkey:form method="post" layout="horizontal">
+    <labkey:form method="post" layout="horizontal" onsubmit="LABKEY.setSubmit(true);">
         <%= options %>
 
-        <labkey:input type="text" label="Server URL *" name="url" value="<%= h(settings != null ? settings.getUrl() : null) %>" size="50" isRequired="true"/>
+        <labkey:input type="text" label="Server URL *" name="url" value="<%= h(settings != null ? settings.getUrl() : null) %>" size="50" isRequired="true" onChange="LABKEY.setDirty(true);"/>
         <labkey:input type="text" label="User *" name="username" value="<%= h(settings != null ? settings.getUsername() : null) %>"
-                      isRequired="true" contextContent="Provide a valid user name for logging onto the Master Patient Index server" forceSmallContext="true"/>
+                      isRequired="true" contextContent="Provide a valid user name for logging onto the Master Patient Index server" forceSmallContext="true" onChange="LABKEY.setDirty(true);"/>
         <labkey:input type="password" label="Password *" name="password"
-                      isRequired="true" contextContent="Provide the password for the user name" forceSmallContext="true"/>
+                      isRequired="true" contextContent="Provide the password for the user name" forceSmallContext="true" onChange="LABKEY.setDirty(true);"/>
 
         <labkey:button text="save" submit="true"/>
-        <labkey:button text="cancel" href="<%=PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL()%>"/>
+        <labkey:button text="cancel" href="<%=PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL()%>" onclick="LABKEY.setSubmit(true);"/>
+        <labkey:button text="test connection" submit="false" onclick="testConnection();"/>
     </labkey:form>
 <%  }
 %>
