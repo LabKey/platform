@@ -49,6 +49,8 @@ public interface MasterPatientIndexService
     void setFolderSettings(Container container, FolderSettings settings);
     FolderSettings getFolderSettings(Container container);
 
+    boolean checkServerSettings(ServerSettings settings);
+
     /**
      * Update patient index information for the specified container
      */

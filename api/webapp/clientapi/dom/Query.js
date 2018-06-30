@@ -156,6 +156,10 @@ LABKEY.Query = new function(impl, $) {
         });
 
         select.prop('disabled', false);
+        select.on('change', function(){
+            if (initialValue != select.val())
+                LABKEY.setDirty(true);
+        });
     }
 
     function sortObjectArrayByTitle(a, b){
