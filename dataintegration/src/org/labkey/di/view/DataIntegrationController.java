@@ -595,6 +595,7 @@ public class DataIntegrationController extends SpringActionController
         {
             DataIntegrationQuerySchema schema = new DataIntegrationQuerySchema(getUser(), getContainer());
             final QuerySettings settings = new QuerySettings(getViewContext(), "transforms", ETL_DEF_TABLE_NAME);
+            settings.setSchemaName(schema.getName());
             return schema.createView(getViewContext(), settings, null);
         }
     }
