@@ -23,7 +23,7 @@
     <p>There are no selected ETL definitions to delete.</p>
     <%= text(button("OK").href(successUrl).toString())%>
 <% } else { %>
-    <p>Are you sure you want to delete the following ETL definition<%=h(form.getEtlDefIds().size()!=1 ? "s" : "")%>?</p>
+    <p>Are you sure you want to delete the following ETL definition<%=h(form.getEtlDefIds().size()!=1 ? "s" : "")%>? This action cannot be reversed.</p>
     <% if (!disabledSelected.isEmpty()) { %>
     <ul id="unscheduledEtls">
         <% for (String name : disabledSelected) { %>
