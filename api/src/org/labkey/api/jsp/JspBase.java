@@ -243,6 +243,13 @@ abstract public class JspBase extends JspContext implements HasViewContext
     }
 
 
+    // Returns "labkey-alternate-row" (row is even) or "labkey-row" (row is odd)
+    public _HtmlString getShadeRowClass(int row)
+    {
+        return getShadeRowClass(row % 2 == 0);
+    }
+
+
     // Obfuscate the passed in text if this user is in "demo" mode in this container
     public String id(String id)
     {
