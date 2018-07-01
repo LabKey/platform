@@ -33,7 +33,6 @@ import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ModuleResourceResolver;
 import org.labkey.api.module.ResourceRootProvider;
-import org.labkey.api.module.TomcatVersion;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
@@ -55,7 +54,6 @@ import java.io.IOException;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -1443,7 +1441,7 @@ public class DbScope
         PRECOMMIT
         {
             @Override
-            protected Set<Runnable> getRunnables(DbScope.TransactionImpl transaction)
+            protected Set<Runnable> getRunnables(TransactionImpl transaction)
             {
                 return transaction._preCommitTasks;
             }
@@ -1452,7 +1450,7 @@ public class DbScope
         POSTCOMMIT
         {
             @Override
-            protected Set<Runnable> getRunnables(DbScope.TransactionImpl transaction)
+            protected Set<Runnable> getRunnables(TransactionImpl transaction)
             {
                 return transaction._postCommitTasks;
             }
@@ -1461,7 +1459,7 @@ public class DbScope
         POSTROLLBACK
         {
             @Override
-            protected Set<Runnable> getRunnables(DbScope.TransactionImpl transaction)
+            protected Set<Runnable> getRunnables(TransactionImpl transaction)
             {
                 return transaction._postRollbackTasks;
             }
@@ -1470,7 +1468,7 @@ public class DbScope
         IMMEDIATE
         {
             @Override
-            protected Set<Runnable> getRunnables(DbScope.TransactionImpl transaction)
+            protected Set<Runnable> getRunnables(TransactionImpl transaction)
             {
                 throw new UnsupportedOperationException();
             }
@@ -1483,9 +1481,9 @@ public class DbScope
             }
         };
 
-        protected abstract Set<Runnable> getRunnables(DbScope.TransactionImpl transaction);
+        protected abstract Set<Runnable> getRunnables(TransactionImpl transaction);
 
-        public void run(DbScope.TransactionImpl transaction)
+        public void run(TransactionImpl transaction)
         {
             // Copy to avoid ConcurrentModificationExceptions
             Set<Runnable> tasks = new HashSet<>(getRunnables(transaction));
@@ -2260,7 +2258,7 @@ public class DbScope
                 {
                     Connection c = t.getConnection();
                     assertTrue(getLabKeyScope().isTransactionActive());
-                    try (Transaction t2 = getLabKeyScope().ensureTransaction())
+                    try (Transaction ignored = getLabKeyScope().ensureTransaction())
                     {
                         // Intentionally don't call t2.commit();
                     }
@@ -2337,28 +2335,23 @@ public class DbScope
             Lock lockHome = new ServerPrimaryKeyLock(true, CoreSchema.getInstance().getTableInfoContainers(), ContainerManager.getHomeContainer().getId());
 
             // let's try to intentionally cause a deadlock
-            Thread bkg = new Thread()
-            {
-                @Override
-                public void run()
+            Thread bkg = new Thread(() -> {
+                // lockHome should succeed fg has not locked this yet
+                try (Transaction txBg = CoreSchema.getInstance().getScope().ensureTransaction(lockHome))
                 {
-                    // lockHome should succeed fg has not locked this yet
-                    try (Transaction txBg = CoreSchema.getInstance().getScope().ensureTransaction(lockHome))
+                    synchronized (notifier)
                     {
-                        synchronized (notifier)
-                        {
-                            notifier.notify();
-                        }
-                        // should block on fg thread, but we're not deadlocked yet
-                        lockUser.lock();
-                        txBg.commit();
+                        notifier.notify();
                     }
-                    catch (Throwable x)
-                    {
-                        bkgException[0] = x;
-                    }
+                    // should block on fg thread, but we're not deadlocked yet
+                    lockUser.lock();
+                    txBg.commit();
                 }
-            };
+                catch (Throwable x)
+                {
+                    bkgException[0] = x;
+                }
+            });
 
 
             // lockUser should succeed (bg has not even started yet)
