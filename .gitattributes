@@ -848,6 +848,7 @@ experiment/resources/schemas/dbscripts/postgresql/obsolete/exp-17.22-17.23.sql -
 experiment/resources/schemas/dbscripts/postgresql/obsolete/exp-17.23-17.24.sql -text
 experiment/resources/schemas/dbscripts/postgresql/obsolete/exp_drop.sql -text
 experiment/resources/schemas/dbscripts/postgresql/obsolete/findOrphans.sql -text
+experiment/resources/schemas/dbscripts/postgresql/required_scripts.txt -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-0.00-16.10.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-16.10-16.20.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-16.30-17.10.sql -text
@@ -905,6 +906,7 @@ experiment/resources/schemas/dbscripts/sqlserver/obsolete/exp-18.10-18.11.sql -t
 experiment/resources/schemas/dbscripts/sqlserver/obsolete/exp-18.11-18.12.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/obsolete/exp_drop.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/obsolete/findOrphans.sql -text
+experiment/resources/schemas/dbscripts/sqlserver/required_scripts.txt -text
 experiment/resources/schemas/exp.xml -text
 experiment/src/org/labkey/experiment/ArchiveURLRewriter.java -text
 experiment/src/org/labkey/experiment/ChooseExperimentTypeBean.java -text
