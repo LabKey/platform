@@ -488,11 +488,15 @@ public class LinkedSchema extends ExternalSchema
     private static class LinkedSchemaUserWrapper extends LimitedUser
     {
         private final Container _sourceContainer;
+        private final Set<Role> _inherentRoles;
 
         public LinkedSchemaUserWrapper(User realUser, Container sourceContainer)
         {
             super(realUser, realUser.getGroups(), Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
             _sourceContainer = sourceContainer;
+
+            // Site admins can inherently read any container
+            _inherentRoles = realUser.isInSiteAdminGroup() ? Collections.singleton(RoleManager.getRole(ReaderRole.class)) : Collections.emptySet();
         }
 
         @Override
@@ -505,7 +509,7 @@ public class LinkedSchema extends ExternalSchema
             }
 
             // For all other containers, just rely on normal permissions
-            return Collections.emptySet();
+            return _inherentRoles;
         }
     }
 }
