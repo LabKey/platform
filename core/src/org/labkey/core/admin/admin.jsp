@@ -30,9 +30,9 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="java.util.Collection"%>
+<%@ page import="java.util.Date" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
-<%@ page import="java.util.Date" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -52,6 +52,8 @@
 
     String edition = bean.scope.getSqlDialect().getProductEdition();
     String databaseProductVersion = bean.scope.getDatabaseProductVersion() + (null != edition ? " (" + edition + ")" : "");
+
+    int row = 0;
 %>
 <style type="text/css">
     body { overflow-y: scroll; }
@@ -72,33 +74,36 @@
             <h4>Core Database Configuration</h4>
             <table class="labkey-data-region-legacy labkey-show-borders">
                 <tr><td class="labkey-column-header">Property</td><td class="labkey-column-header">Value</td></tr>
-                <tr class="labkey-alternate-row"><td>Server URL</td><td id="databaseServerURL"><%=h(bean.scope.getURL())%></td></tr>
-                <tr class="labkey-row"><td>Product Name</td><td id="databaseProductName"><%=h(bean.scope.getDatabaseProductName())%></td></tr>
-                <tr class="labkey-alternate-row"><td>Product Version</td><td id="databaseProductVersion"><%=h(databaseProductVersion)%></td></tr>
-                <tr class="labkey-row"><td>JDBC Driver Name</td><td id="databaseDriverName"><%=h(bean.scope.getDriverName())%></td></tr>
-                <tr class="labkey-alternate-row"><td>JDBC Driver Version</td><td id="databaseDriverVersion"><%=h(bean.scope.getDriverVersion())%></td></tr><%
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Server URL</td><td id="databaseServerURL"><%=h(bean.scope.getURL())%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Product Name</td><td id="databaseProductName"><%=h(bean.scope.getDatabaseProductName())%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Product Version</td><td id="databaseProductVersion"><%=h(databaseProductVersion)%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>JDBC Driver Name</td><td id="databaseDriverName"><%=h(bean.scope.getDriverName())%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>JDBC Driver Version</td><td id="databaseDriverVersion"><%=h(bean.scope.getDriverVersion())%></td></tr><%
                 if (null != location)
                 { %>
-                <tr class="labkey-row"><td>JDBC Driver Location</td><td id="databaseDriverLocation"><%=h(location)%></td></tr><%
+                <tr class="<%=getShadeRowClass(row++)%>"><td>JDBC Driver Location</td><td id="databaseDriverLocation"><%=h(location)%></td></tr><%
                 } %>
-                <tr class="labkey-row"><td>Connection Pool Size</td><td id="connectionPoolSize"><%=h(bean.scope.getDataSourceProperties().getMaxTotal())%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Connection Pool Size</td><td id="connectionPoolSize"><%=h(bean.scope.getDataSourceProperties().getMaxTotal())%></td></tr>
             </table>
             <br/>
+<%
+    row = 0;
+%>
             <h4>Runtime Information</h4>
             <table class="labkey-data-region-legacy labkey-show-borders">
                 <tr><td class="labkey-column-header">Property</td><td class="labkey-column-header">Value</td></tr>
-                <tr class="labkey-alternate-row"><td>Mode</td><td><%=h(bean.mode)%></td></tr>
-                <tr class="labkey-row"><td>Asserts</td><td><%=h(bean.asserts)%></td></tr>
-                <tr class="labkey-alternate-row"><td>Servlet Container</td><td><%=h(bean.servletContainer)%></td></tr>
-                <tr class="labkey-row"><td>Java Runtime</td><td><%=h(bean.javaVersion)%></td></tr>
-                <tr class="labkey-alternate-row"><td>Java Home</td><td><%=h(bean.javaHome)%></td></tr>
-                <tr class="labkey-row"><td>Username</td><td><%=h(bean.userName)%></td></tr>
-                <tr class="labkey-alternate-row"><td>User Home Dir</td><td><%=h(bean.userHomeDir)%></td></tr>
-                <tr class="labkey-row"><td>Webapp Dir</td><td><%=h(bean.webappDir)%></td></tr>
-                <tr class="labkey-alternate-row"><td>OS</td><td><%=h(bean.osName)%></td></tr>
-                <tr class="labkey-row"><td>Working Dir</td><td><%=h(bean.workingDir)%></td></tr>
-                <tr class="labkey-alternate-row"><td>Server GUID</td><td><%=h(bean.serverGuid)%></td></tr>
-                <tr class="labkey-row"><td>Server Time</td><td><%=formatDateTime(new Date())%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Mode</td><td><%=h(bean.mode)%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Asserts</td><td><%=h(bean.asserts)%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Servlet Container</td><td><%=h(bean.servletContainer)%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Java Runtime</td><td><%=h(bean.javaVersion)%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Java Home</td><td><%=h(bean.javaHome)%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Username</td><td><%=h(bean.userName)%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>User Home Dir</td><td><%=h(bean.userHomeDir)%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Webapp Dir</td><td><%=h(bean.webappDir)%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>OS</td><td><%=h(bean.osName)%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Working Dir</td><td><%=h(bean.workingDir)%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Server GUID</td><td><%=h(bean.serverGuid)%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Server Time</td><td><%=formatDateTime(new Date())%></td></tr>
             </table>
         </labkey:panel>
         <labkey:panel id="links" className="lk-admin-section">
@@ -164,14 +169,14 @@
                             {
                                 if (StringUtils.equals("Source Path", entry.getKey()))
                                 {%>
-                            <tr class="<%=h(count % 2 == 0 ? "labkey-alternate-row" : "labkey-row")%>">
+                            <tr class="<%=getShadeRowClass(count)%>">
                                 <td nowrap="true"><%=h(entry.getKey())%><%=(devMode && !sourcePathMatched) ? helpPopup("source path not found") : new _HtmlString("")%></td>
                                 <td nowrap="true" style="color:<%=h(!devMode?"":sourcePathMatched?"green":"red")%>;"><%=h(entry.getValue())%></td>
                             </tr><%
                         }
                         else if (StringUtils.equals("Enlistment ID", entry.getKey()))
                         {%>
-                            <tr class="<%=h(count % 2 == 0 ? "labkey-alternate-row" : "labkey-row")%>">
+                            <tr class="<%=getShadeRowClass(count)%>">
                                 <td nowrap="true"><%=h(entry.getKey())%><%=(devMode && sourcePathMatched && !enlistmentIdMatched) ? helpPopup("enlistment id does not match") : new _HtmlString("")%></td>
                                 <td nowrap="true" style="color:<%=h( (!devMode||!sourcePathMatched)?"":enlistmentIdMatched?"green":"red")%>;"><%=h(entry.getValue())%></td>
                             </tr><%
@@ -183,7 +188,7 @@
                         else if (StringUtils.equals("Organization", entry.getKey()) || StringUtils.equals("License", entry.getKey()))
                         {
                             String url = properties.get(entry.getKey() + "URL"); %>
-                            <tr class="<%=h(count % 2 == 0 ? "labkey-alternate-row" : "labkey-row")%>">
+                            <tr class="<%=getShadeRowClass(count)%>">
                                 <td nowrap="true"><%=h(entry.getKey())%></td>
                                 <% if (url != null) { %>
                                 <td nowrap="true"><%=textLink(entry.getValue(), url)%></td>
@@ -194,7 +199,7 @@
                         }
                         else
                         {%>
-                            <tr class="<%=h(count % 2 == 0 ? "labkey-alternate-row" : "labkey-row")%>">
+                            <tr class="<%=getShadeRowClass(count)%>">
                                 <td nowrap="true"><%=h(entry.getKey())%></td>
                                 <td nowrap="true"><%=h(entry.getValue())%></td>
                             </tr><%
@@ -217,7 +222,7 @@
                     for (Pair<String, Long> pair : bean.active)
                     {
                 %>
-                <tr class="<%=h(count % 2 == 0 ? "labkey-alternate-row" : "labkey-row")%>"><td><%=h(pair.getKey())%></td><td><%=pair.getValue()%> minutes ago</td></tr>
+                <tr class="<%=getShadeRowClass(count)%>"><td><%=h(pair.getKey())%></td><td><%=pair.getValue()%> minutes ago</td></tr>
                 <%
                         count++;
                     } %>
