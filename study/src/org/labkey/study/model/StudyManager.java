@@ -5000,7 +5000,6 @@ public class StudyManager
      */
 
 
-
     @TestWhen(TestWhen.When.BVT)
     public static class DatasetImportTestCase extends Assert
     {
@@ -5208,6 +5207,12 @@ public class StudyManager
                 if (null != l && l.size() > 0)
                     throw l.get(0);
                 throw x;
+            }
+            catch (Throwable t)
+            {
+                // Help track down "connection already closed" exceptions in this test, #34735.
+                _log.error("Exception running test", t);
+                throw t;
             }
             finally
             {
@@ -5802,10 +5807,14 @@ public class StudyManager
         {
             if (null != _studyDateBased)
             {
+                // Help track down #34735
+                assertFalse(DbScope.getLabKeyScope().isTransactionActive());
                 assertTrue(ContainerManager.delete(_studyDateBased.getContainer(), _context.getUser()));
             }
             if (null != _studyVisitBased)
             {
+                // Help track down #34735
+                assertFalse(DbScope.getLabKeyScope().isTransactionActive());
                 assertTrue(ContainerManager.delete(_studyVisitBased.getContainer(), _context.getUser()));
             }
         }
