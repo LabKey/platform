@@ -348,7 +348,7 @@ public class SecurityController extends SpringActionController
 
             FolderPermissionsView permsView = new FolderPermissionsView(resource, doneURL);
 
-            setHelpTopic("configuringPerms#siteperm");
+            setHelpTopic("permissionLevels");
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             getPageConfig().setTitle("Permissions for " + getContainer().getPath());
 
