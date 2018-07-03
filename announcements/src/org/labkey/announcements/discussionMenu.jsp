@@ -60,7 +60,7 @@
     }
     else if (!discussions.isEmpty())
     {
-        if (me.isDiscussionVisible)
+        if (null == request.getParameter("discussion.hide"))
         {
             menu.addChild("Hide discussion", hideUrl);
         }
