@@ -153,7 +153,7 @@ public class ContainerScopedTable<SchemaType extends UserSchema> extends CustomP
                     TableSelector ts = new TableSelector(getQueryTable(), Collections.singleton(pkCol.getName()), filter, null);
                     Object[] results = ts.getArray(Object.class);
                     if (results.length == 0)
-                        throw new InvalidKeyException("Existing row not found for key: " + pseudoKey);
+                        return null; // it should be up to the caller to decide if this is a problem/exception
                     else if (results.length > 1)
                         throw new InvalidKeyException("More than one existing row found key: " + pseudoKey);
 
