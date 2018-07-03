@@ -128,6 +128,7 @@ public class WorkbookContainerType implements ContainerType
             case folderManagement:
             case fileRoot:
             case tabParent:
+            case sharedSchemaOwner:
                 return currentContainer.getParent();
             default:
                 return currentContainer;
