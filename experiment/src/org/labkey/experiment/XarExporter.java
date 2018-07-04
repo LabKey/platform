@@ -662,6 +662,10 @@ public class XarExporter
             xProp.setScale(domainProp.getScale());
 
         ConditionalFormat.convertToXML(domainProp.getConditionalFormats(), xProp);
+
+        xProp.setMeasure(domainProp.isMeasure());
+        xProp.setDimension(domainProp.isDimension());
+        xProp.setRecommendedVariable(domainProp.isRecommendedVariable());
     }
 
     private PropertyValidatorType addPropertyValidator(PropertyDescriptorType xProp, IPropertyValidator validator)
