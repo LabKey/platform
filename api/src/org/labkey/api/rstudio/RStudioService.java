@@ -80,6 +80,12 @@ public interface RStudioService
         throw new UnsupportedOperationException(NO_RSTUDIO);
     }
 
+    // used for Export to RStudio
+    default void sendRScriptToRStudio(String rScript, ViewContext viewContext, BindException errors) throws Exception
+    {
+        throw new UnsupportedOperationException(NO_RSTUDIO);
+    }
+
     // the no-explanation version, just return null if user is not eligible
     ActionURL getRStudioLink(User user);
 
