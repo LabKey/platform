@@ -24,7 +24,6 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.StringKeyCache;
-import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialect.DataSourceProperties;
 import org.labkey.api.data.dialect.SqlDialectManager;
@@ -834,13 +833,8 @@ public class DbScope
             _initializedConnections.put(delegate, spid == null ? spidUnknown : spid);
         }
 
-        // Temporarily track underlying SPIDs at get & close in an attempt to track down #34735
-        assert ACTIVE_SPIDS.add(spid);
-
         return new ConnectionWrapper(conn, this, spid, log);
     }
-
-    final static Set<Integer> ACTIVE_SPIDS = new ConcurrentHashSet<>();
 
     public void releaseConnection(Connection conn)
     {

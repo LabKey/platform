@@ -355,9 +355,6 @@ public class ConnectionWrapper implements java.sql.Connection
                 }
             }
 
-            // Temporarily track underlying SPIDs at get & close in an attempt to track down #34735
-            assert DbScope.ACTIVE_SPIDS.remove(_spid);
-
             try
             {
                 _connection.close();
