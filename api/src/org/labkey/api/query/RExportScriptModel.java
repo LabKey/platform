@@ -162,7 +162,7 @@ public class RExportScriptModel extends ExportScriptModel
         sb.append(nl).append(")\n");
 
         if ("rstudio".equals(view))
-            sb.append("\nsprintf(\"").append(variableName).append(" has %d rows(s)\", nrow(").append(variableName).append("))");
+            sb.append("\nsprintf(\"").append(variableName).append(" has %d row(s)\", nrow(").append(variableName).append("))");
         if ("r".equals(view))
             sb.append(variableName).append("\n");
 
