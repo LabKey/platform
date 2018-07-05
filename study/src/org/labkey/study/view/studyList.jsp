@@ -33,7 +33,7 @@
         No Studies found in project <%= h(proj.getName()) %> <%
     }
     FolderType studyFolderType = FolderTypeManager.get().getFolderType("Study");
-%> <div style="vertical-align:top;display:inline-block;margin-right:1em" ><%
+%> <div style="vertical-align:top;display:inline-block;margin-right:1em;white-space: nowrap"><%
     for (Study study: studies)
     {
         ActionURL url;
