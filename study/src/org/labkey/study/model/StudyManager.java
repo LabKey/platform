@@ -143,7 +143,6 @@ import org.labkey.study.dataset.DatasetAuditProvider;
 import org.labkey.study.designer.StudyDesignManager;
 import org.labkey.study.importer.SchemaReader;
 import org.labkey.study.importer.StudyImportContext;
-import org.labkey.study.importer.StudyReload;
 import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.study.query.StudyPersonnelDomainKind;
 import org.labkey.study.query.StudyQuerySchema;
@@ -2956,9 +2955,6 @@ public class StudyManager
 
     public void deleteAllStudyData(Container c, User user)
     {
-        // Cancel any reload timer
-        StudyReload.cancelTimer(c);
-
         // No need to delete individual participants if the whole study is going away
         VisitManager.cancelParticipantPurge(c);
 

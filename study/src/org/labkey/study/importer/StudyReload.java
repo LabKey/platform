@@ -23,42 +23,24 @@ import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.admin.StaticLoggerGetter;
-import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.ShutdownListener;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.folder.xml.FolderDocument;
-import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.quartz.Job;
-import org.quartz.JobBuilder;
-import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
-import org.quartz.JobKey;
-import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
-import org.quartz.SimpleScheduleBuilder;
-import org.quartz.Trigger;
-import org.quartz.TriggerBuilder;
-import org.quartz.TriggerKey;
-import org.quartz.impl.StdSchedulerFactory;
 import org.springframework.validation.BindException;
 
 import java.io.File;
@@ -76,8 +58,6 @@ public class StudyReload
     private static final Logger LOG = Logger.getLogger(StudyReload.class);
     private static final BlockingQueue<ImportOptions> QUEUE = new ArrayBlockingQueue<>(100);       // Container IDs instead?
     private static final Thread RELOAD_THREAD = new ReloadThread();
-
-    private static final String JOB_GROUP_NAME = "org.labkey.study.importer.StudyReload";
 
     static
     {
@@ -102,160 +82,10 @@ public class StudyReload
         RELOAD_THREAD.start();
     }
 
-    public enum ReloadInterval
-    {
-        Never(0, "<Never>", "never"),
-        Hours24(24 * 60 * 60, "24 Hours", "once a day"),
-        Hours1(60 * 60, "1 Hour", "once an hour"),
-        Minutes5(5 * 60, "5 Minutes", "every five minutes"),
-        Seconds10(10, true, "10 Seconds", "every 10 seconds");   // for dev mode purposes only
-
-        private final String _dropDownLabel;
-        private final String _description;
-        private final Integer _seconds;
-        private final boolean _devOnly;
-
-        ReloadInterval(Integer seconds, String dropDownLabel, String description)
-        {
-            this(seconds, false, dropDownLabel, description);
-        }
-
-        ReloadInterval(Integer seconds, boolean devOnly, String dropDownLabel, String description)
-        {
-            _seconds = seconds;
-            _devOnly = devOnly;
-            _dropDownLabel = dropDownLabel;
-            _description = description;
-        }
-
-        public String getDropDownLabel()
-        {
-            return _dropDownLabel;
-        }
-
-        public String getDescription()
-        {
-            return _description;
-        }
-
-        public Integer getSeconds()
-        {
-            return _seconds;
-        }
-
-        public boolean shouldDisplay()
-        {
-            return !_devOnly || AppProps.getInstance().isDevMode();
-        }
-
-        @NotNull
-        public static ReloadInterval getForSeconds(Integer seconds)
-        {
-            for (ReloadInterval interval : values())
-                if (interval.getSeconds().equals(seconds))
-                    return interval;
-
-            return Never;
-        }
-    }
-
-
     private static String getDescription(Study study)
     {
         return study.getLabel();
     }
-
-
-    public static void initializeTimer(StudyImpl study)
-    {
-        initializeTimer(study.getContainer().getId(), study.isAllowReload(), study.getReloadInterval());
-    }
-
-
-    public static void initializeAllTimers()
-    {
-        TableInfo tinfo = StudySchema.getInstance().getTableInfoStudy();
-        SimpleFilter filter = new SimpleFilter();
-        filter.addCondition(FieldKey.fromParts("AllowReload"), true);
-        filter.addCondition(FieldKey.fromParts("ReloadInterval"), 0, CompareType.GT);
-
-        new TableSelector(tinfo, tinfo.getColumns("Container", "ReloadInterval"), filter, null)
-            .forEach(rs -> initializeTimer(rs.getString(1), true, rs.getInt(2)));
-    }
-
-
-    public static void cancelTimer(Container c)
-    {
-        cancelTimer(c.getId());
-    }
-
-
-    private static void cancelTimer(String containerId)
-    {
-        initializeTimer(containerId, false, 0);
-    }
-
-
-    private static void initializeTimer(String containerId, boolean allowReload, Integer secondsInterval)
-    {
-        try
-        {
-            Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
-
-            TriggerKey triggerKey = TriggerKey.triggerKey(containerId, JOB_GROUP_NAME);
-            JobKey jobKey = JobKey.jobKey(containerId, JOB_GROUP_NAME);
-
-            // Unschedule any existing triggers
-            if (scheduler.checkExists(triggerKey))
-            {
-                scheduler.unscheduleJob(triggerKey);
-            }
-
-            // Check if we should schedule a new trigger
-            if (allowReload && null != secondsInterval && 0 != secondsInterval)
-            {
-                int reasonableInterval = Math.max(secondsInterval.intValue(), 10);
-
-                // Reuse the existing detail object if we've already submitted it in the past
-                JobDetail job = scheduler.getJobDetail(jobKey);
-                boolean existingJob = job != null;
-                if (!existingJob)
-                {
-                    job = JobBuilder.newJob(ReloadTask.class).
-                            withIdentity(jobKey).
-                            storeDurably().
-                            build();
-                    job.getJobDataMap().put(CONTAINER_ID_KEY, containerId);
-                }
-
-                // Run it on the user-specified schedule
-                Trigger trigger = TriggerBuilder.newTrigger()
-                    .withIdentity(triggerKey)
-                    .forJob(jobKey)
-//                    .startNow()
-                    .withSchedule(SimpleScheduleBuilder.simpleSchedule()
-                            .withIntervalInSeconds(reasonableInterval)
-                            .repeatForever())
-                    .usingJobData(job.getJobDataMap())
-                    .build();
-
-                // Submit it
-                if (existingJob)
-                {
-                    scheduler.scheduleJob(trigger);
-                }
-                else
-                {
-                    scheduler.scheduleJob(job, trigger);
-                }
-            }
-        }
-        catch (SchedulerException e)
-        {
-            throw new UnexpectedException(e);
-        }
-    }
-
 
     @NotNull
     public static PipeRoot getPipelineRoot(Container c)
@@ -346,7 +176,6 @@ public class StudyReload
             if (null == c)
             {
                 // Container must have been deleted
-                cancelTimer(options.getContainerId());
                 throw new ImportException("Container " + options.getContainerId() + " does not exist");
             }
             else
@@ -374,7 +203,7 @@ public class StudyReload
                 }
             }
 
-            return new ReloadStatus("Reload failed", false);
+            return new ReloadStatus("Reload failed");
         }
 
         public ReloadStatus reloadStudy(StudyImpl study, ImportOptions options, String source, Long lastModified, Date lastReload) throws ImportException
@@ -420,7 +249,7 @@ public class StudyReload
 
             if (QUEUE.offer(options))
             {
-                return new ReloadStatus("Reloading " + getDescription(study), true);
+                return new ReloadStatus("Reloading " + getDescription(study));
             }
             else
             {
@@ -436,22 +265,15 @@ public class StudyReload
     public static class ReloadStatus
     {
         private final String _message;
-        private final boolean _reloadQueued;
 
-        private ReloadStatus(String message, boolean reloadQueued)
+        private ReloadStatus(String message)
         {
             _message = message;
-            _reloadQueued = reloadQueued;
         }
 
         public String getMessage()
         {
             return _message;
-        }
-
-        public boolean isReloadQueued()
-        {
-            return _reloadQueued;
         }
     }
 

@@ -116,7 +116,6 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     private boolean _showPrivateDataByDefault = true;
     private boolean _blankQCStatePublic = false;
     private boolean _isAllowReload;
-    private Integer _reloadInterval;
     private boolean _validateQueriesAfterImport;
     private Date _lastReload;
     private Integer _reloadUser;
@@ -580,22 +579,6 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return _isAllowReload;
     }
 
-    public void setAllowReload(boolean allowReload)
-    {
-        _isAllowReload = allowReload;
-    }
-
-    // Study reload interval, specified in seconds
-    public Integer getReloadInterval()
-    {
-        return _reloadInterval;
-    }
-
-    public void setReloadInterval(Integer reloadInterval)
-    {
-        _reloadInterval = reloadInterval;
-    }
-
     public Date getLastReload()
     {
         return _lastReload;
@@ -611,19 +594,9 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return _reloadUser;
     }
 
-    public void setValidateQueriesAfterImport(boolean validateQueriesAfterImport)
-    {
-        _validateQueriesAfterImport = validateQueriesAfterImport;
-    }
-
     public boolean isValidateQueriesAfterImport()
     {
         return _validateQueriesAfterImport;
-    }
-
-    public void setReloadUser(Integer reloadUser)
-    {
-        _reloadUser = reloadUser;
     }
 
     public boolean isAdvancedCohorts()

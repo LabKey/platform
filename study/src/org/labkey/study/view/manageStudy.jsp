@@ -38,7 +38,6 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.controllers.CohortController" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.study.controllers.StudyController.ManageReloadAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageStudyPropertiesAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageTypesAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageVisitsAction" %>
@@ -46,7 +45,6 @@
 <%@ page import="org.labkey.study.controllers.StudyDesignController" %>
 <%@ page import="org.labkey.study.controllers.security.SecurityController" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
-<%@ page import="org.labkey.study.importer.StudyReload" %>
 <%@ page import="org.labkey.study.model.ParticipantCategoryImpl" %>
 <%@ page import="org.labkey.study.model.ParticipantGroup" %>
 <%@ page import="org.labkey.study.model.ParticipantGroupManager" %>
@@ -101,9 +99,6 @@
     int numProperties = study.getNumExtendedProperties(user);
     String propString = numProperties == 1 ? "property" : "properties";
 
-    StudyReload.ReloadInterval currentInterval = StudyReload.ReloadInterval.getForSeconds(study.getReloadInterval());
-    String intervalLabel;
-
     String subjectNounSingle = StudyService.get().getSubjectNounSingular(c);
     List<ParticipantGroup> groups = new LinkedList<>();
 
@@ -111,13 +106,6 @@
     {
         groups.addAll(ParticipantGroupManager.getInstance().getParticipantGroups(c, user, category));
     }
-
-    if (!study.isAllowReload())
-        intervalLabel = "This study is set to not reload";
-    else if (null == study.getReloadInterval() || 0 == study.getReloadInterval())
-        intervalLabel = "This study is set for manual reloading";
-    else
-        intervalLabel = "This study is scheduled to check for reload " + (StudyReload.ReloadInterval.Never != currentInterval ? currentInterval.getDescription() : "every " + study.getReloadInterval() + " seconds");
 
     String availableStudyName = ContainerManager.getAvailableChildContainerName(c, "New Study");
 
@@ -184,11 +172,6 @@
                                 %>&nbsp;<%
                             }
                         %></td>
-                    </tr>
-                    <tr>
-                        <td class="lk-study-prop-label">Reloading</td>
-                        <td class="lk-study-prop-desc"><%= h(intervalLabel) %></td>
-                        <td><%= textLink("Manage Reloading", ManageReloadAction.class) %></td>
                     </tr>
                     <%
                         if (!reloadSources.isEmpty())

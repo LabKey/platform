@@ -2780,7 +2780,6 @@ study/src/org/labkey/study/view/manageLocations.jsp -text
 study/src/org/labkey/study/view/manageMasterPatientConfig.jsp -text
 study/src/org/labkey/study/view/manageParticipantCategories.jsp -text
 study/src/org/labkey/study/view/manageQCStates.jsp -text
-study/src/org/labkey/study/view/manageReload.jsp -text
 study/src/org/labkey/study/view/manageReports.jsp -text
 study/src/org/labkey/study/view/manageStudy.jsp -text
 study/src/org/labkey/study/view/manageStudyPropertiesExt.jsp -text

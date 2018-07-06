@@ -6401,90 +6401,10 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
-    public class ManageReloadAction extends FormViewAction<ReloadForm>
-    {
-        public void validateCommand(ReloadForm target, Errors errors)
-        {
-        }
-
-        public ModelAndView getView(ReloadForm form, boolean reshow, BindException errors) throws Exception
-        {
-            return new StudyJspView<>(getStudyRedirectIfNull(), "manageReload.jsp", form, errors);
-        }
-
-        public boolean handlePost(ReloadForm form, final BindException errors)
-        {
-            StudyImpl study = getStudyThrowIfNull();
-
-            // If the "allow reload" state, interval, or reload user changes then update the study and initialize the timer
-            if (form.isAllowReload() != study.isAllowReload() || !nullSafeEqual(form.getInterval(), study.getReloadInterval())
-                    || getUser().getUserId() != study.getReloadUser() || study.isValidateQueriesAfterImport() != form.isQueryValidation())
-            {
-                study = study.createMutable();
-                study.setAllowReload(form.isAllowReload());
-                study.setReloadInterval(0 != form.getInterval() ? form.getInterval() : null);
-                study.setReloadUser(getUser().getUserId());
-                study.setValidateQueriesAfterImport(form.isQueryValidation());
-                study.setLastReload(new Date());
-                StudyManager.getInstance().updateStudy(getUser(), study);
-                StudyReload.initializeTimer(study);
-            }
-
-            return true;
-        }
-
-        public ActionURL getSuccessURL(ReloadForm reloadForm)
-        {
-            return new ActionURL(StudyController.ManageStudyAction.class, getContainer());
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            setHelpTopic("importExportStudy");
-            _appendManageStudy(root);
-            return root.addChild("Manage Reloading");
-        }
-    }
-
-
     public static class ReloadForm
     {
-        private boolean allowReload = false;
-        private int interval = 0;
-        private boolean _ui = false;
         private boolean _queryValidation;
         private boolean _failForUndefinedVisits;
-
-        public boolean isAllowReload()
-        {
-            return allowReload;
-        }
-
-        public void setAllowReload(boolean allowReload)
-        {
-            this.allowReload = allowReload;
-        }
-
-        public int getInterval()
-        {
-            return interval;
-        }
-
-        public void setInterval(int interval)
-        {
-            this.interval = interval;
-        }
-
-        public boolean isUi()
-        {
-            return _ui;
-        }
-
-        public void setUi(boolean ui)
-        {
-            _ui = ui;
-        }
 
         public boolean isQueryValidation()
         {
@@ -6613,10 +6533,10 @@ public class StudyController extends BaseStudyController
 
     @RequiresLogin
     @RequiresPermission(AdminPermission.class)
-    public class CheckForReloadAction extends ManageReloadAction    // Subclassing makes it easier to redisplay errors, etc. TODO: Switch to an ApiAction after removing UI
+    public class CheckForReloadAction extends ApiAction<ReloadForm>    // Subclassing makes it easier to redisplay errors, etc.
     {
         @Override
-        public ModelAndView getView(ReloadForm form, boolean reshow, BindException errors) throws Exception
+        public ApiResponse execute(ReloadForm form, BindException errors) throws Exception
         {
             ReloadTask task = new ReloadTask();
             String message;
@@ -6630,15 +6550,9 @@ public class StudyController extends BaseStudyController
 
                 final String source;
 
-                if (form.isUi())
-                    source = "user \"" + user.getDisplayName(null) + "\"" + " clicking the \"Attempt Reload\" button";
-                else
-                    source = "a script invoking the \"CheckForReload\" action while authenticated as user \"" + user.getDisplayName(null) + "\"";
+                source = "a script invoking the \"CheckForReload\" action while authenticated as user \"" + user.getDisplayName(null) + "\"";
 
                 ReloadStatus status = task.attemptReload(options, source);
-
-                if (status.isReloadQueued() && form.isUi())
-                    return HttpView.redirect(PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(getContainer()));
 
                 message = status.getMessage();
             }
@@ -6647,18 +6561,9 @@ public class StudyController extends BaseStudyController
                 message = "Error: " + e.getMessage();
             }
 
-            // If this was initiated from the UI and reload was not queued up then reshow the form and display the message
-            if (form.isUi())
-            {
-                errors.reject(ERROR_MSG, message);
-                return super.getView(form, false, errors);
-            }
-            else
-            {
-                // Plain text response for scripts
-                sendPlainText(message);
-                return null;
-            }
+            // Plain text response for scripts
+            sendPlainText(message);
+            return null;
         }
     }
 

@@ -132,7 +132,6 @@ import org.labkey.study.importer.MissingValueImporterFactory;
 import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.importer.StudyImportProvider;
 import org.labkey.study.importer.StudyImporterFactory;
-import org.labkey.study.importer.StudyReload;
 import org.labkey.study.model.*;
 import org.labkey.study.pipeline.AssayImportRunTask;
 import org.labkey.study.pipeline.SampleMindedTransform;
@@ -487,12 +486,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         }
 
         AdminConsole.addLink(AdminConsole.SettingsLinkType.Premium, "Master Patient Index", new ActionURL(StudyController.MasterPatientProviderAction.class, ContainerManager.getRoot()));
-    }
-
-    @Override
-    public void startBackgroundThreads()
-    {
-        StudyReload.initializeAllTimers();
     }
 
     @Override
