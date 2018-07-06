@@ -81,7 +81,7 @@ public interface RStudioService
     }
 
     // used for Export to RStudio
-    default void sendRScriptToRStudio(String rScript, ViewContext viewContext, BindException errors) throws Exception
+    default void sendRScriptToRStudio(String rScript, ViewContext viewContext, BindException errors) throws Exception //TODO 34577 remove after merge
     {
         throw new UnsupportedOperationException(NO_RSTUDIO);
     }
@@ -89,31 +89,9 @@ public interface RStudioService
     // the no-explanation version, just return null if user is not eligible
     ActionURL getRStudioLink(User user);
 
-    default void addRequiredLibrary(String library) {};
+    default void addRequiredLibrary(String library) {}; //TODO 34577 remove after merge
 
-    default List<String> getRequiredLibraries() {return Collections.emptyList();};
-
-    // TODO remove after merge - begin
-    default Pair<String, String> editInRStudio(File scriptFile, String entityId, ViewContext viewContext, BindException errors)
-    {
-        throw new UnsupportedOperationException(NO_RSTUDIO);
-    }
-
-    default boolean isUserEditingReportInRStudio(User user, String entityId)
-    {
-        return false;
-    }
-
-    default Pair<String, String> getReportRStudioUrl(ViewContext viewContext, String entityId)
-    {
-        return null;
-    }
-
-    default ActionURL getFinishReportUrl(Container container)
-    {
-        return null;
-    }
-    // TODO remove after merge - end
+    default List<String> getRequiredLibraries() {return Collections.emptyList();}; //TODO 34577 remove after merge
 
     /**
      * Inject javascript by converting response stream to String and inject js string to html.
@@ -126,7 +104,7 @@ public interface RStudioService
      * @return
      * @throws Exception
      */
-    default Controller createInjectScriptHttpProxy(ServletContext servletContext, String servletName, Properties properties, String injectJavascriptHook, boolean capture) throws Exception
+    default Controller createInjectScriptHttpProxy(ServletContext servletContext, String servletName, Properties properties, String injectJavascriptHook, boolean capture) throws Exception //TODO 34577 remove after merge
     {
         return null;
     }
@@ -141,7 +119,7 @@ public interface RStudioService
      * @return
      * @throws Exception
      */
-    default Controller createModifyHtmlHttpProxy(ServletContext servletContext, String servletName, Properties properties, List<Pair<String, String>> searchReplacements) throws Exception
+    default Controller createModifyHtmlHttpProxy(ServletContext servletContext, String servletName, Properties properties, List<Pair<String, String>> searchReplacements) throws Exception //TODO 34577 remove after merge
     {
         return null;
     }
@@ -161,7 +139,7 @@ public interface RStudioService
         return null;
     }
 
-    default void saveReportSource(RReport report, String runScript, ViewContext viewContext)
+    default void saveReportSource(RReport report, String runScript, ViewContext viewContext) //TODO 34577 remove after merge
     {
 
     }

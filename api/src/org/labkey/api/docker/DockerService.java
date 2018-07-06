@@ -240,11 +240,6 @@ public interface DockerService
         public final Map<String, String> labels;
         public final Map<String, String> environment;
         private final Integer userId;
-        private final String entityId;
-        private final String lkContainer;
-        private final String filename;
-//        private final boolean isReportContainer; //TODO refactor after branch merge
-        private boolean isReportContainer;
 
         public synchronized void setStatus(ContainerStatus status)
         {
@@ -266,24 +261,24 @@ public interface DockerService
             return null == userId ? null : UserManager.getUser(userId);
         }
 
-        public String getEntityId()
+        public String getEntityId() //TODO 34577 refactor after merge - remove
         {
-            return entityId;
+            return null;
         }
 
-        public String getLkContainer()
+        public String getFilename() //TODO 34577 remove after merge - remove
         {
-            return lkContainer;
+            return null;
         }
 
-        public String getFilename()
+        public Map<String, String> getLabels()
         {
-            return filename;
+            return labels;
         }
 
-        public boolean isReportContainer()
+        public boolean isReportContainer() //TODO 34577 remove after merge - remove
         {
-            return isReportContainer;
+            return Boolean.valueOf(labels.get("labkey:isReport"));
         }
 
         public static DockerContainer makeDockerContainer(
@@ -305,17 +300,9 @@ public interface DockerService
         public static DockerContainer makeDockerContainer(
                 String name, String id, ImageConfig image, String home, String host, int port, String created,
                 Map<String, String> labels,
-                String[] environment, boolean isReportContainer)
+                String[] environment, boolean isReportContainer) //TODO 34577 remove after merge - remove
         {
-            HashMap<String,String> map = new HashMap<>();
-            if (null != environment)
-            {
-                Arrays.stream(environment).forEach(s -> {
-                    int eq = s.indexOf("=");
-                    map.put(s.substring(0,eq),s.substring(eq+1));
-                });
-            }
-            return new DockerContainer(name, id, image, home, host, port, created, labels, map, isReportContainer);
+            return makeDockerContainer(name, id, image, home, host, port, created, labels, environment);
         }
 
         public static DockerContainer makeDockerContainer(
@@ -329,9 +316,9 @@ public interface DockerService
         public static DockerContainer makeDockerContainer(
                 String name, String id, ImageConfig image, String home, String host, int port, String created,
                 Map<String, String> labels,
-                Map<String,String> environment, boolean isReportContainer)
+                Map<String,String> environment, boolean isReportContainer) //TODO 34577 remove after merge - remove
         {
-            return new DockerContainer(name, id, image, home, host, port, created, labels, environment, isReportContainer);
+            return new DockerContainer(name, id, image, home, host, port, created, labels, environment);
         }
 
         public DockerContainer(
@@ -360,21 +347,7 @@ public interface DockerService
                 tmpUserId = null;
             }
             userId = tmpUserId;
-
-            this.entityId = labels.get("labkey:entityid");
-            this.lkContainer = labels.get("labkey:lkContainer");
-            this.filename = labels.get("labkey:filename");
         }
-
-        public DockerContainer(
-                String name, String id, ImageConfig image, String home, String host, int port, String created,
-                Map<String, String> labels,
-                Map<String,String> environment, boolean isReportContainer)
-        {
-            this(name, id, image, home, host, port, created, labels, environment);
-            this.isReportContainer = isReportContainer;
-        }
-
 
     }
 
@@ -390,12 +363,15 @@ public interface DockerService
 
     DockerContainer start(ImageConfig image, String prefix, User user, Map<String, String> labels, Map<String, String> env, Map<File, String> filesForContainer, Map<InputStream, String> streamsForContainer, List<List<String>> postStartCmds, ContainerUsage usage) throws IOException;
 
-    default DockerContainer start(ImageConfig image, String prefix, User user, Map<String, String> labels, Map<String, String> env, Map<File, String> filesForContainer, Map<InputStream, String> streamsForContainer, List<List<String>> postStartCmds, ContainerUsage usage, boolean isReportContainer) throws IOException
+    default DockerContainer start(ImageConfig image, String prefix, User user, Map<String, String> labels, Map<String, String> env, Map<File, String> filesForContainer, Map<InputStream, String> streamsForContainer, List<List<String>> postStartCmds, ContainerUsage usage, boolean isReportContainer) throws IOException //TODO 34577 remove after merge - remove
     {
         return null;
     }
 
-    String readFileFromContainer(String containerId, String filepath) throws IOException;
+    default String readFileFromContainer(String containerId, String filepath) throws IOException //TODO 34577 remove after merge - remove
+    {
+       return null;
+    }
 
     boolean pingContainer(String host, int port);
 
@@ -477,7 +453,7 @@ public interface DockerService
             return this.lastEntityId;
         }
 
-        public void setLastEntityId(String entityId) //TODO update
+        public void setLastEntityId(String entityId)
         {
             this.lastEntityId = entityId;
         }
