@@ -5804,13 +5804,13 @@ public class StudyManager
             if (null != _studyDateBased)
             {
                 // Help track down #34735
-                assertFalse(DbScope.getLabKeyScope().isTransactionActive());
+//                assertFalse(DbScope.getLabKeyScope().isTransactionActive());
                 assertTrue(ContainerManager.delete(_studyDateBased.getContainer(), _context.getUser()));
             }
             if (null != _studyVisitBased)
             {
                 // Help track down #34735
-                assertFalse(DbScope.getLabKeyScope().isTransactionActive());
+//                assertFalse(DbScope.getLabKeyScope().isTransactionActive());
                 assertTrue(ContainerManager.delete(_studyVisitBased.getContainer(), _context.getUser()));
             }
         }
