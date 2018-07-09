@@ -157,6 +157,7 @@
                                     Moved to new location
                                 </option>
                             </select>
+                            <span id="notifyAboutPipeline" style="color: #FF0000"><br> Changing File Root to cloud-based storage disables any pipeline override. Files at that location will remain.</span>
                         </td>
                     </tr>
                 </table>
@@ -184,8 +185,7 @@
             The cloud module must be enabled within this folder and
             cloud accounts and stores must be first configured in the
             <a href="<%=PageFlowUtil.urlProvider(CloudUrls.class).urlAdmin()%>">site admin preferences</a>
-            prior to enabling them within a folder. Selecting a cloud store as your file root (above) automatically enables that store
-            in this folder.
+            prior to enabling them within a folder.
             <br>
             <em>Cloud stores disabled at the site-level cannot be enabled within a folder.</em>
         </td></tr>
@@ -267,11 +267,26 @@
                 document.getElementById('cloudRootName').style.display = '';
         }
         var migrateFiles = document.getElementById('migrateFilesRow');
-        if (migrateFiles) {
+        var notifyAboutPipeline = document.getElementById('notifyAboutPipeline');
+        if (migrateFiles)
+        {
             if (isChange && !optionDisableChecked && !<%=isFolderSetup || isCurrentFileRootOptionDisable%>)
+            {
                 migrateFiles.style.display = '';
+                if (notifyAboutPipeline)
+                {
+                    if (optionCloudRoot && optionCloudRoot.checked)
+                        notifyAboutPipeline.style.display = '';
+                    else
+                        notifyAboutPipeline.style.display = 'none';
+                }
+            }
             else
+            {
                 migrateFiles.style.display = 'none';
+                if (notifyAboutPipeline)
+                    notifyAboutPipeline.style.display = 'none';
+            }
         }
     }
 

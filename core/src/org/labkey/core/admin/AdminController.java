@@ -5508,10 +5508,14 @@ public class AdminController extends SpringActionController
         if (!service.isUseDefaultRoot(ctx.getContainer()))
         {
             Path fileRootPath = service.getFileRootPath(ctx.getContainer());
-            if (null != fileRootPath && !FileUtil.getAbsolutePath(ctx.getContainer(), fileRootPath).equalsIgnoreCase(form.getFolderRootPath()))
+            if (null != fileRootPath)
             {
-                if (!ctx.getUser().hasRootPermission(AdminOperationsPermission.class))
-                    throw new UnauthorizedException("Only site admins change change file roots");
+                String absolutePath = FileUtil.getAbsolutePath(ctx.getContainer(), fileRootPath);
+                if (StringUtils.equalsIgnoreCase(absolutePath, form.getFolderRootPath()))
+                {
+                    if (!ctx.getUser().hasRootPermission(AdminOperationsPermission.class))
+                        throw new UnauthorizedException("Only site admins change change file roots");
+                }
             }
         }
     }
@@ -5549,7 +5553,7 @@ public class AdminController extends SpringActionController
                 else
                     throw e;
             }
-            catch (UnauthorizedException e)
+            catch (RuntimeException e)
             {
                 errors.reject(ERROR_MSG, e.getMessage());
             }

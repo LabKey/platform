@@ -32,6 +32,8 @@ import org.labkey.api.data.dialect.TestUpgradeCode;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.VersionNumber;
 
+import java.sql.DatabaseMetaData;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
@@ -53,6 +55,15 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
 
     final static String PRODUCT_NAME = "PostgreSQL";
     final static String RECOMMENDED = PRODUCT_NAME + " 10.x is the recommended version.";
+    final static String JDBC_PREFIX = "jdbc:postgresql:";
+
+    @Override
+    public @Nullable SqlDialect createFromMetadata(DatabaseMetaData md, boolean logWarnings, boolean primaryDataSource) throws SQLException, DatabaseNotSupportedException
+    {
+        if (!StringUtils.startsWithIgnoreCase(md.getURL(), JDBC_PREFIX))
+            return null;
+        return createFromProductNameAndVersion(md.getDatabaseProductName(), md.getDatabaseProductVersion(), md.getDriverVersion(), logWarnings, primaryDataSource);
+    }
 
     @Override
     public @Nullable SqlDialect createFromProductNameAndVersion(String dataBaseProductName, String databaseProductVersion, String jdbcDriverVersion, boolean logWarnings, boolean primaryDataSource) throws DatabaseNotSupportedException

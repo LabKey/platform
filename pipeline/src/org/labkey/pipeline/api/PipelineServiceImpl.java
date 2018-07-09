@@ -215,7 +215,8 @@ public class PipelineServiceImpl implements PipelineService
                         if (root != null)
                         {
                             AttachmentDirectory dir = svc.getMappedAttachmentDirectory(container, true);
-                            return new PipeRootImpl(createPipelineRoot(container, FileUtil.pathToString(dir.getFileSystemDirectoryPath())), false);
+                            if (null != dir)
+                                return new PipeRootImpl(createPipelineRoot(container, FileUtil.pathToString(dir.getFileSystemDirectoryPath())), false);
                         }
                     }
                     else

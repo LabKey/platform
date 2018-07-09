@@ -640,6 +640,7 @@ public class FileContentServiceImpl implements FileContentService
     }
 
     @Override
+    @Nullable
     public AttachmentDirectory getMappedAttachmentDirectory(Container c, boolean createDir) throws UnsetRootDirectoryException
     {
         try
@@ -653,7 +654,8 @@ public class FileContentServiceImpl implements FileContentService
         }
         catch (IOException e)
         {
-            throw new IllegalStateException(e.getMessage());
+            _log.error("Cannot get mapped directory for " + c.getPath(), e);
+            return null;
         }
     }
 

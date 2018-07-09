@@ -190,6 +190,9 @@
                     target.attr('id', id);
                 }
 
+                // Issue 32953: add loading message for header menu dropdowns, note this only shows on first load
+                // other calls through this listener will use the menuCache instead
+                $('#' + id).html('<i class="fa fa-spinner fa-pulse" style="padding: 10px"></i> loading...');
                 var config = {
                     renderTo: id,
                     partName: partName,

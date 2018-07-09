@@ -305,7 +305,14 @@ groupByLoop:
                         {
                             if (null != queryTableWith.getTableInfo())
                             {
-                                _query.setHasRecursiveWith(true);
+                                if (getSqlDialect().isRecursiveLabKeyWithSupported())
+                                {
+                                    _query.setHasRecursiveWith(true);
+                                }
+                                else
+                                {
+                                    parseError("Recursive WITH not supported for " + getSqlDialect().getProductName(), node);
+                                }
                             }
                             else
                             {

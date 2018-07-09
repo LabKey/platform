@@ -979,7 +979,7 @@ abstract class PostgreSql91Dialect extends SqlDialect
     @Override
     public JdbcHelper getJdbcHelper()
     {
-        return new StandardJdbcHelper("jdbc:postgresql:");
+        return new StandardJdbcHelper(PostgreSqlDialectFactory.JDBC_PREFIX);
     }
 
     @Override
