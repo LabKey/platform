@@ -4,9 +4,7 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 (function() {
-    /**
-     * @private
-     */
+
     var validateFilter = function(filter) {
         var filterObj = {};
         if (filter instanceof LABKEY.Query.Filter || filter.getColumnName) {
@@ -33,9 +31,6 @@
         return filter;
     };
 
-    /**
-     * @private
-     */
     var _validateKey = function(key, keyClazz) {
         if (key instanceof keyClazz) {
             return key.getParts();
@@ -415,6 +410,7 @@
 
 /**
  * Used to render a queryWebPart around a response from GetData.
+ *
  * @memberOf LABKEY.Query.GetData
  * @function
  * @static

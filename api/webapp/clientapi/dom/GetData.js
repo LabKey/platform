@@ -7,14 +7,7 @@
 LABKEY.Query.GetData = new function(impl) {
 
     /**
-     * Used to render a queryWebPart around a response from GetData.
-     * @function
-     * @param {Object} config The config object for renderQueryWebpart is nearly identical to {@link LABKEY.Query.GetData.getRawData},
-     * except it has an additional parameter <strong><em>webPartConfig</em></strong>, which is a config object for
-     * {@link LABKEY.QueryWebPart}. Note that the Query returned from GetData is a read-only temporary query, so some
-     * features of QueryWebPart may be ignored (i.e. <em>showInsertButton</em>, <em>deleteURL</em>, etc.).
-     * @see LABKEY.QueryWebPart
-     * @see LABKEY.Query.GetData.getRawData
+     * Documentation specified in core/GetData.js -- search for "@name renderQueryWebPart"
      */
     impl.renderQueryWebPart = function(config) {
         var jsonData = validateGetDataConfig(config);

@@ -125,6 +125,7 @@ public interface FileContentService
      * @param createDir Create the mapped directory if it doesn't exist
      * @return AttachmentParent that can be passed to other methods of this interface
      */
+    @Nullable
     AttachmentDirectory getMappedAttachmentDirectory(Container c, boolean createDir) throws UnsetRootDirectoryException, MissingRootDirectoryException;
 
     /**

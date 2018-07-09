@@ -3173,3 +3173,96 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
  *       the scope of this query. Defaults to containerFilter.current, and is interpreted relative to
  *       config.containerPath.
  */
+
+/**
+ * Load the set of user visible schemas from the given container into a standard &lt;select&gt; input element.
+ *
+ * @memberOf LABKEY.Query
+ * @function
+ * @static
+ * @name schemaSelectInput
+ * @param config An object which contains the following configuration properties.
+ * @param {String} config.renderTo the id of the &lt;select&gt; input to load the LabKey queries into.
+ * @param {String} config.initValue the initial value to try and set the &lt;select&gt; element value after it loads.
+ */
+
+/**
+ * Load the set of queries from this container for a given schema into a standard &lt;select&gt; input. The config object
+ * must define which &lt;select&gt; input is for the schemas and which &lt;select&gt; input is for the queries. This function
+ * also then associates the two &lt;select&gt; inputs so that a selection change in the schema input will update the
+ * query input accordingly.
+ *
+ * @memberOf LABKEY.Query
+ * @function
+ * @static
+ * @name querySelectInput
+ * @param config An object which contains the following configuration properties.
+ * @param {String} config.renderTo the id of the &lt;select&gt; input to load the LabKey queries into.
+ * @param {String} config.schemaInputId the id of the &lt;select&gt; input to load the LabKey schemas into.
+ * @param {String} config.initValue the initial value to try and set the &lt;select&gt; element value after it loads.
+ */
+
+/**
+ * Load the set of columns for a given schema/query into a standard &lt;select&gt; input. The config object
+ * must define the schemaName and queryName to be used to source the column listing.
+ *
+ * @memberOf LABKEY.Query
+ * @function
+ * @static
+ * @name columnSelectInput
+ * @param config An object which contains the following configuration properties.
+ * @param {String} config.renderTo the id of the &lt;select&gt; input to load the LabKey queries into. Required.
+ * @param {String} config.schemaName the name of the schema. Required.
+ * @param {String} config.queryName the name of the query. Required.
+ * @param {String} config.initValue the initial value to try and set the &lt;select&gt; element value after it loads. Optional.
+ * @param {String} config.filterFn a function to call to filter the column set (ex. by data type). Optional.
+ */
+
+/**
+ * Bulk import data rows into a table.
+ * One of 'text', 'path', 'moduleResource', or 'file' is required and cannot be combined.
+ *
+ * @memberOf LABKEY.Query
+ * @function
+ * @static
+ * @name importData
+ * @param {Object} config An object which contains the following configuration properties.
+ * @param {String} config.schemaName Name of a schema defined within the current container.
+ * @param {String} config.queryName Name of a query table associated with the chosen schema.
+ * @param {File} [config.file] A <a href='https://developer.mozilla.org/en-US/docs/DOM/File'><code>File</code></a> object or a file input element to upload to the server.
+ * @param {String} [config.text] Text to import.
+ * @param {String} [config.path] Path to resource under webdav tree. E.g. "/_webdav/MyProject/@files/data.tsv"
+ * @param {String} [config.module] Module name to use when resolving a module resource.
+ * @param {String} [config.moduleResource] A file resource within the module to import.
+ * @param {String} [config.importIdentity] When true, auto-increment key columns may be imported from the data.
+ * @param {String} [config.importLookupByAlternateKey] When true, lookup columns can be imported by their alternate keys instead of the primary key.
+ *          For example, if a column is a lookup to a SampleSet, the imported value can be the Sample's name since names must be unique within a SampleSet.
+ * @param {Function} [config.success] Function called when the "importData" function executes successfully.
+ Will be called with the following arguments:
+ An object containing success and rowCount properties.
+ * @param {Function} [config.failure]  Function called importing data fails.
+ * @param {String} [config.containerPath] The container path in which the schema and query name are defined.
+ * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
+ *       generating a timeout error (defaults to 30000).
+ * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
+ * @returns {Mixed} In client-side scripts, this method will return a transaction id
+ * for the async request that can be used to cancel the request
+ * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+ * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
+ * @example Example, importing tsv data from a module: <pre name="code" class="javascript">
+ LABKEY.Query.importData({
+             schemaName: 'lists',
+             queryName: 'People',
+             // reference to &lt;input type='file' id='file'&gt;
+             file: document.getElementById('file')
+         },
+ });</pre>
+ * @example Example, importing tsv data from a module: <pre name="code" class="javascript">
+ LABKEY.Query.importData({
+             schemaName: 'lists',
+             queryName: 'People',
+             module: 'mymodule',
+             moduleResource: '/data/lists/People.tsv'
+         },
+ });</pre>
+ */

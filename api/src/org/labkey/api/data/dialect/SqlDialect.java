@@ -27,7 +27,6 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.TomcatVersion;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
@@ -39,7 +38,6 @@ import org.springframework.jdbc.BadSqlGrammarException;
 import javax.servlet.ServletException;
 import javax.sql.DataSource;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -1543,5 +1541,13 @@ public abstract class SqlDialect
     public boolean isWithRecursiveKeywordRequired()
     {
         return false;
+    }
+
+    /**
+     * Default is, if LabKey SQL CTEs are supported at all, both recursive and nonrecursive forms are supported. Not true of all dialects.
+     */
+    public boolean isRecursiveLabKeyWithSupported()
+    {
+        return isLabKeyWithSupported();
     }
 }

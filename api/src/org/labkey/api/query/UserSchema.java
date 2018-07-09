@@ -726,6 +726,14 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
                 {
                     hasPermission = rowTi.hasPermission(u, clazz);
                 }
+                else
+                {
+                    throw new UnauthorizedException("Unknown table: " + us.getSchemaName() + "." + ti.getName() + " in container: " + rowContainer.getPath());
+                }
+            }
+            else
+            {
+                throw new UnauthorizedException("Unknown table: " + ti.getUserSchema().getSchemaName() + "." + ti.getName() + " in container: " + rowContainer.getPath());
             }
         }
 
