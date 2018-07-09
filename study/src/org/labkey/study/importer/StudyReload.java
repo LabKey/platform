@@ -56,31 +56,6 @@ import java.util.concurrent.BlockingQueue;
 public class StudyReload
 {
     private static final Logger LOG = Logger.getLogger(StudyReload.class);
-    private static final BlockingQueue<ImportOptions> QUEUE = new ArrayBlockingQueue<>(100);       // Container IDs instead?
-    private static final Thread RELOAD_THREAD = new ReloadThread();
-
-    static
-    {
-        ContextListener.addShutdownListener(new ShutdownListener()
-        {
-            @Override
-            public String getName()
-            {
-                return RELOAD_THREAD.getName();
-            }
-
-            public void shutdownPre()
-            {
-                RELOAD_THREAD.interrupt();
-            }
-
-            public void shutdownStarted()
-            {
-            }
-        });
-
-        RELOAD_THREAD.start();
-    }
 
     private static String getDescription(Study study)
     {
@@ -209,15 +184,13 @@ public class StudyReload
         public ReloadStatus reloadStudy(StudyImpl study, ImportOptions options, String source, Long lastModified, Date lastReload) throws ImportException
         {
             options.addMessage("Study reload was initiated by " + source);
-            if (study.isAllowReload())
-                options.setSkipQueryValidation(!study.isValidateQueriesAfterImport());
 
             // Check for valid reload user
             User reloadUser = options.getUser();
 
             if (null == reloadUser)
             {
-                Integer reloadUserId = study.getReloadUser();
+                Integer reloadUserId = reloadUser.getUserId();
 
                 if (null != reloadUserId)
                     reloadUser = UserManager.getUser(reloadUserId);
@@ -247,17 +220,72 @@ public class StudyReload
             study.setLastReload(lastModified == null ? new Date() : new Date(lastModified));
             StudyManager.getInstance().updateStudy(null, study);
 
-            if (QUEUE.offer(options))
+
+            StudyManager manager = StudyManager.getInstance();
+            Container c = null;
+
+            try
             {
-                return new ReloadStatus("Reloading " + getDescription(study));
+                c = ContainerManager.getForId(options.getContainerId());
+                File studyXml = null;
+                PipeRoot root = StudyReload.getPipelineRoot(c);
+
+                // Task overrides default analysis directory, usually when study.xml is located
+                // in a subdirectory underneath the pipeline root
+                if (options.getAnalysisDir() != null)
+                {
+                    File[] files = options.getAnalysisDir().listFiles();
+                    if (files != null)
+                    {
+                        for (File f : files)
+                        {
+                            if (f.getName().equalsIgnoreCase("study.xml"))
+                            {
+                                studyXml = f;
+                                break;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    studyXml = root.resolvePath("study.xml");
+                }
+
+                study = manager.getStudy(c);
+                //noinspection ThrowableInstanceNeverThrown
+                BindException errors = new NullSafeBindException(c, "reload");
+                ActionURL manageStudyURL = new ActionURL(StudyController.ManageStudyAction.class, c);
+
+                LOG.info("Handling " + c.getPath());
+
+                // issue 15681: if there is a folder archive instead of a study archive, see if the folder.xml exists to point to the study root dir
+                if (studyXml != null && !studyXml.exists())
+                {
+                    File folderXml = root.resolvePath("folder.xml");
+                    if (folderXml.exists())
+                    {
+                        FolderImportContext folderCtx = new FolderImportContext(reloadUser, c, folderXml, null, new StaticLoggerGetter(LOG), null);
+                        FolderDocument folderDoc = folderCtx.getDocument();
+                        if (folderDoc.getFolder().getStudy() != null && folderDoc.getFolder().getStudy().getDir() != null)
+                        {
+                            studyXml = root.resolvePath("/" + folderDoc.getFolder().getStudy().getDir() + "/study.xml");
+                        }
+                    }
+                }
+                if (studyXml != null)
+                    PipelineService.get().queueJob(new StudyImportJob(c, reloadUser, manageStudyURL, studyXml, studyXml.getName(), errors, root, options));
+                else
+                    LOG.error("Study.xml does not exist in the analysis directory or pipeline root.");
             }
-            else
+            catch (Throwable t)
             {
-                // Restore last reload so we'll try this again later
-                study.setLastReload(lastReload);
-                StudyManager.getInstance().updateStudy(null, study);
-                throw new ImportException("Skipping reload of " + getDescription(study) + ": reload queue is full");
+                String studyDescription = (null != study ? " \"" + getDescription(study) + "\"" : "");
+                String folderPath = (null != c ? " in folder " + c.getPath() : "");
+                LOG.error("Error while reloading study" + studyDescription + folderPath, t);
             }
+
+            return new ReloadStatus("Reloading " + getDescription(study));
         }
     }
 
@@ -274,94 +302,6 @@ public class StudyReload
         public String getMessage()
         {
             return _message;
-        }
-    }
-
-
-    private static class ReloadThread extends Thread
-    {
-        private ReloadThread()
-        {
-            super("Study Reload Handler");
-        }
-
-        @Override
-        public void run()
-        {
-            StudyManager manager = StudyManager.getInstance();
-
-            while (true)
-            {
-                StudyImpl study = null;
-                Container c = null;
-
-                try
-                {
-                    ImportOptions options = QUEUE.take();
-                    c = ContainerManager.getForId(options.getContainerId());
-                    User reloadUser = options.getUser();
-                    File studyXml = null;
-                    PipeRoot root = StudyReload.getPipelineRoot(c);
-
-                    // Task overrides default analysis directory, usually when study.xml is located
-                    // in a subdirectory underneath the pipeline root
-                    if (options.getAnalysisDir() != null)
-                    {
-                        File[] files = options.getAnalysisDir().listFiles();
-                        if (files != null)
-                        {
-                            for (File f : files)
-                            {
-                                if (f.getName().equalsIgnoreCase("study.xml"))
-                                {
-                                    studyXml = f;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    else
-                    {
-                        studyXml = root.resolvePath("study.xml");
-                    }
-
-                    study = manager.getStudy(c);
-                    //noinspection ThrowableInstanceNeverThrown
-                    BindException errors = new NullSafeBindException(c, "reload");
-                    ActionURL manageStudyURL = new ActionURL(StudyController.ManageStudyAction.class, c);
-
-                    LOG.info("Handling " + c.getPath());
-
-                    // issue 15681: if there is a folder archive instead of a study archive, see if the folder.xml exists to point to the study root dir
-                    if (studyXml != null && !studyXml.exists())
-                    {
-                        File folderXml = root.resolvePath("folder.xml");
-                        if (folderXml.exists())
-                        {
-                            FolderImportContext folderCtx = new FolderImportContext(reloadUser, c, folderXml, null, new StaticLoggerGetter(LOG), null);
-                            FolderDocument folderDoc = folderCtx.getDocument();
-                            if (folderDoc.getFolder().getStudy() != null && folderDoc.getFolder().getStudy().getDir() != null)
-                            {
-                                studyXml = root.resolvePath("/" + folderDoc.getFolder().getStudy().getDir() + "/study.xml");
-                            }
-                        }
-                    }
-                    if (studyXml != null)
-                        PipelineService.get().queueJob(new StudyImportJob(c, reloadUser, manageStudyURL, studyXml, studyXml.getName(), errors, root, options));
-                    else
-                        LOG.error("Study.xml does not exist in the analysis directory or pipeline root.");
-                }
-                catch (InterruptedException e)
-                {
-                    break;
-                }
-                catch (Throwable t)
-                {
-                    String studyDescription = (null != study ? " \"" + getDescription(study) + "\"" : "");
-                    String folderPath = (null != c ? " in folder " + c.getPath() : "");
-                    LOG.error("Error while reloading study" + studyDescription + folderPath, t);
-                }
-            }
         }
     }
 }

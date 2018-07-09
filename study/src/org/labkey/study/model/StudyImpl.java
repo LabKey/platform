@@ -115,10 +115,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     private Integer _defaultDirectEntryQCState;
     private boolean _showPrivateDataByDefault = true;
     private boolean _blankQCStatePublic = false;
-    private boolean _isAllowReload;
-    private boolean _validateQueriesAfterImport;
     private Date _lastReload;
-    private Integer _reloadUser;
     private boolean _advancedCohorts;
     private Integer _participantCommentDatasetId;
     private String _participantCommentProperty;
@@ -574,11 +571,6 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return domain.getProperties().size();
     }
 
-    public boolean isAllowReload()
-    {
-        return _isAllowReload;
-    }
-
     public Date getLastReload()
     {
         return _lastReload;
@@ -587,16 +579,6 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     public void setLastReload(Date lastReload)
     {
         _lastReload = lastReload;
-    }
-
-    public Integer getReloadUser()
-    {
-        return _reloadUser;
-    }
-
-    public boolean isValidateQueriesAfterImport()
-    {
-        return _validateQueriesAfterImport;
     }
 
     public boolean isAdvancedCohorts()

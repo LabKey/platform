@@ -2998,6 +2998,7 @@ study/test/src/org/labkey/test/tests/study/SampleMindedImportTest.java -text
 study/test/src/org/labkey/test/tests/study/SharedStudyTest.java -text
 study/test/src/org/labkey/test/tests/study/SpecimenMergeTest.java -text
 study/test/src/org/labkey/test/tests/study/SpecimenReplaceTest.java -text
+study/test/src/org/labkey/test/tests/study/StudyCheckForReloadTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyCohortExportTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyContinuousTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyDatasetImportFieldsTest.java -text

@@ -6533,7 +6533,7 @@ public class StudyController extends BaseStudyController
 
     @RequiresLogin
     @RequiresPermission(AdminPermission.class)
-    public class CheckForReloadAction extends ApiAction<ReloadForm>    // Subclassing makes it easier to redisplay errors, etc.
+    public class CheckForReloadAction extends ApiAction<ReloadForm>
     {
         @Override
         public ApiResponse execute(ReloadForm form, BindException errors) throws Exception
