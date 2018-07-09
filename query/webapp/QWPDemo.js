@@ -262,15 +262,29 @@
                 success: function() {
                     var bbar = $("#" + RENDERTO + " div.labkey-button-bar");
                     var rs = bbar.find("a.labkey-button:contains('RStudio')");
-                    var ex = bbar.find("a.labkey-button[title='Export / Sign Data']");
                     if (rs.length !== 1) {
+                        alert('Failed to find RStudio button');
                     }
-                    if (ex.length !== 1) {
-                        alert('Failed to find Export');
-                    }
-                    else {
-                        LABKEY.Utils.signalWebDriverTest("testRStudioButtons");
-                    }
+                    rs[0].click(); // toggle panel open
+                    setTimeout(function() {
+                        var exportToRs = $("button.labkey-rstudio-export:visible");
+                        if (exportToRs.length !== 1) {
+                            alert('Failed to open RStudio export panel');
+                        }
+                        else {
+                            rs[0].click(); // toggle panel close
+                            setTimeout(function() {
+                                exportToRs = $("button.labkey-rstudio-export:visible");
+                                if (exportToRs.length > 0) {
+                                    alert('Failed to close RStudio export panel');
+                                }
+                                else {
+                                    LABKEY.Utils.signalWebDriverTest("testRStudioButtons");
+                                }
+                            }, 1000);
+                        }
+                    }, 1000);
+
                 },
                 failure: function() {
                     alert('Failed test: Rstudio buttons');
