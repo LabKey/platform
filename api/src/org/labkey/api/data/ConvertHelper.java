@@ -222,6 +222,31 @@ public class ConvertHelper implements PropertyEditorRegistrar
         }
     }
 
+    // Issue 34334: Add 't' and 'f' to BooleanConverter in order to support PostgreSQL array_to_string of booleans array.
+    // For example, array_to_string(array_agg(array[true, false]), '|') ==> returns 't|f'
+    public static class BooleanConverter implements Converter
+    {
+        org.apache.commons.beanutils.converters.BooleanConverter nested = new org.apache.commons.beanutils.converters.BooleanConverter();
+
+        @Override
+        public Object convert(Class type, Object value)
+        {
+            if (value == null)
+                return null;
+
+            if (value instanceof Boolean)
+                return value;
+
+            String str = value.toString();
+            if (str.equalsIgnoreCase("t"))
+                return Boolean.TRUE;
+            else if (str.equalsIgnoreCase("f"))
+                return Boolean.FALSE;
+
+            return nested.convert(type, value);
+        }
+    }
+
 
     /**
      * This converter converts dates with a time portion only.
@@ -596,7 +621,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
     }
 
     public static class ConvertUtilsEditor extends PropertyEditorSupport
-        {
+    {
         Class _class;
 
         ConvertUtilsEditor(Class c)
