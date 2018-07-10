@@ -217,7 +217,6 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
         deleteMultipleVisits(Arrays.asList("2 week Post-V#1", "411.0 - 491.0", "4 week Post-V#1", "1 week Post-V#2"));
 
         // enable study reloading and attempt now, which will say that studyload.txt not found
-        enableStudyReloading();
         attemptStudyReloadNow("Error: Could not find file studyload.txt in the pipeline root for Study 001", true);
 
         // change pipeline root and then attempt reload again
@@ -247,14 +246,6 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
         verifyStudyVisits(definedVisits, null);
 
         checkExpectedErrors(5);
-    }
-
-    private void enableStudyReloading()
-    {
-        goToManageStudy();
-        clickAndWait(Locator.linkWithText("Manage Reloading"));
-        checkCheckbox(Locator.name("allowReload"));
-        clickButton("Update");
     }
 
     private void attemptStudyReloadNow(String expectedMsg, boolean failForUndefinedVisits)

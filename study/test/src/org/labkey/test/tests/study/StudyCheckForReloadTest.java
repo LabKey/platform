@@ -15,7 +15,6 @@
  */
 package org.labkey.test.tests.study;
 
-import org.labkey.api.settings.BaseServerProperties;
 import org.labkey.api.util.FileUtil;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
@@ -23,13 +22,10 @@ import org.labkey.test.WebTestHelper;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.SimpleHttpRequest;
-import org.labkey.test.util.SimpleHttpResponse;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
-
-import static org.junit.Assert.assertEquals;
 
 public class StudyCheckForReloadTest extends StudyBaseTest
 {
@@ -37,10 +33,13 @@ public class StudyCheckForReloadTest extends StudyBaseTest
     @LogMethod
     protected void doCreateSteps()
     {
+        log("Initializing project folder and importing study");
+
         initializeFolder();
         importStudyFromZip(TestFileUtils.getSampleData("studyreload/original.zip"));
 
-        // Copy files from "unzip" folder into parent folder
+        log("Copy files from \"unzip\" folder into parent folder");
+
         String path = "\\build\\deploy\\files\\StudyVerifyProject\\My Study\\@files";
         String fullBasePath = new File(new File("").toURI()).getParent() + path;
         try
@@ -52,7 +51,8 @@ public class StudyCheckForReloadTest extends StudyBaseTest
             e.printStackTrace();
         }
 
-        // Create studyload.txt file
+        log("Create studyload.txt file");
+
         File studyload = new File(fullBasePath + "\\studyload.txt");
         try
         {
@@ -68,6 +68,8 @@ public class StudyCheckForReloadTest extends StudyBaseTest
     @LogMethod
     protected void doVerifySteps()
     {
+        log("Sending api request...");
+
         String reloadURL = WebTestHelper.buildURL("study", "StudyVerifyProject/My Study", "checkForReload");
         SimpleHttpRequest request = new SimpleHttpRequest(reloadURL);
         try
@@ -79,8 +81,9 @@ public class StudyCheckForReloadTest extends StudyBaseTest
             e.printStackTrace();
         }
 
-        // Check reload is surfaced in pipeline UI
-        refresh();
-        waitForElement(Locator.tagContainingText("td", "Study reload"));
+        log("Check reload is surfaced in pipeline UI");
+
+        waitForPipelineJobsToComplete(2, "Study reload", false);
+        waitForElement(Locator.linkContainingText("Study reload"));
     }
 }
