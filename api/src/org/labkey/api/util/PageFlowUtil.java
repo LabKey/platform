@@ -1258,7 +1258,7 @@ public class PageFlowUtil
 
     public static String generateBackButton(String text)
     {
-        return button(text).href("#").onClick("window.history.back(); return false;").toString();
+        return button(text).href("#").onClick("LABKEY.setDirty(false); window.history.back(); return false;").toString();
     }
 
     public static String generateDropDownButton(String text, String href, String onClick, @Nullable Map<String, String> attributes)
