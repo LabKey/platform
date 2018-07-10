@@ -52,10 +52,20 @@
     ActionURL completeUserUrl = new ActionURL(AnnouncementsController.CompleteUserAction.class, getContainer());
 
 %><%=formatMissedErrors("form")%>
-<labkey:form method="POST" enctype="multipart/form-data" action="<%=respondUrl%>" onsubmit="return LABKEY.discuss.validate(this)">
-<input type="hidden" name="cancelUrl" value="<%=h(bean.cancelURL)%>">
+
+<script type="text/javascript">
+    function onSubmit(form){
+        LABKEY.setSubmit(true);
+        return LABKEY.discuss.validate(form);
+    }
+
+    window.onbeforeunload = LABKEY.beforeunload(LABKEY.isDirty());
+</script>
+
+<labkey:form method="POST" enctype="multipart/form-data" action="<%=respondUrl%>" onsubmit="onSubmit(this);">
+<labkey:input type="hidden" name="cancelUrl" value="<%=h(bean.cancelURL)%>" />
 <%=generateReturnUrlFormField(bean.cancelURL)%>
-<input type="hidden" name="fromDiscussion" value="<%=bean.fromDiscussion%>">
+<labkey:input type="hidden" name="fromDiscussion" value="<%=bean.fromDiscussion%>" />
 <div style="max-width: 1050px;">
 <table style="width: 100%;" class="lk-fields-table">
 <%
@@ -68,11 +78,11 @@ if (!mr.isApproved(c, user))
 
 if (settings.isTitleEditable())
 {
-    %><tr><td class="labkey-form-label">Title * <%= PageFlowUtil.helpPopup("Title", "This field is required.") %></td><td colspan="2"><input type="text" size="60" maxlength="255" name="title" value="<%=h(form.get("title"))%>"></td></tr><%
+    %><tr><td class="labkey-form-label">Title * <%= PageFlowUtil.helpPopup("Title", "This field is required.") %></td><td colspan="2"><labkey:input type="text" size="60" maxLength="255" name="title" value='<%=h(form.get("title"))%>' onChange="LABKEY.setDirty(true);"/></td></tr><%
 }
 else
 {
-    %><tr><td colspan="2"><input type="hidden" name="title" value="<%=h(form.get("title"))%>"></td></tr><%
+    %><tr><td colspan="2"><labkey:input type="hidden" name="title" value='<%=h(form.get("title"))%>'/></td></tr><%
 }
 
 if (settings.hasStatus())
@@ -101,7 +111,7 @@ if (settings.hasMemberList())
 
 if (settings.hasExpires())
 {
-    %><tr><td class="labkey-form-label">Expires</td><td><input type="text" size="23" name="expires" value="<%=h(form.get("expires"))%>" ></td><td width="100%"><i>Expired messages are not deleted, they are just no longer shown on the Portal page.</i></td></tr><%
+    %><tr><td class="labkey-form-label">Expires</td><td><labkey:input type="text" size="23" name="expires" value='<%=h(form.get("expires"))%>' /></td><td width="100%"><i>Expired messages are not deleted, they are just no longer shown on the Portal page.</i></td></tr><%
 }
 
 %>
@@ -118,12 +128,12 @@ if (settings.hasExpires())
             </ul>
             <div class="tab-content" id="messageTabsContent">
                 <div class="tab-pane active" id="source" role="tabpanel" aria-labelledby="source-tab">
-                    <textarea cols='120' rows='15' id="body" name='body' style="width: 100%;"><%=h(form.get("body"))%></textarea>
+                    <textarea cols='120' rows='15' id="body" name='body' style="width: 100%;" onChange="LABKEY.setDirty(true);"><%=h(form.get("body"))%></textarea>
                 </div>
                 <div class="tab-pane message-preview form-control" id="preview" role="tabpanel" aria-labelledby="preview-tab">
                 </div>
             </div>
-            <input type="hidden" name="parentId" value="<%=h(bean.parentAnnouncementModel.getEntityId())%>"/>
+            <labkey:input type="hidden" name="parentId" value="<%=h(bean.parentAnnouncementModel.getEntityId())%>"/>
         </td>
     </tr><%
     
@@ -132,7 +142,7 @@ if (settings.hasFormatPicker())
 %><tr>
     <td class="labkey-form-label">Render As</td>
     <td colspan="2">
-        <select name="rendererType" id="rendererType">
+        <select name="rendererType" id="rendererType" onChange="LABKEY.setDirty(true);">
               <%
                   for (WikiRendererType type : bean.renderers)
                   {
@@ -167,7 +177,7 @@ if (settings.hasFormatPicker())
 <br>&nbsp;<%= button("Submit").submit(true).id("submitButton").disableOnClick(true) %>&nbsp;<%
 if (null != bean.cancelURL)
 {
-    %><%= button("Cancel").href(bean.cancelURL) %><%
+    %><%= button("Cancel").href(bean.cancelURL).onClick("LABKEY.setSubmit(true);") %><%
 }
 else
 {

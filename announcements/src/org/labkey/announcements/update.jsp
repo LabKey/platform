@@ -47,16 +47,26 @@
     ActionURL completeUserUrl = new ActionURL(AnnouncementsController.CompleteUserAction.class, getContainer());
 %>
 <%=formatMissedErrors("form")%>
-<labkey:form method="post" action='<%=baseUrl.setAction(AnnouncementsController.UpdateAction.class)%>' enctype="multipart/form-data" onsubmit="return LABKEY.discuss.validate(this)">
-<input type="hidden" name="rowId" value="<%=ann.getRowId()%>">
-<input type="hidden" name="entityId" value="<%=h(ann.getEntityId())%>">
-<input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(ann)%>">
+
+<script type="text/javascript">
+    function onSubmit(form){
+        LABKEY.setSubmit(true);
+        return LABKEY.discuss.validate(form);
+    }
+
+    window.onbeforeunload = LABKEY.beforeunload(LABKEY.isDirty());
+</script>
+
+<labkey:form method="post" action='<%=baseUrl.setAction(AnnouncementsController.UpdateAction.class)%>' enctype="multipart/form-data" onsubmit="onSubmit(this);">
+<labkey:input type="hidden" name="rowId" value="<%=ann.getRowId()%>"/>
+<labkey:input type="hidden" name="entityId" value="<%=h(ann.getEntityId())%>"/>
+<labkey:input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(ann)%>"/>
 <%=generateReturnUrlFormField(bean.returnURL)%>
 <table><%
 
 if (settings.isTitleEditable())
 {
-    %><tr><td class='labkey-form-label'>Title * <%= PageFlowUtil.helpPopup("Title", "This field is required.") %></td><td colspan="2"><input name="title" size="60" maxlength="255" value="<%=h(ann.getTitle())%>"></td></tr><%
+    %><tr><td class='labkey-form-label'>Title * <%= PageFlowUtil.helpPopup("Title", "This field is required.") %></td><td colspan="2"><labkey:input name="title" size="60" maxLength="255" value="<%=h(ann.getTitle())%>" onChange="LABKEY.setDirty(true);"/></td></tr><%
 }
 
 if (settings.hasStatus())
@@ -88,7 +98,7 @@ if (settings.hasMemberList())
 
 if (settings.hasExpires())
 {
-    %><tr><td class="labkey-form-label">Expires</td><td><input name="expires" size="23" value="<%=formatDate(ann.getExpires())%>"></td><td width="100%"><i>Expired messages are not deleted, they are just no longer shown on the Portal page.</i></td></tr><%
+    %><tr><td class="labkey-form-label">Expires</td><td><labkey:input name="expires" size="23" value="<%=formatDate(ann.getExpires())%>"/></td><td width="100%"><i>Expired messages are not deleted, they are just no longer shown on the Portal page.</i></td></tr><%
 }
 
 %>
@@ -105,7 +115,7 @@ if (settings.hasExpires())
             </ul>
             <div class="tab-content" id="messageTabsContent">
                 <div class="tab-pane active" id="source" role="tabpanel" aria-labelledby="source-tab">
-                    <textarea cols='120' rows='15' id="body" name='body' style="width: 100%;"><%=h(ann.getBody())%></textarea>
+                    <textarea cols='120' rows='15' id="body" name='body' style="width: 100%;" onChange="LABKEY.setDirty(true);"><%=h(ann.getBody()) %></textarea>
                 </div>
                 <div class="tab-pane message-preview form-control" id="preview" role="tabpanel" aria-labelledby="preview-tab">
                 </div>
@@ -118,7 +128,7 @@ if (settings.hasExpires())
   <tr>
     <td class="labkey-form-label">Render As</td>
     <td colspan="2">
-      <select name="rendererType" id="rendererType"><%
+      <select name="rendererType" id="rendererType" onChange="LABKEY.setDirty(true);"<%
           for (WikiRendererType type : bean.renderers)
           {
               String value = type.name();
