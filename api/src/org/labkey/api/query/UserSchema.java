@@ -672,7 +672,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
 
     /**
      * This provides a single method to translate a the value supplied on a row for container into a
-     * proper Container object.  We accept: the containerId, containerPath or a Container object.
+     * proper Container object.  We accept: the containerId or a Container object.
      * If a value is supplied but cannot be resolved to a valid container then null is returned.
      */
     @Nullable
@@ -690,10 +690,6 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         else
         {
             ret = ContainerManager.getForId(String.valueOf(rowContainerVal));
-            if (ret == null)
-            {
-                ret = ContainerManager.getForPath(String.valueOf(rowContainerVal));
-            }
         }
 
         if (ret != null && !ret.equals(c))

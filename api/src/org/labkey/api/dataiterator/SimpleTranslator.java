@@ -19,6 +19,7 @@ package org.labkey.api.dataiterator;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -93,6 +94,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     Container _mvContainer;
     Map<String,String> _missingValues = Collections.emptyMap();
     Map<String,Integer> _inputNameMap = null;
+
+    private static final Logger LOG = Logger.getLogger(SimpleTranslator.class);
 
     public SimpleTranslator(DataIterator source, DataIteratorContext context)
     {
@@ -424,7 +427,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 {
                     if (!this.us.getContainer().allowRowMutationForContainer(rowContainer))
                     {
-                        getRowError().addError(new SimpleValidationError("Row is not from the correct container: " + rowContainerVal));
+                        getRowError().addError(new SimpleValidationError("Row supplied container value: " + rowContainerVal + " cannot be used for actions against the container: " + us.getContainer().getPath()));
+                        LOG.warn("Resolved container to " + rowContainer.getPath() + " but rejected as valid location for import into " + us.getContainer().getPath() + " in " + us.getSchemaName() + "." + tableInfo.getPublicSchemaName());
                     }
                     else
                     {
@@ -435,7 +439,11 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 }
                 else
                 {
-                    getRowError().addError(new SimpleValidationError("Unknown container: " + rowContainerVal));
+                    // only log if the incoming value is GUID-like
+                    if (rowContainerVal instanceof String && GUID.isGUID((String)rowContainerVal))
+                    {
+                        LOG.warn("Failed to resolve container value '" + rowContainerVal + "' to container for import into " + us.getSchemaName() + "." + tableInfo.getPublicSchemaName() + ", defaulting to original target container of " + us.getContainer().getPath());
+                    }
                 }
             }
 

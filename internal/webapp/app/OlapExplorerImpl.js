@@ -6,7 +6,7 @@
 /**
  * A new implementation of OlapExplorer that support multiple level using tree as underlying data structure
  */
-Ext.define('LABKEY.app.model.OlapExplorer2', {
+Ext.define('LABKEY.app.model.OlapExplorerImpl', {
 
     extend: 'LABKEY.app.model.OlapExplorer',
 
@@ -17,13 +17,13 @@ Ext.define('LABKEY.app.model.OlapExplorer2', {
     ]
 });
 
-Ext.define('LABKEY.app.store.OlapExplorer2', {
+Ext.define('LABKEY.app.store.OlapExplorerImpl', {
     extend: 'LABKEY.app.store.OlapExplorer',
-    alternateClassName: 'LABKEY.olapStore2',
+    alternateClassName: 'LABKEY.olapStoreImpl',
     allRecordTree: null,
     statics: {
         /**
-         * These sort functions assume sorting an Array of LABKEY.app.model.OlapExplorer2 nodes
+         * These sort functions assume sorting an Array of LABKEY.app.model.OlapExplorerImpl nodes
          */
         nodeSorters: {
             sortAlphaNum : function(recA, recB) {
@@ -107,19 +107,18 @@ Ext.define('LABKEY.app.store.OlapExplorer2', {
 
             // Subjects should not be listed so do not roll up
             if ((!this.showEmpty && baseResult.cells[x][0].value === 0)
-                    || (subPosition.level.name === this.subjectName)
-                    || subPosition.name == '#null') {
+                    || (subPosition.level.name === this.subjectName)) {
                 continue;
             }
+
+            if (!this.shouldIncludeMember(hierarchy, subPosition))
+                continue;
 
             isGroup = false;
             if (hasGrpLevel && subPosition.level.id == grpLevelID) {
                 activeGroup = subPosition.name;
                 isGroup = true;
             }
-
-            if (!this.shouldIncludeMember(hierarchy.getUniqueName(), subPosition.level.uniqueName, subPosition.uniqueName))
-                continue;
 
             target = {
                 label: LABKEY.app.model.Filter.getMemberLabel(subPosition.name),
@@ -143,7 +142,7 @@ Ext.define('LABKEY.app.store.OlapExplorer2', {
                 target.subcount = this._calculateSubcount(selectionResult, target.uniqueName);
             }
 
-            var instance = Ext.create('LABKEY.app.model.OlapExplorer2', target);
+            var instance = Ext.create('LABKEY.app.model.OlapExplorerImpl', target);
 
             if (target.isGroup) {
                 groupTarget = instance;
@@ -170,7 +169,7 @@ Ext.define('LABKEY.app.store.OlapExplorer2', {
             }
         }
 
-        this.allRecordTree.updateLeafNodes();
+        this.allRecordTree.updateLeafNodes(this.shouldCollapseDescendantsWithSameValue());
         var allRecords = this.allRecordTree.getAllRecords();
         var allInstances = [];
         Ext.each(allRecords, function(rec){
@@ -239,20 +238,29 @@ Ext.define('LABKEY.app.store.OlapExplorer2', {
             this.resumeEvents();
             this.fireEvent('subselect', this);
         }
+    },
+
+    /**
+     * Determine if node's descendants should be pruned off when all descendants have the same value as current node.
+     * e.g. when a first level node is of value "#null", then it will have exact one child with "#null", for N levels, return true to hide all child levels of the node.
+     * @returns {boolean}
+     */
+    shouldCollapseDescendantsWithSameValue: function() {
+        return false; //subclass to override
     }
 
 });
 
-Ext.define('LABKEY.app.view.OlapExplorer2', {
+Ext.define('LABKEY.app.view.OlapExplorerImpl', {
     extend: 'LABKEY.app.view.OlapExplorer',
-    alias : 'widget.olapexplorerview2',
+    alias : 'widget.olapexplorerviewImpl',
     initTemplate : function() {
 
         var barTpl = this.getBarTemplate();
         var countTpl = this.getCountTemplate();
 
         //
-        // This template is meant to be bound to a set of LABKEY.app.model.OlapExplorer2 instances
+        // This template is meant to be bound to a set of LABKEY.app.model.OlapExplorerImpl instances
         //
         this.tpl = new Ext.XTemplate(
                 '<div class="', this.baseChartCls, '">',
@@ -260,9 +268,11 @@ Ext.define('LABKEY.app.view.OlapExplorer2', {
                 '<tpl for=".">',
                 '<tpl if="isGroup === true">',
                 '<div class="saeparent">',
+                '<tpl if="isLeafNode === true"><tpl else>',
                 '<div class="saecollapse {#}-collapse" id="{#}-collapse">',
-                '<p><tpl if="isLeafNode === true"><tpl else><tpl if="collapsed === true">+<tpl else>-</tpl></tpl></p>',
+                '<p><tpl if="collapsed === true">+<tpl else>-</tpl></p>',
                 '</div>',
+                '</tpl>',
                 '<div class="', this.barCls, ' large">',
                 '<span class="', this.barLabelCls, '">{label:htmlEncode}',
                 (this.ordinal ? '&nbsp;({ordinal:htmlEncode})' : ''),
@@ -376,24 +386,52 @@ Ext.define('LABKEY.app.util.OlapExplorerTree', {
         return this.preOrderTraversal(this.root, [], true);
     },
     /**
-     * Detemine if a node is a leaf node with no children
+     * collapseSameDescendants: true to trim node whose all descendants have the same value as current node
+     * Determine if a node is a leaf node
      */
-    updateLeafNodes: function() {
-        this.updateLeafNodesInfo(this.root);
+    updateLeafNodes: function(collapseSameDescendants) {
+        this.updateLeafNodesInfo(this.root, collapseSameDescendants);
     },
-    updateLeafNodesInfo: function(parentNode) {
+    updateLeafNodesInfo: function(parentNode, prune) {
         for (var i = 0, length = parentNode.childrenNodes.length; i < length; i++) {
             var curNode = parentNode.childrenNodes[i];
-            if (curNode.childrenNodes.length == 0) {
+            if (curNode.childrenNodes.length === 0) {
+                if (curNode.record.data) {
+                    curNode.record.data.isLeafNode = true;
+                }
+            }
+            // if prune, and if all descendants have only one child, don't show full lineage
+            else if (curNode.childrenNodes.length === 1 && prune && !this.hasDifferentDescendantValues(curNode)) {
+                curNode.childrenNodes = [];
                 if (curNode.record.data) {
                     curNode.record.data.isLeafNode = true;
                 }
             }
             else {
-                this.updateLeafNodesInfo(curNode);
+                this.updateLeafNodesInfo(curNode, prune);
             }
         }
     },
+
+    // check if node has any offspring with different value than current node
+    hasDifferentDescendantValues: function(node) {
+        var hasDiff = false;
+        while (node.childrenNodes.length > 0 && !hasDiff) {
+            if (node.childrenNodes.length > 1) {
+                hasDiff = true;
+            }
+            else {
+                if (node.record.data.uniqueName !== node.childrenNodes[0].record.data.uniqueName) {
+                    hasDiff = true;
+                }
+                else {
+                    node = node.childrenNodes[0];
+                }
+            }
+        }
+        return hasDiff;
+    },
+
     preOrderTraversal: function(currentNode, results, isRoot) {
         if (!isRoot) {
             results.push(currentNode);

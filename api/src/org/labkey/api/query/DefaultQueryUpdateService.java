@@ -473,13 +473,13 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         {
             // UNDONE: 9077: check container permission on each row before delete
             Container rowContainer = UserSchema.translateRowSuppliedContainer(new CaseInsensitiveHashMap<>(oldRowMap).get("container"), container, user, getQueryTable(), DeletePermission.class);
-            if (null != rowContainer && !container.getId().equals(rowContainer))
+            if (null != rowContainer && !container.equals(rowContainer))
             {
                 //Issue 15301: allow workbooks records to be deleted/updated from the parent container
                 if (container.allowRowMutationForContainer(rowContainer))
                     container = rowContainer;
                 else
-                    throw new UnauthorizedException("The row is from the wrong container.");
+                    throw new UnauthorizedException("The row is from the container: " + rowContainer.getId() + " which does not allow deletes from the container: " + container.getPath());
             }
         }
 
@@ -613,9 +613,9 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                 Container rowContainer = UserSchema.translateRowSuppliedContainer(row.get("container"), container, user, getQueryTable(), clazz);
                 if (rowContainer != null && container.allowRowMutationForContainer(rowContainer))
                 {
+                    row.put("container", rowContainer.getId()); //normalize to container ID
                     return;  //accept the row-provided value
                 }
-
             }
             row.put("container", container.getId());
         }

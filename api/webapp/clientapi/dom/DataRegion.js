@@ -473,7 +473,10 @@ if (!LABKEY.DataRegions) {
          * Non-configurable Options
          */
         this.selectionModified = false;
-        this.panelConfigurations = {};
+
+        if (this.panelConfigurations === undefined) {
+            this.panelConfigurations = {};
+        }
 
         if (isQWP && this.renderTo) {
             _load(this);
@@ -522,6 +525,9 @@ if (!LABKEY.DataRegions) {
     };
 
     LABKEY.DataRegion.prototype.destroy = function() {
+        // clean-up panel configurations because we preserve this in init
+        this.panelConfigurations = {};
+
         // currently a no-op, but should be used to clean-up after ourselves
         this.disableHeaderLock();
     };
@@ -1423,13 +1429,18 @@ if (!LABKEY.DataRegions) {
     LABKEY.DataRegion.prototype.showContext = function() {
         _initContexts();
 
-        var ctx = _getContextBarSelector(this);
-        if (ctx.html().trim() !== '') {
-            ctx.show();
-        }
-        var view = _getViewBarSelector(this);
-        if (view.html().trim() !== '') {
-            view.show();
+        var contexts = [
+            _getContextBarSelector(this),
+            _getViewBarSelector(this)
+        ];
+
+        for (var i = 0; i < contexts.length; i++) {
+            var ctx = contexts[i];
+            var html = ctx.html();
+
+            if (html && html.trim() !== '') {
+                ctx.show();
+            }
         }
     };
 
@@ -2137,7 +2148,7 @@ if (!LABKEY.DataRegions) {
             hide: $.isFunction(hideFn) ? hideFn : _defaultHide,
             scope: scope
         };
-        if (friendlyName !== panelId)
+        if (friendlyName && friendlyName !== panelId)
             this.panelConfigurations[friendlyName] = this.panelConfigurations[panelId];
         return this;
     };
@@ -2428,7 +2439,7 @@ if (!LABKEY.DataRegions) {
                 }
 
                 // determine if this panel has been registered
-                if (!dr.getPanelConfiguration(panelId)) {
+                if (!dr.getPanelConfiguration(panelId) && panelSel.length > 0) {
                     dr.publishPanel(panelId, panelId);
                 }
 
