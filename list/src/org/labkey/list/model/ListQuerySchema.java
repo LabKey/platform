@@ -139,4 +139,10 @@ public class ListQuerySchema extends UserSchema
             root.addChild("Manage lists", ListController.getBeginURL(getContainer()));
         return root;
     }
+
+    @Override
+    public boolean hasRegisteredSchemaLinks()
+    {
+        return true;
+    }
 }

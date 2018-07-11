@@ -47,9 +47,15 @@ public class CoreWarningProvider implements WarningProvider
             Integer maxTotal = labkeyScope.getDataSourceProperties().getMaxTotal();
 
             if (null == maxTotal)
+            {
                 warnings.add("Could not determine the connection pool size for the labkeyDataSource; verify that the connection pool is properly configured in labkey.xml");
+            }
             else if (maxTotal < 20)
-                warnings.add("The configured labkeyDataSource connection pool size (" + maxTotal + ") is too small for a production server! Update the configuration and restart the server.");
+            {
+                HelpTopic topic = new HelpTopic("troubleshootingAdmin#pool");
+                warnings.add("The configured labkeyDataSource connection pool size (" + maxTotal + ") is too small for a production server. Update the configuration and restart the server. " +
+                        "See the " + topic.getSimpleLinkHtml("Connection Pool Size section of the Troubleshooting page") + " for more information.");
+            }
         }
 
         if (!ModuleLoader.getInstance().getTomcatVersion().isSupported())
