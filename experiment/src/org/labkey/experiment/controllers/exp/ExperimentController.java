@@ -121,6 +121,7 @@ import org.labkey.api.study.assay.AssayFileWriter;
 import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.AssayWellExclusionService;
 import org.labkey.api.study.query.AssayBaseQueryView;
 import org.labkey.api.study.query.ResultsQueryView;
 import org.labkey.api.util.CSRFUtil;
@@ -184,7 +185,6 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.imageio.ImageIO;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
 import java.awt.image.BufferedImage;
 import java.io.BufferedOutputStream;
@@ -197,7 +197,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Writer;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
@@ -5974,9 +5973,12 @@ public class ExperimentController extends SpringActionController
             if (!exclusionEventForm.isUpdate())
                 return false;
 
-            Set<String> rows = DataRegionSelection.getSelected(getViewContext(), exclusionEventForm.getDataRegionSelectionKey(), true, false);
-            ExperimentService.get().createExclusionEvent(this.run, rows, exclusionEventForm.getComment(), getUser(), getContainer());
-
+            AssayWellExclusionService svc = AssayWellExclusionService.getProvider();
+            if (svc != null)
+            {
+                Set<String> rows = DataRegionSelection.getSelected(getViewContext(), exclusionEventForm.getDataRegionSelectionKey(), true, false);
+                svc.createExclusionEvent(this.run, rows, exclusionEventForm.getComment(), getUser(), getContainer());
+            }
             DataRegionSelection.clearAll(getViewContext(), exclusionEventForm.getDataRegionSelectionKey());
             return true;
         }

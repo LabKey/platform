@@ -24,7 +24,6 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
-import org.fhcrc.cpas.exp.xml.ExperimentArchiveType;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -97,8 +96,6 @@ import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.exp.query.ExpDataClassTable;
 import org.labkey.api.exp.query.ExpDataInputTable;
 import org.labkey.api.exp.query.ExpDataTable;
-import org.labkey.api.exp.query.ExpExclusionMapTable;
-import org.labkey.api.exp.query.ExpExclusionTable;
 import org.labkey.api.exp.query.ExpMaterialInputTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpProtocolApplicationTable;
@@ -106,7 +103,6 @@ import org.labkey.api.exp.query.ExpRunGroupMapTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSampleSetTable;
 import org.labkey.api.exp.query.ExpSchema;
-import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.exp.xar.XarConstants;
@@ -142,6 +138,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayTableMetadata;
+import org.labkey.api.study.assay.AssayWellExclusionService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileUtil;
@@ -1078,16 +1075,6 @@ public class ExperimentServiceImpl implements ExperimentService
     public ExpDataTable createFilesTable(String name, UserSchema schema)
     {
         return new ExpFilesTableImpl(name, schema);
-    }
-
-    public ExpExclusionTable createExclusionTable(String name, UserSchema schema)
-    {
-        return new ExpExclusionTableImpl(name, schema);
-    }
-
-    public ExpExclusionMapTable createExclusionMapTable(String name, UserSchema schema)
-    {
-        return new ExpExclusionMapTableImpl(name, schema);
     }
 
     private String getNamespacePrefix(Class<? extends ExpObject> clazz)
@@ -3051,16 +3038,6 @@ public class ExperimentServiceImpl implements ExperimentService
         return getExpSchema().getTable("AssayQCFlag");
     }
 
-    public TableInfo getTinfoExclusion()
-    {
-        return getExpSchema().getTable("Exclusions");
-    }
-
-    public TableInfo getTinfoExclusionMap()
-    {
-        return getExpSchema().getTable("ExclusionMaps");
-    }
-
     @Override
     public TableInfo getTinfoAlias()
     {
@@ -3425,9 +3402,9 @@ public class ExperimentServiceImpl implements ExperimentService
                         StudyService studyService = StudyService.get();
                         if (studyService != null)
                         {
-                            AssayProvider provider = AssayService.get().getProvider(protocol);
-                            if (provider != null && provider.isExclusionSupported())
-                                deleteExclusionsForRunId(runId);
+                            AssayWellExclusionService svc = AssayWellExclusionService.getProvider();
+                            if (svc != null)
+                                svc.deleteExclusionsForRun(protocol, runId);
 
                             for (Dataset dataset : studyService.getDatasetsForAssayRuns(Collections.singletonList(run), user))
                             {
@@ -3438,6 +3415,7 @@ public class ExperimentServiceImpl implements ExperimentService
                                 UserSchema schema = QueryService.get().getUserSchema(user, dataset.getContainer(), "study");
                                 TableInfo tableInfo = schema.getTable(dataset.getName());
 
+                                AssayProvider provider = AssayService.get().getProvider(protocol);
                                 if (provider != null)
                                 {
                                     AssayTableMetadata tableMetadata = provider.getTableMetadata(protocol);
@@ -3480,40 +3458,6 @@ public class ExperimentServiceImpl implements ExperimentService
                 transaction.commit();
             }
         }
-    }
-
-    private void deleteExclusionsForRunId(@NotNull Integer runId)
-    {
-        // Select which exclusions are to be deleted
-        List<Integer> exclusionsToDelete = new ArrayList<>();
-
-        SimpleFilter runFilter = new SimpleFilter(FieldKey.fromParts("RunId"), runId);
-        TableInfo exclusionsTi = getTinfoExclusion();
-        LinkedHashSet<ColumnInfo> cols = new LinkedHashSet<>();
-        cols.add(exclusionsTi.getColumn("RunId"));
-        cols.add(exclusionsTi.getColumn("RowId"));
-        TableSelector ts = new TableSelector(exclusionsTi, cols, runFilter, null);
-        try (TableResultSet rs = ts.getResultSet(false, false))
-        {
-            for (Map<String, Object> row : rs)
-            {
-                exclusionsToDelete.add((Integer) row.get("RowId"));
-            }
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-
-        // Delete exclusionMaps for the run first due to FK constraints
-        for (Integer exclusion : exclusionsToDelete)
-        {
-            SimpleFilter exclusionMapsFilter = new SimpleFilter(FieldKey.fromParts("ExclusionId"), exclusion);
-            Table.delete(getTinfoExclusionMap(), exclusionMapsFilter);
-        }
-
-        // Delete exclusion details last
-        Table.delete(getTinfoExclusion(), runFilter);
     }
 
     private Collection<Integer> getRelatedProtocolIds(Collection<Integer> selectedProtocolIds)
@@ -6684,39 +6628,6 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public void createExclusionEvent(ExpRun run, Set<String> rowIds, String comment, User user, Container container)
-    {
-        if (run == null || rowIds == null || rowIds.size() == 0)
-            return;
-
-        try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction())
-        {
-            TableInfo exclusionEventsTi = ExperimentService.get().getTinfoExclusion();
-            TableInfo exclusionMapsTi = ExperimentService.get().getTinfoExclusionMap();
-
-            Map<String, Object> eventRow = new CaseInsensitiveHashMap<>();
-            eventRow.put("RunId", run.getRowId());
-            eventRow.put("Comment", comment);
-            Map<String, Object> result = Table.insert(user, exclusionEventsTi, eventRow);
-
-            for (String rowId : rowIds)
-            {
-                Map<String, Object> row = new CaseInsensitiveHashMap<>();
-                row.put("ExclusionId", result.get("RowId"));
-                row.put("DataRowId", rowId);
-                Table.insert(user, exclusionMapsTi, row);
-            }
-
-            String auditMsg = rowIds.size() + " data row" + (rowIds.size() > 1 ? "s have" : " has") + " been marked for exclusion for run '"  + run.getName()
-                    + (StringUtils.isEmpty(comment) ? "" : ("' with comment '"  + comment))
-                    + "'. DataRowId: " + StringUtils.join(rowIds, ",") + ".";
-            ExperimentServiceImpl.get().auditRunEvent(user, run.getProtocol(), run, null, auditMsg);
-
-            transaction.commit();
-        }
-    }
-
-    @Override
     public ActionURL getExclusionURL(Container container, AssayProvider provider, int rowId, String runId, String returnUrl)
     {
         ActionURL url = new ActionURL(ExperimentController.ExcludeRowsAction.class, container)
@@ -6726,22 +6637,6 @@ public class ExperimentServiceImpl implements ExperimentService
         .addParameter("returnUrl", returnUrl);
 
         return url;
-    }
-
-    @Override
-    public int getExclusionCount(ExpRun run)
-    {
-        SQLFragment sql = new SQLFragment()
-                .append(" SELECT COUNT(DISTINCT exmap.dataRowId) FROM ")
-                .append(ExperimentService.get().getTinfoExclusionMap(), "exmap").append(", ")
-                .append(ExperimentService.get().getTinfoExclusion(), "ex").append(", ")
-                .append(ExperimentService.get().getTinfoProtocolApplication(), "pa")
-                .append("\nWHERE ex.RowId = exmap.ExclusionId AND ex.RunId = pa.RunId AND " +
-                        "pa.ProtocolLSID = ? AND ex.RunId = ? ")
-                .add(run.getProtocol().getLSID())
-                .add(run.getRowId());
-
-        return new SqlSelector(getExpSchema(), sql).getArrayList(Integer.class).get(0);
     }
 
     public static class TestCase extends Assert

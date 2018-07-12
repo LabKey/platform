@@ -1026,7 +1026,7 @@
             <column columnName="runId"/>
         </columns>
     </table>
-    <table tableName="Exclusions" tableDbType="TABLE">
+    <table tableName="Exclusions" tableDbType="UNKNOWN">
         <columns>
             <column columnName="RowId"/>
             <column columnName="RunId">
@@ -1043,7 +1043,7 @@
             <column columnName="ModifiedBy"/>
         </columns>
     </table>
-    <table tableName="ExclusionMaps" tableDbType="TABLE">
+    <table tableName="ExclusionMaps" tableDbType="UNKNOWN">
         <columns>
             <column columnName="RowId"/>
             <column columnName="ExclusionId">
