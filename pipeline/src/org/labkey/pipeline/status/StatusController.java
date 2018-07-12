@@ -823,7 +823,10 @@ public class StatusController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(ConfirmDeleteStatusForm form)
         {
-            return form.getReturnURLHelper();
+            URLHelper ret = form.getReturnURLHelper();
+            if (null == ret)
+                ret = urlShowList(getContainer(), true, null);
+            return ret;
         }
 
         @Override
