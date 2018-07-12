@@ -55,23 +55,6 @@ import java.util.Set;
  */
 abstract class OracleDialect extends SimpleSqlDialect
 {
-    // TableResolver that uses an unpooled connection to avoid cursor leaks (an issue perhaps of Oracle itself, or its JDBC driver).
-    // See Issue 33481: Cursor leak when querying Oracle JDBC table metadata
-    private static final TableResolver TABLE_RESOLVER = new StandardTableResolver() {
-
-        @Override
-        public JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope, @Nullable String schemaName, @Nullable String tableName) throws SQLException
-        {
-            return new StandardJdbcMetaDataLocator(scope, null, tableName, scope.getUnpooledConnection());
-        }
-    };
-
-    @Override
-    protected TableResolver getTableResolver()
-    {
-        return TABLE_RESOLVER;
-    }
-
     @Override
     public String getProductName()
     {
