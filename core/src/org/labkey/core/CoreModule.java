@@ -634,6 +634,14 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             ContainerManager.getHomeContainer();
             ContainerManager.getSharedContainer();
         });
+
+        if (moduleContext.getInstalledVersion() < 18.21)
+        {
+            // Force all servers to check CSRF tokens on every POST
+            WriteableAppProps props = AppProps.getWriteableInstance();
+            props.setCSRFCheck("POST");
+            props.save(null);
+        }
     }
 
 
