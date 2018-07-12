@@ -18,16 +18,30 @@ package org.labkey.api.exp.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerFilterable;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UnionContainerFilter;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.query.*;
-import org.labkey.api.data.*;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
-import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.StringExpression;
@@ -35,7 +49,12 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 public class ExpSchema extends AbstractExpSchema
 {
@@ -155,24 +174,7 @@ public class ExpSchema extends AbstractExpSchema
                 ExpDataTable result = ExperimentService.get().createFilesTable(Files.toString(), expSchema);
                 return expSchema.setupTable(result);
             }
-        },
-        Exclusions
-        {
-            public TableInfo createTable(ExpSchema expSchema, String queryName)
-            {
-                ExpExclusionTable result = ExperimentService.get().createExclusionTable(Exclusions.toString(), expSchema);
-                return expSchema.setupTable(result);
-            }
-        },
-        ExclusionMaps
-        {
-            public TableInfo createTable(ExpSchema expSchema, String queryName)
-            {
-                ExpExclusionMapTable result = ExperimentService.get().createExclusionMapTable(ExclusionMaps.toString(), expSchema);
-                return expSchema.setupTable(result);
-            }
         };
-
         public abstract TableInfo createTable(ExpSchema expSchema, String queryName);
     }
 
@@ -345,18 +347,6 @@ public class ExpSchema extends AbstractExpSchema
                 ExpProtocolTable protocolTable = (ExpProtocolTable)TableType.Protocols.createTable(ExpSchema.this, TableType.Protocols.toString());
                 protocolTable.setContainerFilter(ContainerFilter.EVERYTHING);
                 return protocolTable;
-            }
-        };
-    }
-
-    public ForeignKey getExclusionForeignKey()
-    {
-        return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.Exclusions.name(), "RowId", null)
-        {
-            @Override
-            public @Nullable TableInfo getLookupTableInfo()
-            {
-                return getTable(TableType.Exclusions);
             }
         };
     }

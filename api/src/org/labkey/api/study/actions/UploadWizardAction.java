@@ -56,6 +56,7 @@ import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.assay.AssayWarningsDisplayColumn;
+import org.labkey.api.study.assay.AssayWellExclusionService;
 import org.labkey.api.study.assay.DefaultAssayRunCreator;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.study.assay.ThawListResolverType;
@@ -556,20 +557,24 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             vbox.addView(batchPropsView);
         }
 
-        if (newRunForm.getReRun() != null && newRunForm.getProvider().isExclusionSupported())
+        if (newRunForm.getReRun() != null)
         {
-            int exclusionCount = ExperimentService.get().getExclusionCount(newRunForm.getReRun());
-            if (exclusionCount > 0)
+            AssayWellExclusionService svc = AssayWellExclusionService.getProvider();
+            if (svc != null)
             {
-                ActionURL excludeReportUrl = getExclusionReportURL(getContainer(), newRunForm.getReRun());
-                String html = "<p>The run you are replacing has " + exclusionCount + " exclusion" + (exclusionCount > 1 ? "s" : "") + ". " +
-                        "These exclusions will not be retained after the assay run is re-imported. <br>" +
-                        "Please review the <a class=\"labkey-text-link\" href=\"" +
-                        PageFlowUtil.filter(excludeReportUrl) +
-                        "\">exclusions report</a> for more information</p>";
-                HtmlView exclusionWarningView = new HtmlView(html);
-                exclusionWarningView.setTitle("Exclusions Warning");
-                vbox.addView(exclusionWarningView);
+                int exclusionCount = svc.getExclusionCount(newRunForm.getReRun());
+                if (exclusionCount > 0)
+                {
+                    ActionURL excludeReportUrl = getExclusionReportURL(getContainer(), newRunForm.getReRun());
+                    String html = "<p>The run you are replacing has " + exclusionCount + " exclusion" + (exclusionCount > 1 ? "s" : "") + ". " +
+                            "These exclusions will not be retained after the assay run is re-imported. <br>" +
+                            "Please review the <a class=\"labkey-text-link\" href=\"" +
+                            PageFlowUtil.filter(excludeReportUrl) +
+                            "\">exclusions report</a> for more information</p>";
+                    HtmlView exclusionWarningView = new HtmlView(html);
+                    exclusionWarningView.setTitle("Exclusions Warning");
+                    vbox.addView(exclusionWarningView);
+                }
             }
         }
 

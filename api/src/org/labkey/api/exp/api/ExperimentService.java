@@ -43,8 +43,6 @@ import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.exp.query.ExpDataClassTable;
 import org.labkey.api.exp.query.ExpDataInputTable;
 import org.labkey.api.exp.query.ExpDataTable;
-import org.labkey.api.exp.query.ExpExclusionMapTable;
-import org.labkey.api.exp.query.ExpExclusionTable;
 import org.labkey.api.exp.query.ExpExperimentTable;
 import org.labkey.api.exp.query.ExpMaterialInputTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
@@ -87,7 +85,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
-import java.util.function.Consumer;
 
 public interface ExperimentService extends ExperimentRunTypeSource
 {
@@ -397,10 +394,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     ExpDataTable createFilesTable(String name, UserSchema schema);
 
-    ExpExclusionTable createExclusionTable(String name, UserSchema schema);
-
-    ExpExclusionMapTable createExclusionMapTable(String name, UserSchema schema);
-
     String generateLSID(Container container, Class<? extends ExpObject> clazz, String name);
 
     String generateGuidLSID(Container container, Class<? extends ExpObject> clazz);
@@ -462,10 +455,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
     TableInfo getTinfoDataAliasMap();
 
     TableInfo getTinfoMaterialAliasMap();
-
-    TableInfo getTinfoExclusion();
-
-    TableInfo getTinfoExclusionMap();
 
     ExpSampleSet ensureDefaultSampleSet();
 
@@ -667,11 +656,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     void onMaterialsCreated(List<? extends ExpMaterial> materials, Container container, User user);
 
-    void createExclusionEvent(ExpRun run, Set<String> rowIds, String comment, User user, Container container);
-
     ActionURL getExclusionURL(Container container, AssayProvider provider, int rowId, String runId, String returnUrl);
-
-    int getExclusionCount(ExpRun run);
 
     // see org.labkey.experiment.LSIDRelativizer
     public static final String LSID_OPTION_ABSOLUTE = "ABSOLUTE";

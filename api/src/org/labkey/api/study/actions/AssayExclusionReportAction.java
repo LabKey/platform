@@ -1,6 +1,7 @@
 package org.labkey.api.study.actions;
 
 import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -13,6 +14,7 @@ import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayView;
+import org.labkey.api.study.assay.AssayWellExclusionService;
 import org.labkey.api.study.assay.ReplacedRunFilter;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -22,7 +24,6 @@ import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
 import static org.labkey.api.study.assay.AssayProtocolSchema.EXCLUSION_REPORT_TABLE_NAME;
-import static org.labkey.api.study.assay.AssayResultTable.FLAGGED_AS_EXCLUDED_COLUMN_NAME;
 
 @RequiresPermission(ReadPermission.class)
 public class AssayExclusionReportAction extends BaseAssayAction<ProtocolIdForm>
@@ -39,7 +40,7 @@ public class AssayExclusionReportAction extends BaseAssayAction<ProtocolIdForm>
         _protocol = protocolIdForm.getProtocol();
         _provider = AssayService.get().getProvider(_protocol);
         if (!_provider.isExclusionSupported())
-            throw new NotFoundException("Exclusion report not supported for for assay type");
+            throw new NotFoundException("Exclusion report not supported for assay type");
 
         AssayProtocolSchema schema = _provider.createProtocolSchema(getViewContext().getUser(), getViewContext().getContainer(), _protocol, null);
         result.setupViews(getExcludedQueryView(schema, EXCLUSION_REPORT_TABLE_NAME, errors), false, _provider, _protocol);
@@ -50,14 +51,19 @@ public class AssayExclusionReportAction extends BaseAssayAction<ProtocolIdForm>
     private QueryView getExcludedQueryView(AssayProtocolSchema schema, String queryName, BindException errors)
     {
         QuerySettings settings = new QuerySettings(getViewContext(), queryName, queryName);
-        SimpleFilter exclusionFilter = new SimpleFilter(FieldKey.fromParts(FLAGGED_AS_EXCLUDED_COLUMN_NAME), true);
-        settings.setBaseFilter(exclusionFilter);
         QueryView view = new QueryView(schema, settings, errors)
         {
             @Override
             public DataView createDataView()
             {
                 DataView result = super.createDataView();
+                AssayWellExclusionService svc = AssayWellExclusionService.getProvider();
+                if (svc != null)
+                {
+                    ColumnInfo excludedColumn = svc.createExcludedColumn(result.getTable(), _protocol);
+                    SimpleFilter excludedFilter = new SimpleFilter(excludedColumn.getFieldKey(), true);
+                    result.getRenderContext().setBaseFilter(excludedFilter);
+                }
 
                 SimpleFilter filter = (SimpleFilter) result.getRenderContext().getBaseFilter();
                 if (filter == null)

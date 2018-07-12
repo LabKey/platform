@@ -95,8 +95,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.labkey.api.study.assay.AssayResultTable.FLAGGED_AS_EXCLUDED_COLUMN_NAME;
-
 /**
  * A child schema of AssayProviderSchema. Scoped to a single assay design (AKA ExpProtocol).
  * Exposes tables for Runs, Batches, etc.
@@ -569,16 +567,24 @@ public abstract class AssayProtocolSchema extends AssaySchema
     @Nullable
     protected ResultsQueryView createDataQueryView(ViewContext context, QuerySettings settings, BindException errors)
     {
-        ResultsQueryView queryView = _provider.isExclusionSupported() ? new ResultsQueryView(_protocol, context, settings)
+        AssayWellExclusionService svc = AssayWellExclusionService.getProvider();
+        ResultsQueryView queryView = new ResultsQueryView(_protocol, context, settings);
+        if (svc != null)
         {
-            @Override
-            protected DataRegion createDataRegion()
+            ResultsQueryView.ResultsDataRegion dr = svc.createResultsDataRegion(_protocol);
+            if (dr != null)
             {
-                ResultsDataRegion rgn = new ExclusionSupportedResultsDataRegion(_provider, _protocol);
-                initializeDataRegion(rgn);
-                return rgn;
+                queryView = new ResultsQueryView(_protocol, context, settings)
+                {
+                    @Override
+                    protected DataRegion createDataRegion()
+                    {
+                        initializeDataRegion(dr);
+                        return dr;
+                    }
+                };
             }
-        } : new ResultsQueryView(_protocol, context, settings);
+        }
 
         if (_provider.hasCustomView(ExpProtocol.AssayDomainTypes.Result, true))
         {
@@ -594,37 +600,6 @@ public abstract class AssayProtocolSchema extends AssaySchema
         }
 
         return queryView;
-    }
-
-    public class ExclusionSupportedResultsDataRegion extends ResultsQueryView.ResultsDataRegion
-    {
-        private ColumnInfo _excludedColumn;
-
-        public ExclusionSupportedResultsDataRegion(AssayProvider provider, ExpProtocol protocol)
-        {
-            super(provider, protocol);
-        }
-
-        @Override
-        protected boolean isErrorRow(RenderContext ctx, int rowIndex)
-        {
-            return super.isErrorRow(ctx, rowIndex) ||
-                    _excludedColumn != null && Boolean.TRUE.equals(_excludedColumn.getValue(ctx));
-        }
-
-        @Override
-        public void addQueryColumns(Set<ColumnInfo> columns)
-        {
-            super.addQueryColumns(columns);
-            FieldKey fk = new FieldKey(null, FLAGGED_AS_EXCLUDED_COLUMN_NAME);
-            Map<FieldKey, ColumnInfo> newColumns = QueryService.get().getColumns(getTable(), Collections.singleton(fk), columns);
-            _excludedColumn = newColumns.get(fk);
-            if (_excludedColumn != null)
-            {
-                columns.add(_excludedColumn);
-            }
-        }
-
     }
 
     @Override
