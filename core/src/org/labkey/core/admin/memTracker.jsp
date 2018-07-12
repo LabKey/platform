@@ -92,11 +92,11 @@
                     <th>Max</th>
                 </tr>
             <%
-                int counter = 1;
+                int counter = 0;
                 for (Pair<String, AdminController.MemoryUsageSummary> property : bean.memoryUsages)
                 {
             %>
-                <tr class="<%=getShadeRowClass(counter % 2 == 1)%>">
+                <tr class="<%=getShadeRowClass(counter)%>">
                     <td><%= h(property.getKey()) %></td>
                     <td align="right"><%= h(property.getValue() == null ? "" : property.getValue().getInit()) %></td>
                     <td align="right"><%= h(property.getValue() == null ? "" : property.getValue().getUsed()) %></td>
@@ -115,11 +115,11 @@
                     <th>System Property Value</th>
                 </tr>
             <%
-                counter = 1;
+                counter = 0;
                 for (Pair<String, Object> property : bean.systemProperties)
                 {
             %>
-                <tr class="<%=getShadeRowClass(counter % 2 == 1)%>">
+                <tr class="<%=getShadeRowClass(counter)%>">
                     <td><%= h(property.getKey()) %></td>
                     <td><%= h(property.getValue().toString()) %></td>
                 </tr>
@@ -159,7 +159,7 @@
                         String[] split = htmlStack.split("<br>");
                         String secondLine = split.length >= 2 ? split[2] : "";
             %>
-                <tr class="<%=getShadeRowClass(counter % 2 == 1)%>">
+                <tr class="<%=getShadeRowClass(counter + 1)%>">
                     <td valign=top><img id="toggleImg<%=counter%>" src="<%=getWebappURL("_images/plus.gif")%>" alt="expand/collapse" onclick='toggle(<%=counter%>)'></td>
                     <td class='objectClass' valign=top><%=h(reference.getClassName())%></td>
                     <td class='objectToString' valign=top>

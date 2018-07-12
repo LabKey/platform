@@ -96,7 +96,7 @@ This folder does not contain a study.
         _HtmlString rowClass;
         for (SpecimenVisitReportParameters factory : bean.getFactories(category))
         {
-            rowClass = getShadeRowClass(formRowIndex++ %2 == 0);
+            rowClass = getShadeRowClass(formRowIndex++);
             String showHideSuffix = "_" + categoryIndex + "_" + formRowIndex + "_" + bean.getUniqueId();
             String formName = "form" + showHideSuffix;
 %>

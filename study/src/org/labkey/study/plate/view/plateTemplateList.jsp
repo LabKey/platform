@@ -47,7 +47,7 @@
     for (PlateTemplate template : plateTemplates)
     {
 %>
-    <tr class="<%=getShadeRowClass(index % 2 == 0)%>">
+    <tr class="<%=getShadeRowClass(index)%>">
         <td><%= h(template.getName()) %></td>
         <td>
         <%

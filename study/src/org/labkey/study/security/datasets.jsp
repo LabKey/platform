@@ -167,7 +167,7 @@ else
         %><col><%
     }
     %></colgroup>
-    <tr class="<%=getShadeRowClass(row++ % 2 == 0)%>"><th>&nbsp;</th><%
+    <tr class="<%=getShadeRowClass(row++)%>"><th>&nbsp;</th><%
     for (Group g : restrictedGroups)
     {
         %><th style="padding: 0 5px 0 5px;"><%=h(groupName(g))%></th><%
@@ -191,7 +191,7 @@ else
     }
 
     %></tr>
-    <tr class="<%=getShadeRowClass(row++ % 2 == 0)%>"><th>&nbsp;</th><%
+    <tr class="<%=getShadeRowClass(row++)%>"><th>&nbsp;</th><%
     for (Group g : restrictedGroups)
     {
         %><td class="dataset-permission" data-toggle="tooltip" title='Set all values in column'><select name="<%= h(g.getName()) %>" onchange="setColumnSelections(this)">
@@ -220,7 +220,7 @@ else
         SecurityPolicy dsPolicy = SecurityPolicyManager.getPolicy(ds);
 
         String inputName = "dataset." + ds.getDatasetId();
-        %><tr class="<%=getShadeRowClass(row++ % 2 == 0)%>"><td><%=h(ds.getLabel())%></td><%
+        %><tr class="<%=getShadeRowClass(row++)%>"><td><%=h(ds.getLabel())%></td><%
 
         for (Group g : restrictedGroups)
         {

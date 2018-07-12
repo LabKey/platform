@@ -90,7 +90,6 @@ else
     int i = 0;
     for (ExternalSchemaDef def : defs)
     {
-        i++;
         ActionURL urlEdit = urls.urlUpdateExternalSchema(c, def);
         ActionURL urlView = urls.urlSchemaBrowser(c, def.getUserSchemaName());
         ActionURL urlReload = urlEdit.clone();
@@ -98,7 +97,7 @@ else
         ActionURL urlDelete = urls.urlDeleteExternalSchema(c, def);
 
     %>
-        <tr class='<%=getShadeRowClass(i % 2 == 1)%>'>
+        <tr class='<%=getShadeRowClass(i)%>'>
             <td><%=h(def.getUserSchemaName())%></td>
             <td><%=h(def.getDataSource())%></td>
             <td><%=h(def.getSourceSchemaName())%></td><%
@@ -123,6 +122,7 @@ else
                 }
             %>
         </tr><%
+        i++;
     } %>
     </table><%
 } %>
@@ -169,7 +169,6 @@ else
     int i = 0;
     for (LinkedSchemaDef linkedSchema : linkedSchemas)
     {
-        i++;
         ActionURL urlView = urls.urlSchemaBrowser(c, linkedSchema.getUserSchemaName());
         ActionURL urlEdit = new ActionURL(QueryController.EditLinkedSchemaAction.class, c).addParameter("externalSchemaId", Integer.toString(linkedSchema.getExternalSchemaId()));
         ActionURL urlDelete = new ActionURL(QueryController.DeleteLinkedSchemaAction.class, c).addParameter("externalSchemaId", Integer.toString(linkedSchema.getExternalSchemaId()));
@@ -183,7 +182,7 @@ else
         }
 
     %>
-        <tr class='<%=getShadeRowClass(i % 2 == 1)%>'>
+        <tr class='<%=getShadeRowClass(i)%>'>
             <td><%=h(linkedSchema.getUserSchemaName())%></td>
             <td><%=h(linkedSchema.getSchemaTemplate())%></td>
             <td><%=h(sourceContainer != null ? sourceContainer.getPath() : linkedSchema.getSourceContainerId())%></td>
@@ -198,6 +197,7 @@ else
             <% if (isAdmin) {%><td class="labkey-noborder"><labkey:link text="edit" href="<%=h(urlEdit)%>" /></td><%}%>
             <% if (isAdmin) {%><td class="labkey-noborder"><labkey:link text="delete" href="<%=h(urlDelete)%>" /></td><%}%>
         </tr><%
+        i++;
     } %>
     </table><%
 }

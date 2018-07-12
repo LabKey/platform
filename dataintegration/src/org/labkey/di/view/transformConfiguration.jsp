@@ -463,7 +463,6 @@ List<ScheduledPipelineJobDescriptor> sortedDescriptors = new ArrayList<>(descrip
 sortedDescriptors.sort(Comparator.comparing(ScheduledPipelineJobDescriptor::getName, String.CASE_INSENSITIVE_ORDER));
 for (ScheduledPipelineJobDescriptor descriptor : sortedDescriptors)
 {
-    row++;
     String id = descriptor.getId();
     TransformConfiguration configuration = configurationsMap.get(descriptor.getId());
     if (null == configuration)
@@ -476,7 +475,7 @@ for (ScheduledPipelineJobDescriptor descriptor : sortedDescriptors)
     if (isAdmin)
     {
         boolean enableControls = !PENDING.equalsIgnoreCase(configuration.getLastStatus());
-        %><tr transformId="<%=h(descriptor.getId())%>" class="<%=getShadeRowClass(1 == row % 2)%>">
+        %><tr transformId="<%=h(descriptor.getId())%>" class="<%=getShadeRowClass(row)%>">
         <td><%=h(descriptor.getName())%></td>
         <td><%=h(descriptor.isUserDefined() ? "User Defined" : descriptor.getModuleName())%></td>
         <td><%=h(descriptor.getScheduleDescription())%></td>
@@ -511,7 +510,7 @@ for (ScheduledPipelineJobDescriptor descriptor : sortedDescriptors)
     }
     else
     {
-        %><tr transformId="<%=h(descriptor.getId())%>" class="<%=getShadeRowClass(1 == row % 2)%>">
+        %><tr transformId="<%=h(descriptor.getId())%>" class="<%=getShadeRowClass(row)%>">
         <td><%=h(descriptor.getName())%></td>
         <td><%=h(descriptor.getModuleName())%></td>
         <td><%=h(descriptor.getScheduleDescription())%></td>
@@ -522,6 +521,8 @@ for (ScheduledPipelineJobDescriptor descriptor : sortedDescriptors)
         <td></td>
         </tr><%
     }
+
+    row++;
 }
 %></table>
 </div>

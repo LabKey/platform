@@ -104,7 +104,7 @@
         boolean isUser = null != UserManager.getUser(row.getUser().getUserId());
         String userColDisplay = isUser ? ((User)row.getUser()).getDisplayName(currentUser) : row.getUser().getName();
 %>
-    <tr class="<%=getShadeRowClass(rowNumber++ % 2 == 0)%>">
+    <tr class="<%=getShadeRowClass(rowNumber++)%>">
 <%
         if (!bean.showUserCol())
         {

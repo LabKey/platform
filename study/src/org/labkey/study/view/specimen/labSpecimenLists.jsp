@@ -63,7 +63,7 @@
                     "&sourceSiteId=" + location.getRowId() +
                     "&export=";
     %>
-    <tr class="<%=getShadeRowClass(rowCount++ % 2 == 0) %>" valign="top">
+    <tr class="<%=getShadeRowClass(rowCount++) %>" valign="top">
         <td><%= h(location.getDisplayName()) %></td>
         <td>
             <table>

@@ -405,7 +405,7 @@
 <%
     }
     int row = 0;
-    _HtmlString className = getShadeRowClass(row % 2 == 0);
+    _HtmlString className = getShadeRowClass(row);
 
     // display details link(s) only if we have a source lsid in at least one of the rows
     boolean hasSourceLsid = false;
@@ -462,7 +462,7 @@
     {
         if (col == null) continue;
         row++;
-        className = getShadeRowClass(row % 2 == 0);
+        className = getShadeRowClass(row);
         String labelName = StringUtils.defaultString(col.getLabel(), col.getName());
 %>
 <tr class="<%=className%>" style="<%=text(expanded ? "" : "display:none")%>">
@@ -507,7 +507,7 @@
     if (hasSourceLsid) // Need to display a details link
     {
         row++;
-        className = getShadeRowClass(row % 2 == 0);
+        className = getShadeRowClass(row);
 %>
 <tr class="<%=className%>" style="<%=text(expanded ? "" : "display:none")%>">
     <td align="left" nowrap>Details</td>

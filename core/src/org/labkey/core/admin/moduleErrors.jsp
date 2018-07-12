@@ -19,6 +19,7 @@
 <%@ page import="java.io.PrintWriter" %>
 <%@ page import="java.io.StringWriter" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="java.util.Map.Entry" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Map<String,Throwable> moduleFailures = ModuleLoader.getInstance().getModuleFailures();
@@ -28,11 +29,10 @@
             <td class="labkey-column-header">Module name</td>
             <td class="labkey-column-header">Stack trace</td>
         </tr>
-
 <%
     int rowIndex = 0;
 
-    for(Map.Entry<String,Throwable> entry : moduleFailures.entrySet())
+    for(Entry<String, Throwable> entry : moduleFailures.entrySet())
     {
         Throwable throwable = entry.getValue();
         String message = throwable.getMessage();
@@ -53,7 +53,7 @@
             }
         }
 %>
-        <tr class="<%=getShadeRowClass(rowIndex % 1 == 0)%>">
+        <tr class="<%=getShadeRowClass(rowIndex++)%>">
             <td valign="top"><strong><pre><%=entry.getKey()%></pre></strong></td>
             <td valign="top"><% if (message != null) { %>
                 <strong class="labkey-error"><pre><%= h(message) %></pre></strong>
@@ -69,7 +69,6 @@
 
         </tr>
 <%
-        rowIndex++;
     }
 %>
 

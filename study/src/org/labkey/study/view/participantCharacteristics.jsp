@@ -219,7 +219,7 @@
             if (StringUtils.isEmpty(labelName))
                 labelName = pd.getName();
     %>
-    <tr class="<%=getShadeRowClass(row % 2 == 0)%>" style="<%=text(expanded ? "" : "display:none")%>">
+    <tr class="<%=getShadeRowClass(row)%>" style="<%=text(expanded ? "" : "display:none")%>">
         <td align="left" nowrap><%=h(labelName)%>
         </td>
         <%

@@ -53,7 +53,7 @@ for (DatasetImportRunnable runnable : runnables)
         message = "<font class=labkey-error>" + h(message) + "</font>";
     }
     %>
-    <tr class="<%=getShadeRowClass(row++ % 2 == 0)%>">
+    <tr class="<%=getShadeRowClass(row++)%>">
         <td align=right><%= dataset != null ? dataset.getDatasetId() : ""%></td>
         <td><%=dataset != null ? dataset.getLabel() : "Unknown"%></td>
         <td><%=message%></td>

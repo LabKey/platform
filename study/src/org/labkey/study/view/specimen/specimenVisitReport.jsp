@@ -119,7 +119,7 @@ The request has produced no records.
             for (SpecimenVisitReport.Row row : (Collection<SpecimenVisitReport.Row>) report.getRows())
             {
                 rowIndex++;
-                %><tr class="<%=getShadeRowClass(rowIndex % 2 == 1)%>" style="vertical-align:top"><%
+                %><tr class="<%=getShadeRowClass(rowIndex + 1)%>" style="vertical-align:top"><%
                 for (int col = 0; col<width ; col++)
                 {
                     String title = rowtitles[rowIndex][col].first.getDisplayValue();

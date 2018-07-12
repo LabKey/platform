@@ -79,7 +79,7 @@
         String type = col.getFriendlyTypeName();
         if (col.getName().equalsIgnoreCase("modifiedby")||col.getName().equalsIgnoreCase("createdby"))
             type = "User (Integer)";
-        %><tr class="<%=getShadeRowClass(rowIndex % 2 == 0)%>">
+        %><tr class="<%=getShadeRowClass(rowIndex)%>">
             <td><%=h(col.getName())%></td>
             <td><%=h(col.getLabel())%></td>
             <td><%=h(type)%></td>
@@ -104,12 +104,13 @@
         <td class="labkey-column-header">Description</td>
     </tr>
 <%
+    rowIndex = 0;  // Reset shading
 
     for (ColumnInfo col : userColumns)
     {
         boolean isKeyColumn = (StringUtils.equalsIgnoreCase(col.getName(), dataset.getKeyPropertyName()));
 %>
-        <tr class="<%=getShadeRowClass(rowIndex % 2 == 0)%>">
+        <tr class="<%=getShadeRowClass(rowIndex)%>">
             <td><%=text(isKeyColumn ? "<b>" : "")%><%=h(col.getName())%><%=text(isKeyColumn ? "</b>" : "")%></td>
             <td><%=h(col.getLabel())%></td>
             <td><%=h(col.getFriendlyTypeName())%></td>
