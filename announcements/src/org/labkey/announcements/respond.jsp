@@ -62,7 +62,7 @@
     window.onbeforeunload = LABKEY.beforeunload(LABKEY.isDirty());
 </script>
 
-<labkey:form method="POST" enctype="multipart/form-data" action="<%=respondUrl%>" onsubmit="onSubmit(this);">
+<labkey:form method="POST" enctype="multipart/form-data" action="<%=respondUrl%>" onsubmit="return onSubmit(this);">
 <labkey:input type="hidden" name="cancelUrl" value="<%=h(bean.cancelURL)%>" />
 <%=generateReturnUrlFormField(bean.cancelURL)%>
 <labkey:input type="hidden" name="fromDiscussion" value="<%=bean.fromDiscussion%>" />

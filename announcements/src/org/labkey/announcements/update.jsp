@@ -57,7 +57,7 @@
     window.onbeforeunload = LABKEY.beforeunload(LABKEY.isDirty());
 </script>
 
-<labkey:form method="post" action='<%=baseUrl.setAction(AnnouncementsController.UpdateAction.class)%>' enctype="multipart/form-data" onsubmit="onSubmit(this);">
+<labkey:form method="post" action='<%=baseUrl.setAction(AnnouncementsController.UpdateAction.class)%>' enctype="multipart/form-data" onsubmit="return onSubmit(this);">
 <labkey:input type="hidden" name="rowId" value="<%=ann.getRowId()%>"/>
 <labkey:input type="hidden" name="entityId" value="<%=h(ann.getEntityId())%>"/>
 <labkey:input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(ann)%>"/>
