@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.ApiJsonWriter;
@@ -1665,6 +1666,7 @@ public class Query
             // if this fails, it probably means a previous test cleared them, which is unexpected
             assertNotNull(QueryService.get().getEnvironment(QueryService.Environment.USER));
             assertNotNull(QueryService.get().getEnvironment(QueryService.Environment.CONTAINER));
+            Assume.assumeTrue(getClass().getSimpleName() + " requires list module", ListService.get() != null);
         }
 
 
