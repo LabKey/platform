@@ -26,7 +26,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.ExecutionException;
 
 /**
  * {@link Map} implementation that uses case-insensitive {@link String}s for keys. Unlike many other implementations,

@@ -871,7 +871,7 @@ public class ModuleLoader implements Filter
     /**
      * Checks Java version and throws if it's not supported.
      *
-     * Warnings for deprecated Java versions are specified in CoreWarningProvider
+     * Warnings for deprecated Java versions are usually added to CoreWarningProvider
      *
      * @throws ConfigurationException if Java version is not supported
      */
