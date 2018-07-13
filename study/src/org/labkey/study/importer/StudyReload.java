@@ -185,22 +185,7 @@ public class StudyReload
         {
             options.addMessage("Study reload was initiated by " + source);
 
-            // Check for valid reload user
             User reloadUser = options.getUser();
-
-            if (null == reloadUser)
-            {
-                Integer reloadUserId = reloadUser.getUserId();
-
-                if (null != reloadUserId)
-                    reloadUser = UserManager.getUser(reloadUserId);
-
-                if (null == reloadUser)
-                    throw new ImportException("Reload user is not set to a valid user. Update the reload settings on this study to ensure a valid reload user.");
-
-                options.setUser(reloadUser);
-                options.addMessage("User \"" + reloadUser.getDisplayName(null) + "\" is configured as the reload user for this study. This can be changed by visiting the \"Manage Reloading\" page.");
-            }
 
             // TODO: Check for inactive user and not sufficient permissions
 

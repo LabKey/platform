@@ -22,10 +22,12 @@ import org.labkey.test.WebTestHelper;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.SimpleHttpRequest;
+import org.labkey.test.util.SimpleHttpResponse;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Paths;
+
+import static org.junit.Assert.assertEquals;
 
 public class StudyCheckForReloadTest extends StudyBaseTest
 {
@@ -34,55 +36,34 @@ public class StudyCheckForReloadTest extends StudyBaseTest
     protected void doCreateSteps()
     {
         log("Initializing project folder and importing study");
-
         initializeFolder();
         importStudyFromZip(TestFileUtils.getSampleData("studyreload/original.zip"));
-
-        log("Copy files from \"unzip\" folder into parent folder");
-
-        String path = "\\build\\deploy\\files\\StudyVerifyProject\\My Study\\@files";
-        String fullBasePath = new File(new File("").toURI()).getParent() + path;
-        try
-        {
-            FileUtil.copyDirectory(Paths.get(fullBasePath + "\\unzip"), Paths.get(fullBasePath));
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
-
-        log("Create studyload.txt file");
-
-        File studyload = new File(fullBasePath + "\\studyload.txt");
-        try
-        {
-            studyload.createNewFile();
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
     }
 
     @Override
     @LogMethod
-    protected void doVerifySteps()
+    protected void doVerifySteps() throws IOException
     {
+        log("Copy files from \"unzip\" folder into parent folder");
+        File fileRoot = TestFileUtils.getDefaultFileRoot(getProjectName() + "/" + getFolderName());
+        File unzipDir = new File(fileRoot, "unzip");
+        FileUtil.copyDirectory(unzipDir.toPath(), fileRoot.toPath());
+
+        log("Create studyload.txt file");
+        File studyload = new File(fileRoot + "\\studyload.txt");
+        studyload.createNewFile();
+
         log("Sending api request...");
 
         String reloadURL = WebTestHelper.buildURL("study", "StudyVerifyProject/My Study", "checkForReload");
         SimpleHttpRequest request = new SimpleHttpRequest(reloadURL);
-        try
-        {
-            request.getResponse();
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
+        request.getResponse();
+
+        log("Check reload request receives 200 response");
+        SimpleHttpResponse response = request.getResponse();
+        assertEquals(response.getResponseMessage(), 200, response.getResponseCode());
 
         log("Check reload is surfaced in pipeline UI");
-
         waitForPipelineJobsToComplete(2, "Study reload", false);
         waitForElement(Locator.linkContainingText("Study reload"));
     }
