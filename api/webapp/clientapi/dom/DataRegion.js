@@ -899,8 +899,9 @@ if (!LABKEY.DataRegions) {
     };
 
     /**
-     * Get selected items on the current page of the DataRegion.
-     * Note, if the region is paginated, selected items may exist on other pages.
+     * Get selected items on the current page of the DataRegion, based on the current state of the checkboxes in the
+     * browser's DOM. Note, if the region is paginated, selected items may exist on other pages which will not be
+     * included in the results of this function.
      * @see LABKEY.DataRegion#getSelected
      */
     LABKEY.DataRegion.prototype.getChecked = function() {
@@ -914,7 +915,9 @@ if (!LABKEY.DataRegions) {
     };
 
     /**
-     * Get all selected items for this DataRegion.
+     * Get all selected items for this DataRegion, as maintained in server-state. This will include rows on any
+     * pages of a paginated grid, and may not correspond directly with the state of the checkboxes in the current
+     * browser window's DOM if the server-side state has been modified.
      *
      * @param config A configuration object with the following properties:
      * @param {Function} config.success The function to be called upon success of the request.
