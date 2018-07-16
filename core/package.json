@@ -10,16 +10,16 @@
   },
   "betterScripts": {
     "clean": {
-      "command": "rimraf resources/web/core/css"
+      "command": "rimraf resources/web/core/css && rimraf resources/web/clientapi"
     },
     "build:dev": {
-      "command": "node webpack/buildThemes.js",
+      "command": "node build.js && node webpack/buildThemes.js",
       "env": {
         "NODE_ENV": "development"
       }
     },
     "build:prod": {
-      "command": "node webpack/buildThemes.js",
+      "command": "node build.js && node webpack/buildThemes.js",
       "env": {
         "NODE_ENV": "production"
       }
@@ -27,6 +27,7 @@
   },
   "dependencies": {},
   "devDependencies": {
+    "@labkey/api": "0.0.7",
     "autoprefixer": "7.1.4",
     "better-npm-run": "0.1.0",
     "bootstrap-sass": "3.3.7",
@@ -34,6 +35,7 @@
     "extract-text-webpack-plugin": "3.0.0",
     "file-loader": "0.11.2",
     "font-awesome": "4.7.0",
+    "fs-extra": "6.0.1",
     "node-sass": "4.5.3",
     "postcss-loader": "1.3.3",
     "resolve-url-loader": "2.1.0",

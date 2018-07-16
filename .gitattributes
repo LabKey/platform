@@ -158,6 +158,7 @@ bigiron/src/org/labkey/bigiron/sas/Sas93Dialect.java -text
 bigiron/src/org/labkey/bigiron/sas/SasDialect.java -text
 bigiron/src/org/labkey/bigiron/sas/SasDialectFactory.java -text
 /build.gradle -text
+core/.npmrc -text
 core/api-src/org/labkey/api/admin/TableXmlUtils.java -text
 core/api-src/org/labkey/api/admin/sitevalidation/SiteValidationProvider.java -text
 core/api-src/org/labkey/api/admin/sitevalidation/SiteValidationResult.java -text
@@ -165,6 +166,7 @@ core/api-src/org/labkey/api/admin/sitevalidation/SiteValidationResultList.java -
 core/api-src/org/labkey/api/admin/sitevalidation/SiteValidationService.java -text
 core/api-src/org/labkey/api/admin/sitevalidation/SiteValidatorDescriptor.java -text
 core/build.gradle -text
+core/build.js -text
 core/module.properties -text
 core/package-lock.json -text
 core/package.json -text
