@@ -1184,7 +1184,7 @@ public class Query
             }
             if (a.equals(b))
                 return;
-            QueryTestCase.assertEquals("expected:<" + a + "> bug was:<" + b + "> " + _sql, a, b);
+            QueryTestCase.assertEquals("expected:<" + a + "> but was:<" + b + "> " + _sql, a, b);
         }
     }
 
