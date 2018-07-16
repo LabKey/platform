@@ -265,7 +265,8 @@ public class ImageUtil
             if (uri.equals(_baseURI))
                 return XMLResource.load(new StringReader(_xhtml));
 
-            Pair<String, URI> content = null;
+            final Pair<String, URI> content;
+
             try
             {
                 content = HttpUtil.getHTML(new URI(uri));
@@ -367,7 +368,7 @@ public class ImageUtil
         @Override
         public org.xhtmlrenderer.resource.ImageResource getImageResource(java.lang.String uri)
         {
-            ImageResource ir = null;
+            ImageResource ir;
             String uriResolved = resolveURI(uri);
             ir = (ImageResource) _imageCache.get(uriResolved);
 
@@ -439,9 +440,9 @@ public class ImageUtil
 
                 @Override
                 public void shutdownPre()
-                                                                            {
-                                                                               PlatformImpl.exit();
-                                                                                                                                                          }
+                {
+                    PlatformImpl.exit();
+                }
 
                 @Override
                 public void shutdownStarted()
