@@ -100,10 +100,7 @@ import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.study.query.StudyQuerySchema;
 import org.springframework.beans.factory.InitializingBean;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -120,8 +117,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 
 /**
@@ -495,15 +490,11 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
 
     /**
-     *
      * We do not want to invalidate caches every time someone updates a dataset row
      * So don't store modified in this bean.
      *
      * Instead cache modified dates separately
-     *
-     * @return
      */
-
     static CacheLoader<String,Date> modifiedDatesLoader = (key, argument) -> {
         StudySchema ss = StudySchema.getInstance();
         SQLFragment sql = new SQLFragment("SELECT Modified FROM " + ss.getTableInfoDataset() + " WHERE EntityId = ?",key);
@@ -787,14 +778,6 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
             time.stop();
             _log.debug("purgeDataset " + getDisplayString() + " " + DateUtil.formatDuration(time.getTotal()/1000));
-        }
-        catch (Exception s)
-        {
-            if (SqlDialect.isObjectNotFoundException(s)) // UNDEFINED TABLE
-            {
-                // CONSIDER: Can't swallow exception, because connection might be in bad state
-            }
-            throw s;
         }
 
         return count;
@@ -1122,24 +1105,6 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     }
 
     
-    /**
-     * Returns the key names for display purposes.
-     * If demographic data, visit keys are suppressed
-     */
-    public String[] getDisplayKeyNames()
-    {
-        List<String> keyNames = new ArrayList<>();
-        keyNames.add(StudyService.get().getSubjectColumnName(getContainer()));
-        if (!isDemographicData())
-        {
-            keyNames.add(getStudy().getTimepointType().isVisitBased() ? "SequenceNum" : "Date");
-        }
-        if (getKeyPropertyName() != null)
-            keyNames.add(getKeyPropertyName());
-
-        return keyNames.toArray(new String[keyNames.size()]);
-    }
-
     public String getKeyPropertyName()
     {
         return _keyPropertyName;
@@ -2138,8 +2103,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             }
         }
 
-        SQLFragment ret = StudySchema.getInstance().getSchema().getSqlDialect().concatenate(parts.toArray(new SQLFragment[parts.size()]));
-        return ret;
+        return StudySchema.getInstance().getSchema().getSqlDialect().concatenate(parts.toArray(new SQLFragment[parts.size()]));
     }
 
 
@@ -2250,25 +2214,20 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             filter.addCondition(new FieldKey(null,"Container"), rowsContainer);
         }
 
-        new TableSelector(tinfo, filter, null).forEachMap(new Selector.ForEachBlock<Map<String, Object>>()
-        {
-            @Override
-            public void exec(Map<String, Object> orig)
+        new TableSelector(tinfo, filter, null).forEachMap(orig -> {
+            String lsid = (String) orig.get("LSID");
+            String uniq = demographic ? (String)orig.get("ParticipantID"): lsid;
+            Object[] keys = uriMap.get(uniq);
+            boolean replace = Boolean.TRUE.equals(keys[3]);
+            if (replace)
             {
-                String lsid = (String) orig.get("LSID");
-                String uniq = demographic ? (String)orig.get("ParticipantID"): lsid;
-                Object[] keys = uriMap.get(uniq);
-                boolean replace = Boolean.TRUE.equals(keys[3]);
-                if (replace)
-                {
-                    deleteSet.add(lsid);
-                }
-                else
-                {
-                    noDeleteMap.put(uniq, keys);
-                }
-
+                deleteSet.add(lsid);
             }
+            else
+            {
+                noDeleteMap.put(uniq, keys);
+            }
+
         });
 
         // If we have duplicates, and we don't have an auto-keyed dataset,
@@ -2354,9 +2313,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         if (_datasetId != that._datasetId) return false;
         // The _studyDateBased member variable is populated lazily in the getter,
         // so go through the getter instead of relying on the variable to be populated
-        if (getStudy() != null ? !getStudy().equals(that.getStudy()) : that.getStudy() != null) return false;
-
-        return true;
+        return getStudy() != null ? getStudy().equals(that.getStudy()) : that.getStudy() == null;
     }
 
     @Override
@@ -2366,71 +2323,6 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         result = 31 * result + _datasetId;
         return result;
     }
-
-    private static final Pattern TABLE_NAME_PATTERN = Pattern.compile("c(\\d+)_(.+)");
-
-    public static void purgeOrphanedDatasets()
-    {
-        Connection conn = null;
-        try
-        {
-            DbScope scope = StudySchema.getInstance().getSchema().getScope();
-            conn = scope.getConnection();
-            ResultSet tablesRS = conn.getMetaData().getTables(scope.getDatabaseName(), StudySchema.getInstance().getDatasetSchemaName(), null, new String[]{"TABLE"});
-            while (tablesRS.next())
-            {
-                String tableName = tablesRS.getString("TABLE_NAME");
-                boolean delete = true;
-                Matcher matcher = TABLE_NAME_PATTERN.matcher(tableName);
-                if (matcher.matches())
-                {
-                    int containerRowId = Integer.parseInt(matcher.group(1));
-                    String datasetName = matcher.group(2);
-                    Container c = ContainerManager.getForRowId(containerRowId);
-                    if (c != null)
-                    {
-                        StudyImpl study = StudyManager.getInstance().getStudy(c);
-                        if (study != null)
-                        {
-                            for (DatasetDefinition dataset : study.getDatasets())
-                            {
-                                if (dataset.getName().equalsIgnoreCase(datasetName))
-                                {
-                                    delete = false;
-                                }
-                            }
-                        }
-                    }
-                }
-                if (delete)
-                {
-                    Statement statement = null;
-                    try
-                    {
-                        statement = conn.createStatement();
-                        statement.execute("DROP TABLE " + StudySchema.getInstance().getDatasetSchemaName() + "." + scope.getSqlDialect().makeLegalIdentifier(tableName));
-                    }
-                    finally
-                    {
-                        if (statement != null) { try { statement.close(); } catch (SQLException e) {} }
-                    }
-                }
-            }
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-        finally
-        {
-            if (conn != null)
-            {
-                try { conn.close(); } catch (SQLException e) {}
-            }
-        }
-    }
-
-
 
     @Override
     public void afterPropertiesSet()
@@ -2692,16 +2584,3 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         }
     }
 }
-
-
-/*** TODO
- [ ] verify synchronize/transact updates to domain/storage table
- [N] test column rename, name collisions
- [N] we seem to still be orphaning tables in the studydataset schema
- [ ] exp StudyDatasetColumn usage of getStudyDataTable()
- // FUTURE
- [ ] don't use subjectname alias at this level
- [ ] remove _Key columns
- [ ] make OntologyManager.insertTabDelimited could handle materialized domains (maybe two subclasses?)
- [ ] clean up architecture of import/queryupdateservice
- ***/

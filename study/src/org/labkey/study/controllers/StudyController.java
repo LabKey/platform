@@ -452,23 +452,6 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresSiteAdmin
-    public class PurgeOrphanedDatasetsAction extends SimpleViewAction
-    {
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public ModelAndView getView(Object o, BindException errors)
-        {
-            DatasetDefinition.purgeOrphanedDatasets();
-            throw new RedirectException(PageFlowUtil.urlProvider(ProjectUrls.class).getHomeURL());
-        }
-    }
-
     @RequiresPermission(AdminPermission.class)
     @SuppressWarnings("unchecked")
     public class EditTypeAction extends SimpleViewAction<DatasetForm>
@@ -1319,38 +1302,6 @@ public class StudyController extends BaseStudyController
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Create Study");
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public class OldCreateStudyAction extends FormHandlerAction<StudyPropertiesForm>
-    {
-        public void validateCommand(StudyPropertiesForm target, Errors errors)
-        {
-            if (target.getTimepointType() == TimepointType.DATE && null == target.getStartDate())
-                errors.reject(ERROR_MSG, "Start date must be supplied for a date-based study.");
-
-            target.setLabel(StringUtils.trimToNull(target.getLabel()));
-            if (null == target.getLabel())
-                errors.reject(ERROR_MSG, "Please supply a label");
-
-            if (!StudyService.get().isValidSubjectColumnName(getContainer(), target.getSubjectColumnName()))
-                errors.reject(ERROR_MSG, target.getSubjectColumnName() + " is not a valid subject column name.");
-
-            if (!StudyService.get().isValidSubjectNounSingular(getContainer(), target.getSubjectNounSingular()))
-                errors.reject(ERROR_MSG, target.getSubjectNounSingular() + " is not a valid subject noun.");
-        }
-
-        public boolean handlePost(StudyPropertiesForm form, BindException errors)
-        {
-            createStudy(getStudy(), getContainer(), getUser(), form);
-            updateRepositorySettings(getContainer(), form.isSimpleRepository());
-            return true;
-        }
-
-        public ActionURL getSuccessURL(StudyPropertiesForm studyPropertiesForm)
-        {
-            return new ActionURL(ManageStudyAction.class, getContainer());
         }
     }
 
