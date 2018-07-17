@@ -61,7 +61,7 @@ public interface DataIterator extends Closeable
      * b) real value (e.g. 5.0, or "name")
      * c) MvFieldWrapper
      *
-     * MSInspectFeatursDataHandler uses error values as well, but that's what ValidationException is for
+     * MSInspectFeaturesDataHandler uses error values as well, but that's what ValidationException is for
      */
     Object get(int i);
 
@@ -85,6 +85,6 @@ public interface DataIterator extends Closeable
 
     default void debugLogInfo(StringBuilder sb)
     {
-        sb.append(this.getClass().getName()+"\n");
+        sb.append(this.getClass().getName()).append("\n");
     }
 }

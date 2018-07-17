@@ -31,7 +31,7 @@ import org.labkey.api.data.StatementUtils;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateService.InsertOption;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -41,15 +41,16 @@ import java.util.Set;
 
 public class TableInsertDataIterator extends StatementDataIterator implements DataIteratorBuilder
 {
-    DbScope _scope = null;
-    Connection _conn = null;
-    final TableInfo _table;
-    final Container _c;
-    boolean _selectIds = false;
-    QueryUpdateService.InsertOption _insertOption = QueryUpdateService.InsertOption.INSERT;
-    final Set<String> _skipColumnNames = new CaseInsensitiveHashSet();
-    final Set<String> _dontUpdate = new CaseInsensitiveHashSet();
-    final Set<String> _keyColumns = new CaseInsensitiveHashSet();
+    private DbScope _scope = null;
+    private Connection _conn = null;
+
+    private final TableInfo _table;
+    private final Container _c;
+    private final boolean _selectIds;
+    private final InsertOption _insertOption;
+    private final Set<String> _skipColumnNames = new CaseInsensitiveHashSet();
+    private final Set<String> _dontUpdate = new CaseInsensitiveHashSet();
+    private final Set<String> _keyColumns = new CaseInsensitiveHashSet();
 
 
     public static DataIteratorBuilder create(DataIterator data, TableInfo table, DataIteratorContext context)
@@ -191,7 +192,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
             _conn = _scope.getConnection();
 
             Parameter.ParameterMap stmt;
-            if (_insertOption == QueryUpdateService.InsertOption.MERGE)
+            if (_insertOption == InsertOption.MERGE)
             {
                 if (_context.supportsAutoIncrementKey())
                     setAutoIncrement(INSERT.ON);
@@ -199,7 +200,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
             }
             else
             {
-                if (_insertOption == QueryUpdateService.InsertOption.IMPORT_IDENTITY)
+                if (_insertOption == InsertOption.IMPORT_IDENTITY)
                     setAutoIncrement(INSERT.ON);
                 stmt = StatementUtils.insertStatement(_conn, _table, _skipColumnNames, _c, null, constants, _selectIds, false, _context.supportsAutoIncrementKey());
             }
@@ -267,8 +268,8 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         super.close();
         if (null != _scope && null != _conn)
         {
-            if (_insertOption == QueryUpdateService.InsertOption.IMPORT_IDENTITY ||
-                (_insertOption == QueryUpdateService.InsertOption.MERGE && _context.supportsAutoIncrementKey()))
+            if (_insertOption == InsertOption.IMPORT_IDENTITY ||
+                (_insertOption == InsertOption.MERGE && _context.supportsAutoIncrementKey()))
             {
                 setAutoIncrement(INSERT.OFF);
             }
@@ -277,7 +278,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
     }
 
     private enum INSERT
-    {ON, OFF};
+    {ON, OFF}
 
     private void setAutoIncrement(INSERT bound)
     {

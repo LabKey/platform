@@ -67,9 +67,9 @@ public class Pump implements Runnable
             log.trace(sb.toString());
         }
 
-        try
+        try (DataIterator it = _it)
         {
-            while (_it.next())
+            while (it.next())
             {
                 _rowCount++;
                 if (_errors.getRowErrors().size() > _errorLimit)
@@ -82,16 +82,9 @@ public class Pump implements Runnable
         {
             assert x == _errors;
         }
-        finally
+        catch (IOException x)
         {
-            try
-            {
-                _it.close();
-            }
-            catch (IOException x)
-            {
-                /* ignore */
-            }
+            /* ignore */
         }
     }
 
