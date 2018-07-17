@@ -265,8 +265,9 @@ public class ModuleLoader implements Filter
     {
         _log.debug("ModuleLoader init");
 
-        verifyJavaVersion();
         rollErrorLogFile(_log);
+
+        verifyJavaVersion();
 
         // make sure ConvertHelper is initialized
         ConvertHelper.getPropertyEditorRegistrar();
@@ -635,7 +636,11 @@ public class ModuleLoader implements Filter
                 {
                     throw new IllegalStateException("Error rolling labkey-errors.log file, likely a file permissions problem in CATALINA_HOME/logs");
                 }
-                rfa.rollOver();
+                File f = new File(fileName);
+                if (f.exists() && f.length() > 0)
+                {
+                    rfa.rollOver();
+                }
             }
         }
     }
