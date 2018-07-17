@@ -44,11 +44,13 @@ public class DescriptorCacheHandler implements ModuleResourceCacheHandler<Map<St
     @Override
     public Map<String, ScheduledPipelineJobDescriptor> load(Stream<? extends Resource> resources, Module module)
     {
-        return unmodifiable(resources
+        Map<String, ScheduledPipelineJobDescriptor> map = resources
             .filter(getFilter(DESCRIPTOR_EXTENSION))
             .map(resource -> _transformManager.parseETL(resource, module))
             .filter(Objects::nonNull)
-            .collect(Collectors.toMap(TransformDescriptor::getId, Function.identity())));
+            .collect(Collectors.toMap(TransformDescriptor::getId, Function.identity()));
+
+        return unmodifiable(map);
     }
 
     @Nullable
