@@ -284,12 +284,13 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver
                                             CloudStoreService cloudStoreService = CloudStoreService.get();
                                             if (null != cloudStoreService)
                                             {
-                                                WebdavResource resource = cloudStoreService.getWebFilesResource(this, parentContainer, name);
+                                                WebdavResource resource = cloudStoreService.getWebFilesResource(this, parentContainer, (null != rawFolderName ? rawFolderName : name), name);
                                                 if (null != resource)
                                                     return resource;
                                             }
                                             break;
                                         }
+                                        // TODO: handle hasCloudScheme(path) && !isCloudRoot
                                     }
                                 }
                             }
@@ -303,6 +304,8 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver
             }
             else // uploading, creating subfolder directly under child (but maps to @files) is supported
             {
+                FileContentService fileContentService = FileContentService.get();
+                boolean isCloudRoot = null != fileContentService && fileContentService.isCloudRoot(parentContainer);
                 java.nio.file.Path fileRootFile = getFileRootFile(parentContainer);
                 if (fileRootFile != null)
                 {
@@ -313,6 +316,17 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver
                             return fileRootResource;
                         return new FileSystemResource(fileRootResource, child);
                     }
+                    else if (isCloudRoot)
+                    {
+                        CloudStoreService cloudStoreService = CloudStoreService.get();
+                        if (null != cloudStoreService)
+                        {
+                            WebdavResource resource = cloudStoreService.getWebFilesResource(this, parentContainer, child, child);
+                            if (null != resource)
+                                return resource;
+                        }
+                    }
+                    // TODO: handle hasCloudScheme(path) && !isCloudRoot
                 }
             }
 

@@ -187,21 +187,16 @@ LABKEY.internal.FileDrop = new function () {
         // TODO: listen for el removed event to cleanup the Dropzone
 
         // this (passing the dropzone) is silly but it works.
-        Dropzone.prototype.setEnabled = function(bool) {
-            if (bool)
-            {
+        Dropzone.prototype.setEnabled = function(enabled) {
+            if (enabled) {
                 this.enable();
-                document.body.appendChild(this.element);
+                // 34847: HierarchyRequestError on IE/Edge
+                try { document.body.appendChild(this.element); } catch (e) { }
             }
-            else
-            {
+            else {
                 this.disable();
-                try {
-                    document.body.removeChild(this.element);
-                }
-                catch (e) {
-                    if (e.name != 'NotFoundError') throw e;
-                }
+                // 34847: HierarchyRequestError on IE/Edge
+                try { document.body.removeChild(this.element); } catch (e) { }
             }
         };
 

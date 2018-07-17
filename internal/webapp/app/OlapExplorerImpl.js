@@ -94,6 +94,11 @@ Ext.define('LABKEY.app.store.OlapExplorerImpl', {
         }
         var sortFn = this._resolveSortFunction(sortStrategy);
 
+        if (!pos || pos.length === 0) {
+            this.removeAll();
+            return;
+        }
+
         // use (All) as root
         var rootPosition = pos[0][0];
         var nodeName = rootPosition.uniqueName.replace(rootPosition.name, '').replace('.[]', '');

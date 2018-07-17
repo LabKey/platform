@@ -106,8 +106,13 @@ public interface CloudStoreService
                                   @NotNull org.labkey.api.util.Path path);
 
     @Nullable
-    default WebdavResource getWebFilesResource(@NotNull WebdavResource parent, @NotNull Container container, @NotNull String name)
+    default WebdavResource getWebFilesResource(@NotNull WebdavResource parent, @NotNull Container container, @NotNull String name)      // TODO: remove this when implementation switches to below
     {
         return null;
+    }
+    @Nullable
+    default WebdavResource getWebFilesResource(@NotNull WebdavResource parent, @NotNull Container container, @NotNull String name, @NotNull String nameDisplay)
+    {
+        return getWebFilesResource(parent, container, name);
     }
 }
