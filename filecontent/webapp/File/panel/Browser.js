@@ -2118,11 +2118,15 @@ Ext4.define('File.panel.Browser', {
                 cls = 'labkey-import-enabled';
 
             if (enabled) {
-                el.addCls(cls);
+                if (el) {
+                    el.addCls(cls);
+                }
                 importData.enable();
             }
             else {
-                el.removeCls(cls);
+                if (el) {
+                    el.removeCls(cls);
+                }
                 importData.disable();
             }
         }
