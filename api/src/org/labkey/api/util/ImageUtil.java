@@ -15,19 +15,6 @@
  */
 package org.labkey.api.util;
 
-import com.sun.javafx.application.PlatformImpl;
-import javafx.application.Application;
-import javafx.beans.value.ChangeListener;
-import javafx.concurrent.Worker;
-import javafx.embed.swing.SwingFXUtils;
-import javafx.scene.Group;
-import javafx.scene.Node;
-import javafx.scene.Scene;
-import javafx.scene.SnapshotParameters;
-import javafx.scene.image.WritableImage;
-import javafx.scene.web.WebEngine;
-import javafx.scene.web.WebView;
-import javafx.stage.Stage;
 import net.coobird.thumbnailator.Thumbnails;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
@@ -57,9 +44,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 
 /**
@@ -297,18 +281,6 @@ public class ImageUtil
             throw new RuntimeException(e);
         }
 
-        if (headlessJavaFX())
-        {
-            // Ensure the WebThumb JavaFX Application has started
-            WebThumb thumb = ensureWebThumbStarted();
-            if (thumb != null)
-            {
-                // Blocks until image is rendered
-                BufferedImage image = thumb.generateImage(url.toString(), width, height);
-                return image;
-            }
-        }
-
         Pair<Document, URI> content = HttpUtil.getXHTML(uri);
         if (content != null)
             return webImage(content.first, content.second, width, height);
@@ -411,187 +383,6 @@ public class ImageUtil
         }
     }
 
-
-    private synchronized static WebThumb ensureWebThumbStarted()
-    {
-        if (WEB_THUMB.get() == null)
-        {
-            class AppLaunch extends Thread implements ShutdownListener
-            {
-                public AppLaunch()
-                {
-                    setName(getClass().getSimpleName());
-                    ContextListener.addShutdownListener(this);
-                }
-
-                @Override
-                public void run()
-                {
-                    // Force AWT to be initialized first, so we can run in headless mode
-                    // See: https://javafx-jira.kenai.com/browse/RT-20784
-                    java.awt.Toolkit.getDefaultToolkit();
-                    LOG.debug("WebThumb: toolkit initialized");
-
-                    // We have to burn a thread because Application.launch() blocks
-                    // until the WebThumb has exited, and we can't call Application.launch()
-                    // more than once, so we keep the app running.
-                    Application.launch(WebThumb.class);
-                }
-
-                @Override
-                public void shutdownPre()
-                {
-                    PlatformImpl.exit();
-                }
-
-                @Override
-                public void shutdownStarted()
-                {
-                }
-            }
-            new AppLaunch().start();
-
-            // Wait until WebThumb has initialized itself
-            try
-            {
-                WEB_THUMB_STARTUP_LATCH.await();
-            }
-            catch (InterruptedException e)
-            {
-                throw new RuntimeException(e);
-            }
-        }
-
-        return WEB_THUMB.get();
-    }
-
-    protected static final AtomicReference<WebThumb> WEB_THUMB = new AtomicReference<>();
-    protected static final CountDownLatch WEB_THUMB_STARTUP_LATCH = new CountDownLatch(1);
-
-    private static Boolean _headlessJavaFX = null;
-
-    /**
-     * Checks Monocle is available and configured for headless rendering.
-     */
-    // Also consider forcing headless using reflection -- see https://gist.github.com/mojavelinux/593f5a56381507bca46f
-    private static boolean headlessJavaFX()
-    {
-        if (_headlessJavaFX == null)
-        {
-            if (System.getProperty("glass.platform") == null)
-                System.setProperty("glass.platform", "Monocle");
-
-            if (System.getProperty("monocle.platform") == null)
-                System.setProperty("monocle.platform", "Headless");
-
-            if (System.getProperty("prism.order") == null)
-                System.setProperty("prism.order", "sw");
-
-            if (System.getProperty("javafx.macosx.embedded") == null)
-                System.setProperty("javafx.macosx.embedded", "true");
-
-
-            try
-            {
-                Class.forName("com.sun.glass.ui.monocle.MonoclePlatformFactory");
-                _headlessJavaFX =
-                        "Monocle".equals(System.getProperty("glass.platform")) &&
-                        "Headless".equals(System.getProperty("monocle.platform")) &&
-                        "sw".equals(System.getProperty("prism.order"));
-            }
-            catch (ClassNotFoundException e)
-            {
-                LOG.debug("Monocle not on classpath");
-                _headlessJavaFX = false;
-            }
-        }
-
-        return _headlessJavaFX;
-    }
-
-    public static class WebThumb extends Application
-    {
-        private WebView _webView;
-
-        public WebThumb() { }
-
-        @Override
-        public void start(Stage stage)
-        {
-            stage.setTitle("WebThumb");
-            final Group rootGroup = new Group();
-
-            _webView = new WebView();
-            _webView.setPrefHeight(WEB_IMAGE_HEIGHT);
-            _webView.setPrefWidth(WEB_IMAGE_WIDTH);
-
-            rootGroup.getChildren().add(_webView);
-
-            final Scene scene = new Scene(rootGroup, WEB_IMAGE_WIDTH, WEB_IMAGE_HEIGHT, javafx.scene.paint.Color.WHITE);
-            stage.setScene(scene);
-            stage.show();
-
-            // We can only create the app once so stash the WebThumb reference
-            // and notify the other thread the app has initialized.
-            WEB_THUMB.set(this);
-            WEB_THUMB_STARTUP_LATCH.countDown();
-            LOG.debug("WebThumb: started");
-        }
-
-        private BufferedImage renderToImage(Node node)
-        {
-            SnapshotParameters params = new SnapshotParameters();
-            WritableImage img = node.snapshot(params, null);
-            BufferedImage image = SwingFXUtils.fromFXImage(img, null);
-            return image;
-        }
-
-        // synchronized to only allow a single render request at a time
-        public synchronized BufferedImage generateImage(String url, int width, int height)
-        {
-            LOG.info("WebThumb: requesting web image: " + url);
-            final AtomicReference<BufferedImage> image = new AtomicReference<>();
-            final CountDownLatch renderLatch = new CountDownLatch(1);
-
-//            _webView.setPrefWidth(width);
-//            _webView.setPrefHeight(height);
-
-            final WebEngine webEngine = _webView.getEngine();
-            final ChangeListener<Worker.State> listener = (ov, oldState, newState) -> {
-                LOG.debug("WebThumb state: " + newState.name());
-                if (newState == Worker.State.SUCCEEDED)
-                {
-                    image.set(renderToImage(_webView));
-                    renderLatch.countDown();
-                }
-            };
-
-            PlatformImpl.runAndWait(() -> {
-                webEngine.getLoadWorker().stateProperty().addListener(listener);
-                _webView.getEngine().load(url);
-            });
-
-            try
-            {
-                renderLatch.await(5, TimeUnit.MINUTES);
-                LOG.info("WebThumb: rendered web image: " + url);
-            }
-            catch (InterruptedException e)
-            {
-                // failed to load or render within timeout
-                PlatformImpl.runLater(() -> webEngine.getLoadWorker().cancel());
-            }
-            finally
-            {
-                PlatformImpl.runAndWait(() -> {
-                    webEngine.getLoadWorker().stateProperty().removeListener(listener);
-                });
-            }
-
-            return image.get();
-        }
-
-    }
 
     public static void main(String[] args) throws Exception
     {
