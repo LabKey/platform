@@ -6484,7 +6484,7 @@ public class StudyController extends BaseStudyController
 
     @RequiresLogin
     @RequiresPermission(AdminPermission.class)
-    public class CheckForReloadAction extends ApiAction<ReloadForm>
+    public class CheckForReloadAction extends MutatingApiAction<ReloadForm>
     {
         @Override
         public ApiResponse execute(ReloadForm form, BindException errors) throws Exception
