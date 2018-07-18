@@ -65,6 +65,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.InsertView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -562,18 +563,10 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             AssayWellExclusionService svc = AssayWellExclusionService.getProvider();
             if (svc != null)
             {
-                int exclusionCount = svc.getExclusionCount(newRunForm.getReRun());
-                if (exclusionCount > 0)
+                HttpView exclusionWarning = svc.getAssayReImportWarningView(getContainer(), newRunForm.getReRun());
+                if (exclusionWarning != null)
                 {
-                    ActionURL excludeReportUrl = getExclusionReportURL(getContainer(), newRunForm.getReRun());
-                    String html = "<p>The run you are replacing has " + exclusionCount + " exclusion" + (exclusionCount > 1 ? "s" : "") + ". " +
-                            "These exclusions will not be retained after the assay run is re-imported. <br>" +
-                            "Please review the <a class=\"labkey-text-link\" href=\"" +
-                            PageFlowUtil.filter(excludeReportUrl) +
-                            "\">exclusions report</a> for more information</p>";
-                    HtmlView exclusionWarningView = new HtmlView(html);
-                    exclusionWarningView.setTitle("Exclusions Warning");
-                    vbox.addView(exclusionWarningView);
+                    vbox.addView(exclusionWarning);
                 }
             }
         }
@@ -583,13 +576,6 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
         vbox.addView(insertView);
         return vbox;
-    }
-
-    private ActionURL getExclusionReportURL(Container container, ExpRun run)
-    {
-        return new ActionURL(AssayExclusionReportAction.class, container)
-                .addParameter("rowId", run.getProtocol().getRowId())
-                .addParameter("ExclusionReport.Run/RowId~eq", run.getRowId());
     }
 
     /** Check the assay configuration to determine if we should prompt the user to upload or otherwise specify a data file */

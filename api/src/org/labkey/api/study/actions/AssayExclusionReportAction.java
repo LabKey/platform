@@ -26,6 +26,7 @@ import org.springframework.web.servlet.ModelAndView;
 import static org.labkey.api.study.assay.AssayProtocolSchema.EXCLUSION_REPORT_TABLE_NAME;
 
 @RequiresPermission(ReadPermission.class)
+@Deprecated // this class will be removed once the code is merged to move this to the premium module
 public class AssayExclusionReportAction extends BaseAssayAction<ProtocolIdForm>
 {
     public static final FieldKey REPLACED_FIELD_KEY = FieldKey.fromParts("Run", "Replaced");
