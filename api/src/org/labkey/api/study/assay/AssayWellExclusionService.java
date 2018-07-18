@@ -8,8 +8,6 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.security.User;
 import org.labkey.api.study.query.ResultsQueryView;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 
 import java.util.Set;
 
@@ -48,11 +46,4 @@ public interface AssayWellExclusionService
 
     @Nullable
     ResultsQueryView.ResultsDataRegion createResultsDataRegion(ExpProtocol protocol);
-
-    ActionURL getExclusionReportURL(Container container, ExpRun run);
-    ActionURL getExclusionURL(Container container, AssayProvider provider, int rowId, String runId, String returnUrl);
-
-    @Nullable
-    // returns a view containing warnings if the specified run has current well exclusions associated with it
-    HttpView getAssayReImportWarningView(Container container, ExpRun run);
 }
