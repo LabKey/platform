@@ -5954,6 +5954,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(UpdatePermission.class)
+    @Deprecated // this class will be removed once the code is merged to move this to the premium module
     public class ExcludeRowsAction extends FormViewAction<ExclusionEventForm>
     {
         private ExpRun run;
