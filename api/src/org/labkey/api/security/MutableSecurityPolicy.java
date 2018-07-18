@@ -107,21 +107,30 @@ public class MutableSecurityPolicy extends SecurityPolicy
     {
         MutableSecurityPolicy policy = new MutableSecurityPolicy(resource);
 
-        Object modified = map.get("modified");
-        if (modified instanceof Date)
+        // Use millisecond precision, if present. Good for optimistic concurrency check.
+        Object modifiedMillis = map.get("modifiedMillis");
+        if (modifiedMillis instanceof Long)
         {
-            policy._modified = (Date)modified;
+            policy._modified = new Date((Long)modifiedMillis);
         }
         else
         {
-            String modifiedStr = String.valueOf(modified);
-            try
+            Object modified = map.get("modified");
+            if (modified instanceof Date)
             {
-                policy._modified = (modifiedStr == null || modifiedStr.length() == 0) ? null : new Date(DateUtil.parseDateTime(modifiedStr));
+                policy._modified = (Date) modified;
             }
-            catch (ConversionException x)
+            else
             {
-            /* */
+                String modifiedStr = String.valueOf(modified);
+                try
+                {
+                    policy._modified = (modifiedStr == null || modifiedStr.length() == 0) ? null : new Date(DateUtil.parseDateTime(modifiedStr));
+                }
+                catch (ConversionException x)
+                {
+                    /* */
+                }
             }
         }
 
@@ -135,7 +144,7 @@ public class MutableSecurityPolicy extends SecurityPolicy
             else if (map.get("assignments") instanceof List)
                 assignments = new JSONArray(map.get("assignments"));
             else
-                throw new IllegalArgumentException("The assignements property does not contain a list!");
+                throw new IllegalArgumentException("The assignments property does not contain a list!");
 
             for (Object element : assignments.toMapList())
             {

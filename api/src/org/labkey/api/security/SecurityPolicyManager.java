@@ -36,7 +36,6 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.query.FieldKey;
 
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -127,9 +126,8 @@ public class SecurityPolicyManager
                     .getObject(policy.getResourceId(), SecurityPolicyBean.class);
 
             if (null != currentPolicyBean && null != policy.getModified() &&
-                    // Use seconds granularity to protect against comparing a posted Date (no nanos) against a stored Timestamp (with nanos)
-                    // TODO: Ideally, we would round-trip a more precise date measure (including millis) through the permissions page and tighten up this check
-                    0 != currentPolicyBean.getModified().toInstant().until(policy.getModified().toInstant(), ChronoUnit.SECONDS))
+                    // Use millisecond granularity; need to protect against comparing a posted Date (no nanos) against a stored Timestamp (with nanos)
+                    currentPolicyBean.getModified().getTime() != policy.getModified().getTime())
             {
                 throw new OptimisticConflictException("The security policy you are attempting to save" +
                 " has been altered by someone else since you selected it.", Table.SQLSTATE_TRANSACTION_STATE, 0);

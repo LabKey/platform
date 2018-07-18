@@ -455,7 +455,12 @@ public class SecurityPolicy implements HasPermission
         Map<String, Object> props = new HashMap<>();
 
         //modified
-        props.put("modified", getModified());
+        Date modified = getModified();
+        props.put("modified", modified);  // Standard JSON format for dates is only accurate to the second
+
+        //modifiedMillis
+        if (null != modified)
+            props.put("modifiedMillis", modified.getTime());  // Add a more accurate timestamp for optimistic concurrency purposes
 
         //resource id
         props.put("resourceId", getResourceId());
@@ -467,8 +472,8 @@ public class SecurityPolicy implements HasPermission
             Map<String, Object> assignmentProps = new HashMap<>();
             try
             {
-            assignmentProps.put("userId", assignment.getUserId());
-            assignmentProps.put("role", assignment.getRole().getUniqueName());
+                assignmentProps.put("userId", assignment.getUserId());
+                assignmentProps.put("role", assignment.getRole().getUniqueName());
             }
             catch (NullPointerException x)
             {
