@@ -887,7 +887,7 @@ public class ModuleLoader implements Filter
         {
             if (SystemUtils.isJavaVersionAtLeast(JavaVersion.JAVA_9) && AppProps.getInstance().isDevMode())
             {
-                _log.error("LabKey Server has not been tested against Java runtime version " + SystemUtils.JAVA_VERSION + ".");
+                _log.warn("LabKey Server has not been tested against Java runtime version " + SystemUtils.JAVA_VERSION + ".");
             }
             else
             {
