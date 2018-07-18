@@ -16,83 +16,83 @@
 
 package org.labkey.api.study.actions;
 
-import org.jetbrains.annotations.Nullable;
-import org.labkey.api.action.LabKeyError;
-import org.labkey.api.action.SpringActionController;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.ActionButton;
-import org.labkey.api.data.ButtonBar;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.SimpleDisplayColumn;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableViewForm;
-import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.api.ExpExperiment;
-import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.query.ExpRunTable;
-import org.labkey.api.pipeline.PipeRoot;
-import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.pipeline.PipelineUrls;
-import org.labkey.api.query.PropertyValidationError;
-import org.labkey.api.query.ValidationError;
-import org.labkey.api.query.ValidationException;
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.permissions.AdminOperationsPermission;
-import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.study.assay.AbstractAssayProvider;
-import org.labkey.api.study.assay.AssayColumnInfoRenderer;
-import org.labkey.api.study.assay.AssayDataCollector;
-import org.labkey.api.study.assay.AssayDataCollectorDisplayColumn;
-import org.labkey.api.study.assay.AssayHeaderLinkProvider;
-import org.labkey.api.study.assay.AssayProvider;
-import org.labkey.api.study.assay.AssayService;
-import org.labkey.api.study.assay.AssayUrls;
-import org.labkey.api.study.assay.AssayWarningsDisplayColumn;
-import org.labkey.api.study.assay.AssayWellExclusionService;
-import org.labkey.api.study.assay.DefaultAssayRunCreator;
-import org.labkey.api.study.assay.ParticipantVisitResolverType;
-import org.labkey.api.study.assay.ThawListResolverType;
-import org.labkey.api.util.HelpTopic;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.InsertView;
-import org.labkey.api.view.JspView;
-import org.labkey.api.view.NavTree;
-import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.RedirectException;
-import org.labkey.api.view.VBox;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ViewServlet;
-import org.labkey.api.view.template.ClientDependency;
-import org.labkey.api.writer.ContainerUser;
-import org.springframework.context.MessageSourceResolvable;
-import org.springframework.validation.BindException;
-import org.springframework.validation.Errors;
-import org.springframework.validation.FieldError;
-import org.springframework.validation.ObjectError;
-import org.springframework.web.servlet.ModelAndView;
+    import org.jetbrains.annotations.Nullable;
+    import org.labkey.api.action.LabKeyError;
+    import org.labkey.api.action.SpringActionController;
+    import org.labkey.api.collections.CaseInsensitiveHashSet;
+    import org.labkey.api.data.ActionButton;
+    import org.labkey.api.data.ButtonBar;
+    import org.labkey.api.data.ColumnInfo;
+    import org.labkey.api.data.DataRegion;
+    import org.labkey.api.data.DisplayColumn;
+    import org.labkey.api.data.RenderContext;
+    import org.labkey.api.data.SimpleDisplayColumn;
+    import org.labkey.api.data.TableInfo;
+    import org.labkey.api.data.TableViewForm;
+    import org.labkey.api.exp.ExperimentException;
+    import org.labkey.api.exp.api.ExpExperiment;
+    import org.labkey.api.exp.api.ExpProtocol;
+    import org.labkey.api.exp.api.ExpRun;
+    import org.labkey.api.exp.api.ExperimentService;
+    import org.labkey.api.exp.property.Domain;
+    import org.labkey.api.exp.property.DomainProperty;
+    import org.labkey.api.exp.query.ExpRunTable;
+    import org.labkey.api.pipeline.PipeRoot;
+    import org.labkey.api.pipeline.PipelineService;
+    import org.labkey.api.pipeline.PipelineUrls;
+    import org.labkey.api.query.PropertyValidationError;
+    import org.labkey.api.query.ValidationError;
+    import org.labkey.api.query.ValidationException;
+    import org.labkey.api.security.RequiresPermission;
+    import org.labkey.api.security.permissions.AdminOperationsPermission;
+    import org.labkey.api.security.permissions.InsertPermission;
+    import org.labkey.api.study.assay.AbstractAssayProvider;
+    import org.labkey.api.study.assay.AssayColumnInfoRenderer;
+    import org.labkey.api.study.assay.AssayDataCollector;
+    import org.labkey.api.study.assay.AssayDataCollectorDisplayColumn;
+    import org.labkey.api.study.assay.AssayHeaderLinkProvider;
+    import org.labkey.api.study.assay.AssayProvider;
+    import org.labkey.api.study.assay.AssayService;
+    import org.labkey.api.study.assay.AssayUrls;
+    import org.labkey.api.study.assay.AssayWarningsDisplayColumn;
+    import org.labkey.api.study.assay.AssayWellExclusionService;
+    import org.labkey.api.study.assay.DefaultAssayRunCreator;
+    import org.labkey.api.study.assay.ParticipantVisitResolverType;
+    import org.labkey.api.study.assay.ThawListResolverType;
+    import org.labkey.api.util.HelpTopic;
+    import org.labkey.api.util.PageFlowUtil;
+    import org.labkey.api.util.Pair;
+    import org.labkey.api.view.ActionURL;
+    import org.labkey.api.view.HtmlView;
+    import org.labkey.api.view.HttpView;
+    import org.labkey.api.view.InsertView;
+    import org.labkey.api.view.JspView;
+    import org.labkey.api.view.NavTree;
+    import org.labkey.api.view.NotFoundException;
+    import org.labkey.api.view.RedirectException;
+    import org.labkey.api.view.VBox;
+    import org.labkey.api.view.ViewContext;
+    import org.labkey.api.view.ViewServlet;
+    import org.labkey.api.view.template.ClientDependency;
+    import org.labkey.api.writer.ContainerUser;
+    import org.springframework.context.MessageSourceResolvable;
+    import org.springframework.validation.BindException;
+    import org.springframework.validation.Errors;
+    import org.springframework.validation.FieldError;
+    import org.springframework.validation.ObjectError;
+    import org.springframework.web.servlet.ModelAndView;
 
-import javax.servlet.ServletException;
-import java.io.IOException;
-import java.io.Writer;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+    import javax.servlet.ServletException;
+    import java.io.IOException;
+    import java.io.Writer;
+    import java.sql.SQLException;
+    import java.util.ArrayList;
+    import java.util.Collections;
+    import java.util.HashMap;
+    import java.util.HashSet;
+    import java.util.List;
+    import java.util.Map;
+    import java.util.Set;
 
 /**
  * User: brittp
@@ -562,18 +562,10 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             AssayWellExclusionService svc = AssayWellExclusionService.getProvider();
             if (svc != null)
             {
-                int exclusionCount = svc.getExclusionCount(newRunForm.getReRun());
-                if (exclusionCount > 0)
+                HttpView exclusionWarning = svc.getAssayReImportWarningView(getContainer(), newRunForm.getReRun());
+                if (exclusionWarning != null)
                 {
-                    ActionURL excludeReportUrl = getExclusionReportURL(getContainer(), newRunForm.getReRun());
-                    String html = "<p>The run you are replacing has " + exclusionCount + " exclusion" + (exclusionCount > 1 ? "s" : "") + ". " +
-                            "These exclusions will not be retained after the assay run is re-imported. <br>" +
-                            "Please review the <a class=\"labkey-text-link\" href=\"" +
-                            PageFlowUtil.filter(excludeReportUrl) +
-                            "\">exclusions report</a> for more information</p>";
-                    HtmlView exclusionWarningView = new HtmlView(html);
-                    exclusionWarningView.setTitle("Exclusions Warning");
-                    vbox.addView(exclusionWarningView);
+                    vbox.addView(exclusionWarning);
                 }
             }
         }
@@ -583,13 +575,6 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
         vbox.addView(insertView);
         return vbox;
-    }
-
-    private ActionURL getExclusionReportURL(Container container, ExpRun run)
-    {
-        return new ActionURL(AssayExclusionReportAction.class, container)
-                .addParameter("rowId", run.getProtocol().getRowId())
-                .addParameter("ExclusionReport.Run/RowId~eq", run.getRowId());
     }
 
     /** Check the assay configuration to determine if we should prompt the user to upload or otherwise specify a data file */
