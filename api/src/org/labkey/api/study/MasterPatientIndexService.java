@@ -4,9 +4,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.util.Pair;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -55,6 +57,16 @@ public interface MasterPatientIndexService
      * Update patient index information for the specified container
      */
     void updateIndices(PipelineJob pipelineJob);
+
+    /**
+     * Utility to purge records matching the specified attribute key value pairs
+     * @param attributes
+     * @return the number of records removed
+     */
+    default int deleteMatchingRecords(List<Pair<String, String>> attributes)
+    {
+        return 0;
+    }
 
     class ServerSettings
     {
