@@ -16,6 +16,7 @@
 
 package org.labkey.api.study.actions;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.SpringActionController;
@@ -147,7 +148,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             //FIX: 4014. ensure that the pipeline root path actually exists before starting the first
             //step of the wizard (if it doesn't, the upload will eventually fail)
             PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(getContainer());
-            if (pipeRoot != null && !pipeRoot.isValid())
+            if (pipeRoot == null || !pipeRoot.isValid())
             {
                 StringBuilder msg = new StringBuilder("<p class='labkey-error'>The pipeline directory (");
                 msg.append(pipeRoot);
@@ -160,12 +161,20 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                     msg.append("</p><p><a href='").append(urlhelper.getLocalURIString()).append("'>[Setup Pipeline]</a></p>");
                 }
                 else
+                {
                     msg.append(" Please contact your system administrator.</p>");
+                }
 
                 return new HtmlView(msg.toString());
             } //pipe root does not exist
+            else if (isCloudAndUnsupported(pipeRoot, _protocol))
+            {
+                return new HtmlView("<p class='labkey-error'>The pipeline provider for this assay does not support using cloud-based storage. Please contact your administrator.</p>");
+            }
             else
+            {
                 return getBatchPropertiesView(form, false, errors);
+            }
         } //first step
 
         StepHandler<FormType> handler = _stepHandlers.get(currentStep);
@@ -175,6 +184,15 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         }
 
         return handler.handleStep(form, errors);
+    }
+
+    private boolean isCloudAndUnsupported(@NotNull PipeRoot pipeRoot, ExpProtocol protocol)
+    {
+        AssayProvider provider = AssayService.get().getProvider(protocol);
+        return (pipeRoot.isCloudRoot() &&
+                null != provider &&
+                null != provider.getPipelineProvider() &&
+                !provider.getPipelineProvider().supportsCloud());
     }
 
     /** After a run has been successfully created, either send the user to upload another, or complete the wizard */
