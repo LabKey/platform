@@ -64,7 +64,6 @@ import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
-import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.CustomView;
@@ -103,7 +102,6 @@ import org.labkey.api.search.SearchUrls;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -115,7 +113,6 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.MasterPatientIndexService;
 import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyReloadSource;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
@@ -169,7 +166,6 @@ import org.labkey.study.importer.DatasetImportUtils;
 import org.labkey.study.importer.RequestabilityManager;
 import org.labkey.study.importer.SchemaReader;
 import org.labkey.study.importer.SchemaTsvReader;
-import org.labkey.study.importer.StudyReload;
 import org.labkey.study.importer.StudyReload.ReloadStatus;
 import org.labkey.study.importer.StudyReload.ReloadTask;
 import org.labkey.study.importer.VisitMapImporter;
@@ -7962,7 +7958,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class RefreshMasterPatientIndexAction extends ApiAction<Object>
+    public class RefreshMasterPatientIndexAction extends MutatingApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object o, BindException errors) throws Exception
@@ -7994,6 +7990,46 @@ public class StudyController extends BaseStudyController
                 throw new IOException(e);
             }
             return response;
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class DeleteMasterPatientRecordsAction extends MutatingApiAction<DeleteMPIForm>
+    {
+        @Override
+        public ApiResponse execute(DeleteMPIForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            List<Pair<String, String>> params = form.getParams();
+            MasterPatientIndexService svc = MasterPatientIndexMaintenanceTask.getConfiguredService();
+            if (svc != null && params.size() > 0)
+            {
+                int count = svc.deleteMatchingRecords(params);
+
+                response.put("success", true);
+                response.put("count", count);
+            }
+            return response;
+        }
+    }
+
+    public static class DeleteMPIForm implements CustomApiForm
+    {
+        private List<Pair<String, String>> _params = new ArrayList<>();
+
+        public List<Pair<String, String>> getParams()
+        {
+            return _params;
+        }
+
+        @Override
+        public void bindProperties(Map<String, Object> props)
+        {
+            for (Map.Entry<String, Object> entry : props.entrySet())
+            {
+                _params.add(new Pair<>(entry.getKey(), String.valueOf(entry.getValue())));
+            }
         }
     }
 }
