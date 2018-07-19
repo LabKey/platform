@@ -94,7 +94,7 @@ public class SampleMindedImportTest extends BaseWebDriverTest
         clickAndWait(Locator.linkWithText("Overview"));
         clickAndWait(Locator.linkWithText("manage files"));
         setPipelineRoot(TestFileUtils.getLabKeyRoot() + "/sampledata/study");
-        clickFolder(PROJECT_NAME);
+        clickProject(PROJECT_NAME);
         clickTab("Overview");
         clickAndWait(Locator.linkWithText("Manage Files"));
 

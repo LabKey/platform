@@ -101,7 +101,7 @@ public class StudyDataspaceTest extends StudyBaseTest
     protected void doVerifySteps()
     {
         log("Verify project has study, but can't import or export");
-        clickFolder(getProjectName());
+        clickProject(getProjectName());
         verifyStudyExportButtons(false);
         verifyStudyProductTableInfo(true, 0, null, null);
         verifyStudyTreatmentTableInfo(false, 0, null, null);
@@ -320,7 +320,7 @@ public class StudyDataspaceTest extends StudyBaseTest
         Bag<List<String>> expectedRows = new HashBag<>(DataRegionTable.collateColumnsIntoRows(VISIT_TAG_MAP_TAGS, VISIT_TAG_MAP_VISITS, VISIT_TAG_MAP_COHORTS));
 
         // Check visit tags
-        clickFolder(getProjectName());
+        clickProject(getProjectName());
         goToModule("Query");
         viewQueryData("study", "VisitTagMap");
         DataRegionTable visitTagMaps = new DataRegionTable("query", this);
