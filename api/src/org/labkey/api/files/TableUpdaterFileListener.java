@@ -65,13 +65,9 @@ public class TableUpdaterFileListener implements FileListener
         /** @return the string that is expected to be the in database */
         String get(File f);
         String get(Path f);
-        /** @return the file path separator (typically '/' or '\' */
+        /** @return the file path separator (typically '/' or '\') */
         String getSeparatorSuffix();
-        default boolean doChildren()
-        {
-            return !Type.fileRootPath.equals(this);
-        }
-        default boolean matchFileName()
+        default boolean matchParentAndFileName()
         {
             return Type.fileRootPath.equals(this);
         }
@@ -132,17 +128,13 @@ public class TableUpdaterFileListener implements FileListener
             @Override
             public String get(Path path)
             {
-                Path parent = path.getParent();
-                if (FileUtil.hasCloudScheme(parent))
-                    return FileUtil.pathToString(parent) + getSeparatorSuffix();
-                else
-                    return parent.toFile().getPath() + getSeparatorSuffix();
+                return filePath.get(path);
             }
 
             @Override
             public String get(File f)
             {
-                return f.getParentFile().getPath() + getSeparatorSuffix();
+                return filePath.get(f);
             }
 
             @Override
@@ -226,9 +218,6 @@ public class TableUpdaterFileListener implements FileListener
     @Override
     public void fileMoved(@NotNull Path src, @NotNull Path dest, @Nullable User user, @Nullable Container container)
     {
-        String srcPath = getSourcePath(src, container);
-        String destPath = _pathGetter.get(dest);
-
         DbSchema schema = _table.getSchema();
         SqlDialect dialect = schema.getSqlDialect();
         String dbColumnName = _table.getSqlDialect().makeLegalIdentifier(_pathColumn);
@@ -251,40 +240,55 @@ public class TableUpdaterFileListener implements FileListener
         sharedSQL.append(dbColumnName);
         sharedSQL.append(" = ");
 
-        // Now build up the SQL to handle this specific path
-        SQLFragment singleEntrySQL = new SQLFragment(sharedSQL);
-        singleEntrySQL.append("? WHERE ");
-        singleEntrySQL.append(dbColumnName);
-        singleEntrySQL.append(" = ?");
-        singleEntrySQL.add(destPath);
-        singleEntrySQL.add(srcPath);
+        String srcPath = getSourcePath(src, container);
+        String destPath = _pathGetter.get(dest);
 
-        if (_pathGetter.matchFileName())
+        if (!_pathGetter.matchParentAndFileName() || !Files.isDirectory(src))
         {
-            String fileName = FileUtil.getFileName(src);
-            if (null != fileName)
-                singleEntrySQL.append(" AND Name = ?").add(fileName);
-        }
+            // For fileRootPath, we need the parent of the files
+            if (_pathGetter.matchParentAndFileName())
+            {
+                srcPath = getParentWithSeparator(src);
+                destPath = getParentWithSeparator(dest);
+                if (null == srcPath || null == destPath)
+                    return;     // Nothing to do
+            }
 
-        int rows = -1;
-        for (int retry=0 ; retry<2 ; retry++)
-        {
-            try
+            // Now build up the SQL to handle this specific path
+            SQLFragment singleEntrySQL = new SQLFragment(sharedSQL);
+            singleEntrySQL.append("? WHERE ");
+            singleEntrySQL.append(dbColumnName);
+            singleEntrySQL.append(" = ?");
+            singleEntrySQL.add(destPath);
+            singleEntrySQL.add(srcPath);
+
+            if (_pathGetter.matchParentAndFileName())
             {
-                rows = new SqlExecutor(schema).execute(singleEntrySQL);
-                break;
+                String fileName = FileUtil.getFileName(src);
+                if (null != fileName)
+                    singleEntrySQL.append(" AND Name = ?").add(fileName);
             }
-            catch (RuntimeException x)
+
+            int rows = -1;
+            for (int retry = 0; retry < 2; retry++)
             {
-                if (retry > 0 || _table.getSchema().getScope().isTransactionActive() || !SqlDialect.isTransactionException(x))
-                    throw x;
+                try
+                {
+                    rows = new SqlExecutor(schema).execute(singleEntrySQL);
+                    break;
+                }
+                catch (RuntimeException x)
+                {
+                    if (retry > 0 || _table.getSchema().getScope().isTransactionActive() || !SqlDialect.isTransactionException(x))
+                        throw x;
+                }
             }
+            LOG.info("Updated " + rows + " row in " + _table + " for move from " + src + " to " + dest);
         }
-        LOG.info("Updated " + rows + " row in " + _table + " for move from " + src + " to " + dest);
 
         // Skip attempting to fix up child paths if we know that the entry is a file. If it's not (either it's a
         // directory or it doesn't exist), then try to fix up child records
-        if (_pathGetter.doChildren() && (!Files.exists(dest) || Files.isDirectory(dest)))
+        if ((!Files.exists(dest) || Files.isDirectory(dest)))
         {
             if (!srcPath.endsWith(_pathGetter.getSeparatorSuffix()))
             {
@@ -318,6 +322,20 @@ public class TableUpdaterFileListener implements FileListener
             int childRows = new SqlExecutor(schema).execute(childPathsSQL);
             LOG.info("Updated " + childRows + " child paths in " + _table + " rows for move from " + src + " to " + dest);
         }
+    }
+
+    @Nullable
+    private String getParentWithSeparator(Path path)
+    {
+        Path parent = path.getParent();
+        if (null != parent)
+        {
+            if (FileUtil.hasCloudScheme(parent))
+                return FileUtil.pathToString(parent) + File.separator;
+            else
+                return parent.toFile().getPath() + File.separator;
+        }
+        return null;
     }
 
     @Override

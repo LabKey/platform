@@ -24,6 +24,8 @@ import org.labkey.api.webdav.WebdavResource;
 
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -43,6 +45,42 @@ public interface CloudStoreService
     static void setInstance(CloudStoreService impl)
     {
         ServiceRegistry.get().registerService(CloudStoreService.class, impl);
+    }
+
+    class StoreInfo
+    {
+        private final boolean _isEnabled;
+        private final boolean _isEnabledInContainer;
+        private final boolean _isLabKeyManaged;
+        private final String _name;
+
+        public StoreInfo(String name, boolean isEnabled, boolean isEnabledInContainer, boolean isLabKeyManaged)
+        {
+            _isEnabled = isEnabled;
+            _isEnabledInContainer = isEnabledInContainer;
+            _isLabKeyManaged = isLabKeyManaged;
+            _name = name;
+        }
+
+        public boolean isEnabled()
+        {
+            return _isEnabled;
+        }
+
+        public boolean isEnabledInContainer()
+        {
+            return _isEnabledInContainer;
+        }
+
+        public boolean isLabKeyManaged()
+        {
+            return _isLabKeyManaged;
+        }
+
+        public String getName()
+        {
+            return _name;
+        }
     }
 
     /**
@@ -114,5 +152,10 @@ public interface CloudStoreService
     default WebdavResource getWebFilesResource(@NotNull WebdavResource parent, @NotNull Container container, @NotNull String name, @NotNull String nameDisplay)
     {
         return getWebFilesResource(parent, container, name);
+    }
+
+    default Map<String, StoreInfo> getStoreInfos(@Nullable Container container)
+    {
+        return Collections.emptyMap();
     }
 }
