@@ -27,6 +27,7 @@
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.files.FileContentService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -35,6 +36,8 @@
     Map<String, String> locations = new LinkedHashMap<>();
     String defaultLocation = null;
 
+    FileContentService fileContentService = FileContentService.get();
+    boolean isCloudRoot = null != fileContentService && fileContentService.isCloudRoot(getContainer());
     for (Pair<Container, String> entry : AssayService.get().getLocationOptions(getContainer(), getUser()))
     {
         locations.put(entry.getKey().getId(), entry.getValue());
@@ -58,14 +61,20 @@
 <labkey:form method="POST">
     <%= generateReturnUrlFormField(bean.getReturnURL()) %>
     <table>
-        <% for (AssayProvider provider : providers) { %>
+        <% for (AssayProvider provider : providers) {
+            boolean isCloudAndUnsupported = (isCloudRoot && null != provider.getPipelineProvider() && !provider.getPipelineProvider().supportsCloud());
+        %>
         <tr>
-            <td><input id="providerName_<%=h(provider.getName())%>" name="providerName" type="radio" value="<%= h(provider.getName()) %>"/></td>
+            <td><input id="providerName_<%=h(provider.getName())%>" name="providerName" type="radio" value="<%= h(provider.getName()) %>"
+                <%=h(isCloudAndUnsupported ? "disabled" : "")%>
+            /></td>
             <td><label for="providerName_<%=h(provider.getName())%>"><strong><%= h(provider.getName())%></strong></label></td>
         </tr>
         <tr>
             <td>&nbsp;</td>
-            <td><label for="providerName_<%=h(provider.getName())%>" style="font-weight: normal;"><%= text(provider.getDescription()) %></label></td>
+            <td><label for="providerName_<%=h(provider.getName())%>" style="font-weight: normal;"><%= text(provider.getDescription()) %>
+                <%=h(isCloudAndUnsupported ? " (Does not support using cloud-based storage.)" : "")%>
+            </label></td>
         </tr>
         <% } %>
         <tr><td>&nbsp;</td><td>&nbsp;</td></tr>

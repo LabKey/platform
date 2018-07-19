@@ -155,7 +155,10 @@
                                     Moved to new location
                                 </option>
                             </select>
-                            <span id="notifyAboutPipeline" style="color: #FF0000"><br> Changing File Root to cloud-based storage disables any pipeline override. Files at that location will remain.</span>
+                            <span id="notifyAboutPipeline" style="color: #FF0000"><br>
+                                Changing File Root to cloud-based storage disables any pipeline override. Files at that location will remain.<br>
+                                Not all pipeline providers support using cloud-based storage.
+                            </span>
                         </td>
                     </tr>
                 </table>
