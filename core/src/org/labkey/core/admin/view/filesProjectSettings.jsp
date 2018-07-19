@@ -31,8 +31,8 @@
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.AdminController.ProjectSettingsForm.FileRootProp" %>
 <%@ page import="org.labkey.core.admin.AdminController.ProjectSettingsForm.MigrateFilesOption" %>
-<%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Collections" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -67,17 +67,15 @@
     boolean isCurrentFileRootOptionDisable = FileRootProp.disable.name().equals(bean.getFileRootOption());
 
     CloudStoreService cloud = CloudStoreService.get();
-    Collection<String> storeNames = Collections.emptyList();
-    if (cloud != null)
-    {
-        storeNames = cloud.getCloudStores();
-    }
+    Map<String, CloudStoreService.StoreInfo> storeInfos = cloud != null ? cloud.getStoreInfos(getContainer()) : Collections.emptyMap();
 
     String folderSetup = getActionURL().getParameter("folderSetup");
-    boolean isFolderSetup = null != folderSetup && "true".equalsIgnoreCase(folderSetup);
+    boolean isFolderSetup = "true".equalsIgnoreCase(folderSetup);
     String cancelButtonText = isFolderSetup ? "Next" : "Cancel";
     String cancelButtonUrl = isFolderSetup ? getActionURL().getReturnURL().toString() : getContainer().getStartURL(getUser()).toString();
     ActionURL redirectToPipeline = urlProvider(PipelineUrls.class).urlBegin(getContainer());
+    boolean isCurrentFileRootManaged = !(FileRootProp.cloudRoot.name().equals(bean.getFileRootOption()) &&
+                                                null != storeInfos.get(bean.getCloudRootName()) && !storeInfos.get(bean.getCloudRootName()).isLabKeyManaged());
 %>
 
 <%  if (bean.getConfirmMessage() != null) { %>
@@ -132,11 +130,11 @@
                                 onclick="updateSelection(true);">
                             Use cloud-based file storage
                             <select name="cloudRootName" id="cloudRootName" onchange="updateSelection(true);">
-                                <% for (String cloudStoreName : storeNames)
-                                    if (cloud.isEnabled(cloudStoreName, getContainer()))
+                                <% for (CloudStoreService.StoreInfo storeInfo : storeInfos.values())
+                                    if (storeInfo.isEnabledInContainer())
                                     { %>
-                                        <option value="<%=h(cloudStoreName)%>" <%=selected(cloudStoreName.equalsIgnoreCase(currentCloudRootName))%>>
-                                            <%=h(cloudStoreName)%>
+                                        <option value="<%=h(storeInfo.getName())%>" <%=selected(storeInfo.getName().equalsIgnoreCase(currentCloudRootName))%>>
+                                            <%=h(storeInfo.getName())%>
                                         </option>
                                 <%  } %>
                             </select>
@@ -153,7 +151,7 @@
                                 <option value="<%=MigrateFilesOption.copy%>">
                                     Copied to new location
                                 </option>
-                                <option value="<%=MigrateFilesOption.move%>">
+                                <option id="migrateMoveOption" value="<%=MigrateFilesOption.move%>">
                                     Moved to new location
                                 </option>
                             </select>
@@ -192,22 +190,20 @@
         <tr><td></td></tr>
 
         <%
-            if (storeNames.isEmpty())
+            if (storeInfos.isEmpty())
             {
                 %><tr><td><em>No cloud stores have been created in the site admin preferences.</em></td></tr><%
             }
             else
             {
-                for (String storeName : storeNames)
+                for (CloudStoreService.StoreInfo storeInfo : storeInfos.values())
                 {
-                    boolean siteEnabled = cloud.isEnabled(storeName);
-                    boolean containerEnabled = cloud.isEnabled(storeName, getContainer());
                     String id = "cloudStore_" + UniqueID.getRequestScopedUID(getViewContext().getRequest());
         %>
         <tr>
-            <td <%=text(siteEnabled ? "" : "class='labkey-disabled'")%>>
-                <input type="checkbox" id="<%=h(id)%>" name="enabledCloudStore" value="<%=h(storeName)%>" <%=checked(containerEnabled)%> <%=disabled(!siteEnabled)%>>
-                <label for="<%=h(id)%>"><%=h(storeName)%></label>
+            <td <%=text(storeInfo.isEnabled() ? "" : "class='labkey-disabled'")%>>
+                <input type="checkbox" id="<%=h(id)%>" name="enabledCloudStore" value="<%=h(storeInfo.getName())%>" <%=checked((storeInfo.isEnabledInContainer()))%> <%=disabled(!storeInfo.isEnabled())%>>
+                <label for="<%=h(id)%>"><%=h(storeInfo.getName())%></label>
             </td>
         </tr>
         <%
@@ -279,6 +275,20 @@
                         notifyAboutPipeline.style.display = '';
                     else
                         notifyAboutPipeline.style.display = 'none';
+                }
+                var migrateMoveOption = document.getElementById('migrateMoveOption');
+                if (migrateMoveOption)
+                {
+                    var isNewCloudRootManaged = false;  // TODO: must we prevent moving when switching *TO* unmanaged cloud root?
+                    if ((optionCloudRoot && optionCloudRoot.checked && isNewCloudRootManaged) ||
+                            <%=!isCurrentFileRootManaged%>)
+                    {
+                        migrateMoveOption.setAttribute('hidden', '');
+                    }
+                    else
+                    {
+                        migrateMoveOption.removeAttribute('hidden');
+                    }
                 }
             }
             else
