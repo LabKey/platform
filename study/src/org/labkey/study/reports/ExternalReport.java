@@ -28,6 +28,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.reader.Readers;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.ReportDescriptor;
@@ -40,7 +41,9 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.PrintWriters;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.StudyImpl;
@@ -49,9 +52,8 @@ import org.labkey.study.query.StudyQuerySchema;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -162,7 +164,7 @@ public class ExternalReport extends AbstractReport
         getDescriptor().setProperty("queryName", queryName);
     }
 
-    public static enum RecomputeWhen
+    public enum RecomputeWhen
     {
         Always,
         Hourly,
@@ -189,6 +191,7 @@ public class ExternalReport extends AbstractReport
 
         File resultFile = null;
         File outFile = null;
+        File errFile = null;
         File dataFile = null;
         try
         {
@@ -233,31 +236,34 @@ public class ExternalReport extends AbstractReport
                 }
             }
 
-            //outFile is stdout + stdErr. If proc writes to stdout use file extension hint
+            // Display stderr separate from stdout, #34902. If somebody cares (e.g., they want errors to be shown inline with
+            // the output), we could add this as an option in the report designer. For now, always keep them separate.
+            boolean displayErrorsSeparately = true;
+
+            //outFile is stdout. If proc writes to stdout use file extension hint
             String outFileExt = resultFile == null ? ext : "out";
             outFile = new File(getReportDir(viewContext), dataFileName.substring(0, dataFileName.length() - DATA_FILE_SUFFIX.length()) + "." + outFileExt);
+
+            errFile = displayErrorsSeparately ? new File(getReportDir(viewContext), dataFileName.substring(0, dataFileName.length() - DATA_FILE_SUFFIX.length()) + ".err") : null;
 
             ProcessBuilder pb = new ProcessBuilder(params);
             pb = pb.directory(getReportDir(viewContext));
 
-            int resultCode = runProcess(pb, outFile);
+            int resultCode = runProcess(pb, outFile, displayErrorsSeparately, errFile);
             if (resultCode != 0)
             {
                 String err = "<font color='red'>Error " + resultCode + " executing command</font> " +
                         PageFlowUtil.filter(getProgram()) + "&nbsp;" + PageFlowUtil.filter(getArguments()) + "<br><pre>" +
                         PageFlowUtil.filter(PageFlowUtil.getFileContentsAsString(outFile)) + "</pre>";
-                HttpView errView = new HtmlView(err);
-                return errView;
+
+                return new HtmlView(err);
             }
             else
             {
                 File reportFile = null == resultFile ? outFile : resultFile;
-                if (ext.equalsIgnoreCase("tsv"))
-                    return new TabReportView(reportFile);
-                else if (mimeMap.getContentType(ext) != null && mimeMap.getContentType(ext).startsWith("image/"))
-                    return new ImgReportView(reportFile);
-                else
-                    return new InlineReportView(reportFile);
+                HttpView outputView = getOutputView(reportFile, ext);
+
+                return displayErrorsSeparately ? new VBox(new InlineReportView(errFile), outputView) : outputView;
             }
         }
         catch (IOException e)
@@ -271,9 +277,21 @@ public class ExternalReport extends AbstractReport
             //If for some reason file never gets rendered, mark for delete on exit.
             if (null != outFile && outFile.exists())
                 outFile.deleteOnExit();
+            if (null != errFile && errFile.exists())
+                errFile.deleteOnExit();
             if (null != resultFile && resultFile.exists())
                 resultFile.deleteOnExit();
         }
+    }
+
+    private HttpView getOutputView(File reportFile, String ext)
+    {
+        if (ext.equalsIgnoreCase("tsv"))
+            return new TabReportView(reportFile);
+        else if (mimeMap.getContentType(ext) != null && mimeMap.getContentType(ext).startsWith("image/"))
+            return new ImgReportView(reportFile);
+        else
+            return new InlineReportView(reportFile);
     }
 
     protected StudyQuerySchema getStudyQuerySchema(User user, Class<? extends Permission> perm, ViewContext context)
@@ -293,12 +311,13 @@ public class ExternalReport extends AbstractReport
         return "rpt";
     }
 
-    private int runProcess(ProcessBuilder pb, File outFile)
+    @SuppressWarnings("ConstantConditions")
+    private int runProcess(ProcessBuilder pb, File outFile, boolean displayErrorsSeparately, @Nullable File errFile)
     {
         Process proc;
         try
         {
-            pb.redirectErrorStream(true);
+            pb.redirectErrorStream(!displayErrorsSeparately);
             proc = pb.start();
         }
         catch (SecurityException e)
@@ -312,7 +331,26 @@ public class ExternalReport extends AbstractReport
                     "Must be on server path. (PATH=" + env.get("PATH") + ")", eio);
         }
 
-        try (FileWriter writer = new FileWriter(outFile); BufferedReader procReader = new BufferedReader(new InputStreamReader(proc.getInputStream())))
+        String suffix = " for process in '" + pb.directory().getPath() + "'.";
+        outputToFile("output" + suffix, proc.getInputStream(), outFile);
+
+        if (displayErrorsSeparately)
+            outputToFile("errors" + suffix, proc.getErrorStream(), errFile);
+
+        try
+        {
+            return proc.waitFor();
+        }
+        catch (InterruptedException ei)
+        {
+            throw new RuntimeException("Interrupted process for '" + pb.command() + " in " + pb.directory() + "'.", ei);
+        }
+    }
+
+
+    private void outputToFile(String what, InputStream is, File outputFile)
+    {
+        try (PrintWriter writer = PrintWriters.getPrintWriter(outputFile); BufferedReader procReader = Readers.getReader(is))
         {
             String line;
             while ((line = procReader.readLine()) != null)
@@ -323,16 +361,7 @@ public class ExternalReport extends AbstractReport
         }
         catch (IOException eio)
         {
-            throw new RuntimeException("Failed writing output for process in '" + pb.directory().getPath() + "'.", eio);
-        }
-
-        try
-        {
-            return proc.waitFor();
-        }
-        catch (InterruptedException ei)
-        {
-            throw new RuntimeException("Interrupted process for '" + pb.command() + " in " + pb.directory() + "'.", ei);
+            throw new RuntimeException("Failed writing " + what, eio);
         }
     }
 
