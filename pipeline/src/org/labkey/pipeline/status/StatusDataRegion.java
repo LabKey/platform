@@ -78,7 +78,9 @@ public class StatusDataRegion extends DataRegion
         out.write("<script type=\"text/javascript\">\n" +
                 "LABKEY.requiresExt4Sandbox(function() {\n" +
                     "LABKEY.requiresScript('pipeline/StatusUpdate.js', function(){\n" +
-                        "new LABKEY.pipeline.StatusUpdate(" + PageFlowUtil.jsString(controller) + "," + PageFlowUtil.jsString(action) + "," + PageFlowUtil.jsString(_returnURL.toString()) + ").start();\n" +
+                        "if (!LABKEY.pipeline.statusUpdateInstance)\n" +
+                            "LABKEY.pipeline.statusUpdateInstance = new LABKEY.pipeline.StatusUpdate(" + PageFlowUtil.jsString(controller) + "," + PageFlowUtil.jsString(action) + "," + PageFlowUtil.jsString(_returnURL.toString()) + ");\n" +
+                        "LABKEY.pipeline.statusUpdateInstance.start();\n" +
                     "});\n" +
                 "});\n" +
                 "</script>\n");

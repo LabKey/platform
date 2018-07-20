@@ -194,5 +194,20 @@ public class PipelineQueryView extends QueryView
             completeStatus.setDisplayPermission(UpdatePermission.class);
             bar.add(completeStatus);
         }
+
+        if (_buttonOption == PipelineService.PipelineButtonOption.Standard)
+        {
+            ActionButton btn = new ActionButton("Pause/Resume Status Update");
+            btn.setActionType(ActionButton.Action.SCRIPT);
+            btn.setScript("LABKEY.requiresExt4Sandbox(function() {\n" +
+                    "LABKEY.requiresScript('pipeline/StatusUpdate.js', function(){\n" +
+                    "if (LABKEY.pipeline.statusUpdateInstance)\n" +
+                    "LABKEY.pipeline.statusUpdateInstance.toggle();\n" +
+                    "});\n" +
+                    "});\n");
+            btn.setIconCls("pause");
+            btn.setTooltip("Pause status update");
+            bar.add(btn);
+        }
     }
 }

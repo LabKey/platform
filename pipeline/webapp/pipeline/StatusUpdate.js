@@ -37,6 +37,7 @@ LABKEY.pipeline.StatusUpdate = function(controller, action, returnURL)
     var _lastUpdate = "";
     var _iDelay = 0;
     var _delays = [15, 30, 60, 120, 240];
+    var _paused = false;
 
     var isSelectionModified = function()
     {
@@ -116,13 +117,15 @@ LABKEY.pipeline.StatusUpdate = function(controller, action, returnURL)
                 var newText = Ext4.util.Format.stripTags(Ext4.util.Format.stripScripts(response.responseText));
                 if (_lastUpdate != newText)
                 {
-                    var dr = LABKEY.DataRegions["StatusFiles"];
-                    if (dr)
-                        dr.destroy();
-                    el.update(response.responseText, true);
-                    _lastUpdate = newText;
+                    delete LABKEY.DataRegions["StatusFiles"];
+                    el.update(response.responseText, true, function(){
+                        _lastUpdate = newText;
+                        nextUpdate(0);
+                    });
                 }
-                nextUpdate(0);
+                else
+                    nextUpdate(0);
+
             }
         }
         else
@@ -141,6 +144,30 @@ LABKEY.pipeline.StatusUpdate = function(controller, action, returnURL)
         }
     };
 
+    var pauseResumeUpdate = function()
+    {
+        var dr = document.getElementById('statusRegionDiv');
+        if (dr) {
+            var icon = dr.getElementsByClassName(_paused ? 'fa-play' : 'fa-pause');
+            if (icon && icon.length > 0) {
+                var button = icon[0].parentNode;
+                button.innerHTML = '<i class="fa ' + (_paused ? 'fa-pause' : 'fa-play') + '"></i>';
+                button.setAttribute("data-original-title", _paused ? "Pause status update" : "Status update paused, click to resume.");
+            }
+        }
+
+        if (_paused) {
+            if (_dt == null)
+                _dt = new Ext4.util.DelayedTask(update);
+            nextUpdate(0);
+        }
+        else {
+            if (_dt)
+                _dt.cancel();
+        }
+        _paused = !_paused;
+    };
+
     // public methods:
     /** @scope LABKEY.pipeline.StatusUpdate.prototype */
     return {
@@ -149,6 +176,10 @@ LABKEY.pipeline.StatusUpdate = function(controller, action, returnURL)
             if (_dt == null)
                 _dt = new Ext4.util.DelayedTask(update);
             nextUpdate(0);
+        },
+        toggle : function()
+        {
+            pauseResumeUpdate();
         }
     }
 };
