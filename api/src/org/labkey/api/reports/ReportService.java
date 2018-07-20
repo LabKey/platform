@@ -30,9 +30,11 @@ import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.VirtualFile;
@@ -230,6 +232,13 @@ public interface ReportService
          * Returns null if this UIProvider does not support this report.
          */
         @Nullable String getIconCls(Report report);
+
+        /**
+         * Returns list of NavTree, String pairs that would not otherwise be a part of the query menu.
+         * The provider is in charge of deciding whether to include items using the contextual arguments.
+         */
+        List<Pair<NavTree, String>> getAdditionalChartingMenuItems(ViewContext context, QuerySettings settings);
+
     }
 
     interface ItemFilter

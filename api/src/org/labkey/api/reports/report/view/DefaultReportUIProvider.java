@@ -20,8 +20,10 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.settings.ResourceURL;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 
 import java.util.Collections;
@@ -52,6 +54,12 @@ public class DefaultReportUIProvider implements ReportService.UIProvider
     public @Nullable String getIconCls(Report report)
     {
         return null;
+    }
+
+    @Override
+    public List<Pair<NavTree, String>> getAdditionalChartingMenuItems(ViewContext context, QuerySettings settings)
+    {
+        return Collections.emptyList();
     }
 
     protected ActionURL addForwardParams(ActionURL url, ViewContext context, String[] params)

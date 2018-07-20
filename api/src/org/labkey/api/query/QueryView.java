@@ -52,6 +52,7 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -1424,7 +1425,7 @@ public class QueryView extends WebPartView<Object>
             {
                 if (viewItemFilter.accept(designer.getReportType(), designer.getLabel()))
                 {
-                     NavTree item = new NavTree("Create " + designer.getLabel(), designer.getDesignerURL().getLocalURIString());
+                    NavTree item = new NavTree("Create " + designer.getLabel(), designer.getDesignerURL().getLocalURIString());
                     item.setId(getBaseMenuId() + ":Reports:Create:" + designer.getLabel());
                     item.setImageSrc(designer.getIconURL());
                     item.setImageCls(designer.getIconCls());
@@ -1488,6 +1489,7 @@ public class QueryView extends WebPartView<Object>
         {
             MenuButton reportButton = createReportButton();
             MenuButton chartButton = createChartButton();
+            NavTree uiProviderLinks = createUIProviderLinks();
 
             if (reportButton.getNavTree().hasChildren())
             {
@@ -1497,10 +1499,47 @@ public class QueryView extends WebPartView<Object>
                 for (NavTree child : reportButton.getNavTree().getChildren())
                     chartButton.addMenuItem(child);
             }
+            if (uiProviderLinks != null && uiProviderLinks.hasChildren())
+            {
+                chartButton.addSeparator();
+                for (NavTree child : uiProviderLinks.getChildren())
+                    chartButton.addMenuItem(child);
+            }
 
             if (chartButton.getNavTree().hasChildren())
                 bar.add(chartButton);
         }
+    }
+
+    private NavTree createUIProviderLinks()
+    {
+        NavTree menu = null;
+        List<ReportService.UIProvider> uiProviders = ReportService.get().getUIProviders();
+        Map<String, List<NavTree>> uiProviderAddedViews = new TreeMap<>();
+
+        for (ReportService.UIProvider provider : uiProviders)
+        {
+            for (Pair<NavTree, String> additionalItem : provider.getAdditionalChartingMenuItems(getViewContext(), getSettings()))
+            {
+                if (!uiProviderAddedViews.containsKey(additionalItem.second))
+                    uiProviderAddedViews.put(additionalItem.second, new ArrayList<>());
+                uiProviderAddedViews.get(additionalItem.second).add(additionalItem.first);
+            }
+        }
+
+        if (!uiProviderAddedViews.isEmpty())
+        {
+            menu = new NavTree();
+            for (Map.Entry<String, List<NavTree>> entry : uiProviderAddedViews.entrySet())
+            {
+                List<NavTree> navItems = entry.getValue();
+                navItems.sort(Comparator.comparing(NavTree::getText));
+                for (NavTree item : navItems)
+                    menu.addChild(item);
+            }
+        }
+
+        return menu;
     }
 
     public ReportService.ItemFilter getItemFilter()
