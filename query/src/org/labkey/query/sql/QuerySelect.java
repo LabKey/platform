@@ -15,8 +15,6 @@
  */
 package org.labkey.query.sql;
 
-import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -1885,9 +1883,9 @@ groupByLoop:
         if (_parent instanceof QueryUnion || _parent instanceof QueryPivot)
             return Collections.emptySet();
 
-        MultiValuedMap<QueryRelation, RelationColumn> maps = new ArrayListValuedHashMap<>();
-        Set<RelationColumn> ret = new HashSet<>();
-
+        // Using a LinkedHashMap to preserve order of the Query Relations
+        Map<QueryRelation, List<RelationColumn>> maps = new LinkedHashMap<>();
+        List<RelationColumn> rcs;
         for (SelectColumn sc : _columns.values())
         {
             if (null == sc._field)
@@ -1898,15 +1896,27 @@ groupByLoop:
             QField field = (QField)expr;
             if (null == field.getTable() || null == field.getRelationColumn())
                 continue;
-            maps.put(field.getTable(), field.getRelationColumn());
+
+            rcs = maps.get(field.getTable());
+            if (rcs == null)
+            {
+                rcs = new ArrayList<>();
+                rcs.add(field.getRelationColumn());
+                maps.put(field.getTable(), rcs);
+            }
+            else
+            {
+                rcs.add(field.getRelationColumn());
+            }
         }
 
-        for (Map.Entry<QueryRelation, Collection<RelationColumn>> e : maps.asMap().entrySet())
+        Set<RelationColumn> ret = new HashSet<>();
+        for (QueryRelation qr : maps.keySet())
         {
             IdentityHashMap<RelationColumn,RelationColumn> h = new IdentityHashMap<>();
-            for (RelationColumn rc : e.getValue())
+            for (RelationColumn rc : maps.get(qr))
                 h.put(rc, rc);
-            Set<RelationColumn> suggestedColumns = e.getKey().getOrderedSuggestedColumns(h.keySet());
+            Set<RelationColumn> suggestedColumns = qr.getOrderedSuggestedColumns(h.keySet());
             if (null == suggestedColumns) suggestedColumns = Collections.emptySet();
             for (RelationColumn s : suggestedColumns)
             {
