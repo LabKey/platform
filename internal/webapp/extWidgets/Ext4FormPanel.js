@@ -343,7 +343,7 @@ Ext4.define('LABKEY.ext4.FormPanel', {
 
         if(!this.store.getNewRecords().length && !this.store.getUpdatedRecords().length && !this.store.getRemovedRecords().length){
             Ext4.Msg.alert('No changes', 'There are no changes, nothing to do');
-            window.location = btn.successURL || LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: this.store.schemaName, 'query.queryName': this.store.queryName})
+            window.location = btn.successURL ? decodeURI(btn.successURL) : LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: this.store.schemaName, 'query.queryName': this.store.queryName})
             return;
         }
 
@@ -353,7 +353,7 @@ Ext4.define('LABKEY.ext4.FormPanel', {
 
             if(!this.supressSuccessAlert){
                 Ext4.Msg.alert("Success", "Your upload was successful!", function(){
-                    window.location = btn.successURL || LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: this.store.schemaName, 'query.queryName': this.store.queryName})
+                    window.location = btn.successURL ? decodeURI(btn.successURL) : LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: this.store.schemaName, 'query.queryName': this.store.queryName})
                 }, this);
             }
         }
@@ -475,8 +475,9 @@ LABKEY.ext4.FORMBUTTONS = {
     CANCEL: function(config){
         return Ext4.Object.merge({
             text: 'Cancel',
+            returnURL: LABKEY.ActionURL.getParameter('srcURL') || LABKEY.ActionURL.getParameter('returnUrl'),
             handler: function(btn, key){
-                window.location = btn.returnURL || LABKEY.ActionURL.getParameter('srcURL') || LABKEY.ActionURL.buildURL('project', 'begin')
+                window.location = btn.returnURL ? decodeURI(btn.returnURL) : LABKEY.ActionURL.buildURL('project', 'begin')
             }
         }, config)
     }

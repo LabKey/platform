@@ -152,11 +152,9 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
                 text: 'Cancel'
                 ,width: 50
                 ,scope: this
-                ,handler: function(){
-                    window.location = LABKEY.ActionURL.getParameter('srcURL') || LABKEY.ActionURL.getParameter('returnURL') || LABKEY.ActionURL.getParameter('returnUrl') || LABKEY.ActionURL.buildURL('project', 'begin.view')
-                }
+                ,handler: this.goToReturnUrl
             }]
-        })
+        });
 
         if (this.isVisible()){
             this.doCloseExtMsg = true;
@@ -434,6 +432,19 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
             this.fireEvent('uploadcomplete', this, response);
 
         }
+    },
+
+    goToReturnUrl: function() {
+        var returnUrl = LABKEY.ActionURL.getParameter('srcURL') || LABKEY.ActionURL.getParameter('returnURL') || LABKEY.ActionURL.getParameter('returnUrl');
+        if (returnUrl) {
+            returnUrl = decodeURI(returnUrl);
+        }
+        else {
+            // default to using the project-begin action
+            returnUrl = LABKEY.ActionURL.buildURL('project', 'begin');
+        }
+
+        window.location = returnUrl;
     }
 });
 

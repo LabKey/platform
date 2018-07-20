@@ -35,9 +35,8 @@ Ext4.define('LABKEY.ext.ImportPanel', {
                 xtype: 'labkey-formpanel',
                 store: this.store,
                 listeners: {
-                    uploadcomplete: function(panel, response){
-                        window.location = LABKEY.ActionURL.getParameter('srcURL') || LABKEY.ActionURL.getParameter('returnURL') || LABKEY.ActionURL.getParameter('returnUrl') || LABKEY.ActionURL.buildURL('project', 'begin');
-                    }
+                    scope: this,
+                    uploadcomplete: this.goToReturnUrl
                 }
 //            },{
 //                title: 'Import Multiple',
@@ -58,15 +57,27 @@ Ext4.define('LABKEY.ext.ImportPanel', {
                 viewName: this.viewName,
                 columns: this.columns,
                 listeners: {
+                    scope: this,
                     uploadcomplete: function(panel, response){
-                        Ext4.Msg.alert("Success", response.successMessage, function(btn){
-                            window.location = LABKEY.ActionURL.getParameter('srcURL') || LABKEY.ActionURL.getParameter('returnURL') || LABKEY.ActionURL.getParameter('returnUrl') || LABKEY.ActionURL.buildURL('project', 'begin');
-                        }, this);
+                        Ext4.Msg.alert("Success", response.successMessage, this.goToReturnUrl, this);
                     }
                 }
             }]
         });
 
         this.callParent(arguments);
+    },
+
+    goToReturnUrl: function() {
+        var returnUrl = LABKEY.ActionURL.getParameter('srcURL') || LABKEY.ActionURL.getParameter('returnURL') || LABKEY.ActionURL.getParameter('returnUrl');
+        if (returnUrl) {
+            returnUrl = decodeURI(returnUrl);
+        }
+        else {
+            // default to using the project-begin action
+            returnUrl = LABKEY.ActionURL.buildURL('project', 'begin');
+        }
+
+        window.location = returnUrl;
     }
 });
