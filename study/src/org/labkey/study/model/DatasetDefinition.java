@@ -1934,11 +1934,21 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             {
                 Pump p = new Pump(insert.getDataIterator(context), context);
                 p.run();
+
+                try
+                {
+                    assert !transaction.getConnection().isClosed() : "Connection should not be closed!";
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeSQLException(e);
+                }
             }
             long end = System.currentTimeMillis();
 
-            if (context.getErrors().hasErrors())
-                throw context.getErrors();
+            BatchValidationException errors = context.getErrors();
+            if (errors.hasErrors())
+                throw errors;
 
             _log.debug("imported " + getName() + " : " + DateUtil.formatDuration(Math.max(0,end-start)));
             StudyManager.datasetModified(this, user, true);
