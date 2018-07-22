@@ -23,6 +23,8 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectFactory;
 import org.labkey.api.util.VersionNumber;
 
+import java.sql.DatabaseMetaData;
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -47,11 +49,12 @@ public class MySqlDialectFactory implements SqlDialectFactory
     }
 
     @Override
-    public @Nullable SqlDialect createFromProductNameAndVersion(String dataBaseProductName, String databaseProductVersion, String jdbcDriverVersion, boolean logWarnings, boolean primaryDataSource) throws DatabaseNotSupportedException
+    public @Nullable SqlDialect createFromMetadata(DatabaseMetaData md, boolean logWarnings, boolean primaryDataSource) throws SQLException, DatabaseNotSupportedException
     {
-        if (!getProductName().equals(dataBaseProductName))
+        if (!getProductName().equals(md.getDatabaseProductName()))
             return null;
 
+        String databaseProductVersion = md.getDatabaseProductVersion();
         VersionNumber versionNumber = new VersionNumber(databaseProductVersion);
         int version = versionNumber.getVersionInt();
 
