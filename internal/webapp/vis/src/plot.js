@@ -2052,7 +2052,7 @@ boxPlot.render();
         }
 
         // points based on the data value, color and hover text can be added via params to config
-        var getPointLayerConfig = function(ySide, valueName, colorValue)
+        var getPointLayerConfig = function(ySide, valueName, colorValue, hasOutlierMap)
         {
             var pointLayerConfig = {
                 geom: new LABKEY.vis.Geom.Point({
@@ -2066,11 +2066,20 @@ boxPlot.render();
             pointLayerConfig.aes[ySide] = valueName;
 
             if (config.properties.color) {
-                pointLayerConfig.aes.color = function(row) {
-                    return row[config.properties.color] + (hasYRightMetric ? '|' + valueName : '');
-                };
+                // Sometimes a row of data plots multiple points that need different colors.
+                // example color property:  { color: 'outliers' ... }
+                // example data row: { outliers: { 'CUSUMmP': false, 'CUSUMmN': true} ... }
+                if (hasOutlierMap && row[config.properties.color] === Object(row[config.properties.color])) {
+                    pointLayerConfig.aes.color = function (row) {
+                        return row[config.properties.color][valueName]
+                    };
+                } else {
+                    pointLayerConfig.aes.color = function(row) {
+                        return row[config.properties.color] + (hasYRightMetric ? '|' + valueName : '');
+                    };
+                }
             }
-            else if (colorValue != undefined) {
+            else if (colorValue !== undefined) {
                 pointLayerConfig.aes.color = function(row){ return colorValue; };
             }
 
@@ -2112,15 +2121,15 @@ boxPlot.render();
         if (config.properties.showDataPoints) {
             if (config.qcPlotType == LABKEY.vis.TrendingLinePlotType.CUSUM) {
                 if (hasYRightMetric) {
-                    config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.negativeValue, 1)));
-                    config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yRight', config.properties.negativeValueRight, 0)));
-                    config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.positiveValue, 1)));
-                    config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yRight', config.properties.positiveValueRight, 0)));
+                    config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.negativeValue, 1, true)));
+                    config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yRight', config.properties.negativeValueRight, 0, true)));
+                    config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.positiveValue, 1, true)));
+                    config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yRight', config.properties.positiveValueRight, 0, true)));
 
                 }
                 else {
-                    config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.negativeValue)));
-                    config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.positiveValue)));
+                    config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.negativeValue, undefined, true)));
+                    config.layers.push(new LABKEY.vis.Layer(getPointLayerConfig('yLeft', config.properties.positiveValue, undefined, true)));
                 }
             }
             else if (config.qcPlotType == LABKEY.vis.TrendingLinePlotType.MovingRange) {
