@@ -6627,18 +6627,6 @@ public class ExperimentServiceImpl implements ExperimentService
         }
     }
 
-    @Override
-    public ActionURL getExclusionURL(Container container, AssayProvider provider, int rowId, String runId, String returnUrl)
-    {
-        ActionURL url = new ActionURL(ExperimentController.ExcludeRowsAction.class, container)
-        .addParameter("provider", provider.getName())
-        .addParameter("protocolRowId", rowId)
-        .addParameter("runId", runId)
-        .addParameter("returnUrl", returnUrl);
-
-        return url;
-    }
-
     public static class TestCase extends Assert
     {
         @Before
