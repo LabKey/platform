@@ -40,25 +40,44 @@ Ext4.define('LABKEY.vis.ChartQueryPanel', {
             this.centerPanel = Ext4.create('Ext.form.Panel', {
                 region: 'center',
                 cls: 'region-panel',
-                items : [this.getSchemaCombo(), this.getQueryCombo()]
+                items: []
+            });
+
+            // Issue 34802: on first initialization, load the list of schemas for the user/container
+            LABKEY.Query.getSchemas({
+                includeHidden: false,
+                scope: this,
+                success: function(response) {
+                    this.initCenterPanel(response.schemas);
+                },
+                failure: function(response) {
+                    console.log(response);
+
+                    // default to the set of schemas originally used
+                    this.initCenterPanel(['assay', 'lists', 'study']);
+                }
             });
         }
 
         return this.centerPanel;
     },
 
-    getSchemaCombo : function()
+    initCenterPanel: function(schemas) {
+        var schemaNames = [];
+        Ext4.each(schemas, function(schema) {
+            schemaNames.push({name: schema});
+        });
+
+        this.centerPanel.add(this.getSchemaCombo(schemaNames), this.getQueryCombo());
+    },
+
+    getSchemaCombo : function(schemas)
     {
         if (!this.schemaCombo)
         {
-            // hard-coded for now, we can change this to query for the schema listing later
             var store = Ext4.create('Ext.data.Store', {
                 fields: ['name'],
-                data: [
-                    {name : 'assay'},
-                    {name : 'lists'},
-                    {name : 'study'}
-                ]
+                data: schemas
             });
 
             this.schemaCombo = Ext4.create('Ext.form.field.ComboBox', {
