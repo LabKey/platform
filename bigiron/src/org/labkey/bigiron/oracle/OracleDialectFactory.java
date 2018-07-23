@@ -18,21 +18,15 @@ package org.labkey.bigiron.oracle;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CsvSet;
-import org.labkey.api.data.dialect.AbstractDialectRetrievalTestCase;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.JdbcHelperTest;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectFactory;
-import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.util.VersionNumber;
 
-import java.sql.DatabaseMetaData;
-import java.sql.SQLException;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
@@ -61,9 +55,9 @@ public class OracleDialectFactory implements SqlDialectFactory
     private final static String POST_VERSION_CLAUSE = "-";
 
     @Override
-    public @Nullable SqlDialect createFromMetadata(DatabaseMetaData md, boolean logWarnings, boolean primaryDataSource) throws SQLException, DatabaseNotSupportedException
+    public SqlDialect createFromProductNameAndVersion(String dataBaseProductName, String databaseProductVersion, String jdbcDriverVersion, boolean logWarnings, boolean primaryDataSource) throws DatabaseNotSupportedException
     {
-        if (!md.getDatabaseProductName().equals(getProductName()))
+        if (!dataBaseProductName.equals(getProductName()))
             return null;
 
         /*
@@ -73,7 +67,6 @@ public class OracleDialectFactory implements SqlDialectFactory
             Oracle Database 11g Enterprise Edition Release 11.2.0.2.0 - 64bit Production
             With the Partitioning, OLAP, Data Mining and Real Application Testing options
         */
-        String databaseProductVersion = md.getDatabaseProductVersion();
 
         int startIndex = databaseProductVersion.indexOf(PRE_VERSION_CLAUSE) + PRE_VERSION_CLAUSE.length();
         int endIndex = databaseProductVersion.indexOf(POST_VERSION_CLAUSE) - 1;
@@ -107,7 +100,7 @@ public class OracleDialectFactory implements SqlDialectFactory
     @Override
     public Collection<? extends Class> getJUnitTests()
     {
-        return Arrays.asList(JdbcHelperTestCase.class, DialectRetrievalTestCase.class);
+        return Collections.singleton(JdbcHelperTestCase.class);
     }
 
     @Override
@@ -116,37 +109,22 @@ public class OracleDialectFactory implements SqlDialectFactory
         return Collections.emptyList();
     }
 
-    public static class DialectRetrievalTestCase extends AbstractDialectRetrievalTestCase
-    {
-        @Override
-        public void testDialectRetrieval()
-        {
-            validateVersion(Oracle11gR1Dialect.class, "Oracle Database 11g Enterprise Edition Release 11.1.0.2.0 - 64bit Production\n" +
-                    "With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options");
-            validateVersion(Oracle11gR2Dialect.class, "Oracle Database 11g Enterprise Edition Release 11.2.0.2.0 - 64bit Production\n" +
-                    "With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options");
-            validateVersion(Oracle11gR2Dialect.class, "Oracle Database 11g Enterprise Edition Release 11.3.0.2.0 - 64bit Production\n" +
-                    "With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options");
-            validateVersion(Oracle12cDialect.class, "Oracle Database 12c Enterprise Edition Release 12.1.0.2.0 - 64bit Production\n" +
-                    "With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options");
-        }
-
-        private void validateVersion(Class<? extends SqlDialect> expectedDialectClass, String version)
-        {
-            try
-            {
-                assertEquals(expectedDialectClass, SqlDialectManager.getFromMetaData(getMockedMetadata("Oracle", version, null, null), false, false).getClass());
-            }
-            catch (Exception e)
-            {
-                fail(e.getClass() + " thrown for version: " + version + "\n Message: " + e.getMessage());
-            }
-        }
-    }
-
-
     public static class JdbcHelperTestCase extends Assert
     {
+        @Test
+        public void testVersionParsing()
+        {
+            OracleDialectFactory factory = new OracleDialectFactory();
+            assertEquals(Oracle11gR1Dialect.class, factory.createFromProductNameAndVersion("Oracle", "Oracle Database 11g Enterprise Edition Release 11.1.0.2.0 - 64bit Production\n" +
+                    "With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options", null, false, false).getClass());
+            assertEquals(Oracle11gR2Dialect.class, factory.createFromProductNameAndVersion("Oracle", "Oracle Database 11g Enterprise Edition Release 11.2.0.2.0 - 64bit Production\n" +
+                    "With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options", null, false, false).getClass());
+            assertEquals(Oracle11gR2Dialect.class, factory.createFromProductNameAndVersion("Oracle", "Oracle Database 11g Enterprise Edition Release 11.3.0.2.0 - 64bit Production\n" +
+                    "With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options", null, false, false).getClass());
+            assertEquals(Oracle12cDialect.class, factory.createFromProductNameAndVersion("Oracle", "Oracle Database 12c Enterprise Edition Release 12.1.0.2.0 - 64bit Production\n" +
+                    "With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options", null, false, false).getClass());
+        }
+
         @Test
         public void testJdbcHelper()
         {

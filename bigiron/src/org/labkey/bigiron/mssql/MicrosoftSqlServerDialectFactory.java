@@ -34,8 +34,7 @@ import org.labkey.api.data.dialect.TestUpgradeCode;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.VersionNumber;
 
-import java.sql.DatabaseMetaData;
-import java.sql.SQLException;
+import javax.servlet.ServletException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
@@ -73,16 +72,16 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
     static final String RECOMMENDED = PRODUCT_NAME + " 2016 is the recommended version.";
 
     @Override
-    public @Nullable SqlDialect createFromMetadata(DatabaseMetaData md, boolean logWarnings, boolean primaryDataSource) throws SQLException, DatabaseNotSupportedException
+    public @Nullable SqlDialect createFromProductNameAndVersion(String dataBaseProductName, String databaseProductVersion, String jdbcDriverVersion, boolean logWarnings, boolean primaryDataSource) throws DatabaseNotSupportedException
     {
-        if (!md.getDatabaseProductName().equals(getProductName()))
+        if (!dataBaseProductName.equals(getProductName()))
             return null;
 
-        VersionNumber versionNumber = new VersionNumber(md.getDatabaseProductVersion());
+        VersionNumber versionNumber = new VersionNumber(databaseProductVersion);
         int version = versionNumber.getVersionInt();
 
         // Get the appropriate dialect and stash version information
-        SqlDialect dialect = getDialect(version, md.getDatabaseProductVersion(), logWarnings, primaryDataSource);
+        SqlDialect dialect = getDialect(version, databaseProductVersion, logWarnings, primaryDataSource);
         dialect.setDatabaseVersion(version);
         String className = dialect.getClass().getSimpleName();
         dialect.setProductVersion(className.substring(18, className.indexOf("Dialect")));
@@ -154,27 +153,27 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
         public void testDialectRetrieval()
         {
             // These should result in bad database exception
-            badProductName("Gobbledygook", 1.0, 14.0, "", null);
-            badProductName("SQL Server", 1.0, 14.0, "", null);
-            badProductName("sqlserver", 1.0, 14.0, "", null);
+            badProductName("Gobbledygook", 1.0, 14.0, "");
+            badProductName("SQL Server", 1.0, 14.0, "");
+            badProductName("sqlserver", 1.0, 14.0, "");
 
             // < 10.5 should result in bad version error
-            badVersion("Microsoft SQL Server", 0.0, 10.0, null, null);
+            badVersion("Microsoft SQL Server", 0.0, 10.0, null);
 
             // >= 10.0 and < 11.0 should result in MicrosoftSqlServer2008R2Dialect
-            good("Microsoft SQL Server", 10.0, 11.0, "", null, MicrosoftSqlServer2008R2Dialect.class);
+            good("Microsoft SQL Server", 10.0, 11.0, "", MicrosoftSqlServer2008R2Dialect.class);
 
             // >= 11.0 and < 12.0 should result in MicrosoftSqlServer2012Dialect
-            good("Microsoft SQL Server", 11.0, 12.0, "", null, MicrosoftSqlServer2012Dialect.class);
+            good("Microsoft SQL Server", 11.0, 12.0, "", MicrosoftSqlServer2012Dialect.class);
 
             // >= 12.0 should result in MicrosoftSqlServer2014Dialect
-            good("Microsoft SQL Server", 12.0, 13.0, "", null, MicrosoftSqlServer2014Dialect.class);
+            good("Microsoft SQL Server", 12.0, 13.0, "", MicrosoftSqlServer2014Dialect.class);
 
             // >= 13.0 should result in MicrosoftSqlServer2016Dialect
-            good("Microsoft SQL Server", 13.0, 14.0, "", null, MicrosoftSqlServer2016Dialect.class);
+            good("Microsoft SQL Server", 13.0, 14.0, "", MicrosoftSqlServer2016Dialect.class);
 
             // >= 14.0 should result in MicrosoftSqlServer2017Dialect
-            good("Microsoft SQL Server", 14.0, 16.0, "", null, MicrosoftSqlServer2017Dialect.class);
+            good("Microsoft SQL Server", 14.0, 16.0, "", MicrosoftSqlServer2017Dialect.class);
         }
     }
 

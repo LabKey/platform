@@ -21,8 +21,6 @@ import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectFactory;
 
-import java.sql.DatabaseMetaData;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -46,12 +44,11 @@ public class SasDialectFactory implements SqlDialectFactory
 
     // SAS/SHARE driver throws when invoking DatabaseMetaData database version methods, so use the jdbcDriverVersion to determine dialect version
     @Override
-    public @Nullable SqlDialect createFromMetadata(DatabaseMetaData md, boolean logWarnings, boolean primaryDataSource) throws SQLException, DatabaseNotSupportedException
+    public @Nullable SqlDialect createFromProductNameAndVersion(String dataBaseProductName, String databaseProductVersion, String jdbcDriverVersion, boolean logWarnings, boolean primaryDataSource) throws DatabaseNotSupportedException
     {
-        if (!getProductName().equals(md.getDatabaseProductName()))
+        if (!getProductName().equals(dataBaseProductName))
             return null;
 
-        String jdbcDriverVersion = md.getDriverVersion();
         if (jdbcDriverVersion.startsWith("9.1"))
             return new Sas91Dialect();
 
@@ -61,7 +58,7 @@ public class SasDialectFactory implements SqlDialectFactory
         if (jdbcDriverVersion.startsWith("9.3"))
             return new Sas93Dialect();
 
-        throw new DatabaseNotSupportedException(getProductName() + " version " + jdbcDriverVersion + " is not supported.");
+        throw new DatabaseNotSupportedException(getProductName() + " version " + databaseProductVersion + " is not supported.");
     }
 
     @Override

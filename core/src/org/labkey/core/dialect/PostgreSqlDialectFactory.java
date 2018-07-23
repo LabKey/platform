@@ -60,10 +60,17 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
     @Override
     public @Nullable SqlDialect createFromMetadata(DatabaseMetaData md, boolean logWarnings, boolean primaryDataSource) throws SQLException, DatabaseNotSupportedException
     {
-        if (!(StringUtils.startsWithIgnoreCase(md.getURL(), JDBC_PREFIX) && PRODUCT_NAME.equals(md.getDatabaseProductName())))
+        if (!StringUtils.startsWithIgnoreCase(md.getURL(), JDBC_PREFIX))
+            return null;
+        return createFromProductNameAndVersion(md.getDatabaseProductName(), md.getDatabaseProductVersion(), md.getDriverVersion(), logWarnings, primaryDataSource);
+    }
+
+    @Override
+    public @Nullable SqlDialect createFromProductNameAndVersion(String dataBaseProductName, String databaseProductVersion, String jdbcDriverVersion, boolean logWarnings, boolean primaryDataSource) throws DatabaseNotSupportedException
+    {
+        if (!PRODUCT_NAME.equals(dataBaseProductName))
             return null;
 
-        String databaseProductVersion = md.getDatabaseProductVersion();
         int betaIdx = databaseProductVersion.indexOf("beta");
 
         if (-1 != betaIdx)
@@ -152,24 +159,22 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
     {
         public void testDialectRetrieval()
         {
-            final String connectionUrl = "jdbc:postgresql:";
-
             // These should result in bad database exception
-            badProductName("Gobbledygood", 8.0, 9.6, "", connectionUrl);
-            badProductName("Postgres", 8.0, 9.6, "", connectionUrl);
-            badProductName("postgresql", 8.0, 9.6, "", connectionUrl);
+            badProductName("Gobbledygood", 8.0, 9.6, "");
+            badProductName("Postgres", 8.0, 9.6, "");
+            badProductName("postgresql", 8.0, 9.6, "");
 
             // < 9.3 should result in bad version number exception
-            badVersion("PostgreSQL", 0.0, 9.2, null, connectionUrl);
+            badVersion("PostgreSQL", 0.0, 9.2, null);
 
             // >= 9.3 should be good
-            good("PostgreSQL", 9.3, 9.4, "", connectionUrl, PostgreSql93Dialect.class);
-            good("PostgreSQL", 9.4, 9.5, "", connectionUrl, PostgreSql94Dialect.class);
-            good("PostgreSQL", 9.5, 9.6, "", connectionUrl, PostgreSql95Dialect.class);
-            good("PostgreSQL", 9.6, 9.7, "", connectionUrl, PostgreSql96Dialect.class);
-            good("PostgreSQL", 9.7, 11.0, "", connectionUrl, PostgreSql_10_Dialect.class);
-            good("PostgreSQL", 11.0, 12.0, "", connectionUrl, PostgreSql_11_Dialect.class);
-            good("PostgreSQL", 12.0, 13.0, "", connectionUrl, PostgreSql_11_Dialect.class);
+            good("PostgreSQL", 9.3, 9.4, "", PostgreSql93Dialect.class);
+            good("PostgreSQL", 9.4, 9.5, "", PostgreSql94Dialect.class);
+            good("PostgreSQL", 9.5, 9.6, "", PostgreSql95Dialect.class);
+            good("PostgreSQL", 9.6, 9.7, "", PostgreSql96Dialect.class);
+            good("PostgreSQL", 9.7, 11.0, "", PostgreSql_10_Dialect.class);
+            good("PostgreSQL", 11.0, 12.0, "", PostgreSql_11_Dialect.class);
+            good("PostgreSQL", 12.0, 13.0, "", PostgreSql_11_Dialect.class);
         }
     }
 
