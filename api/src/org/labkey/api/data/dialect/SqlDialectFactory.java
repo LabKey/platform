@@ -35,7 +35,19 @@ public interface SqlDialectFactory
      * supported, returns the matching implementation; if the version is not supported, throws DatabaseNotSupportedException.
      * @param primaryDataSource whether the data source is the primary LabKey Server database, or an external/secondary database
      */
-    @Nullable SqlDialect createFromMetadata(DatabaseMetaData md, boolean logWarnings, boolean primaryDataSource) throws SQLException, DatabaseNotSupportedException;
+    default @Nullable SqlDialect createFromMetadata(DatabaseMetaData md, boolean logWarnings, boolean primaryDataSource) throws SQLException, DatabaseNotSupportedException
+    {
+        return createFromProductNameAndVersion(md.getDatabaseProductName(), md.getDatabaseProductVersion(), md.getDriverVersion(), logWarnings, primaryDataSource);
+    }
+
+    /**
+     * Returns null if this factory is not responsible for the specified database server.  Otherwise, if the version is
+     * supported, returns the matching implementation; if the version is not supported, throws DatabaseNotSupportedException.
+     * @param primaryDataSource whether the data source is the primary LabKey Server database, or an external/secondary database
+     * TODO: In 18.3, remove this method and SqlDialectManager.getProductName, in favor of always calling factory.createFromMetadata.
+     *        AbstractDialectRetrievalTestCase.testRange will need a mocked DatabaseMetadata for that.
+     */
+    @Nullable SqlDialect createFromProductNameAndVersion(String dataBaseProductName, String databaseProductVersion, String jdbcDriverVersion, boolean logWarnings, boolean primaryDataSource) throws DatabaseNotSupportedException;
 
     // These tests must be safe to invoke when LabKey Server can't connect to any data sources matching the dialect and
     // even when the JDBC driver isn't present.
