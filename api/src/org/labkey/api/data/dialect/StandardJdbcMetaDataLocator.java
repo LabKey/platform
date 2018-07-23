@@ -33,24 +33,24 @@ import java.sql.SQLException;
 public class StandardJdbcMetaDataLocator implements JdbcMetaDataLocator
 {
     private final DbScope _scope;
-    private final Connection _conn;
+    private final DbScope.Transaction _transaction;
     private final DatabaseMetaData _dbmd;
 
     private final String _schemaName;
     private final String _tableNamePattern;
 
-    public StandardJdbcMetaDataLocator(DbScope scope, String schemaName, @Nullable String tableNamePattern, Connection conn) throws SQLException
+    public StandardJdbcMetaDataLocator(DbScope scope, String schemaName, @Nullable String tableNamePattern, DbScope.Transaction transaction) throws SQLException
     {
         _scope = scope;
-        _conn = conn;
-        _dbmd = _conn.getMetaData();
+        _transaction = transaction;
+        _dbmd = _transaction.getConnection().getMetaData();
         _schemaName = schemaName;
         _tableNamePattern = tableNamePattern;
     }
 
     public StandardJdbcMetaDataLocator(DbScope scope, String schemaName, @Nullable String tableNamePattern) throws SQLException
     {
-        this(scope, schemaName, tableNamePattern, scope.getConnection());
+        this(scope, schemaName, tableNamePattern, scope.ensureTransaction());
     }
 
     @Override
@@ -61,14 +61,14 @@ public class StandardJdbcMetaDataLocator implements JdbcMetaDataLocator
 
     public Connection getConnection()
     {
-        return _conn;
+        return _transaction.getConnection();
     }
 
     @Override
     public void close()
     {
-        if (!_scope.isTransactionActive())
-            _scope.releaseConnection(_conn);
+        _transaction.commit();
+        _transaction.close();
     }
 
     @Override
