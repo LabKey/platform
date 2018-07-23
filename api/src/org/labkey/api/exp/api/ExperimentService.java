@@ -656,9 +656,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     void onMaterialsCreated(List<? extends ExpMaterial> materials, Container container, User user);
 
-    @Deprecated // this method will be removed once the code is merged to move this to the premium module
-    ActionURL getExclusionURL(Container container, AssayProvider provider, int rowId, String runId, String returnUrl);
-
     // see org.labkey.experiment.LSIDRelativizer
     public static final String LSID_OPTION_ABSOLUTE = "ABSOLUTE";
     public static final String LSID_OPTION_FOLDER_RELATIVE = "FOLDER_RELATIVE";
