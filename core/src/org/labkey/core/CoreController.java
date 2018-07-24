@@ -29,7 +29,9 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.ExportAction;
+import org.labkey.api.action.FormApiAction;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -75,6 +77,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleProperty;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.premium.AntiVirusService;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
@@ -83,6 +86,7 @@ import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
@@ -98,9 +102,11 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.Compress;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.PageFlowUtil.Content;
 import org.labkey.api.util.PageFlowUtil.NoContent;
@@ -108,7 +114,9 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.FolderTab;
+import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
@@ -130,6 +138,8 @@ import org.labkey.core.workbook.WorkbookFolderType;
 import org.labkey.folder.xml.FolderDocument;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -1934,6 +1944,124 @@ public class CoreController extends SpringActionController
             return response;
         }
     }
+
+
+    // use of illegal filename chars is intentional
+    private static final String TOKEN_PREFIX = "upload://";
+
+    static File getUploadDir(User user, String session)
+    {
+        if (user.isGuest())
+            throw new UnauthorizedException();
+        File tmpDir = FileUtil.getTempDirectory();
+        File userDir = new File(tmpDir,"loadingDock/" + session);
+        userDir.mkdirs();
+        return userDir;
+    }
+
+
+    public static File getUploadedFileForUser(User user, String session, String token)
+    {
+        if (!token.startsWith(TOKEN_PREFIX))
+            return null;
+        token = token.substring(TOKEN_PREFIX.length());
+
+        File uploadDir = getUploadDir(user, session);
+        File tokenDir = new File(uploadDir, token);
+        if (!tokenDir.isDirectory())
+            return null;
+        File[] files = tokenDir.listFiles();
+        if (null == files || files.length != 1)
+            return null;
+        return files[0];
+    }
+
+
+    //@RequiresLogin
+    @RequiresSiteAdmin
+    public class PreUploadAction extends FormApiAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            // only for testing!
+            if (!AppProps.getInstance().isDevMode() || !getUser().hasRootAdminPermission())
+                throw new UnauthorizedException("under development");
+            return new HtmlView("<form method=\"POST\" enctype=\"multipart/form-data\">"+
+                    "<input name=file type=file><input type=submit><input type=hidden name=" +  CSRFUtil.csrfName + " value=" + CSRFUtil.getExpectedToken(getViewContext()) + ">" +
+                    "</form>");
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root;
+        }
+
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            if (!AppProps.getInstance().isDevMode() || !getUser().hasRootAdminPermission())
+                throw new UnauthorizedException("under development");
+
+            // something is wrong here: errors==null maybe this is due to not having a Form class??
+            if (null == errors)
+                errors = new NullSafeBindException(new Object(), "form");
+
+            JSONObject ret = new JSONObject();
+
+            HttpServletRequest request = getViewContext().getRequest();
+            if (!(request instanceof MultipartHttpServletRequest))
+                throw new BadRequestException("Expected multi-part form", null);
+            MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest) request;
+            Map<String, MultipartFile> map = multipartRequest.getFileMap();
+            if (map.size() == 0)
+                return ret;
+            if (map.size() > 1)
+                throw new BadRequestException("Expected one file", null);
+
+            // TODO cleanup on server shutdown/startup
+            // TODO register session cleanup event
+            // TODO check quota
+            File uploadDir = getUploadDir(getUser(), request.getSession().getId());
+            File location;
+            do
+            {
+                String uniq = GUID.makeHash();
+                location = new File(uploadDir, uniq);
+            }
+            while (location.exists());    // pretty unlikely to have a collision...
+            location.mkdir();
+            location.deleteOnExit();
+
+            Map.Entry<String, MultipartFile> entry = map.entrySet().iterator().next();
+            // TODO optimize case where we have saved file to disk already, e.g. AntiVirusFilter
+            // if (entry instanceof LabKeyMultiPartFileEntry)....
+            MultipartFile mp = entry.getValue();
+            File target = new File(location, mp.getOriginalFilename());
+            target.deleteOnExit();
+            FileUtil.copyData(mp.getInputStream(), target);
+
+            // The spec proposes that the virus scan would happen when the file is used
+            // I'm scanning here anyway just for prototype purposes
+
+            AntiVirusService avs = AntiVirusService.get();
+            AntiVirusService.ScanResult result = avs.scan(target);
+            if (result.result == AntiVirusService.Result.OK)
+            {
+                ret.put("success", true);
+                ret.put("token", TOKEN_PREFIX + location.getName());
+            }
+            else
+            {
+                ret.put("success", false);
+                ret.put("message", result.message);
+            }
+
+            return ret;
+        }
+    }
+
 
     @RequiresNoPermission
     public class StyleGuideAction extends SimpleViewAction

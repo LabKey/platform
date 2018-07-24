@@ -72,6 +72,7 @@ import org.labkey.api.notification.EmailMessage;
 import org.labkey.api.notification.EmailService;
 import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.premium.AntiVirusService;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
@@ -95,6 +96,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationManager.Priority;
 import org.labkey.api.security.AuthenticationProviderConfigAuditTypeProvider;
+import org.labkey.api.security.DummyAntiVirusService;
 import org.labkey.api.security.Encryption;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
@@ -220,9 +222,9 @@ import org.labkey.core.test.TestController;
 import org.labkey.core.thumbnail.ThumbnailServiceImpl;
 import org.labkey.core.user.UserController;
 import org.labkey.core.view.ShortURLServiceImpl;
-import org.labkey.core.view.template.bootstrap.WarningServiceImpl;
 import org.labkey.core.view.template.bootstrap.CoreWarningProvider;
 import org.labkey.core.view.template.bootstrap.ViewServiceImpl;
+import org.labkey.core.view.template.bootstrap.WarningServiceImpl;
 import org.labkey.core.webdav.DavController;
 import org.labkey.core.workbook.WorkbookFolderType;
 import org.labkey.core.workbook.WorkbookQueryView;
@@ -325,6 +327,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         CustomLabelService.setInstance(new CustomLabelServiceImpl());
         WarningService.setInstance(new WarningServiceImpl());
         SecurityPointcutService.setInstance(new SecurityPointcutServiceImpl());
+        AntiVirusService.setInstance(new DummyAntiVirusService());
 
         try
         {
