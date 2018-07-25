@@ -119,23 +119,31 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
 
     enum IndexType
     {
-        Primary(org.labkey.data.xml.IndexType.Type.PRIMARY),
-        Unique(org.labkey.data.xml.IndexType.Type.UNIQUE),
-        NonUnique(org.labkey.data.xml.IndexType.Type.NON_UNIQUE);
+        Primary(org.labkey.data.xml.IndexType.Type.PRIMARY, true),
+        Unique(org.labkey.data.xml.IndexType.Type.UNIQUE, true),
+        NonUnique(org.labkey.data.xml.IndexType.Type.NON_UNIQUE, false);
 
-        private final org.labkey.data.xml.IndexType.Type.Enum xmlIndexType;
+        private final org.labkey.data.xml.IndexType.Type.Enum _xmlIndexType;
+        private final boolean _unique;
 
-        IndexType(org.labkey.data.xml.IndexType.Type.Enum xmlIndexType)
+        IndexType(org.labkey.data.xml.IndexType.Type.Enum xmlIndexType, boolean unique)
         {
-            this.xmlIndexType = xmlIndexType;
+            _xmlIndexType = xmlIndexType;
+            _unique = unique;
         }
 
         public org.labkey.data.xml.IndexType.Type.Enum getXmlIndexType()
         {
-            return xmlIndexType;
+            return _xmlIndexType;
         }
 
-        public static IndexType getForXmlIndexType(org.labkey.data.xml.IndexType.Type.Enum xmlIndexType){
+        public boolean isUnique()
+        {
+            return _unique;
+        }
+
+        public static IndexType getForXmlIndexType(org.labkey.data.xml.IndexType.Type.Enum xmlIndexType)
+        {
             for (IndexType indexType : IndexType.values())
             {
                 if(indexType.getXmlIndexType().equals(xmlIndexType)){
