@@ -36,8 +36,10 @@ import org.springframework.validation.BindException;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -189,6 +191,7 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
 
     TriggerConfiguration getTriggerConfig(Container c, String name);
     void saveTriggerConfig(Container c, User user, TriggerConfiguration config) throws Exception;
+    void setTriggeredTime(Container container, User user, int triggerConfigId, Path filePath, Date date);
 
     class FileAnalysisProperties
     {

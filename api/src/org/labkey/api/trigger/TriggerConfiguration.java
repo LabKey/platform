@@ -217,6 +217,14 @@ public class TriggerConfiguration extends Entity
         _lastChecked = lastChecked;
     }
 
+    /**
+     * flush the cached configuration
+     */
+    public void resetConfiguration()
+    {
+        _configuration = null;
+    }
+
     public String getConfiguration()
     {
         if (_configuration == null)

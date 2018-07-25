@@ -2170,7 +2170,8 @@ public class PageFlowUtil
             }
         }
         json.put("pageAdminMode", pageAdminMode);
-
+        if (appProps.isUserRequestedAdminOnlyMode() || ModuleLoader.getInstance().isUpgradeRequired())
+            json.put("adminOnlyMode", true);
         json.put("defaultHeaders", defaultHeaders);
 
         AnalyticsProviderRegistry analyticsProviderRegistry = AnalyticsProviderRegistry.get();

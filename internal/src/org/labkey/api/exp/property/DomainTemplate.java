@@ -591,7 +591,7 @@ public class DomainTemplate
 
         public InitialDataSettings(String moduleName, String file)
         {
-            this(file, true, false, false);
+            this(file, true, false, true);
             this.moduleName = moduleName;
         }
     }

@@ -243,11 +243,9 @@ public class DomainTemplateGroup
         {
             try (DbScope.Transaction tx = ExperimentService.get().getSchema().getScope().ensureTransaction())
             {
-                for (int i = 0; i < _templates.size(); i++)
+                for (DomainTemplate template : _templates)
                 {
-                    DomainTemplate template = _templates.get(i);
-                    Domain d = domains.get(i);
-                    template.importData(d.getName(), c, u);
+                    template.importData(null, c, u);
                 }
                 tx.commit();
             }
