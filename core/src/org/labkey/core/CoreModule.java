@@ -197,6 +197,7 @@ import org.labkey.core.authentication.test.TestSecondaryController;
 import org.labkey.core.authentication.test.TestSecondaryProvider;
 import org.labkey.core.authentication.test.TestSsoController;
 import org.labkey.core.authentication.test.TestSsoProvider;
+import org.labkey.core.dialect.PostgreSql92Dialect;
 import org.labkey.core.dialect.PostgreSqlDialectFactory;
 import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
@@ -1050,7 +1051,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 FolderTypeManager.TestCase.class,
                 ModuleHtmlView.TestCase.class,
                 Portal.TestCase.class,
-                MultiValuedMapCollectors.TestCase.class
+                MultiValuedMapCollectors.TestCase.class,
+                PostgreSql92Dialect.TestCase.class
         ));
 
         testClasses.addAll(SqlDialectManager.getAllJUnitTests());

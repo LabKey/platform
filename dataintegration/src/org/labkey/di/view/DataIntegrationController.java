@@ -631,9 +631,7 @@ public class DataIntegrationController extends SpringActionController
                     errors.reject(ERROR_MSG, "Site-scoped ETLs can only be defined in module resources. If you need a site-scoped ETL, please contact your site administrator.");
                 }
                 if (TransformManager.get().getDescriptors(getContainer()).stream()
-                        .anyMatch(cachedDescriptor ->
-                                cachedDescriptor.getModuleName().equals(descriptor.getModuleName())
-                                        && cachedDescriptor.getName().equals(descriptor.getName())
+                        .anyMatch(cachedDescriptor -> cachedDescriptor.getName().equals(descriptor.getName())
                                         && !cachedDescriptor.getId().equals(descriptor.getId())))
                 {
                     errors.reject(ERROR_MSG, "An ETL with that name is already defined in this folder.");

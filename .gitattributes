@@ -509,7 +509,6 @@ core/src/org/labkey/core/authentication/test/TestSsoProvider.java -text
 core/src/org/labkey/core/authentication/test/testSecondary.jsp -text
 core/src/org/labkey/core/authentication/test/testSso.jsp -text
 core/src/org/labkey/core/dialect/ArrayParameterInClauseGenerator.java -text
-core/src/org/labkey/core/dialect/PostgreSql91Dialect.java -text
 core/src/org/labkey/core/dialect/PostgreSql92Dialect.java -text
 core/src/org/labkey/core/dialect/PostgreSql93Dialect.java -text
 core/src/org/labkey/core/dialect/PostgreSql94Dialect.java -text
