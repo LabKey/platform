@@ -212,9 +212,12 @@ api/src/org/labkey/api/admin/AbstractFolderContext.java -text
 api/src/org/labkey/api/admin/AbstractFolderImportFactory.java -text
 api/src/org/labkey/api/admin/AbstractImportContext.java -text
 api/src/org/labkey/api/admin/ActionsHelper.java -text
+api/src/org/labkey/api/admin/AdminBean.java -text
 api/src/org/labkey/api/admin/AdminUrls.java -text
 api/src/org/labkey/api/admin/BaseFolderWriter.java -text
 api/src/org/labkey/api/admin/CoreUrls.java -text
+api/src/org/labkey/api/admin/DiagnosticButton.java -text
+api/src/org/labkey/api/admin/DiagnosticsService.java -text
 api/src/org/labkey/api/admin/FolderArchiveDataTypes.java -text
 api/src/org/labkey/api/admin/FolderExportContext.java -text
 api/src/org/labkey/api/admin/FolderExportPermission.java -text

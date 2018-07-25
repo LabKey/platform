@@ -983,6 +983,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         props.put("VCS URL", getVcsUrl());
         props.put("VCS Revision", getVcsRevision());
         props.put("Build OS", getBuildOS());
+
         props.put("Build Time", getBuildTime());
         props.put("Build User", getBuildUser());
         props.put("Build Path", getBuildPath());

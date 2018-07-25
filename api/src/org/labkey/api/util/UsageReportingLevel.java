@@ -128,6 +128,15 @@ public enum UsageReportingLevel
 
             report.addHostName();
         }
+    },
+
+    DIAGNOSTICS
+    {
+        @Override
+        protected void addExtraParams(MothershipReport report, Map<String, Object> metrics)
+        {
+            // no op
+        }
     };
 
     protected abstract void addExtraParams(MothershipReport report, Map<String, Object> metrics);
