@@ -72,26 +72,6 @@ public class SqlDialectManager
         throw new SqlDialectNotSupportedException("The requested product name and version -- " + md.getDatabaseProductName() + " " + md.getDatabaseProductVersion() + " -- is not supported by your LabKey installation.");
     }
 
-    /**
-     * @throws SqlDialectNotSupportedException if database is not supported
-     * @param primaryDataSource whether the data source is the primary LabKey Server database, or an external/secondary database
-     *
-     * TODO: In 18.3, remove this method and SqlDialectFactory.createFromProductNameAndVersion, in favor of always calling getFromMetaData / factory.createFromMetadata.
-     *       AbstractDialectRetrievalTestCase.testRange will need a mocked DatabaseMetadata for that.
-     */
-    public static @NotNull SqlDialect getFromProductName(String dataBaseProductName, String databaseProductVersion, String jdbcDriverVersion, boolean logWarnings, boolean primaryDataSource) throws SqlDialectNotSupportedException, DatabaseNotSupportedException
-    {
-        for (SqlDialectFactory factory : FACTORIES)
-        {
-            SqlDialect dialect = factory.createFromProductNameAndVersion(dataBaseProductName, databaseProductVersion, jdbcDriverVersion, logWarnings, primaryDataSource);
-
-            if (null != dialect)
-                return dialect;
-        }
-
-        throw new SqlDialectNotSupportedException("The requested product name and version -- " + dataBaseProductName + " " + databaseProductVersion + " -- is not supported by your LabKey installation.");
-    }
-
 
     public static Collection<? extends Class> getAllJUnitTests()
     {

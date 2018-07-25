@@ -17,31 +17,36 @@
 package org.labkey.api.data.dialect;
 
 import org.jetbrains.annotations.Nullable;
+import org.jmock.Expectations;
+import org.jmock.Mockery;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.util.ConfigurationException;
+
+import java.sql.DatabaseMetaData;
+import java.sql.SQLException;
 
 public abstract class AbstractDialectRetrievalTestCase extends Assert
 {
     @Test
     public abstract void testDialectRetrieval();
 
-    protected void good(String databaseName, double beginVersion, double endVersion, String jdbcDriverVersion, Class<? extends SqlDialect> expectedDialectClass)
+    protected void good(String databaseName, double beginVersion, double endVersion, String jdbcDriverVersion, String jdbcConnectionUrl, Class<? extends SqlDialect> expectedDialectClass)
     {
-        testRange(databaseName, beginVersion, endVersion, jdbcDriverVersion, expectedDialectClass, null);
+        testRange(databaseName, beginVersion, endVersion, jdbcDriverVersion, jdbcConnectionUrl, expectedDialectClass, null);
     }
 
-    protected void badProductName(String databaseName, double beginVersion, double endVersion, String jdbcDriverVersion)
+    protected void badProductName(String databaseName, double beginVersion, double endVersion, String jdbcDriverVersion, String jdbcConnectionUrl)
     {
-        testRange(databaseName, beginVersion, endVersion, jdbcDriverVersion, null, SqlDialectNotSupportedException.class);
+        testRange(databaseName, beginVersion, endVersion, jdbcDriverVersion, jdbcConnectionUrl, null, SqlDialectNotSupportedException.class);
     }
 
-    protected void badVersion(String databaseName, double beginVersion, double endVersion, String jdbcDriverVersion)
+    protected void badVersion(String databaseName, double beginVersion, double endVersion, String jdbcDriverVersion, String jdbcConnectionUrl)
     {
-        testRange(databaseName, beginVersion, endVersion, jdbcDriverVersion, null, DatabaseNotSupportedException.class);
+        testRange(databaseName, beginVersion, endVersion, jdbcDriverVersion, jdbcConnectionUrl, null, DatabaseNotSupportedException.class);
     }
 
-    private void testRange(String databaseName, double beginVersion, double endVersion, String jdbcDriverVersion, @Nullable Class<? extends SqlDialect> expectedDialectClass, @Nullable Class<? extends ConfigurationException> expectedExceptionClass)
+    protected void testRange(String databaseName, double beginVersion, double endVersion, String jdbcDriverVersion, String jdbcConnectionUrl, @Nullable Class<? extends SqlDialect> expectedDialectClass, @Nullable Class<? extends ConfigurationException> expectedExceptionClass)
     {
         int begin = (int)Math.round(beginVersion * 10);
         int end = (int)Math.round(endVersion * 10);
@@ -55,15 +60,38 @@ public abstract class AbstractDialectRetrievalTestCase extends Assert
 
             try
             {
-                SqlDialect dialect = SqlDialectManager.getFromProductName(databaseName, majorVersion + "." + minorVersion, jdbcDriverVersion, false, false);
+                SqlDialect dialect = SqlDialectManager.getFromMetaData(getMockedMetadata(databaseName, majorVersion + "." + minorVersion, jdbcDriverVersion, jdbcConnectionUrl), false, false);
                 assertNotNull(description + " returned " + dialect.getClass().getSimpleName() + "; expected failure", expectedDialectClass);
                 assertEquals(description, expectedDialectClass, dialect.getClass());
             }
             catch (Exception e)
             {
-                assertTrue(description + " failed; expected success", null == expectedDialectClass);
+                assertNull(description + " failed; expected success", expectedDialectClass);
                 assertEquals(description, expectedExceptionClass, e.getClass());
             }
         }
+    }
+
+    protected DatabaseMetaData getMockedMetadata(String databaseProductName, String databaseProductVersion, String jdbcDriverVersion, String jdbcConnectionUrl) throws SQLException
+    {
+        Mockery mocker = new Mockery();
+        final DatabaseMetaData md = mocker.mock(DatabaseMetaData.class);
+        mocker.checking(new Expectations()
+        {
+            {
+                allowing(md).getURL();
+                will(returnValue(jdbcConnectionUrl));
+
+                allowing(md).getDatabaseProductName();
+                will(returnValue(databaseProductName));
+
+                allowing(md).getDatabaseProductVersion();
+                will(returnValue(databaseProductVersion));
+
+                allowing(md).getDriverVersion();
+                will(returnValue(jdbcDriverVersion));
+            }
+        });
+        return md;
     }
 }
