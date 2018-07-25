@@ -31,8 +31,7 @@ public class AggregatesMeanAnalyticsProvider extends BaseAggregatesAnalyticsProv
     @Override
     public boolean isApplicable(@NotNull ColumnInfo col)
     {
-        return col.isNumericType() && !col.isKeyField() && !col.isLookup()
-                && !"serial".equalsIgnoreCase(col.getSqlTypeName());
+        return isApplicableNonKey(col);
     }
 
     @Override
