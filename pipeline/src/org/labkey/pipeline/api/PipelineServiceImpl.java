@@ -75,6 +75,7 @@ import org.labkey.pipeline.importer.FolderImportJob;
 import org.labkey.pipeline.mule.EPipelineQueueImpl;
 import org.labkey.pipeline.mule.ResumableDescriptor;
 import org.labkey.pipeline.status.PipelineQueryView;
+import org.labkey.pipeline.trigger.PipelineTriggerManager;
 import org.mule.MuleManager;
 import org.mule.umo.UMODescriptor;
 import org.mule.umo.UMOException;
@@ -94,6 +95,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -679,6 +681,12 @@ public class PipelineServiceImpl implements PipelineService
     public void saveTriggerConfig(Container c, User user, TriggerConfiguration config) throws Exception
     {
         PipelineManager.insertOrUpdateTriggerConfiguration(user, c, config);
+    }
+
+    @Override
+    public void setTriggeredTime(Container container, User user, int triggerConfigId, Path filePath, Date date)
+    {
+        PipelineTriggerManager.getInstance().setTriggeredTime(container, user, triggerConfigId, filePath, date);
     }
 
     @Override

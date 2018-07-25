@@ -679,7 +679,7 @@ public class DatasetQueryView extends StudyQueryView
             {
                 if (msg.length() > 0)
                     msg.append("&nbsp;&nbsp;");
-                msg.append("<span class=\"labkey-strong\">Selected Subjects:</span>&nbsp;");
+                msg.append("<span class=\"labkey-strong\">Selected " + dqs.getStudy().getSubjectNounPlural() + ":</span>&nbsp;");
                 msg.append(sessionGroup.getParticipantIds().length);
             }
 

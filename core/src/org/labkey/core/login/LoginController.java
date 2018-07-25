@@ -809,6 +809,11 @@ public class LoginController extends SpringActionController
                 {
                     // This user has passed primary authentication
                     AuthenticationManager.setPrimaryAuthenticationResult(request, result);
+
+                    AuthenticationManager.AuthenticationResult authResult = AuthenticationManager.handleAuthentication(getViewContext().getRequest(), getContainer());
+                    URLHelper redirectUrl = authResult.getRedirectURL();
+                    if (!StringUtils.isEmpty(redirectUrl.toString()))
+                        response.put("returnUrl", redirectUrl.toString());
                 }
             }
 

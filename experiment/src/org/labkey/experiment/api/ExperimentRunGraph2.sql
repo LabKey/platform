@@ -48,7 +48,7 @@
         END                                                   AS parent_expType,
         COALESCE(PM.cpasType, PD.cpasType, PR.protocolLsid)   AS parent_cpasType,
         COALESCE(PM.name, PD.name, PR.name)                   AS parent_name,
-        COALESCE(PM.lsid, PD.lsid, PR.lsid)                   AS parent_lsid,
+        I.fromLsid                                            AS parent_lsid,
         COALESCE(PM.rowId, PD.rowId, PR.rowId)                AS parent_rowId,
 
         -- child columns
@@ -63,7 +63,7 @@
         END                                                   AS child_expType,
         COALESCE(CM.cpasType, CD.cpasType, CR.protocolLsid)   AS child_cpasType,
         COALESCE(CM.name, CD.name, CR.name)                   AS child_name,
-        COALESCE(CM.lsid, CD.lsid, CR.lsid)                   AS child_lsid,
+        I.toLsid                                              AS child_lsid,
         COALESCE(CM.rowId, CD.rowId, CR.rowId)                AS child_rowId
 
       FROM $PARENTS_INNER$ AS I
@@ -122,7 +122,7 @@
         END                                                   AS parent_expType,
         COALESCE(PM.cpasType, PD.cpasType, PR.protocolLsid)   AS parent_cpasType,
         COALESCE(PM.name, PD.name, PR.name)                   AS parent_name,
-        COALESCE(PM.lsid, PD.lsid, PR.lsid)                   AS parent_lsid,
+        I.fromLsid                                            AS parent_lsid,
         COALESCE(PM.rowId, PD.rowId, PR.rowId)                AS parent_rowId,
 
         -- child columns
@@ -137,7 +137,7 @@
         END                                                   AS child_expType,
         COALESCE(CM.cpasType, CD.cpasType, CR.protocolLsid)   AS child_cpasType,
         COALESCE(CM.name, CD.name, CR.name)                   AS child_name,
-        COALESCE(CM.lsid, CD.lsid, CR.lsid)                   AS child_lsid,
+        I.toLsid                                              AS child_lsid,
         COALESCE(CM.rowId, CD.rowId, CR.rowId)                AS child_rowId
 
       FROM $CHILDREN_INNER$ AS I

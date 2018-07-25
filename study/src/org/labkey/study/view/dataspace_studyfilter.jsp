@@ -29,6 +29,10 @@
 <%@ page import="org.labkey.study.query.DataspaceQuerySchema" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.Collection" %>
+<%@ page import="java.util.regex.Pattern" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
+<%@ page import="org.labkey.api.data.ContainerFilter" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -40,7 +44,6 @@
 %>
 <%
     Study study = StudyManager.getInstance().getStudy(getViewContext().getContainer());
-    int uuid = this.getRequestScopedUID();
 
     boolean hasStudy = study != null;
     boolean isSharedStudy = study != null && study.isDataspaceStudy();
@@ -51,26 +54,40 @@
     ActionURL finderURL = null;
     if (immport != null && project != null && project.getActiveModules().contains(immport))
         finderURL = new ActionURL("immport", "dataFinder.view", project);
-
-    String key = DataspaceQuerySchema.SHARED_STUDY_CONTAINER_FILTER_KEY + getContainer().getProject().getRowId();
-    Object o = getViewContext().getSession().getAttribute(key);
     List<Study> studies = new ArrayList<>();
-    if (o instanceof List)
+    if (hasStudy)
     {
-        List<GUID> containerIds = (List)o;
-        for (GUID id : containerIds)
+        DataspaceQuerySchema schema = new DataspaceQuerySchema((StudyImpl)study, getUser(), true);
+        ContainerFilter cf = schema.getDefaultContainerFilter();
+        Collection<GUID> containerIds = cf.getIds(getContainer());
+        if (null != containerIds)
         {
-            Container c = ContainerManager.getForId(id);
-            Study s = StudyManager.getInstance().getStudy(c);
-            if (s != null)
-                studies.add(s);
+            for (GUID id : containerIds)
+            {
+                Container c = ContainerManager.getForId(id);
+                if (c.equals(project))
+                    continue;
+                // container filter doesn't know to skip empty study, but this never shows up elsewhere because it's empty
+                if (c.getName().toLowerCase().contains("template"))
+                    continue;
+                Study s = StudyManager.getInstance().getStudy(c);
+                if (s != null)
+                    studies.add(s);
+            }
         }
     }
+    Pattern p = Pattern.compile("SDY\\d+");
+    studies.sort((s1, s2) -> {
+        String n1 = s1.getLabel(), n2 = s2.getLabel();
+        if (p.matcher(n1).matches() && p.matcher(n2).matches())
+            return Integer.compare(Integer.parseInt(n1.substring(3)), Integer.parseInt(n2.substring(3)));
+        return n1.compareTo(n2);
+    });
 
     ParticipantGroup sessionGroup = ParticipantGroupManager.getInstance().getSessionParticipantGroup(getContainer(), getUser(), getViewContext().getRequest());
 
 %>
-<h4 style="margin-top:0px; margin-bottom:8px; border-bottom:1px solid #e5e5e5;">Selected Subjects</h4>
+<h4 style="margin-top:0px; margin-bottom:8px; border-bottom:1px solid #e5e5e5;">Selected  <%= h(study==null ? "Participants" : study.getSubjectNounPlural()) %></h4>
 
 <% if (!hasStudy) { %>
     <div>No study found in this folder</div>
@@ -94,7 +111,7 @@
 
 
 <% if (sessionGroup != null) { %>
-    <div>Participants: <%=sessionGroup.getParticipantIds().length%></div>
+    <div><%= h(study==null ? "Participants" : study.getSubjectNounPlural()) %>: <%=sessionGroup.getParticipantIds().length%></div>
 <% } %>
 
 <div id="summaryData"></div>

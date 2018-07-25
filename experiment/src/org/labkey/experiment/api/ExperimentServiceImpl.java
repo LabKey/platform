@@ -2160,6 +2160,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
         new SqlSelector(getExpSchema(), sqlf).forEachMap((m)->
         {
+            Integer depth = (Integer)m.get("depth");
             String parentLSID = (String)m.get("parent_lsid");
             String childLSID = (String)m.get("child_lsid");
 
@@ -2174,23 +2175,31 @@ public class ExperimentServiceImpl implements ExperimentService
                 role = "no role";
             else
                 role = (String)m.get("role");
-            edges.add(new ExpLineage.Edge(parentLSID, childLSID, role));
+            if (parentRowId == null || childRowId == null)
+            {
+                LOG.error(String.format("Node not found for lineage of %s.\n  depth=%d, parentLsid=%s, parentType=%s, parentRowId=%d, childLsid=%s, childType=%s, childRowId=%d",
+                        start.toString(), depth, parentLSID, parentExpType, parentRowId, childLSID, childExpType, childRowId));
+            }
+            else
+            {
+                edges.add(new ExpLineage.Edge(parentLSID, childLSID, role));
 
-            // process parents
-            if ("Data".equals(parentExpType))
-                dataids.add(parentRowId);
-            else if ("Material".equals(parentExpType))
-                materialids.add(parentRowId);
-            else if ("ExperimentRun".equals(parentExpType))
-                runids.add(parentRowId);
+                // process parents
+                if ("Data".equals(parentExpType))
+                    dataids.add(parentRowId);
+                else if ("Material".equals(parentExpType))
+                    materialids.add(parentRowId);
+                else if ("ExperimentRun".equals(parentExpType))
+                    runids.add(parentRowId);
 
-            // process children
-            if ("Data".equals(childExpType))
-                dataids.add(childRowId);
-            else if ("Material".equals(childExpType))
-                materialids.add(childRowId);
-            else if ("ExperimentRun".equals(childExpType))
-                runids.add(childRowId);
+                // process children
+                if ("Data".equals(childExpType))
+                    dataids.add(childRowId);
+                else if ("Material".equals(childExpType))
+                    materialids.add(childRowId);
+                else if ("ExperimentRun".equals(childExpType))
+                    runids.add(childRowId);
+            }
         });
 
         Set<ExpData> datas = new HashSet<>();
