@@ -261,24 +261,9 @@ public interface DockerService
             return null == userId ? null : UserManager.getUser(userId);
         }
 
-        public String getEntityId() //TODO 34577 refactor after merge - remove
-        {
-            return null;
-        }
-
-        public String getFilename() //TODO 34577 remove after merge - remove
-        {
-            return null;
-        }
-
         public Map<String, String> getLabels()
         {
             return labels;
-        }
-
-        public boolean isReportContainer() //TODO 34577 remove after merge - remove
-        {
-            return Boolean.valueOf(labels.get("labkey:isReport"));
         }
 
         public static DockerContainer makeDockerContainer(
@@ -300,23 +285,7 @@ public interface DockerService
         public static DockerContainer makeDockerContainer(
                 String name, String id, ImageConfig image, String home, String host, int port, String created,
                 Map<String, String> labels,
-                String[] environment, boolean isReportContainer) //TODO 34577 remove after merge - remove
-        {
-            return makeDockerContainer(name, id, image, home, host, port, created, labels, environment);
-        }
-
-        public static DockerContainer makeDockerContainer(
-                String name, String id, ImageConfig image, String home, String host, int port, String created,
-                Map<String, String> labels,
                 Map<String,String> environment)
-        {
-            return new DockerContainer(name, id, image, home, host, port, created, labels, environment);
-        }
-
-        public static DockerContainer makeDockerContainer(
-                String name, String id, ImageConfig image, String home, String host, int port, String created,
-                Map<String, String> labels,
-                Map<String,String> environment, boolean isReportContainer) //TODO 34577 remove after merge - remove
         {
             return new DockerContainer(name, id, image, home, host, port, created, labels, environment);
         }
@@ -362,16 +331,6 @@ public interface DockerService
     List<String> listVolumes();
 
     DockerContainer start(ImageConfig image, String prefix, User user, Map<String, String> labels, Map<String, String> env, Map<File, String> filesForContainer, Map<InputStream, String> streamsForContainer, List<List<String>> postStartCmds, ContainerUsage usage) throws IOException;
-
-    default DockerContainer start(ImageConfig image, String prefix, User user, Map<String, String> labels, Map<String, String> env, Map<File, String> filesForContainer, Map<InputStream, String> streamsForContainer, List<List<String>> postStartCmds, ContainerUsage usage, boolean isReportContainer) throws IOException //TODO 34577 remove after merge - remove
-    {
-        return null;
-    }
-
-    default String readFileFromContainer(String containerId, String filepath) throws IOException //TODO 34577 remove after merge - remove
-    {
-       return null;
-    }
 
     boolean pingContainer(String host, int port);
 
