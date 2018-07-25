@@ -78,7 +78,7 @@
         <labkey:panel id="info" className="lk-admin-section">
             <div class="labkey-page-section-header">
                 <h3 class="header-title pull-left">Server Information</h3>
-                <a class="labkey-button" href="<%= diagnosticButton.getLinkUrl() %>">Export Diagnostics</a>
+                <%--<a class="labkey-button" href="<%= diagnosticButton.getLinkUrl() %>">Export Diagnostics</a>--%>
             </div>
             <div class="clearfix"></div>
             <h4>Core Database Configuration</h4>
