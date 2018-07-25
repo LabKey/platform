@@ -39,6 +39,7 @@ import org.junit.Test;
 import org.labkey.api.Constants;
 import org.labkey.api.action.*;
 import org.labkey.api.admin.AbstractFolderContext;
+import org.labkey.api.admin.AdminBean;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderImportContext;
@@ -362,35 +363,6 @@ public class AdminController extends SpringActionController
             root.addChild("Admin Console");
             getPageConfig().setHelpTopic(new HelpTopic("siteManagement"));
             return root;
-        }
-    }
-
-
-    public static class AdminBean
-    {
-        public final List<Module> modules;
-        public String javaVersion = System.getProperty("java.version");
-        public String javaHome = System.getProperty("java.home");
-        public String userName = System.getProperty("user.name");
-        public String userHomeDir = System.getProperty("user.home");
-        public String webappDir = ModuleLoader.getServletContext().getRealPath("");
-        public String workingDir = new File("file").getAbsoluteFile().getParent();
-        public String osName = System.getProperty("os.name");
-        public String mode = AppProps.getInstance().isDevMode() ? "Development" : "Production";
-        public String asserts = "disabled";
-        public String serverGuid = AppProps.getInstance().getServerGUID();
-        public String servletContainer = ModuleLoader.getServletContext().getServerInfo();
-        public DbScope scope = CoreSchema.getInstance().getSchema().getScope();
-        public List<Pair<String, Long>> active = UserManager.getRecentUsers(System.currentTimeMillis() - DateUtils.MILLIS_PER_HOUR);
-        public String userEmail;
-
-        private AdminBean(User user)
-        {
-            //noinspection ConstantConditions,AssertWithSideEffects
-            assert null != (asserts = "enabled");
-            userEmail = user.getEmail();
-            modules = new ArrayList<>(ModuleLoader.getInstance().getModules());
-            modules.sort(Comparator.comparing(Module::getName, String.CASE_INSENSITIVE_ORDER));
         }
     }
 

@@ -22,6 +22,7 @@ import org.apache.log4j.RollingFileAppender;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiXmlWriter;
+import org.labkey.api.admin.DiagnosticsService;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.SubfolderWriter;
 import org.labkey.api.admin.notification.NotificationService;
@@ -165,6 +166,7 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.core.admin.ActionsTsvWriter;
 import org.labkey.core.admin.AdminController;
+import org.labkey.core.admin.DiagnosticsServiceImpl;
 import org.labkey.core.admin.CustomizeMenuForm;
 import org.labkey.core.admin.FilesSiteSettingsAction;
 import org.labkey.core.admin.MenuViewFactory;
@@ -329,6 +331,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         WarningService.setInstance(new WarningServiceImpl());
         SecurityPointcutService.setInstance(new SecurityPointcutServiceImpl());
         AntiVirusService.setInstance(new DummyAntiVirusService());
+        DiagnosticsService.setInstance(new DiagnosticsServiceImpl());
 
         try
         {

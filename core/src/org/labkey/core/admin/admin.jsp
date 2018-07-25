@@ -10,7 +10,7 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either extpress or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -33,11 +33,14 @@
 <%@ page import="java.util.Date" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
+<%@ page import="org.labkey.api.admin.DiagnosticButton" %>
+<%@ page import="org.labkey.api.admin.DiagnosticsService" %>
+<%@ page import="org.labkey.api.admin.AdminBean" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    HttpView<AdminController.AdminBean> me = (HttpView<AdminController.AdminBean>) HttpView.currentView();
-    AdminController.AdminBean bean = me.getModelBean();
+    HttpView<AdminBean> me = (HttpView<AdminBean>) HttpView.currentView();
+    AdminBean bean = me.getModelBean();
     Container c = getContainer();
     boolean devMode = AppProps.getInstance().isDevMode();
 
@@ -54,10 +57,13 @@
     String databaseProductVersion = bean.scope.getDatabaseProductVersion() + (null != edition ? " (" + edition + ")" : "");
 
     int row = 0;
+
+    DiagnosticButton diagnosticButton = DiagnosticsService.get().getDiagnosticButton();
 %>
 <style type="text/css">
     body { overflow-y: scroll; }
     .lk-admin-section { display: none; }
+    .header-title { margin: 0px 20px auto auto; }
 </style>
 <div class="row">
     <div class="col-sm-12 col-md-3">
@@ -70,7 +76,11 @@
     </div>
     <div class="col-sm-12 col-md-9">
         <labkey:panel id="info" className="lk-admin-section">
-            <h3 class="labkey-page-section-header">Server Information</h3>
+            <div class="labkey-page-section-header">
+                <h3 class="header-title pull-left">Server Information</h3>
+                <a class="labkey-button" href="<%= diagnosticButton.getLinkUrl() %>">Export Diagnostics</a>
+            </div>
+            <div class="clearfix"></div>
             <h4>Core Database Configuration</h4>
             <table class="labkey-data-region-legacy labkey-show-borders">
                 <tr><td class="labkey-column-header">Property</td><td class="labkey-column-header">Value</td></tr>
