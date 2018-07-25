@@ -18,16 +18,20 @@ package org.labkey.test.tests.study;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.simple.JSONObject;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.api.util.Pair;
+import org.labkey.remoteapi.CommandException;
+import org.labkey.remoteapi.CommandResponse;
+import org.labkey.remoteapi.Connection;
+import org.labkey.remoteapi.PostCommand;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.Locators;
 import org.labkey.test.TestFileUtils;
-import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.categories.Study;
 import org.labkey.test.pages.StartImportPage;
@@ -35,9 +39,9 @@ import org.labkey.test.pages.query.ExecuteQueryPage;
 import org.labkey.test.pages.study.DeleteMultipleVisitsPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.util.DataRegionTable;
-import org.labkey.test.util.Maps;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -204,7 +208,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
     }
 
     @Test
-    public void testFailForUndefinedVisitsReload()
+    public void testFailForUndefinedVisitsReload() throws IOException
     {
         _containerHelper.createSubfolder(getProjectName(), "testFailForUndefinedVisitsReload");
 
@@ -225,7 +229,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
         clickButton("Process and Import Data");
         _fileBrowserHelper.uploadFile(EXPLODED_FOLDER_STUDYLOAD_TXT, null, null, true);
         attemptStudyReloadNow("Reloading Study 001", true);
-        goToModule("Pipeline");
+        //goToModule("Pipeline");
         waitForPipelineJobsToComplete(2, "Study reload", true);
 
         // verify the expected import failure message and defined visits
@@ -248,10 +252,24 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
         checkExpectedErrors(5);
     }
 
-    private void attemptStudyReloadNow(String expectedMsg, boolean failForUndefinedVisits)
+    private void attemptStudyReloadNow(String expectedMsg, boolean failForUndefinedVisits) throws IOException
     {
-        beginAt(WebTestHelper.buildURL("study", getCurrentContainerPath(), "checkForReload", Maps.of("failForUndefinedVisits", failForUndefinedVisits ? "true" : "false")));
-        waitForText(expectedMsg);
+        Connection cn = createDefaultConnection(false);
+        PostCommand reloadStudy = new PostCommand("study", "checkForReload");
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("failForUndefinedVisits", failForUndefinedVisits ? "true" : "false");
+        reloadStudy.setJsonObject(jsonObject);
+
+        try
+        {
+            CommandResponse r = reloadStudy.execute(cn, getCurrentContainerPath());
+            assertEquals(expectedMsg, r.getText());
+        }
+        catch (IOException | CommandException e)
+        {
+            throw new RuntimeException("Failed to reload study", e);
+        }
+
         goBack();
     }
 
