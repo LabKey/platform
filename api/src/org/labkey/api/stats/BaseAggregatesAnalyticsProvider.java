@@ -15,6 +15,8 @@
  */
 package org.labkey.api.stats;
 
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.RenderContext;
@@ -111,5 +113,12 @@ public abstract class BaseAggregatesAnalyticsProvider extends ColumnAnalyticsPro
     public void addClientDependencies(Set<ClientDependency> dependencies)
     {
         dependencies.add(ClientDependency.fromPath("query/ColumnQueryAnalytics.js"));
+    }
+
+    protected boolean isApplicableNonKey(@NotNull ColumnInfo col)
+    {
+        return col.isNumericType() && !col.isKeyField() && !col.isLookup()
+                && !"serial".equalsIgnoreCase(col.getSqlTypeName())
+                && !StringUtils.containsIgnoreCase(col.getSqlTypeName(), "identity");
     }
 }
