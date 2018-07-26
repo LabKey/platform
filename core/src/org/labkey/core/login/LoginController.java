@@ -721,76 +721,13 @@ public class LoginController extends SpringActionController
                 return response;
             }
 
-            try
-            {
-                String verification = form.getVerification();
+            String verification = form.getVerification();
+            boolean isValidatedEmail = SecurityManager.verify(email, verification);
+            if (isValidatedEmail)
+                _email = email;
 
-                if (SecurityManager.verify(email, verification))
-                {
-                    _email = email;
-
-                    if (UserManager.getUser(_email) == null)
-                    {
-                        errors.reject("setPassword", "This user doesn't exist.  Make sure you've copied the entire link into your browser's address bar.");
-                        response.put("success", false);
-                        response.put("message", errors.getMessage());
-                        return response;
-                    }
-                }
-                else
-                {
-                    if (!SecurityManager.loginExists(email))
-                        errors.reject("setPassword", "This email address is not associated with an account.  Make sure you've copied the entire link into your browser's address bar.");
-                    else if (SecurityManager.isVerified(email))
-                        errors.reject("setPassword", "This email address has already been verified.");
-                    else if (null == verification || verification.length() < SecurityManager.tempPasswordLength)
-                        errors.reject("setPassword", "Make sure you've copied the entire link into your browser's address bar.");
-                    else
-                        // Incorrect verification string
-                        errors.reject("setPassword", "Verification failed.  Make sure you've copied the entire link into your browser's address bar.");
-
-                    response.put("success", false);
-                    response.put("message", errors.getMessage());
-                    return response;
-                }
-            }
-            catch (Exception e)
-            {
-                throw new RuntimeException(e);
-            }
-
-            HttpServletRequest request = getViewContext().getRequest();
-
-            // Pull straight from the request to minimize logging of passwords (in Spring, bean utils, etc.)
-            String password = request.getParameter("password");
-            String password2 = request.getParameter("password2");
-
-            Collection<String> messages = new LinkedList<>();
-            User user = UserManager.getUser(_email);
-
-            if (!DbLoginManager.getPasswordRule().isValidToStore(password, password2, user, messages))
-            {
-                for (String message : messages)
-                    errors.reject("password", message);
-
-                response.put("success", false);
-                response.put("message", errors.getMessage());
-                return response;
-            }
-
-            try
-            {
-                SecurityManager.setPassword(_email, password);
-            }
-            catch (UserManagementException e)
-            {
-                errors.reject("password", "Setting password failed: " + e.getMessage() + ".  Contact the " + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getShortName() + " team.");
-                response.put("success", false);
-                response.put("message", errors.getMessage());
-                return response;
-            }
-
-            afterPasswordSet(errors, user);
+            User user = UserManager.getUser(email);
+            LoginController.checkVerificationErrors(isValidatedEmail, user, email, verification, errors);
 
             if (errors.hasErrors())
             {
@@ -799,40 +736,17 @@ public class LoginController extends SpringActionController
                 return response;
             }
 
-            // Should log user in only for initial user, choose password, and forced change password scenarios, but not for scenarios
-            // where a user is already logged in (normal change password, admins initializing another user's password, etc.)
-            if (getUser().isGuest())
-            {
-                PrimaryAuthenticationResult result = AuthenticationManager.authenticate(request, _email.getEmailAddress(), password, form.getReturnURLHelper(), true);
+            AuthenticationManager.AuthenticationResult result = attemptSetPassword(_email, form.getReturnURLHelper(), "Verified and chose a password.", true, errors);
 
-                if (result.getStatus() == Success)
-                {
-                    // This user has passed primary authentication
-                    AuthenticationManager.setPrimaryAuthenticationResult(request, result);
+            response.put("success", !errors.hasErrors());
+            if (result != null)
+                response.put("returnUrl", result.getRedirectURL());
+            if (errors.hasErrors())
+                response.put("message", errors.getMessage());
 
-                    AuthenticationManager.AuthenticationResult authResult = AuthenticationManager.handleAuthentication(getViewContext().getRequest(), getContainer());
-                    URLHelper redirectUrl = authResult.getRedirectURL();
-                    if (!StringUtils.isEmpty(redirectUrl.toString()))
-                        response.put("returnUrl", redirectUrl.toString());
-                }
-            }
-
-            response.put("success", true);
             return response;
         }
 
-        public void afterPasswordSet(BindException errors, User user)
-        {
-            try
-            {
-                SecurityManager.setVerification(_email, null);
-                UserManager.addToUserHistory(user, "Verified and chose a password.");
-            }
-            catch (UserManagementException e)
-            {
-                errors.reject("password", "Resetting verification failed.  Contact the " + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getShortName() + " team.");
-            }
-        }
     }
 
     @RequiresNoPermission
@@ -1526,6 +1440,7 @@ public class LoginController extends SpringActionController
     {
         protected ValidEmail _email = null;
         protected boolean _unrecoverableError = false;
+        protected URLHelper _successUrl = null;
 
         public void validateCommand(SetPasswordForm form, Errors errors)
         {
@@ -1606,57 +1521,18 @@ public class LoginController extends SpringActionController
 
         public boolean handlePost(SetPasswordForm form, BindException errors) throws Exception
         {
-            HttpServletRequest request = getViewContext().getRequest();
-
-            // Pull straight from the request to minimize logging of passwords (in Spring, bean utils, etc.)
-            String password = request.getParameter("password");
-            String password2 = request.getParameter("password2");
-
-            Collection<String> messages = new LinkedList<>();
-            User user = UserManager.getUser(_email);
-
-            if (!DbLoginManager.getPasswordRule().isValidToStore(password, password2, user, messages))
-            {
-                for (String message : messages)
-                    errors.reject("password", message);
-
-                return false;
-            }
-
-            try
-            {
-                SecurityManager.setPassword(_email, password);
-            }
-            catch (UserManagementException e)
-            {
-                errors.reject("password", "Setting password failed: " + e.getMessage() + ".  Contact the " + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getShortName() + " team.");
-                return false;
-            }
-
-            afterPasswordSet(errors, user);
+            AuthenticationManager.AuthenticationResult result = attemptSetPassword(_email, form.getReturnURLHelper(), getAuditMessage(), clearVerification(), errors);
 
             if (errors.hasErrors())
                 return false;
-
-            // Should log user in only for initial user, choose password, and forced change password scenarios, but not for scenarios
-            // where a user is already logged in (normal change password, admins initializing another user's password, etc.)
-            if (getUser().isGuest())
-            {
-                PrimaryAuthenticationResult result = AuthenticationManager.authenticate(request, _email.getEmailAddress(), password, form.getReturnURLHelper(), true);
-
-                if (result.getStatus() == Success)
-                {
-                    // This user has passed primary authentication
-                    AuthenticationManager.setPrimaryAuthenticationResult(request, result);
-                }
-            }
-
+            if (result != null)
+                _successUrl = result.getRedirectURL();
             return true;
         }
 
         public URLHelper getSuccessURL(SetPasswordForm form)
         {
-            return AuthenticationManager.handleAuthentication(getViewContext().getRequest(), getContainer()).getRedirectURL();
+            return _successUrl;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1682,10 +1558,67 @@ public class LoginController extends SpringActionController
         protected abstract void verify(SetPasswordForm form, ValidEmail email, Errors errors);
         protected abstract String getMessage(SetPasswordForm form);
         protected abstract NamedObjectList getPasswordInputs(SetPasswordForm form);
-        protected abstract void afterPasswordSet(BindException errors, User user);
+        protected boolean clearVerification()
+        {
+            return false;
+        }
+        protected abstract String getAuditMessage();
         protected abstract boolean isCancellable(SetPasswordForm form);
     }
 
+    public AuthenticationManager.AuthenticationResult attemptSetPassword(ValidEmail _email, URLHelper returnUrlHelper, String auditMessage, boolean clearVerification, BindException errors) throws InvalidEmailException
+    {
+        HttpServletRequest request = getViewContext().getRequest();
+        String password = request.getParameter("password");
+        String password2 = request.getParameter("password2");
+
+        Collection<String> messages = new LinkedList<>();
+        User user = UserManager.getUser(_email);
+
+        if (!DbLoginManager.getPasswordRule().isValidToStore(password, password2, user, messages))
+        {
+            for (String message : messages)
+                errors.reject("setPassword", message);
+            return null;
+        }
+
+        try
+        {
+            SecurityManager.setPassword(_email, password);
+        }
+        catch (UserManagementException e)
+        {
+            errors.reject("setPassword", "Setting password failed: " + e.getMessage() + ".  Contact the " + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getShortName() + " team.");
+            return null;
+        }
+
+        try
+        {
+            if (clearVerification)
+                SecurityManager.setVerification(_email, null);
+            UserManager.addToUserHistory(user, auditMessage);
+        }
+        catch (UserManagementException e)
+        {
+            errors.reject("setPassword", "Resetting verification failed.  Contact the " + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getShortName() + " team.");
+            return null;
+        }
+
+        // Should log user in only for initial user, choose password, and forced change password scenarios, but not for scenarios
+        // where a user is already logged in (normal change password, admins initializing another user's password, etc.)
+        if (getUser().isGuest())
+        {
+            PrimaryAuthenticationResult result = AuthenticationManager.authenticate(request, _email.getEmailAddress(), password, returnUrlHelper, true);
+
+            if (result.getStatus() == Success)
+            {
+                // This user has passed primary authentication
+                AuthenticationManager.setPrimaryAuthenticationResult(request, result);
+            }
+        }
+
+        return AuthenticationManager.handleAuthentication(getViewContext().getRequest(), getContainer());
+    }
 
     @RequiresNoPermission
     @AllowedDuringUpgrade
@@ -1742,17 +1675,15 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public void afterPasswordSet(BindException errors, User user)
+        protected boolean clearVerification()
         {
-            try
-            {
-                SecurityManager.setVerification(_email, null);
-                UserManager.addToUserHistory(user, "Verified and chose a password.");
-            }
-            catch (UserManagementException e)
-            {
-                errors.reject("password", "Resetting verification failed.  Contact the " + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getShortName() + " team.");
-            }
+            return true;
+        }
+
+        @Override
+        protected String getAuditMessage()
+        {
+            return "Verified and chose a password.";
         }
 
         public URLHelper getSuccessURL(SetPasswordForm form)
@@ -1764,8 +1695,7 @@ public class LoginController extends SpringActionController
         public ModelAndView getSuccessView(SetPasswordForm form)
         {
             // Issue 33599: allow the returnUrl for this action to redirect to an absolute URL (ex. labkey.org back to accounts.trial.labkey.host)
-            AuthenticationManager.AuthenticationResult result = AuthenticationManager.handleAuthentication(getViewContext().getRequest(), getContainer());
-            return HttpView.redirect(result.getRedirectURL(), true);
+            return HttpView.redirect(_successUrl, true);
         }
     }
 
@@ -1852,10 +1782,10 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        protected void afterPasswordSet(BindException errors, User user)
+        protected String getAuditMessage()
         {
             // Put it here to get ordering right... "Added to the system" gets logged before first login
-            UserManager.addToUserHistory(user, "Added to the system via the initial user page.");
+            return "Added to the system via the initial user page.";
         }
 
         @Override
@@ -2012,6 +1942,12 @@ public class LoginController extends SpringActionController
         }
 
         @Override
+        protected String getAuditMessage()
+        {
+            return "Changed password.";
+        }
+
+        @Override
         public boolean handlePost(SetPasswordForm form, BindException errors) throws Exception
         {
             // Verify the old password on post
@@ -2029,11 +1965,6 @@ public class LoginController extends SpringActionController
             return super.handlePost(form, errors);
         }
 
-        @Override
-        public void afterPasswordSet(BindException errors, User user)
-        {
-            UserManager.addToUserHistory(user, "Changed password.");
-        }
     }
 
 
