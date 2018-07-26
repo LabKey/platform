@@ -58,12 +58,16 @@
 
     int row = 0;
 
-    DiagnosticButton diagnosticButton = DiagnosticsService.get().getDiagnosticButton();
+    DiagnosticButton diagnosticButton = null;
+    if (null != DiagnosticsService.get()) {
+        diagnosticButton = DiagnosticsService.get().getDiagnosticButton();
+    }
 %>
 <style type="text/css">
     body { overflow-y: scroll; }
     .lk-admin-section { display: none; }
-    .header-title { margin: 0px 20px auto auto; }
+    .header-title { margin-bottom: 5px; }
+    .diagnostic-button { margin-bottom: 20px; }
 </style>
 <div class="row">
     <div class="col-sm-12 col-md-3">
@@ -76,11 +80,12 @@
     </div>
     <div class="col-sm-12 col-md-9">
         <labkey:panel id="info" className="lk-admin-section">
-            <div class="labkey-page-section-header">
-                <h3 class="header-title pull-left">Server Information</h3>
-                <%--<a class="labkey-button" href="<%= diagnosticButton.getLinkUrl() %>">Export Diagnostics</a>--%>
+            <h3 class="header-title labkey-page-section-header">Server Information</h3>
+            <% if (null != diagnosticButton) { %>
+            <div class="diagnostic-button">
+                <a href="<%=diagnosticButton.getLinkUrl()%>">Export Diagnostics</a>
             </div>
-            <div class="clearfix"></div>
+            <% } %>
             <h4>Core Database Configuration</h4>
             <table class="labkey-data-region-legacy labkey-show-borders">
                 <tr><td class="labkey-column-header">Property</td><td class="labkey-column-header">Value</td></tr>

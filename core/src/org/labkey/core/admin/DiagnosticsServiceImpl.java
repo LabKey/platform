@@ -29,7 +29,6 @@ public class DiagnosticsServiceImpl implements DiagnosticsService
     private static DiagnosticButton _diagnosticButton;
 
     @Override
-    @NotNull
     public DiagnosticButton getDiagnosticButton()
     {
         return _diagnosticButton;
