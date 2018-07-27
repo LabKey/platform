@@ -123,7 +123,9 @@
         <attribute name="dir" type="string" use="optional"/>
         <attribute name="fileBaseName" type="string" use="optional">
             <annotation>
-                <documentation>The base name to use for an output target file. Special substitutions:<p/>'${TransformRunId}' will be substituted with the transformRunId.<p/>'${Timestamp}' will be substituted with the timestamp at file creation.</documentation>
+                <documentation>The base name to use for an output target file. Special substitutions:
+                    '${TransformRunId}' will be substituted with the transformRunId.
+                    '${Timestamp}' will be substituted with the timestamp at file creation.</documentation>
             </annotation>
         </attribute>
         <attribute name="fileExtension" type="string" use="optional">
