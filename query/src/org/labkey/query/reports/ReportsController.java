@@ -1303,6 +1303,7 @@ public class ReportsController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("reportsAndViews");
             if (_report != null)
                 return root.addChild(_report.getDescriptor().getReportName());
             return null;
@@ -3979,6 +3980,7 @@ public class ReportsController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("manageViews#notifications");
             return root.addChild("Manage Report/Dataset Notifications");
         }
     }

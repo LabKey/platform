@@ -521,6 +521,7 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("datasetProperties");
             return _appendNavTrailDatasetAdmin(root).addChild(_def.getLabel() + " Dataset Properties");
         }
     }
@@ -613,7 +614,7 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            setHelpTopic("studyNavigator");
+            setHelpTopic("studyDashboard#navigator");
             return root.addChild("Overview: " + _study.getLabel());
         }
     }
