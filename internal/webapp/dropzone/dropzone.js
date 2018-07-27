@@ -895,6 +895,12 @@
           if (entry.isFile) {
             _results.push(this.addFile(item.getAsFile()));
           } else if (entry.isDirectory) {
+            if (item.getAsFile != null) {
+                var directoryFile = item.getAsFile();
+                directoryFile.isDirectory = true;
+                if (this.options.acceptDirectory)
+                    this.options.acceptDirectory.call(this, directoryFile);
+            }
             _results.push(this._addFilesFromDirectory(entry, entry.name));
           } else {
             _results.push(void 0);
@@ -929,6 +935,8 @@
                 return _this.addFile(file);
               });
             } else if (entry.isDirectory) {
+                if (_this.options.acceptDirectory)
+                    _this.options.acceptDirectory.call(_this, entry);
               _this._addFilesFromDirectory(entry, "" + path + "/" + entry.name);
             }
           }
