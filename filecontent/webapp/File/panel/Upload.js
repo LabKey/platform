@@ -114,6 +114,20 @@ Ext4.define('File.panel.Upload', {
                 'createIntermediates': 'true'
             },
 
+            acceptDirectory: function(file) {
+                var root = this.uploadPanel.fileSystem.rootPath;
+                if (root && file.isDirectory)
+                {
+                    root = this.uploadPanel.fileSystem.concatPaths(root, this.uploadPanel.getWorkingDirectory('path'));
+                    var uri = this.uploadPanel.fileSystem.concatPaths(root, file.fullPath ? file.fullPath : file.name);
+
+                    var parentFolderUri = this.uploadPanel.fileSystem.getParentPath(uri);
+                    this.uploadPanel.fileSystem.createDirectory({
+                        path : parentFolderUri + '/' + file.name
+                    });
+                }
+            },
+
             accept: function (file, done) {
                 // NOTE: this only covers the case that the error message is from the server-side
                 // Filter out folder drag-drop on unsupported browsers (Firefox)
