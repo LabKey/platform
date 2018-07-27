@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -61,7 +62,7 @@ public abstract class DisplayColumn extends RenderColumn
 
     protected String _textAlign = null;
     protected boolean _nowrap = false;
-    protected String _width = "60";
+    protected String _width = null;
     protected String _linkTarget = null;
     protected String _linkCls = null;
     protected String _onClick = null;
@@ -679,9 +680,19 @@ public abstract class DisplayColumn extends RenderColumn
         }
         out.write("\""); // end of "class"
 
-        out.write(" style=\"");
-        out.write(getDefaultHeaderStyle());
-        out.write("\"");
+        String style = getDefaultHeaderStyle();
+        if (style == null)
+            style = "";
+
+        if (!StringUtils.isBlank(getWidth()))
+            style += ";width:" + getWidth() + "px;";
+
+        if (!"".equals(style))
+        {
+            out.write(" style=\"");
+            out.write(style);
+            out.write("\"");
+        }
 
         StringBuilder tooltip = new StringBuilder();
         if (null != getDescription())

@@ -713,26 +713,12 @@ public class ColumnInfo extends ColumnRenderProperties
         _displayWidth = width;
     }
 
+    @NotNull
     public String getWidth()
     {
         if (null != _displayWidth)
             return _displayWidth;
-
-//        This is the DisplayColumn's job to swap display type, shouldn't do this here
-//        Also, this causes table construction recursion in the case of self-join
-//        if (fk != null)
-//        {
-//            ColumnInfo fkTitleColumn = getDisplayField();
-//            if (null != fkTitleColumn && fkTitleColumn != this)
-//                return displayWidth = fkTitleColumn.getWidth();
-//        }
-
-        if (isStringType())
-            return _displayWidth = String.valueOf(Math.max(10, Math.min(getScale() * 6, 200)));
-        else if (isDateTimeType())
-            return _displayWidth = "90";
-        else
-            return _displayWidth = "60";
+        return "";
     }
 
     public TableInfo getFkTableInfo()
@@ -957,7 +943,7 @@ public class ColumnInfo extends ColumnRenderProperties
                 xmlCol.setScale(_scale);
             if (null != _defaultValue)
                 xmlCol.setDefaultValue(_defaultValue);
-            if (null != getDisplayWidth())
+            if (!StringUtils.isBlank(getDisplayWidth()))
                 xmlCol.setDisplayWidth(getDisplayWidth());
             if (null != _format)
                 xmlCol.setFormatString(_format);
