@@ -132,7 +132,6 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                     colKey.setNullable(false); // Must assure this as it can be set incorrectly via StorageProvisioner
                     colKey.setInputType("text");
                     colKey.setInputLength(-1);
-                    colKey.setWidth("180");
 
                     if (_list.getKeyType().equals(ListDefinition.KeyType.AutoIncrementInteger))
                     {
