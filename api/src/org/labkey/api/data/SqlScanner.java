@@ -15,10 +15,15 @@
  */
 package org.labkey.api.data;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.view.NotFoundException;
+
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * A simple scanner for SQL text that understands block & single-line comments, double-quoted identifiers, single-quoted strings,
@@ -131,6 +136,32 @@ public class SqlScanner
     }
 
     /**
+     * Splits the provided text into collections, using the specified separator. Ignores all comments as well as single-
+     * and double-quoted strings (while correctly handling escaped quotes within those strings).
+     * @param ch the character used as a delimiter
+     * @return a collection of parsed strings
+     */
+    public Collection<String> split(char ch)
+    {
+        List<String> ret = new LinkedList<>();
+        int start = 0;
+        int idx = indexOf(ch);
+
+        while (-1 != idx)
+        {
+            String subquery = StringUtils.mid(_sql, start, idx - start);
+            ret.add(subquery);
+            start = idx + 1;
+            idx = indexOf(ch, start);
+        }
+
+        String subquery = StringUtils.mid(_sql, start, _sql.length() - start);
+        ret.add(subquery);
+
+        return ret;
+    }
+
+    /**
      * Returns the SQL stripped of all block and line comments (while correctly handling comment characters in quoted strings).
      * @return StringBuilder containing the stripped SQL
      */
@@ -144,7 +175,7 @@ public class SqlScanner
             @Override
             public boolean comment(int beginIndex, int endIndex)
             {
-                ret.append(_sql.substring(previous.getValue(), beginIndex));
+                ret.append(_sql, previous.getValue(), beginIndex);
                 previous.setValue(endIndex);
 
                 return true;
@@ -334,6 +365,28 @@ public class SqlScanner
             SQLFragment frag = new SQLFragment(sql);
             StringBuilder stripped = new SqlScanner(frag).stripComments();
             assertEquals("Stripped SQL (\"" + stripped + "\") had unexpected length", expectedLength, stripped.length());
+        }
+
+        @Test
+        public void testSplit()
+        {
+            testSplit("BEGIN; SELECT * FROM foo; END", ';', "BEGIN", " SELECT * FROM foo", " END");
+            testSplit("SET THIS = TRUE  ; SHOW TRANSACTION_ISOLATION;  SET THAT = FALSE;", ';', "SET THIS = TRUE  ", " SHOW TRANSACTION_ISOLATION", "  SET THAT = FALSE", "");
+            testSplit("/* This is a comment; it shouldn't affect the splitting just because there are ; characters inside */ SELECT \"SOME ID; WITH SEMI\" = 'SOME CONST; WITH SEMI'; ANOTHER STATEMENT;", ';', "/* This is a comment; it shouldn't affect the splitting just because there are ; characters inside */ SELECT \"SOME ID; WITH SEMI\" = 'SOME CONST; WITH SEMI'", " ANOTHER STATEMENT", "");
+            testSplit("Some Other|Character|As a; delimiter", '|', "Some Other", "Character", "As a; delimiter");
+        }
+
+        private void testSplit(String sql, char ch, String... queries)
+        {
+            Collection<String> split = new SqlScanner(sql).split(ch);
+            assertEquals(sql + " split to the wrong number of queries.", queries.length, split.size());
+
+            int i = 0;
+
+            for (String s : split)
+            {
+                assertEquals(queries[i++], s);
+            }
         }
 
         @Test(expected = NotFoundException.class)
