@@ -34,6 +34,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.*;
+import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -686,7 +687,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
         // Use a transaction to ensure that we acquire the lock and check out the DB connection from the pool in a
         // consistent order to avoid deadlock
-        try (DbScope.Transaction t = StudySchema.getInstance().getSchema().getScope().ensureTransaction(_lock))
+        try (Transaction t = StudySchema.getInstance().getSchema().getScope().ensureTransaction(_lock))
         {
             Domain d = ensureDomain();
 
@@ -707,7 +708,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
      */
     public void provisionTable()
     {
-        try (DbScope.Transaction t = StudySchema.getInstance().getSchema().getScope().ensureTransaction(_lock))
+        try (Transaction t = StudySchema.getInstance().getSchema().getScope().ensureTransaction(_lock))
         {
             _domain = null;
             if (null == getTypeURI())
@@ -749,7 +750,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
         DbSchema schema = StudySchema.getInstance().getSchema();
 
-        try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
+        try (Transaction transaction = schema.getScope().ensureTransaction())
         {
             CPUTimer time = new CPUTimer("purge");
             time.start();
@@ -1067,7 +1068,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         if (null == data)
             return;
         DbScope scope =  StudySchema.getInstance().getSchema().getScope();
-        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        try (Transaction transaction = scope.ensureTransaction())
         {
             Table.delete(data, new SimpleFilter().addWhereClause("Container=?", new Object[] {getContainer()}));
             StudyManager.datasetModified(this, user, true);
@@ -1628,7 +1629,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         }
 
         Domain d=null;
-        try (DbScope.Transaction t = StudySchema.getInstance().getSchema().getScope().ensureTransaction(_lock))
+        try (Transaction t = StudySchema.getInstance().getSchema().getScope().ensureTransaction(_lock))
         {
             if (null != getTypeURI() && null == _domain)
                 d = PropertyService.get().getDomain(getContainer(), getTypeURI());
@@ -1799,7 +1800,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
         TableInfo data = getStorageTableInfo();
 
-        try (DbScope.Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
+        try (Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
         {
             for (Collection<String> rowLSIDs : rowLSIDSlices)
             {
@@ -1919,6 +1920,19 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     }
 
 
+    // Using temporarily to isolate #34735
+    private void checkConnection(Transaction transaction)
+    {
+        try
+        {
+            assert !transaction.getConnection().isClosed() : "Connection should not be closed!";
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
     private List<String> insertData(User user, DataIteratorBuilder in,
             CheckForDuplicates checkDuplicates, DataIteratorContext context, QCState defaultQCState,
             StudyImportContext studyImportContext, Logger logger, boolean forUpdate)
@@ -1928,21 +1942,14 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
         DbScope scope = ExperimentService.get().getSchema().getScope();
 
-        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        try (Transaction transaction = scope.ensureTransaction())
         {
             long start = System.currentTimeMillis();
             {
                 Pump p = new Pump(insert.getDataIterator(context), context);
+                checkConnection(transaction);
                 p.run();
-
-                try
-                {
-                    assert !transaction.getConnection().isClosed() : "Connection should not be closed!";
-                }
-                catch (SQLException e)
-                {
-                    throw new RuntimeSQLException(e);
-                }
+                checkConnection(transaction);
             }
             long end = System.currentTimeMillis();
 
@@ -2446,7 +2453,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         if (getKeyType() == Dataset.KeyType.SUBJECT_VISIT_OTHER && getKeyManagementType() != Dataset.KeyManagementType.None)
             managedKey = getKeyPropertyName();
 
-        try (DbScope.Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
+        try (Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
         {
             Map<String, Object> oldData = getDatasetRow(u, lsid);
 
@@ -2545,7 +2552,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         // Need to fetch the old item in order to log the deletion
         List<Map<String, Object>> oldDatas = getDatasetRows(u, lsids);
 
-        try (DbScope.Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
+        try (Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
         {
             deleteRows(u, lsids);
 
