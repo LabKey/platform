@@ -16,28 +16,34 @@
 
 package org.labkey.core.admin;
 
-import org.jetbrains.annotations.NotNull;
-import org.labkey.api.admin.DiagnosticsService;
-import org.labkey.api.admin.DiagnosticButton;
+import org.labkey.api.admin.AdminConsoleService;
+import org.labkey.api.admin.DiagnosticsLink;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * User: emilyz
  * Date: Jul 16, 2018
  */
-public class DiagnosticsServiceImpl implements DiagnosticsService
+public class AdminConsoleServiceImpl implements AdminConsoleService
 {
-    private static DiagnosticButton _diagnosticButton;
+    private static List<AdminConsoleHeaderLinkProvider> _providers;
 
-    @Override
-    public DiagnosticButton getDiagnosticButton()
+    public AdminConsoleServiceImpl()
     {
-        return _diagnosticButton;
+        _providers = new ArrayList<>();
     }
 
     @Override
-    public void registerDiagnosticButton(DiagnosticButton button)
+    public void registerAdminConsoleHeaderProvider(AdminConsoleHeaderLinkProvider provider)
     {
-        _diagnosticButton = button;
+        _providers.add(provider);
     }
 
+    @Override
+    public List<AdminConsoleHeaderLinkProvider> getAdminConsoleHeaderProviders()
+    {
+        return _providers;
+    }
 }

@@ -33,9 +33,12 @@
 <%@ page import="java.util.Date" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
-<%@ page import="org.labkey.api.admin.DiagnosticButton" %>
-<%@ page import="org.labkey.api.admin.DiagnosticsService" %>
+<%@ page import="org.labkey.api.admin.DiagnosticsLink" %>
+<%@ page import="org.labkey.api.admin.AdminConsoleService" %>
 <%@ page import="org.labkey.api.admin.AdminBean" %>
+<%@ page import="org.labkey.core.admin.AdminConsoleHeaderLinkProvider" %>
+<%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -58,10 +61,10 @@
 
     int row = 0;
 
-    DiagnosticButton diagnosticButton = null;
-    if (null != DiagnosticsService.get()) {
-        diagnosticButton = DiagnosticsService.get().getDiagnosticButton();
-    }
+//    List<AdminConsoleHeaderLinkProvider> providers = null;
+//    if (null != AdminConsoleService.get()) {
+//        providers = AdminConsoleService.get().getAdminConsoleHeaderProviders();
+//    }
 %>
 <style type="text/css">
     body { overflow-y: scroll; }
@@ -81,9 +84,9 @@
     <div class="col-sm-12 col-md-9">
         <labkey:panel id="info" className="lk-admin-section">
             <h3 class="header-title labkey-page-section-header">Server Information</h3>
-            <% if (null != diagnosticButton) { %>
-            <div class="diagnostic-button">
-                <a href="<%=diagnosticButton.getLinkUrl()%>">Export Diagnostics</a>
+            <% for (NavTree link : bean.getLinks(getViewContext())) { %>
+            <div class="diagnostic-link">
+                <a href="<%=h(link.getHref())%>"><%=h(link.getText())%></a>
             </div>
             <% } %>
             <h4>Core Database Configuration</h4>
