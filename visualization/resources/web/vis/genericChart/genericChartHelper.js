@@ -13,6 +13,8 @@ if(!LABKEY.vis) {
  */
 LABKEY.vis.GenericChartHelper = new function(){
 
+    var DEFULAT_TICK_LABEL_MAX = 25;
+
     var getRenderTypes = function() {
         return [
             {
@@ -283,9 +285,9 @@ LABKEY.vis.GenericChartHelper = new function(){
             width = Math.max((xBarCount * 15 * 2) + 300, defaultWidth);
 
             if (Ext4.isObject(measures.xSub)) {
-                // 15px per bar per group + 200px between groups + 600 for default margins
+                // 15px per bar per group + 200px between groups + 300 for default margins
                 var xSubCount = measureStore.members(measures.xSub.name).length;
-                width = (xBarCount * xSubCount * 15) + (xSubCount * 200) + 600;
+                width = (xBarCount * xSubCount * 15) + (xSubCount * 200) + 300;
             }
         }
         else if (chartType == 'box_plot' && Ext4.isObject(measures.x)) {
@@ -345,7 +347,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             scales.x = {
                 scaleType: 'discrete', // Force discrete x-axis scale for box plots.
                 sortFn: LABKEY.vis.discreteSortFn,
-                tickLabelMax: 25
+                tickLabelMax: DEFULAT_TICK_LABEL_MAX
             };
 
             var yMin = d3.min(data, aes.y);
@@ -392,7 +394,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                 scales.x = {
                     scaleType: 'discrete',
                     sortFn: LABKEY.vis.discreteSortFn,
-                    tickLabelMax: 25
+                    tickLabelMax: DEFULAT_TICK_LABEL_MAX
                 };
 
                 //bar chart x-axis subcategories support
@@ -400,7 +402,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                     scales.xSub = {
                         scaleType: 'discrete',
                         sortFn: LABKEY.vis.discreteSortFn,
-                        tickLabelMax: 25
+                        tickLabelMax: DEFULAT_TICK_LABEL_MAX
                     };
                 }
             }
@@ -914,7 +916,13 @@ LABKEY.vis.GenericChartHelper = new function(){
             );
         }
 
-        var margins = _getPlotMargins(renderType, aes, data, plotConfig);
+        // Issue 34711: better guess at the max number of discrete x-axis tick mark labels to show based on the plot width
+        if (scales.x && scales.x.scaleType === 'discrete' && scales.x.tickLabelMax) {
+            // approx 30 px for a 45 degree rotated tick label
+            scales.x.tickLabelMax = Math.floor((plotConfig.width - 300) / 30);
+        }
+
+        var margins = _getPlotMargins(renderType, scales, aes, data, plotConfig);
         if (Ext4.isObject(margins)) {
             plotConfig.margins = margins;
         }
@@ -946,9 +954,18 @@ LABKEY.vis.GenericChartHelper = new function(){
         return plotConfig;
     };
 
-    var _getPlotMargins = function(renderType, aes, data, plotConfig) {
+    var _willRotateXAxisTickText = function(scales, plotConfig, maxTickLength, data) {
+        if (scales.x && scales.x.scaleType === 'discrete') {
+            var tickCount = scales.x && scales.x.tickLabelMax ? Math.min(scales.x.tickLabelMax, data.length) : data.length;
+            return (tickCount * maxTickLength * 5) > (plotConfig.width - 150);
+        }
+
+        return false;
+    };
+
+    var _getPlotMargins = function(renderType, scales, aes, data, plotConfig) {
         // issue 29690: for bar and box plots, set default bottom margin based on the number of labels and the max label length
-        if (Ext4.isArray(data) && ((renderType == 'bar_chart' && !Ext4.isDefined(aes.xSub)) || renderType == 'box_plot')) {
+        if (Ext4.isArray(data)) {
             var maxLen = 0;
             Ext4.each(data, function(d) {
                 var val = Ext4.isFunction(aes.x) ? aes.x(d) : d[aes.x];
@@ -957,7 +974,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                 }
             });
 
-            if (data.length * maxLen*5 > plotConfig.width - 150) {
+            if (_willRotateXAxisTickText(scales, plotConfig, maxLen, data)) {
                 // min bottom margin: 50, max bottom margin: 275
                 var bottomMargin = Math.min(Math.max(50, maxLen*5), 275);
                 return {bottom: bottomMargin};
