@@ -329,6 +329,11 @@ function tinyMceHandleEvent(evt) {
     var onAttachmentSuccess = function(response) {
         //parse the response JSON
         var respJson = LABKEY.Utils.decode(response.responseText);
+        if (!respJson.success)
+        {
+            onAttachmentFailure(respJson);
+            return;
+        }
         if (respJson.attachments) {
             _attachments = respJson.attachments;
             updateExistingAttachments(_attachments, false);

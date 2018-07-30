@@ -17,6 +17,7 @@
 package org.labkey.core;
 
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
@@ -31,7 +32,6 @@ import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormApiAction;
 import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -77,7 +77,6 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleProperty;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.premium.AntiVirusService;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
@@ -140,6 +139,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
+import org.springframework.web.multipart.commons.CommonsMultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -2004,10 +2004,6 @@ public class CoreController extends SpringActionController
             if (!AppProps.getInstance().isDevMode() || !getUser().hasRootAdminPermission())
                 throw new UnauthorizedException("under development");
 
-            // something is wrong here: errors==null maybe this is due to not having a Form class??
-            if (null == errors)
-                errors = new NullSafeBindException(new Object(), "form");
-
             JSONObject ret = new JSONObject();
 
             HttpServletRequest request = getViewContext().getRequest();
@@ -2035,29 +2031,26 @@ public class CoreController extends SpringActionController
             location.deleteOnExit();
 
             Map.Entry<String, MultipartFile> entry = map.entrySet().iterator().next();
-            // TODO optimize case where we have saved file to disk already, e.g. AntiVirusFilter
-            // if (entry instanceof LabKeyMultiPartFileEntry)....
             MultipartFile mp = entry.getValue();
             File target = new File(location, mp.getOriginalFilename());
             target.deleteOnExit();
-            FileUtil.copyData(mp.getInputStream(), target);
 
-            // The spec proposes that the virus scan would happen when the file is used
-            // I'm scanning here anyway just for prototype purposes
-
-            AntiVirusService avs = AntiVirusService.get();
-            AntiVirusService.ScanResult result = avs.scan(target);
-            if (result.result == AntiVirusService.Result.OK)
+            boolean copied = false;
+            if (entry.getValue() instanceof CommonsMultipartFile)
             {
-                ret.put("success", true);
-                ret.put("token", TOKEN_PREFIX + location.getName());
+                CommonsMultipartFile mpf = (CommonsMultipartFile)entry.getValue();
+                if (mpf.getFileItem() instanceof DiskFileItem)
+                {
+                    DiskFileItem dfi = (DiskFileItem)mpf.getFileItem();
+                    if (!dfi.isInMemory() && dfi.getStoreLocation().isFile())
+                        copied = dfi.getStoreLocation().renameTo(target);
+                }
             }
-            else
-            {
-                ret.put("success", false);
-                ret.put("message", result.message);
-            }
+            if (!copied)
+                FileUtil.copyData(mp.getInputStream(), target);
 
+            ret.put("success", true);
+            ret.put("token", TOKEN_PREFIX + location.getName());
             return ret;
         }
     }
