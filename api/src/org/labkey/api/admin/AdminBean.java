@@ -17,6 +17,7 @@
 package org.labkey.api.admin;
 
 import org.apache.commons.lang3.time.DateUtils;
+import org.labkey.api.action.HasViewContext;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
@@ -27,6 +28,9 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.ViewContext;
+import org.labkey.core.admin.AdminConsoleHeaderLinkProvider;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -58,5 +62,15 @@ public class AdminBean
         userEmail = user.getEmail();
         modules = new ArrayList<>(ModuleLoader.getInstance().getModules());
         modules.sort(Comparator.comparing(Module::getName, String.CASE_INSENSITIVE_ORDER));
+    }
+
+    public List<NavTree> getLinks(ViewContext ctx)
+    {
+        List<NavTree> links = new ArrayList<>();
+        for (AdminConsoleHeaderLinkProvider headerLinkProvider : AdminConsoleService.get().getAdminConsoleHeaderProviders())
+        {
+            links.addAll(headerLinkProvider.getLinks(ctx));
+        }
+        return links;
     }
 }

@@ -19,25 +19,28 @@ package org.labkey.api.admin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.core.admin.AdminConsoleHeaderLinkProvider;
+
+import java.util.List;
 
 /**
  * User: emilyz
  * Date: Jul 16, 2018
  */
-public interface DiagnosticsService
+public interface AdminConsoleService
 {
     @Nullable
-    static DiagnosticsService get()
+    static AdminConsoleService get()
     {
-        return ServiceRegistry.get().getService(DiagnosticsService.class);
+        return ServiceRegistry.get().getService(AdminConsoleService.class);
     }
 
-    static void setInstance(DiagnosticsService impl)
+    static void setInstance(AdminConsoleService impl)
     {
-        ServiceRegistry.get().registerService(DiagnosticsService.class, impl);
+        ServiceRegistry.get().registerService(AdminConsoleService.class, impl);
     }
 
-    DiagnosticButton getDiagnosticButton();
+    void registerAdminConsoleHeaderProvider(AdminConsoleHeaderLinkProvider provider);
 
-    void registerDiagnosticButton(@NotNull DiagnosticButton button);
+    @NotNull List<AdminConsoleHeaderLinkProvider> getAdminConsoleHeaderProviders();
 }
