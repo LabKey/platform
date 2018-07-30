@@ -19,6 +19,8 @@ package org.labkey.api.action;
 import org.labkey.api.view.JspView;
 import org.springframework.validation.BindException;
 
+import static org.labkey.api.action.SpringActionController.ERROR_MSG;
+
 /**
  * View that renders an error collection.
  * User: adam
@@ -35,5 +37,12 @@ public class SimpleErrorView extends JspView<Boolean>
     public SimpleErrorView(BindException errors)
     {
         this(errors, true);
+    }
+
+    static SimpleErrorView fromMessage(String message)
+    {
+        BindException errors = new BindException(new Object(), "form");
+        errors.reject(ERROR_MSG, message);
+        return new SimpleErrorView(errors, true);
     }
 }

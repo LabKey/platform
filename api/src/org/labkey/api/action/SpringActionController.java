@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
@@ -31,6 +32,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SimpleAction;
+import org.labkey.api.premium.PremiumService;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.LoginUrls;
@@ -43,6 +45,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
@@ -56,7 +59,6 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
-import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 import org.springframework.web.servlet.DispatcherServlet;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.View;
@@ -69,6 +71,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.Writer;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
@@ -307,24 +310,50 @@ public abstract class SpringActionController implements Controller, HasViewConte
    }
 
 
+    private ModelAndView handleBadRequestException(HttpServletRequest request, HttpServletResponse response, Controller controller, String message) throws Exception
+    {
+        return handleBadRequestException(request, response, controller, new BadRequestException(message,null));
+    }
+
+    private ModelAndView handleBadRequestException(HttpServletRequest request, HttpServletResponse response, Controller controller, BadRequestException x) throws Exception
+   {
+       // TODO: we are assuming that all ApiActions respond with JSON and all !ApiAction respond HTML.  Would be better to be explicit.
+       boolean jsonResponse = controller instanceof ApiAction;
+       boolean htmlWrappedJson = !"XMLHttpRequest".equals(request.getHeader("X-Requested-With" )); // might be hidden form post (e.g. Ext)
+
+       if (jsonResponse)
+       {
+           Writer w = response.getWriter();
+           JSONObject json = new JSONObject();
+           json.put("success", false);
+           json.put("status", HttpServletResponse.SC_BAD_REQUEST);
+           json.put("exception", x.getMessage());
+           if (htmlWrappedJson)
+               w.write("<html><body><textarea>");
+           json.write(w);
+           if (htmlWrappedJson)
+               w.write("</textarea></body></html>");
+           return null;
+       }
+
+       // TODO design/text for custom view
+       if (x instanceof AntiVirusException)
+       {
+           response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+           SimpleErrorView.fromMessage(x.getMessage()).render(request,response);
+           return null;
+       }
+
+       response.sendError(HttpServletResponse.SC_BAD_REQUEST, x.getMessage());
+       return null;
+   }
+
     public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception
     {
         request.setAttribute(DispatcherServlet.WEB_APPLICATION_CONTEXT_ATTRIBUTE, getApplicationContext());
         _viewContext.setApplicationContext(_applicationContext);
 
         Throwable throwable = null;
-
-        String contentType = request.getContentType();
-        if (null != contentType && contentType.startsWith("multipart"))
-        {
-            request = (new CommonsMultipartResolver()).resolveMultipart(request);
-            // ViewServlet doesn't check validChars for parameters in a multipart request, so check again
-            if (!ViewServlet.validChars(request))
-            {
-                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Illegal characters in request body");
-                return null;
-            }
-        }
 
         ViewContext context = getViewContext();
         context.setRequest(request);
@@ -399,6 +428,28 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
                         response.setHeader("X-MiniProfiler-Ids", ids.toString());
                     }
+                }
+            }
+
+            // MULTIPART-FORMDATA handling (before permission check because permissionCheck needs CSRF parameter)
+            String contentType = request.getContentType();
+            if (null != contentType && contentType.startsWith("multipart"))
+            {
+                try
+                {
+                    request = PremiumService.get().getMultipartResolver().resolveMultipart(request);
+                    context.setRequest(request);
+                    // ViewServlet doesn't check validChars for parameters in a multipart request, so check again
+                    if (!ViewServlet.validChars(request))
+                        return handleBadRequestException(request, response, controller, "Illegal characters in request body");
+                }
+                catch (RuntimeException x)
+                {
+                    // TODO class AntiVirusException extends BadRequestException
+                    // TODO Better/custom error report page/response
+                    if (x.getCause() instanceof BadRequestException)
+                        return handleBadRequestException(request, response, controller, (BadRequestException)x.getCause());
+                    throw x;
                 }
             }
 

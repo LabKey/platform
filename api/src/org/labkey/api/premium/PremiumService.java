@@ -2,6 +2,7 @@ package org.labkey.api.premium;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.services.ServiceRegistry;
+import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 
 public interface PremiumService
 {
@@ -19,6 +20,11 @@ public interface PremiumService
     boolean isFileUploadDisabled();
 
     boolean isFileWatcherSupported();
+
+    default CommonsMultipartResolver getMultipartResolver()
+    {
+        return new CommonsMultipartResolver();
+    }
 
     static void setInstance(PremiumService instance)
     {
