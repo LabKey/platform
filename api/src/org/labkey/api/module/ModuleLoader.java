@@ -471,9 +471,7 @@ public class ModuleLoader implements Filter
             getModules()
                 .stream()
                 .filter(module -> module.getBuildType() != null && isDevelopmentBuild(module))
-                .forEach(module -> {
-                    addModuleFailure(module.getName(), new IllegalStateException("Module " + module + " was not compiled in production mode"));
-                });
+                .forEach(module -> addModuleFailure(module.getName(), new IllegalStateException("Module " + module + " was not compiled in production mode")));
         }
     }
 
@@ -1342,11 +1340,12 @@ public class ModuleLoader implements Filter
         }
     }
 
-    private volatile boolean _backgroundThreadsStarted = false;
+    private boolean _backgroundThreadsStarted = false;
+    private static final Object BACKGROUND_THREAD_LOCK = new Object();
 
     public void attemptStartBackgroundThreads()
     {
-        synchronized (STARTUP_LOCK)
+        synchronized (BACKGROUND_THREAD_LOCK)
         {
             if (!_backgroundThreadsStarted && isStartupComplete() && AppProps.getInstance().isSetBaseServerUrl())
             {
@@ -1466,9 +1465,7 @@ public class ModuleLoader implements Filter
                 setUpgradeUser(user);
 
                 ModuleUpgrader upgrader = new ModuleUpgrader(modules);
-                upgrader.upgrade(() -> {
-                    afterUpgrade(true);
-                }, execution);
+                upgrader.upgrade(() -> afterUpgrade(true), execution);
             }
             else
             {
@@ -1880,14 +1877,7 @@ public class ModuleLoader implements Filter
 
         synchronized(_resourceFinders)
         {
-            Collection<ResourceFinder> col = _resourceFinders.get(prefix);
-
-            if (null == col)
-            {
-                col = new ArrayList<>();
-                _resourceFinders.put(prefix, col);
-            }
-
+            Collection<ResourceFinder> col = _resourceFinders.computeIfAbsent(prefix, k -> new ArrayList<>());
             col.add(finder);
         }
     }
@@ -2080,7 +2070,7 @@ public class ModuleLoader implements Filter
         if (key.contains("."))
         {
             scope = key.substring(0, key.indexOf('.'));
-            key = key.substring(key.indexOf('.') + 1, key.length());
+            key = key.substring(key.indexOf('.') + 1);
         }
 
         String[] parts = key.split(";");
