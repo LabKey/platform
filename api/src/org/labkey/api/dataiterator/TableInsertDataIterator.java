@@ -104,7 +104,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
     protected TableInsertDataIterator(DataIterator data, TableInfo table, Container c, DataIteratorContext context,
           @Nullable Set<String> keyColumns, @Nullable Set<String> addlSkipColumns, @Nullable Set<String> dontUpdate)
     {
-        super(data, null, context);
+        super(data, context);
 
         _table = table;
         _c = c;

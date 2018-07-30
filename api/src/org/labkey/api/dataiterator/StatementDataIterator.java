@@ -27,6 +27,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Parameter;
+import org.labkey.api.data.Parameter.ParameterMap;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
@@ -54,15 +55,15 @@ import java.util.function.Supplier;
 
 public class StatementDataIterator extends AbstractDataIterator
 {
-    Parameter.ParameterMap[] _stmts;
+    ParameterMap[] _stmts;
     Triple[][] _bindings = null;
 
-    Parameter.ParameterMap _currentStmt;
+    ParameterMap _currentStmt;
     Triple[] _currentBinding;
 
     // coordinate asynchronous statement execution
     boolean _useAsynchronousExecute = false;
-    SwapQueue<Parameter.ParameterMap> _queue = new SwapQueue<>();
+    SwapQueue<ParameterMap> _queue = new SwapQueue<>();
     final Thread _foregroundThread;
     Thread _asyncThread = null;
     AtomicReference<Exception> _backgroundException = new AtomicReference<>();
@@ -70,7 +71,7 @@ public class StatementDataIterator extends AbstractDataIterator
     DataIterator _data;
 
 
-    // NOTE all columns are pass through to the source iterator, except for key columns
+    // NOTE all columns are passed through to the source iterator, except for key columns
     ArrayList<ColumnInfo> _keyColumnInfo;
     ArrayList<Object> _keyValues;
     Integer _rowIdIndex = null;
@@ -83,20 +84,21 @@ public class StatementDataIterator extends AbstractDataIterator
     CPUTimer _elapsed = new CPUTimer("StatementDataIterator@" + System.identityHashCode(this) + ".elapsed");
     CPUTimer _execute = new CPUTimer("StatementDataIterator@" + System.identityHashCode(this) + ".execute()");
 
-    protected StatementDataIterator(DataIterator data, @Nullable Parameter.ParameterMap map, DataIteratorContext context)
+    @Deprecated  // Use the other constructor. TODO: Migrate usages (e.g., immport) and delete this constructor.
+    protected StatementDataIterator(DataIterator data, @Nullable ParameterMap map, DataIteratorContext context)
     {
         super(context);
 
         _data = data;
 
-        _stmts = new Parameter.ParameterMap[] {map};
+        _stmts = new ParameterMap[] {map};
         _foregroundThread = Thread.currentThread();
 
-        _keyColumnInfo = new ArrayList<>(Collections.nCopies(data.getColumnCount()+1,(ColumnInfo)null));
+        _keyColumnInfo = new ArrayList<>(Collections.nCopies(data.getColumnCount()+1, null));
         _keyValues = new ArrayList<>(Collections.nCopies(data.getColumnCount()+1,null));
     }
 
-    protected StatementDataIterator(DataIterator data, DataIteratorContext context, Parameter.ParameterMap... maps)
+    protected StatementDataIterator(DataIterator data, DataIteratorContext context, ParameterMap... maps)
     {
         super(context);
 
@@ -105,7 +107,7 @@ public class StatementDataIterator extends AbstractDataIterator
         _stmts = maps;
         _foregroundThread = Thread.currentThread();
 
-        _keyColumnInfo = new ArrayList<>(Collections.nCopies(data.getColumnCount()+1,(ColumnInfo)null));
+        _keyColumnInfo = new ArrayList<>(Collections.nCopies(data.getColumnCount()+1, null));
         _keyValues = new ArrayList<>(Collections.nCopies(data.getColumnCount()+1,null));
     }
 
@@ -153,7 +155,7 @@ public class StatementDataIterator extends AbstractDataIterator
 
         for (int set=0 ; set<_stmts.length ; set++)
         {
-            Parameter.ParameterMap stmt = _stmts[set];
+            ParameterMap stmt = _stmts[set];
             // map from source to target
             ArrayList<Triple> bindings = new ArrayList<>(stmt.size());
             // by name
@@ -226,7 +228,7 @@ public class StatementDataIterator extends AbstractDataIterator
     }
 
     @Nullable
-    protected Parameter getMvParameter(@NotNull Parameter.ParameterMap stmt, @NotNull FieldKey mvFieldKey)
+    protected Parameter getMvParameter(@NotNull ParameterMap stmt, @NotNull FieldKey mvFieldKey)
     {
         return stmt.getParameter(mvFieldKey.getName());
     }
@@ -250,7 +252,7 @@ public class StatementDataIterator extends AbstractDataIterator
         }
         finally
         {
-            if (ret == false)
+            if (!ret)
             {
                 _queue.close();
                 if (null != _asyncThread)
@@ -423,23 +425,23 @@ public class StatementDataIterator extends AbstractDataIterator
             try {_asyncThread.join();}catch(InterruptedException x){}
             _asyncThread = null;
         }
-        for (Parameter.ParameterMap stmt : _stmts)
+        for (ParameterMap stmt : _stmts)
         {
             if (stmt != null)
             {
                 stmt.close();
             }
         }
-        _stmts = new Parameter.ParameterMap[0];
+        _stmts = new ParameterMap[0];
     }
 
 
 
     class _Runnable implements Runnable
     {
-        Parameter.ParameterMap _firstEmpty;
+        ParameterMap _firstEmpty;
 
-        _Runnable(@NotNull Parameter.ParameterMap empty)
+        _Runnable(@NotNull ParameterMap empty)
         {
             _firstEmpty = empty;
         }
@@ -458,9 +460,9 @@ public class StatementDataIterator extends AbstractDataIterator
             }
         }
 
-        void executeStatementsInBackground() throws BatchValidationException, InterruptedException
+        private void executeStatementsInBackground() throws BatchValidationException, InterruptedException
         {
-            Parameter.ParameterMap m = _firstEmpty;
+            ParameterMap m = _firstEmpty;
 
             while (null != (m = _queue.swapEmptyForFull(m)))
             {
@@ -486,7 +488,7 @@ public class StatementDataIterator extends AbstractDataIterator
     @Override
     public void debugLogInfo(StringBuilder sb)
     {
-        sb.append(this.getClass().getName() + "\n");
+        sb.append(this.getClass().getName()).append("\n");
         if (null != _data)
             _data.debugLogInfo(sb);
     }
@@ -494,7 +496,7 @@ public class StatementDataIterator extends AbstractDataIterator
 
     public static class TestCase extends Assert
     {
-        DataIterator getSource(DataIteratorContext context, final int rowlimit)
+        DataIterator getSource(final int rowlimit)
         {
             return new DataIterator()
             {
@@ -547,7 +549,6 @@ public class StatementDataIterator extends AbstractDataIterator
                 @Override
                 public void close()
                 {
-
                 }
             };
         }
@@ -584,14 +585,14 @@ public class StatementDataIterator extends AbstractDataIterator
 
                 SQLFragment updateX = new SQLFragment("UPDATE " + tableName + " SET X=X+?");
                 updateX.add(new Parameter("I", JdbcType.INTEGER));
-                Parameter.ParameterMap pm1 = new Parameter.ParameterMap(tempdb.getScope(), conn, updateX, null);
+                ParameterMap pm1 = new ParameterMap(tempdb.getScope(), conn, updateX, null);
 
                 SQLFragment updateY = new SQLFragment("UPDATE " + tableName + " SET Y=Y+?");
                 updateY.add(new Parameter("I", JdbcType.INTEGER));
-                Parameter.ParameterMap pm2 = new Parameter.ParameterMap(tempdb.getScope(), conn, updateY, null);
+                ParameterMap pm2 = new ParameterMap(tempdb.getScope(), conn, updateY, null);
 
                 DataIteratorContext context = new DataIteratorContext();
-                DataIterator source = getSource(context, rowCount);
+                DataIterator source = getSource(rowCount);
                 StatementDataIterator sdi = new StatementDataIterator(source, context, pm1, pm2)
                 {
                     @Override
