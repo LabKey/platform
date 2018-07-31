@@ -33,6 +33,7 @@
 <%@ page import="java.util.regex.Pattern" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.api.data.ContainerFilter" %>
+<%@ page import="static org.apache.commons.lang3.StringUtils.defaultString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -78,7 +79,8 @@
     }
     Pattern p = Pattern.compile("SDY\\d+");
     studies.sort((s1, s2) -> {
-        String n1 = s1.getLabel(), n2 = s2.getLabel();
+        String n1 = s1.getContainer().getName();
+        String n2 = s2.getContainer().getName();
         if (p.matcher(n1).matches() && p.matcher(n2).matches())
             return Integer.compare(Integer.parseInt(n1.substring(3)), Integer.parseInt(n2.substring(3)));
         return n1.compareTo(n2);

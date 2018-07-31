@@ -170,18 +170,20 @@ Ext4.define('LABKEY.query.browser.Browser', {
                 },
                 scope: this
             });
-            tbar.push({
-                xtype: 'querybutton',
-                text: 'Generate Schema Export',
-                tooltip: 'Generate schema export sql script for migrating a schema.',
-                fontCls: 'fa-file',
-                stacked: true,
-                stackedCls: 'fa-plus labkey-fa-plus-file',
-                handler: function() {
-                    location.href = LABKEY.ActionURL.buildURL('query', 'generateSchema', null, {returnUrl: window.location});
-                },
-                scope: this
-            });
+            if (LABKEY.Security.currentUser.isSystemAdmin) {
+                tbar.push({
+                    xtype: 'querybutton',
+                    text: 'Generate Schema Export',
+                    tooltip: 'Generate a sql script that inserts all data in a schema.',
+                    fontCls: 'fa-file',
+                    stacked: true,
+                    stackedCls: 'fa-plus labkey-fa-plus-file',
+                    handler: function () {
+                        location.href = LABKEY.ActionURL.buildURL('query', 'generateSchema', null, {returnUrl: window.location});
+                    },
+                    scope: this
+                });
+            }
         }
 
         this.tbar = tbar;

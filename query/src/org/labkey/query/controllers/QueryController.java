@@ -59,7 +59,6 @@ import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
@@ -6280,10 +6279,9 @@ public class QueryController extends SpringActionController
         }
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminOperationsPermission.class)
     public class GenerateSchemaAction extends FormViewAction<GenerateSchemaForm>
     {
-
         @Override
         public void validateCommand(GenerateSchemaForm form, Errors errors)
         {
@@ -6496,7 +6494,6 @@ public class QueryController extends SpringActionController
                 controller.new InternalSourceViewAction(),
                 controller.new InternalNewViewAction(),
                 controller.new QueryExportAuditRedirectAction(),
-                controller.new GenerateSchemaAction(),
                 controller.new GetSchemasWithDataSourcesAction()
             );
 
@@ -6514,6 +6511,7 @@ public class QueryController extends SpringActionController
                 controller.new EditLinkedSchemaAction(),
                 controller.new EditExternalSchemaAction(),
                 controller.new GetTablesAction(),
+                controller.new GenerateSchemaAction(),
                 controller.new SchemaTemplateAction(),
                 controller.new SchemaTemplatesAction(),
                 controller.new ParseExpressionAction(),
