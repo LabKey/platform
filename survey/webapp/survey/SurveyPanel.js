@@ -163,6 +163,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         {
             if (!this.disableAutoSave)
             {
+                Ext4.TaskManager.stopAll();
                 var autoSaveFn = function(count){
                     // without btn/event arguments so we don't show the success msg
                     this.saveSurvey(null, null, false, null, null);
@@ -395,7 +396,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                         this.autosaveInfo.update("<span style='font-style: italic; font-size: 90%'>Responses automatically saved at " + Ext4.util.Format.date(new Date(), 'g:i:s A') + "</span>");
                         this.updateSubmitInfo();
                     }
-
+                    this.savingSurvey = false;
                     if (successUrl && idParamName) {
                         var params = {};
                         params[idParamName] = this.rowId;
@@ -406,10 +407,15 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                         window.location = successUrl;
                     }
                 }
-                else
+                else{
+                    this.savingSurvey = false;
                     this.onFailure(resp);
+                }
             },
-            failure : this.onFailure,
+            failure : function(resp){
+                this.savingSurvey = false;
+                this.onFailure(resp);
+            },
             scope   : this
         });
     },

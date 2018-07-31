@@ -1037,14 +1037,17 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         if (!this.beforeSaveSurvey(btn, evt, toSubmit, successUrl, idParamName))
             return;
 
-        // get the dirty form values which are also valid and to be submitted
-        this.submitValues = this.getFormDirtyValues();
-
-        this.updateSurveyResponse(btn, evt, toSubmit, successUrl, idParamName, false);
+        if (!this.savingSurvey){
+            this.savingSurvey = true;
+            // get the dirty form values which are also valid and to be submitted
+            this.submitValues = this.getFormDirtyValues();
+            this.updateSurveyResponse(btn, evt, toSubmit, successUrl, idParamName, false);
+        }
     },
 
     updateSurveyResponse : function(btn, evt, toSubmit, successUrl, idParamName, navigateOnSave) {
         // default, do nothing
+        this.savingSurvey = false;
     },
 
     submitSurvey : function(btn, evt) {
