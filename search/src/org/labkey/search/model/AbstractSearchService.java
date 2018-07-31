@@ -496,28 +496,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    // params will be modified
-    public boolean _eq(URLHelper a, URLHelper b)
-    {
-        a.deleteParameter("_docid");
-        a.deleteParameter("_print");
-        b.deleteParameter("_docid");
-        b.deleteParameter("_print");
-
-        Path aPath = a instanceof ActionURL ? ((ActionURL)a).getFullParsedPath() : a.getParsedPath();
-        Path bPath = b instanceof ActionURL ? ((ActionURL)b).getFullParsedPath() : b.getParsedPath();
-        if (!aPath.equals(bPath))
-        {
-            // handle container ids
-            aPath = normalize(aPath);
-            bPath = normalize(bPath);
-            if (!aPath.equals(bPath))
-                return false;
-        }
-        return URLHelper.queryEqual(a,b);
-    }
-
-
     // doesn't know about contextPath
     protected Path normalize(Path p)
     {
@@ -533,6 +511,29 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         return p;
     }
 
+    /** Modifies query parameters of URLHelper */
+    protected Path canonicalize(URLHelper x)
+    {
+        x.deleteParameter("_print");
+        x.deleteParameter("_docid");
+
+        // we need to handle both path first, and controller first urls
+        if (!(x instanceof ActionURL) && x.getPath().endsWith(".view"))
+            x = new ActionURL(x.toString());
+
+        Path path = x instanceof ActionURL ? ((ActionURL)x).getFullParsedPath() : x.getParsedPath();
+        return normalize(path);
+    }
+
+    /** query parameters will be modified */
+    public boolean _eq(URLHelper a, URLHelper b)
+    {
+        Path aPath = canonicalize(a);
+        Path bPath = canonicalize(b);
+        if (!aPath.equals(bPath))
+                return false;
+        return URLHelper.queryEqual(a,b);
+    }
 
     public void notFound(URLHelper in)
     {
