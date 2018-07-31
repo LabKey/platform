@@ -16,6 +16,7 @@
 package org.labkey.core.dialect;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.view.template.Warnings;
 
 import java.util.Set;
 
@@ -36,10 +37,9 @@ public class PostgreSql94Dialect extends PostgreSql93Dialect
         return words;
     }
 
-//  Uncomment when it's time to deprecate 9.3
-//    @Override
-//    public void addAdminWarningMessages(Collection<String> messages)
-//    {
-//        // Override the 9.3 override... no warnings for 9.4+
-//    }
+    @Override
+    public void addAdminWarningMessages(Warnings warnings)
+    {
+        // Override the 9.3 override... no warnings for 9.4+
+    }
 }

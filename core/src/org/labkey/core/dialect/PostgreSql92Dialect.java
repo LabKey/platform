@@ -41,7 +41,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
+/* PostgreSQL 9.2 is no longer supported, however, we keep this class to track changes we implemented specifically for this version.
+ *
  * User: adam
  * Date: 5/21/12
  * Time: 8:52 AM

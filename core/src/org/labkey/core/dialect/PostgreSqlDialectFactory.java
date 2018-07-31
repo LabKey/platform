@@ -93,18 +93,15 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
         if (version >= 93)
         {
             // This approach is used when it's time to deprecate a version of PostgreSQL. Also, change the old dialect's
-            // addAdminWarnings() method to add a message that gets displayed in the page header for admins.
-//            if (93 == version)
-//            {
-//                // PostgreSQL 9.3 is deprecated; support will be removed soon
-//                if (logWarnings)
-//                    _log.warn("LabKey Server no longer supports " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED);
-//
-//                return new PostgreSql93Dialect();
-//            }
-
+            // addAdminWarningMessages() method to add a message that gets displayed in the page header for admins.
             if (93 == version)
+            {
+                // PostgreSQL 9.3 is deprecated; support will be removed soon
+                if (logWarnings)
+                    _log.warn("LabKey Server no longer supports " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED);
+
                 return new PostgreSql93Dialect();
+            }
 
             if (94 == version)
                 return new PostgreSql94Dialect();
@@ -123,7 +120,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
                 return new PostgreSql_10_Dialect();
 
             // 11.x+ gets a warning.
-            if (version >= 11 && logWarnings)
+            if (logWarnings)
                 _log.warn("LabKey Server has not been tested against " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED);
 
             return new PostgreSql_11_Dialect();
