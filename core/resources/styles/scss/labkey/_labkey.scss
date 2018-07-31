@@ -1387,7 +1387,7 @@ div span.labkey-main-menu-icon {
   margin-bottom: 4px;
   margin-left: 8px;
   color: $gray-dark;
-  word-break: break-all;
+  word-break: normal;
 
   // This copies "table-condensed" from bootstrap. Add that class to issues-Changes tables?
   > thead,
