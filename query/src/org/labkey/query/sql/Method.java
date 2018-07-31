@@ -577,13 +577,14 @@ public abstract class Method
 
         public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] fragments)
         {
+            JdbcType jdbcType = null;
             SQLFragment length = null;
             if (fragments.length >= 2)
             {
                 String sqlEscapeTypeName = getTypeArgument(fragments);
                 try
                 {
-                    JdbcType jdbcType = ConvertType.valueOf(sqlEscapeTypeName).jdbcType;
+                    jdbcType = ConvertType.valueOf(sqlEscapeTypeName).jdbcType;
                     String typeName = dialect.getSqlTypeName(jdbcType);
                     if (null == typeName)
                         throw new NullPointerException("No sql type name found for '" + jdbcType.name() + "' in " + dialect.getProductName() + " database");
@@ -595,6 +596,17 @@ public abstract class Method
                 {
                     /* */
                 }
+            }
+
+            if (jdbcType == JdbcType.DOUBLE || jdbcType == JdbcType.REAL)
+            {
+                String s = fragments[0].getRawSQL().toLowerCase();
+                if ("'infinity'".equals(s) || "'+infinity'".equals(s))
+                    return new SQLFragment("?", jdbcType==JdbcType.DOUBLE ? Double.POSITIVE_INFINITY : Float.POSITIVE_INFINITY);
+                if ("'-infinity'".equals(s))
+                    return new SQLFragment("?", jdbcType==JdbcType.DOUBLE ? Double.NEGATIVE_INFINITY : Float.NEGATIVE_INFINITY);
+                if ("'nan'".equals(s))
+                    return new SQLFragment("?", jdbcType==JdbcType.DOUBLE ? Double.NaN : Float.NaN);
             }
 
             SQLFragment ret = new SQLFragment();
