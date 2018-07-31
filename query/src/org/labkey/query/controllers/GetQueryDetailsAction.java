@@ -145,6 +145,16 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         if (null == tinfo)
             throw new NotFoundException("Could not find the query '" + form.getQueryName() + "' in the schema '" + form.getSchemaName() + "'!");
 
+        // check if this query is shadowing a local table
+        if (isUserDefined)
+        {
+            CaseInsensitiveHashSet names = new CaseInsensitiveHashSet(schema.getTableNames());
+            if (names.contains(form.getQueryName()))
+            {
+                resp.put("warning", "This query has the same name as a built-in table.  This may cause unexpected behavior.");
+            }
+        }
+
         if (!isUserDefined && tinfo.isMetadataOverrideable())
             resp.put("isMetadataOverrideable", true);
 

@@ -438,6 +438,10 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
                 tag: 'div',
                 cls: 'lk-qd-description',
                 html: Ext4.htmlEncode(queryDetails.description)
+            },{
+                tag: 'div',
+                cls: 'lk-vq-warn-message',
+                html: Ext4.htmlEncode(queryDetails.exception || queryDetails.warning)
             }]
         };
     },
