@@ -60,17 +60,12 @@
     String databaseProductVersion = bean.scope.getDatabaseProductVersion() + (null != edition ? " (" + edition + ")" : "");
 
     int row = 0;
-
-//    List<AdminConsoleHeaderLinkProvider> providers = null;
-//    if (null != AdminConsoleService.get()) {
-//        providers = AdminConsoleService.get().getAdminConsoleHeaderProviders();
-//    }
 %>
 <style type="text/css">
     body { overflow-y: scroll; }
     .lk-admin-section { display: none; }
     .header-title { margin-bottom: 5px; }
-    .diagnostic-button { margin-bottom: 20px; }
+    .header-link { margin: 0 5px 20px 0; }
 </style>
 <div class="row">
     <div class="col-sm-12 col-md-3">
@@ -85,7 +80,7 @@
         <labkey:panel id="info" className="lk-admin-section">
             <h3 class="header-title labkey-page-section-header">Server Information</h3>
             <% for (NavTree link : bean.getLinks(getViewContext())) { %>
-            <div class="diagnostic-link">
+            <div class="header-link">
                 <a href="<%=h(link.getHref())%>"><%=h(link.getText())%></a>
             </div>
             <% } %>
