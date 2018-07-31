@@ -160,6 +160,7 @@ public class MVDisplayColumn extends DataColumn
     @Override
     public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
     {
+        out.write("<div style=\"margin-top:5px\"></div>");
         super.renderInputHtml(ctx, out, value);
         renderMVPicker(ctx, out);
     }
@@ -169,8 +170,8 @@ public class MVDisplayColumn extends DataColumn
         String formFieldName = ctx.getForm().getFormFieldName(mvIndicatorColumn);
         String selectedMvIndicator = getMvIndicator(ctx);
         Set<String> mvIndicators = MvUtil.getMvIndicators(ctx.getContainer());
-        out.write("<br>Missing Value Indicator:");
-        out.write("<select");
+        out.write("Missing Value Indicator:&nbsp;");
+        out.write("<select style=\"margin-bottom:5px; margin-top:2px\"");
         outputName(ctx, out, formFieldName);
         if (isDisabledInput())
             out.write(" DISABLED");
