@@ -122,13 +122,21 @@ public class ServiceRegistry
      */
     public <T> void registerService(@NotNull Class<T> type, @NotNull T instance)
     {
+        registerService(type, instance, true);
+    }
+
+    public <T> void registerService(@NotNull Class<T> type, @NotNull T instance, boolean registerSpringSingletons)
+    {
         //warn about double-registration
-        assert null == _servicesByClass.get(type) : "A service instance for type " + type.toString() + " is already registered!";
+        assert !registerSpringSingletons || null == _servicesByClass.get(type) : "A service instance for type " + type.toString() + " is already registered!";
 
         _ServiceDef s = new _ServiceDef(type, instance);
         _servicesByClass.put(s.cls, s);
-        ((ConfigurableListableBeanFactory)getApplicationContext().getAutowireCapableBeanFactory()).registerSingleton(s.longName, s.instance);
-        ((ConfigurableListableBeanFactory)getApplicationContext().getAutowireCapableBeanFactory()).registerSingleton(s.shortName, s.instance);
+        if (registerSpringSingletons)
+        {
+            ((ConfigurableListableBeanFactory) getApplicationContext().getAutowireCapableBeanFactory()).registerSingleton(s.longName, s.instance);
+            ((ConfigurableListableBeanFactory) getApplicationContext().getAutowireCapableBeanFactory()).registerSingleton(s.shortName, s.instance);
+        }
     }
 
 

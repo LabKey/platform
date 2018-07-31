@@ -1,7 +1,9 @@
 package org.labkey.api.premium;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.view.ActionURL;
 import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 
 public interface PremiumService
@@ -26,9 +28,19 @@ public interface PremiumService
         return new CommonsMultipartResolver();
     }
 
+    void registerAntiVirusProvider(AntiVirusProvider avp);
+
     static void setInstance(PremiumService instance)
     {
         ServiceRegistry.get().registerService(PremiumService.class, instance);
+    }
+
+    interface AntiVirusProvider
+    {
+        @NotNull String getId();             // something unique e.g. className
+        @NotNull String getDescription();    // e.g. ClamAV Daemon
+        @Nullable ActionURL getConfigurationURL();
+        @NotNull AntiVirusService getService();
     }
 
     class DefaultPremiumService implements PremiumService
@@ -50,5 +62,8 @@ public interface PremiumService
         {
             return false;
         }
+
+        @Override
+        public void registerAntiVirusProvider(AntiVirusProvider avp) {}
     }
 }

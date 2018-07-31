@@ -17,7 +17,12 @@ public interface AntiVirusService
 
     static void setInstance(AntiVirusService impl)
     {
-        ServiceRegistry.get().registerService(AntiVirusService.class, impl);
+        if (ServiceRegistry.get().getService(AntiVirusService.class) == impl)
+            return;
+        if (null == impl)
+            ServiceRegistry.get().unregisterService(AntiVirusService.class);
+        else
+            ServiceRegistry.get().registerService(AntiVirusService.class, impl, false);
     }
 
     enum Result
