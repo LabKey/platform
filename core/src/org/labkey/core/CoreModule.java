@@ -73,7 +73,7 @@ import org.labkey.api.notification.EmailMessage;
 import org.labkey.api.notification.EmailService;
 import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.premium.AntiVirusService;
+import org.labkey.api.premium.PremiumService;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
@@ -330,7 +330,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         CustomLabelService.setInstance(new CustomLabelServiceImpl());
         WarningService.setInstance(new WarningServiceImpl());
         SecurityPointcutService.setInstance(new SecurityPointcutServiceImpl());
-        AntiVirusService.setInstance(new DummyAntiVirusService());
         AdminConsoleService.setInstance(new AdminConsoleServiceImpl());
 
         try
@@ -906,6 +905,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 return results;
             }
         });
+
+        if (AppProps.getInstance().isDevMode())
+            PremiumService.get().registerAntiVirusProvider(new DummyAntiVirusService.Provider());
     }
 
     @Override
