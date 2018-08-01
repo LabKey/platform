@@ -2,6 +2,7 @@ package org.labkey.core.admin;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.pipeline.CancelledException;
 import org.labkey.api.pipeline.LocalDirectory;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
@@ -103,6 +104,10 @@ public class CopyFileRootPipelineJob extends PipelineJob
             info("Job complete");
             setStatus(status);
         }
+        catch (CancelledException e)
+        {
+            setActiveTaskStatus(TaskStatus.cancelled);  // Need to set because cleaning upo LocalDirectory can getActiveTaskStatus
+        }
         finally
         {
             finallyCleanUpLocalDirectory();
@@ -126,14 +131,13 @@ public class CopyFileRootPipelineJob extends PipelineJob
             info("Source: " + (null != sourceStr ? sourceStr : "null"));
             info("Destination: " + (null != destStr ? destStr : "null"));
 
-            if (!Files.exists(sourceDir) || !Files.isDirectory(sourceDir))     // Source must exist
+            if (!Files.exists(sourceDir) || !Files.isDirectory(sourceDir))
             {
-                error("Source not directory: " + FileUtil.pathToString(sourceDir));
-                status = TaskStatus.error;
+                warn("Source does not exist or is not directory: " + FileUtil.pathToString(sourceDir));
             }
             else if (Files.exists(destDir) && !Files.isDirectory(destDir))          // Dest doesn't have to exist
             {
-                error("Destination not directory: " + FileUtil.pathToString(destDir));
+                error("Destination exists and is not directory: " + FileUtil.pathToString(destDir));
                 status = TaskStatus.error;
             }
             else
