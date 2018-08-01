@@ -73,8 +73,10 @@ public class InsertIssueDefAction extends UserSchemaAction
         btnSubmit.setScript("IssueDefUtil.verifyIssueDefName('" + submitGUID + "');");
         btnSubmit.setActionType(ActionButton.Action.SCRIPT);
         btnSubmit.setId(submitGUID);
+        btnSubmit.setPrimary(true);
         ActionButton btnCancel = new ActionButton(getCancelURL(tableForm), "Cancel");
         btnCancel.setId(cancelGUID);
+        btnCancel.setPrimary(false);
 
         bb.add(btnSubmit);
         bb.add(btnCancel);
