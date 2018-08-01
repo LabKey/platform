@@ -1426,7 +1426,11 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(SiteSettingsForm form, boolean reshow, BindException errors)
         {
-            SiteSettingsBean bean = new SiteSettingsBean(form.isUpgradeInProgress(), form.isTestInPage());
+            SiteSettingsBean bean = new SiteSettingsBean(
+                    form.isUpgradeInProgress(),
+                    form.isTestInPage(),
+                    new HelpTopic("setRoots#map").getSimpleLinkHtml("more info...")
+            );
 
             return new JspView<>("/org/labkey/core/admin/mapNetworkDrive.jsp", bean, errors);
         }
@@ -1451,13 +1455,14 @@ public class AdminController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("setRoots#map");
             return appendAdminNavTrail(root, "Map Network Drive", this.getClass());
         }
     }
 
     public static class SiteSettingsBean
     {
-        public final String helpLink = new HelpTopic("configAdmin").getSimpleLinkHtml("more info...");
+        public final String helpLink;
         public final boolean upgradeInProgress;
         public final boolean testInPage;
         public final boolean showSelfReportExceptions;
@@ -1467,6 +1472,15 @@ public class AdminController extends SpringActionController
             this.upgradeInProgress = upgradeInProgress;
             this.testInPage = testInPage;
             this.showSelfReportExceptions = MothershipReport.isShowSelfReportExceptions();
+            helpLink = new HelpTopic("configAdmin").getSimpleLinkHtml("more info...");
+        }
+
+        private SiteSettingsBean(boolean upgradeInProgress, boolean testInPage, String helpLink)
+        {
+            this.upgradeInProgress = upgradeInProgress;
+            this.testInPage = testInPage;
+            this.showSelfReportExceptions = MothershipReport.isShowSelfReportExceptions();
+            this.helpLink = helpLink;
         }
     }
 
