@@ -55,7 +55,7 @@ import java.util.concurrent.Callable;
  * Date: 4/2/13
  * Time: 2:54 PM
  */
-abstract public class AbstractDataDefinedTable extends SimpleUserSchema.SimpleTable
+abstract public class AbstractDataDefinedTable extends CustomPermissionsTable
 {
     protected String _pk;
 
@@ -74,7 +74,7 @@ abstract public class AbstractDataDefinedTable extends SimpleUserSchema.SimpleTa
         setTitle(tableName);
     }
 
-    public SimpleUserSchema.SimpleTable init()
+    public CustomPermissionsTable init()
     {
         super.init();
 
