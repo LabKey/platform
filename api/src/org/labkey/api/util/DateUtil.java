@@ -17,6 +17,7 @@ package org.labkey.api.util;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.jetbrains.annotations.NotNull;
@@ -36,6 +37,10 @@ import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalQueries;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -739,12 +744,28 @@ validNum:       {
     {
         if (s.contains(":") || s.contains("Z"))
         {
-            return DatatypeConverter.parseDateTime(s).getTimeInMillis();
+            try
+            {
+                // This new approach is compatible with Java 8/9/10/11...
+                TemporalAccessor accessor = DateTimeFormatter.ISO_DATE.parse(s);
+                long newMillis = accessor.query(TemporalQueries.localDate()).atStartOfDay(accessor.query(TemporalQueries.zone())).toInstant().toEpochMilli();
+
+                // Temporarily test new approach against old; only works on Java 8. TODO: Remove this check.
+                if (SystemUtils.IS_JAVA_1_8)
+                {
+                    long oldMillis = DatatypeConverter.parseDateTime(s).getTimeInMillis();
+                    assert oldMillis == newMillis;
+                }
+
+                return newMillis;
+            }
+            catch (DateTimeParseException e)
+            {
+                // Ignore
+            }
         }
-        else
-        {
-            throw new IllegalArgumentException();
-        }
+
+        throw new IllegalArgumentException();
     }
 
     // Parse using a specific pattern... used where strict parsing or non-standard pattern is required
