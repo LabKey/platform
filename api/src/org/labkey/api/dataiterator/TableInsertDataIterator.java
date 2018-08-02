@@ -30,6 +30,7 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.StatementUtils;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService.InsertOption;
 
@@ -275,6 +276,28 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
             }
             _scope.releaseConnection(_conn);
         }
+    }
+
+    // Using temporarily to isolate #34735
+    private void checkConnection()
+    {
+        try
+        {
+            assert null == _conn || !_conn.isClosed() : "Connection should not be closed!";
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
+    @Override
+    public boolean next() throws BatchValidationException
+    {
+        checkConnection();
+        boolean next = super.next();
+        checkConnection();
+        return next;
     }
 
     private enum INSERT
