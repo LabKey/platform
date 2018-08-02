@@ -108,6 +108,7 @@ import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.AdminReadPermission;
+import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
@@ -7396,7 +7397,7 @@ public class AdminController extends SpringActionController
         public void checkPermissions()
         {
             super.checkPermissions();
-            if (!getUser().isDeveloper())
+            if (!getContainer().hasPermission(getUser(), PlatformDeveloperPermission.class))
                 throw new UnauthorizedException();
         }
 
@@ -7442,7 +7443,7 @@ public class AdminController extends SpringActionController
         public void checkPermissions()
         {
             super.checkPermissions();
-            if (!getUser().isDeveloper())
+            if (!getContainer().hasPermission(getUser(), PlatformDeveloperPermission.class))
                 throw new UnauthorizedException();
         }
 
@@ -7500,7 +7501,7 @@ public class AdminController extends SpringActionController
         public void checkPermissions()
         {
             super.checkPermissions();
-            if (!getUser().isDeveloper())
+            if (!getContainer().hasPermission(getUser(), PlatformDeveloperPermission.class))
                 throw new UnauthorizedException();
         }
 
@@ -7526,7 +7527,7 @@ public class AdminController extends SpringActionController
         public void checkPermissions()
         {
             super.checkPermissions();
-            if (!getUser().isDeveloper())
+            if (!getContainer().hasPermission(getUser(), PlatformDeveloperPermission.class))
                 throw new UnauthorizedException();
         }
 

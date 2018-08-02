@@ -67,6 +67,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.EditSharedViewPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AdminConsole;
@@ -764,7 +765,7 @@ public class QueryController extends SpringActionController
 
     NavTree _appendSchemaActionNavTrail(NavTree root, SchemaKey schemaKey, String queryName)
     {
-        if (getContainer().hasPermission(getUser(), AdminPermission.class) || getUser().isDeveloper())
+        if (getContainer().hasOneOf(getUser(), AdminPermission.class, PlatformDeveloperPermission.class))
         {
             // Don't show the full query nav trail to non-admin/non-developer users as they almost certainly don't
             // want it

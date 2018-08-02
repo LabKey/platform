@@ -79,6 +79,8 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
@@ -126,6 +128,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -172,7 +175,7 @@ public class ListController extends SpringActionController
 
     public static NavTree appendRootNavTrail(NavTree root, Container c, User user)
     {
-        if (c.hasPermission(user, AdminPermission.class) || user.isDeveloper())
+        if (c.hasOneOf(user, AdminPermission.class, PlatformDeveloperPermission.class))
         {
             root.addChild("Lists", getBeginURL(c));
         }

@@ -18,13 +18,20 @@ package org.labkey.core;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.log4j.Logger;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DeferredUpgrade;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.Encryption;
+import org.labkey.api.security.Group;
+import org.labkey.api.security.MutableSecurityPolicy;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityPolicyManager;
+import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.settings.NetworkDriveProps;
 import org.labkey.api.settings.WriteableAppProps;
 
@@ -117,5 +124,37 @@ public class CoreUpgradeCode implements UpgradeCode
         {
             return lookupStringValue(key, "");
         }
+    }
+
+    /**
+     * Invoked from 18.21-18.22
+     */
+    @SuppressWarnings({"UnusedDeclaration"})
+    @DeferredUpgrade
+    public void updateDevelopersGroup(final ModuleContext context)
+    {
+        if (!context.isNewInstall())
+        {
+            // Add PlatformDeveloperRole to "/", Home, Shared and Home/support, if they exist
+            addDevRoleAssignment(ContainerManager.getRoot());
+            Container shared = ContainerManager.getForPath(ContainerManager.SHARED_CONTAINER_PATH);
+            if (null != shared)
+                addDevRoleAssignment(shared);
+            Container home = ContainerManager.getForPath(ContainerManager.HOME_PROJECT_PATH);
+            if (null != home)
+            {
+                addDevRoleAssignment(home);
+                Container support = ContainerManager.getForPath(Container.DEFAULT_SUPPORT_PROJECT_PATH);
+                if (null != support)
+                    addDevRoleAssignment(support);
+            }
+        }
+    }
+
+    private void addDevRoleAssignment(Container container)
+    {
+        MutableSecurityPolicy policy = new MutableSecurityPolicy(SecurityPolicyManager.getPolicy(container));
+        policy.addRoleAssignment(SecurityManager.getGroup(Group.groupDevelopers), PlatformDeveloperRole.class);
+        SecurityPolicyManager.savePolicy(policy);
     }
 }

@@ -59,8 +59,10 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.roles.DeveloperRole;
+import org.labkey.api.security.permissions.TrustedBrowserDeveloperPermission;
+import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
@@ -100,7 +102,6 @@ import org.labkey.wiki.model.WikiTree;
 import org.labkey.wiki.model.WikiVersion;
 import org.labkey.wiki.model.WikiVersionsGrid;
 import org.labkey.wiki.model.WikiView;
-import org.labkey.wiki.permissions.IncludeScriptPermission;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -2295,13 +2296,13 @@ public class WikiController extends SpringActionController
 
                 Set<Role> contextualRoles = new HashSet<>();
 
-                if (user.isDeveloper())
-                    contextualRoles.add(RoleManager.getRole(DeveloperRole.class));
+                if (container.hasPermission(user, PlatformDeveloperPermission.class))
+                    contextualRoles.add(RoleManager.getRole(PlatformDeveloperRole.class));
 
                 SecurityPolicy policy = SecurityPolicyManager.getPolicy(getContainer());
-                PageFlowUtil.validateHtml(body, tidyErrors, policy.hasPermission(user, IncludeScriptPermission.class, contextualRoles));
+                PageFlowUtil.validateHtml(body, tidyErrors, policy.hasPermission(user, TrustedBrowserDeveloperPermission.class, contextualRoles));
 
-                if (!getUser().isDeveloper())
+                if (!container.hasPermission(user, PlatformDeveloperPermission.class))
                 {
                     this.sanitizedHtml = PageFlowUtil.sanitizeHtml(body, tidyErrors);
                 }

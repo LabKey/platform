@@ -96,6 +96,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.Role;
@@ -1910,11 +1911,12 @@ public class AnnouncementsController extends SpringActionController
                 String body = bean.getBody();
                 if (!StringUtils.isEmpty(body))
                 {
-                    body = PageFlowUtil.validateHtml(body, validateErrors, getUser().isDeveloper());
+                    boolean hasDeveloperPermission = getContainer().hasPermission(getUser(), PlatformDeveloperPermission.class);
+                    body = PageFlowUtil.validateHtml(body, validateErrors, hasDeveloperPermission);
                     for (String err : validateErrors)
                         errors.reject(ERROR_MSG, err);
                     bean.setBody(body);
-                    if (!getUser().isDeveloper())
+                    if (!hasDeveloperPermission)
                     {
                         _sanitizedHtml = PageFlowUtil.sanitizeHtml(body, validateErrors);
                     }

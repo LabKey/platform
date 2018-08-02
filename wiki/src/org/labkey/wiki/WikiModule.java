@@ -33,8 +33,6 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
-import org.labkey.api.security.roles.DeveloperRole;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
@@ -49,7 +47,6 @@ import org.labkey.wiki.model.CollaborationFolderType;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiType;
 import org.labkey.wiki.model.WikiVersion;
-import org.labkey.wiki.permissions.IncludeScriptPermission;
 import org.labkey.wiki.query.WikiSchema;
 import org.labkey.wiki.renderer.MarkdownServiceImpl;
 import org.labkey.wiki.renderer.RadeoxRenderer;
@@ -114,9 +111,6 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
 
     public void doStartup(ModuleContext moduleContext)
     {
-        RoleManager.registerPermission(new IncludeScriptPermission(), false);
-        RoleManager.getRole(DeveloperRole.class).addPermission(IncludeScriptPermission.class);
-        
         ContainerManager.addContainerListener(new WikiContainerListener());
         FolderTypeManager.get().registerFolderType(this, new CollaborationFolderType());
         WebdavService.get().addProvider(new WikiWebdavProvider());

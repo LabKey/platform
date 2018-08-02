@@ -103,7 +103,6 @@ import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.NestedGroupsTest;
 import org.labkey.api.security.PasswordExpiration;
-import org.labkey.api.security.PrincipalType;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPointcutService;
 import org.labkey.api.security.SecurityPointcutServiceImpl;
@@ -113,6 +112,7 @@ import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.roles.NoPermissionsRole;
+import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
@@ -657,20 +657,21 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         GroupManager.bootstrapGroup(Group.groupAdministrators, "Administrators");
         GroupManager.bootstrapGroup(Group.groupUsers, "Users");
         GroupManager.bootstrapGroup(Group.groupGuests, "Guests");
-        GroupManager.bootstrapGroup(Group.groupDevelopers, "Developers", PrincipalType.ROLE);
+        GroupManager.bootstrapGroup(Group.groupDevelopers, "Developers");
 
         // Other containers inherit permissions from root; admins get all permissions, users & guests none
         Role noPermsRole = RoleManager.getRole(NoPermissionsRole.class);
         Role siteAdminRole = RoleManager.getRole(SiteAdminRole.class);
         Role readerRole = RoleManager.getRole(ReaderRole.class);
+        Role devRole = RoleManager.getRole(PlatformDeveloperRole.class);
 
-        ContainerManager.bootstrapContainer("/", siteAdminRole, noPermsRole, noPermsRole);
+        ContainerManager.bootstrapContainer("/", siteAdminRole, noPermsRole, noPermsRole, devRole);
 
         // Users & guests can read from /home
-        ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, siteAdminRole, readerRole, readerRole);
+        ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, siteAdminRole, readerRole, readerRole, devRole);
 
         // Only users can read from /Shared
-        ContainerManager.bootstrapContainer(ContainerManager.SHARED_CONTAINER_PATH, siteAdminRole, readerRole, noPermsRole);
+        ContainerManager.bootstrapContainer(ContainerManager.SHARED_CONTAINER_PATH, siteAdminRole, readerRole, noPermsRole, devRole);
 
         try
         {

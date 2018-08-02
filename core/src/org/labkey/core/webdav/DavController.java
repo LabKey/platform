@@ -64,6 +64,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -3125,7 +3126,7 @@ public class DavController extends SpringActionController
                 File file = resource.getFile();
                 if (range != null)
                 {
-                    if (resource.getContentType().startsWith("text/html") && !getUser().isDeveloper())
+                    if (resource.getContentType().startsWith("text/html") && !getContainer().hasPermission(getUser(), PlatformDeveloperPermission.class))
                         throw new DavException(WebdavStatus.SC_FORBIDDEN, "Partial writing of html files is not allowed");
                     if (range.start > raf.length() || (range.end - range.start) > Integer.MAX_VALUE)
                         throw new DavException(WebdavStatus.SC_REQUESTED_RANGE_NOT_SATISFIABLE);
@@ -3145,7 +3146,7 @@ public class DavController extends SpringActionController
                 }
                 else
                 {
-                    if (resource.getContentType().startsWith("text/html") && !getUser().isDeveloper())
+                    if (resource.getContentType().startsWith("text/html") && !getContainer().hasPermission(getUser(), PlatformDeveloperPermission.class))
                     {
                         _ByteArrayOutputStream bos = new _ByteArrayOutputStream(4*1025);
                         FileUtil.copyData(getFileStream().openInputStream(), bos);
@@ -3747,7 +3748,7 @@ public class DavController extends SpringActionController
     boolean isSafeCopy(WebdavResource src, WebdavResource dest)
     {
         // Don't allow creating text/html via rename (circumventing script checking)
-        if (src.isFile() && !getUser().isDeveloper())
+        if (src.isFile() && !getContainer().hasPermission(getUser(), PlatformDeveloperPermission.class))
         {
             String contentTypeSrc = StringUtils.defaultString(src.getContentType(),"");
             String contentTypeDest = StringUtils.defaultString(dest.getContentType(),"");

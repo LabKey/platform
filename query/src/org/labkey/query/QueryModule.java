@@ -65,6 +65,7 @@ import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
@@ -364,7 +365,7 @@ public class QueryModule extends DefaultModule
     {
         // Don't show Query nav trails to users who aren't admins or developers since they almost certainly don't want
         // to go to those links
-        if (c.hasPermission(user, AdminPermission.class) || user.isDeveloper())
+        if (c.hasOneOf(user, AdminPermission.class, PlatformDeveloperPermission.class))
         {
             return super.getTabURL(c, user);
         }

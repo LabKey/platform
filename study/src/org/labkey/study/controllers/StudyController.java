@@ -107,6 +107,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.Dataset;
@@ -4786,7 +4788,7 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(CustomizeParticipantViewForm form, boolean reshow, BindException errors)
         {
             // We know that the user is at least a folder admin - they must also be either a developer
-            if (!(getUser().isDeveloper()))
+            if (!(getContainer().hasPermission(getUser(), PlatformDeveloperPermission.class)))
                 throw new UnauthorizedException();
             Study study = getStudyRedirectIfNull();
             CustomParticipantView view = StudyManager.getInstance().getCustomParticipantView(study);
@@ -6065,7 +6067,10 @@ public class StudyController extends BaseStudyController
             }
 
             // Show customize link to site admins (who are always developers) and folder admins who are developers:
-            if (_showCustomizeLink && (c.hasPermission(getViewContext().getUser(), AdminPermission.class) && getViewContext().getUser().isDeveloper()))
+            Set<Class<? extends Permission>> permissions = new HashSet<>();
+            permissions.add(AdminPermission.class);
+            permissions.add(PlatformDeveloperPermission.class);
+            if (_showCustomizeLink && c.hasPermissions(getViewContext().getUser(), permissions))
             {
                 ActionURL customizeURL = new ActionURL(CustomizeParticipantViewAction.class, c);
                 customizeURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().getLocalURIString());

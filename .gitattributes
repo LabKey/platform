@@ -187,6 +187,7 @@ core/resources/schemas/dbscripts/postgresql/core-17.30-18.10.sql -text
 core/resources/schemas/dbscripts/postgresql/core-17.31-17.32.sql -text
 core/resources/schemas/dbscripts/postgresql/core-18.10-18.11.sql -text
 core/resources/schemas/dbscripts/postgresql/core-18.10-18.20.sql -text
+core/resources/schemas/dbscripts/postgresql/core-18.21-18.22.sql -text
 core/resources/schemas/dbscripts/postgresql/core-create.sql -text
 core/resources/schemas/dbscripts/postgresql/core-drop.sql -text
 core/resources/schemas/dbscripts/postgresql/labkey-0.00-13.30.sql -text
@@ -247,6 +248,7 @@ core/resources/schemas/dbscripts/sqlserver/core-17.20-17.30.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-17.30-18.10.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-17.31-17.32.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-18.10-18.20.sql -text
+core/resources/schemas/dbscripts/sqlserver/core-18.21-18.22.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-create.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-drop.sql -text
 core/resources/schemas/dbscripts/sqlserver/group_concat_install.sql -text
@@ -3693,7 +3695,6 @@ wiki/src/org/labkey/wiki/model/WikiVersion.java -text
 wiki/src/org/labkey/wiki/model/WikiVersionsGrid.java -text
 wiki/src/org/labkey/wiki/model/WikiView.java -text
 wiki/src/org/labkey/wiki/model/WikiWebPart.java -text
-wiki/src/org/labkey/wiki/permissions/IncludeScriptPermission.java -text
 wiki/src/org/labkey/wiki/query/PathDisplayColumn.java -text
 wiki/src/org/labkey/wiki/query/WikiSchema.java -text
 wiki/src/org/labkey/wiki/renderer/ClientDependencySubstitutionHandler.java -text

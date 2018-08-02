@@ -43,6 +43,7 @@ import org.labkey.api.security.Group;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 
 import java.io.IOException;
@@ -158,10 +159,8 @@ public class ToursTable extends FilteredTable<AnnouncementSchema>
 
         if (perm.equals(ReadPermission.class))
             permission = getContainer().hasPermission(user, perm);
-        else if (user instanceof User)
-            permission = ((User) user).isDeveloper();
         else
-            permission = user.isInGroup(Group.groupDevelopers);
+            permission = getContainer().hasPermission(user, PlatformDeveloperPermission.class);
 
         return permission;
     }

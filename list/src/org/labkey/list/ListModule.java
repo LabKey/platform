@@ -33,6 +33,7 @@ import org.labkey.api.module.SpringModule;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.StudySerializationRegistry;
@@ -172,7 +173,7 @@ public class ListModule extends SpringModule
     {
         // Don't show full List nav trails to users that aren't admins or developers since they almost certainly don't
         // want to go to those links
-        if (c.hasPermission(user, AdminPermission.class) || user.isDeveloper())
+        if (c.hasOneOf(user, AdminPermission.class, PlatformDeveloperPermission.class))
         {
             return super.getTabURL(c, user);
         }
