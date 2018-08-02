@@ -740,6 +740,7 @@ validNum:       {
         throw new ConversionException("Can't parse \"" + s + "\" into a date");
     }
 
+    // Examples: "2001-02-03+01:00", "2001-02-03Z"
     private static long parseXMLDate(String s)
     {
         if (s.contains(":") || s.contains("Z"))
