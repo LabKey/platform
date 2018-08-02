@@ -576,9 +576,7 @@ public class IssuesController extends SpringActionController
                 _issue.setAssignedTo(defaultUser.getUserId());
 
             _issue.open(getContainer(), getUser());
-
-            if (NumberUtils.isNumber(form.getPriority()))
-                _issue.setPriority(Integer.parseInt(form.getPriority()));
+            _issue.setPriority(form.getPriority());
 
             // add any of the default values from the URL for the custom/extra properties
             CustomColumnConfiguration customColumnConfig = getColumnConfiguration();

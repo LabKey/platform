@@ -171,7 +171,7 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
         issue.setIssueDefName(def.getName());
         issue.setAssignedTo(user.getUserId());
         issue.setTitle(title);
-        issue.setPriority(3);
+        issue.setPriority("3");
         issue.setType("Todo");
         if (body != null)
             issue.addComment(user, body);

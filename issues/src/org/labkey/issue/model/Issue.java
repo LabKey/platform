@@ -200,7 +200,8 @@ public class Issue extends Entity implements Serializable, Cloneable
 
     public String getType()
     {
-        return (String)_properties.get("type");
+        Object o = _properties.get("type");
+        return o != null ? String.valueOf(o) : "";
     }
 
 
@@ -211,7 +212,8 @@ public class Issue extends Entity implements Serializable, Cloneable
 
     public String getArea()
     {
-        return (String)_properties.get("area");
+        Object o = _properties.get("area");
+        return o != null ? String.valueOf(o) : "";
     }
 
     public void setArea(String area)
@@ -219,12 +221,13 @@ public class Issue extends Entity implements Serializable, Cloneable
         _properties.put("area", area);
     }
 
-    public Integer getPriority()
+    public String getPriority()
     {
-        return (Integer)_properties.get("priority");
+        Object o = _properties.get("priority");
+        return o != null ? String.valueOf(o) : "";
     }
 
-    public void setPriority(Integer priority)
+    public void setPriority(String priority)
     {
         if (priority != null)
             _properties.put("priority", priority);
@@ -232,7 +235,8 @@ public class Issue extends Entity implements Serializable, Cloneable
 
     public String getMilestone()
     {
-        return (String)_properties.get("milestone");
+        Object o = _properties.get("milestone");
+        return o != null ? String.valueOf(o) : "";
     }
 
     public void setMilestone(String milestone)

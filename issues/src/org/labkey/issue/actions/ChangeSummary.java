@@ -169,8 +169,8 @@ public class ChangeSummary
             // Keep track of whether this issue is new
             boolean newIssue = previous.getIssueId() == 0;
 
-            String prevPriStringVal = previous.getPriority() == null ? "" : String.valueOf(previous.getPriority());
-            String priStringVal = issue.getPriority() == null ? "" : String.valueOf(issue.getPriority());
+            String prevPriStringVal = previous.getPriority() == null ? "" : previous.getPriority();
+            String priStringVal = issue.getPriority() == null ? "" : issue.getPriority();
 
             // issueChanges is not defined yet, but it leaves things flexible
             sbHTMLChanges.append("<table class=issues-Changes>");

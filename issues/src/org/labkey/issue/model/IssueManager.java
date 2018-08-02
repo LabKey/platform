@@ -1771,7 +1771,7 @@ public class IssueManager
                 issue.setAssignedTo(user.getUserId());
                 issue.setTitle("This is a junit test bug");
                 issue.addComment(user, "new issue");
-                issue.setPriority(3);
+                issue.setPriority("3");
                 issue.setIssueDefName(IssueListDef.DEFAULT_ISSUE_LIST_NAME);
 
                 factory.toMap(issue, issue.getProperties());
