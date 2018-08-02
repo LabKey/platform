@@ -60,7 +60,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
     @Override
     public @Nullable SqlDialect createFromMetadata(DatabaseMetaData md, boolean logWarnings, boolean primaryDataSource) throws SQLException, DatabaseNotSupportedException
     {
-        if (!(StringUtils.startsWithIgnoreCase(md.getURL(), JDBC_PREFIX) && PRODUCT_NAME.equals(md.getDatabaseProductName())))
+        if (!(StringUtils.startsWithIgnoreCase(md.getURL(), JDBC_PREFIX)))
             return null;
 
         String databaseProductVersion = md.getDatabaseProductVersion();
@@ -150,11 +150,6 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
         public void testDialectRetrieval()
         {
             final String connectionUrl = "jdbc:postgresql:";
-
-            // These should result in bad database exception
-            badProductName("Gobbledygood", 8.0, 9.6, "", connectionUrl);
-            badProductName("Postgres", 8.0, 9.6, "", connectionUrl);
-            badProductName("postgresql", 8.0, 9.6, "", connectionUrl);
 
             // < 9.3 should result in bad version number exception
             badVersion("PostgreSQL", 0.0, 9.2, null, connectionUrl);
