@@ -794,7 +794,7 @@
     <p>
         A scripting engine enables the execution of scripting code on the server, for example, in a report or a QC validation script.
         Scripting languages like JavaScript, R, and Perl can be configured below.
-        For details see <a href="https://www.labkey.org/Documentation/wiki-page.view?name=configureScripting" target="_blank">Configure Scripting Engines</a>.
+        For details see <%=helpLink("configureScripting", "Configure Scripting Engines")%>.
     </p>
 
     <div id="enginesGrid" class="extContainer"></div>
