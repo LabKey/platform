@@ -1406,9 +1406,12 @@ api/src/org/labkey/api/security/permissions/EditSpecimenDataPermission.java -tex
 api/src/org/labkey/api/security/permissions/EnableRestrictedModules.java -text
 api/src/org/labkey/api/security/permissions/InsertPermission.java -text
 api/src/org/labkey/api/security/permissions/Permission.java -text
+api/src/org/labkey/api/security/permissions/PlatformDeveloperPermission.java -text
 api/src/org/labkey/api/security/permissions/ReadPermission.java -text
 api/src/org/labkey/api/security/permissions/ReadSomePermission.java -text
 api/src/org/labkey/api/security/permissions/SeeUserEmailAddressesPermission.java -text
+api/src/org/labkey/api/security/permissions/TrustedAnalystPermission.java -text
+api/src/org/labkey/api/security/permissions/TrustedBrowserDeveloperPermission.java -text
 api/src/org/labkey/api/security/permissions/UpdatePermission.java -text
 api/src/org/labkey/api/security/permissions/UserManagementPermission.java -text
 api/src/org/labkey/api/security/roles/AbstractContextualRole.java -text
@@ -1420,7 +1423,6 @@ api/src/org/labkey/api/security/roles/AuthorRole.java -text
 api/src/org/labkey/api/security/roles/CanSeeAuditLogRole.java -text
 api/src/org/labkey/api/security/roles/CanUseSendMessageApi.java -text
 api/src/org/labkey/api/security/roles/ContextualRole.java -text
-api/src/org/labkey/api/security/roles/DeveloperRole.java -text
 api/src/org/labkey/api/security/roles/EditorRole.java -text
 api/src/org/labkey/api/security/roles/EmailNonUsersPermission.java -text
 api/src/org/labkey/api/security/roles/EmailNonUsersRole.java -text
@@ -1428,6 +1430,7 @@ api/src/org/labkey/api/security/roles/FolderAdminRole.java -text
 api/src/org/labkey/api/security/roles/HasContextualRoles.java -text
 api/src/org/labkey/api/security/roles/NoPermissionsRole.java -text
 api/src/org/labkey/api/security/roles/OwnerRole.java -text
+api/src/org/labkey/api/security/roles/PlatformDeveloperRole.java -text
 api/src/org/labkey/api/security/roles/ProjectAdminRole.java -text
 api/src/org/labkey/api/security/roles/ReaderRole.java -text
 api/src/org/labkey/api/security/roles/RestrictedReaderRole.java -text

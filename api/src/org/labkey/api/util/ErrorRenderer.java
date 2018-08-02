@@ -22,6 +22,7 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
@@ -128,7 +129,7 @@ public class ErrorRenderer
             renderException(_exception, out);
 
             // Since there might be SQL in here, maybe don't dump for non-admin/dev
-            if (null != user && user.isDeveloper())
+            if (null != user && context.getContainer().hasPermission(user, PlatformDeveloperPermission.class))
             {
                 Map<Enum,String> decorations = ExceptionUtil.getExceptionDecorations(_exception);
                 for (Map.Entry<Enum,String> e : decorations.entrySet())

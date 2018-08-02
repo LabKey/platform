@@ -24,6 +24,7 @@ import org.labkey.api.jsp.JspBase;
 import org.labkey.api.jsp.JspLoader;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
+import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
@@ -158,7 +159,9 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
             exposeModelAsRequestAttributes(((BindException)_errors).getModel(), request, response);
         exposeModelAsRequestAttributes(_renderMap, request, response);
 
-        boolean devMode = AppProps.getInstance().isDevMode() || (_viewContext != null && _viewContext.getUser() != null && _viewContext.getUser().isDeveloper());
+        boolean devMode = AppProps.getInstance().isDevMode() ||
+                (_viewContext != null && _viewContext.getUser() != null && _viewContext.getContainer() != null &&
+                        _viewContext.getContainer().hasPermission(_viewContext.getUser(), PlatformDeveloperPermission.class));
         boolean isDebugHtml = devMode && this.getFrame() != FrameType.NOT_HTML && StringUtils.startsWith(response.getContentType(), "text/html");
         if (isDebugHtml)
             response.getWriter().print("<!--" + _page.getClass() + "-->");

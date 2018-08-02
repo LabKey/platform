@@ -29,6 +29,7 @@ import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.TabStripView;
@@ -155,7 +156,7 @@ public abstract class ScriptReport extends AbstractReport
 
         if (errors.isEmpty())
         {
-            if (user.isDeveloper())
+            if (container.hasPermission(user, PlatformDeveloperPermission.class))
             {
                 if (isPrivate() || getDescriptor().hasCustomAccess())
                 {
@@ -177,7 +178,7 @@ public abstract class ScriptReport extends AbstractReport
         {
             if (isPrivate())
             {
-                if (user.isDeveloper())
+                if (container.hasPermission(user, PlatformDeveloperPermission.class))
                 {
                     if (!container.hasPermission(user, ShareReportPermission.class))
                         errors.add(new SimpleValidationError("You must be in the Author role to share a private script report."));

@@ -65,7 +65,7 @@
     boolean readOnly = bean.isReadOnly() || !report.canEdit(user, c);
     boolean allowShareReport = report.allowShareButton(user, c);
     Mode mode = bean.getMode();
-    boolean sourceAndHelp = mode.showSourceAndHelp(ctx.getUser()) || bean.isSourceTabVisible();
+    boolean sourceAndHelp = mode.showSourceAndHelp(ctx) || bean.isSourceTabVisible();
     String knitrFormat = bean.getKnitrFormat() != null ? bean.getKnitrFormat() : "None";
     boolean useGetDataApi = report.getReportId() == null || bean.isUseGetDataApi();
     ActionURL saveURL = urlProvider(ReportUrls.class).urlAjaxSaveScriptReport(c);

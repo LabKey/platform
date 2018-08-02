@@ -58,6 +58,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.AuthorRole;
+import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
@@ -2167,7 +2168,8 @@ public class ContainerManager
         return bootstrapContainer(Container.DEFAULT_SUPPORT_PROJECT_PATH,
                 RoleManager.getRole(SiteAdminRole.class),
                 RoleManager.getRole(AuthorRole.class),
-                RoleManager.getRole(ReaderRole.class));
+                RoleManager.getRole(ReaderRole.class),
+                RoleManager.getRole(PlatformDeveloperRole.class));
     }
 
     public static String[] getAliasesForContainer(Container c)
@@ -2233,7 +2235,7 @@ public class ContainerManager
      * are dropped.
      */
     @NotNull
-    public static Container bootstrapContainer(String path, Role adminRole, Role userRole, Role guestRole)
+    public static Container bootstrapContainer(String path, Role adminRole, Role userRole, Role guestRole, Role devRole)
     {
         Container c = null;
 
@@ -2276,6 +2278,7 @@ public class ContainerManager
             policy.addRoleAssignment(SecurityManager.getGroup(Group.groupAdministrators), adminRole);
             policy.addRoleAssignment(SecurityManager.getGroup(Group.groupUsers), userRole);
             policy.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), guestRole);
+            policy.addRoleAssignment(SecurityManager.getGroup(Group.groupDevelopers), devRole);
             SecurityPolicyManager.savePolicy(policy);
         }
 

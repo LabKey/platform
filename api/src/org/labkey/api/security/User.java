@@ -32,7 +32,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.ApplicationAdminRole;
-import org.labkey.api.security.roles.DeveloperRole;
+import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
@@ -315,7 +315,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         if (isApplicationAdmin())
             roles.add(RoleManager.getRole(ApplicationAdminRole.class));
         if (isDeveloper())
-            roles.add(RoleManager.getRole(DeveloperRole.class));
+            roles.add(RoleManager.getRole(PlatformDeveloperRole.class));
 
         return roles;
     }

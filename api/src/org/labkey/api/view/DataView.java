@@ -29,6 +29,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableViewForm;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.template.ClientDependency;
@@ -253,7 +254,7 @@ public abstract class DataView extends WebPartView<RenderContext>
                 if (null != resolveURL && seen.add(resolveURL))
                 {
                     User user = getRenderContext().getViewContext().getUser();
-                    if (user.isSiteAdmin() || user.isDeveloper())
+                    if (user.isInSiteAdminGroup() || getRenderContext().getContainer().hasPermission(user, PlatformDeveloperPermission.class))
                     {
                         out.write("&nbsp;");
                         out.write(PageFlowUtil.textLink(StringUtils.defaultString(resolveText, "resolve"), resolveURL));

@@ -69,7 +69,6 @@ public class RoleManager
         registerRole(new SubmitterRole());
         registerRole(new NoPermissionsRole());
         registerRole(new OwnerRole());
-        registerRole(new DeveloperRole());
         registerRole(new TroubleshooterRole());
         registerRole(new SeeEmailAddressesRole());
         registerRole(new CanSeeAuditLogRole());
@@ -77,6 +76,7 @@ public class RoleManager
         registerRole(new SharedViewEditorRole());
         registerRole(new SeeFilePathsRole(), false);
         registerRole(new CanUseSendMessageApi(), false);
+        registerRole(new PlatformDeveloperRole(), false);
     }
 
     public static Role getRole(String name)

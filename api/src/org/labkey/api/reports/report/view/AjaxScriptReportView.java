@@ -19,9 +19,10 @@ package org.labkey.api.reports.report.view;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.ReportIdentifier;
-import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.ViewContext;
 
 /*
 * User: adam
@@ -50,9 +51,9 @@ public class AjaxScriptReportView extends JspView<ScriptReportBean>
             _preferSourceTab = preferSourceTab;
         }
 
-        public boolean showSourceAndHelp(User user)
+        public boolean showSourceAndHelp(ViewContext context)
         {
-            return _allowSourceAndHelp && user.isDeveloper();
+            return _allowSourceAndHelp && context.getContainer().hasPermission(context.getUser(), PlatformDeveloperPermission.class);
         }
 
         public String getUniqueID()

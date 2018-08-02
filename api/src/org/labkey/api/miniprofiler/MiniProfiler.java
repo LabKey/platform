@@ -25,6 +25,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.MemTracker;
@@ -83,7 +84,8 @@ public class MiniProfiler
     {
         // CONSIDER: Add CanSeeProfilingPermission ?
         User user = context.getUser();
-        return ModuleLoader.getInstance().isStartupComplete() && user != null && user.isDeveloper() && getSettings().isEnabled();
+        return ModuleLoader.getInstance().isStartupComplete() && user != null && getSettings().isEnabled() &&
+                context.getContainer() != null && context.getContainer().hasPermission(user, PlatformDeveloperPermission.class);
     }
 
     /** Get site-wide settings. */

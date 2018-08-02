@@ -25,6 +25,7 @@ import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.QueryUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -433,7 +434,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                     folderAdmin.addChildren(FolderAdminMenu.getFolderElements(ctx, tabContainer));
                     menu.addChild(folderAdmin);
                 }
-                if (user.isDeveloper())
+                if (ctx.hasPermission("MultiPortalFolderType", PlatformDeveloperPermission.class))
                 {
                     menu.addChild(new NavTree("Schema Browser", PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(tabContainer)));
                 }

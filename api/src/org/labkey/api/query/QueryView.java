@@ -42,6 +42,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
@@ -356,7 +357,7 @@ public class QueryView extends WebPartView<Object>
                 if (null != resolveURL && seen.add(resolveURL))
                 {
                     String resolveText = ExceptionUtil.getExceptionDecoration(e, ExceptionUtil.ExceptionInfo.ResolveText);
-                    if (getUser().isDeveloper())
+                    if (getContainer().hasPermission(getUser(), PlatformDeveloperPermission.class))
                     {
                         out.write(" ");
                         out.print(PageFlowUtil.textLink(StringUtils.defaultString(resolveText, "resolve"), resolveURL));
