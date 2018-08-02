@@ -89,10 +89,10 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.UploadLog;
 
-import javax.servlet.ServletException;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -651,30 +651,31 @@ public class AssayPublishManager implements AssayPublishService
         if (null == pipelineRoot || !pipelineRoot.isValid())
             throw new IOException("Please have your administrator set up a pipeline root for this folder.");
 
-        File dir = pipelineRoot.resolvePath(AssayFileWriter.DIR_NAME);
-        if (!dir.exists())
+        Path dir = pipelineRoot.resolveToNioPath(AssayFileWriter.DIR_NAME);
+        if (null == dir)
+            throw new IOException("Cannot create directory uploaded data: " + AssayFileWriter.DIR_NAME);
+
+        if (!Files.exists(dir))
         {
-            boolean success = dir.mkdir();
-            if (!success)
-                throw new IOException("Could not create directory: " + dir);
+            Files.createDirectory(dir);
         }
 
         //File name is studyname_datasetname_date_hhmm.ss
         Date dateCreated = new Date();
         String dateString = DateUtil.formatDateTime(dateCreated, "yyy-MM-dd-HHmm");
         int id = 0;
-        File file;
+        Path file;
         do
         {
             String extension = StringUtils.defaultString(filename == null ? "tsv" : FileUtil.getExtension(filename), "tsv");
             String extra = id++ == 0 ? "" : String.valueOf(id);
             String fileName = dsd.getStudy().getLabel() + "-" + dsd.getLabel() + "-" + dateString + extra + "." + extension;
             fileName = fileName.replace('\\', '_').replace('/', '_').replace(':', '_');
-            file = new File(dir, fileName);
+            file = dir.resolve(fileName);
         }
-        while (file.exists());
+        while (Files.exists(file));
 
-        try (FileOutputStream out = new FileOutputStream(file))
+        try (OutputStream out = Files.newOutputStream(file))
         {
             IOUtils.copy(tsv.openInputStream(), out);
             tsv.closeInputStream();
@@ -686,7 +687,8 @@ public class AssayPublishManager implements AssayPublishService
         ul.setCreated(dateCreated);
         ul.setUserId(user.getUserId());
         ul.setStatus("Initializing");
-        ul.setFilePath(file.getPath());
+        String filePath = FileUtil.hasCloudScheme(file) ? FileUtil.pathToString(file) : file.toFile().getPath();
+        ul.setFilePath(filePath);
 
         return Table.insert(user, getTinfoUpdateLog(), ul);
     }
