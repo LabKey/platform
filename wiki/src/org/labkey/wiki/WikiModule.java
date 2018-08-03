@@ -89,15 +89,6 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
 
         WikiService.setInstance(WikiManager.get());
 
-        try
-        {
-            MarkdownService.setInstance(new MarkdownServiceImpl());
-        }
-        catch (Exception e)
-        {
-            _log.error(e);
-        }
-
         AttachmentService.get().registerAttachmentType(WikiType.get());
     }
 
@@ -132,6 +123,15 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
 
         WikiSchema.register(this);
         WikiController.registerAdminConsoleLinks();
+
+        try
+        {
+            MarkdownService.setInstance(new MarkdownServiceImpl());
+        }
+        catch (Exception e)
+        {
+            _log.error(e);
+        }
     }
 
     private void populateHomeProjectWebpartsWithStartupProps()

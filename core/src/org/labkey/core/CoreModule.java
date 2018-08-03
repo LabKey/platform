@@ -89,7 +89,8 @@ import org.labkey.api.reader.HTMLDataLoader;
 import org.labkey.api.reader.JSONDataLoader;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.reader.TabLoader;
-import org.labkey.api.reports.LabKeyScriptEngineManager;
+import org.labkey.api.reports.LabkeyScriptEngineManager;
+import org.labkey.core.reports.ScriptEngineManagerImpl;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.script.RhinoService;
@@ -117,6 +118,7 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConfigProperty;
@@ -809,8 +811,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         SecurityManager.populateGroupRolesWithStartupProps();
         SecurityManager.populateUserRolesWithStartupProps();
         SecurityManager.populateUserGroupsWithStartupProps();
+
+        ScriptEngineManagerImpl mgr = new ScriptEngineManagerImpl();
+        ServiceRegistry.get().registerService(LabkeyScriptEngineManager.class, mgr);
         // populate script engine definitions values read from startup properties as appropriate for not bootstrap
-        LabKeyScriptEngineManager.populateScriptEngineDefinitionsWithStartupProps();
+        mgr.populateScriptEngineDefinitionsWithStartupProps();
+
         // populate folder types from startup properties as appropriate for not bootstrap
         FolderTypeManager.get().populateWithStartupProps();
 
@@ -1125,7 +1131,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 BuilderObjectFactory.TestCase.class,
                 ChecksumUtil.TestCase.class,
                 MaterializedQueryHelper.TestCase.class,
-                LabKeyScriptEngineManager.TestCase.class,
+                ScriptEngineManagerImpl.TestCase.class,
                 ConvertHelper.TestCase.class,
                 RReport.TestCase.class
         ));

@@ -47,7 +47,6 @@ import org.labkey.api.query.SasExportScriptFactory;
 import org.labkey.api.query.SimpleTableDomainKind;
 import org.labkey.api.query.URLExportScriptFactory;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
-import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.chart.ChartRendererFactory;
 import org.labkey.api.reports.report.ChartQueryReport;
@@ -67,7 +66,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.SummaryStatisticRegistry;
@@ -122,7 +120,6 @@ import org.labkey.query.view.InheritedQueryDataViewProvider;
 import org.labkey.query.view.QueryDataViewProvider;
 import org.labkey.query.view.QueryWebPartFactory;
 
-import javax.script.ScriptEngineManager;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -246,8 +243,6 @@ public class QueryModule extends DefaultModule
             PipelineService.get().registerPipelineProvider(new ReportsPipelineProvider(this));
         ReportsController.registerAdminConsoleLinks();
         QueryController.registerAdminConsoleLinks();
-
-        ServiceRegistry.get().registerService(ScriptEngineManager.class, new LabKeyScriptEngineManager());
 
         FolderSerializationRegistry folderRegistry = FolderSerializationRegistry.get();
         if (null != folderRegistry)

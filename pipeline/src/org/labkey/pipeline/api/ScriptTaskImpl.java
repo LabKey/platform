@@ -29,7 +29,7 @@ import org.labkey.api.pipeline.cmd.TaskPath;
 import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
-import org.labkey.api.reports.LabKeyScriptEngineManager;
+import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.reports.RScriptEngine;
 import org.labkey.api.reports.RserveScriptEngine;
 import org.labkey.api.security.SecurityManager;
@@ -44,7 +44,6 @@ import org.labkey.pipeline.analysis.CommandTaskImpl;
 import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import java.io.File;
 import java.io.IOException;
@@ -151,19 +150,18 @@ public class ScriptTaskImpl extends CommandTaskImpl
         return replacements;
     }
 
-    private ScriptEngine getScriptEngine(ScriptEngineManager mgr, String extension)
+    private ScriptEngine getScriptEngine(LabkeyScriptEngineManager mgr, String extension)
     {
         ScriptEngine engine = mgr.getEngineByName(extension);
         if (engine == null)
         {
             //
-            // since we allow both R and Rserve engines now, ask for Rserve if we are using the LabKeyScriptEngineManager and
+            // since we allow both R and Rserve engines now, ask for Rserve if we are using the ScriptEngineManagerImpl and
             // Rserve has been enabled
             //
-            if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING) &&
-                    mgr instanceof LabKeyScriptEngineManager)
+            if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
             {
-                engine = ((LabKeyScriptEngineManager) mgr).getEngineByExtension(extension, true, false);
+                engine = mgr.getEngineByExtension(extension, true, false);
             }
             else
             {
@@ -180,7 +178,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
     protected boolean runCommand(RecordedAction action) throws IOException, PipelineJobException
     {
         // Get the script engine
-        ScriptEngineManager mgr = ServiceRegistry.get().getService(ScriptEngineManager.class);
+        LabkeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
         if (mgr == null)
             throw new PipelineJobException("Script engine manager not available");
 

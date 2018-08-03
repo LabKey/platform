@@ -24,6 +24,7 @@ import org.labkey.api.pipeline.cmd.JobParamToCommandArgs;
 import org.labkey.api.pipeline.cmd.TaskPath;
 import org.labkey.api.pipeline.cmd.TaskToCommandArgs;
 import org.labkey.api.pipeline.cmd.ValueInLine;
+import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.services.ServiceRegistry;
@@ -36,7 +37,6 @@ import org.labkey.pipeline.xml.ScriptType;
 import org.labkey.pipeline.xml.TaskType;
 
 import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -178,7 +178,7 @@ public class ScriptTaskFactory extends SimpleTaskFactory
 
     private static ScriptEngine ensureEngine(String interpreter)
     {
-        ScriptEngineManager mgr = ServiceRegistry.get().getService(ScriptEngineManager.class);
+        LabkeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
         if (mgr == null)
             throw new IllegalStateException("Script engine manager not available");
 

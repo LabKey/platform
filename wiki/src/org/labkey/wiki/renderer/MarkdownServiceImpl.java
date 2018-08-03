@@ -18,8 +18,9 @@ package org.labkey.wiki.renderer;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.reports.LabKeyScriptEngineManager;
+import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
 
@@ -37,8 +38,8 @@ public class MarkdownServiceImpl implements MarkdownService
     public MarkdownServiceImpl() throws Exception
     {
         ScriptEngine engine;
-        LabKeyScriptEngineManager engineManager = new LabKeyScriptEngineManager();
-        engine = engineManager.getEngineByName("nashorn");
+        LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+        engine = svc.getEngineByName("nashorn");
 
         Module module = ModuleLoader.getInstance().getModule("Wiki");
         Path path = Path.parse("scripts/").append("markdown-it.js");

@@ -41,6 +41,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.resource.FileResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
@@ -72,7 +73,6 @@ import org.labkey.study.controllers.assay.AssayController;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.script.ScriptEngineManager;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -669,7 +669,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
 
             if (scriptDir != null && scriptDir.exists())
             {
-                final ScriptEngineManager manager = ServiceRegistry.get().getService(ScriptEngineManager.class);
+                final LabkeyScriptEngineManager manager = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
 
                 Collection<? extends Resource> scripts = scriptDir.list();
                 List<File> moduleScriptFiles = new ArrayList<>(scripts.size());

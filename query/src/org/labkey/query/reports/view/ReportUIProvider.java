@@ -23,7 +23,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
-import org.labkey.api.reports.LabKeyScriptEngineManager;
+import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ChartQueryReport;
@@ -50,7 +50,6 @@ import org.labkey.query.reports.LinkReport;
 import org.labkey.query.reports.ReportsController;
 
 import javax.script.ScriptEngineFactory;
-import javax.script.ScriptEngineManager;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -170,12 +169,11 @@ public class ReportUIProvider extends DefaultReportUIProvider
                     _getIconPath(RReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(RReport.TYPE)));
         }
 
-        ScriptEngineManager manager = ServiceRegistry.get().getService(ScriptEngineManager.class);
-
+        LabkeyScriptEngineManager manager = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
         for (ScriptEngineFactory factory : manager.getEngineFactories())
         {
             // don't add an entry for R, since we have a specific report type above.
-            if (canCreateScript && LabKeyScriptEngineManager.isFactoryEnabled(factory) && !factory.getLanguageName().equalsIgnoreCase("R"))
+            if (canCreateScript && manager.isFactoryEnabled(factory) && !factory.getLanguageName().equalsIgnoreCase("R"))
             {
                 ScriptReportBean bean = new ScriptReportBean(settings);
                 bean.setRedirectUrl(returnUrl.getLocalURIString());
