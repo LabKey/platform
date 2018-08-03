@@ -75,6 +75,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -101,7 +102,6 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
@@ -1124,7 +1124,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             if (scriptFile.isFile())
             {
                 String ext = FileUtil.getExtension(scriptFile);
-                ScriptEngine engine = ServiceRegistry.get().getService(ScriptEngineManager.class).getEngineByExtension(ext);
+                ScriptEngine engine = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class).getEngineByExtension(ext);
                 if (engine != null)
                 {
                     sb.append(separator);

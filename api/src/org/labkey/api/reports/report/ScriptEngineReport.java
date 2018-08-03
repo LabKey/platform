@@ -43,6 +43,7 @@ import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.reader.Readers;
+import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.r.ParamReplacement;
@@ -75,7 +76,6 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.VirtualFile;
 
 import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import java.io.BufferedReader;
 import java.io.File;
@@ -144,7 +144,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     public ScriptEngine getScriptEngine()
     {
         String extension = getDescriptor().getProperty(ScriptReportDescriptor.Prop.scriptExtension);
-        ScriptEngineManager mgr = ServiceRegistry.get().getService(ScriptEngineManager.class);
+        LabkeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
 
         return mgr.getEngineByExtension(extension);
     }

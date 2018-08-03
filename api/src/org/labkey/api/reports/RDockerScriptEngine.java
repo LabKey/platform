@@ -153,9 +153,9 @@ public class RDockerScriptEngine extends RScriptEngine
     }
 
     @NotNull
-    private static LabKeyScriptEngineManager.EngineDefinition mockEngineDefinition()
+    private static EngineDefinition mockEngineDefinition()
     {
-        LabKeyScriptEngineManager.EngineDefinition engineDef = new LabKeyScriptEngineManager.EngineDefinition();
+        EngineDefinition engineDef = new EngineDefinition();
         engineDef.setExtensions(new String[]{"R", "r"});
         engineDef.setPandocEnabled(true); // TODO: ?
         return engineDef;

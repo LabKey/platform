@@ -30,6 +30,7 @@ import org.labkey.api.qc.TransformResult;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.reports.ExternalScriptEngine;
+import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
@@ -41,7 +42,6 @@ import org.labkey.api.util.Pair;
 import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
 import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedReader;
 import java.io.File;
@@ -106,7 +106,7 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
                     throw new ValidationException(e.getMessage());
                 }
 
-                ScriptEngine engine = ServiceRegistry.get().getService(ScriptEngineManager.class).getEngineByExtension(FileUtil.getExtension(scriptFile));
+                ScriptEngine engine = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class).getEngineByExtension(FileUtil.getExtension(scriptFile));
                 if (engine != null)
                 {
                     File scriptDir = getScriptDir(context.getProtocol(), scriptFile, isDefault);
