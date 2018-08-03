@@ -1,7 +1,11 @@
 package org.labkey.api.premium;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.JobRunner;
+import org.labkey.api.view.ViewBackgroundInfo;
 
 import java.io.File;
 
@@ -28,6 +32,7 @@ public interface AntiVirusService
     enum Result
     {
         OK,
+        CONFIGURATION_ERROR,
         FAILED
     }
 
@@ -35,11 +40,19 @@ public interface AntiVirusService
     {
         public ScanResult(Result r, String m)
         {
-            result = r;
-            message = m;
+            this.result = r;
+            this.message = m;
+            filename = null;
+        }
+        public ScanResult(@Nullable String name, Result r, String m)
+        {
+            this.result = r;
+            this.filename = name;
+            this.message = m;
         }
 
         public final Result result;
+        public final String filename;
         public final String message;
     }
 
@@ -59,10 +72,11 @@ public interface AntiVirusService
      *
      * The caller should not expect the result callbacks to be called synchronously or on the same thread.
      */
-    default <T> void queueScan(File f, T extra, Callback<T> callbackFn)
+    default <T> void queueScan(@NotNull File f, @Nullable String originalName, ViewBackgroundInfo info, T extra, Callback<T> callbackFn)
     {
-        JobRunner.getDefault().submit(()-> callbackFn.call(f, extra, scan(f)));
+        JobRunner.getDefault().submit(()-> callbackFn.call(f, extra, scan(f, originalName, info)));
     }
 
-    ScanResult scan(File f);
+    /** originalName and user are used for error reporting and logging */
+    ScanResult scan(@NotNull File f, @Nullable String originalName, ViewBackgroundInfo info);
 }

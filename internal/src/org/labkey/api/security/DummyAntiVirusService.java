@@ -2,24 +2,33 @@ package org.labkey.api.security;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.premium.AntiVirusService;
 import org.labkey.api.premium.PremiumService;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewBackgroundInfo;
 
 import java.io.File;
 import java.io.IOException;
 
+import static org.apache.commons.lang3.StringUtils.defaultString;
 import static org.labkey.api.premium.AntiVirusService.Result.FAILED;
 import static org.labkey.api.premium.AntiVirusService.Result.OK;
 
 public class DummyAntiVirusService implements AntiVirusService
 {
+    final static Logger LOG = Logger.getLogger(DummyAntiVirusService.class);
+
     @Override
-    public ScanResult scan(File f)
+    public ScanResult scan(@NotNull File f, @Nullable String originalName, ViewBackgroundInfo info)
     {
+        originalName = defaultString(originalName, f.getName());
+
         try
         {
             long len = f.length();
@@ -28,14 +37,26 @@ public class DummyAntiVirusService implements AntiVirusService
             {
                 String s = IOUtils.toString(Readers.getReader(f));
                 if (StringUtils.equals(TEST_VIRUS_CONTENT, s.trim()))
-                    return new ScanResult(FAILED, "virus found");
+                {
+                    String logmessage = "File failed virus scan: LABKEY virus detected";
+                    LOG.warn( (null!=info.getUser() ? info.getUser().getEmail() + " " : "") + logmessage );
+                    FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(
+                            info.getContainer().getId(), logmessage
+                    );
+                    if (null != info.getURL())
+                        event.setDirectory(info.getURL().getPath());
+                    event.setFile(originalName);
+                    AuditLogService.get().addEvent(info.getUser(), event);
+
+                    return new ScanResult(originalName, FAILED, "LABKEY virus detected in file: '" + originalName + "'");
+                }
             }
         }
         catch (IOException x)
         {
-            return new ScanResult(FAILED, x.getMessage());
+            return new ScanResult(originalName, FAILED, x.getMessage());
         }
-        return new ScanResult(OK, null);
+        return new ScanResult(originalName, OK, null);
     }
 
 

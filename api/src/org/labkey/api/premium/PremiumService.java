@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewBackgroundInfo;
 import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 
 public interface PremiumService
@@ -23,7 +24,7 @@ public interface PremiumService
 
     boolean isFileWatcherSupported();
 
-    default CommonsMultipartResolver getMultipartResolver()
+    default CommonsMultipartResolver getMultipartResolver(ViewBackgroundInfo info)
     {
         return new CommonsMultipartResolver();
     }

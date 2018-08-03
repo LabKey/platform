@@ -437,7 +437,8 @@ public abstract class SpringActionController implements Controller, HasViewConte
             {
                 try
                 {
-                    request = PremiumService.get().getMultipartResolver().resolveMultipart(request);
+                    ViewBackgroundInfo info = new ViewBackgroundInfo(context.getContainer(), context.getUser(), context.getActionURL().clone());
+                    request = PremiumService.get().getMultipartResolver(info).resolveMultipart(request);
                     context.setRequest(request);
                     // ViewServlet doesn't check validChars for parameters in a multipart request, so check again
                     if (!ViewServlet.validChars(request))
