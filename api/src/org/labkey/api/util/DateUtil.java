@@ -696,7 +696,7 @@ validNum:       {
                 if (len == 16 && s.charAt(13)==':') // no seconds 2001-02-03 00:00
                     s = s + ":00";
                 if (s.charAt(10) == 'T')
-                    s = s.substring(0, 10) + ' ' + s.substring(11, s.length());
+                    s = s.substring(0, 10) + ' ' + s.substring(11);
                 Timestamp ts = Timestamp.valueOf(s);
                 ms = ts.getTime();
             }
@@ -745,28 +745,45 @@ validNum:       {
     {
         if (s.contains(":") || s.contains("Z"))
         {
-            try
+            // For now, parse on Java 8 with old parsing approach. TODO: Remove this.
+            if (SystemUtils.IS_JAVA_1_8)
             {
-                // This new approach is compatible with Java 8/9/10/11...
-                TemporalAccessor accessor = DateTimeFormatter.ISO_DATE.parse(s);
-                long newMillis = accessor.query(TemporalQueries.localDate()).atStartOfDay(accessor.query(TemporalQueries.zone())).toInstant().toEpochMilli();
-
-                // Temporarily test new approach against old; only works on Java 8. TODO: Remove this check.
-                if (SystemUtils.IS_JAVA_1_8)
-                {
-                    long oldMillis = DatatypeConverter.parseDateTime(s).getTimeInMillis();
-                    assert oldMillis == newMillis;
-                }
-
-                return newMillis;
+                return DatatypeConverter.parseDateTime(s).getTimeInMillis();
             }
-            catch (DateTimeParseException e)
+            else
             {
-                // Ignore
+                // This approach is compatible with Java 8/9/10/11... but it doesn't address all the cases yet
+                TemporalAccessor accessor = findCompatibleAccessor(s);
+
+                if (null != accessor)
+                {
+                    return accessor.query(TemporalQueries.localDate()).atStartOfDay(accessor.query(TemporalQueries.zone())).toInstant().toEpochMilli();
+                }
             }
         }
 
         throw new IllegalArgumentException();
+    }
+
+    private static @Nullable TemporalAccessor findCompatibleAccessor(String s)
+    {
+        try
+        {
+            return DateTimeFormatter.ISO_DATE.parse(s);
+        }
+        catch (DateTimeParseException ignored)
+        {
+        }
+
+        try
+        {
+            return DateTimeFormatter.ISO_DATE_TIME.parse(s);
+        }
+        catch (DateTimeParseException ignored)
+        {
+        }
+
+        return null;
     }
 
     // Parse using a specific pattern... used where strict parsing or non-standard pattern is required
@@ -1507,6 +1524,13 @@ Parse:
             assertEquals(datetimeExpected-6000, parseDateTime("03 feb 2001 04:05 am"));
             assertEquals(datetimeExpected, parseDateTime("03-FEB-2001-04:05:06")); // FCS dates
 
+            // Test parseXMLDate() handling of time and date time values
+            if (SystemUtils.IS_JAVA_1_8) // TODO: Fix for Java 10 and remove this check
+            {
+                assertEquals(Timestamp.valueOf("2018-08-01 23:51:26.551").getTime(), parseDateTime("2018-08-02T06:51:26.551Z"));
+                assertEquals(Timestamp.valueOf("1970-01-01 15:02:00").getTime(), parseDateTime("15:02:00.0000000"));
+            }
+
             // illegal
             assertIllegalDateTime("2");
             assertIllegalDateTime("2/3");
@@ -1533,7 +1557,7 @@ Parse:
             assertIllegalDateTime("17000101");
             assertIllegalDateTime("23000101");
 
-            // Test XML date format
+            // Test parseXMLDate() handling of XML date formats
             assertXmlDateMatches(parseDate("2001-02-03+01:00"));
             assertXmlDateMatches(parseDate("2001-02-03Z"));
             assertIllegalDateTime("115468001");
