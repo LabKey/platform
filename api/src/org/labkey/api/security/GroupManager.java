@@ -56,7 +56,6 @@ import org.labkey.security.xml.UserRefType;
 import org.labkey.security.xml.UserRefsType;
 
 import java.beans.PropertyChangeEvent;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -140,11 +139,9 @@ public class GroupManager
     public static String getGroupGraphSvg(Collection<Group> groups, User user, boolean hideUnconnected)
     {
         StringBuilder sb = new StringBuilder("digraph groups\n{\n");
-        HashSet<Group> groupSet = new HashSet<>();
         HashSet<Integer> connected = new HashSet<>();
-        LinkedList<Group> recurse = new LinkedList<>();
-        recurse.addAll(groups);
-        groupSet.addAll(groups);
+        LinkedList<Group> recurse = new LinkedList<>(groups);
+        HashSet<Group> groupSet = new HashSet<>(groups);
 
         while (!recurse.isEmpty())
         {
@@ -266,8 +263,7 @@ public class GroupManager
         if (group != null && xmlGroupType != null && (xmlGroupType.getGroups() != null || xmlGroupType.getUsers() != null))
         {
             // remove existing group members, full replacement
-            List<UserPrincipal> membersToDelete = new ArrayList<>();
-            membersToDelete.addAll(SecurityManager.getGroupMembers(group, MemberType.ALL_GROUPS_AND_USERS));
+            List<UserPrincipal> membersToDelete = new ArrayList<>(SecurityManager.getGroupMembers(group, MemberType.ALL_GROUPS_AND_USERS));
             SecurityManager.deleteMembers(group, membersToDelete);
 
             if (xmlGroupType.getGroups() != null)
@@ -566,7 +562,7 @@ public class GroupManager
 
     public static Group copyGroupToContainer(Group g, Container c)
     {
-        return copyGroupToContainer(g, c, new HashMap<UserPrincipal, UserPrincipal>(), 1);
+        return copyGroupToContainer(g, c, new HashMap<>(), 1);
     }
 
     private static Group copyGroupToContainer(Group g, Container c, HashMap<UserPrincipal, UserPrincipal> groupMap)
