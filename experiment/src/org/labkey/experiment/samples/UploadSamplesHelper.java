@@ -25,9 +25,11 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.SimpleTranslator;
@@ -51,6 +53,7 @@ import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
@@ -91,6 +94,9 @@ public class UploadSamplesHelper
 {
     private static final Logger _log = Logger.getLogger(UploadSamplesHelper.class);
     private static final String MATERIAL_LSID_SUFFIX = "ToBeReplaced";
+    private static final SchemaKey SCHEMA_EXP = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME);
+    private static final SchemaKey SCHEMA_EXP_DATA = SchemaKey.fromString(SCHEMA_EXP, ExpSchema.NestedSchemas.data.name());
+    private static final SchemaKey SCHEMA_SAMPLES = SchemaKey.fromParts(SamplesSchema.SCHEMA_NAME);
 
     UploadMaterialSetForm _form;
     private MaterialSource _materialSource;
@@ -679,10 +685,20 @@ public class UploadSamplesHelper
 
         if (!skipDerivation && (source.getParentCol() != null || !inputOutputColumns.isEmpty()))
         {
-            // TODO: replace with a cache
-            Map<String, List<ExpMaterialImpl>> potentialParents = new HashMap<>();
-
             assert rows.size() == helper._materials.size() : "Didn't find as many materials as we have rows";
+
+            RemapCache cache = new RemapCache();
+            Map<Integer, ExpMaterial> materialCache = new HashMap<>();
+            Map<Integer, ExpData> dataCache = new HashMap<>();
+
+            // We need to make sure that the set of potential parents points to the same object as our list of recently
+            // inserted materials. This is important because if creating the sample derivation run changes the material
+            // at all (setting its source run, for example), we need to be sure that we don't later save a different
+            // instance of the same material that doesn't have the edit.
+            for (ExpMaterial m : helper._materials)
+            {
+                materialCache.put(m.getRowId(), m);
+            }
 
             List<UploadSampleRunRecord> runRecords = new ArrayList<>();
             for (int i = 0; i < rows.size(); i++)
@@ -699,7 +715,8 @@ public class UploadSamplesHelper
                 Pair<RunInputOutputBean, RunInputOutputBean> inputsAndOutputs = resolveInputsAndOutputs(
                         _form.getUser(), getContainer(),
                         source, inputOutputColumns,
-                        row, potentialParents, helper);
+                        row,
+                        cache, materialCache, dataCache);
 
                 if (inputsAndOutputs.first != null)
                 {
@@ -878,7 +895,10 @@ public class UploadSamplesHelper
     @NotNull
     public static Pair<RunInputOutputBean, RunInputOutputBean> resolveInputsAndOutputs(User user, Container c,
                                                                          Set<Pair<String, String>> parentNames,
-                                                                         @Nullable MaterialSource source)
+                                                                         @Nullable MaterialSource source,
+                                                                         RemapCache cache,
+                                                                         Map<Integer, ExpMaterial> materialMap,
+                                                                         Map<Integer, ExpData> dataMap)
             throws ExperimentException, ValidationException
     {
         Map<ExpMaterial, String> parentMaterials = new HashMap<>();
@@ -892,13 +912,12 @@ public class UploadSamplesHelper
             String parentColName = pair.first;
             String parentValue = pair.second;
 
-            // TODO: Avoid looking up the SampleSet and DataClass on every iteration
             String[] parts = parentColName.split("\\.|/");
             if (parts.length == 2)
             {
                 if (parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_INPUT_PARENT))
                 {
-                    ExpMaterial sample = findMaterial(c, user, parts[1], parentValue);
+                    ExpMaterial sample = findMaterial(c, user, parts[1], parentValue, cache, materialMap);
                     if (sample != null)
                         parentMaterials.put(sample, "Sample");
                     else
@@ -906,7 +925,7 @@ public class UploadSamplesHelper
                 }
                 else if (parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_OUTPUT_CHILD))
                 {
-                    ExpMaterial sample = findMaterial(c, user, parts[1], parentValue);
+                    ExpMaterial sample = findMaterial(c, user, parts[1], parentValue, cache, materialMap);
                     if (sample != null)
                         childMaterials.put(sample, "Sample");
                     else
@@ -916,7 +935,7 @@ public class UploadSamplesHelper
                 {
                     if (source != null)
                         ensureTargetColumnLookup(user, c, source, parentColName, "exp.data", parts[1]);
-                    ExpData data = findData(c, user, parts[1], parentValue);
+                    ExpData data = findData(c, user, parts[1], parentValue, cache, dataMap);
                     if (data != null)
                         parentData.put(data, data.getName());
                     else
@@ -924,7 +943,7 @@ public class UploadSamplesHelper
                 }
                 else if (parts[0].equalsIgnoreCase(ExpData.DATA_OUTPUT_CHILD))
                 {
-                    ExpData data = findData(c, user, parts[1], parentValue);
+                    ExpData data = findData(c, user, parts[1], parentValue, cache, dataMap);
                     if (data != null)
                         childData.put(data, data.getName());
                     else
@@ -948,10 +967,13 @@ public class UploadSamplesHelper
     Pair<RunInputOutputBean, RunInputOutputBean> resolveInputsAndOutputs(User user, Container c, MaterialSource source,
                                                            Set<String> parentColumns,
                                                            Map<String, Object> row,
-                                                           Map<String, List<ExpMaterialImpl>> potentialParents,
-                                                           MaterialImportHelper helper) throws ExperimentException, ValidationException
+                                                           RemapCache cache,
+                                                           Map<Integer, ExpMaterial> materialCache,
+                                                           Map<Integer, ExpData> dataCache)
+            throws ExperimentException, ValidationException
     {
         RunInputOutputBean parents = null;
+
 
         //
         // legacy magic column value method
@@ -962,43 +984,12 @@ public class UploadSamplesHelper
             String newParent = row.get(source.getParentCol()) == null ? null : row.get(source.getParentCol()).toString();
             if (newParent != null)
             {
-                if (parentInputMap.isEmpty())
+                List<ExpMaterial> parentMaterials = resolveParentMaterials(c, user, newParent, cache, materialCache);
+                int index = 1;
+                for (ExpMaterial parentMaterial : parentMaterials)
                 {
-                    if (potentialParents.isEmpty())
-                    {
-                        // Map from material name to material of all materials in all sample sets visible from this location
-                        potentialParents = ExperimentServiceImpl.get().getSamplesByName(_form.getContainer(), _form.getUser());
-                        if (potentialParents.isEmpty())
-                            potentialParents.put("NO-SAMPLES", null); // avoid re-querying if there are no samples
-
-                        // We need to make sure that the set of potential parents points to the same object as our list of recently
-                        // inserted materials. This is important because if creating the sample derivation run changes the material
-                        // at all (setting its source run, for example), we need to be sure that we don't later save a different
-                        // instance of the same material that doesn't have the edit.
-                        for (ExpMaterial material : helper._materials)
-                        {
-                            List<ExpMaterialImpl> possibleDuplicates = potentialParents.get(material.getName());
-                            assert possibleDuplicates != null && !possibleDuplicates.isEmpty() : "There should be at least one material with the same name, but found no matches for " + material.getName();
-                            if (possibleDuplicates != null)
-                            {
-                                for (int i = 0; i < possibleDuplicates.size(); i++)
-                                {
-                                    if (possibleDuplicates.get(i).getRowId() == material.getRowId())
-                                    {
-                                        possibleDuplicates.set(i, (ExpMaterialImpl) material);
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    List<ExpMaterial> parentMaterials = resolveParentMaterials(c, user, newParent, potentialParents);
-                    int index = 1;
-                    for (ExpMaterial parentMaterial : parentMaterials)
-                    {
-                        parentInputMap.put(parentMaterial, "Sample" + (index == 1 ? "" : Integer.toString(index)));
-                        index++;
-                    }
+                    parentInputMap.put(parentMaterial, "Sample" + (index == 1 ? "" : Integer.toString(index)));
+                    index++;
                 }
             }
 
@@ -1024,7 +1015,7 @@ public class UploadSamplesHelper
         }
 
         // resolve the parent and children
-        Pair<RunInputOutputBean, RunInputOutputBean> ret = resolveInputsAndOutputs(user, c, parentValues, source);
+        Pair<RunInputOutputBean, RunInputOutputBean> ret = resolveInputsAndOutputs(user, c, parentValues, source, cache, materialCache, dataCache);
 
         // merge in the parents from legacy parentsCol
         if (parents != null)
@@ -1066,7 +1057,8 @@ public class UploadSamplesHelper
         }
     }
 
-    private List<ExpMaterial> resolveParentMaterials(Container c, User user, String newParent, Map<String, List<ExpMaterialImpl>> materials) throws ValidationException, ExperimentException
+    private List<ExpMaterial> resolveParentMaterials(Container c, User user, String newParent, RemapCache cache, Map<Integer, ExpMaterial> materialCache)
+            throws ValidationException
     {
         List<ExpMaterial> parents = new ArrayList<>();
 
@@ -1074,10 +1066,20 @@ public class UploadSamplesHelper
         for (String parentName : parentNames)
         {
             parentName = parentName.trim();
-            List<? extends ExpMaterial> potentialParents = materials.get(parentName);
-            if (potentialParents != null && potentialParents.size() == 1)
+
+            ExpMaterial material = null;
+            try
             {
-                parents.add(potentialParents.get(0));
+                material = findMaterial(c, user, null, parentName, cache, materialCache);
+            }
+            catch (ConversionException e)
+            {
+                throw new ValidationException("Failed to find sample parent: " + e.getMessage());
+            }
+
+            if (material != null)
+            {
+                parents.add(material);
             }
             else
             {
@@ -1090,57 +1092,59 @@ public class UploadSamplesHelper
                     String sampleSetName = parentName.substring(0, dotIndex);
 
                     // See if there's potentially a container path prefixed
+                    Container targetedContainer = c;
                     int i = sampleSetName.indexOf(".");
                     if (i != -1 && sampleSetName.startsWith("/"))
                     {
                         String folderPath = sampleSetName.substring(0, i);
-                        Container targetedContainer = ContainerManager.getForPath(folderPath);
+                        Container candidateContainer = ContainerManager.getForPath(folderPath);
                         // Make sure the container exists and the user has permission to see it
-                        if (targetedContainer != null && targetedContainer.hasPermission(_form.getUser(), ReadPermission.class))
+                        if (candidateContainer != null && candidateContainer.hasPermission(_form.getUser(), ReadPermission.class))
                         {
-                            c = targetedContainer;
+                            targetedContainer = candidateContainer;
                             sampleSetName = sampleSetName.substring(i + 1);
                         }
                     }
 
                     String sampleName = parentName.substring(dotIndex + 1);
-                    parent = findMaterial(c, user, sampleSetName, sampleName);
+                    parent = findMaterial(targetedContainer, user, sampleSetName, sampleName, cache, materialCache);
                 }
                 if (parent != null)
                 {
                     parents.add(parent);
                 }
-                else if (potentialParents == null)
+                else
                 {
                     throw new ValidationException("Could not find parent material with name '" + parentName + "'.");
-                }
-                else if (potentialParents.size() > 1)
-                {
-                    throw new ExperimentException("More than one match for parent material '" + parentName + "' was found. Please prefix the name with the desired sample set, in the format 'SAMPLE_SET.SAMPLE'.");
                 }
             }
         }
         return parents;
     }
 
-    private static ExpMaterial findMaterial(Container c, User user, String sampleSetName, String sampleName) throws ValidationException
+    private static ExpMaterial findMaterial(Container c, User user, String sampleSetName, String sampleName, RemapCache cache, Map<Integer, ExpMaterial> materialCache)
     {
-        // Could easily do some caching here, but probably not a significant perf issue
-        ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(c, user, sampleSetName);
-        if (sampleSet == null)
-            throw new ValidationException("SampleSet '" + sampleSetName + "' not found");
+        Integer rowId;
+        if (sampleSetName == null)
+            rowId = cache.remap(SCHEMA_EXP, ExpSchema.TableType.Materials.name(), user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, sampleName);
+        else
+            rowId = cache.remap(SCHEMA_SAMPLES, sampleSetName, user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, sampleName);
 
-        return sampleSet.getSample(c, sampleName);
+        if (rowId == null)
+            return null;
+
+        ExperimentServiceImpl svc = ExperimentServiceImpl.get();
+        return materialCache.computeIfAbsent(rowId, svc::getExpMaterial);
     }
 
-    private static ExpData findData(Container c, User user, String dataClassName, String dataName) throws ValidationException
+    private static ExpData findData(Container c, User user, String dataClassName, String dataName, RemapCache cache, Map<Integer, ExpData> dataCache)
     {
-        // Could easily do some caching here, but probably not a significant perf issue
-        ExpDataClass dataClass = ExperimentService.get().getDataClass(c, user, dataClassName);
-        if (dataClass == null)
-            throw new ValidationException("DataClass '" + dataClassName + "' not found");
+        Integer rowId = cache.remap(SCHEMA_EXP_DATA, dataClassName, user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, dataName);
+        if (rowId == null)
+            return null;
 
-        return dataClass.getData(c, dataName);
+        ExperimentServiceImpl svc = ExperimentServiceImpl.get();
+        return dataCache.computeIfAbsent(rowId, svc::getExpData);
     }
 
     private class MaterialImportHelper implements OntologyManager.ImportHelper

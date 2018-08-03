@@ -962,6 +962,10 @@ public class ExpDataClassDataTableImpl extends ExpProtocolOutputTableImpl<ExpDat
             {
                 try
                 {
+                    RemapCache cache = new RemapCache();
+                    Map<Integer, ExpMaterial> materialCache = new HashMap<>();
+                    Map<Integer, ExpData> dataCache = new HashMap<>();
+
                     List<UploadSampleRunRecord> runRecords = new ArrayList<>();
                     for (Map.Entry<String, Set<Pair<String, String>>> entry : _parentNames.entrySet())
                     {
@@ -969,7 +973,7 @@ public class ExpDataClassDataTableImpl extends ExpProtocolOutputTableImpl<ExpDat
                         Set<Pair<String, String>> parentNames = entry.getValue();
 
                         Pair<RunInputOutputBean, RunInputOutputBean> pair =
-                                UploadSamplesHelper.resolveInputsAndOutputs(_user, getContainer(), parentNames, null);
+                                UploadSamplesHelper.resolveInputsAndOutputs(_user, getContainer(), parentNames, null, cache, materialCache, dataCache);
 
                         ExpData data = null;
                         if (pair.first != null)
