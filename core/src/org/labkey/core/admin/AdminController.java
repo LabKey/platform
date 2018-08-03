@@ -21,7 +21,6 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.DateUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.spi.LoggingEvent;
@@ -40,7 +39,6 @@ import org.labkey.api.Constants;
 import org.labkey.api.action.*;
 import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.admin.AdminBean;
-import org.labkey.api.admin.AdminConsoleService;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderImportContext;
@@ -1101,7 +1099,7 @@ public class AdminController extends SpringActionController
 
     private static String getCreditsFile(Module module, String filename) throws IOException
     {
-        // New way... in /resources/credits
+        // credits files are in /resources/credits
         InputStream is = module.getResourceStream("credits/" + filename);
 
         return null == is ? null : PageFlowUtil.getStreamContentsAsString(is);
