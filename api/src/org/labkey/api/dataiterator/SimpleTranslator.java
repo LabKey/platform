@@ -18,7 +18,9 @@ package org.labkey.api.dataiterator;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Triple;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -33,6 +35,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.Selector;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.TestSchema;
@@ -150,8 +153,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         private final boolean _includeTitleColumn;
         private final RemapMissingBehavior _missing;
 
-        private List<MultiValuedMap<?, ?>> _maps = null;
-        private MultiValuedMap<String, ?> _titleColumnLookupMap = null;
+        private List<Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?, ?>>> _maps = null;
+        private Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?, ?>> _titleColumnLookupMap = null;
 
         public RemapPostConvert(@NotNull TableInfo targetTable, boolean includeTitleColumn, RemapMissingBehavior missing)
         {
@@ -160,7 +163,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             _missing = missing;
         }
 
-        private List<MultiValuedMap<?, ?>> getMaps()
+        private List<Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?, ?>>> getMaps()
         {
             if (_maps == null)
             {
@@ -192,7 +195,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     if (!col.getJdbcType().isText())
                         continue;
 
-                    _maps.add(createMap(_targetTable, pkCol, col));
+                    _maps.add(Triple.of(pkCol, col, new ArrayListValuedHashMap()));
                 }
 
                 if (_includeTitleColumn)
@@ -200,20 +203,11 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     ColumnInfo titleColumn = _targetTable.getTitleColumn() != null ? _targetTable.getColumn(_targetTable.getTitleColumn()) : null;
                     if (titleColumn != null && !seen.contains(titleColumn))
                     {
-                        _titleColumnLookupMap = createMap(_targetTable, pkCol, titleColumn);
+                        _titleColumnLookupMap = Triple.of(pkCol, titleColumn, new ArrayListValuedHashMap());
                     }
                 }
             }
             return _maps;
-        }
-
-        // Create a value map from the altKeyCol -> pkCol
-        private <K> MultiValuedMap<K, ?> createMap(TableInfo targetTable, ColumnInfo pkCol, ColumnInfo altKeyCol)
-        {
-            // While there should be at most one matching value for lookup targets with a true unique constraint,
-            // using a multi-valued map allows us to also work with things that are almost always unique, like
-            // exp.Material names, when only a single value matches
-            return new TableSelector(targetTable, Arrays.asList(altKeyCol, pkCol), null, null).getMultiValuedMap();
         }
 
         public Object mappedValue(Object k)
@@ -221,22 +215,18 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             if (null == k)
                 return null;
 
-            for (MultiValuedMap map : getMaps())
+            for (Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?,?>> triple : getMaps())
             {
-                Collection<Object> vs = map.get(k);
-                if (vs != null && !vs.isEmpty())
-                {
-                    return getSingleValue(k, vs);
-                }
+                Object v = fetch(triple, k);
+                if (v != null)
+                    return v;
             }
 
             if (_titleColumnLookupMap != null)
             {
-                Collection<?> vs = _titleColumnLookupMap.get(String.valueOf(k));
-                if (vs != null && !vs.isEmpty())
-                {
-                    return getSingleValue(k, vs);
-                }
+                Object v = fetch(_titleColumnLookupMap, String.valueOf(k));
+                if (v != null)
+                    return v;
             }
 
             switch (_missing)
@@ -248,12 +238,57 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             }
         }
 
+        private final Object MISS = new Object();
+
+        // While there should be at most one matching value for lookup targets with a true unique constraint,
+        // using a multi-valued map allows us to also work with things that are almost always unique, like
+        // exp.Material names, when only a single value matches
+        private Object fetch(Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?,?>> triple, Object k)
+        {
+            final ColumnInfo pkCol = triple.getLeft();
+            final ColumnInfo altKeyCol = triple.getMiddle();
+            final MultiValuedMap map = triple.getRight();
+
+            // check if we've already fetched the key
+            Collection<Object> vs;
+            if (map.containsKey(k))
+            {
+                vs = map.get(k);
+                assert vs != null && !vs.isEmpty() : "map should contain values or the MISS marker";
+            }
+            else
+            {
+                TableSelector ts = createSelector(pkCol, altKeyCol, k);
+                ts.fillMultiValuedMap(map);
+                vs = map.get(k);
+
+                // ArrayListValuedHashMap returns an empty collection if 'k' is not in the map.
+                // If there are no values in the database, stash a MISS marker to avoid re-fetching.
+                assert vs != null;
+                if (vs.isEmpty())
+                    map.put(k, MISS);
+            }
+
+            Object v = getSingleValue(k, vs);
+            if (v == MISS)
+                return null;
+
+            return v;
+        }
+
+        private TableSelector createSelector(ColumnInfo pkCol, ColumnInfo altKeyCol, Object value)
+        {
+            SimpleFilter filter = new SimpleFilter(altKeyCol.getFieldKey(), value);
+            return new TableSelector(_targetTable, Arrays.asList(altKeyCol, pkCol), filter, null);
+        }
+
+
         private Object getSingleValue(Object k, Collection<?> vs)
         {
             if (vs.size() == 1)
                 return vs.iterator().next();
 
-            throw new ConversionException("More than one value matched: " + String.valueOf(k));
+            throw new ConversionException("Found " + vs.size() + " values matching: " + String.valueOf(k));
         }
     }
 
