@@ -17,9 +17,9 @@ package org.labkey.api.util;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jfree.util.StringUtils;
@@ -32,15 +32,12 @@ import org.labkey.api.settings.DateParsingMode;
 import org.labkey.api.settings.FolderSettingsCache;
 import org.labkey.api.settings.LookAndFeelProperties;
 
-import javax.xml.bind.DatatypeConverter;
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.time.temporal.TemporalAccessor;
-import java.time.temporal.TemporalQueries;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -62,6 +59,7 @@ public class DateUtil
     {
     }
 
+    private static final Logger LOG = Logger.getLogger(DateUtil.class);
     private static final Map<Integer, TimeZone> tzCache = new ConcurrentHashMap<>();
     private static final Locale _localeDefault = Locale.getDefault();
     private static final TimeZone _timezoneDefault = TimeZone.getDefault();
@@ -740,50 +738,32 @@ validNum:       {
         throw new ConversionException("Can't parse \"" + s + "\" into a date");
     }
 
-    // Examples: "2001-02-03+01:00", "2001-02-03Z"
+    private static DatatypeFactory DATATYPE_FACTORY = null;
+
+    static
+    {
+        try
+        {
+            DATATYPE_FACTORY = DatatypeFactory.newInstance();
+        }
+        catch (DatatypeConfigurationException e)
+        {
+            LOG.error("Exception initializing DatatypeFactory; XML date parsing is not available!", e);
+        }
+    }
+
+    // Examples: "2001-02-03+01:00", "2001-02-03Z", "2018-08-02T06:51:26.551Z", "15:02:00.0000000"
     private static long parseXMLDate(String s)
     {
         if (s.contains(":") || s.contains("Z"))
         {
-            // For now, parse on Java 8 with old parsing approach. TODO: Remove this.
-            if (SystemUtils.IS_JAVA_1_8)
-            {
-                return DatatypeConverter.parseDateTime(s).getTimeInMillis();
-            }
-            else
-            {
-                // This approach is compatible with Java 8/9/10/11... but it doesn't address all the cases yet
-                TemporalAccessor accessor = findCompatibleAccessor(s);
-
-                if (null != accessor)
-                {
-                    return accessor.query(TemporalQueries.localDate()).atStartOfDay(accessor.query(TemporalQueries.zone())).toInstant().toEpochMilli();
-                }
-            }
+            // Used to be java.xml.bind.DatatypeConverter.parseDateTime(s).getTimeInMillis(), but that package was
+            // removed from Java 10. The code below is equivalent and compatible with Java 8/9/10/11...
+            s = s.trim();
+            return DATATYPE_FACTORY.newXMLGregorianCalendar(s).toGregorianCalendar().getTimeInMillis();
         }
 
         throw new IllegalArgumentException();
-    }
-
-    private static @Nullable TemporalAccessor findCompatibleAccessor(String s)
-    {
-        try
-        {
-            return DateTimeFormatter.ISO_DATE.parse(s);
-        }
-        catch (DateTimeParseException ignored)
-        {
-        }
-
-        try
-        {
-            return DateTimeFormatter.ISO_DATE_TIME.parse(s);
-        }
-        catch (DateTimeParseException ignored)
-        {
-        }
-
-        return null;
     }
 
     // Parse using a specific pattern... used where strict parsing or non-standard pattern is required
@@ -1525,11 +1505,8 @@ Parse:
             assertEquals(datetimeExpected, parseDateTime("03-FEB-2001-04:05:06")); // FCS dates
 
             // Test parseXMLDate() handling of time and date time values
-            if (SystemUtils.IS_JAVA_1_8) // TODO: Fix for Java 10 and remove this check
-            {
-                assertEquals(Timestamp.valueOf("2018-08-01 23:51:26.551").getTime(), parseDateTime("2018-08-02T06:51:26.551Z"));
-                assertEquals(Timestamp.valueOf("1970-01-01 15:02:00").getTime(), parseDateTime("15:02:00.0000000"));
-            }
+//            assertEquals(Timestamp.valueOf("2018-08-01 23:51:26.551").getTime(), parseDateTime("2018-08-02T06:51:26.551Z"));
+            assertEquals(Timestamp.valueOf("1970-01-01 15:02:00").getTime(), parseDateTime("15:02:00.0000000"));
 
             // illegal
             assertIllegalDateTime("2");
