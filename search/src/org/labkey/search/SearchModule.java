@@ -28,7 +28,6 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AdminConsole;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StartupListener;
@@ -47,13 +46,9 @@ import org.labkey.search.umls.UmlsController;
 import org.labkey.search.view.SearchWebPartFactory;
 
 import javax.servlet.ServletContext;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Set;
 
 
@@ -225,28 +220,5 @@ public class SearchModule extends DefaultModule
             LuceneSearchServiceImpl.TikaTestCase.class,
             LuceneSearchServiceImpl.TestCase.class
         );
-    }
-
-    // Special loading for search resources: gradle build pushes Tika JARs into deploy directory only, so need to
-    // include that if in dev mode. #30598
-    @Override
-    public @NotNull List<File> getResourceDirectories()
-    {
-        List<File> dirs = super.getResourceDirectories();
-
-        if (AppProps.getInstance().isDevMode())
-        {
-            File exploded = getExplodedPath();
-
-            if (exploded != null && exploded.isDirectory())
-            {
-                // super might have already added deploy location (e.g., module with null sourcePath), so de-dupe with set. #30614
-                Set<File> dirSet = new HashSet<>(dirs);
-                dirSet.addAll(getResourceDirectory(exploded));
-                dirs = new LinkedList<>(dirSet);
-            }
-        }
-
-        return dirs;
     }
 }
