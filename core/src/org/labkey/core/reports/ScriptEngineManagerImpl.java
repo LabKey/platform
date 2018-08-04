@@ -229,7 +229,8 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
         return factory.getScriptEngine();
    }
 
-    public static List<ExternalScriptEngineDefinition> getEngineDefinitions()
+    @Override
+    public List<ExternalScriptEngineDefinition> getEngineDefinitions()
     {
         List<ExternalScriptEngineDefinition> engines = new ArrayList<>();
         Map<String, String> map = PropertyManager.getProperties(SCRIPT_ENGINE_MAP);
@@ -558,7 +559,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
             prepareTestStartupProperties();
 
             // examine the original list of Script Engine Definitions to ensure the test script engine is not already setup
-            List<ExternalScriptEngineDefinition> defList = getEngineDefinitions();
+            List<ExternalScriptEngineDefinition> defList = svc.getEngineDefinitions();
             assertFalse("The script engine defined in the startup properties was already setup on this server: " + SCRIPT_ENGINE_NAME, defList.stream().anyMatch((ExternalScriptEngineDefinition def) -> def.getName().equals(SCRIPT_ENGINE_NAME))) ;
 
             // call the method that makes use of the test startup properties to add a new Script Engine Definition to the server
@@ -566,7 +567,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
                 ((ScriptEngineManagerImpl)svc).populateScriptEngineDefinitionsWithStartupProps(true);
 
             // now check that the expected changes occurred to the Scripting Engine Definitions on the server
-            defList = getEngineDefinitions();
+            defList = svc.getEngineDefinitions();
             assertTrue("The script engine defined in the startup properties was not setup: " + SCRIPT_ENGINE_NAME, defList.stream().anyMatch((ExternalScriptEngineDefinition def) -> def.getName().equals(SCRIPT_ENGINE_NAME))) ;
 
             // restore the Script Engine Definitions to how they were originally
