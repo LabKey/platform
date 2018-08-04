@@ -15,4 +15,5 @@ public interface LabkeyScriptEngineManager
     void deleteDefinition(ExternalScriptEngineDefinition def);
     ExternalScriptEngineDefinition saveDefinition(ExternalScriptEngineDefinition def);
     boolean isFactoryEnabled(ScriptEngineFactory factory);
+    List<ExternalScriptEngineDefinition> getEngineDefinitions();
 }
