@@ -40,7 +40,6 @@ import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.SqlScriptManager;
 import org.labkey.api.data.SqlScriptRunner;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
-import org.labkey.api.data.SqlScriptRunner.SqlScriptException;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.AllowedDuringUpgrade;
@@ -66,7 +65,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
@@ -607,7 +605,6 @@ public class SqlScriptController extends SpringActionController
         private final double _targetTo;
         private final double _actualTo;
 
-        protected boolean _includeOriginatingScriptComments = true;
         private Collection<String> _errors = null;
 
         private ScriptConsolidator(FileSqlScriptProvider provider, DbSchema schema, double targetFrom, double targetTo)
@@ -664,20 +661,22 @@ public class SqlScriptController extends SpringActionController
                     if (licenseMatcher.lookingAt())
                     {
                         contentStartIndex = licenseMatcher.end();
-                        sb.append(contents.substring(0, contentStartIndex));
+                        sb.append(contents, 0, contentStartIndex);
                     }
 
-                    if (_includeOriginatingScriptComments)
+                    // Skip for incremental and existing bootstrap scripts
+                    if (!script.isIncremental() && script.getFromVersion() != 0.0)
                         sb.append("/* ").append(script.getDescription()).append(" */\n\n");
 
-                    sb.append(contents.substring(contentStartIndex, contents.length()));
+                    sb.append(contents.substring(contentStartIndex));
                     firstScript = false;
                 }
                 else
                 {
                     sb.append("\n\n");
 
-                    if (_includeOriginatingScriptComments)
+                    // Skip for incremental scripts
+                    if (!script.isIncremental())
                         sb.append("/* ").append(script.getDescription()).append(" */\n\n");
 
                     sb.append(licenseMatcher.replaceFirst(""));    // Remove license
