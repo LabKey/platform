@@ -48,6 +48,7 @@ import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
@@ -2212,8 +2213,7 @@ public class DataRegion extends DisplayElement
 
         if (action == MODE_UPDATE_MULTIPLE)
         {
-            String msg = "This will edit " + ctx.getForm().getSelectedRows().length + " rows.";
-
+            String msg = "This will edit " + StringUtilsLabKey.pluralize(ctx.getForm().getSelectedRows().length, "row");
             out.write("<tr><td colspan=\"3\">" + msg + "</td></tr>");
         }
 
