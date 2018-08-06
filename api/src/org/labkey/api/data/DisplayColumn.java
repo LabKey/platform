@@ -684,6 +684,7 @@ public abstract class DisplayColumn extends RenderColumn
         if (style == null)
             style = "";
 
+        // 34871: Support for column display width
         if (!StringUtils.isBlank(getWidth()))
             style += ";width:" + getWidth() + "px;";
 
@@ -994,11 +995,16 @@ public abstract class DisplayColumn extends RenderColumn
     @NotNull /** Always return a non-null string to make it easy to concatenate values */
     public String getCssStyle(RenderContext ctx)
     {
+        String style = "";
+
         if (_nowrap)
-        {
-            return "white-space:nowrap;";
-        }
-        return "";
+            style += "white-space:nowrap;";
+
+        // 34871: Support for column display width
+        if (!StringUtils.isBlank(getWidth()))
+            style += "word-break:break-all;";
+
+        return style;
     }
 
     public String getCaption()
