@@ -24,14 +24,13 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
 /**
- * Responsible for asynchronously running SQL scripts as part of module install or upgrade at server startup-time.
+ * Responsible for executing SQL scripts as part of module install or upgrade at server startup-time.
  * User: arauch
  * Date: Jun 14, 2005
  */
