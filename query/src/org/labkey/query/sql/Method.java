@@ -591,22 +591,22 @@ public abstract class Method
                     if (fragments.length > 2)
                         length = fragments[2];
                     fragments = new SQLFragment[] {fragments[0], new SQLFragment(typeName)};
+
+                    if (jdbcType == JdbcType.DOUBLE || jdbcType == JdbcType.REAL)
+                    {
+                        String s = fragments[0].getRawSQL().toLowerCase();
+                        if ("'infinity'".equals(s) || "'+infinity'".equals(s))
+                            return new SQLFragment("?", jdbcType==JdbcType.DOUBLE ? Double.POSITIVE_INFINITY : Float.POSITIVE_INFINITY);
+                        if ("'-infinity'".equals(s))
+                            return new SQLFragment("?", jdbcType==JdbcType.DOUBLE ? Double.NEGATIVE_INFINITY : Float.NEGATIVE_INFINITY);
+                        if ("'nan'".equals(s))
+                            return new SQLFragment("?", jdbcType==JdbcType.DOUBLE ? Double.NaN : Float.NaN);
+                    }
                 }
                 catch (IllegalArgumentException x)
                 {
                     /* */
                 }
-            }
-
-            if (jdbcType == JdbcType.DOUBLE || jdbcType == JdbcType.REAL)
-            {
-                String s = fragments[0].getRawSQL().toLowerCase();
-                if ("'infinity'".equals(s) || "'+infinity'".equals(s))
-                    return new SQLFragment("?", jdbcType==JdbcType.DOUBLE ? Double.POSITIVE_INFINITY : Float.POSITIVE_INFINITY);
-                if ("'-infinity'".equals(s))
-                    return new SQLFragment("?", jdbcType==JdbcType.DOUBLE ? Double.NEGATIVE_INFINITY : Float.NEGATIVE_INFINITY);
-                if ("'nan'".equals(s))
-                    return new SQLFragment("?", jdbcType==JdbcType.DOUBLE ? Double.NaN : Float.NaN);
             }
 
             SQLFragment ret = new SQLFragment();
