@@ -1441,8 +1441,6 @@ ALTER TABLE study.participantvisit ALTER COLUMN visitrowid SET NOT NULL;
 
 /* study-16.10-16.20.sql */
 
-SELECT core.executeJavaUpgradeCode('upgradeLocationTables');
-
 SELECT core.fn_dropifexists('report', 'study', 'TABLE', NULL);
 
 SELECT core.fn_dropifexists('ParticipantVisit', 'study', 'INDEX', 'IX_PV_SequenceNum');

@@ -19,35 +19,32 @@ import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.*;
-import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.defaults.DefaultValueService;
-import org.labkey.api.exp.PropertyType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DeferredUpgrade;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.DomainTemplate;
-import org.labkey.api.exp.property.DomainTemplateGroup;
-import org.labkey.api.exp.property.Lookup;
-import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.issues.IssuesSchema;
-import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.Group;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.issue.model.CustomColumn;
@@ -57,9 +54,7 @@ import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.model.KeywordManager;
 import org.labkey.issue.query.IssueDefDomainKind;
 import org.labkey.issue.query.IssuesListDefTable;
-import org.springframework.util.LinkedCaseInsensitiveMap;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -78,359 +73,6 @@ public class IssuesUpgradeCode implements UpgradeCode
     private static final Logger _log = Logger.getLogger(IssuesUpgradeCode.class);
     private static final String DEFAULT_SITE_ISSUE_LIST_NAME = "siteIssues";
     private static final String DEFAULT_FOLDER_ISSUE_LIST_NAME = "folderIssues";
-
-    /**
-     * Invoked by issues-16.10-16.20.sql
-     *
-     * Upgrade to migrate existing issues to provisioned tables and to migrate legacy issues
-     * admin setting to the domain and new tables
-     */
-    @DeferredUpgrade
-    public void upgradeIssuesTables(final ModuleContext context)
-    {
-        if (context.isNewInstall())
-            return;
-
-        _log.info("Analyzing site-wide configuration to generate the issue list migration plan");
-        MultiValuedMap<Container, IssueMigrationPlan> migrationPlans = generateMigrationPlan();
-        User upgradeUser = new LimitedUser(UserManager.getGuestUser(), new int[0], Collections.singleton(RoleManager.getRole(SiteAdminRole.class)), false);
-        ObjectFactory<LegacyIssue> factory = ObjectFactory.Registry.getFactory(LegacyIssue.class);
-
-        try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
-        {
-            // create the issue list definitions and new domains
-            for (Map.Entry<Container, Collection<IssueMigrationPlan>> entry : migrationPlans.asMap().entrySet())
-            {
-                Container defContainer = entry.getKey();
-
-                for (IssueMigrationPlan plan : entry.getValue())
-                {
-                    IssueListDef existingDef = IssueManager.getIssueListDef(defContainer, plan.getIssueDefName());
-                    if (existingDef == null)
-                    {
-                        _log.info("Creating the issue def domain named : " + plan.getIssueDefName() + " in folder : " + defContainer.getPath());
-                        IssueListDef def = createNewIssueListDef(upgradeUser, plan.getIssueDefName(), defContainer);
-
-                        // initialize the domain with the saved settings
-                        configureIssueDomain(upgradeUser, def, plan);
-
-                        // now create individual issue lists that share this configuration (if in a different container)
-                        for (Container folder : plan.getFolders())
-                        {
-                            if (!defContainer.equals(folder))
-                            {
-                                createNewIssueListDef(upgradeUser, plan.getIssueDefName(), folder);
-                            }
-
-                            // migrate issue records specific to this folder
-                            _log.info("Populating provisioned table in folder : " + folder.getPath());
-                            populateProvisionedTable(folder, upgradeUser, factory, plan);
-
-                            _log.info("Migrating custom views for issues query in folder : " + folder.getPath());
-                            migrateCustomViews(folder, upgradeUser, plan);
-                            migrateIssueProperties(folder, upgradeUser, plan);
-                        }
-                    }
-                    else
-                        _log.error("An issue definition of name : " + plan.getIssueDefName() + " already exists in folder : " + defContainer.getPath());
-                }
-            }
-            transaction.commit();
-        }
-        catch (Exception e)
-        {
-            _log.error(e.getMessage());
-        }
-    }
-
-    /**
-     * Populate the new provisioned tables with existing data from issues.issues. We want to write directly
-     * to the hard tables instead of using the query update service to avoid double writing to the legacy
-     * issues table.
-     */
-    void populateProvisionedTable(Container c, User user, ObjectFactory<LegacyIssue> factory, IssueMigrationPlan plan)
-    {
-        IssueListDef issueListDef = IssueManager.getIssueListDef(c, plan.getIssueDefName());
-        if (issueListDef != null)
-        {
-            TableInfo table = issueListDef.createTable(user);
-            if (table != null)
-            {
-                // add any custom parameters
-                Map<String, String> columnNameMap = new LinkedCaseInsensitiveMap<>();
-                plan.getConfig().getColumnConfiguration().getCustomColumns()
-                    .stream()
-                    .filter(cc -> cc.getName().startsWith("string") || cc.getName().startsWith("int"))
-                    .forEach(cc -> {
-                        String colName = ColumnInfo.legalNameFromName(cc.getCaption());
-                        columnNameMap.put(cc.getName(), colName);
-                    });
-                List<Map<String, Object>> rows = new ArrayList<>();
-
-                new TableSelector(IssuesSchema.getInstance().getTableInfoIssues(), SimpleFilter.createContainerFilter(c), null).forEachBatch(batch -> {
-                    rows.clear();
-
-                    for (LegacyIssue issue : batch)
-                    {
-                        Map<String, Object> row = new CaseInsensitiveHashMap<>();
-                        factory.toMap(issue, row);
-
-                        row.putIfAbsent("AssignedTo", 0);
-
-                        for (Map.Entry<String, String> entry : columnNameMap.entrySet())
-                        {
-                            if (row.get(entry.getKey()) != null)
-                                row.put(entry.getValue(), row.get(entry.getKey()));
-                        }
-                        rows.add(row);
-                    }
-
-                    for (Map<String, Object> row : rows)
-                    {
-                        Table.insert(user, table, row);
-                    }
-                }, LegacyIssue.class, 1000);
-
-                // need to set the issue def id in the issues table to be able to determine the issue definition for
-                // each individual issue record
-                SQLFragment sql = new SQLFragment("UPDATE ").append(IssuesSchema.getInstance().getTableInfoIssues(), "").
-                        append(" SET IssueDefId = ? WHERE Container = ?");
-                sql.addAll(issueListDef.getRowId(), c);
-                new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(sql);
-            }
-        }
-    }
-
-    void migrateCustomViews(Container c, User user, IssueMigrationPlan plan)
-    {
-        // only need to change for non-default issue def names
-        TableInfo tinfoCustomView = DbSchema.get("query", DbSchemaType.Module).getTable("CustomView");
-
-        if (tinfoCustomView != null)
-        {
-            SQLFragment sql = new SQLFragment("UPDATE ").append(tinfoCustomView, "").
-                    append(" SET QueryName = ? WHERE QueryName = ? AND Container = ?");
-            sql.addAll(plan.getIssueDefName(), "Issues", c);
-
-            new SqlExecutor(tinfoCustomView.getSchema()).execute(sql);
-        }
-        else
-            _log.error("Unable to get the table info for query.CustomView");
-    }
-
-    void migrateIssueProperties(Container c, User user, IssueMigrationPlan plan)
-    {
-        Container adminContainer = IssueManager.getInheritFromOrCurrentContainer(c);
-        IssueManager.EntryTypeNames typeNames = IssueManager.getEntryTypeNames(adminContainer);
-        Group assignedToGroup = IssueManager.getAssignedToGroup(c);
-        User defaultUser = IssueManager.getDefaultAssignedToUser(c);
-        Sort.SortDirection sortDirection = IssueManager.getCommentSortDirection(adminContainer);
-
-        IssueManager.saveEntryTypeNames(c, plan.getIssueDefName(), typeNames);
-        IssueManager.saveAssignedToGroup(c, plan.getIssueDefName(), assignedToGroup);
-        IssueManager.saveDefaultAssignedToUser(c, plan.getIssueDefName(), defaultUser);
-        IssueManager.saveCommentSortDirection(c, plan.getIssueDefName(), sortDirection);
-    }
-
-    IssueListDef createNewIssueListDef(User user, String name, Container container)
-    {
-        // ensure the issue module is enabled for this folder
-        Module issueModule = ModuleLoader.getInstance().getModule(IssuesModule.NAME);
-        Set<Module> activeModules = container.getActiveModules();
-        if (!activeModules.contains(issueModule))
-        {
-            Set<Module> newActiveModules = new HashSet<>();
-            newActiveModules.addAll(activeModules);
-            newActiveModules.add(issueModule);
-
-            container.setActiveModules(newActiveModules);
-        }
-        IssueListDef def = new IssueListDef();
-        def.setName(name);
-        def.setLabel(name);
-        def.setKind(IssueDefDomainKind.NAME);
-        def.beforeInsert(user, container.getId());
-
-        return def.save(user);
-    }
-
-    /**
-     * Initializes the issue definition domain, adding any custom field configurations and legacy picklists
-     */
-    void configureIssueDomain(User user, IssueListDef def, IssueMigrationPlan plan) throws Exception
-    {
-        IssueAdminConfig config = plan.getConfig();
-        Domain domain = def.getDomain(user);
-        if (domain != null)
-        {
-            if (!config.isEmpty())
-            {
-                Map<String, Collection<KeywordManager.Keyword>> keywordMap = config.getKeywordMap();
-                Set<String> keywordSet = new CaseInsensitiveHashSet(keywordMap.keySet());
-                Set<String> requiredFields = new CaseInsensitiveHashSet();
-                Map<String, String> defaultValueMap = new HashMap<>();
-
-                if (config.getRequiredFields() != null)
-                {
-                    for (String field : config.getRequiredFields().split(";"))
-                        requiredFields.add(field.trim());
-                }
-
-                for (CustomColumn col : config.getColumnConfiguration().getCustomColumns())
-                {
-                    DomainProperty prop = domain.getPropertyByName(col.getName());
-                    String colName = col.getName();
-
-                    if (prop == null)
-                    {
-                        prop = domain.addProperty();
-                        colName = ColumnInfo.legalNameFromName(col.getCaption());
-
-                        prop.setName(colName);
-                        prop.setPropertyURI(domain.getTypeURI() + "#" + colName);
-
-                        if (col.getName().toLowerCase().contains("string"))
-                            prop.setType(PropertyService.get().getType(domain.getContainer(), PropertyType.STRING.getXmlName()));
-                        else
-                            prop.setType(PropertyService.get().getType(domain.getContainer(), PropertyType.INTEGER.getXmlName()));
-                    }
-                    prop.setLabel(col.getCaption());
-
-                    if (requiredFields.contains(col.getName()))
-                    {
-                        if (!hasNullValues(plan.getFolders(), col.getName()))
-                            prop.setRequired(true);
-                        else
-                            _log.warn("Unable to mark field: '" + col.getName() + "' as required due to existing NULL values.");
-                    }
-                    if (!col.getPermission().equals(ReadPermission.class))
-                        prop.setPhi(PHI.Limited);
-
-                    if (col.isPickList())
-                    {
-                        // need to create the lookup
-                        Lookup lookup = prop.getLookup();
-                        if (lookup == null)
-                        {
-                            // create the lookup as a list using the preexisting domain templates
-                            DomainTemplateGroup templateGroup = DomainTemplateGroup.get(domain.getContainer(), IssueDefDomainKind.ISSUE_LOOKUP_TEMPLATE_GROUP);
-                            String lookupTableName = IssueDefDomainKind.getLookupListName(domain.getName(), colName);
-                            if (templateGroup != null)
-                            {
-                                String templateName = prop.getPropertyType().equals(PropertyType.STRING) ? IssueDefDomainKind.AREA_LOOKUP : IssueDefDomainKind.PRIORITY_LOOKUP;
-                                DomainTemplate template = templateGroup.getTemplate(templateName);
-                                template.createAndImport(domain.getContainer(), user, lookupTableName, true, false);
-                            }
-                            lookup = new Lookup(domain.getContainer(), "lists", lookupTableName);
-                            prop.setLookup(lookup);
-                        }
-
-                        // populate the lookup
-                        if (lookup != null && keywordMap.containsKey(col.getName()))
-                        {
-                            keywordSet.remove(col.getName());
-                            String defaultValue = populateLookupTable(domain.getContainer(), user, prop, lookup, keywordMap.get(col.getName()));
-                            if (defaultValue != null)
-                                defaultValueMap.put(prop.getName(), defaultValue);
-                        }
-                    }
-                }
-
-                // standard fields (type, area, priority, milestone...) may have keywords without having a custom column entry
-                // deal with them in this pass
-                for (String colName : keywordSet)
-                {
-                    DomainProperty prop = domain.getPropertyByName(colName);
-                    if (requiredFields.contains(prop.getName()))
-                    {
-                        if (!hasNullValues(plan.getFolders(), colName))
-                            prop.setRequired(true);
-                        else
-                            _log.warn("Unable to mark field: '" + colName + "' as required due to existing NULL values.");
-                    }
-
-                    if (prop != null && prop.getLookup() != null)
-                    {
-                        String defaultValue = populateLookupTable(domain.getContainer(), user, prop, prop.getLookup(), keywordMap.get(colName));
-                        if (defaultValue != null)
-                            defaultValueMap.put(prop.getName(), defaultValue);
-                    }
-                }
-                domain.save(user);
-
-                // set any default values
-                Map<DomainProperty, Object> defaultValues = new HashMap<>();
-                for (Map.Entry<String, String> entry : defaultValueMap.entrySet())
-                {
-                    DomainProperty prop = domain.getPropertyByName(entry.getKey());
-
-                    if (prop != null)
-                    {
-                        prop.setDefaultValueTypeEnum(DefaultValueType.FIXED_EDITABLE);
-                        defaultValues.put(prop, entry.getValue());
-                    }
-                }
-
-                if (!defaultValues.isEmpty())
-                    DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
-            }
-        }
-    }
-
-    private boolean hasNullValues(Collection<Container> folders, String colName)
-    {
-        if (!folders.isEmpty())
-        {
-            SqlDialect dialect = CoreSchema.getInstance().getSqlDialect();
-            SQLFragment sql = new SQLFragment("SELECT * FROM ").append(IssuesSchema.getInstance().getTableInfoIssues(), "x").append(" WHERE ");
-
-            sql.append("x.").append(dialect.makeLegalIdentifier(colName.toLowerCase())).append(" IS NULL");
-            sql.append(" AND x.container ");
-            dialect.appendInClauseSql(sql, folders);
-
-            return new SqlSelector(IssuesSchema.getInstance().getSchema(), sql).exists();
-        }
-        return false;
-    }
-
-    /**
-     * Populates the lookup table with the contents of the legacy keywords
-     * @return the default value for the keyword set (if any)
-     */
-    @Nullable
-    private String populateLookupTable(Container c, User user, DomainProperty prop, Lookup lookup, Collection<KeywordManager.Keyword> keywords) throws Exception
-    {
-        UserSchema userSchema = QueryService.get().getUserSchema(user, lookup.getContainer(), lookup.getSchemaName());
-        TableInfo table = userSchema.getTable(lookup.getQueryName());
-        String defaultValue = null;
-
-        if (table != null)
-        {
-            QueryUpdateService qus = table.getUpdateService();
-            if (qus != null)
-            {
-                // delete any existing rows
-                final List<Map<String, Object>> rowsToDelete = new ArrayList<>();
-                new TableSelector(table).forEachMap(rowsToDelete::add);
-                if (!rowsToDelete.isEmpty())
-                {
-                    qus.deleteRows(user, c, rowsToDelete, null, null);
-                }
-
-                List<Map<String, Object>> rows = new ArrayList<>();
-                BatchValidationException errors = new BatchValidationException();
-
-                for (KeywordManager.Keyword keyword : keywords)
-                {
-                    rows.add(new CaseInsensitiveHashMap<>(Collections.singletonMap("value", keyword.getKeyword())));
-                    if (keyword.isDefault())
-                        defaultValue = keyword.getKeyword();
-                }
-                qus.insertRows(user, c, rows, errors, null, null);
-            }
-        }
-        return defaultValue;
-    }
 
     /**
      * Generate the migration plan for every container that needs to be upgraded.

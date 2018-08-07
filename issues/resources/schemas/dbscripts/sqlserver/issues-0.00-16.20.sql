@@ -205,5 +205,3 @@ ALTER TABLE issues.IssueListDef ADD Label NVARCHAR(200);
 GO
 UPDATE issues.IssueListDef SET Label = Name;
 ALTER TABLE issues.IssueListDef ALTER COLUMN Label NVARCHAR(200) NOT NULL;
-
-EXEC core.executeJavaUpgradeCode 'upgradeIssuesTables';

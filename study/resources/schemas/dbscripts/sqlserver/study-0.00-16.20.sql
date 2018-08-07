@@ -1505,8 +1505,6 @@ ALTER TABLE study.participantvisit ADD CONSTRAINT study_pv_visitrowid_def DEFAUL
 
 /* study-16.10-16.20.sql */
 
-EXEC core.executeJavaUpgradeCode 'upgradeLocationTables';
-
 EXEC core.fn_dropifexists 'report', 'study', 'TABLE', NULL;
 
 EXEC core.fn_dropifexists 'ParticipantVisit', 'study', 'INDEX', 'IX_PV_SequenceNum';

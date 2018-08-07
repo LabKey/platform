@@ -34,6 +34,7 @@ import java.util.Map;
  * Date: 1/27/13
  * Time: 2:41 PM
  */
+@Deprecated // Remove in 19.1
 public class ColumnConfigurationCache
 {
     private static final BlockingCache<Container, CustomColumnConfiguration> CACHE = CacheManager.getBlockingCache(1000, CacheManager.DAY, "Issues Column Configurations", (c, argument) ->
@@ -49,11 +50,5 @@ public class ColumnConfigurationCache
     static CustomColumnConfiguration get(Container c)
     {
         return CACHE.get(c);
-    }
-
-    static void uncache()
-    {
-        //Lazy uncache: uncache ALL the containers for updated values in case any folder is inheriting its Admin settings.
-        CACHE.clear();
     }
 }

@@ -40,12 +40,9 @@ import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.DatasetDomainKind;
 import org.labkey.study.model.DoseAndRoute;
-import org.labkey.study.model.LocationDomainKind;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.TreatmentManager;
 import org.labkey.study.model.TreatmentProductImpl;
-import org.labkey.study.query.LocationTable;
-import org.labkey.study.query.SpecimenTablesProvider;
 import org.labkey.study.query.StudyQuerySchema;
 
 import java.util.ArrayList;
@@ -64,42 +61,6 @@ import java.util.Set;
 public class StudyUpgradeCode implements UpgradeCode
 {
     private static final Logger _log = Logger.getLogger(StudyUpgradeCode.class);
-
-    // Invoked by study-16.10-16.20.sql
-    @SuppressWarnings({"UnusedDeclaration"})
-    public void upgradeLocationTables(final ModuleContext context)
-    {
-        if (!context.isNewInstall())
-        {
-            LocationDomainKind domainKind = new LocationDomainKind();
-            for (Container container : ContainerManager.getAllChildren(ContainerManager.getRoot()))
-            {
-                if (null != container)
-                {
-                    Study study = StudyManager.getInstance().getStudy(container);
-                    if (null != study)
-                    {
-                        try
-                        {
-                            SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, context.getUpgradeUser(), null);
-                            Domain domain = specimenTablesProvider.getDomain(SpecimenTablesProvider.LOCATION_TABLENAME, true);
-                            if (null != domain)
-                            {
-                                specimenTablesProvider.ensureAddedProperties(context.getUpgradeUser(), domain, domainKind, domainKind.getAddedProperties());
-                                TableInfo table = specimenTablesProvider.getTableInfoIfExists(SpecimenTablesProvider.LOCATION_TABLENAME);
-                                if (null != table)
-                                    LocationTable.updateLocationTableInUse(table, container);
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                            _log.error("Error upgrading location table in folder '" + container.getName() + "'", e);
-                        }
-                    }
-                }
-            }
-        }
-    }
 
     // Invoked by study-16.20-16.30.sql
     @SuppressWarnings({"UnusedDeclaration"})
@@ -325,7 +286,7 @@ public class StudyUpgradeCode implements UpgradeCode
         Note: When this upgrade code is removed (in v20.1), we'll need to move the three ADD CONSTRAINT statements into an upgrade script
      */
 
-    // Invoked by study-17.21-17.22.sql
+    // Invoked by study-17.20-17.30.sql
     @SuppressWarnings({"UnusedDeclaration"})
     public void moveQCStateToCore(final ModuleContext context)
     {
@@ -395,7 +356,7 @@ public class StudyUpgradeCode implements UpgradeCode
         new SqlExecutor(StudySchema.getInstance().getScope()).execute(sqlFrag);
     }
 
-    // Invoked by study-17.30-17.31.sql
+    // Invoked by study-17.30-18.10.sql
     @SuppressWarnings({"UnusedDeclaration"})
     public void updateSpecimenHash(final ModuleContext context)
     {

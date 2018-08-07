@@ -197,5 +197,3 @@ ALTER TABLE issues.Issues ADD CONSTRAINT FK_IssueListDef_IssueDefId_RowId FOREIG
 ALTER TABLE issues.IssueListDef ADD COLUMN Label VARCHAR(200);
 UPDATE issues.IssueListDef SET Label = Name;
 ALTER TABLE issues.IssueListDef ALTER COLUMN Label SET NOT NULL;
-
-SELECT core.executeJavaUpgradeCode('upgradeIssuesTables');

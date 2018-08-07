@@ -415,12 +415,14 @@ public class IssueManager
     }
 
 
+    @Deprecated // Remove in 19.1
     public static CustomColumnConfiguration getCustomColumnConfiguration(Container c)
     {
         return ColumnConfigurationCache.get(c);
     }
 
 
+    @Deprecated // Remove in 19.1
     static class CustomColumnMap extends LinkedHashMap<String, CustomColumn>
     {
         private CustomColumnMap(Map<String, CustomColumn> map)
@@ -437,7 +439,7 @@ public class IssueManager
     }
 
 
-    @Deprecated // Used only for 16.2 issue migration
+    @Deprecated // Remove in 19.1
     public static class CustomColumnConfigurationImpl implements CustomColumnConfiguration
     {
         private static final String[] COLUMN_NAMES = {"type", "area", "priority", "milestone", "resolution", "related", "int1", "int2", "string1", "string2", "string3", "string4", "string5"};
@@ -744,19 +746,6 @@ public class IssueManager
 
 
     @NotNull
-    @Deprecated
-    public static EntryTypeNames getEntryTypeNames(Container container)
-    {
-        Map<String,String> props = PropertyManager.getProperties(getInheritFromOrCurrentContainer(container), CAT_ENTRY_TYPE_NAMES);
-        EntryTypeNames ret = new EntryTypeNames();
-        if (props.containsKey(PROP_ENTRY_TYPE_NAME_SINGULAR))
-            ret.singularName =props.get(PROP_ENTRY_TYPE_NAME_SINGULAR);
-        if (props.containsKey(PROP_ENTRY_TYPE_NAME_PLURAL))
-            ret.pluralName = props.get(PROP_ENTRY_TYPE_NAME_PLURAL);
-        return ret;
-    }
-
-    @NotNull
     public static EntryTypeNames getEntryTypeNames(Container container, String issueDefName)
     {
         Map<String,String> props = PropertyManager.getProperties(container, getPropMapName(issueDefName));
@@ -812,19 +801,6 @@ public class IssueManager
         props.save();
     }
 
-    @Deprecated  // Used only for 16.2 issue migration
-    public static @Nullable Group getAssignedToGroup(Container c)
-    {
-        Map<String, String> props = PropertyManager.getProperties(c, CAT_ASSIGNED_TO_LIST);
-
-        String groupId = props.get(PROP_ASSIGNED_TO_GROUP);
-
-        if (null == groupId)
-            return null;
-
-        return SecurityManager.getGroup(Integer.valueOf(groupId));
-    }
-
     public static @Nullable Group getAssignedToGroup(Container c, String issueDefName)
     {
         Map<String, String> props = PropertyManager.getProperties(c, getPropMapName(issueDefName));
@@ -843,21 +819,6 @@ public class IssueManager
         props.put(PROP_ASSIGNED_TO_GROUP, null != group ? String.valueOf(group.getUserId()) : "0");
         props.save();
         uncache();  // uncache the assigned to list
-    }
-
-    @Deprecated  // Used only for 16.2 issue migration
-    public static @Nullable User getDefaultAssignedToUser(Container c)
-    {
-        Map<String, String> props = PropertyManager.getProperties(c, CAT_DEFAULT_ASSIGNED_TO_LIST);
-        String userId = props.get(PROP_DEFAULT_ASSIGNED_TO_USER);
-        if (null == userId)
-            return null;
-        User user = UserManager.getUser(Integer.parseInt(userId));
-        if (user == null)
-            return null;
-        if (!canAssignTo(c, user))
-            return null;
-        return user;
     }
 
     public static @Nullable User getDefaultAssignedToUser(Container c, String issueDefName)
@@ -993,22 +954,6 @@ public class IssueManager
         }
 
         return inheritFromContainer;
-    }
-
-    @Deprecated  // Used only for 16.2 issue migration
-    public static Sort.SortDirection getCommentSortDirection(Container c)
-    {
-        Map<String, String> props = PropertyManager.getProperties(getInheritFromOrCurrentContainer(c), CAT_COMMENT_SORT);
-        String direction = props.get(CAT_COMMENT_SORT);
-        if (direction != null)
-        {
-            try
-            {
-                return Sort.SortDirection.valueOf(direction);
-            }
-            catch (IllegalArgumentException e) {}
-        }
-        return Sort.SortDirection.ASC; 
     }
 
     public static Sort.SortDirection getCommentSortDirection(Container c, String issueDefName)
