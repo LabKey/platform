@@ -22,7 +22,6 @@ import org.labkey.api.settings.AppProps;
  */
 public class ExpLineageOptions
 {
-    private boolean _veryNewHotness = AppProps.getInstance().isExperimentalFeatureEnabled(ExperimentService.EXPERIMENTAL_LINEAGE_PERFORMANCE);
     private int _rowId;
     private String _lsid;
     private int _depth;
@@ -31,16 +30,6 @@ public class ExpLineageOptions
     private String _expType;
     private String _cpasType;
     private boolean _forLookup = false;
-
-    public boolean isVeryNewHotness()
-    {
-        return _veryNewHotness;
-    }
-
-    public void setVeryNewHotness(boolean b)
-    {
-        _veryNewHotness = b;
-    }
 
     public int getDepth()
     {
