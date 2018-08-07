@@ -164,9 +164,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         AdminConsole.addExperimentalFeatureFlag(ExperimentServiceImpl.EXPERIMENTAL_LEGACY_LINEAGE, "Legacy lineage query",
                 "This feature will restore the legacy lineage queries used on the Material and Data details pages", false);
 
-        AdminConsole.addExperimentalFeatureFlag(ExperimentService.EXPERIMENTAL_LINEAGE_PERFORMANCE, "Lineage performance improvements",
-                "This feature will turn on the lineage performance improvements", false);
-
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS, "Resolve property URIs as columns on experiment tables",
                 "If a column is not found on an experiment table, attempt to resolve the column name as a Property URI and add it as a property column", false);
     }

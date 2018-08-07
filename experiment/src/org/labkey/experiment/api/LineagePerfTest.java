@@ -66,8 +66,8 @@ public class LineagePerfTest extends Assert
     @BeforeClass
     public static void setup()
     {
-        _currentSetting = ExperimentalFeatureService.get().isFeatureEnabled(ExperimentService.EXPERIMENTAL_LINEAGE_PERFORMANCE);
-        LOG.info("lineage perf setting currently enabled: " + _currentSetting);
+        _currentSetting = ExperimentalFeatureService.get().isFeatureEnabled(ExperimentServiceImpl.EXPERIMENTAL_LEGACY_LINEAGE);
+        LOG.info("current legacy lineage setting: " + _currentSetting);
 
         _user = TestContext.get().getUser();
         assertNotNull("Should have access to a user", _user);
@@ -82,8 +82,8 @@ public class LineagePerfTest extends Assert
     @AfterClass
     public static void cleanup()
     {
-        LOG.info("restoring previous perf setting: " + _currentSetting);
-        ExperimentalFeatureService.get().setFeatureEnabled(ExperimentService.EXPERIMENTAL_LINEAGE_PERFORMANCE, _currentSetting, _user);
+        LOG.info("restoring legacy lineage setting: " + _currentSetting);
+        ExperimentalFeatureService.get().setFeatureEnabled(ExperimentServiceImpl.EXPERIMENTAL_LEGACY_LINEAGE, _currentSetting, _user);
         //deleteTestContainer();
     }
 
@@ -309,12 +309,12 @@ public class LineagePerfTest extends Assert
         // TEST: 10 x (insert a sample, query lineage twice)
         //
 
-        LOG.info("TEST querying with very OLD hotness: ");
-        ExperimentalFeatureService.get().setFeatureEnabled(ExperimentService.EXPERIMENTAL_LINEAGE_PERFORMANCE, false, _user);
+        LOG.info("TEST querying with legacy lineage: ");
+        ExperimentalFeatureService.get().setFeatureEnabled(ExperimentServiceImpl.EXPERIMENTAL_LEGACY_LINEAGE, true, _user);
         lineageQueries("OLD", oldLineageQuery, oldLineageGraph, oldInsertMoreTimer, ss, firstData);
 
-        LOG.info("TEST querying with very NEW hotness: ");
-        ExperimentalFeatureService.get().setFeatureEnabled(ExperimentService.EXPERIMENTAL_LINEAGE_PERFORMANCE, true, _user);
+        LOG.info("TEST querying with exp.edge lineage: ");
+        ExperimentalFeatureService.get().setFeatureEnabled(ExperimentServiceImpl.EXPERIMENTAL_LEGACY_LINEAGE, false, _user);
         lineageQueries("NEW", newLineageQuery, newLineageGraph, newInsertMoreTimer, ss, firstData);
 
         elapsedTimer.stop();
