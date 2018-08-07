@@ -98,8 +98,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
     int SIMPLE_PROTOCOL_EXTRA_STEP_SEQUENCE = 15;
     int SIMPLE_PROTOCOL_OUTPUT_STEP_SEQUENCE = 20;
 
-    String EXPERIMENTAL_LINEAGE_PERFORMANCE = "very-new-hotness";
-
     static ExperimentService get()
     {
         return ServiceRegistry.get().getService(ExperimentService.class);
