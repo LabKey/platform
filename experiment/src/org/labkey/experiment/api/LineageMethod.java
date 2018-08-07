@@ -48,7 +48,6 @@ import org.labkey.api.query.snapshot.AbstractTableMethodInfo;
     private Container _container;
     private ColumnInfo _lsidColumn;
     private boolean _parents;
-    private boolean _veryNewHotness = false;
 
     LineageMethod(Container c, ColumnInfo lsidColumn, boolean parents)
     {
@@ -113,7 +112,7 @@ import org.labkey.api.query.snapshot.AbstractTableMethodInfo;
             catch (NumberFormatException ex) { /* ok */ }
         }
 
-        return new LineageTableInfo("Foo", schema, lsids, _parents, depth, expType, cpasType, _veryNewHotness);
+        return new LineageTableInfo("Foo", schema, lsids, _parents, depth, expType, cpasType);
     }
 
     @Override

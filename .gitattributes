@@ -945,7 +945,6 @@ experiment/src/org/labkey/experiment/ExternalDocsURLCustomPropertyRenderer.java 
 experiment/src/org/labkey/experiment/FileLinkFileListener.java -text
 experiment/src/org/labkey/experiment/LSIDRelativizer.java -text
 experiment/src/org/labkey/experiment/LineageGraphDisplayColumn.java -text
-experiment/src/org/labkey/experiment/LineageManager.java -text
 experiment/src/org/labkey/experiment/MoveRunsBean.java -text
 experiment/src/org/labkey/experiment/NoPipelineRootSetView.java -text
 experiment/src/org/labkey/experiment/Parameters.jsp -text
@@ -1017,9 +1016,7 @@ experiment/src/org/labkey/experiment/api/ExpTableImpl.java -text
 experiment/src/org/labkey/experiment/api/Experiment.java -text
 experiment/src/org/labkey/experiment/api/ExperimentProtocolGraph.sql -text
 experiment/src/org/labkey/experiment/api/ExperimentRun.java -text
-experiment/src/org/labkey/experiment/api/ExperimentRunGraph.sql -text
 experiment/src/org/labkey/experiment/api/ExperimentRunGraph2.sql -text
-experiment/src/org/labkey/experiment/api/ExperimentRunGraphForLookup.sql -text
 experiment/src/org/labkey/experiment/api/ExperimentRunGraphForLookup2.sql -text
 experiment/src/org/labkey/experiment/api/ExperimentServiceImpl.java -text
 experiment/src/org/labkey/experiment/api/IdentifiableEntity.java -text

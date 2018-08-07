@@ -53,9 +53,8 @@ public class LineageTableInfo extends VirtualTable
     private @Nullable Integer _depth;
     private @Nullable String _expType;
     private @Nullable String _cpasType;
-    private boolean _veryNewHotness;
 
-    public LineageTableInfo(String name, @NotNull UserSchema schema, @NotNull SQLFragment lsids, boolean parents, @Nullable Integer depth, @Nullable String expType, @Nullable String cpasType, boolean veryNewHotness)
+    public LineageTableInfo(String name, @NotNull UserSchema schema, @NotNull SQLFragment lsids, boolean parents, @Nullable Integer depth, @Nullable String expType, @Nullable String cpasType)
     {
         super(schema.getDbSchema(), name, schema);
         _lsids = lsids;
@@ -67,17 +66,13 @@ public class LineageTableInfo extends VirtualTable
         _depth = depth;
         _expType = expType;
         _cpasType = cpasType;
-        _veryNewHotness = veryNewHotness;
 
         ColumnInfo selfLsid = new ColumnInfo(FieldKey.fromParts("self_lsid"), this, JdbcType.VARCHAR);
         selfLsid.setSqlTypeName("lsidtype");
         addColumn(selfLsid);
 
-        if (veryNewHotness)
-        {
-            ColumnInfo selfRowId = new ColumnInfo(FieldKey.fromParts("self_rowid"), this, JdbcType.INTEGER);
-            addColumn(selfRowId);
-        }
+        ColumnInfo selfRowId = new ColumnInfo(FieldKey.fromParts("self_rowid"), this, JdbcType.INTEGER);
+        addColumn(selfRowId);
 
         ColumnInfo depthCol = new ColumnInfo(FieldKey.fromParts("depth"), this, JdbcType.INTEGER);
         addColumn(depthCol);
@@ -119,7 +114,7 @@ public class LineageTableInfo extends VirtualTable
 
         return new LookupForeignKey("lsid") {
             @Override
-            public TableInfo getLookupTableInfo() { return new NodesTableInfo(_userSchema, _veryNewHotness); }
+            public TableInfo getLookupTableInfo() { return new NodesTableInfo(_userSchema); }
         };
     }
 
@@ -225,7 +220,6 @@ public class LineageTableInfo extends VirtualTable
         options.setExpType(_expType);
         if (_depth != null)
             options.setDepth(_depth);
-        options.setVeryNewHotness(_veryNewHotness);
 
         SQLFragment tree = ExperimentServiceImpl.get().generateExperimentTreeSQL(_lsids, options);
 
@@ -244,12 +238,9 @@ public class LineageTableInfo extends VirtualTable
      */
     private static class NodesTableInfo extends VirtualTable
     {
-        private boolean _veryNewHotness;
-
-        public NodesTableInfo(@Nullable UserSchema schema, boolean veryNewHotness)
+        public NodesTableInfo(@Nullable UserSchema schema)
         {
             super(schema.getDbSchema(), "Nodes", schema);
-            _veryNewHotness = veryNewHotness;
 
             ColumnInfo containerCol = new ColumnInfo(FieldKey.fromParts("Container"), this, JdbcType.VARCHAR);
             containerCol.setSqlTypeName("entityid");
@@ -279,21 +270,7 @@ public class LineageTableInfo extends VirtualTable
         @Override
         public SQLFragment getFromSQL()
         {
-            // Attempt to use materialized nodes table
-            if (!_veryNewHotness)
-            {
-                ExperimentServiceImpl impl = ExperimentServiceImpl.get();
-                synchronized (impl.initEdgesLock)
-                {
-                    if (impl.materializedEdges != null)
-                    {
-                        SQLFragment temp = impl.materializedNodes.getFromSql(null, null);
-                        return new SQLFragment("SELECT * FROM ").append(temp);
-                    }
-                }
-            }
-
-            // Fallback to giant union query
+            // giant union query
             SQLFragment sql = new SQLFragment();
             sql.append(
                     "SELECT container, CAST('Data' AS VARCHAR(50)) AS exptype, CAST(cpastype AS VARCHAR(200)) AS cpastype, name, lsid, rowid\n" +

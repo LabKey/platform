@@ -1707,30 +1707,13 @@ public class ExperimentServiceImpl implements ExperimentService
             return getParentsOldAndBusted(start);
         }
 
-        if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_LINEAGE_PERFORMANCE))
-        {
-            Pair<Set<ExpData>, Set<ExpMaterial>> veryNewHotness = getParentsVeryNewHotness(start);
+        Pair<Set<ExpData>, Set<ExpMaterial>> veryNewHotness = getParentsVeryNewHotness(start);
 
-            Pair<Set<ExpData>, Set<ExpMaterial>> newHotness = null;
-            assert null != (newHotness = getParentsNewHotness(start));
-            assert assertLineage(start, veryNewHotness, newHotness);
+        Pair<Set<ExpData>, Set<ExpMaterial>> oldAndBusted = null;
+        assert null != (oldAndBusted = getParentsOldAndBusted(start));
+        assert assertLineage(start, veryNewHotness, oldAndBusted);
 
-            Pair<Set<ExpData>, Set<ExpMaterial>> oldAndBusted = null;
-            assert null != (oldAndBusted = getParentsOldAndBusted(start));
-            assert assertLineage(start, veryNewHotness, oldAndBusted);
-
-            return veryNewHotness;
-        }
-        else
-        {
-            Pair<Set<ExpData>, Set<ExpMaterial>> newHotness   = getParentsNewHotness(start);
-
-            Pair<Set<ExpData>, Set<ExpMaterial>> oldAndBusted = null;
-            assert null != (oldAndBusted = getParentsOldAndBusted(start));
-            assert assertLineage(start, newHotness, oldAndBusted);
-
-            return newHotness;
-        }
+        return veryNewHotness;
     }
 
     // Make boolean so it can hide behind 'assert' and no-op in production mode
@@ -1833,30 +1816,13 @@ public class ExperimentServiceImpl implements ExperimentService
             return getChildrenOldAndBusted(start);
         }
 
-        if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_LINEAGE_PERFORMANCE))
-        {
-            Pair<Set<ExpData>, Set<ExpMaterial>> veryNewHotness = getChildrenVeryNewHotness(start);
+        Pair<Set<ExpData>, Set<ExpMaterial>> veryNewHotness = getChildrenVeryNewHotness(start);
 
-            Pair<Set<ExpData>, Set<ExpMaterial>> newHotness = null;
-            assert null != (newHotness   = getChildrenNewHotness(start));
-            assert assertLineage(start, veryNewHotness, newHotness);
+        Pair<Set<ExpData>, Set<ExpMaterial>> oldAndBusted = null;
+        assert null != (oldAndBusted = getChildrenOldAndBusted(start));
+        assert assertLineage(start, veryNewHotness, oldAndBusted);
 
-            Pair<Set<ExpData>, Set<ExpMaterial>> oldAndBusted = null;
-            assert null != (oldAndBusted = getChildrenOldAndBusted(start));
-            assert assertLineage(start, veryNewHotness, oldAndBusted);
-
-            return veryNewHotness;
-        }
-        else
-        {
-            Pair<Set<ExpData>, Set<ExpMaterial>> newHotness = getChildrenNewHotness(start);
-
-            Pair<Set<ExpData>, Set<ExpMaterial>> oldAndBusted = null;
-            assert null != (oldAndBusted = getChildrenOldAndBusted(start));
-            assert assertLineage(start, newHotness, oldAndBusted);
-
-            return newHotness;
-        }
+        return veryNewHotness;
     }
 
 
@@ -1921,19 +1887,9 @@ public class ExperimentServiceImpl implements ExperimentService
      * each row in the result represents one 'edge' or 'leaf/root' in the experiment graph, that is to say
      * nodes (material,data,protocolapplication) may appear more than once, but edges shouldn't
      **/
-    private Pair<Set<ExpData>, Set<ExpMaterial>> getParentsNewHotness(ExpProtocolOutput start)
-    {
-        ExpLineageOptions options = new ExpLineageOptions();
-        options.setChildren(false);
-
-        ExpLineage lineage = getLineage(start, options);
-        return Pair.of(lineage.getDatas(), lineage.getMaterials());
-    }
-
     private Pair<Set<ExpData>, Set<ExpMaterial>> getParentsVeryNewHotness(ExpProtocolOutput start)
     {
         ExpLineageOptions options = new ExpLineageOptions();
-        options.setVeryNewHotness(true);
         options.setChildren(false);
 
         ExpLineage lineage = getLineage(start, options);
@@ -1944,19 +1900,9 @@ public class ExperimentServiceImpl implements ExperimentService
     /**
      * walk experiment graph with one tricky recursive query
      **/
-    public Pair<Set<ExpData>, Set<ExpMaterial>> getChildrenNewHotness(ExpProtocolOutput start)
-    {
-        ExpLineageOptions options = new ExpLineageOptions();
-        options.setParents(false);
-
-        ExpLineage lineage = getLineage(start, options);
-        return Pair.of(lineage.getDatas(), lineage.getMaterials());
-    }
-
     public Pair<Set<ExpData>, Set<ExpMaterial>> getChildrenVeryNewHotness(ExpProtocolOutput start)
     {
         ExpLineageOptions options = new ExpLineageOptions();
-        options.setVeryNewHotness(true);
         options.setParents(false);
 
         ExpLineage lineage = getLineage(start, options);
@@ -1984,33 +1930,8 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
 
-    static final String exp_graph_sql;
-    static final String exp_graph_sql_for_lookup;
-
     static final String exp_graph_sql2;
     static final String exp_graph_sql_for_lookup2;
-
-    static
-    {
-        try
-        {
-            String sql = IOUtils.toString(ExperimentServiceImpl.class.getResourceAsStream("ExperimentRunGraph.sql"), "UTF-8");
-            if (DbSchema.get("exp", DbSchemaType.Module).getSqlDialect().isPostgreSQL())
-                exp_graph_sql = StringUtils.replace(StringUtils.replace(sql, "$RECURSIVE$", "RECURSIVE"), "$VARCHAR$", "VARCHAR");
-            else
-                exp_graph_sql = StringUtils.replace(StringUtils.replace(StringUtils.replace(sql, "$RECURSIVE$", ""), "$VARCHAR$", "NVARCHAR"), "||", "+");
-
-            sql = IOUtils.toString(ExperimentServiceImpl.class.getResourceAsStream("ExperimentRunGraphForLookup.sql"), "UTF-8");
-            if (DbSchema.get("exp", DbSchemaType.Module).getSqlDialect().isPostgreSQL())
-                exp_graph_sql_for_lookup = StringUtils.replace(StringUtils.replace(sql, "$RECURSIVE$", "RECURSIVE"), "$VARCHAR$", "VARCHAR");
-            else
-                exp_graph_sql_for_lookup = StringUtils.replace(StringUtils.replace(StringUtils.replace(sql, "$RECURSIVE$", ""), "$VARCHAR$", "NVARCHAR"), "||", "+");
-        }
-        catch (IOException x)
-        {
-            throw new ConfigurationException("Cannot read file ExperimentRunGraph.sql");
-        }
-    }
 
     static
     {
@@ -2030,7 +1951,7 @@ public class ExperimentServiceImpl implements ExperimentService
         }
         catch (IOException x)
         {
-            throw new ConfigurationException("Cannot read file ExperimentRunGraph.sql");
+            throw new ConfigurationException("Cannot read file ExperimentRunGraph2.sql: " + x.getMessage());
         }
     }
 
@@ -2129,20 +2050,8 @@ public class ExperimentServiceImpl implements ExperimentService
         if (isUnknownMaterial(start))
             return new ExpLineage(start);
 
-        List<String> lsids;
+        List<String> lsids = Collections.singletonList(start.getLSID());;
         Pair<Map<String, String>, Map<String, String>> pair = collectRunsAndRolesToInvestigate(start, options);
-        if (options.isVeryNewHotness())
-        {
-            lsids = Collections.singletonList(start.getLSID());
-        }
-        else
-        {
-            lsids = new ArrayList<>(pair.first.size() + pair.second.size());
-            lsids.addAll(pair.first.keySet());
-            lsids.addAll(pair.second.keySet());
-            if (lsids.isEmpty())
-                return new ExpLineage(start);
-        }
 
         SQLFragment sqlf = generateExperimentTreeSQL(lsids, options);
         Set<Integer> dataids = new HashSet<>();
@@ -2152,11 +2061,11 @@ public class ExperimentServiceImpl implements ExperimentService
 
         // add edges for initial runs and roles up
         for (Map.Entry<String, String> runAndRole : pair.first.entrySet())
-            edges.add(new ExpLineage.Edge(runAndRole.getKey(), start.getLSID(), options.isVeryNewHotness() ? "no role" : runAndRole.getValue()));
+            edges.add(new ExpLineage.Edge(runAndRole.getKey(), start.getLSID(), "no role"));
 
         // add edges for initial runs and roles down
         for (Map.Entry<String, String> runAndRole : pair.second.entrySet())
-            edges.add(new ExpLineage.Edge(start.getLSID(), runAndRole.getKey(), options.isVeryNewHotness() ? "no role" :runAndRole.getValue()));
+            edges.add(new ExpLineage.Edge(start.getLSID(), runAndRole.getKey(), "no role"));
 
         new SqlSelector(getExpSchema(), sqlf).forEachMap((m)->
         {
@@ -2170,11 +2079,7 @@ public class ExperimentServiceImpl implements ExperimentService
             Integer parentRowId = (Integer)m.get("parent_rowid");
             Integer childRowId = (Integer)m.get("child_rowid");
 
-            String role;
-            if (options.isVeryNewHotness())
-                role = "no role";
-            else
-                role = (String)m.get("role");
+            String role = "no role";
             if (parentRowId == null || childRowId == null)
             {
                 LOG.error(String.format("Node not found for lineage of %s.\n  depth=%d, parentLsid=%s, parentType=%s, parentRowId=%d, childLsid=%s, childType=%s, childRowId=%d",
@@ -2241,11 +2146,9 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     /* return <ParentsQuery,ChildrenQuery> */
-    private Pair<String,String> getRunGraphCommonTableExpressions(SQLFragment ret, SQLFragment lsidsFrag, boolean forLookup, Integer depth, boolean veryNewHotness)
+    private Pair<String,String> getRunGraphCommonTableExpressions(SQLFragment ret, SQLFragment lsidsFrag, boolean forLookup, Integer depth)
     {
-        String sourceSQL = veryNewHotness ?
-                (forLookup ? exp_graph_sql_for_lookup2 : exp_graph_sql2) :
-                (forLookup ? exp_graph_sql_for_lookup : exp_graph_sql);
+        String sourceSQL = (forLookup ? exp_graph_sql_for_lookup2 : exp_graph_sql2);
 
         Map<String,String> map = new HashMap<>();
 
@@ -2264,38 +2167,17 @@ public class ExperimentServiceImpl implements ExperimentService
                 select = select.substring(1).trim();
             if (name.equals("$SEED$"))
                 select = select.replace("$LSIDS$", lsidsFrag.getRawSQL());
-            if (veryNewHotness && (name.equals("$PARENTS_INNER$") || name.equals("$CHILDREN_INNER$")))
+            if (name.equals("$PARENTS_INNER$") || name.equals("$CHILDREN_INNER$"))
                 select = select.replace("$LSIDS$", lsidsFrag.getRawSQL());
             map.put(name, select);
         }
 
-        String nodesToken = null;
         String seedToken = null;
         String edgesToken = null;
-        if (!veryNewHotness)
-        {
-            String nodesSelect = map.get("$NODES$");
-            SQLFragment nodesMaterialized = materializeNodesCTE(nodesSelect);
-            nodesToken = ret.addCommonTableExpression(ExperimentServiceImpl.class.getName() + "$CTE_NODES", "org_lk_exp_NODES", nodesMaterialized);
-
-            String seedSelect = map.get("$SEED$");
-            seedSelect = StringUtils.replace(seedSelect, "$NODES$", nodesToken);
-            SQLFragment seedSqlfSelect = new SQLFragment(seedSelect, lsidsFrag.getParams());
-            seedToken = ret.addCommonTableExpression(JdbcUtil.format(seedSqlfSelect), "org_lk_exp_SEED", seedSqlfSelect);
-
-            String edgesSelect = map.get("$EDGES$");
-            SQLFragment edgesMaterialized = materializeEdgesCTE(edgesSelect);
-            edgesToken = ret.addCommonTableExpression(ExperimentServiceImpl.class.getName() + "$CTE_EDGES", "org_lk_exp_EDGES", edgesMaterialized);
-        }
 
         boolean recursive = getExpSchema().getSqlDialect().isPostgreSQL();
 
         String parentsInnerSelect = map.get("$PARENTS_INNER$");
-        if (!veryNewHotness)
-        {
-            parentsInnerSelect = StringUtils.replace(parentsInnerSelect, "$SEED$", seedToken);
-            parentsInnerSelect = StringUtils.replace(parentsInnerSelect, "$EDGES$", edgesToken);
-        }
         // NOTE: Adding depth clause to the inner recursive CTE makes it more efficient, but does mean it won't be shared if we have a lookup by a different depth in the query
         String parentDepth = "";
         if (depth != null && depth != 0)
@@ -2305,14 +2187,11 @@ public class ExperimentServiceImpl implements ExperimentService
         }
         parentsInnerSelect = StringUtils.replace(parentsInnerSelect, "$AND_STUFF$", parentDepth);
         SQLFragment parentsInnerSelectFrag = new SQLFragment(parentsInnerSelect);
-        if (veryNewHotness)
-            parentsInnerSelectFrag.addAll(lsidsFrag.getParams());
+        parentsInnerSelectFrag.addAll(lsidsFrag.getParams());
         String parentsInnerToken = ret.addCommonTableExpression(parentsInnerSelect, "org_lk_exp_PARENTS_INNER", parentsInnerSelectFrag, recursive);
 
         String parentsSelect = map.get("$PARENTS$");
         parentsSelect = StringUtils.replace(parentsSelect, "$PARENTS_INNER$", parentsInnerToken);
-        if (!veryNewHotness)
-            parentsSelect = StringUtils.replace(parentsSelect, "$NODES$", nodesToken);
         String parentsToken = ret.addCommonTableExpression(parentsSelect, "org_lk_exp_PARENTS", new SQLFragment(parentsSelect), recursive);
 
         String childrenInnerSelect = map.get("$CHILDREN_INNER$");
@@ -2326,14 +2205,11 @@ public class ExperimentServiceImpl implements ExperimentService
         }
         childrenInnerSelect = StringUtils.replace(childrenInnerSelect, "$AND_STUFF$", childrenDepth);
         SQLFragment childrenInnerSelectFrag = new SQLFragment(childrenInnerSelect);
-        if (veryNewHotness)
-            childrenInnerSelectFrag.addAll(lsidsFrag.getParams());
+        childrenInnerSelectFrag.addAll(lsidsFrag.getParams());
         String childrenInnerToken = ret.addCommonTableExpression(childrenInnerSelect, "org_lk_exp_CHILDREN_INNER", childrenInnerSelectFrag, recursive);
 
         String childrenSelect = map.get("$CHILDREN$");
         childrenSelect = StringUtils.replace(childrenSelect, "$CHILDREN_INNER$", childrenInnerToken);
-        if (!veryNewHotness)
-            childrenSelect = StringUtils.replace(childrenSelect, "$NODES$", nodesToken);
         String childrenToken = ret.addCommonTableExpression(childrenSelect, "org_lk_exp_CHILDREN", new SQLFragment(childrenSelect), recursive);
 
         return new Pair<>(parentsToken,childrenToken);
@@ -2441,7 +2317,7 @@ public class ExperimentServiceImpl implements ExperimentService
     public SQLFragment generateExperimentTreeSQL(SQLFragment lsidsFrag, ExpLineageOptions options)
     {
         SQLFragment sqlf = new SQLFragment();
-        Pair<String,String> tokens = getRunGraphCommonTableExpressions(sqlf, lsidsFrag, options.isForLookup(), options.getDepth(), options.isVeryNewHotness());
+        Pair<String,String> tokens = getRunGraphCommonTableExpressions(sqlf, lsidsFrag, options.isForLookup(), options.getDepth());
         boolean up = options.isParents();
         boolean down = options.isChildren();
 
@@ -2453,8 +2329,6 @@ public class ExperimentServiceImpl implements ExperimentService
                 if (options.isForLookup())
                 {
                     parents.append("\nSELECT MIN(depth) AS depth, self_lsid, ");
-                    if (!options.isVeryNewHotness())
-                        parents.append("MIN(self_rowid) AS self_rowid, ");
                     parents.append("MIN(container) AS container, MIN(exptype) AS exptype, MIN(cpastype) AS cpastype, MIN(name) AS name, lsid, MIN(rowid) AS rowid ");
                     parents.append("\nFROM ").append(tokens.first);
                 }
@@ -2462,18 +2336,13 @@ public class ExperimentServiceImpl implements ExperimentService
                 {
                     parents.append("\nSELECT * FROM " + tokens.first);
                 }
-                String and = "\nWHERE ";
 
-                if (options.isVeryNewHotness())
-                {
-                    parents.append(and).append("depth != 0");
-                    and = "\nAND ";
-                }
+                parents.append("\nWHERE depth != 0");
+                String and = "\nAND ";
 
                 if (options.isForLookup())
                 {
                     parents.append(and).append("lsid <> self_lsid");
-                    and = "\nAND ";
                 }
 
                 if (options.getExpType() != null && !"NULL".equalsIgnoreCase(options.getExpType()))
@@ -2483,7 +2352,6 @@ public class ExperimentServiceImpl implements ExperimentService
                     else
                         parents.append(and).append("parent_exptype = ?\n");
                     parents.add(options.getExpType());
-                    and = "\nAND ";
                 }
 
                 if (options.getCpasType() != null && !"NULL".equalsIgnoreCase(options.getCpasType()))
@@ -2493,7 +2361,6 @@ public class ExperimentServiceImpl implements ExperimentService
                     else
                         parents.append(and).append("parent_cpastype = ?\n");
                     parents.add(options.getCpasType());
-                    and = "\nAND ";
                 }
 
                 if (options.getDepth() != 0)
@@ -2503,7 +2370,6 @@ public class ExperimentServiceImpl implements ExperimentService
                     if (depth > 0)
                         depth *= -1;
                     parents.append(and).append("depth >= ").append(depth);
-                    and = "\nAND ";
                 }
 
                 if (options.isForLookup())
@@ -2525,8 +2391,6 @@ public class ExperimentServiceImpl implements ExperimentService
                 if (options.isForLookup())
                 {
                     children.append("\nSELECT MIN(depth) AS depth, self_lsid, ");
-                    if (!options.isVeryNewHotness())
-                        children.append("MIN(self_rowid) AS self_rowid, ");
                     children.append("MIN(container) AS container, MIN(exptype) AS exptype, MIN(cpastype) AS cpastype, MIN(name) as name, lsid, MIN(rowid) AS rowid ");
                     children.append("\nFROM ").append(tokens.second);
                 }
@@ -2535,18 +2399,12 @@ public class ExperimentServiceImpl implements ExperimentService
                     children.append("\nSELECT * FROM " + tokens.second);
                 }
 
-                String and = "\nWHERE ";
-
-                if (options.isVeryNewHotness())
-                {
-                    children.append(and).append("depth != 0");
-                    and = "\nAND ";
-                }
+                children.append("\nWHERE depth != 0");
+                String and = "\nAND ";
 
                 if (options.isForLookup())
                 {
                     children.append(and).append("lsid <> self_lsid");
-                    and = "\nAND ";
                 }
 
                 if (options.getExpType() != null && !"NULL".equalsIgnoreCase(options.getExpType()))
@@ -2556,7 +2414,6 @@ public class ExperimentServiceImpl implements ExperimentService
                     else
                         children.append(and).append("child_exptype = ?\n");
                     children.add(options.getExpType());
-                    and = "\nAND ";
                 }
 
                 if (options.getCpasType() != null && !"NULL".equalsIgnoreCase(options.getCpasType()))
@@ -2566,13 +2423,11 @@ public class ExperimentServiceImpl implements ExperimentService
                     else
                         children.append(and).append("child_cpastype = ?\n");
                     children.add(options.getCpasType());
-                    and = "\nAND ";
                 }
 
                 if (options.getDepth() > 0)
                 {
                     children.append(and).append("depth <= ").append(options.getDepth());
-                    and = "\nAND ";
                 }
 
                 if (options.isForLookup())
@@ -2733,26 +2588,36 @@ public class ExperimentServiceImpl implements ExperimentService
         LOG.debug("Rebuilding edges for runId " + runId);
         try (DbScope.Transaction tx = getExpSchema().getScope().ensureTransaction())
         {
-            SQLFragment inputDatas = new SQLFragment()
+            SQLFragment datas = new SQLFragment()
                     .append("SELECT d.Container, d.LSID FROM exp.Data d\n")
                     .append("INNER JOIN exp.DataInput di ON d.rowId = di.dataId\n")
                     .append("INNER JOIN exp.ProtocolApplication pa ON di.TargetApplicationId = pa.RowId\n")
                     .append("WHERE pa.RunId = ?")
-                    .append("  AND pa.CpasType = 'ExperimentRun'")
-                    .add(runId);
-            Collection<Map<String, Object>> fromDataLsids = new SqlSelector(getSchema(), inputDatas).getMapCollection();
+                    .add(runId)
+                    .append("  AND pa.CpasType = ?")
+                    .add(0);
 
-            SQLFragment inputMaterials = new SQLFragment()
+            datas.set(1, ExpProtocol.ApplicationType.ExperimentRun.name());
+            Collection<Map<String, Object>> fromDataLsids = new SqlSelector(getSchema(), datas).getMapCollection();
+
+            // NOTE: Originally, we just filtered exp.data by runId.  This works for most runs but includes intermediate exp.data nodes and caused the ExpTest to fail
+            datas.set(1, ExpProtocol.ApplicationType.ExperimentRunOutput.name());
+            Collection<Map<String, Object>> toDataLsids = new SqlSelector(getSchema(), datas).getMapCollection();
+
+            SQLFragment materials = new SQLFragment()
                     .append("SELECT m.Container, m.LSID, m.CpasType FROM exp.material m\n")
                     .append("INNER JOIN exp.MaterialInput mi ON m.rowId = mi.materialId\n")
                     .append("INNER JOIN exp.ProtocolApplication pa ON mi.TargetApplicationId = pa.RowId\n")
                     .append("WHERE pa.RunId = ?")
-                    .append("  AND pa.CpasType = 'ExperimentRun'")
-                    .add(runId);
-            Collection<Map<String, Object>> fromMaterialLsids = new SqlSelector(getSchema(), inputMaterials).getMapCollection();
+                    .add(runId)
+                    .append("  AND pa.CpasType = ?")
+                    .add(0);
 
-            Collection<Map<String, Object>> toDataLsids = new TableSelector(getTinfoData(), getTinfoData().getColumns("Container, LSID"), new SimpleFilter(FieldKey.fromParts("RunId"), runId), null).getMapCollection();
-            Collection<Map<String, Object>> toMaterialLsids = new TableSelector(getTinfoMaterial(), getTinfoMaterial().getColumns("Container, LSID, CpasType"), new SimpleFilter(FieldKey.fromParts("RunId"), runId), null).getMapCollection();
+            materials.set(1, ExpProtocol.ApplicationType.ExperimentRun.name());
+            Collection<Map<String, Object>> fromMaterialLsids = new SqlSelector(getSchema(), materials).getMapCollection();
+
+            materials.set(1, ExpProtocol.ApplicationType.ExperimentRunOutput.name());
+            Collection<Map<String, Object>> toMaterialLsids = new SqlSelector(getSchema(), materials).getMapCollection();
 
             // delete all existing edges for this run
             if (deleteFirst)
