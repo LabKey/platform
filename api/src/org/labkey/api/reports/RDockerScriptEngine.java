@@ -25,6 +25,7 @@ import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.rstudio.RStudioService;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileUtil;
 
 import javax.script.ScriptContext;
@@ -63,7 +64,7 @@ public class RDockerScriptEngine extends RScriptEngine
         _rs = rs;
         _remoteWorkingDir = remoteWorkingDir;
 
-        def.setPathMap(new PathMapperImpl(){
+        def.setPathMapper(new PathMapperImpl(){
 
             void setMapping()
             {
@@ -153,9 +154,11 @@ public class RDockerScriptEngine extends RScriptEngine
     }
 
     @NotNull
-    private static EngineDefinition mockEngineDefinition()
+    private static ExternalScriptEngineDefinition mockEngineDefinition()
     {
-        EngineDefinition engineDef = new EngineDefinition();
+        LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+
+        ExternalScriptEngineDefinition engineDef = svc.createEngineDefinition();
         engineDef.setExtensions(new String[]{"R", "r"});
         engineDef.setPandocEnabled(true); // TODO: ?
         return engineDef;

@@ -167,4 +167,9 @@ public class CoreSchema
     {
         return getSchema().getTable("APIKeys");
     }
+
+    public TableInfo getTableInfoReportEngines()
+    {
+        return getSchema().getTable("ReportEngines");
+    }
 }

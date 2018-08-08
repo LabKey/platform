@@ -1191,7 +1191,6 @@ api/src/org/labkey/api/reader/jxl/JxlFormulaEvaluator.java -text
 api/src/org/labkey/api/reader/jxl/JxlRow.java -text
 api/src/org/labkey/api/reader/jxl/JxlSheet.java -text
 api/src/org/labkey/api/reader/jxl/JxlWorkbook.java -text
-api/src/org/labkey/api/reports/EngineDefinition.java -text
 api/src/org/labkey/api/reports/ExternalScriptEngine.java -text
 api/src/org/labkey/api/reports/ExternalScriptEngineDefinition.java -text
 api/src/org/labkey/api/reports/ExternalScriptEngineFactory.java -text

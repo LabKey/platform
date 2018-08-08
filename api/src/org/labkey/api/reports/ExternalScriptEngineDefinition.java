@@ -24,6 +24,14 @@ import org.labkey.api.pipeline.file.PathMapper;
 */
 public interface ExternalScriptEngineDefinition
 {
+    enum Type
+    {
+        R,
+        Perl,
+        External,
+    }
+
+    Integer getRowId();
     String getName();
     String[] getExtensions();
     String getLanguageName();
@@ -31,6 +39,7 @@ public interface ExternalScriptEngineDefinition
 
     String getExePath();
     String getExeCommand();
+    Type getType();
 
     //
     // consider:  move these to RemoteScriptEngineDefinition?
@@ -74,5 +83,5 @@ public interface ExternalScriptEngineDefinition
     void setPort(int port);
     void setUser(String user);
     void setPassword(String password);
-    void setPathMap(PathMapper pathMap);
+    void setPathMapper(PathMapper pathMap);
 }
