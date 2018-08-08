@@ -98,6 +98,7 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
         this.items = [{
             xtype: 'box',
             itemId: 'loader',
+            id: 'loaderTag',
             autoEl: {
                 tag: 'p',
                 cls: 'lk-qd-loading',
@@ -121,7 +122,9 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
         this.cache.loadQueryDetails(this.schemaName, this.queryName, this.fk, function(queryDetails) {
             loader.call(this, queryDetails);
         }, function(errorInfo) {
-            this.getEl().update(this.displayError('Error in query: ' + errorInfo.exception));
+            if (Ext4.getCmp('loaderTag')) {
+                Ext4.getCmp('loaderTag').update('<div class="lk-qd-error">Error in query: ' + Ext4.htmlEncode(errorInfo.exception) + '</div>');
+            }
         }, this);
     },
 
