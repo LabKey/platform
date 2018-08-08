@@ -677,4 +677,30 @@
           <column columnName="Expiration"/>
       </columns>
   </table>
+
+  <table tableName="ReportEngines" tableDbType="TABLE">
+    <description>Contains one row per API key.</description>
+    <columns>
+      <column columnName="RowId"/>
+      <column columnName="CreatedBy">
+        <fk>
+          <fkColumnName>UserId</fkColumnName>
+          <fkTable>Users</fkTable>
+        </fk>
+      </column>
+      <column columnName="Created"/>
+      <column columnName="ModifiedBy">
+        <fk>
+          <fkColumnName>UserId</fkColumnName>
+          <fkTable>Users</fkTable>
+        </fk>
+      </column>
+      <column columnName="Modified"/>
+      <column columnName="Name"/>
+      <column columnName="Enabled"/>
+      <column columnName="Type"/>
+      <column columnName="Description"/>
+      <column columnName="Configuration"/>
+    </columns>
+  </table>
 </tables>

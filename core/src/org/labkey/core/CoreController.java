@@ -30,12 +30,14 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.ExportAction;
+import org.labkey.api.action.ExtFormAction;
 import org.labkey.api.action.FormApiAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AbstractFolderContext;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.CoreUrls;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
@@ -77,9 +79,17 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleProperty;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.file.PathMapper;
+import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationError;
+import org.labkey.api.query.ValidationException;
+import org.labkey.api.reports.ExternalScriptEngineDefinition;
+import org.labkey.api.reports.ExternalScriptEngineFactory;
+import org.labkey.api.reports.LabkeyScriptEngineManager;
+import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.RequiresLogin;
@@ -89,6 +99,7 @@ import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -97,6 +108,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.study.Study;
@@ -106,6 +118,7 @@ import org.labkey.api.util.Compress;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.PageFlowUtil.Content;
 import org.labkey.api.util.PageFlowUtil.NoContent;
@@ -130,6 +143,7 @@ import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
 import org.labkey.api.writer.ZipUtil;
+import org.labkey.core.reports.ExternalScriptEngineDefinitionImpl;
 import org.labkey.core.security.SecurityController;
 import org.labkey.core.workbook.CreateWorkbookBean;
 import org.labkey.core.workbook.MoveWorkbooksBean;
@@ -143,6 +157,7 @@ import org.springframework.web.multipart.commons.CommonsMultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
+import javax.script.ScriptEngineFactory;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -274,6 +289,11 @@ public class CoreController extends SpringActionController
         }
 
         abstract Content getContent(HttpServletRequest request, HttpServletResponse response) throws Exception;
+    }
+
+    public static void registerAdminConsoleLinks()
+    {
+        AdminConsole.addLink(AdminConsole.SettingsLinkType.Configuration, "views and scripting", new ActionURL(ConfigureReportsAndScriptsAction.class, ContainerManager.getRoot()));
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -2069,6 +2089,146 @@ public class CoreController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("LabKey Style Guide");
+        }
+    }
+
+    @AdminConsoleAction(AdminOperationsPermission.class)
+    public class ConfigureReportsAndScriptsAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors)
+        {
+            return new JspView("/org/labkey/core/view/configReportsAndScripts.jsp");
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            getPageConfig().setHelpTopic(new HelpTopic("configureScripting"));
+            root.addChild("Admin Console", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL());
+            return root.addChild("Views and Scripting Configuration");
+        }
+    }
+
+    @AdminConsoleAction(AdminOperationsPermission.class)
+    public class ScriptEnginesSummaryAction extends ApiAction
+    {
+        public ApiResponse execute(Object o, BindException errors)
+        {
+            List<Map<String, Object>> views = new ArrayList<>();
+
+            LabkeyScriptEngineManager manager = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+
+            for (ScriptEngineFactory factory : manager.getEngineFactories())
+            {
+                Map<String, Object> record = new HashMap<>();
+
+                record.put("name", factory.getEngineName());
+                record.put("extensions", StringUtils.join(factory.getExtensions(), ','));
+                record.put("languageName", factory.getLanguageName());
+                record.put("languageVersion", factory.getLanguageVersion());
+
+                boolean isExternal = factory instanceof ExternalScriptEngineFactory;
+                record.put("external", String.valueOf(isExternal));
+
+                LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+                record.put("enabled", String.valueOf(svc.isFactoryEnabled(factory)));
+
+                if (isExternal)
+                {
+                    // extra metadata for external engines
+                    ExternalScriptEngineDefinition def = ((ExternalScriptEngineFactory)factory).getDefinition();
+
+                    record.put("rowId", def.getRowId());
+                    if (def.getType() != null)
+                        record.put("type", def.getType().name());
+                    record.put("remote", def.isRemote());
+
+                    record.put("exePath", def.getExePath());
+                    record.put("exeCommand", def.getExeCommand());
+                    record.put("outputFileName", def.getOutputFileName());
+                    record.put("pandocEnabled", String.valueOf(def.isPandocEnabled()));
+                    record.put("docker", String.valueOf(def.isDocker()));
+
+                    if (def.isRemote())
+                    {
+                        record.put("machine", def.getMachine());
+                        record.put("port", String.valueOf(def.getPort()));
+
+                        PathMapper pathMap = def.getPathMap();
+                        if (pathMap != null)
+                            record.put("pathMap", ((PathMapperImpl)pathMap).toJSON());
+                        else
+                            record.put("pathMap", null);
+
+                        record.put("user", def.getUser());
+                        record.put("password", def.getPassword());
+                    }
+                }
+                views.add(record);
+            }
+            return new ApiSimpleResponse("views", views);
+        }
+    }
+
+    @AdminConsoleAction(AdminOperationsPermission.class)
+    public class ScriptEnginesSaveAction extends ExtFormAction<ExternalScriptEngineDefinitionImpl>
+    {
+        @Override
+        public void validateForm(ExternalScriptEngineDefinitionImpl def, Errors errors)
+        {
+            // validate definition
+            if (StringUtils.isEmpty(def.getName()))
+                errors.rejectValue("name", ERROR_MSG, "The Name field cannot be empty");
+
+            if (def.isExternal())
+            {
+                //
+                // If the engine is remote then don't validate the exe and command line values
+                //
+                if (!def.isRemote())
+                {
+                    File rexe = new File(def.getExePath());
+                    if (!rexe.exists())
+                        errors.rejectValue("exePath", ERROR_MSG, "The program location: '" + def.getExePath() + "' does not exist");
+                    if (rexe.isDirectory())
+                        errors.rejectValue("exePath", ERROR_MSG, "Please specify the entire path to the program, not just the directory (e.g., 'c:/Program Files/R/R-2.7.1/bin/R.exe')");
+                }
+                else
+                {
+                    // see if we had any bind errors (currently only filled in from the remote path mapper)
+                    if (def.getPathMap() != null )
+                    {
+                        ValidationException validationException = def.getPathMap().getValidationErrors();
+                        if (validationException != null && validationException.hasErrors())
+                        {
+                            List<ValidationError> validationErrors = validationException.getErrors();
+                            for (ValidationError v : validationErrors)
+                            {
+                                errors.rejectValue("pathMap", ERROR_MSG, v.getMessage());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        public ApiResponse execute(ExternalScriptEngineDefinitionImpl def, BindException errors)
+        {
+            LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+            svc.saveDefinition(getUser(), def);
+
+            return new ApiSimpleResponse("success", true);
+        }
+    }
+
+    @AdminConsoleAction(AdminOperationsPermission.class)
+    public class ScriptEnginesDeleteAction extends ApiAction<ExternalScriptEngineDefinitionImpl>
+    {
+        public ApiResponse execute(ExternalScriptEngineDefinitionImpl def, BindException errors)
+        {
+            LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+            svc.deleteDefinition(getUser(), def);
+
+            return new ApiSimpleResponse("success", true);
         }
     }
 

@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.api.util.FileUtil" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.api.reports.ExternalScriptEngineDefinition" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -143,7 +144,8 @@
                         external: true,
                         enabled: true,
                         remote: false,
-                        languageName:'R'
+                        languageName:'R',
+                        type : <%=q(ExternalScriptEngineDefinition.Type.R.name())%>
                     };
 
                     editRecord(button, grid, record);
@@ -167,7 +169,8 @@
                         external: true,
                         enabled: true,
                         remote : true,
-                        languageName:'R'
+                        languageName:'R',
+                        type : <%=q(ExternalScriptEngineDefinition.Type.R.name())%>
                     };
 
                     record['pathMap'] = {
@@ -207,7 +210,8 @@
                         enabled: true,
                         docker: true,
                         remote: true,
-                        languageName:'R'
+                        languageName:'R',
+                        type : <%=q(ExternalScriptEngineDefinition.Type.R.name())%>
                     };
                     editRecord(button, grid, record);
                 }
@@ -226,17 +230,18 @@
                 <% } %>
                 enabled: true,
                 remote : false,
+                type : <%=q(ExternalScriptEngineDefinition.Type.Perl.name())%>,
                 languageName:'Perl'});}}}
             );
 
 
         var con = new Ext.data.HttpProxy(new Ext.data.Connection({
-                url: LABKEY.ActionURL.buildURL("reports", "scriptEnginesSummary", <%=q(getContainer().getPath())%>),
+                url: LABKEY.ActionURL.buildURL("core", "scriptEnginesSummary", <%=q(getContainer().getPath())%>),
                 method: 'GET'
             }));
 
         var store = new Ext.data.Store({
-            reader: new Ext.data.JsonReader({root:'views',id:'key'},
+            reader: new Ext.data.JsonReader({root:'views',id:'rowId'},
                     [
                         {name:'name'},
                         {name:'exePath'},
@@ -249,7 +254,7 @@
                         {name:'extensions'},
                         {name:'languageName'},
                         {name:'languageVersion'},
-                        {name:'key'},
+                        {name:'rowId'},
                         {name:'enabled', type:'boolean'},
                         {name:'external', type:'boolean'},
                         {name:'remote', type:'boolean'},
@@ -307,6 +312,7 @@
                 listeners:{click:function(button, event) {editRecord(button, grid, {
                     name:"External",
                     enabled:true,
+                    type : <%=q(ExternalScriptEngineDefinition.Type.External.name())%>,
                     external: true});}}
             }] });
 
@@ -369,7 +375,7 @@
             Ext.Msg.alert("Delete Engine Configuration", "Java 6 script engines cannot be deleted but you can disable them.");
             return false;
         }
-        params.push("key=" + record.key);
+        params.push("rowId=" + record.rowId);
         params.push("extensions=" + record.extensions);
 
         Ext.Msg.confirm('Delete Engine Configuration', "Are you sure you wish to delete the selected Configuration? : " + record.name, function(btn, text) {
@@ -377,7 +383,7 @@
             {
                 Ext.Ajax.request({
 
-                    url: LABKEY.ActionURL.buildURL("reports", "scriptEnginesDelete") + '?' + params.join('&'),
+                    url: LABKEY.ActionURL.buildURL("core", "scriptEnginesDelete") + '?' + params.join('&'),
                     method: "POST",
                     success: function(){grid.store.load();},
                     failure: function(){Ext.Msg.alert("Delete Engine Configuration", "Deletion Failed");}
@@ -618,9 +624,15 @@
         };
 
         var itemKey = {
-            name: 'key',
+            name: 'rowId',
             xtype: 'hidden',
-            value: record.key
+            value: record.rowId
+        };
+
+        var itemType = {
+            name: 'type',
+            xtype: 'hidden',
+            value: record.type
         };
 
         var itemRemote = {
@@ -671,8 +683,10 @@
         panelItems.push(itemEnabled);
         panelItems.push(itemExternal);
         panelItems.push(itemKey);
+        panelItems.push(itemType);
         panelItems.push(itemRemote);
-        panelItems.push(itemDocker);
+        if (record.docker)
+            panelItems.push(itemDocker);
 
         var formPanel = new Ext.FormPanel({
             bodyStyle:'padding:5px 5px 0',
@@ -730,7 +744,7 @@
 
         win.getBottomToolbar().get(0).setText("");
         Ext.Ajax.request({
-            url: LABKEY.ActionURL.buildURL("reports", "scriptEnginesSave"),
+            url: LABKEY.ActionURL.buildURL("core", "scriptEnginesSave"),
             method: 'POST',
             jsonData: values,
             success: function(resp, opt){

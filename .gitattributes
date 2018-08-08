@@ -185,6 +185,7 @@ core/resources/schemas/dbscripts/postgresql/core-17.30-18.10.sql -text
 core/resources/schemas/dbscripts/postgresql/core-18.10-18.11.sql -text
 core/resources/schemas/dbscripts/postgresql/core-18.10-18.20.sql -text
 core/resources/schemas/dbscripts/postgresql/core-18.21-18.22.sql -text
+core/resources/schemas/dbscripts/postgresql/core-18.22-18.23.sql -text
 core/resources/schemas/dbscripts/postgresql/core-create.sql -text
 core/resources/schemas/dbscripts/postgresql/core-drop.sql -text
 core/resources/schemas/dbscripts/postgresql/labkey-0.00-13.30.sql -text
@@ -248,6 +249,7 @@ core/resources/schemas/dbscripts/sqlserver/core-17.20-17.30.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-17.30-18.10.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-18.10-18.20.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-18.21-18.22.sql -text
+core/resources/schemas/dbscripts/sqlserver/core-18.22-18.23.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-create.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-drop.sql -text
 core/resources/schemas/dbscripts/sqlserver/group_concat_install.sql -text
@@ -563,6 +565,7 @@ core/src/org/labkey/core/query/UsersDomainKind.java -text
 core/src/org/labkey/core/query/UsersMsgPrefTable.java -text
 core/src/org/labkey/core/query/UsersTable.java -text
 core/src/org/labkey/core/reader/DataLoaderServiceImpl.java -text
+core/src/org/labkey/core/reports/ExternalScriptEngineDefinitionImpl.java -text
 core/src/org/labkey/core/reports/ScriptEngineManagerImpl.java -text
 core/src/org/labkey/core/search/NoopSearchService.java -text
 core/src/org/labkey/core/security/ContainersView.java -text
@@ -602,6 +605,7 @@ core/src/org/labkey/core/user/toggleInactive.jsp -text
 core/src/org/labkey/core/user/toggleShowAll.jsp -text
 core/src/org/labkey/core/view/ShortURLFilter.java -text
 core/src/org/labkey/core/view/ShortURLServiceImpl.java -text
+core/src/org/labkey/core/view/configReportsAndScripts.jsp -text
 core/src/org/labkey/core/view/styleGuide.jsp -text
 core/src/org/labkey/core/view/template/bootstrap/AppTemplate.java -text
 core/src/org/labkey/core/view/template/bootstrap/CoreWarningProvider.java -text
@@ -1781,7 +1785,6 @@ query/src/org/labkey/query/reports/view/ReportUIProvider.java -text
 query/src/org/labkey/query/reports/view/ReportsWebPart.java -text
 query/src/org/labkey/query/reports/view/ReportsWebPartConfig.java -text
 query/src/org/labkey/query/reports/view/attachmentReport.jsp -text
-query/src/org/labkey/query/reports/view/configReportsAndScripts.jsp -text
 query/src/org/labkey/query/reports/view/createQueryReport.jsp -text
 query/src/org/labkey/query/reports/view/dataViews.jsp -text
 query/src/org/labkey/query/reports/view/linkReport.jsp -text

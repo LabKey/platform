@@ -21,15 +21,17 @@ import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.json.JSONObject;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.pipeline.file.PathMapper;
-import org.labkey.api.pipeline.file.PathMapperImpl;
-import org.labkey.api.reports.EngineDefinition;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
@@ -38,6 +40,7 @@ import org.labkey.api.reports.RScriptEngineFactory;
 import org.labkey.api.reports.RserveScriptEngineFactory;
 import org.labkey.api.rstudio.RStudioService;
 import org.labkey.api.script.ScriptService;
+import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConfigProperty;
@@ -65,10 +68,8 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
 {
     private static final Logger LOG = Logger.getLogger(ScriptEngineManagerImpl.class);
 
-    private static final String SCRIPT_ENGINE_MAP = "ExternalScriptEngineMap";
+    public static final String SCRIPT_ENGINE_MAP = "ExternalScriptEngineMap";
     private static final String ENGINE_DEF_MAP_PREFIX = "ScriptEngineDefinition_";
-    private static final String REMOTE_ENGINE_DEF_MAP_PREFIX = ENGINE_DEF_MAP_PREFIX + "remote_";
-    private static final String DOCKER_ENGINE_DEF_MAP_PREFIX = ENGINE_DEF_MAP_PREFIX + "docker_";
 
     enum Props
     {
@@ -91,7 +92,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
         docker
     }
 
-    ScriptEngineFactory rhino = null;
+    ScriptEngineFactory rhino;
 
     public ScriptEngineManagerImpl()
     {
@@ -227,10 +228,30 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
         }
 
         return factory.getScriptEngine();
-   }
+    }
 
     @Override
     public List<ExternalScriptEngineDefinition> getEngineDefinitions()
+    {
+        return new ArrayList<>(new TableSelector(CoreSchema.getInstance().getTableInfoReportEngines()).getCollection(ExternalScriptEngineDefinitionImpl.class));
+    }
+
+    @Override
+    @Nullable
+    public ExternalScriptEngineDefinition getEngineDefinition(String name, ExternalScriptEngineDefinition.Type type)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Name"), name);
+        filter.addCondition(FieldKey.fromParts("Type"), type);
+
+        return new TableSelector(CoreSchema.getInstance().getTableInfoReportEngines(), filter, null).getObject(ExternalScriptEngineDefinitionImpl.class);
+    }
+
+    /**
+     * Returns the collection of engine configurations that were stored in the legacy
+     * property store.
+     */
+    @Deprecated
+    public List<ExternalScriptEngineDefinition> getLegacyEngineDefinitions()
     {
         List<ExternalScriptEngineDefinition> engines = new ArrayList<>();
         Map<String, String> map = PropertyManager.getProperties(SCRIPT_ENGINE_MAP);
@@ -254,108 +275,33 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
             catch (Exception e)
             {
                 LOG.error("Failed to parse script engine definition: " + e.getMessage());
-                //deleteDefinition(name);
             }
         }
-
         return engines;
     }
 
     @Override
-    public void deleteDefinition(ExternalScriptEngineDefinition def)
+    public void deleteDefinition(User user, ExternalScriptEngineDefinition def)
     {
-        if (def instanceof EngineDefinition)
+        if (def.getRowId() != null)
         {
-            deleteDefinition(((EngineDefinition)def).getKey());
+            Table.delete(CoreSchema.getInstance().getTableInfoReportEngines(), def.getRowId());
         }
         else
-            throw new IllegalArgumentException("Engine definition must be an instance of LabkeyScriptEngineManager.EngineDefinition");
-    }
-
-    private static void deleteDefinition(String key)
-    {
-        if (key != null)
-        {
-            PropertyManager.PropertyMap engines = PropertyManager.getWritableProperties(SCRIPT_ENGINE_MAP, false);
-            if (engines != null && engines.containsKey(key))
-            {
-                engines.remove(key);
-                engines.save();
-
-                PropertyManager.PropertyMap definition = PropertyManager.getWritableProperties(key, false);
-                if (definition != null)
-                {
-                    definition.clear();
-                    definition.save();
-                }
-
-                // Issue 22354: It's a little heavy handed, but clear all caches so any file-based pipeline tasks that may require a script engine will be re-loaded
-                CacheManager.clearAllKnownCaches();
-            }
-        }
+            LOG.error("Script engine definition cannot be deleted: " + def.getName());
     }
 
     @Override
-    public ExternalScriptEngineDefinition saveDefinition(ExternalScriptEngineDefinition def)
+    public ExternalScriptEngineDefinition saveDefinition(User user, ExternalScriptEngineDefinition def)
     {
-        if (def instanceof EngineDefinition)
+        if (def instanceof ExternalScriptEngineDefinition)
         {
             if (def.isExternal())
             {
-                String key = ((EngineDefinition)def).getKey();
-
-                if (key == null)
-                {
-                    // new engine definition
-                    key = makeKey(def);
-                    if (getProp(key, SCRIPT_ENGINE_MAP) != null)
-                        throw new IllegalArgumentException("An existing definition is already mapped to those file extensions");
-
-                    setProp(key, key, SCRIPT_ENGINE_MAP);
-                }
-                if (getProp(key, SCRIPT_ENGINE_MAP) != null)
-                {
-                    setProp(Props.key.name(), key, key);
-                    setProp(Props.name.name(), def.getName(), key);
-                    setProp(Props.extensions.name(), StringUtils.join(def.getExtensions(), ','), key);
-                    setProp(Props.languageName.name(), def.getLanguageName(), key);
-                    setProp(Props.languageVersion.name(), def.getLanguageVersion(), key);
-
-                    if (!def.isDocker())
-                    {
-                        if (def.isRemote())
-                        {
-                            setProp(Props.machine.name(), def.getMachine(), key);
-                            setProp(Props.port.name(), String.valueOf(def.getPort()), key);
-
-                            String pathMapStr = null;
-                            PathMapper pathMapper = def.getPathMap();
-                            if (pathMapper != null && !pathMapper.getPathMap().isEmpty())
-                            {
-                                pathMapStr = ((PathMapperImpl) pathMapper).toJSON().toString();
-                            }
-
-                            setProp(Props.pathMap.name(), pathMapStr, key);
-                            setProp(Props.user.name(), def.getUser(), key);
-                            setProp(Props.password.name(), def.getPassword(), key);
-                        }
-                        else
-                        {
-                            setProp(Props.exePath.name(), def.getExePath(), key);
-                        }
-                        // note that this really is the invocation command for both local and
-                        // remote engines
-                        setProp(Props.exeCommand.name(), def.getExeCommand(), key);
-                    }
-
-                    setProp(Props.outputFileName.name(), def.getOutputFileName(), key);
-                    setProp(Props.disabled.name(), String.valueOf(!def.isEnabled()), key);
-                    setProp(Props.remote.name(), String.valueOf(def.isRemote()), key);
-                    setProp(Props.pandocEnabled.name(), String.valueOf(def.isPandocEnabled()), key); //TODO: should this be moved to an extended class?
-                    setProp(Props.docker.name(), String.valueOf(def.isDocker()), key);
-                }
+                if (def.getRowId() != null)
+                    Table.update(user, CoreSchema.getInstance().getTableInfoReportEngines(), def, def.getRowId());
                 else
-                    throw new IllegalArgumentException("Existing definition does not exist in the DB");
+                    Table.insert(user, CoreSchema.getInstance().getTableInfoReportEngines(), def);
             }
             else
             {
@@ -389,18 +335,6 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
         }
     }
 
-    private static String makeKey(ExternalScriptEngineDefinition def)
-    {
-        String prefix;
-        if (def.isDocker())
-            prefix = DOCKER_ENGINE_DEF_MAP_PREFIX;
-        else if (def.isRemote())
-            prefix = REMOTE_ENGINE_DEF_MAP_PREFIX;
-        else
-            prefix = ENGINE_DEF_MAP_PREFIX;
-        return prefix + StringUtils.join(def.getExtensions(), ',');
-    }
-
     private static String makeKey(String[] engineExtensions)
     {
         return ENGINE_DEF_MAP_PREFIX + StringUtils.join(engineExtensions, ',');
@@ -418,33 +352,25 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
         String extensionStr = props.get(Props.extensions.name());
         String pathMapStr = props.get(Props.pathMap.name());
         boolean isRemote = Boolean.valueOf(props.get(Props.remote.name()));
+        ExternalScriptEngineDefinition.Type type = ExternalScriptEngineDefinition.Type.External;
 
-        // Create a copy of the props so we can remove pathMap
-        props = new HashMap<>(props);
-        props.remove(Props.pathMap.name());
+        if (extensionStr.contains("r"))
+            type = ExternalScriptEngineDefinition.Type.R;
+        else if (extensionStr.contains("pl"))
+            type = ExternalScriptEngineDefinition.Type.Perl;
 
         if ((key != null || isFromStartupProps) && name != null && extensionStr != null && (isRemote || (exePath!=null)))
         {
             try
             {
-                String[] extensions = StringUtils.split(extensionStr, ',');
-                EngineDefinition def = new EngineDefinition();
+                ExternalScriptEngineDefinitionImpl def = new ExternalScriptEngineDefinitionImpl();
 
                 BeanUtils.populate(def, props);
-                def.setExtensions(extensions);
+                def.setExternal(true);
+                def.setType(type);
                 def.setEnabled(!BooleanUtils.toBoolean(props.get(Props.disabled.name())));
-
-                PathMapper pathMapper;
-                if (pathMapStr != null && !pathMapStr.equals("null"))
-                {
-                    JSONObject pathMapJson = new JSONObject(pathMapStr);
-                    pathMapper = PathMapperImpl.fromJSON(pathMapJson);
-                }
-                else
-                {
-                    pathMapper = new PathMapperImpl();
-                }
-                def.setPathMap(pathMapper);
+                if (pathMapStr != null)
+                    def.setPathMap(pathMapStr);
 
                 return def;
             }
@@ -454,6 +380,12 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
             }
         }
         throw new IllegalArgumentException("Unable to create an engine definition from the specified properties : " + props);
+    }
+
+    @Override
+    public ExternalScriptEngineDefinition createEngineDefinition()
+    {
+        return new ExternalScriptEngineDefinitionImpl();
     }
 
     private static String getProp(String prop, String mapName)
@@ -533,12 +465,11 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
             // Set a default value for external to true since script engines defined in startup props will likely be external
             entry.getValue().putIfAbsent("external", "True");
             ExternalScriptEngineDefinition def = createDefinition(entry.getValue(), true);
-            String key = makeKey(def);
             // Only attempt to create the script engine if no script engine with this key has been created before.
             // This means that the property modifier 'startup' will be applied only once for script engine definitions.
             // It will create a script engine definition, but does not modify an existing script engine definition.
-            if (getProp(key, SCRIPT_ENGINE_MAP) == null)
-                saveDefinition(def);
+            if (getEngineDefinition(def.getName(), def.getType()) == null)
+                saveDefinition(User.getSearchUser(), def);
         }
     }
 
@@ -571,7 +502,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
             assertTrue("The script engine defined in the startup properties was not setup: " + SCRIPT_ENGINE_NAME, defList.stream().anyMatch((ExternalScriptEngineDefinition def) -> def.getName().equals(SCRIPT_ENGINE_NAME))) ;
 
             // restore the Script Engine Definitions to how they were originally
-            svc.deleteDefinition(defList.stream().filter((ExternalScriptEngineDefinition def) -> def.getName().equals(SCRIPT_ENGINE_NAME)).findAny().get());
+            svc.deleteDefinition(User.getSearchUser(), defList.stream().filter((ExternalScriptEngineDefinition def) -> def.getName().equals(SCRIPT_ENGINE_NAME)).findAny().get());
         }
 
         private void prepareTestStartupProperties()

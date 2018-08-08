@@ -30,7 +30,6 @@ import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.CustomApiForm;
-import org.labkey.api.action.ExtFormAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.HasViewContext;
@@ -39,7 +38,6 @@ import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.Attachment;
@@ -65,8 +63,6 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
-import org.labkey.api.pipeline.file.PathMapper;
-import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -74,10 +70,6 @@ import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.reports.EngineDefinition;
-import org.labkey.api.reports.ExternalScriptEngineDefinition;
-import org.labkey.api.reports.ExternalScriptEngineFactory;
-import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.reports.RConnectionHolder;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportContentEmailManager;
@@ -113,7 +105,6 @@ import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.resource.FileResource;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
@@ -124,9 +115,6 @@ import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.AdminConsole;
-import org.labkey.api.settings.AdminConsole.SettingsLinkType;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
@@ -171,7 +159,6 @@ import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.script.ScriptEngineFactory;
 import javax.script.ScriptException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
@@ -364,11 +351,6 @@ public class ReportsController extends SpringActionController
         setActionResolver(_actionResolver);
     }
 
-    public static void registerAdminConsoleLinks()
-    {
-        AdminConsole.addLink(SettingsLinkType.Configuration, "views and scripting", new ActionURL(ConfigureReportsAndScriptsAction.class, ContainerManager.getRoot()));
-    }
-
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
     public class DesignChartAction extends SimpleViewAction<ChartDesignerBean>
@@ -532,150 +514,6 @@ public class ReportsController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
-        }
-    }
-
-
-    @AdminConsoleAction(AdminOperationsPermission.class)
-    public class ConfigureReportsAndScriptsAction extends SimpleViewAction
-    {
-        public ModelAndView getView(Object o, BindException errors)
-        {
-            return new JspView("/org/labkey/query/reports/view/configReportsAndScripts.jsp");
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            getPageConfig().setHelpTopic(new HelpTopic("configureScripting"));
-            root.addChild("Admin Console", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL());
-            return root.addChild("Views and Scripting Configuration");
-        }
-    }
-
-    @AdminConsoleAction(AdminOperationsPermission.class)
-    public class ScriptEnginesSummaryAction extends ApiAction
-    {
-        public ApiResponse execute(Object o, BindException errors)
-        {
-            List<Map<String, Object>> views = new ArrayList<>();
-
-            LabkeyScriptEngineManager manager = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
-
-            for (ScriptEngineFactory factory : manager.getEngineFactories())
-            {
-                Map<String, Object> record = new HashMap<>();
-
-                record.put("name", factory.getEngineName());
-                record.put("extensions", StringUtils.join(factory.getExtensions(), ','));
-                record.put("languageName", factory.getLanguageName());
-                record.put("languageVersion", factory.getLanguageVersion());
-
-                boolean isExternal = factory instanceof ExternalScriptEngineFactory;
-                record.put("external", String.valueOf(isExternal));
-
-                LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
-                record.put("enabled", String.valueOf(svc.isFactoryEnabled(factory)));
-
-                if (isExternal)
-                {
-                    // extra metadata for external engines
-                    ExternalScriptEngineDefinition def = ((ExternalScriptEngineFactory)factory).getDefinition();
-
-                    if (def instanceof EngineDefinition)
-                    {
-                        record.put("key", ((EngineDefinition)def).getKey());
-                        record.put("remote", def.isRemote());
-                    }
-
-                    record.put("exePath", def.getExePath());
-                    record.put("exeCommand", def.getExeCommand());
-                    record.put("outputFileName", def.getOutputFileName());
-                    record.put("pandocEnabled", String.valueOf(def.isPandocEnabled()));
-                    record.put("docker", String.valueOf(def.isDocker()));
-
-                    if (def.isRemote())
-                    {
-                        record.put("machine", def.getMachine());
-                        record.put("port", String.valueOf(def.getPort()));
-
-                        PathMapper pathMap = def.getPathMap();
-                        if (pathMap != null)
-                            record.put("pathMap", ((PathMapperImpl)pathMap).toJSON());
-                        else
-                            record.put("pathMap", null);
-
-                        record.put("user", def.getUser());
-                        record.put("password", def.getPassword());
-                    }
-                }
-                views.add(record);
-            }
-            return new ApiSimpleResponse("views", views);
-        }
-    }
-
-
-    @AdminConsoleAction(AdminOperationsPermission.class)
-    public class ScriptEnginesSaveAction extends ExtFormAction<EngineDefinition>
-    {
-        @Override
-        public void validateForm(EngineDefinition def, Errors errors)
-        {
-            // validate definition
-            if (StringUtils.isEmpty(def.getName()))
-                errors.rejectValue("name", ERROR_MSG, "The Name field cannot be empty");
-
-            if (def.isExternal())
-            {
-                //
-                // If the engine is remote then don't validate the exe and command line values
-                //
-                if (!def.isRemote())
-                {
-                    File rexe = new File(def.getExePath());
-                    if (!rexe.exists())
-                        errors.rejectValue("exePath", ERROR_MSG, "The program location: '" + def.getExePath() + "' does not exist");
-                    if (rexe.isDirectory())
-                        errors.rejectValue("exePath", ERROR_MSG, "Please specify the entire path to the program, not just the directory (e.g., 'c:/Program Files/R/R-2.7.1/bin/R.exe')");
-                }
-                else
-                {
-                    // see if we had any bind errors (currently only filled in from the remote path mapper)
-                    if (def.getPathMap() != null )
-                    {
-                        ValidationException validationException = def.getPathMap().getValidationErrors();
-                        if (validationException != null && validationException.hasErrors())
-                        {
-                            List<ValidationError> validationErrors = validationException.getErrors();
-                            for (ValidationError v : validationErrors)
-                            {
-                                errors.rejectValue("pathMap", ERROR_MSG, v.getMessage());
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        public ApiResponse execute(EngineDefinition def, BindException errors)
-        {
-            LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
-            svc.saveDefinition(def);
-
-            return new ApiSimpleResponse("success", true);
-        }
-    }
-
-
-    @AdminConsoleAction(AdminOperationsPermission.class)
-    public class ScriptEnginesDeleteAction extends ApiAction<EngineDefinition>
-    {
-        public ApiResponse execute(EngineDefinition def, BindException errors)
-        {
-            LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
-            svc.deleteDefinition(def);
-
-            return new ApiSimpleResponse("success", true);
         }
     }
 

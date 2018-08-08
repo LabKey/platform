@@ -90,7 +90,6 @@ import org.labkey.api.reader.JSONDataLoader;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
-import org.labkey.core.reports.ScriptEngineManagerImpl;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.script.RhinoService;
@@ -217,6 +216,7 @@ import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.UserAuditProvider;
 import org.labkey.core.query.UsersDomainKind;
 import org.labkey.core.reader.DataLoaderServiceImpl;
+import org.labkey.core.reports.ScriptEngineManagerImpl;
 import org.labkey.core.security.SecurityApiActions;
 import org.labkey.core.security.SecurityController;
 import org.labkey.core.security.validators.PermissionsValidator;
@@ -333,6 +333,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         WarningService.setInstance(new WarningServiceImpl());
         SecurityPointcutService.setInstance(new SecurityPointcutServiceImpl());
         AdminConsoleService.setInstance(new AdminConsoleServiceImpl());
+        ServiceRegistry.get().registerService(LabkeyScriptEngineManager.class, new ScriptEngineManagerImpl());
 
         try
         {
@@ -812,10 +813,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         SecurityManager.populateUserRolesWithStartupProps();
         SecurityManager.populateUserGroupsWithStartupProps();
 
-        ScriptEngineManagerImpl mgr = new ScriptEngineManagerImpl();
-        ServiceRegistry.get().registerService(LabkeyScriptEngineManager.class, mgr);
+        LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
         // populate script engine definitions values read from startup properties as appropriate for not bootstrap
-        mgr.populateScriptEngineDefinitionsWithStartupProps();
+        if (svc instanceof ScriptEngineManagerImpl)
+            ((ScriptEngineManagerImpl)svc).populateScriptEngineDefinitionsWithStartupProps();
 
         // populate folder types from startup properties as appropriate for not bootstrap
         FolderTypeManager.get().populateWithStartupProps();
@@ -825,6 +826,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AnalyticsController.registerAdminConsoleLinks();
         UserController.registerAdminConsoleLinks();
         LoggerController.registerAdminConsoleLinks();
+        CoreController.registerAdminConsoleLinks();
 
         FolderTypeManager.get().registerFolderType(this, new WorkbookFolderType());
 

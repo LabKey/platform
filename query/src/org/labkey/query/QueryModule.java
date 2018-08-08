@@ -241,7 +241,6 @@ public class QueryModule extends DefaultModule
     {
         if (null != PipelineService.get())
             PipelineService.get().registerPipelineProvider(new ReportsPipelineProvider(this));
-        ReportsController.registerAdminConsoleLinks();
         QueryController.registerAdminConsoleLinks();
 
         FolderSerializationRegistry folderRegistry = FolderSerializationRegistry.get();
