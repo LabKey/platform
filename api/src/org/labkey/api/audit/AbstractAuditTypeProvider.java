@@ -48,11 +48,13 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -374,7 +376,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         }
     }
 
-    public static String encodeForDataMap(Map<String, ?> properties)
+    public static String encodeForDataMap(Container c, Map<String, ?> properties)
     {
         if (properties == null) return null;
 
@@ -382,7 +384,11 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         for (Map.Entry<String,?> entry :  properties.entrySet())
         {
             Object value = entry.getValue();
-            stringMap.put(entry.getKey(), value == null ? null : value.toString());
+            if (value instanceof Date)
+                // issue: 35002 - normalize Date values to avoid Timestamp/Date toString differences
+                stringMap.put(entry.getKey(), DateUtil.formatDate(c, (Date)value));
+            else
+                stringMap.put(entry.getKey(), value == null ? null : value.toString());
         }
         return PageFlowUtil.toQueryString(stringMap.entrySet());
     }
