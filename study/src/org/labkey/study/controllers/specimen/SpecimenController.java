@@ -1153,6 +1153,7 @@ public class SpecimenController extends BaseStudyController
                     form.isSubmissionResult(), form.getReturnUrl());
             if (form.getExport() != null)
             {
+                bean.getSpecimenQueryView().getSettings().setMaxRows(-1);   // #34998; exporting specimens in a request should include all of them
                 getUtils().writeExportData(bean.getSpecimenQueryView(), form.getExport());
                 return null;
             }
