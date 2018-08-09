@@ -94,7 +94,7 @@ public class InternalScriptEngineReport extends ScriptEngineReport
     @Override
     public String runScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters) throws ScriptException
     {
-        ScriptEngine engine = getScriptEngine();
+        ScriptEngine engine = getScriptEngine(context.getContainer());
         if (engine != null)
         {
             StringWriter errors = new StringWriter();

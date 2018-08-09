@@ -29,6 +29,7 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.ValidationError;
+import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.reports.RScriptEngine;
 import org.labkey.api.reports.Report;
@@ -109,13 +110,13 @@ public class RReport extends ExternalScriptEngineReport
     public static boolean isEnabled()
     {
         LabkeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
-        return mgr.getEngineByExtension("r") != null;
+        return !mgr.getEngineDefinitions(ExternalScriptEngineDefinition.Type.R).isEmpty();
     }
 
     //
     // For R reports honor the 'remote' metadata for scriptEngines if provided
     //
-    public ScriptEngine getScriptEngine()
+    public ScriptEngine getScriptEngine(Container c)
     {
         LabkeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
 
@@ -671,7 +672,7 @@ public class RReport extends ExternalScriptEngineReport
     @Override
     public String runScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters) throws ScriptException
     {
-        ScriptEngine engine = getScriptEngine();
+        ScriptEngine engine = getScriptEngine(context.getContainer());
         if (engine != null)
         {
             try
@@ -869,8 +870,8 @@ public class RReport extends ExternalScriptEngineReport
         {
             RReport report = new RReport();
             report.getDescriptor().setProperty(ScriptReportDescriptor.Prop.knitrFormat, "r");
-            RScriptEngine r = (RScriptEngine)ServiceRegistry.get().getService(LabkeyScriptEngineManager.class).getEngineByExtension("r");
             ViewContext context = HttpView.currentContext();
+            RScriptEngine r = (RScriptEngine)ServiceRegistry.get().getService(LabkeyScriptEngineManager.class).getEngineByExtension(context.getContainer(), "r");
             Map<String,String> params = PageFlowUtil.map("a", "1", "b", "2");
             String pre = "print('hello world')\n\nprint('line 3')\n";
             String post = report.concatScriptProlog(r, context, pre, null, (Map)params);
@@ -890,10 +891,10 @@ public class RReport extends ExternalScriptEngineReport
         {
             RReport report = new RReport();
             report.getDescriptor().setProperty(ScriptReportDescriptor.Prop.knitrFormat, "html");
-            RScriptEngine r = (RScriptEngine)ServiceRegistry.get().getService(LabkeyScriptEngineManager.class).getEngineByExtension("r");
+            ViewContext context = HttpView.currentContext();
+            RScriptEngine r = (RScriptEngine)ServiceRegistry.get().getService(LabkeyScriptEngineManager.class).getEngineByExtension(context.getContainer(), "r");
             //r.getBindings(ScriptContext.ENGINE_SCOPE).put(RScriptEngine.KNITR_FORMAT, RReportDescriptor.KnitrFormat.Html);
             //assertEquals(RReportDescriptor.KnitrFormat.Html, r.getKnitrFormat());
-            ViewContext context = HttpView.currentContext();
             Map<String,String> params = PageFlowUtil.map("a", "1", "b", "2");
             String pre = "<b>hello world</b>\n";
             String post = report.concatScriptProlog(r, context, pre, null, (Map)params);
@@ -912,9 +913,9 @@ public class RReport extends ExternalScriptEngineReport
         {
             RReport report = new RReport();
             report.getDescriptor().setProperty(ScriptReportDescriptor.Prop.knitrFormat, "markdown");
-            RScriptEngine r = (RScriptEngine)ServiceRegistry.get().getService(LabkeyScriptEngineManager.class).getEngineByExtension("r");
-            //r.getBindings(ScriptContext.ENGINE_SCOPE).put(RScriptEngine.KNITR_FORMAT, RReportDescriptor.KnitrFormat.Markdown);
             ViewContext context = HttpView.currentContext();
+            RScriptEngine r = (RScriptEngine)ServiceRegistry.get().getService(LabkeyScriptEngineManager.class).getEngineByExtension(context.getContainer(), "r");
+            //r.getBindings(ScriptContext.ENGINE_SCOPE).put(RScriptEngine.KNITR_FORMAT, RReportDescriptor.KnitrFormat.Markdown);
             Map<String,String> params = PageFlowUtil.map("a", "1", "b", "2");
             String pre = "---\n" +
                     "title: My Report\n" +

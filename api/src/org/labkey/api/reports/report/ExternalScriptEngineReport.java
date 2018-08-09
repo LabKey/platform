@@ -263,7 +263,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
     @Override
     public String runScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters) throws ScriptException
     {
-        ScriptEngine engine = getScriptEngine();
+        ScriptEngine engine = getScriptEngine(context.getContainer());
 
         if (engine != null)
         {

@@ -141,17 +141,17 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         return RReportDescriptor.TYPE;
     }
 
-    public ScriptEngine getScriptEngine()
+    public ScriptEngine getScriptEngine(Container c)
     {
         String extension = getDescriptor().getProperty(ScriptReportDescriptor.Prop.scriptExtension);
         LabkeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
 
-        return mgr.getEngineByExtension(extension);
+        return mgr.getEngineByExtension(c, extension);
     }
 
     public String getTypeDescription()
     {
-        ScriptEngine engine = getScriptEngine();
+        ScriptEngine engine = getScriptEngine(ContainerManager.getForId(getContainerId()));
 
         if (engine != null)
         {
@@ -724,7 +724,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     }
     protected String getSerializedScriptFileName(ImportContext context)
     {
-        ScriptEngine engine = getScriptEngine();
+        ScriptEngine engine = getScriptEngine(context.getContainer());
         String extension = "script";
         String reportName;
 

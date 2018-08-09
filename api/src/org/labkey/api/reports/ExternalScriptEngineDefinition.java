@@ -41,6 +41,11 @@ public interface ExternalScriptEngineDefinition
     String getExeCommand();
     Type getType();
 
+    /**
+     * Determines the default engine for it's type
+     */
+    boolean isDefault();
+
     //
     // consider:  move these to RemoteScriptEngineDefinition?
     //

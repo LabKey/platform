@@ -172,4 +172,9 @@ public class CoreSchema
     {
         return getSchema().getTable("ReportEngines");
     }
+
+    public TableInfo getTableInfoReportEngineMap()
+    {
+        return getSchema().getTable("ReportEngineMap");
+    }
 }
