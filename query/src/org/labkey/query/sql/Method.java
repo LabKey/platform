@@ -625,7 +625,6 @@ public abstract class Method
             ret.append(")");                            
             return ret;
         }
-
         String getTypeArgument(SQLFragment[] argumentsIN) throws IllegalArgumentException
         {
             if (argumentsIN.length < 2)

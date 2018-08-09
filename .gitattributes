@@ -159,6 +159,8 @@ bigiron/src/org/labkey/bigiron/sas/SasDialect.java -text
 bigiron/src/org/labkey/bigiron/sas/SasDialectFactory.java -text
 /build.gradle -text
 core/.npmrc -text
+core/api-src/org/labkey/api/admin/HealthCheck.java -text
+core/api-src/org/labkey/api/admin/HealthCheckRegistry.java -text
 core/api-src/org/labkey/api/admin/TableXmlUtils.java -text
 core/api-src/org/labkey/api/admin/sitevalidation/SiteValidationProvider.java -text
 core/api-src/org/labkey/api/admin/sitevalidation/SiteValidationResult.java -text

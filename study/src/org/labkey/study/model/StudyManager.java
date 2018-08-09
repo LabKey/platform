@@ -2264,8 +2264,8 @@ public class StudyManager
                 event.setProjectId(container.getProject().getId());
             event.setDatasetId(datasetId);
             event.setHasDetails(true);
-            event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(oldQCStates));
-            event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(newQCStates));
+            event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(container, oldQCStates));
+            event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(container, newQCStates));
 
             AuditLogService.get().addEvent(user, event);
             clearCaches(container, false);

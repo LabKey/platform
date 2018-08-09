@@ -24,6 +24,8 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiXmlWriter;
 import org.labkey.api.admin.AdminConsoleService;
 import org.labkey.api.admin.FolderSerializationRegistry;
+import org.labkey.api.admin.HealthCheck;
+import org.labkey.api.admin.HealthCheckRegistry;
 import org.labkey.api.admin.SubfolderWriter;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.admin.sitevalidation.SiteValidationService;
@@ -239,6 +241,9 @@ import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;
 
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -391,7 +396,54 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             svc.registerProvider("core", new PermissionsValidator());
         }
 
+        registerHealthChecks();
+
         ContextListener.addNewInstallCompleteListener(() -> sendSystemReadyEmail(UserManager.getAppAdmins()));
+    }
+
+    private void registerHealthChecks()
+    {
+        HealthCheckRegistry.get().registerHealthCheck("database",  HealthCheckRegistry.DEFAULT_CATEGORY, () ->
+                {
+                    Map<String, Object> healthValues = new HashMap<>();
+                    Boolean allConnected = true;
+                    for (DbScope dbScope : DbScope.getDbScopes())
+                    {
+                        Boolean dbConnected;
+                        try (Connection conn = dbScope.getConnection())
+                        {
+                            dbConnected = conn != null;
+                        }
+                        catch (SQLException e)
+                        {
+                            dbConnected = false;
+                        }
+
+                        healthValues.put(dbScope.getDatabaseName(), dbConnected);
+                        allConnected &= dbConnected;
+                    }
+
+                    return new HealthCheck.Result(allConnected, healthValues);
+                }
+        );
+
+        HealthCheckRegistry.get().registerHealthCheck("modules", HealthCheckRegistry.TRIAL_INSTANCES_CATEGORY, () -> {
+            Map<String, Throwable> failures =  ModuleLoader.getInstance().getModuleFailures();
+            Map<String, Object> failureDetails = new HashMap<>();
+            for (Map.Entry<String, Throwable> failure : failures.entrySet())
+            {
+                failureDetails.put(failure.getKey(), failure.getValue().getMessage());
+            }
+            return new HealthCheck.Result(failures.isEmpty(), failureDetails);
+        });
+
+        HealthCheckRegistry.get().registerHealthCheck("users",  HealthCheckRegistry.TRIAL_INSTANCES_CATEGORY, () -> {
+            Map<String, Object> userHealth = new HashMap<>();
+            ZonedDateTime now = ZonedDateTime.now();
+            int userCount = UserManager.getUserCount(Date.from(now.toInstant()));
+            userHealth.put("registeredUsers", userCount);
+            return new HealthCheck.Result(userCount > 0, userHealth);
+        });
     }
 
     private void sendSystemReadyEmail(List<User> users)

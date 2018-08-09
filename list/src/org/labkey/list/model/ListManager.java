@@ -1086,7 +1086,7 @@ public class ListManager implements SearchService.DocumentProvider
             }
 
             if (!recordChangedMap.isEmpty())
-                itemRecord = ListAuditProvider.encodeForDataMap(recordChangedMap);
+                itemRecord = ListAuditProvider.encodeForDataMap(list.getContainer(), recordChangedMap);
         }
 
         return itemRecord;

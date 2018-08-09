@@ -2732,14 +2732,14 @@ public class QueryServiceImpl implements QueryService
                         {
                             case INSERT:
                             {
-                                String newRecord = QueryExportAuditProvider.encodeForDataMap(row);
+                                String newRecord = QueryExportAuditProvider.encodeForDataMap(c, row);
                                 if (newRecord != null)
                                     event.setNewRecordMap(newRecord);
                                 break;
                             }
                             case DELETE:
                             {
-                                String oldRecord = QueryExportAuditProvider.encodeForDataMap(row);
+                                String oldRecord = QueryExportAuditProvider.encodeForDataMap(c, row);
                                 if (oldRecord != null)
                                     event.setOldRecordMap(oldRecord);
                                 break;
@@ -2768,11 +2768,11 @@ public class QueryServiceImpl implements QueryService
                                     }
                                 }
 
-                                String oldRecord = QueryExportAuditProvider.encodeForDataMap(originalRow);
+                                String oldRecord = QueryExportAuditProvider.encodeForDataMap(c, originalRow);
                                 if (oldRecord != null)
                                     event.setOldRecordMap(oldRecord);
 
-                                String newRecord = QueryExportAuditProvider.encodeForDataMap(modifiedRow);
+                                String newRecord = QueryExportAuditProvider.encodeForDataMap(c, modifiedRow);
                                 if (newRecord != null)
                                     event.setNewRecordMap(newRecord);
                                 break;

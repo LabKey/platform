@@ -320,18 +320,18 @@ public class StudyServiceImpl implements StudyService
         Object lsid;
         if (oldRecord == null)
         {
-            newRecordString = DatasetAuditProvider.encodeForDataMap(newRecord);
+            newRecordString = DatasetAuditProvider.encodeForDataMap(c, newRecord);
             lsid = newRecord.get("lsid");
         }
         else if (newRecord == null)
         {
-            oldRecordString = DatasetAuditProvider.encodeForDataMap(oldRecord);
+            oldRecordString = DatasetAuditProvider.encodeForDataMap(c, oldRecord);
             lsid = oldRecord.get("lsid");
         }
         else
         {
-            oldRecordString = DatasetAuditProvider.encodeForDataMap(oldRecord);
-            newRecordString = DatasetAuditProvider.encodeForDataMap(newRecord);
+            oldRecordString = DatasetAuditProvider.encodeForDataMap(c, oldRecord);
+            newRecordString = DatasetAuditProvider.encodeForDataMap(c, newRecord);
             lsid = newRecord.get("lsid");
         }
         event.setLsid(lsid == null ? null : lsid.toString());

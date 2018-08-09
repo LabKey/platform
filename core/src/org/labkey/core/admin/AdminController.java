@@ -46,6 +46,8 @@ import org.labkey.api.admin.FolderImporterImpl;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterImpl;
+import org.labkey.api.admin.HealthCheck;
+import org.labkey.api.admin.HealthCheckRegistry;
 import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.admin.StaticLoggerGetter;
 import org.labkey.api.admin.TableXmlUtils;
@@ -820,115 +822,54 @@ public class AdminController extends SpringActionController
     }
 
     /**
-     * Action that preforms a basic check to see if the configured db is available
+     * Preform health checks corresponding to the given categories.
      */
+    @Marshal(Marshaller.Jackson)
     @RequiresNoPermission
     @AllowedDuringUpgrade
     @AllowedBeforeInitialUserIsSet
-    public class BaseHealthCheckAction extends ApiAction
+    public class HealthCheckAction extends ApiAction<HealthCheckForm>
     {
         @Override
-        public ApiResponse execute(Object form, BindException errors) throws Exception
+        public ApiResponse execute(HealthCheckForm form, BindException errors) throws Exception
         {
             if (!ModuleLoader.getInstance().isStartupComplete())
                 return new ApiSimpleResponse("healthy", false);
 
-            Map<String, Object> healthValues = new HashMap<>();
-            //Hold overall status
-            Map<String, Boolean> overallStatus = new HashMap<>();
+            Collection<String> categories = form.getCategories() == null ? Collections.singleton(HealthCheckRegistry.DEFAULT_CATEGORY) : Arrays.asList(form.getCategories().split(","));
+            HealthCheck.Result checkResult = HealthCheckRegistry.get().checkHealth(categories);
 
-            healthValues.put("Overall", overallStatus);
-            healthValues.put("DbConnectionStatus", dbConnectionHealth(overallStatus));
-            additionalHealthChecks(overallStatus, healthValues);
-
-            Collection<Boolean> statusValues = overallStatus.values();
-            Boolean healthy = statusValues != null;
-
-            for (Boolean healthStat : statusValues)
-            {
-                healthy = healthy && healthStat;
-            }
+            checkResult.getDetails().put("healthy", checkResult.isHealthy());
 
             if (getUser().hasRootAdminPermission())
             {
-                healthValues.put("healthy", healthy);
-                return new ApiSimpleResponse(healthValues);
+                return new ApiSimpleResponse(checkResult.getDetails());
             }
             else
             {
-                if (!healthy)
+                if (!checkResult.isHealthy())
                 {
                     createResponseWriter().writeAndCloseError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Server isn't ready yet");
                     return null;
                 }
 
-                return new ApiSimpleResponse("healthy", healthy);
+                return new ApiSimpleResponse("healthy", checkResult.isHealthy());
             }
-        }
-
-        private Map<String, Boolean> dbConnectionHealth(Map<String, Boolean> overallStatus)
-        {
-            Map<String, Boolean> healthValues = new HashMap<>();
-            Boolean allConnected = true;
-            for (DbScope dbScope : DbScope.getDbScopes())
-            {
-                Boolean dbConnected;
-                try (Connection conn = dbScope.getConnection())
-                {
-                    dbConnected = conn != null;
-                }
-                catch (SQLException e)
-                {
-                    dbConnected = false;
-                }
-
-                healthValues.put(dbScope.getDatabaseName(), dbConnected);
-                allConnected &= dbConnected;
-            }
-
-            overallStatus.put("AllDBsConnected", allConnected);
-            return healthValues;
-        }
-
-        /**
-         * Add additional health checks to the response
-         * @param overallStatus json map showing boolean health indicators for server health categories
-         * @param healthValues Map expanded health per category
-         */
-        protected void additionalHealthChecks(Map<String, Boolean> overallStatus, Map<String, Object> healthValues)
-        {
-            //No additional health checks since this is the base
         }
     }
 
-    /**
-     * Preform the base DB HealthCheck plus some additional checks
-     */
-    @RequiresNoPermission
-    @AllowedDuringUpgrade
-    @AllowedBeforeInitialUserIsSet
-    public class HealthCheckAction extends BaseHealthCheckAction
+    private static class HealthCheckForm
     {
-        @Override
-        protected void additionalHealthChecks(Map<String, Boolean> overallStatus, Map<String, Object> healthValues)
+        private String _categories; // if null, all categories will be checked.
+
+        public String getCategories()
         {
-            //Check if initial user is set
-            healthValues.put("Users", userHealth(overallStatus));
+            return _categories;
         }
 
-        /**
-         * Check user health status (particularly, is at least one user registered)
-         * @param overallStatus Map for server. This method will add flag indicating if a user has been registered
-         * @return a Map containing expanded user health status
-         */
-        private Map<String, Object> userHealth(Map<String, Boolean> overallStatus)
+        public void setCategories(String categories)
         {
-            Map<String, Object> userHealth = new HashMap<>();
-            ZonedDateTime now = ZonedDateTime.now();
-            int userCount = UserManager.getUserCount(Date.from(now.toInstant()));
-            userHealth.put("RegisteredUsers", userCount);
-            overallStatus.put("HasUsers", userCount > 0);
-            return userHealth;
+            _categories = categories;
         }
     }
 
