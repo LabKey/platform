@@ -1837,7 +1837,10 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     @Override
     public Collection<String> getQueryExecutionPlan(DbScope scope, SQLFragment sql)
     {
-        try (Connection conn = scope.getConnection())
+        // Issue 35102 - use an unpooled connection so that nobody else tries to use the query when it's in SHOWPLAN_ALL
+        // mode. Other code on this same thread (and therefore the scope's normal connection) could be trying to do
+        // logging, etc
+        try (Connection conn = scope.getUnpooledConnection())
         {
             try
             {
