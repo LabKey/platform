@@ -155,7 +155,8 @@
             {
                 if (response.success)
                     updateDisplay(response["data"]);
-            }, this)
+            }, this),
+            failure: LABKEY.Utils.displayAjaxErrorResponse
         });
     }
 
@@ -229,7 +230,8 @@
                     // Reload the list of loggers
                     refreshLoggers();
                 }
-            })
+            }),
+            failure: LABKEY.Utils.displayAjaxErrorResponse
         });
     }
 
@@ -378,7 +380,8 @@
             jsonData: {
                 name: row.dataset.name,
                 level: row.dataset.level
-            }
+            },
+            failure: LABKEY.Utils.displayAjaxErrorResponse
         });
     }
 
