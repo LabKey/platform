@@ -129,7 +129,7 @@ public class SpecimenReportQuery
             {
                 sb.append(qe.getMessage()).append('\n');
             }
-            throw new IllegalStateException(sb.toString());
+            throw new QueryException(sb.toString());
         }
         return tinfo;
     }
