@@ -679,7 +679,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
                     {
                         String ext = r.getPath().extension();
                         FileResource fileResource = (FileResource) r;
-                        if (manager.getEngineByExtension(ext) != null)
+                        if (manager.getEngineByExtension(protocol.getContainer(), ext) != null)
                         {
                             moduleScriptFiles.add(fileResource.getFile());
                         }

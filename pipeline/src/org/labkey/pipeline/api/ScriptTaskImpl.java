@@ -19,6 +19,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
@@ -150,7 +151,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
         return replacements;
     }
 
-    private ScriptEngine getScriptEngine(LabkeyScriptEngineManager mgr, String extension)
+    private ScriptEngine getScriptEngine(Container c, LabkeyScriptEngineManager mgr, String extension)
     {
         ScriptEngine engine = mgr.getEngineByName(extension);
         if (engine == null)
@@ -165,7 +166,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
             }
             else
             {
-                engine = mgr.getEngineByExtension(extension);
+                engine = mgr.getEngineByExtension(c, extension);
             }
         }
 
@@ -184,7 +185,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
 
         ScriptTaskFactory factory = (ScriptTaskFactory)_factory;
         String extension = factory._scriptExtension;
-        _engine = getScriptEngine(mgr, extension);
+        _engine = getScriptEngine(getJob().getContainer(), mgr, extension);
         if (_engine == null)
             throw new PipelineJobException("Script engine not found: " + extension);
 

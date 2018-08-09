@@ -679,7 +679,6 @@
   </table>
 
   <table tableName="ReportEngines" tableDbType="TABLE">
-    <description>Contains one row per API key.</description>
     <columns>
       <column columnName="RowId"/>
       <column columnName="CreatedBy">
@@ -701,6 +700,12 @@
       <column columnName="Type"/>
       <column columnName="Description"/>
       <column columnName="Configuration"/>
+    </columns>
+  </table>
+  <table tableName="ReportEngineMap" tableDbType="TABLE">
+    <columns>
+      <column columnName="EngineId"/>
+      <column columnName="Container"/>
     </columns>
   </table>
 </tables>

@@ -255,6 +255,7 @@
                         {name:'languageName'},
                         {name:'languageVersion'},
                         {name:'rowId'},
+                        {name:'type'},
                         {name:'enabled', type:'boolean'},
                         {name:'external', type:'boolean'},
                         {name:'remote', type:'boolean'},

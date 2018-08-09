@@ -15,6 +15,7 @@
  */
 package org.labkey.pipeline.api;
 
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.pipeline.TaskId;
@@ -176,7 +177,7 @@ public class ScriptTaskFactory extends SimpleTaskFactory
         }
     }
 
-    private static ScriptEngine ensureEngine(String interpreter)
+    private static void ensureEngine(String interpreter)
     {
         LabkeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
         if (mgr == null)
@@ -184,10 +185,13 @@ public class ScriptTaskFactory extends SimpleTaskFactory
 
         ScriptEngine engine = mgr.getEngineByName(interpreter);
         if (engine == null)
-            engine = mgr.getEngineByExtension(interpreter);
+        {
+            // this will effectively return any engine registered which can run this extension, since
+            // scoping is not yet important
+            engine = mgr.getEngineByExtension(ContainerManager.getSharedContainer(), interpreter);
+        }
         if (engine == null)
             throw new IllegalArgumentException("Script engine not found: " + interpreter);
-        return engine;
     }
 
     @Override

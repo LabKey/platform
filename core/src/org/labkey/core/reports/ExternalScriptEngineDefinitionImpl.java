@@ -36,6 +36,7 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
     boolean _remote;
     boolean _docker;
     boolean _pandocEnabled;
+    boolean _default;
 
     public Integer getRowId()
     {
@@ -90,6 +91,7 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
             addIfNotNull(json, "docker", isDocker());
             addIfNotNull(json, "pandocEnabled", isPandocEnabled());
             addIfNotNull(json, "pathMap", _pathMap);
+            addIfNotNull(json, "default", isDefault());
 
             _configuration = json.toString();
         }
@@ -131,6 +133,8 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
             setPandocEnabled(json.getBoolean("pandocEnabled"));
         if (json.has("pathMap"))
             setPathMap(json.getString("pathMap"));
+        if (json.has("default"))
+            setDefault(json.getBoolean("default"));
 
         _configuration = configuration;
     }
@@ -354,6 +358,17 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
     public void setPandocEnabled(boolean pandocEnabled)
     {
         _pandocEnabled = pandocEnabled;
+    }
+
+    @Override
+    public boolean isDefault()
+    {
+        return _default;
+    }
+
+    public void setDefault(boolean aDefault)
+    {
+        _default = aDefault;
     }
 
     private void addIfNotNull(JSONObject json, String key, Object value)
