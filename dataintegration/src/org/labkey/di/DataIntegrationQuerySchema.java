@@ -202,9 +202,9 @@ public class DataIntegrationQuerySchema extends SimpleUserSchema
         @Override
         protected void addTableURLs()
         {
-            ActionURL insertUrl = new ActionURL(DataIntegrationController.CreateDefinitionAction.class, getContainer());
+            ActionURL insertUrl = new ActionURL(DataIntegrationController.DefineEtlAction.class, getContainer());
             setInsertURL(new DetailsURL(insertUrl));
-            ActionURL updateUrl = new ActionURL(DataIntegrationController.EditDefinitionAction.class, getContainer());
+            ActionURL updateUrl = new ActionURL(DataIntegrationController.DefineEtlAction.class, getContainer());
             setUpdateURL(new DetailsURL(updateUrl, Collections.singletonMap("etlDefId", FieldKey.fromString("etlDefId"))));
             ActionURL deleteUrl = new ActionURL(DataIntegrationController.DeleteDefinitionsAction.class, getContainer());
             setDeleteURL(new DetailsURL(deleteUrl));

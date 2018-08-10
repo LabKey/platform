@@ -54,6 +54,7 @@ public class EtlDef extends Entity
     private String _description;
     private String _definition;
     private String _configId = null;
+    private String _oldName;
 
     public enum Change {Insert, Update, Delete};
 
@@ -95,6 +96,16 @@ public class EtlDef extends Entity
     public void setDefinition(String definition)
     {
         _definition = definition;
+    }
+
+    public String getOldName()
+    {
+        return _oldName;
+    }
+
+    public void setOldName(String oldName)
+    {
+        _oldName = oldName;
     }
 
     @Nullable

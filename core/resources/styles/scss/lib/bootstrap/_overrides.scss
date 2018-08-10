@@ -196,3 +196,28 @@
 h1, .h1, h2, .h2, h3, .h3 {
   margin-top: 10px;
 }
+
+.modal {
+  .close {
+    color: #FFFFFF;
+    opacity: 0.8;
+    padding-top: 2px;
+  }
+
+  .modal-dialog {
+    margin-top: 100px;
+    .modal-content {
+      border: none;
+    }
+  }
+
+  .modal-header {
+    padding: 5px 15px;
+    background-color: $lk-brand-primary;
+    color: #FFFFFF;
+  }
+}
+
+.modal-backdrop.in {
+  opacity: .3;
+}

@@ -77,6 +77,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -600,9 +601,44 @@ public class DataIntegrationController extends SpringActionController
         }
     }
 
+    public static List<Container> getContainersWithEtlDefinitions(ViewContext context)
+    {
+            if (null != context.getContainer())
+            {
+                Set<Container> containerSet = ContainerManager.getAllChildren(context.getContainer().getProject());
+                List<Container> children = new ArrayList<>();
+                populateEtlDefinitionContainerList(context, context.getContainer(), children, containerSet);
+                return children;
+            }
+            else
+            {
+                return Collections.emptyList();
+            }
+    }
+
+    static private void populateEtlDefinitionContainerList(ViewContext context, Container c, List<Container> children, Set<Container> containerSet)
+    {
+
+        for (Container cChild : containerSet)
+        {
+            // add this container if it contains any Etl definitions or if it's the current container
+            if (cChild.hasPermission(context.getUser(), ReadPermission.class) &&
+                    (cChild.getId().equals(context.getContainer().getId()) || !TransformManager.get().getDescriptors(cChild).isEmpty()))
+            {
+                children.add(cChild);
+            }
+        }
+    }
+
     public static class EtlDefinitionForm extends BeanViewForm<EtlDef>
     {
         private boolean _readOnly = false;
+
+        private boolean _hasNameConflict = false;
+
+        private boolean _hasNameChange = false;
+
+        private String _postedDefinition;
 
         public EtlDefinitionForm()
         {
@@ -619,10 +655,30 @@ public class DataIntegrationController extends SpringActionController
             _readOnly = readOnly;
         }
 
+        public boolean hasNameConflict()
+        {
+            return _hasNameConflict;
+        }
+
+        public boolean hasNameChanged()
+        {
+            return _hasNameChange;
+        }
+
+        public String getPostedDefinition()
+        {
+            return _postedDefinition;
+        }
+
+        public void setPostedDefinition(String postedDefinition)
+        {
+            _postedDefinition = postedDefinition;
+        }
+
         public void validate(Errors errors)
         {
             EtlDef def = getBean();
-
+            setPostedDefinition(def.getDefinition());
             try
             {
                 TransformDescriptor descriptor = def.getDescriptorThrow();
@@ -634,8 +690,17 @@ public class DataIntegrationController extends SpringActionController
                         .anyMatch(cachedDescriptor -> cachedDescriptor.getName().equals(descriptor.getName())
                                         && !cachedDescriptor.getId().equals(descriptor.getId())))
                 {
-                    errors.reject(ERROR_MSG, "An ETL with that name is already defined in this folder.");
+                    _hasNameConflict = true;
+                    errors.reject(ERROR_MSG, ""); //send back and prompt user
                 }
+
+                boolean confirmNameChange = Boolean.parseBoolean(getStrings().get("confirmNameChange"));
+                if (!confirmNameChange && def.getEtlDefId() > -1 && !def.getOldName().equals(descriptor.getName()))
+                {
+                    _hasNameChange = true;
+                    errors.reject(ERROR_MSG, ""); //send back and prompt user
+                }
+
                 if (!errors.hasErrors())
                 {
                     setTypedValue("name", descriptor.getName());
@@ -669,7 +734,8 @@ public class DataIntegrationController extends SpringActionController
         return Objects.requireNonNull(ModuleLoader.getInstance().getUrlProvider(QueryUrls.class)).urlExecuteQuery(getContainer(), DataIntegrationQuerySchema.SCHEMA_NAME, DataIntegrationQuerySchema.ETL_DEF_TABLE_NAME);
     }
 
-    protected abstract class AbstractEtlDefinitionAction extends FormViewAction<EtlDefinitionForm>
+    @RequiresPermission(AdminPermission.class)
+    public class DefineEtlAction extends FormViewAction<EtlDefinitionForm>
     {
         @Override
         public void validateCommand(EtlDefinitionForm form, Errors errors)
@@ -689,6 +755,11 @@ public class DataIntegrationController extends SpringActionController
             try
             {
                 def = form.getBean();
+                if (null != def.getName())
+                {
+                    def.setOldName(def.getName());
+                    form.setBean(def);
+                }
             }
             catch (ConversionException e)
             {
@@ -704,7 +775,26 @@ public class DataIntegrationController extends SpringActionController
             return new JspView<>("/org/labkey/di/view/etlDefinition.jsp", form, errors);
         }
 
-        protected abstract void doAction(EtlDefinitionForm form, Errors errors) throws SQLException;
+        protected void doAction(EtlDefinitionForm form, Errors errors) throws SQLException
+        {
+            EtlDef def = form.getBean();
+            boolean saveAsNew = Boolean.parseBoolean(form.getStrings().get("saveAsNew"));
+
+            if (def.getEtlDefId() > -1 && !saveAsNew) //UPDATE
+            {
+                try (DbScope.Transaction tx = DataIntegrationQuerySchema.getSchema().getScope().ensureTransaction())
+                {
+                    form.doUpdate();
+                    TransformManager.get().etlDefChanged(def, getContainer(), getUser(), EtlDef.Change.Update);
+                    tx.commit();
+                }
+            }
+            else //INSERT
+            {
+                form.doInsert();
+                TransformManager.get().etlDefChanged(def, getContainer(), getUser(), EtlDef.Change.Insert);
+            }
+        }
 
         @Override
         public boolean handlePost(EtlDefinitionForm form, BindException errors) throws Exception
@@ -740,33 +830,6 @@ public class DataIntegrationController extends SpringActionController
         {
             root.addChild("Edit Custom ETL Definition");
             return root;
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public class CreateDefinitionAction extends AbstractEtlDefinitionAction
-    {
-        @Override
-        protected void doAction(EtlDefinitionForm form, Errors errors) throws SQLException
-        {
-            form.doInsert();
-            TransformManager.get().etlDefChanged(form.getBean(), getContainer(), getUser(), EtlDef.Change.Insert);
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public class EditDefinitionAction extends AbstractEtlDefinitionAction
-    {
-        @Override
-        protected void doAction(EtlDefinitionForm form, Errors errors) throws SQLException
-        {
-            EtlDef def = form.getBean();
-            try (DbScope.Transaction tx = DataIntegrationQuerySchema.getSchema().getScope().ensureTransaction())
-            {
-                form.doUpdate();
-                TransformManager.get().etlDefChanged(def, getContainer(), getUser(), EtlDef.Change.Update);
-                tx.commit();
-            }
         }
     }
 
