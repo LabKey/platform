@@ -190,6 +190,11 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             return _installPath;
         }
 
+        public void setInstallPath(String installPath)
+        {
+            _installPath = installPath;
+        }
+
         public boolean isJobComplete(PipelineJob job)
         {
             // TODO: Safer way to do this.

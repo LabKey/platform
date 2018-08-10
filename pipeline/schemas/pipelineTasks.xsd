@@ -43,6 +43,15 @@
         <xs:simpleContent>
             <xs:extension base="xs:string">
                 <xs:attribute name="exe" type="xs:string" />
+                <xs:attribute name="installPath" type="xs:string">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Path to directory containing the executable.
+                            Use the installPath if the executable isn't on the server's PATH environment variable.
+                            Environment variables in the installPath will be replaced before locating the executable.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
                 <xs:attribute name="timeout" type="xs:int">
                     <xs:annotation><xs:documentation>Optional timeout in seconds.</xs:documentation></xs:annotation>
                 </xs:attribute>
@@ -51,7 +60,6 @@
                   - version could be literal "1.0" or a parameter name, e.g "exeVersion"
                   - the ${version} token in the exe path will be replaced by the version provided.
                 <xs:attribute name="version" type="xs:string" />
-                <xs:attribute name="installPath" type="xs:string" />
                 -->
             </xs:extension>
         </xs:simpleContent>

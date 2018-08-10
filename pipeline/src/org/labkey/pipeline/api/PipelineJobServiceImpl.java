@@ -55,8 +55,11 @@ import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.MinorConfigurationException;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.NotFoundException;
@@ -645,6 +648,17 @@ public class PipelineJobServiceImpl implements PipelineJobService
     {
         String path = installPath == null ? getToolsPath() : installPath;
 
+        // expand environment variables in the path
+        if (path.contains("${"))
+        {
+            StringExpression expr = StringExpressionFactory.create(path, false, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.NullResult, false);
+            String newPath = expr.eval(System.getenv());
+            if (newPath == null)
+                throw new MinorConfigurationException("Failed to replace environment variables in path: " + path);
+
+            path = newPath;
+        }
+
         for (String pathFragment : path.split(File.pathSeparator))
         {
             File dir = new File(pathFragment);
@@ -908,6 +922,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
             try
             {
                 _impl.getExecutablePath("percolator", null, "percolator", "1.04", null);
+                fail("Expected to throw FileNotFoundException");
             }
             catch (FileNotFoundException e)
             {
@@ -922,6 +937,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
             try
             {
                 _impl.getExecutablePath("percolator", null, "percolator", "1.04", null);
+                fail("Expected to throw FileNotFoundException");
             }
             catch (FileNotFoundException e)
             {
@@ -949,6 +965,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
             try
             {
                 _impl.getExecutablePath("percolator", null, "percolator", "1.04", null);
+                fail("Expected to throw FileNotFoundException");
             }
             catch (FileNotFoundException e)
             {
@@ -957,16 +974,37 @@ public class PipelineJobServiceImpl implements PipelineJobService
         }
 
         @Test
-        public void testVersionSubstitutionWithoutDot()
+        public void testVersionSubstitutionWithoutDot() throws FileNotFoundException
         {
             _impl.setPrependVersionWithDot(false);
+            assertEquals(_tempDir + File.separator + "percolator_v1.04", _impl.getExecutablePath("percolator_v" + VERSION_SUBSTITUTION, null, "percolator", "1.04", null));
+        }
+
+        @Test
+        public void testPathWithEnvVariableNotFound() throws FileNotFoundException
+        {
+            assertNull(System.getenv("MUST_NOT_EXIST"));
+            String installPath = "${MUST_NOT_EXIST}/bin";
             try
             {
-                assertEquals(_tempDir + File.separator + "percolator_v1.04", _impl.getExecutablePath("percolator_v" + VERSION_SUBSTITUTION, null, "percolator", "1.04", null));
+                _impl.getExecutablePath("java", installPath, null, null, null);
+                fail("Expected to throw MinorConfigurationException");
             }
-            catch (FileNotFoundException e)
+            catch (MinorConfigurationException e)
             {
-                assertEquals(String.format(PIPELINE_TOOLS_ERROR, "percolator_v1.04", _tempDir), e.getMessage());
+                assertEquals("Failed to replace environment variables in path: " + installPath, e.getMessage());
+            }
+        }
+
+        @Test
+        public void testPathWithEnvVariable() throws FileNotFoundException
+        {
+            String javaHome = System.getenv("JAVA_HOME");
+            if (javaHome != null)
+            {
+                String installPath = "${JAVA_HOME}/bin";
+                String found = _impl.getExecutablePath("jar", installPath, null, null, null);
+                assertEquals(javaHome + File.separator + "bin" + File.separator + "jar", found);
             }
         }
 

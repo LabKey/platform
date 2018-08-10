@@ -87,6 +87,9 @@ public class ExecTaskFactory extends SimpleTaskFactory
         if (xexec == null)
             throw new IllegalArgumentException("Exec task requires <exec> element");
 
+        if (xexec.isSetInstallPath())
+            factory.setInstallPath(xexec.getInstallPath());
+
         if (xexec.isSetTimeout() && xexec.getTimeout() > 0)
             factory.setTimeout(xexec.getTimeout());
 
