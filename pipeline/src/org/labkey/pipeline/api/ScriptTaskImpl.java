@@ -162,7 +162,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
             //
             if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
             {
-                engine = mgr.getEngineByExtension(extension, true, false);
+                engine = mgr.getEngineByExtension(c, extension, true);
             }
             else
             {

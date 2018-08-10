@@ -26,7 +26,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyManager;
@@ -121,16 +120,16 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
     }
 
     @Override
-    public ScriptEngine getEngineByName(String shortName)
+    public ScriptEngine getEngineByName(String name)
     {
-        ScriptEngine engine = super.getEngineByName(shortName);
+        ScriptEngine engine = super.getEngineByName(name);
         assert engine == null || !engine.getClass().getSimpleName().equals("com.sun.script.javascript.RhinoScriptEngine") : "Should not use jdk bundled script engine";
 
         if (engine == null)
         {
             for (ExternalScriptEngineDefinition def : getEngineDefinitions())
             {
-                if (def.isEnabled() && shortName.equals(def.getName()))
+                if (def.isEnabled() && name.equals(def.getName()))
                 {
                     ScriptEngineFactory factory = new ExternalScriptEngineFactory(def);
                     return factory.getScriptEngine();
@@ -157,13 +156,13 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
     }
 
     @Override
-    public ScriptEngine getEngineByExtension(String extension)
+    public @Nullable ScriptEngine getEngineByExtension(Container c, String extension)
     {
-        return getEngineByExtension(extension, false, false);
+        return getEngineByExtension(c, extension, false);
     }
 
     @Override
-    public ScriptEngine getEngineByExtension(Container container, String extension)
+    public ScriptEngine getEngineByExtension(Container container, String extension, boolean requestRemote)
     {
         ScriptEngine engine = super.getEngineByExtension(extension);
         assert engine == null || !engine.getClass().getSimpleName().equals("com.sun.script.javascript.RhinoScriptEngine") : "Should not use jdk bundled script engine";
@@ -173,7 +172,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
             return isFactoryEnabled(engine.getFactory()) ? engine : null;
         }
 
-        ExternalScriptEngineDefinition def = getEngine(container, extension);
+        ExternalScriptEngineDefinition def = getEngine(container, extension, requestRemote);
         if (def != null)
         {
             if (def.getType().equals(ExternalScriptEngineDefinition.Type.R))
@@ -187,6 +186,65 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
             }
             else
                 return new ExternalScriptEngineFactory(def).getScriptEngine();
+        }
+        return null;
+    }
+
+    /**
+     * Returns the engine definition for a particular folder scope. We will search for a engine at the folder level
+     * followed by the project level and finally for the default engine at the site level.
+     */
+    private ExternalScriptEngineDefinition getEngine(Container container, String extension, boolean requestRemote)
+    {
+        ExternalScriptEngineDefinition engine = null;
+        for (ExternalScriptEngineDefinition def : getScopedEngines(container))
+        {
+            if (def.isEnabled() && Arrays.asList(def.getExtensions()).contains(extension))
+            {
+                engine = def;
+                break;
+            }
+        }
+
+        // check project level scoping
+        if (engine == null && !container.isProject())
+        {
+            for (ExternalScriptEngineDefinition def : getScopedEngines(container.getProject()))
+            {
+                if (def.isEnabled() && Arrays.asList(def.getExtensions()).contains(extension))
+                {
+                    engine = def;
+                    break;
+                }
+            }
+        }
+
+        if (engine != null && (!requestRemote || engine.isRemote()))
+            return engine;
+
+        // look through all the registered engines at the site level
+        List<ExternalScriptEngineDefinition> definitions = new ArrayList<>();
+        for (ExternalScriptEngineDefinition def : getEngineDefinitions())
+        {
+            if (Arrays.asList(def.getExtensions()).contains(extension) && def.isEnabled())
+                definitions.add(def);
+        }
+
+        if (!definitions.isEmpty())
+        {
+            // if there is only one, assume this is the default (this code can go away after the UI piece is finished)
+            if (definitions.size() == 1)
+                return definitions.get(0);
+
+            // more than one registered engine, choose the one marked as the site default
+            for (ExternalScriptEngineDefinition def : definitions)
+            {
+                if (def.isDefault() && (!requestRemote || def.isRemote()))
+                    return def;
+            }
+
+            if (requestRemote)
+                return definitions.stream().filter(ExternalScriptEngineDefinition::isRemote).findFirst().orElse(null);
         }
         return null;
     }
@@ -229,57 +287,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
         return new ArrayList<>(new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getCollection(ExternalScriptEngineDefinitionImpl.class));
     }
 
-    /**
-     * Returns the engine definition for a particular folder scope. We will search for a engine at the folder level
-     * followed by the project level and finally for the default engine at the site level.
-     */
-    private ExternalScriptEngineDefinition getEngine(Container container, String extension)
-    {
-        for (ExternalScriptEngineDefinition def : getScopedEngines(container))
-        {
-            if (def.isEnabled() && Arrays.asList(def.getExtensions()).contains(extension))
-            {
-                return def;
-            }
-        }
-
-        // check project level scoping
-        if (!container.isProject())
-        {
-            for (ExternalScriptEngineDefinition def : getScopedEngines(container.getProject()))
-            {
-                if (def.isEnabled() && Arrays.asList(def.getExtensions()).contains(extension))
-                {
-                    return def;
-                }
-            }
-        }
-
-        // look through all the registered engines at the site level
-        List<ExternalScriptEngineDefinition> definitions = new ArrayList<>();
-        for (ExternalScriptEngineDefinition def : getEngineDefinitions())
-        {
-            if (Arrays.asList(def.getExtensions()).contains(extension) && def.isEnabled())
-                definitions.add(def);
-        }
-
-        if (!definitions.isEmpty())
-        {
-            // if there is only one, assume this is the default (this code can go away after the UI piece is finished)
-            if (definitions.size() == 1)
-                return definitions.get(0);
-
-            // more than one registered engine, choose the one marked as the site default
-            for (ExternalScriptEngineDefinition def : definitions)
-            {
-                if (def.isDefault())
-                    return def;
-            }
-        }
-        return null;
-    }
-
-    @Override
+    @Deprecated     // delete once the new UI is in place
     public ScriptEngine getEngineByExtension(String extension, boolean requestRemote, boolean requestDocker)
     {
         if (!StringUtils.isBlank(extension))
