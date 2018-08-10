@@ -990,13 +990,34 @@ LABKEY.Utils = new function()
  */
 
 /**
- * Display an error dialog
+ * Display an error dialog.
  * @memberOf LABKEY.Utils
  * @function
  * @static
  * @name alert
  * @param title
  * @param msg
+ */
+
+/**
+ * Display a modal dialog.
+ * @memberOf LABKEY.Utils
+ * @function
+ * @static
+ * @name modal
+ * @param title Title of the modal dialog
+ * @param msg Message to be included in the dialog body. Can be null if the function generates its own content.
+ * @param fn {function} This will be called with the provided argument list {args} after the modal is shown. You can generate content in
+ * modal via the following empty div included: <div id="modal-fn-body"></div>
+ * @param args {array} Array of arguments to be applied to the function when it is called.
+ *
+ * @example &lt;script type="text/javascript"&gt;
+ *
+ * var myFN = function(arg1) {
+ *     document.getElementById('modal-fn-body').innerHTML = "Hello " + LABKEY.Security.currentUser[arg1] + "!";
+ * }
+ * LABKEY.Utils.modal("Hello", null, myFN, ["displayName"]);
+ * &lt;/script&gt;
  */
 
 /**

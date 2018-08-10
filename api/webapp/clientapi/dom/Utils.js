@@ -32,30 +32,40 @@ LABKEY.Utils = new function(impl, $) {
         $('#'+formId).submit();
     };
 
-    var displayModal = function(title, msg) {
+    var displayModalAlert = function(title, msg) {
+       displayModal(title, msg, undefined);
+    };
+
+    var displayModal = function(title, msg, fn, args) {
         var modal = $('#lk-utils-modal');
 
         if (modal.length === 0) {
             $('body').append([
                 '<div id="lk-utils-modal" class="modal fade" role="dialog">',
-                    '<div class="modal-dialog"><div class="modal-content"></div></div>',
+                '<div class="modal-dialog"><div class="modal-content"></div></div>',
                 '</div>'
             ].join(''));
 
             modal = $('#lk-utils-modal');
         }
-
-        modal.find('.modal-content').html([
+        var html = [
             '<div class="modal-header">',
                 '<button type="button" class="close" data-dismiss="modal">&times;</button>',
                 '<h4 class="modal-title">' + LABKEY.Utils.encodeHtml(title) + '</h4>',
             '</div>',
-            '<div class="modal-body">',
-                '<br>',
-                '<p>' + LABKEY.Utils.encodeHtml(msg) + '</p>',
-                '<br>',
-            '</div>'
-        ].join(''));
+            '<div class="modal-body">'
+        ];
+        if (msg) {
+            html.push('<br><p>' + LABKEY.Utils.encodeHtml(msg) + '<br></p>');
+        }
+         html.push(
+                 '<div id="modal-fn-body"></div>',
+                 '</div>'
+         );
+
+        modal.find('.modal-content').html(html.join(''));
+        if (fn && typeof fn === 'function')
+            fn.apply(this, args);
 
         modal.modal('show');
     };
@@ -104,8 +114,15 @@ LABKEY.Utils = new function(impl, $) {
             Ext.Msg.alert(title?Ext.util.Format.htmlEncode(title):"", msg?Ext.util.Format.htmlEncode(msg):"");
         }
         else {
-            displayModal(title, msg);
+            displayModalAlert(title, msg);
         }
+    };
+
+    /**
+     * Documentation specified in core/Utils.js -- search for "@name modal"
+     */
+    impl.modal = function(title, msg, fn, args) {
+      displayModal(title, msg, fn, args);
     };
 
     /**
