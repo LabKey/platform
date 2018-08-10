@@ -120,7 +120,7 @@ public class RReport extends ExternalScriptEngineReport
     {
         LabkeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
 
-        return mgr.getEngineByExtension("r", requestRemote(), true);
+        return mgr.getEngineByExtension(c, "r", requestRemote());
     }
 
     @Nullable
