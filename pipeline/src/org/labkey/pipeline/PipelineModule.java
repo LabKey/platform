@@ -244,6 +244,8 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         return new HashSet<>(Arrays.asList(
             PipelineQueueImpl.TestCase.class,
             PipelineController.TestCase.class,
+            PipelineJobServiceImpl.IntegrationTestCase.class,
+            PipelineServiceImpl.TestCase.class,
             StatusController.TestCase.class
         ));
     }
@@ -256,8 +258,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             PathMapperImpl.TestCase.class,
             PipelineCommandTestCase.class,
             PipelineJobServiceImpl.TestCase.class,
-            CommandTaskImpl.TestCase.class,
-            PipelineServiceImpl.TestCase.class
+            CommandTaskImpl.TestCase.class
         ));
     }
 

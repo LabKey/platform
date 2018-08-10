@@ -20,9 +20,11 @@ import org.apache.log4j.Logger;
 import org.apache.xmlbeans.SchemaType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -35,10 +37,8 @@ import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.pipeline.ParamParser;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
-import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
-import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.RemoteExecutionEngine;
 import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.pipeline.TaskFactorySettings;
@@ -110,8 +110,8 @@ public class PipelineJobServiceImpl implements PipelineJobService
         pjs.setAppProperties(new ApplicationPropertiesImpl());
         pjs.setConfigProperties(new ConfigPropertiesImpl());
         pjs.setWorkDirFactory(new WorkDirectoryLocal.Factory());
-        PipelineStatusFile.JobStore jobStore;
-        PipelineStatusFile.StatusWriter statusWriter;
+        final PipelineStatusFile.JobStore jobStore;
+        final PipelineStatusFile.StatusWriter statusWriter;
         switch (locationType)
         {
             case WebServer:
@@ -829,46 +829,167 @@ public class PipelineJobServiceImpl implements PipelineJobService
 
     public static class TestCase extends Assert
     {
-        private String _tempDir;
+        private static final File TEMP_DIR = FileUtil.getAbsoluteCaseSensitiveFile(new File(System.getProperty("java.io.tmpdir"), "PipelineToolTest"));;
+        private static final File TOOL_DIR = new File(TEMP_DIR, "A");
+        private static final File TOOL_DIR_2 = new File(TEMP_DIR, "B");
+        private static final String TOOL_PATH = TOOL_DIR + File.pathSeparator + TOOL_DIR_2;
+        private static final String TOOL_PACKAGE = "percolator";
+        private static final String TOOL_VERSION = "1.04";
+        private static final String TOOL_NAME = TOOL_PACKAGE + "_v." + TOOL_VERSION;
+        private static final ApplicationPropertiesImpl APP_PROPS = new ApplicationPropertiesImpl()
+        {
+            @Override
+            public String getToolsDirectory()
+            {
+                return TOOL_PATH;
+            }
+        };
+
         private File _dummyTool;
         private PipelineJobServiceImpl _impl;
         private ConfigPropertiesImpl _props;
-        private ApplicationPropertiesImpl _appProps;
+
+        @BeforeClass
+        public static void init()
+        {
+            FileUtil.deleteDir(TEMP_DIR);
+            TOOL_DIR.mkdirs();
+            TOOL_DIR_2.mkdirs();
+        }
 
         @Before
         public void setUp() throws IOException
         {
-            _tempDir = FileUtil.getAbsoluteCaseSensitiveFile(new File(System.getProperty("java.io.tmpdir"))).toString();
-            if (_tempDir.endsWith("\\") || _tempDir.endsWith("/"))
-            {
-                // Strip off trailing slash
-                _tempDir = _tempDir.substring(0, _tempDir.length() - 1);
-            }
+            FileUtil.deleteDirectoryContents(TOOL_DIR);
+            FileUtil.deleteDirectoryContents(TOOL_DIR_2);
 
-            _dummyTool = new File(_tempDir, "percolator_v.1.04");
-            if (!_dummyTool.exists())
-            {
-                _dummyTool.createNewFile();
-                _dummyTool.setExecutable(true);
-            }
+            _dummyTool = new File(TOOL_DIR, TOOL_NAME);
+            _dummyTool.createNewFile();
+            _dummyTool.setExecutable(true);
 
             _impl = new PipelineJobServiceImpl(null, false);
             _props = new ConfigPropertiesImpl();
-            _appProps = new ApplicationPropertiesImpl();
 
-            _appProps.setToolsDirectory(_tempDir);
-            _impl.setAppProperties(_appProps);
+            _impl.setAppProperties(APP_PROPS);
             _impl.setConfigProperties(_props);
         }
 
         @Test
-        public void testDummySubmit() throws PipelineValidationException, InterruptedException, PipelineProvider.HandlerException
+        public void testVersionSubstitution() throws FileNotFoundException
         {
-            if (!PipelineService.get().isEnterprisePipeline())
-            {
-                return;
-            }
+            String expectedExecutablePath = new File(TOOL_DIR, TOOL_NAME).toString();
+            assertEquals("Executable path after version substitution.", expectedExecutablePath, _impl.getExecutablePath(TOOL_PACKAGE + "_v" + VERSION_SUBSTITUTION, null, TOOL_PACKAGE, TOOL_VERSION, null));
+        }
 
+        @Test (expected = FileNotFoundException.class)
+        public void testMissingTool() throws FileNotFoundException
+        {
+            try
+            {
+                _impl.getExecutablePath(TOOL_PACKAGE, null, TOOL_PACKAGE, TOOL_VERSION, null);
+            }
+            catch (FileNotFoundException e)
+            {
+                assertEquals("Wrong error.", String.format(PIPELINE_TOOLS_ERROR, TOOL_PACKAGE, TOOL_PATH), e.getMessage());
+                throw e;
+            }
+        }
+
+        @Test (expected = FileNotFoundException.class)
+        public void testNonexistentPackage() throws FileNotFoundException
+        {
+            _props.setSoftwarePackages(Collections.singletonMap(TOOL_PACKAGE, TOOL_PACKAGE + "_v" + VERSION_SUBSTITUTION));
+            try
+            {
+                _impl.getExecutablePath(TOOL_PACKAGE, null, TOOL_PACKAGE, TOOL_VERSION, null);
+            }
+            catch (FileNotFoundException e)
+            {
+                assertEquals("Wrong error.", String.format(PIPELINE_TOOLS_ERROR, TOOL_NAME + "/" + TOOL_PACKAGE, TOOL_PATH), e.getMessage());
+                throw e;
+            }
+        }
+
+        @Test (expected = FileNotFoundException.class)
+        public void testToolInPackage() throws IOException
+        {
+            _dummyTool.delete();
+
+            _dummyTool = new File(TOOL_DIR, TOOL_NAME + "/percolator.exe");
+            _dummyTool.getParentFile().mkdir();
+            _dummyTool.createNewFile();
+            _dummyTool.setExecutable(true);
+
+            _props.setSoftwarePackages(Collections.singletonMap(TOOL_PACKAGE, TOOL_PACKAGE + "_v" + VERSION_SUBSTITUTION));
+            try
+            {
+                _impl.getExecutablePath(TOOL_PACKAGE, null, TOOL_PACKAGE, TOOL_VERSION, null);
+            }
+            catch (FileNotFoundException e)
+            {
+                assertEquals("Wrong error.", String.format(PIPELINE_TOOLS_ERROR, TOOL_NAME + "/" + TOOL_PACKAGE, TOOL_PATH), e.getMessage());
+                throw e;
+            }
+        }
+
+        @Test (expected = FileNotFoundException.class)
+        public void testVersionSubstitutionWithoutDot() throws FileNotFoundException
+        {
+            _impl.setPrependVersionWithDot(false);
+            try
+            {
+                _impl.getExecutablePath(TOOL_PACKAGE + "_v" + VERSION_SUBSTITUTION, null, TOOL_PACKAGE, TOOL_VERSION, null);
+            }
+            catch (FileNotFoundException e)
+            {
+                assertEquals("Wrong error.", String.format(PIPELINE_TOOLS_ERROR, TOOL_PACKAGE + "_v" + TOOL_VERSION, TOOL_PATH), e.getMessage());
+                throw e;
+            }
+        }
+
+        @Test (expected = MinorConfigurationException.class)
+        public void testPathWithEnvVariableNotFound() throws FileNotFoundException
+        {
+            assertNull(System.getenv("MUST_NOT_EXIST"));
+            String installPath = "${MUST_NOT_EXIST}/bin";
+            try
+            {
+                _impl.getExecutablePath("java", installPath, null, null, null);
+            }
+            catch (MinorConfigurationException e)
+            {
+                assertEquals("Wrong error.", "Failed to replace environment variables in path: " + installPath, e.getMessage());
+                throw e;
+            }
+        }
+
+        @Test
+        public void testPathWithEnvVariable() throws FileNotFoundException
+        {
+            String javaHome = System.getenv("JAVA_HOME");
+            if (javaHome != null)
+            {
+                String installPath = "${JAVA_HOME}/bin";
+                String found = _impl.getExecutablePath("jar", installPath, null, null, null);
+                assertEquals("Failed to expand environment variable correctly.", javaHome + File.separator + "bin" + File.separator + "jar", found);
+            }
+        }
+
+        @AfterClass
+        public static void tearDown()
+        {
+            FileUtil.deleteDir(TEMP_DIR);
+        }
+    }
+
+    public static class IntegrationTestCase extends Assert
+    {
+        @Test
+        public void testDummySubmit() throws Exception
+        {
+            Assume.assumeTrue("Test is only valid on server with enterprise pipeline enabled.", PipelineService.get().isEnterprisePipeline());
+
+            final PipelineJobServiceImpl _impl = new PipelineJobServiceImpl(null, false);
             int dummyEngineIndex = _impl._remoteExecutionEngines.size();
             DummyRemoteExecutionEngine dummyEngine = new DummyRemoteExecutionEngine();
             _impl._remoteExecutionEngines.add(dummyEngine);
@@ -911,122 +1032,17 @@ public class PipelineJobServiceImpl implements PipelineJobService
         }
 
         @Test
-        public void testVersionSubstitution() throws FileNotFoundException
-        {
-            assertEquals(_tempDir + File.separator + "percolator_v.1.04", _impl.getExecutablePath("percolator_v" + VERSION_SUBSTITUTION, null, "percolator", "1.04", null));
-        }
-
-        @Test
-        public void testMissingTool()
-        {
-            try
-            {
-                _impl.getExecutablePath("percolator", null, "percolator", "1.04", null);
-                fail("Expected to throw FileNotFoundException");
-            }
-            catch (FileNotFoundException e)
-            {
-                assertEquals(String.format(PIPELINE_TOOLS_ERROR, "percolator", _tempDir), e.getMessage());
-            }
-        }
-
-        @Test
-        public void testNonexistentPackage()
-        {
-            _props.setSoftwarePackages(Collections.singletonMap("percolator", "percolator_v" + VERSION_SUBSTITUTION));
-            try
-            {
-                _impl.getExecutablePath("percolator", null, "percolator", "1.04", null);
-                fail("Expected to throw FileNotFoundException");
-            }
-            catch (FileNotFoundException e)
-            {
-                assertEquals(String.format(PIPELINE_TOOLS_ERROR, "percolator_v.1.04/percolator", _tempDir), e.getMessage());
-            }
-        }
-
-        @Test
-        public void testToolInPackage() throws IOException
-        {
-            _dummyTool.delete();
-
-            _dummyTool = new File(_tempDir, "percolator_v.1.04/percolator.exe");
-            if (_dummyTool.exists())
-            {
-                _dummyTool.delete();
-                _dummyTool.getParentFile().delete();
-            }
-
-            _dummyTool.getParentFile().mkdir();
-            _dummyTool.createNewFile();
-            _dummyTool.setExecutable(true);
-
-            _props.setSoftwarePackages(Collections.singletonMap("percolator", "percolator_v" + VERSION_SUBSTITUTION));
-            try
-            {
-                _impl.getExecutablePath("percolator", null, "percolator", "1.04", null);
-                fail("Expected to throw FileNotFoundException");
-            }
-            catch (FileNotFoundException e)
-            {
-                assertEquals(String.format(PIPELINE_TOOLS_ERROR, "percolator_v.1.04/percolator", _tempDir), e.getMessage());
-            }
-        }
-
-        @Test
-        public void testVersionSubstitutionWithoutDot()
-        {
-            _impl.setPrependVersionWithDot(false);
-            try
-            {
-                _impl.getExecutablePath("percolator_v" + VERSION_SUBSTITUTION, null, "percolator", "1.04", null);
-            }
-            catch (FileNotFoundException e)
-            {
-                assertEquals(String.format(PIPELINE_TOOLS_ERROR, "percolator_v1.04", _tempDir), e.getMessage());
-            }
-        }
-
-        @Test
-        public void testPathWithEnvVariableNotFound() throws FileNotFoundException
-        {
-            assertNull(System.getenv("MUST_NOT_EXIST"));
-            String installPath = "${MUST_NOT_EXIST}/bin";
-            try
-            {
-                _impl.getExecutablePath("java", installPath, null, null, null);
-                fail("Expected to throw MinorConfigurationException");
-            }
-            catch (MinorConfigurationException e)
-            {
-                assertEquals("Failed to replace environment variables in path: " + installPath, e.getMessage());
-            }
-        }
-
-        @Test
-        public void testPathWithEnvVariable() throws FileNotFoundException
-        {
-            String javaHome = System.getenv("JAVA_HOME");
-            if (javaHome != null)
-            {
-                String installPath = "${JAVA_HOME}/bin";
-                String found = _impl.getExecutablePath("jar", installPath, null, null, null);
-                assertEquals(javaHome + File.separator + "bin" + File.separator + "jar", found);
-            }
-        }
-
-        @Test
         public void testModuleCaches()
         {
             int pipelineCount = TASK_PIPELINE_CACHE.streamAllResourceMaps()
-                .mapToInt(Map::size)
-                .sum();
+                    .mapToInt(Map::size)
+                    .sum();
 
             LOG.info(pipelineCount + " task pipelines defined in all modules");
 
             int factoryCount = TASK_FACTORY_CACHE.streamAllResourceMaps()
-                .mapToInt(Map::size)
-                .sum();
+                    .mapToInt(Map::size)
+                    .sum();
 
             LOG.info(factoryCount + " task factories defined in all modules");
 
@@ -1051,13 +1067,6 @@ public class PipelineJobServiceImpl implements PipelineJobService
                     assertEquals("Task factories from pipelinetest2 module", 2, TASK_FACTORY_CACHE.getResourceMap(pipelinetest2).size());
                 }
             }
-        }
-
-        @After
-        public void tearDown()
-        {
-            if (_dummyTool.exists())
-                _dummyTool.delete();
         }
     }
 }
