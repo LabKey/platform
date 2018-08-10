@@ -3276,7 +3276,7 @@ public class ExperimentServiceImpl implements ExperimentService
                         StudyService studyService = StudyService.get();
                         if (studyService != null)
                         {
-                            AssayWellExclusionService svc = AssayWellExclusionService.getProvider();
+                            AssayWellExclusionService svc = AssayWellExclusionService.getProvider(protocol);
                             if (svc != null)
                                 svc.deleteExclusionsForRun(protocol, runId);
 

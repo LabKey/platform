@@ -87,7 +87,7 @@ public class TSVProtocolSchema extends AssayProtocolSchema
             defaultCols.add(FieldKey.fromParts("Run"));
             defaultCols.add(FieldKey.fromParts("RowId"));
 
-            AssayWellExclusionService svc = AssayWellExclusionService.getProvider();
+            AssayWellExclusionService svc = AssayWellExclusionService.getProvider(getProtocol());
             if (svc != null)
             {
                 ColumnInfo excludedByColumn = svc.createExcludedByColumn(this, getProtocol());
