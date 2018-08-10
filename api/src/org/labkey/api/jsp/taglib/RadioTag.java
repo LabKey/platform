@@ -27,6 +27,7 @@ public class RadioTag extends SimpleTagBase
     protected String _id;
     protected Object _value;
     protected Object _currentValue;
+    protected boolean _disabled=false;
 
     public void doTag() throws IOException
     {
@@ -45,6 +46,10 @@ public class RadioTag extends SimpleTagBase
             out.write(" id=\"");
             out.write(h(_id));
             out.write("\"");
+        }
+        if (_disabled)
+        {
+            out.write(" disabled");
         }
         out.write(">");
     }
@@ -66,6 +71,11 @@ public class RadioTag extends SimpleTagBase
     public void setCurrentValue(Object currentValue)
     {
         _currentValue = currentValue;
+    }
+
+    public void setIsDisabled(boolean disabled)
+    {
+        _disabled = disabled;
     }
 
     public boolean isChecked()
