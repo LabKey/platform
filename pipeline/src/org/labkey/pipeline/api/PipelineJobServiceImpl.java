@@ -974,10 +974,17 @@ public class PipelineJobServiceImpl implements PipelineJobService
         }
 
         @Test
-        public void testVersionSubstitutionWithoutDot() throws FileNotFoundException
+        public void testVersionSubstitutionWithoutDot()
         {
             _impl.setPrependVersionWithDot(false);
-            assertEquals(_tempDir + File.separator + "percolator_v1.04", _impl.getExecutablePath("percolator_v" + VERSION_SUBSTITUTION, null, "percolator", "1.04", null));
+            try
+            {
+                _impl.getExecutablePath("percolator_v" + VERSION_SUBSTITUTION, null, "percolator", "1.04", null);
+            }
+            catch (FileNotFoundException e)
+            {
+                assertEquals(String.format(PIPELINE_TOOLS_ERROR, "percolator_v1.04", _tempDir), e.getMessage());
+            }
         }
 
         @Test
