@@ -26,9 +26,13 @@ public interface AssayWellExclusionService
     }
 
     @Nullable
-    static AssayWellExclusionService getProvider()
+    static AssayWellExclusionService getProvider(ExpProtocol protocol)
     {
-        return _providers[0];
+        AssayProvider provider = AssayService.get().getProvider(protocol);
+        if (provider != null && provider.isExclusionSupported())
+            return _providers[0];
+        else
+            return null;
     }
 
     @Nullable

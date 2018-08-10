@@ -578,7 +578,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
         if (newRunForm.getReRun() != null)
         {
-            AssayWellExclusionService svc = AssayWellExclusionService.getProvider();
+            AssayWellExclusionService svc = AssayWellExclusionService.getProvider(_protocol);
             if (svc != null)
             {
                 HttpView exclusionWarning = svc.getAssayReImportWarningView(getContainer(), newRunForm.getReRun());

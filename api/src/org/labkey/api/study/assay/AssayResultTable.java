@@ -216,7 +216,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         runColumn.setShownInUpdateView(false);
         addColumn(runColumn);
 
-        AssayWellExclusionService svc = AssayWellExclusionService.getProvider();
+        AssayWellExclusionService svc = AssayWellExclusionService.getProvider(_protocol);
         if (svc != null)
         {
             addColumn(svc.createExcludedColumn(this, _protocol));

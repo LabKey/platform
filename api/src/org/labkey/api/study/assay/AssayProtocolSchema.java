@@ -567,7 +567,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
     @Nullable
     protected ResultsQueryView createDataQueryView(ViewContext context, QuerySettings settings, BindException errors)
     {
-        AssayWellExclusionService svc = AssayWellExclusionService.getProvider();
+        AssayWellExclusionService svc = AssayWellExclusionService.getProvider(_protocol);
         ResultsQueryView queryView = new ResultsQueryView(_protocol, context, settings);
         if (svc != null)
         {
