@@ -44,7 +44,7 @@ public class CollaborationFolderType extends MultiPortalFolderType
         this(Arrays.asList(Portal.getPortalPart("Subfolders").createWebPart(),
             new WikiWebPartFactory().createWebPart(),
             new WikiTOCFactory().createWebPart(),
-            Portal.getPortalPart("Messages").createWebPart())
+            (null == Portal.getPortalPart("Messages") ? null : Portal.getPortalPart("Messages").createWebPart()))
         );
     }
 
