@@ -29,6 +29,8 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.annotations.JavaRuntimeVersion;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ConnectionWrapper;
@@ -264,6 +266,10 @@ public class ModuleLoader implements Filter
     public List<Module> doInit(List<File> explodedModuleDirs)
     {
         _log.debug("ModuleLoader init");
+
+
+        // CONSIDER: could optimize more by not
+
 
         rollErrorLogFile(_log);
 
@@ -647,8 +653,8 @@ public class ModuleLoader implements Filter
     {
         ApplicationContext parentContext = ServiceRegistry.get().getApplicationContext();
 
-        Map<String, File> moduleNameToFile = new CaseInsensitiveHashMap<>();
-        List<Module> modules = new ArrayList<>();
+        CaseInsensitiveHashMap<File> moduleNameToFile = new CaseInsensitiveHashMap<>();
+        CaseInsensitiveTreeMap<Module> moduleNameToModule = new CaseInsensitiveTreeMap<>();
         Pattern moduleNamePattern = Pattern.compile(MODULE_NAME_REGEX);
         for(File moduleDir : explodedModuleDirs)
         {
@@ -687,8 +693,8 @@ public class ModuleLoader implements Filter
                     else
                     {
                         module.setExplodedPath(moduleDir);
-                        modules.add(module);
                         moduleNameToFile.put(module.getName(), moduleDir);
+                        moduleNameToModule.put(module.getName(), module);
                     }
 
                     // Check for LabKey module info. Missing info is only a warning for now, but may be an error later.
@@ -709,7 +715,42 @@ public class ModuleLoader implements Filter
                 _moduleFailures.put(moduleDir.getName(), t);
             }
         }
-        return modules;
+
+        // filter by startup properties if specified
+        LinkedList<String> includeList = new LinkedList<>();
+        ArrayList<String> exclude = new ArrayList<>();
+        for (ConfigProperty prop : getConfigProperties("ModuleLoader"))
+        {
+            if (prop.getName().equals("include"))
+                Arrays.stream(StringUtils.split(prop.getValue(), ","))
+                    .map(StringUtils::trimToNull)
+                    .filter(s -> null != s)
+                    .forEach(includeList::add);
+            if (prop.getName().equals("exclude"))
+                Arrays.stream(StringUtils.split(prop.getValue(), ","))
+                        .map(StringUtils::trimToNull)
+                        .filter(s -> null != s)
+                        .forEach(exclude::add);
+        }
+
+        CaseInsensitiveTreeMap<Module> includedModules = moduleNameToModule;
+        if (!includeList.isEmpty())
+        {
+            includeList.addAll(Arrays.asList("Core","API","Internal"));
+            includedModules = new CaseInsensitiveTreeMap<>();
+            while (!includeList.isEmpty())
+            {
+                Module m = moduleNameToModule.get(includeList.removeFirst());
+                // add module to includedModules, add dependencies to includeList (of course it's too soon to call getResolvedModuleDependencies) */
+                if (null == includedModules.put(m.getName(), m))
+                    includeList.addAll(m.getModuleDependenciesAsSet());
+            }
+        }
+
+        for (String e : exclude)
+            includedModules.remove(e);
+
+        return new ArrayList<>(includedModules.values());
     }
 
     /** Load module metadata from a .properties file */
@@ -766,6 +807,7 @@ public class ModuleLoader implements Filter
 
         return simpleModule;
     }
+
 
     /** Read module metadata out of XML file */
     private Module loadModuleFromXML(ApplicationContext parentContext, File moduleXml)
