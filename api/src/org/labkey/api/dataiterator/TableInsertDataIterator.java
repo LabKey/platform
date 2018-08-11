@@ -30,7 +30,6 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.StatementUtils;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
-import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService.InsertOption;
 
@@ -263,18 +262,31 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
     @Override
     public void close() throws IOException
     {
-        if (_closed)
-            return;
-        _closed = true;
-        super.close();
-        if (null != _scope && null != _conn)
+        boolean active = _scope.isTransactionActive();
+
+        if (active)
+            checkConnection();
+
+        try
         {
-            if (_insertOption == InsertOption.IMPORT_IDENTITY ||
-                (_insertOption == InsertOption.MERGE && _context.supportsAutoIncrementKey()))
+            if (_closed)
+                return;
+            _closed = true;
+            super.close();
+            if (null != _scope && null != _conn)
             {
-                setAutoIncrement(INSERT.OFF);
+                if (_insertOption == InsertOption.IMPORT_IDENTITY ||
+                    (_insertOption == InsertOption.MERGE && _context.supportsAutoIncrementKey()))
+                {
+                    setAutoIncrement(INSERT.OFF);
+                }
+                _scope.releaseConnection(_conn);
             }
-            _scope.releaseConnection(_conn);
+        }
+        finally
+        {
+            if (active)
+                checkConnection();
         }
     }
 
@@ -289,15 +301,6 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         {
             throw new RuntimeSQLException(e);
         }
-    }
-
-    @Override
-    public boolean next() throws BatchValidationException
-    {
-        checkConnection();
-        boolean next = super.next();
-        checkConnection();
-        return next;
     }
 
     private enum INSERT
