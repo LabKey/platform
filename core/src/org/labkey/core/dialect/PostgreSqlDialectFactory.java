@@ -89,8 +89,8 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
     {
         int version = versionNumber.getVersionInt();
 
-        // Version 9.3 or greater is allowed
-        if (version >= 93)
+        // Version 9.3 or greater is allowed (except for versions that don't exist: 9.7, 9.8, 9.9)
+        if (version >= 93 && (version <= 96 || version >= 100))
         {
             // This approach is used when it's time to deprecate a version of PostgreSQL. Also, change the old dialect's
             // addAdminWarningMessages() method to add a message that gets displayed in the page header for admins.
@@ -115,11 +115,13 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
             // PostgreSQL version format changed from x.y.z to x.y starting with 10.0... so last digit is now minor version.
             version = version / 10;
 
-            // Any 10.x version is okay
-            if (version <= 10)
+            if (version == 10)
                 return new PostgreSql_10_Dialect();
 
-            // 11.x+ gets a warning.
+            if (version == 11)
+                return new PostgreSql_11_Dialect();
+
+            // 12.x+ gets a warning.
             if (logWarnings)
                 _log.warn("LabKey Server has not been tested against " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED);
 
@@ -154,12 +156,15 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
             // < 9.3 should result in bad version number exception
             badVersion("PostgreSQL", 0.0, 9.2, null, connectionUrl);
 
-            // >= 9.3 should be good
+            // 9.7, 9.8, and 9.9 are bad as well - these versions never existing
+            badVersion("PostgreSQL", 9.7, 10.0, null, connectionUrl);
+
+            // Test good versions
             good("PostgreSQL", 9.3, 9.4, "", connectionUrl, PostgreSql93Dialect.class);
             good("PostgreSQL", 9.4, 9.5, "", connectionUrl, PostgreSql94Dialect.class);
             good("PostgreSQL", 9.5, 9.6, "", connectionUrl, PostgreSql95Dialect.class);
             good("PostgreSQL", 9.6, 9.7, "", connectionUrl, PostgreSql96Dialect.class);
-            good("PostgreSQL", 9.7, 11.0, "", connectionUrl, PostgreSql_10_Dialect.class);
+            good("PostgreSQL", 10.0, 11.0, "", connectionUrl, PostgreSql_10_Dialect.class);
             good("PostgreSQL", 11.0, 12.0, "", connectionUrl, PostgreSql_11_Dialect.class);
             good("PostgreSQL", 12.0, 13.0, "", connectionUrl, PostgreSql_11_Dialect.class);
         }
@@ -172,21 +177,21 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
         {
             String goodSql =
                     "SELECT core.executeJavaUpgradeCode('upgradeCode');\n" +                       // Normal
-                            "    SELECT     core.executeJavaUpgradeCode    ('upgradeCode')    ;     \n" +  // Lots of whitespace
-                            "select CORE.EXECUTEJAVAUPGRADECODE('upgradeCode');\n" +                       // Case insensitive
-                            "SELECT core.executeJavaUpgradeCode('upgradeCode');";                          // No line ending
+                    "    SELECT     core.executeJavaUpgradeCode    ('upgradeCode')    ;     \n" +  // Lots of whitespace
+                    "select CORE.EXECUTEJAVAUPGRADECODE('upgradeCode');\n" +                       // Case insensitive
+                    "SELECT core.executeJavaUpgradeCode('upgradeCode');";                          // No line ending
 
 
             String badSql =
                     "/* SELECT core.executeJavaUpgradeCode('upgradeCode');\n" +       // Inside block comment
-                            "   more comment\n" +
-                            "*/" +
-                            "    -- SELECT core.executeJavaUpgradeCode('upgradeCode');\n" +   // Inside single-line comment
-                            "SELECTcore.executeJavaUpgradeCode('upgradeCode');\n" +           // Bad syntax
-                            "SELECT core. executeJavaUpgradeCode('upgradeCode');\n" +         // Bad syntax
-                            "SEECT core.executeJavaUpgradeCode('upgradeCode');\n" +           // Misspell SELECT
-                            "SELECT core.executeJaavUpgradeCode('upgradeCode');\n" +          // Misspell function name
-                            "SELECT core.executeJavaUpgradeCode('upgradeCode')\n";            // No semicolon
+                    "   more comment\n" +
+                    "*/" +
+                    "    -- SELECT core.executeJavaUpgradeCode('upgradeCode');\n" +   // Inside single-line comment
+                    "SELECTcore.executeJavaUpgradeCode('upgradeCode');\n" +           // Bad syntax
+                    "SELECT core. executeJavaUpgradeCode('upgradeCode');\n" +         // Bad syntax
+                    "SEECT core.executeJavaUpgradeCode('upgradeCode');\n" +           // Misspell SELECT
+                    "SELECT core.executeJaavUpgradeCode('upgradeCode');\n" +          // Misspell function name
+                    "SELECT core.executeJavaUpgradeCode('upgradeCode')\n";            // No semicolon
 
             SqlDialect dialect = new PostgreSql93Dialect();
             TestUpgradeCode good = new TestUpgradeCode();
