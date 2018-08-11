@@ -54,7 +54,8 @@ public class MergedDirectoryResource extends AbstractResourceCollection
     private static final FileSystemWatcher WATCHER = FileSystemWatchers.get();
     private static final Set<Pair<Resolver, Path>> KEYS_WITH_LISTENERS = new ConcurrentHashSet<>();
 
-    private final List<File> _dirs;
+    // TODO: Convert to a simple File... we aren't merging directories any more
+    public final List<File> _dirs;
     private final Resource[] _additional;
     private final Pair<Resolver, Path> _cacheKey;
 
@@ -140,6 +141,9 @@ public class MergedDirectoryResource extends AbstractResourceCollection
         for (File dir : dirs)
             if (!files.add(dir))
                 assert false : dir.toString() + " was listed twice!";
+
+        if (dirs.size() != 1)
+            throw new IllegalStateException("Expected only a single dir! " + this + dirs.toString());
 
         return true;
     }

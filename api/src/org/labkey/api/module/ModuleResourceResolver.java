@@ -31,6 +31,7 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.util.Path;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -57,9 +58,9 @@ public class ModuleResourceResolver implements Resolver
         Path normalized = (Path)argument;
         Resource r = resolve(normalized);
 
-        // Register a listener on every directory we encounter
-        if (null != r && r.exists() && r.isCollection())
-            registerListener(r);
+        // Ensure listeners are registered on this resource and its ancestors
+        if (null != r)
+            ensureListeners(r);
 
         if (null == r)
             LOG.debug("missed resource: " + key);
@@ -81,16 +82,31 @@ public class ModuleResourceResolver implements Resolver
         _classes = additional.toArray(new ClassResourceCollection[classes.length]);
     }
 
-    // r exists and r is a collection
-    private void registerListener(Resource r)
+    // Ensure listeners are registered on this resource (if it's a directory) and the resource's parent, grandparent, etc.
+    private void ensureListeners(Resource r)
     {
-        Path path = r.getPath();
-
-        if (_pathsWithListeners.add(path))
+        while (null != r)
         {
-            LOG.debug("registering a listener on: " + r.toString());
+            if (r.exists() && r.isCollection())
+            {
+                Path path = r.getPath();
 
-            ((MergedDirectoryResource)r).registerListener(WATCHER, new ModuleResourceResolverListener(), ENTRY_CREATE, ENTRY_DELETE);
+                if (_pathsWithListeners.add(path))
+                {
+                    LOG.debug("registering a listener on: " + r.toString());
+
+                    ((MergedDirectoryResource) r).registerListener(WATCHER, new ModuleResourceResolverListener(), ENTRY_CREATE, ENTRY_DELETE);
+                }
+                else
+                {
+                    LOG.debug("NOT registering a listener on: " + r.toString());
+                    // Short-circuit -- if a path is registered then we know its ancestors are registered, so no need to keep looping
+                    return;
+                }
+            }
+
+            // Walk up the ancestors, regardless of whether a resource exists or not (its parent or grandparent might)
+            r = r.parent();
         }
     }
 
@@ -141,7 +157,12 @@ public class ModuleResourceResolver implements Resolver
         if (r != null)
             return r;
 
-        return resolveClassResource(path);
+        Resource classResource = resolveClassResource(path);
+
+        if (null != classResource)
+            throw new IllegalStateException("Resolved a class resource: " + path);
+
+        return classResource;
     }
 
     private Resource resolveFileResource(Path path)
@@ -198,14 +219,19 @@ public class ModuleResourceResolver implements Resolver
         public void entryCreated(java.nio.file.Path directory, java.nio.file.Path entry)
         {
             LOG.debug(entry + " created");
-            remove(new Path(directory.resolve(entry)).toString());
+            java.nio.file.Path nioPath = directory.resolve(entry);
+            if (Files.isDirectory(nioPath))
+                ensureListeners(resolve(new Path(_root._dirs.get(0).toPath().relativize(nioPath)))); // Ugly... we'll improve soon
+            clear(); // Clear all resources and children in this module. A bit heavy-handed, but attempts at targeted approaches have been wrong.
         }
 
         @Override
         public void entryDeleted(java.nio.file.Path directory, java.nio.file.Path entry)
         {
             LOG.debug(entry + " deleted");
-            remove(new Path(directory.resolve(entry)).toString());
+            java.nio.file.Path nioPath = directory.resolve(entry);
+            _pathsWithListeners.remove(new Path(_root._dirs.get(0).toPath().relativize(nioPath))); // Ugly... we'll improve soon
+            clear(); // Clear all resources and children in this module. A bit heavy-handed, but attempts at targeted approaches have been wrong.
         }
 
         @Override
