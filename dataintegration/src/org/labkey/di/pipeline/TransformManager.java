@@ -720,30 +720,40 @@ public class TransformManager implements DataIntegrationService
         return job;
     }
 
-
-    private boolean dumpScheduler()
+    /** @return a text summary of all the ETLs that are currently enabled and scheduled */
+    public List<String> getSchedulerSummary()
     {
+        List<String> result = new ArrayList<>();
         try
         {
             Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
 
             {
-            LOG.debug("Jobs");
-            Set<JobKey> keys = scheduler.getJobKeys(GroupMatcher.groupEquals(JOB_GROUP_NAME));
-            for (JobKey key : keys)
-                LOG.debug("\t" + key.toString());
+                result.add("Jobs");
+                Set<JobKey> keys = scheduler.getJobKeys(GroupMatcher.groupEquals(JOB_GROUP_NAME));
+                for (JobKey key : keys)
+                    result.add("\t" + key.toString());
             }
 
             {
-            LOG.debug("Triggers");
-            Set<TriggerKey> keys = scheduler.getTriggerKeys(GroupMatcher.groupEquals(JOB_GROUP_NAME));
-            for (TriggerKey key : keys)
-                LOG.debug("\t" + key.toString());
+                result.add("Triggers");
+                Set<TriggerKey> keys = scheduler.getTriggerKeys(GroupMatcher.groupEquals(JOB_GROUP_NAME));
+                for (TriggerKey key : keys)
+                    result.add("\t" + key.toString());
             }
         }
         catch(SchedulerException x)
         {
             LOG.warn(x);
+        }
+        return result;
+    }
+
+    private boolean dumpScheduler()
+    {
+        for (String s : getSchedulerSummary())
+        {
+            LOG.debug(s);
         }
         return true;
     }

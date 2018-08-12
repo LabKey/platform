@@ -46,6 +46,7 @@ import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUrls;
+import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -57,6 +58,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderManagement;
+import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -134,6 +136,23 @@ public class DataIntegrationController extends SpringActionController
             JspView<Object> result = new JspView<>(DataIntegrationController.class, "transformConfiguration.jsp", null);
             result.setTitle("ETL Configurations");
             return result;
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root.addChild("ETL Scheduler");
+            return root;
+        }
+    }
+
+    @AdminConsoleAction
+    public class SchedulerSummaryAction extends SimpleViewAction
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors)
+        {
+            return new HtmlView("Scheduled ETLs", "<pre>" + PageFlowUtil.filter(StringUtils.join(TransformManager.get().getSchedulerSummary(), "\n")) + "</pre>");
         }
 
         @Override
@@ -374,6 +393,7 @@ public class DataIntegrationController extends SpringActionController
     {
         AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "etl- all job histories", new ActionURL(ViewJobsAction.class, ContainerManager.getRoot()), ReadPermission.class);
         AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "etl- run site scope etls", new ActionURL(BeginAction.class, ContainerManager.getRoot()), ReadPermission.class);
+        AdminConsole.addLink(AdminConsole.SettingsLinkType.Diagnostics, "etl- view scheduler summary", new ActionURL(SchedulerSummaryAction.class, ContainerManager.getRoot()), ReadPermission.class);
     }
 
     @RequiresPermission(AdminPermission.class)
