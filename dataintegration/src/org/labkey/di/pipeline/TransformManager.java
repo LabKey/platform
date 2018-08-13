@@ -731,15 +731,17 @@ public class TransformManager implements DataIntegrationService
             {
                 result.add("Jobs");
                 Set<JobKey> keys = scheduler.getJobKeys(GroupMatcher.groupEquals(JOB_GROUP_NAME));
+                int count = 1;
                 for (JobKey key : keys)
-                    result.add("\t" + key.toString());
+                    result.add("\t" + (count++) + ") " + key.toString());
             }
 
             {
                 result.add("Triggers");
                 Set<TriggerKey> keys = scheduler.getTriggerKeys(GroupMatcher.groupEquals(JOB_GROUP_NAME));
+                int count = 1;
                 for (TriggerKey key : keys)
-                    result.add("\t" + key.toString());
+                    result.add("\t" + (count++) + ") " + key.toString());
             }
         }
         catch(SchedulerException x)
