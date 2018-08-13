@@ -310,37 +310,27 @@
          */
         createDirectory: function (config)
         {
-            Ext4.Ajax.request(
-                    {
-                        method: 'MKCOL',
-                        url: config.path + "?pageId="+this.pageId,
-                        success: function (response, options)
-                        {
-                            var success = false;
-                            if (OK == response.status || CREATED == response.status)
-                            {
-                                success = true;
-                            }
-                            else if (METHOD_NOT_ALLOWED == response.status)
-                            {
-                                success = false;
-                            }
+            var onFailure = LABKEY.Utils.getCallbackWrapper(config.failure, this, true);
 
-                            if (success)
-                            {
-                                if (Ext4.isFunction(config.success))
-                                {
-                                    config.success.call(config.scope||this, config.path);
-                                }
-                            }
-                            else if (Ext4.isFunction(config.failure))
-                            {
-                                this.handleFailureCallback(config, response, options);
-                            }
-                        },
-                        failure: config.failure,
-                        scope: this
-                    });
+            Ext4.Ajax.request({
+                method: 'MKCOL',
+                url: config.path + "?pageId="+this.pageId,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                success: LABKEY.Utils.getCallbackWrapper(function(result, response, options) {
+                    if (!result || result.success) {
+                        if (Ext4.isFunction(config.success)) {
+                            config.success.call(config.scope || this, config.path);
+                        }
+                    }
+                    else {
+                        onFailure(response, options);
+                    }
+                }, this),
+                failure: onFailure,
+                scope: this
+            });
 
             return true;
         },
@@ -556,44 +546,10 @@
             {
                 // TODO: downloading files using directget doesn't currently work
                 throw new Error("Downloading resources via 'directget' is not yet implemented");
-
-                // make direct request
-                //Ext4.Ajax.request({
-                //    method: directget.method,
-                //    url: directget.endpoint,
-                //    headers: directget.headers,
-                //    disableCaching: false,
-                //    success: function (response, options)
-                //    {
-                //        var success = false;
-                //        if (OK == response.status || CREATED == response.status)
-                //        {
-                //            success = true;
-                //        }
-                //        else if (METHOD_NOT_ALLOWED == response.status)
-                //        {
-                //            success = false;
-                //        }
-                //
-                //        if (success)
-                //        {
-                //            if (Ext4.isFunction(config.success))
-                //            {
-                //                config.success.call(config.scope||this, config.path);
-                //            }
-                //        }
-                //        else
-                //        {
-                //            this.handleFailureCallback(config, response, options);
-                //        }
-                //    },
-                //    failure: config.failure,
-                //    scope: this
-                //});
             }
             else
             {
-                if (records.length == 1 && record && !record.data.collection)
+                if (records.length === 1 && record && !record.data.collection)
                 {
                     // hack to prevent Chrome from turning both test.txt.gz and test.tar.gz into test.gz see: https://code.google.com/p/chromium/issues/detail?id=136305
                     if (navigator.userAgent.indexOf("Chrome")!==-1 && record.data.href.indexOf(".gz")!==-1)

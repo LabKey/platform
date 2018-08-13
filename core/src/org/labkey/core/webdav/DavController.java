@@ -2925,7 +2925,10 @@ public class DavController extends SpringActionController
             Path path = getResourcePath();
             WebdavResource resource = resolvePath();
             if (null == resource || path.size()==0)
-                throw new DavException(WebdavStatus.SC_FORBIDDEN, String.valueOf(path));
+                throw new DavException(WebdavStatus.SC_FORBIDDEN, "Unauthorized: " + String.valueOf(path));
+
+            if (StringUtils.trim(path.getName()).length() != path.getName().length())
+                throw new DavException(WebdavStatus.SC_CONFLICT, "Folder name may not have leading or trailing whitespace: '" + path.getName() + "'");
 
             boolean exists = resource.exists();
 
@@ -2935,7 +2938,7 @@ public class DavController extends SpringActionController
                 // Get allowed methods
                 StringBuilder methodsAllowed = determineMethodsAllowed(resource);
                 getResponse().setMethodsAllowed(methodsAllowed);
-                throw new DavException(WebdavStatus.SC_METHOD_NOT_ALLOWED);
+                throw new DavException(WebdavStatus.SC_METHOD_NOT_ALLOWED, "Failed to create directory on server. This directory already exists.");
             }
 
             checkAllowedFileName(resource.getName());
@@ -2969,11 +2972,7 @@ public class DavController extends SpringActionController
 
             boolean result = resource.createCollection(getUser());
 
-            if (!result)
-            {
-                throw new DavException(WebdavStatus.SC_CONFLICT);
-            }
-            else
+            if (result)
             {
                 updateDataObject(resource);
                 resource.notify(getViewContext(), "folder created");
@@ -2981,6 +2980,8 @@ public class DavController extends SpringActionController
                 lockNullResources.remove(path);
                 return WebdavStatus.SC_CREATED;
             }
+
+            throw new DavException(WebdavStatus.SC_CONFLICT);
         }
     }
 

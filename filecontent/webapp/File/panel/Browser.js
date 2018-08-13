@@ -2601,18 +2601,14 @@ Ext4.define('File.panel.Browser', {
                             this.afterFileSystemChange();
                         },
                         failure : function(response, options) {
-                            var extraErrorInfo = response.errors && response.errors.length ? response.errors[0] : null;
                             var message = '';
-                            if (response.status === 405)
-                                message = 'Failed to create directory on server. This directory already exists.';
-                            else if (extraErrorInfo && extraErrorInfo.message) {
-                                if (extraErrorInfo.resourceName)
-                                    message = extraErrorInfo.resourceName + ": ";
-                                message += extraErrorInfo.message;
+                            if (response.exception) {
+                                message = response.exception;
                             }
-                            else
+                            else {
                                 message = 'Failed to create directory on server. This directory may already exist '
                                         + 'or this may be a server configuration problem. Please contact the site administrator.';
+                            }
                             browser.showErrorMsg('Error', message);
                         },
                         scope : this
