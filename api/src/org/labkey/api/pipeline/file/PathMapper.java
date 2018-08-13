@@ -15,6 +15,7 @@
  */
 package org.labkey.api.pipeline.file;
 
+import org.json.JSONObject;
 import org.labkey.api.query.ValidationException;
 
 import java.util.Map;
@@ -33,4 +34,6 @@ public interface PathMapper
     String localToRemote(String localURI);
 
     ValidationException getValidationErrors();
+
+    JSONObject toJSON();
 }
