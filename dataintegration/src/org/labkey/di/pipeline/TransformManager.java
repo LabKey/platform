@@ -548,7 +548,7 @@ public class TransformManager implements DataIntegrationService
         }
         finally
         {
-            assert dumpScheduler();
+            dumpScheduler();
         }
     }
 
@@ -600,7 +600,7 @@ public class TransformManager implements DataIntegrationService
         }
         finally
         {
-            assert dumpScheduler();
+            dumpScheduler();
         }
     }
 
@@ -650,7 +650,7 @@ public class TransformManager implements DataIntegrationService
         }
         finally
         {
-            assert dumpScheduler();
+            dumpScheduler();
         }
     }
 
@@ -670,7 +670,7 @@ public class TransformManager implements DataIntegrationService
         }
         finally
         {
-            assert dumpScheduler();
+            dumpScheduler();
         }
     }
 
@@ -694,7 +694,7 @@ public class TransformManager implements DataIntegrationService
         }
         finally
         {
-            assert dumpScheduler();
+            dumpScheduler();
         }
     }
 
