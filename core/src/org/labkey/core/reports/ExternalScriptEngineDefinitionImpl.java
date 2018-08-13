@@ -309,7 +309,10 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
     public void setPathMapper(PathMapper pathMap)
     {
         if (pathMap != null)
-            _pathMap = pathMap.toString();
+        {
+            pathMap.getPathMap();
+            _pathMap = pathMap.toJSON().toString();
+        }
     }
 
     @Override
