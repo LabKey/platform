@@ -160,7 +160,7 @@ public class ModuleResourceResolver implements Resolver
         Resource classResource = resolveClassResource(path);
 
         if (null != classResource)
-            throw new IllegalStateException("Resolved a class resource: " + path);
+            throw new IllegalStateException("Resolved a class resource: " + "[" + getModule().getName() + "] " + path);
 
         return classResource;
     }
