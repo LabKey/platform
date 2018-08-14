@@ -5282,7 +5282,7 @@ public class AdminController extends SpringActionController
             // And we need to capture the source roots for each of those, because changing this parent file root changes the child source roots.
             ProjectSettingsForm.MigrateFilesOption migrateFilesOption = ProjectSettingsForm.MigrateFilesOption.valueOf(form.getMigrateFilesOption());
             List<Pair<Container, String>> sourceInfos =
-                    (ProjectSettingsForm.MigrateFilesOption.leave.equals(migrateFilesOption) || form.isDisableFileSharing()) ?
+                    ((ProjectSettingsForm.MigrateFilesOption.leave.equals(migrateFilesOption) && !form.isFolderSetup()) || form.isDisableFileSharing()) ?
                             Collections.emptyList() :
                             getCopySourceInfo(service, ctx.getContainer());
 
@@ -5316,6 +5316,22 @@ public class AdminController extends SpringActionController
                     try
                     {
                         PipelineService.get().setPipelineRoot(ctx.getUser(), ctx.getContainer(), PipelineService.PRIMARY_ROOT, false);
+                        if (form.isFolderSetup() && !sourceInfos.isEmpty())
+                        {
+                            // File root was set to cloud storage, remove folder created
+                            Path fromPath = FileUtil.stringToPath(sourceInfos.get(0).first, sourceInfos.get(0).second);
+                            if (FileContentService.FILES_LINK.equals(FileUtil.getFileName(fromPath)))
+                            {
+                                try
+                                {
+                                    Files.deleteIfExists(fromPath.getParent());
+                                }
+                                catch (IOException e)
+                                {
+                                    LOG.warn("Could not delete directory '" + FileUtil.pathToString(fromPath.getParent()) + "'");
+                                }
+                            }
+                        }
                     }
                     catch (SQLException e)
                     {
