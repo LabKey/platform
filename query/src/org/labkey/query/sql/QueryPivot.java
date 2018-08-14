@@ -736,7 +736,8 @@ public class QueryPivot extends QueryRelation
             QAggregate.Type type = _aggregates.get(name);
             if (null == type)
             {
-                sql.append(comma).append("NULL AS ").append(col.getAlias());
+                // #23919: When inner query returns no results, without CAST we get "failed to find conversion function from unknown to text"
+                sql.append(comma).append("CAST(NULL AS ").append(getSqlDialect().getSqlCastTypeName(col.getJdbcType())).append(") AS ").append(col.getAlias());
                 comma = ",\n";
             }
             else
