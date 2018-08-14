@@ -264,42 +264,42 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
     {
         boolean active = _scope.isTransactionActive();
 
-        if (active)
-            checkConnection();
+        checkConnection(active);
 
-        try
+        if (_closed)
+            return;
+        _closed = true;
+        checkConnection(active);
+        super.close();
+        checkConnection(active);
+        if (null != _scope && null != _conn)
         {
-            if (_closed)
-                return;
-            _closed = true;
-            super.close();
-            if (null != _scope && null != _conn)
+            if (_insertOption == InsertOption.IMPORT_IDENTITY ||
+                (_insertOption == InsertOption.MERGE && _context.supportsAutoIncrementKey()))
             {
-                if (_insertOption == InsertOption.IMPORT_IDENTITY ||
-                    (_insertOption == InsertOption.MERGE && _context.supportsAutoIncrementKey()))
-                {
-                    setAutoIncrement(INSERT.OFF);
-                }
-                _scope.releaseConnection(_conn);
+                setAutoIncrement(INSERT.OFF);
             }
+            checkConnection(active);
+            _scope.releaseConnection(_conn);
+            checkConnection(active);
         }
-        finally
-        {
-            if (active)
-                checkConnection();
-        }
+
+        checkConnection(active);
     }
 
     // Using temporarily to isolate #34735
-    private void checkConnection()
+    private void checkConnection(boolean active)
     {
-        try
+        if (active)
         {
-            assert null == _conn || !_conn.isClosed() : "Connection should not be closed!";
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
+            try
+            {
+                assert null == _conn || !_conn.isClosed() : "Connection should not be closed!";
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
         }
     }
 
