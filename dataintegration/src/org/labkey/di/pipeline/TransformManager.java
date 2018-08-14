@@ -447,6 +447,15 @@ public class TransformManager implements DataIntegrationService
     }
 
     @NotNull
+    synchronized public Collection<ScheduledPipelineJobDescriptor> getUserDefinedDescriptors(Container c)
+    {
+        return Collections.unmodifiableCollection(
+                getDescriptors(c).stream()
+                        .filter(ScheduledPipelineJobDescriptor::isUserDefined)
+                        .collect(Collectors.toList()));
+    }
+
+    @NotNull
     synchronized public Collection<ScheduledPipelineJobDescriptor> getDescriptors(Container c)
     {
         final List<ScheduledPipelineJobDescriptor> descriptors = new ArrayList<>(getModuleEtlDescriptors(c));
