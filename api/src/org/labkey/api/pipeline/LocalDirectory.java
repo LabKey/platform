@@ -153,14 +153,13 @@ public class LocalDirectory implements Serializable
 
     private File ensureContainerDir(Container container) throws IOException
     {
-        File tempDir = FileUtil.getTempDirectory();   // tomcat/temp or similar
-        File moduleDir = new File(tempDir, FileUtil.makeLegalName(_moduleName + "_temp"));
+        File moduleDir = getModuleLocalTempDirectory();
         if (!Files.exists(moduleDir.toPath()))
         {
             Files.createDirectory(moduleDir.toPath());
         }
 
-        File containerDir = new File(moduleDir, FileUtil.makeLegalName(container.getName() + "_" + container.getId()));
+        File containerDir = getContainerLocalTempDirectory(container);
         if (!Files.exists(containerDir.toPath()))
         {
             Files.createDirectory(containerDir.toPath());
@@ -208,4 +207,14 @@ public class LocalDirectory implements Serializable
         }
     }
 
+    private static File getModuleLocalTempDirectory()
+    {
+        File tempDir = FileUtil.getTempDirectory();   // tomcat/temp or similar
+        return new File(tempDir, FileUtil.makeLegalName(PipelineService.MODULE_NAME + "_temp"));
+    }
+    
+    public static File getContainerLocalTempDirectory(Container container)
+    {
+        return new File(getModuleLocalTempDirectory(), FileUtil.makeLegalName(container.getName() + "_" + container.getId()));
+    }
 }
