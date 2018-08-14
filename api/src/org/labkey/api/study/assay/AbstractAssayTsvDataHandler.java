@@ -139,7 +139,9 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     {
         try
         {
-            importRows(data, context.getUser(), run, context.getProtocol(), context.getProvider(), dataMap, null);
+            DataLoaderSettings settings = new DataLoaderSettings();
+            settings.setAllowLookupByAlternateKey(true);
+            importRows(data, context.getUser(), run, context.getProtocol(), context.getProvider(), dataMap, settings);
         }
         catch (ValidationException e)
         {
