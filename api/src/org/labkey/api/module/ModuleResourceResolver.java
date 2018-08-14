@@ -159,7 +159,7 @@ public class ModuleResourceResolver implements Resolver
 
         Resource classResource = resolveClassResource(path);
 
-        if (null != classResource)
+        if (null != classResource && !path.equals(Path.parse("schemas"))) // saml/schemas is a false positive
             throw new IllegalStateException("Resolved a class resource: " + "[" + getModule().getName() + "] " + path);
 
         return classResource;
