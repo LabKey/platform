@@ -641,9 +641,8 @@ public class DataIntegrationController extends SpringActionController
 
         for (Container cChild : containerSet)
         {
-            // add this container if it contains any Etl definitions or if it's the current container
-            if (cChild.hasPermission(context.getUser(), ReadPermission.class) &&
-                    (cChild.getId().equals(context.getContainer().getId()) || !TransformManager.get().getDescriptors(cChild).isEmpty()))
+            // add this container if it contains any Etl definitions
+            if (cChild.hasPermission(context.getUser(), ReadPermission.class) && !TransformManager.get().getDescriptors(cChild).isEmpty())
             {
                 children.add(cChild);
             }

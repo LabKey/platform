@@ -69,7 +69,9 @@
             var templateModalFn = function () {
 
                 var templateXmlDefs = {};
-
+                <% if (containerList.isEmpty()) { %>
+                var html = '<div>There are no existing ETL definitions in the current project or subfolders to copy from.</div>';
+                <%} else {%>
                 var html = [
                         '<div>',
                             '<label class="control-label" for="template-container-select">Select location:</label>',
@@ -86,7 +88,7 @@
                             '<a disabled class="btn btn-primary" style="float: right; margin-right: 8px"id="template-apply-btn">Apply</a>',
                         '</div>'
                 ].join('');
-
+                <%}%>
                 $('#modal-fn-body').html(html);
 
                 $('#template-cancel-btn').on('click', function() {
