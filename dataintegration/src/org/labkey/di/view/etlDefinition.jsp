@@ -15,6 +15,7 @@
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("codemirror");
+        dependencies.add("dataintegration/etlAutocomplete.js");
     }
 %>
 <%
@@ -189,7 +190,15 @@
                 mode: "xml",
                 lineNumbers: true,
                 lineWrapping: true,
-                autofocus: true
+                autofocus: true,
+                extraKeys: {
+                    "'<'": completeAfter,
+                    "'/'": completeIfAfterLt,
+                    "' '": completeIfInTag,
+                    "'='": completeIfInTag,
+                    "Ctrl-Space": "autocomplete"
+                },
+                hintOptions: {schemaInfo: tags}
             });
             LABKEY.codemirror.RegisterEditorInstance('etlDefinition', definitionEditor);
             if (<%=form.isReadOnly()%>) {
