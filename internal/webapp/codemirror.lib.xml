@@ -11,5 +11,8 @@
         <script path="codemirror-4.2/mode/sql/sql.js"/>
         <script path="codemirror-4.2/util.js"/>
         <script path="codemirror-4.2/lib/codemirror.css"/>
+        <script path="codemirror-4.2/addon/hint/show-hint.js"/>
+        <script path="codemirror-4.2/addon/hint/xml-hint.js"/>
+        <script path="codemirror-4.2/addon/hint/show-hint.css"/>
     </library>
 </libraries>
