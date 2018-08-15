@@ -127,7 +127,6 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
         refreshDate,    // same
         status,         // same
         json,
-        modified,
         serializedReportName,
         moduleReportCreatedDate, // creation date of module report, used by cds
         showInDashboard // used in Argos (show visible reports in the grid, show in my links if this is true)
@@ -584,7 +583,8 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
     {
         if (Prop.returnUrl.name().equals(propName)  ||
             Prop.reportId.name().equals(propName)   ||
-            Prop.serializedReportName.name().equals(propName))
+            Prop.serializedReportName.name().equals(propName) ||
+            "modified".equals(propName))        // legacy modified property, issue : 34646
             return false;
 
         return true;
@@ -938,15 +938,6 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
             _contentModified = contentModified;
         else
             _contentModified = new java.sql.Timestamp(System.currentTimeMillis());
-    }
-
-    public void setModified(Date modified)
-    {
-        setProperty(Prop.modified, DateUtil.formatDateISO8601(modified));
-        if (null != modified)
-        {
-            super.setModified(modified);
-        }
     }
 
     public Resource getMetaDataFile()
