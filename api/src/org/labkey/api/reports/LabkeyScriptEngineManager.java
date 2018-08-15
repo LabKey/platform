@@ -27,6 +27,10 @@ public interface LabkeyScriptEngineManager
     @Nullable
     ScriptEngine getEngineByExtension(Container c, String extension, boolean requestRemote);
 
+    @Nullable
+    @Deprecated
+    ScriptEngine getEngineByExtension(Container c, String extension, boolean requestRemote, boolean requestDocker);
+
     void deleteDefinition(User user, ExternalScriptEngineDefinition def);
     ExternalScriptEngineDefinition saveDefinition(User user, ExternalScriptEngineDefinition def);
     boolean isFactoryEnabled(ScriptEngineFactory factory);
