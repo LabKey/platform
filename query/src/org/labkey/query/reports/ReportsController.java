@@ -1791,8 +1791,6 @@ public class ReportsController extends SpringActionController
 
                 descriptor.setContainer(getContainer().getId());
                 descriptor.setReportName(form.getViewName());
-                descriptor.setModified(form.getModifiedDate());
-
                 descriptor.setReportDescription(form.getDescription());
 
                 // Validate that categoryId matches a category in this container
