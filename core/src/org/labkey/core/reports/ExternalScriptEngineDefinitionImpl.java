@@ -21,22 +21,23 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
     private ExternalScriptEngineDefinition.Type _type;
     private String _configuration;
 
-    String _extensions;
-    String _languageName;
-    String _languageVersion;
-    String _exePath;
-    String _exeCommand;
-    String _outputFileName;
-    String _machine;
-    int    _port;
-    String _user;
-    String _password;
-    String _pathMap;
-    boolean _external;
-    boolean _remote;
-    boolean _docker;
-    boolean _pandocEnabled;
-    boolean _default;
+    private String _extensions;
+    private String _languageName;
+    private String _languageVersion;
+    private String _exePath;
+    private String _exeCommand;
+    private String _outputFileName;
+    private String _machine;
+    private int _port;
+    private String _user;
+    private String _password;
+    private String _pathMap;
+    private boolean _external;
+    private boolean _remote;
+    private boolean _docker;
+    private boolean _pandocEnabled;
+    private boolean _default;
+    private PathMapper _pathMapper;
 
     public Integer getRowId()
     {
@@ -292,7 +293,9 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
     @Override
     public PathMapper getPathMap()
     {
-        if (_pathMap != null)
+        if (_pathMapper != null)
+            return _pathMapper;
+        else if (_pathMap != null)
         {
             JSONObject pathMapJson = new JSONObject(_pathMap);
             return PathMapperImpl.fromJSON(pathMapJson, true);
@@ -310,6 +313,7 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
     {
         if (pathMap != null)
         {
+            _pathMapper = pathMap;
             pathMap.getPathMap();
             _pathMap = pathMap.toJSON().toString();
         }

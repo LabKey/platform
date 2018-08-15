@@ -158,11 +158,17 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
     @Override
     public @Nullable ScriptEngine getEngineByExtension(Container c, String extension)
     {
-        return getEngineByExtension(c, extension, false);
+        return getEngineByExtension(c, extension, false, false);
     }
 
     @Override
-    public ScriptEngine getEngineByExtension(Container container, String extension, boolean requestRemote)
+    public @Nullable ScriptEngine getEngineByExtension(Container c, String extension, boolean requestRemote)
+    {
+        return getEngineByExtension(c, extension,  requestRemote, false);
+    }
+
+    @Override
+    public ScriptEngine getEngineByExtension(Container container, String extension, boolean requestRemote, boolean requestDocker)
     {
         ScriptEngine engine = super.getEngineByExtension(extension);
         assert engine == null || !engine.getClass().getSimpleName().equals("com.sun.script.javascript.RhinoScriptEngine") : "Should not use jdk bundled script engine";
@@ -172,7 +178,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
             return isFactoryEnabled(engine.getFactory()) ? engine : null;
         }
 
-        ExternalScriptEngineDefinition def = getEngine(container, extension, requestRemote);
+        ExternalScriptEngineDefinition def = getEngine(container, extension, requestRemote, requestDocker);
         if (def != null)
         {
             if (def.getType().equals(ExternalScriptEngineDefinition.Type.R))
@@ -194,7 +200,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
      * Returns the engine definition for a particular folder scope. We will search for a engine at the folder level
      * followed by the project level and finally for the default engine at the site level.
      */
-    private ExternalScriptEngineDefinition getEngine(Container container, String extension, boolean requestRemote)
+    private ExternalScriptEngineDefinition getEngine(Container container, String extension, boolean requestRemote, boolean requestDocker)
     {
         ExternalScriptEngineDefinition engine = null;
         for (ExternalScriptEngineDefinition def : getScopedEngines(container))
@@ -239,7 +245,9 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
             // more than one registered engine, choose the one marked as the site default
             for (ExternalScriptEngineDefinition def : definitions)
             {
-                if (def.isDefault() && (!requestRemote || def.isRemote()))
+                if (requestDocker && AppProps.getInstance().isExperimentalFeatureEnabled(RStudioService.R_DOCKER_SANDBOX) && def.isDocker())
+                    return def;
+                else if (def.isDefault() && (!requestRemote || def.isRemote()))
                     return def;
             }
 
