@@ -44,6 +44,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
     private @Nullable AsyncQueryRequest _asyncRequest = null;
     private @Nullable StackTraceElement[] _loggingStacktrace = null;
     private final QueryLogging _queryLogging;
+    private static final Logger LOGGER = Logger.getLogger(SqlExecutingSelector.class);
 
     // SQL factory used for the duration of a single query execution. This allows reuse of instances, since query-specific
     // optimizations won't mutate the ExecutingSelector's externally set state.
@@ -348,7 +349,17 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
                     }
                     catch (SQLException outer)
                     {
-                        if (conn.isClosed() || !conn.getAutoCommit() || scope.isTransactionActive() || !SqlDialect.isTransactionException(outer))
+                        boolean rethrowOuter;
+                        try
+                        {
+                            rethrowOuter = conn.isClosed() || !conn.getAutoCommit() || scope.isTransactionActive() || !SqlDialect.isTransactionException(outer);
+                        }
+                        catch (SQLException se)
+                        {
+                            LOGGER.warn("Failed to assess state of connection after seeing SQL Exception, will re-throw original Exception.", se);
+                            rethrowOuter = true;
+                        }
+                        if (rethrowOuter)
                             throw outer;
 
                         // retry if simple transaction exception
