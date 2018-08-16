@@ -29,7 +29,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.annotations.JavaRuntimeVersion;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.collections.Sets;
@@ -118,6 +117,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
@@ -724,12 +724,12 @@ public class ModuleLoader implements Filter
             if (prop.getName().equals("include"))
                 Arrays.stream(StringUtils.split(prop.getValue(), ","))
                     .map(StringUtils::trimToNull)
-                    .filter(s -> null != s)
+                    .filter(Objects::nonNull)
                     .forEach(includeList::add);
             if (prop.getName().equals("exclude"))
                 Arrays.stream(StringUtils.split(prop.getValue(), ","))
                         .map(StringUtils::trimToNull)
-                        .filter(s -> null != s)
+                        .filter(Objects::nonNull)
                         .forEach(exclude::add);
         }
 
@@ -816,7 +816,7 @@ public class ModuleLoader implements Filter
         if (null != ModuleLoader.getInstance() && null != ModuleLoader.getServletContext())
         {
             XmlWebApplicationContext beanFactory = new XmlWebApplicationContext();
-            beanFactory.setConfigLocations(new String[]{moduleXml.toURI().toString()});
+            beanFactory.setConfigLocations(moduleXml.toURI().toString());
             beanFactory.setParent(parentContext);
             beanFactory.setServletContext(new SpringModule.ModuleServletContextWrapper(ModuleLoader.getServletContext()));
             beanFactory.refresh();
@@ -825,7 +825,7 @@ public class ModuleLoader implements Filter
         else
         {
             FileSystemXmlApplicationContext beanFactory = new FileSystemXmlApplicationContext();
-            beanFactory.setConfigLocations(new String[]{moduleXml.toURI().toString()});
+            beanFactory.setConfigLocations(moduleXml.toURI().toString());
             beanFactory.setParent(parentContext);
             beanFactory.refresh();
             applicationContext = beanFactory;
@@ -925,7 +925,7 @@ public class ModuleLoader implements Filter
     {
         if (!SystemUtils.IS_JAVA_1_8)
         {
-            if (SystemUtils.isJavaVersionAtLeast(JavaVersion.JAVA_9) && AppProps.getInstance().isDevMode())
+            if (SystemUtils.isJavaVersionAtLeast(JavaVersion.JAVA_9))
             {
                 _log.warn("LabKey Server has not been tested against Java runtime version " + SystemUtils.JAVA_VERSION + ".");
             }
@@ -2038,7 +2038,6 @@ public class ModuleLoader implements Filter
         File newinstall = new File(propsDir,"newinstall");
         if (newinstall.isFile())
         {
-
             _newInstall = true;
             if (newinstall.canWrite())
                 newinstall.delete();
@@ -2051,8 +2050,8 @@ public class ModuleLoader implements Filter
         if (propFiles != null)
         {
             List<File> sortedPropFiles = Arrays.stream(propFiles)
-                    .sorted(Comparator.comparing(File::getName).reversed())
-                    .collect(Collectors.toList());
+                .sorted(Comparator.comparing(File::getName).reversed())
+                .collect(Collectors.toList());
 
             for (File propFile : sortedPropFiles)
             {
