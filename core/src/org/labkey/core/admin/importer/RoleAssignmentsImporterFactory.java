@@ -18,28 +18,17 @@ package org.labkey.core.admin.importer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AbstractFolderImportFactory;
-import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
+import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
-import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicyManager;
-import org.labkey.api.security.UserManager;
-import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.ValidEmail;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
-import org.labkey.security.xml.GroupRefType;
-import org.labkey.security.xml.GroupRefsType;
-import org.labkey.security.xml.UserRefType;
-import org.labkey.security.xml.UserRefsType;
-import org.labkey.security.xml.roleAssignment.RoleAssignmentType;
 import org.labkey.security.xml.roleAssignment.RoleAssignmentsType;
 
 import java.util.Collection;
@@ -94,59 +83,7 @@ public class RoleAssignmentsImporterFactory extends AbstractFolderImportFactory
             else
             {
                 MutableSecurityPolicy policy = new MutableSecurityPolicy(ctx.getContainer());
-                for (RoleAssignmentType assignmentXml : assignments.getRoleAssignmentArray())
-                {
-                    Role role = RoleManager.getRole(assignmentXml.getRole().getName());
-                    if (role != null)
-                    {
-                        GroupRefsType groups = assignmentXml.getGroups();
-                        if (groups != null)
-                        {
-                            for (GroupRefType groupRef : groups.getGroupArray())
-                            {
-                                UserPrincipal principal = GroupManager.getGroup(ctx.getContainer(), groupRef.getName(), groupRef.getType());
-                                if (principal == null)
-                                {
-                                    ctx.getLogger().warn("Non-existent group in role assignment for role " + assignmentXml.getRole().getName() + " will be ignored: " + groupRef.getName());
-                                }
-                                else
-                                {
-                                    policy.addRoleAssignment(principal, role);
-                                }
-                            }
-                        }
-                        UserRefsType users = assignmentXml.getUsers();
-                        if (users != null)
-                        {
-                            for (UserRefType userRef : users.getUserArray())
-                            {
-                                try
-                                {
-                                    ValidEmail validEmail = new ValidEmail(userRef.getName());
-                                    UserPrincipal principal = UserManager.getUser(validEmail);
-
-                                    if (principal == null)
-                                    {
-                                        ctx.getLogger().warn("Non-existent user in role assignment for role " + assignmentXml.getRole() + " will be ignored: " + userRef.getName());
-                                    }
-                                    else
-                                    {
-                                        policy.addRoleAssignment(principal, role);
-                                    }
-                                }
-                                catch (ValidEmail.InvalidEmailException e)
-                                {
-                                    ctx.getLogger().error("Invalid email in role assignment for role " + assignmentXml.getRole());
-                                }
-                            }
-                        }
-                    }
-                    else
-                    {
-                        ctx.getLogger().warn("Invalid role name ignored: " + assignmentXml.getRole());
-                    }
-                    SecurityPolicyManager.savePolicy(policy);
-                }
+                SecurityPolicyManager.importRoleAssignments(ctx, policy, assignments);
             }
         }
 

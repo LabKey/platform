@@ -55,16 +55,10 @@ import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportIdentifierConverter;
 import org.labkey.api.reports.report.ScriptEngineReport;
 import org.labkey.api.reports.report.view.ReportUtil;
-import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
-import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -81,10 +75,6 @@ import org.labkey.api.writer.DefaultContainerUser;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.query.xml.ReportDescriptorDocument;
 import org.labkey.query.xml.ReportDescriptorType;
-import org.labkey.security.xml.GroupRefType;
-import org.labkey.security.xml.UserRefType;
-import org.labkey.security.xml.roleAssignment.RoleAssignmentType;
-import org.labkey.security.xml.roleAssignment.RoleAssignmentsType;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -507,8 +497,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
 
     public Collection<Report> getReports(@Nullable User user, @NotNull Container c)
     {
-        List<Report> reportsList = new ArrayList<>();
-        reportsList.addAll(DatabaseReportCache.getReports(c));
+        List<Report> reportsList = new ArrayList<>(DatabaseReportCache.getReports(c));
         return getSortedReadableReports(reportsList, user);
     }
 
@@ -560,8 +549,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
                 .collect(Collectors.toList());
         }
 
-        List<Report> reportsList = new ArrayList<>();
-        reportsList.addAll(inheritable);
+        List<Report> reportsList = new ArrayList<>(inheritable);
 
         return getSortedReadableReports(reportsList, user);
     }
@@ -747,8 +735,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
                 key = ReportUtil.getReportKey(descriptor.getProperty(ReportDescriptor.Prop.schemaName), descriptor.getProperty(ReportDescriptor.Prop.queryName));
             }
 
-            List<Report> existingReports = new ArrayList<>();
-            existingReports.addAll(getReports(ctx.getUser(), ctx.getContainer(), key));
+            List<Report> existingReports = new ArrayList<>(getReports(ctx.getUser(), ctx.getContainer(), key));
 
             // in 13.2, there was a change to use dataset names instead of label for query references in reports, views, etc.
             // so if we are importing an older study archive, we need to also check for existing reports using the query name (i.e. dataset name)
@@ -815,60 +802,8 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
 
                 if (descriptorType.isSetRoleAssignments())
                 {
-                    RoleAssignmentsType assignments = descriptorType.getRoleAssignments();
-
                     MutableSecurityPolicy policy = new MutableSecurityPolicy(report.getDescriptor());
-                    for (RoleAssignmentType assignmentXml : assignments.getRoleAssignmentArray())
-                    {
-                        Role role = RoleManager.getRole(assignmentXml.getRole().getName());
-                        if (role != null)
-                        {
-                            if (assignmentXml.isSetGroups())
-                            {
-                                for (GroupRefType groupRef : assignmentXml.getGroups().getGroupArray())
-                                {
-                                    UserPrincipal principal = GroupManager.getGroup(ctx.getContainer(), groupRef.getName(), groupRef.getType());
-                                    if (principal == null)
-                                    {
-                                        ctx.getLogger().warn("Non-existent group in role assignment for role " + assignmentXml.getRole().getName() + " will be ignored: " + groupRef.getName());
-                                    }
-                                    else
-                                    {
-                                        policy.addRoleAssignment(principal, role);
-                                    }
-                                }
-                            }
-                            if (assignmentXml.isSetUsers())
-                            {
-                                for (UserRefType userRef : assignmentXml.getUsers().getUserArray())
-                                {
-                                    try
-                                    {
-                                        ValidEmail validEmail = new ValidEmail(userRef.getName());
-                                        UserPrincipal principal = UserManager.getUser(validEmail);
-
-                                        if (principal == null)
-                                        {
-                                            ctx.getLogger().warn("Non-existent user in role assignment for role " + assignmentXml.getRole() + " will be ignored: " + userRef.getName());
-                                        }
-                                        else
-                                        {
-                                            policy.addRoleAssignment(principal, role);
-                                        }
-                                    }
-                                    catch (ValidEmail.InvalidEmailException e)
-                                    {
-                                        ctx.getLogger().error("Invalid email in role assignment for role " + assignmentXml.getRole());
-                                    }
-                                }
-                            }
-                        }
-                        else
-                        {
-                            ctx.getLogger().warn("Invalid role name ignored: " + assignmentXml.getRole());
-                        }
-                        SecurityPolicyManager.savePolicy(policy);
-                    }
+                    SecurityPolicyManager.importRoleAssignments(ctx, policy, descriptorType.getRoleAssignments());
                 }
             }
         }
