@@ -262,16 +262,19 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
     @Override
     public void close() throws IOException
     {
-        boolean active = _scope.isTransactionActive();
-
-        checkConnection(active);
-
         if (_closed)
             return;
         _closed = true;
-        checkConnection(active);
-        super.close();
-        checkConnection(active);
+        if (_scope.isTransactionActive())
+        {
+            checkConnection(_conn);
+            super.close(_conn);
+            checkConnection(_conn);
+        }
+        else
+        {
+            super.close();
+        }
         if (null != _scope && null != _conn)
         {
             if (_insertOption == InsertOption.IMPORT_IDENTITY ||
@@ -279,27 +282,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
             {
                 setAutoIncrement(INSERT.OFF);
             }
-            checkConnection(active);
             _scope.releaseConnection(_conn);
-            checkConnection(active);
-        }
-
-        checkConnection(active);
-    }
-
-    // Using temporarily to isolate #34735
-    private void checkConnection(boolean active)
-    {
-        if (active)
-        {
-            try
-            {
-                assert null == _conn || !_conn.isClosed() : "Connection should not be closed!";
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
         }
     }
 

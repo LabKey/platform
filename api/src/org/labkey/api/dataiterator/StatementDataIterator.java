@@ -415,26 +415,54 @@ public class StatementDataIterator extends AbstractDataIterator
     }
 
 
-    @Override
-    public void close() throws IOException
+    // Using temporarily to isolate #34735
+    protected void checkConnection(Connection conn)
     {
+        if (null != conn)
+        {
+            try
+            {
+                assert !conn.isClosed() : "Connection should not be closed!";
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
+        }
+    }
+
+    public void close(@Nullable Connection conn) throws IOException
+    {
+        checkConnection(conn);
         _data.close();
+        checkConnection(conn);
         _queue.close();
+        checkConnection(conn);
         if (_asyncThread != null)
         {
             try {_asyncThread.join();}catch(InterruptedException x){}
             _asyncThread = null;
         }
+        checkConnection(conn);
         for (ParameterMap stmt : _stmts)
         {
             if (stmt != null)
             {
                 stmt.close();
+                checkConnection(conn);
             }
         }
+        checkConnection(conn);
         _stmts = new ParameterMap[0];
+        checkConnection(conn);
     }
 
+
+    @Override
+    public void close() throws IOException
+    {
+        close(null);
+    }
 
 
     class _Runnable implements Runnable
