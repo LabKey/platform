@@ -1740,7 +1740,7 @@ groupByLoop:
     }
 
 
-    SelectColumn getColumn(String name)
+    SelectColumn getColumn(@NotNull String name)
     {
         FieldKey key = new FieldKey(null,name);
         SelectColumn col = _columns.get(key);
@@ -1820,7 +1820,7 @@ groupByLoop:
     }
 
 
-    SelectColumn getLookupColumn(RelationColumn parentRelCol, String name)
+    SelectColumn getLookupColumn(@NotNull RelationColumn parentRelCol, @NotNull String name)
     {
         assert parentRelCol instanceof SelectColumn;
         assert parentRelCol.getTable() == QuerySelect.this;
@@ -1932,7 +1932,7 @@ groupByLoop:
     }
 
 
-    RelationColumn getLookupColumn(RelationColumn parentRelCol, ColumnType.Fk fk, String name)
+    RelationColumn getLookupColumn(@NotNull RelationColumn parentRelCol, @NotNull ColumnType.Fk fk, @NotNull String name)
     {
         assert parentRelCol instanceof SelectColumn;
         assert parentRelCol.getTable() == QuerySelect.this;
@@ -2114,6 +2114,7 @@ groupByLoop:
             return QuerySelect.this;
         }
 
+        @NotNull
         public JdbcType getJdbcType()
         {
             return null != _resolved ? _resolved.getJdbcType() : JdbcType.NULL;

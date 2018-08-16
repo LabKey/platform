@@ -143,7 +143,7 @@ public class QueryLookupWrapper extends QueryRelation
     }
     
 
-    RelationColumn getColumn(String name)
+    RelationColumn getColumn(@NotNull String name)
     {
         FieldKey k = new FieldKey(null, name);
         RelationColumn ret = _selectedColumns.get(k);
@@ -172,7 +172,7 @@ public class QueryLookupWrapper extends QueryRelation
     }
 
 
-    RelationColumn getLookupColumn(RelationColumn parentRelCol, String name)
+    RelationColumn getLookupColumn(@NotNull RelationColumn parentRelCol, @NotNull String name)
     {
         assert parentRelCol instanceof _WrapperColumn;
         assert parentRelCol.getTable() == this;
@@ -193,7 +193,7 @@ public class QueryLookupWrapper extends QueryRelation
     }
 
 
-    RelationColumn getLookupColumn(RelationColumn parentRelCol, ColumnType.Fk fk, String name)
+    RelationColumn getLookupColumn(@NotNull RelationColumn parentRelCol, @NotNull ColumnType.Fk fk, @NotNull String name)
     {
         _WrapperColumn parent = (_WrapperColumn)parentRelCol;
         FieldKey k = new FieldKey(parent._key, name);
@@ -388,6 +388,7 @@ public class QueryLookupWrapper extends QueryRelation
             return _wrapped.getFk();
         }
 
+        @NotNull
         public JdbcType getJdbcType()
         {
             return _wrapped.getJdbcType();
@@ -493,6 +494,7 @@ public class QueryLookupWrapper extends QueryRelation
             return _lkCol.getFk();
         }
 
+        @NotNull
         public JdbcType getJdbcType()
         {
             return _lkCol.getJdbcType();
