@@ -973,7 +973,6 @@ public class DbScope
     public void invalidateTable(String schemaName, String tableName, DbSchemaType type)
     {
         _tableCache.remove(schemaName, tableName, type);
-
         _schemaCache.remove(schemaName, type);
     }
 

@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheLoader;
@@ -32,6 +33,8 @@ import org.labkey.api.module.ModuleLoader;
 // Every scope has its own cache of DbSchemas
 public class DbSchemaCache
 {
+    private static final Logger LOG = Logger.getLogger(DbSchemaCache.class);
+
     private final DbScope _scope;
     private final BlockingStringKeyCache<DbSchema> _cache;
 
@@ -64,6 +67,10 @@ public class DbSchemaCache
 
     void remove(String schemaName, DbSchemaType type)
     {
+        if (type == DbSchemaType.Module)
+            LOG.error("removing module schema: " + schemaName, new Throwable("removing module schema: " + schemaName));
+        else
+            LOG.debug("remove " + type + " schema: " + schemaName);
         _cache.removeUsingPrefix(getKey(schemaName, type));
     }
 

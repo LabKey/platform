@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheLoader;
@@ -32,6 +33,8 @@ import org.labkey.api.util.ExceptionUtil;
 */
 public class SchemaTableInfoCache
 {
+    private static final Logger LOG = Logger.getLogger(SchemaTableInfoCache.class);
+
     private final BlockingStringKeyCache<SchemaTableInfo> _blockingCache;
 
     public SchemaTableInfoCache(DbScope scope)
@@ -47,18 +50,30 @@ public class SchemaTableInfoCache
 
     void remove(@NotNull DbSchema schema, @NotNull String tableName)
     {
+        if (schema.getType() == DbSchemaType.Module)
+            LOG.error("removing module schema table: " + schema.getName() + "." + tableName, new Throwable("removing module schema table: " + schema.getName() + "." + tableName));
+        else
+            LOG.debug("remove " + schema.getType() + " schema table: " + schema.getName() + "." + tableName);
         String key = getCacheKey(schema, tableName);
         _blockingCache.remove(key);
     }
 
     void remove(@NotNull String schemaName, @NotNull String tableName, @NotNull DbSchemaType type)
     {
+        if (type == DbSchemaType.Module)
+            LOG.error("removing module schema table: " + schemaName + "." + tableName, new Throwable("removing module schema table: " + schemaName + "." + tableName));
+        else
+            LOG.debug("remove " + type + " schema table: " + schemaName + "." + tableName);
         String key = getCacheKey(schemaName, tableName, type);
         _blockingCache.remove(key);
     }
 
     void removeAllTables(@NotNull String schemaName, DbSchemaType type)
     {
+        if (type == DbSchemaType.Module)
+            LOG.error("removing all module schema tables: " + schemaName, new Throwable("removing all module schema tables: " + schemaName));
+        else
+            LOG.debug("remove all " + type + " schema tables: " + schemaName);
         final String prefix = type.getCacheKey(schemaName);
 
         _blockingCache.removeUsingPrefix(prefix);
@@ -85,6 +100,7 @@ public class SchemaTableInfoCache
                 @SuppressWarnings({"unchecked"})
                 DbScope.SchemaTableOptions options = (DbScope.SchemaTableOptions)argument;
 
+                LOG.debug("loading schema table: " + options.getSchema().getName() + "." + options.getTableName());
                 return options.getSchema().loadTable(options.getTableName(), options);
             }
             catch (Throwable t)
