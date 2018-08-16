@@ -285,8 +285,7 @@ public class SecurityPolicy implements HasPermission
 
     public boolean hasPermissions(@NotNull UserPrincipal principal, Class<? extends Permission>... permissions)
     {
-        Set<Class<? extends Permission>> permsSet = new HashSet<>();
-        permsSet.addAll(Arrays.asList(permissions));
+        Set<Class<? extends Permission>> permsSet = new HashSet<>(Arrays.asList(permissions));
         return hasPermissions(principal, permsSet);
     }
 

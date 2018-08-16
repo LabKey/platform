@@ -35,15 +35,11 @@ import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.security.Group;
 import org.labkey.api.security.MutableSecurityPolicy;
-import org.labkey.api.security.PrincipalType;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -56,14 +52,6 @@ import org.labkey.data.xml.reportProps.PropertyList;
 import org.labkey.query.xml.ReportDescriptorDocument;
 import org.labkey.query.xml.ReportDescriptorType;
 import org.labkey.query.xml.ReportPropertyList;
-import org.labkey.security.xml.GroupEnumType;
-import org.labkey.security.xml.GroupRefType;
-import org.labkey.security.xml.GroupRefsType;
-import org.labkey.security.xml.UserRefType;
-import org.labkey.security.xml.UserRefsType;
-import org.labkey.security.xml.roleAssignment.RoleAssignmentType;
-import org.labkey.security.xml.roleAssignment.RoleAssignmentsType;
-import org.labkey.security.xml.roleAssignment.RoleRefType;
 
 import java.io.File;
 import java.io.IOException;
@@ -544,36 +532,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
             SecurityPolicy existingPolicy = SecurityPolicyManager.getPolicy(this, false);
             if (!existingPolicy.getAssignments().isEmpty())
             {
-                RoleAssignmentsType roleAssignments = descriptor.addNewRoleAssignments();
-                Map<String, Map<PrincipalType, List<UserPrincipal>>> map = existingPolicy.getAssignmentsAsMap();
-
-                for (String roleName : map.keySet())
-                {
-                    Map<PrincipalType, List<UserPrincipal>> assignees = map.get(roleName);
-                    RoleAssignmentType roleAssignment = roleAssignments.addNewRoleAssignment();
-                    RoleRefType role = roleAssignment.addNewRole();
-                    role.setName(roleName);
-                    if (assignees.get(PrincipalType.GROUP) != null)
-                    {
-                        GroupRefsType groups = roleAssignment.addNewGroups();
-                        for (UserPrincipal user : assignees.get(PrincipalType.GROUP))
-                        {
-                            Group group = (Group) user;
-                            GroupRefType groupRef = groups.addNewGroup();
-                            groupRef.setName(group.getName());
-                            groupRef.setType(group.isProjectGroup() ? GroupEnumType.PROJECT : GroupEnumType.SITE);
-                        }
-                    }
-                    if (assignees.get(PrincipalType.USER) != null)
-                    {
-                        UserRefsType users = roleAssignment.addNewUsers();
-                        for (UserPrincipal user : assignees.get(PrincipalType.USER))
-                        {
-                            UserRefType userRef = users.addNewUser();
-                            userRef.setName(user.getName());
-                        }
-                    }
-                }
+                SecurityPolicyManager.exportRoleAssignments(existingPolicy, descriptor.addNewRoleAssignments());
             }
         }
         return doc;

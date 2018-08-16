@@ -18,6 +18,7 @@ package org.labkey.api.security;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.admin.ImportContext;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
@@ -35,11 +36,22 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
+import org.labkey.security.xml.GroupEnumType;
+import org.labkey.security.xml.GroupRefType;
+import org.labkey.security.xml.GroupRefsType;
+import org.labkey.security.xml.UserRefType;
+import org.labkey.security.xml.UserRefsType;
+import org.labkey.security.xml.roleAssignment.RoleAssignmentType;
+import org.labkey.security.xml.roleAssignment.RoleAssignmentsType;
+import org.labkey.security.xml.roleAssignment.RoleRefType;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -256,7 +268,7 @@ public class SecurityPolicyManager
     }
 
 
-    // Remove all assignments and policies on the Containers childre
+    // Remove all assignments and policies on the Container's children
     public static void removeAllChildren(Container c)
     {
         Set<Container> subtrees = ContainerManager.getAllChildren(c);
@@ -297,5 +309,93 @@ public class SecurityPolicyManager
     public static void removeAll()
     {
         CACHE.clear();
+    }
+
+    public static void exportRoleAssignments(SecurityPolicy policy, RoleAssignmentsType roleAssignments)
+    {
+        Map<String, Map<PrincipalType, List<UserPrincipal>>> map = policy.getAssignmentsAsMap();
+
+        for (String roleName : map.keySet())
+        {
+            Map<PrincipalType, List<UserPrincipal>> assignees = map.get(roleName);
+            RoleAssignmentType roleAssignment = roleAssignments.addNewRoleAssignment();
+            RoleRefType role = roleAssignment.addNewRole();
+            role.setName(roleName);
+            if (assignees.get(PrincipalType.GROUP) != null)
+            {
+                GroupRefsType groups = roleAssignment.addNewGroups();
+                for (UserPrincipal user : assignees.get(PrincipalType.GROUP))
+                {
+                    Group group = (Group) user;
+                    GroupRefType groupRef = groups.addNewGroup();
+                    groupRef.setName(group.getName());
+                    groupRef.setType(group.isProjectGroup() ? GroupEnumType.PROJECT : GroupEnumType.SITE);
+                }
+            }
+            if (assignees.get(PrincipalType.USER) != null)
+            {
+                UserRefsType users = roleAssignment.addNewUsers();
+                for (UserPrincipal user : assignees.get(PrincipalType.USER))
+                {
+                    UserRefType userRef = users.addNewUser();
+                    userRef.setName(user.getName());
+                }
+            }
+        }
+    }
+
+    public static void importRoleAssignments(ImportContext ctx, MutableSecurityPolicy policy, RoleAssignmentsType assignments)
+    {
+        for (RoleAssignmentType assignmentXml : assignments.getRoleAssignmentArray())
+        {
+            Role role = RoleManager.getRole(assignmentXml.getRole().getName());
+            if (role != null)
+            {
+                if (assignmentXml.isSetGroups())
+                {
+                    for (GroupRefType groupRef : assignmentXml.getGroups().getGroupArray())
+                    {
+                        UserPrincipal principal = GroupManager.getGroup(ctx.getContainer(), groupRef.getName(), groupRef.getType());
+                        if (principal == null)
+                        {
+                            ctx.getLogger().warn("Non-existent group in role assignment for role " + assignmentXml.getRole().getName() + " will be ignored: " + groupRef.getName());
+                        }
+                        else
+                        {
+                            policy.addRoleAssignment(principal, role);
+                        }
+                    }
+                }
+                if (assignmentXml.isSetUsers())
+                {
+                    for (UserRefType userRef : assignmentXml.getUsers().getUserArray())
+                    {
+                        try
+                        {
+                            ValidEmail validEmail = new ValidEmail(userRef.getName());
+                            UserPrincipal principal = UserManager.getUser(validEmail);
+
+                            if (principal == null)
+                            {
+                                ctx.getLogger().warn("Non-existent user in role assignment for role " + assignmentXml.getRole() + " will be ignored: " + userRef.getName());
+                            }
+                            else
+                            {
+                                policy.addRoleAssignment(principal, role);
+                            }
+                        }
+                        catch (ValidEmail.InvalidEmailException e)
+                        {
+                            ctx.getLogger().error("Invalid email in role assignment for role " + assignmentXml.getRole());
+                        }
+                    }
+                }
+            }
+            else
+            {
+                ctx.getLogger().warn("Invalid role name ignored: " + assignmentXml.getRole());
+            }
+            SecurityPolicyManager.savePolicy(policy);
+        }
     }
 }
