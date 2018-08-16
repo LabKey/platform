@@ -32,6 +32,7 @@ import org.labkey.api.data.UserSchemaCustomizer;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -115,7 +116,8 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         User user = getUser();
         if (user == null)
             return false;
-        return getContainer().hasPermission(getName() + ".canReadSchema()", user, ReadPermission.class);
+        return getContainer().hasPermission(getName() + ".canReadSchema()", user, ReadPermission.class) ||
+               getContainer().hasPermission(getName() + ".canReadSchema()", user, InsertPermission.class);
     }
 
 
