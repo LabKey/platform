@@ -45,24 +45,61 @@ public class TransformQuartzJobRunner implements Job
     @Override
     public void execute(JobExecutionContext context)
     {
-        ScheduledPipelineJobContext infoTemplate = ScheduledPipelineJobContext.getFromQuartzJobDetail(context);
-        ScheduledPipelineJobContext info = infoTemplate.clone();
-        ScheduledPipelineJobDescriptor d = getDescriptorFromJobDetail(context, info.getContainer());
+        String jobName = "";
 
-        if (d.isPending(info) && !d.isAllowMultipleQueuing())
+        //most likely this will not happen - i.e. context will never be null
+        if (null == context)
         {
-            LOG.info(TransformManager.getJobPendingMessage(d.getId()));
+            LOG.error("Unable to queue an ETL job, JobExecutionContext object is null.");
             return;
         }
-        boolean hasWork = d.checkForWork(info, true, info.isVerbose());
-        if (!hasWork)
+        if (null == context.getJobDetail())
+        {
+            LOG.error("Unable to get ETL context job detail.");
             return;
+        }
+
+        if (null == context.getJobDetail().getKey())
+        {
+            LOG.info("ETL job detail key not found, will be unable to find job name.");
+            jobName = "Unable to find Job name.";
+        }
+        else
+        {
+           jobName = context.getJobDetail().getKey().getName();
+        }
+
+        LOG.debug("Begin queuing of an ETL job: " + jobName);
+
+        ScheduledPipelineJobContext infoTemplate;
+        ScheduledPipelineJobContext info;
+        ScheduledPipelineJobDescriptor d = null;
 
         try
         {
+            infoTemplate = ScheduledPipelineJobContext.getFromQuartzJobDetail(context);
+            info = infoTemplate.clone();
+            d = getDescriptorFromJobDetail(context, info.getContainer());
+
+            if (d.isPending(info) && !d.isAllowMultipleQueuing())
+            {
+                LOG.info(TransformManager.getJobPendingMessage(d.getId()));
+                return;
+            }
+            boolean hasWork = d.checkForWork(info, true, info.isVerbose());
+
+            if (!hasWork)
+            {
+                LOG.debug("No work. Job " + d.getId() + " not queued.");
+                return;
+            }
+
             PipelineJob job = d.getPipelineJob(info);
             if (null == job)
+            {
+                LOG.debug("ETL Job " + d.getId() + " not found.");
                 return;
+            }
 
             try
             {
@@ -86,12 +123,16 @@ public class TransformQuartzJobRunner implements Job
         }
         catch (RuntimeException x)
         {
+            LOG.warn("Something went wrong while attempting to queue an ETL job " + jobName, x);
             throw x;
         }
         catch (Exception x)
         {
+            LOG.warn("Something went wrong while attempting to queue an ETL job " + jobName, x);
             throw new UnexpectedException(x);
         }
+
+        LOG.debug("END queuing an ETL job " + jobName);
     }
 
 
