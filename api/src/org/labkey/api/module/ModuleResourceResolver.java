@@ -24,16 +24,13 @@ import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.files.FileSystemWatcher;
 import org.labkey.api.files.FileSystemWatchers;
-import org.labkey.api.resource.ClassResourceCollection;
-import org.labkey.api.resource.MergedDirectoryResource;
+import org.labkey.api.resource.DirectoryResource;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.Path;
 
 import java.io.File;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
@@ -52,8 +49,7 @@ public class ModuleResourceResolver implements Resolver
     // This ends up one per module; Consider: single static set to track all registered listeners?
     private final Set<Path> _pathsWithListeners = new ConcurrentHashSet<>();
     private final Module _module;
-    private final MergedDirectoryResource _root;
-    private final ClassResourceCollection[] _classes;
+    private final DirectoryResource _root;
     private final CacheLoader<String, Resource> RESOURCE_LOADER = (key, argument) -> {
         Path normalized = (Path)argument;
         Resource r = resolve(normalized);
@@ -70,16 +66,10 @@ public class ModuleResourceResolver implements Resolver
         return r;
     };
 
-    ModuleResourceResolver(Module module, List<File> dirs, Class... classes)
+    ModuleResourceResolver(Module module, File dir)
     {
-        List<ClassResourceCollection> additional = new ArrayList<>(classes.length);
-
-        for (Class clazz : classes)
-            additional.add(new ClassResourceCollection(clazz, this));
-
         _module = module;
-        _root = new MergedDirectoryResource(this, Path.emptyPath, dirs);
-        _classes = additional.toArray(new ClassResourceCollection[classes.length]);
+        _root = new DirectoryResource(this, Path.emptyPath, dir);
     }
 
     // Ensure listeners are registered on this resource (if it's a directory) and the resource's parent, grandparent, etc.
@@ -95,7 +85,7 @@ public class ModuleResourceResolver implements Resolver
                 {
                     LOG.debug("registering a listener on: " + r.toString());
 
-                    ((MergedDirectoryResource) r).registerListener(WATCHER, new ModuleResourceResolverListener(), ENTRY_CREATE, ENTRY_DELETE);
+                    ((DirectoryResource) r).registerListener(WATCHER, new ModuleResourceResolverListener(), ENTRY_CREATE, ENTRY_DELETE);
                 }
                 else
                 {
@@ -110,28 +100,12 @@ public class ModuleResourceResolver implements Resolver
         }
     }
 
-    private void remove(final String fullPath)
-    {
-        String moduleName = _module.getName();
-
-        CACHE.removeUsingFilter(key ->
-        {
-            if (key.startsWith(moduleName))
-            {
-                String shortPath = key.substring(moduleName.length() + 1);
-                return fullPath.endsWith(shortPath);
-            }
-
-            return false;
-        });
-    }
-
     // Clear all resources from the cache for just this module
     public void clear()
     {
         String prefix = _module.getName();  // Remove all entries having a key that starts with this module name
         CACHE.removeUsingPrefix(prefix);
-        MergedDirectoryResource.clearResourceCache(this);
+        DirectoryResource.clearResourceCache(this);
     }
 
     public Path getRootPath()
@@ -151,21 +125,7 @@ public class ModuleResourceResolver implements Resolver
         return CACHE.get(cacheKey, normalized, RESOURCE_LOADER);
     }
 
-    private Resource resolve(Path path)
-    {
-        Resource r = resolveFileResource(path);
-        if (r != null)
-            return r;
-
-        Resource classResource = resolveClassResource(path);
-
-        if (null != classResource && !path.equals(Path.parse("schemas"))) // saml/schemas is a false positive
-            throw new IllegalStateException("Resolved a class resource: " + "[" + getModule().getName() + "] " + path);
-
-        return null;
-    }
-
-    private Resource resolveFileResource(Path path)
+    private @Nullable Resource resolve(Path path)
     {
         Resource r = _root;
         for (int i=0 ; i<path.size() ; i++)
@@ -179,19 +139,6 @@ public class ModuleResourceResolver implements Resolver
         }
 
         return r;
-    }
-
-    private Resource resolveClassResource(Path path)
-    {
-        String p = path.toString();
-        for (ClassResourceCollection rc : _classes)
-        {
-            Resource r = rc.find(p);
-            if (r != null)
-                return r;
-        }
-
-        return null;
     }
 
     protected boolean filter(String p)
@@ -221,7 +168,7 @@ public class ModuleResourceResolver implements Resolver
             LOG.debug(entry + " created");
             java.nio.file.Path nioPath = directory.resolve(entry);
             if (Files.isDirectory(nioPath))
-                ensureListeners(resolve(new Path(_root._dirs.get(0).toPath().relativize(nioPath)))); // Ugly... we'll improve soon
+                ensureListeners(resolve(_root.getRelativePath(nioPath)));
             clear(); // Clear all resources and children in this module. A bit heavy-handed, but attempts at targeted approaches have been wrong.
         }
 
@@ -230,7 +177,7 @@ public class ModuleResourceResolver implements Resolver
         {
             LOG.debug(entry + " deleted");
             java.nio.file.Path nioPath = directory.resolve(entry);
-            _pathsWithListeners.remove(new Path(_root._dirs.get(0).toPath().relativize(nioPath))); // Ugly... we'll improve soon
+            _pathsWithListeners.remove(_root.getRelativePath(nioPath));
             clear(); // Clear all resources and children in this module. A bit heavy-handed, but attempts at targeted approaches have been wrong.
         }
 

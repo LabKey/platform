@@ -27,7 +27,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.files.FileSystemWatcher;
 import org.labkey.api.files.FileSystemWatchers;
-import org.labkey.api.resource.MergedDirectoryResource;
+import org.labkey.api.resource.DirectoryResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.resource.ResourceWrapper;
 import org.labkey.api.util.Path;
@@ -168,7 +168,7 @@ public final class ModuleResourceCache<V>
         if (_pathsWithListeners.add(module.getName() + ":" + path.toString()))
         {
             LOG.debug("registering a listener on: " + resource.toString());
-            MergedDirectoryResource mdr = (MergedDirectoryResource) resource;
+            DirectoryResource mdr = (DirectoryResource) resource;
             mdr.registerListener(_watcher, getListener(module), ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
         }
     }

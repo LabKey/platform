@@ -32,10 +32,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.WatchEvent;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -48,15 +46,13 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
  * User: kevink
  * Date: Mar 13, 2010 9:37:56 AM
  */
-public class MergedDirectoryResource extends AbstractResourceCollection
+public class DirectoryResource extends AbstractResourceCollection
 {
     private static final Cache<Pair<Resolver, Path>, Map<String, Resource>> CHILDREN_CACHE = CacheManager.getBlockingCache(5000, CacheManager.DAY, "MergedDirectoryResourceCache", null);
     private static final FileSystemWatcher WATCHER = FileSystemWatchers.get();
     private static final Set<Pair<Resolver, Path>> KEYS_WITH_LISTENERS = new ConcurrentHashSet<>();
 
-    // TODO: Convert to a simple File... we aren't merging directories any more
-    public final List<File> _dirs;
-    private final Resource[] _additional;
+    private final File _dir;
     private final Pair<Resolver, Path> _cacheKey;
 
     private final CacheLoader<Pair<Resolver, Path>, Map<String, Resource>> _loader = new CacheLoader<Pair<Resolver, Path>, Map<String, Resource>>()
@@ -64,50 +60,31 @@ public class MergedDirectoryResource extends AbstractResourceCollection
         @Override
         public Map<String, Resource> load(Pair<Resolver, Path> key, @Nullable Object argument)
         {
-            //org.labkey.api.module.ModuleResourceResolver._log.debug("merged dir: " + ((children == null) ? "null" : "stale") + " cache: " + this);
-            Map<String, ArrayList<File>> map = new CaseInsensitiveTreeMap<>();
+            Map<String, Resource> children = new CaseInsensitiveTreeMap<>();
 
-            for (File dir : _dirs)
+            if (_dir.isDirectory())
             {
-                if (!dir.isDirectory())
-                    continue;
-                File[] files = dir.listFiles();
-                if (files == null)
-                    continue;
-                for (File f : files)
+                File[] files = _dir.listFiles();
+                if (files != null)
                 {
-                    String name = f.getName();
-                    // Issue 11189: default custom view .qview.xml file is hidden on MacOX or Linux
-                    if (!".qview.xml".equalsIgnoreCase(name) && f.isHidden())
-                        continue;
+                    for (File f : files)
+                    {
+                        String name = f.getName();
+                        // Issue 11189: default custom view .qview.xml file is hidden on MacOX or Linux
+                        if (!".qview.xml".equalsIgnoreCase(name) && f.isHidden())
+                            continue;
 //                        if (_resolver.filter(name))
 //                            continue;
-                    if (!map.containsKey(name))
-                        map.put(name, new ArrayList<>(Arrays.asList(f)));
-                    else
-                    {
-                        // only merge directories together
-                        ArrayList<File> existing = map.get(name);
-                        if (existing.get(0).isDirectory() && f.isDirectory())
-                            existing.add(f);
+
+                        Path path = getPath().append(name);
+                        Resource r = f.isFile() ?
+                                new FileResource(path, f, _resolver) :
+                                new DirectoryResource(_resolver, path, f);
+                        Resource prev = children.put(name, r);
+                        assert null == prev;
                     }
                 }
             }
-
-            Map<String, Resource> children = new CaseInsensitiveTreeMap<>();
-
-            for (Map.Entry<String, ArrayList<File>> e : map.entrySet())
-            {
-                Path path = getPath().append(e.getKey());
-                ArrayList<File> files = e.getValue();
-                Resource r = files.size() == 1 && files.get(0).isFile() ?
-                        new FileResource(path, files.get(0), _resolver) :
-                        new MergedDirectoryResource(_resolver, path, files);
-                children.put(e.getKey(), r);
-            }
-
-            for (Resource r : _additional)
-                children.put(r.getName(), r);
 
             return Collections.unmodifiableMap(children);
         }
@@ -119,12 +96,10 @@ public class MergedDirectoryResource extends AbstractResourceCollection
         CHILDREN_CACHE.removeUsingFilter(key -> key.first == resolver);
     }
 
-    public MergedDirectoryResource(Resolver resolver, Path path, List<File> dirs, Resource... children)
+    public DirectoryResource(Resolver resolver, Path path, File dir)
     {
         super(path, resolver);
-        assert validateDirs(dirs);
-        _dirs = dirs;
-        _additional = children;
+        _dir = dir;
         _cacheKey = new Pair<>(_resolver, getPath());
 
         if (!KEYS_WITH_LISTENERS.contains(_cacheKey))
@@ -134,18 +109,9 @@ public class MergedDirectoryResource extends AbstractResourceCollection
         }
     }
 
-    private boolean validateDirs(List<File> dirs)
+    public Path getRelativePath(java.nio.file.Path nioPath)
     {
-        Set<File> files = new HashSet<>();
-
-        for (File dir : dirs)
-            if (!files.add(dir))
-                assert false : dir.toString() + " was listed twice!";
-
-        if (dirs.size() != 1)
-            throw new IllegalStateException("Expected only a single dir! " + this + dirs.toString());
-
-        return true;
+        return new Path(_dir.toPath().relativize(nioPath));
     }
 
     public Resource parent()
@@ -171,12 +137,12 @@ public class MergedDirectoryResource extends AbstractResourceCollection
 
     public boolean exists()
     {
-        return _dirs != null && !_dirs.isEmpty();
+        return _dir.exists();
     }
 
     public boolean isCollection()
     {
-        return exists() && _dirs.get(0).isDirectory();
+        return exists() && _dir.isDirectory();
     }
 
     public Resource find(String name)
@@ -189,9 +155,16 @@ public class MergedDirectoryResource extends AbstractResourceCollection
         return new ArrayList<>(getChildren().keySet());
     }
 
+    // TODO: Delete once trialServices no longer uses
+    @Deprecated
     public List<File> getContents()
     {
-        return _dirs != null ? _dirs : Collections.emptyList();
+        return _dir != null ? Collections.singletonList(_dir) : Collections.emptyList();
+    }
+
+    public File getDir()
+    {
+        return _dir;
     }
 
     private class MergedDirectoryResourceListener implements FileSystemDirectoryListener
@@ -227,16 +200,13 @@ public class MergedDirectoryResource extends AbstractResourceCollection
     {
         if (isCollection())
         {
-            for (File dir : _dirs)
+            try
             {
-                try
-                {
-                    watcher.addListener(dir.toPath(), listener, events);
-                }
-                catch (IOException e)
-                {
-                    ExceptionUtil.logExceptionToMothership(null, e);
-                }
+                watcher.addListener(_dir.toPath(), listener, events);
+            }
+            catch (IOException e)
+            {
+                ExceptionUtil.logExceptionToMothership(null, e);
             }
         }
     }

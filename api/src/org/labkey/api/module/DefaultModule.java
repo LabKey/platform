@@ -1157,7 +1157,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     public final Resolver getModuleResolver()
     {
         if (_resolver == null)
-            _resolver = new ModuleResourceResolver(this, getResourceDirectories(), getResourceClasses());
+            _resolver = new ModuleResourceResolver(this, getResourceDirectory());
 
         return _resolver;
     }
@@ -1311,14 +1311,13 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return l;
     }
 
-    @NotNull
-    protected Class[] getResourceClasses()
+    @NotNull @Deprecated // Left for backward compatibility -- TODO: remove
+    public List<File> getResourceDirectories()
     {
-        return new Class[] { this.getClass() };
+        return Collections.singletonList(getResourceDirectory());
     }
 
-    @NotNull
-    public List<File> getResourceDirectories()
+    public File getResourceDirectory()
     {
         // We load resources from the module's source directory if all of the following conditions are true:
         //
@@ -1368,20 +1367,20 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         if (exploded != null && exploded.isDirectory())
             return getResourceDirectory(exploded);
 
-        return Collections.emptyList();
+        return null;
     }
 
 
-    protected List<File> getResourceDirectory(File dir)
+    protected File getResourceDirectory(File dir)
     {
         File resourcesDir = new File(dir, "resources");
 
         // If we have a "resources" directory then look for resources there (Java module layout)
         // If not, treat all top-level directories as resource directories (simple module layout)
         if (resourcesDir.isDirectory())
-            return Collections.singletonList(FileUtil.getAbsoluteCaseSensitiveFile(resourcesDir));
+            return FileUtil.getAbsoluteCaseSensitiveFile(resourcesDir);
         else
-            return Collections.singletonList(FileUtil.getAbsoluteCaseSensitiveFile(dir));
+            return FileUtil.getAbsoluteCaseSensitiveFile(dir);
     }
 
 

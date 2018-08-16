@@ -17,7 +17,6 @@ package org.labkey.api.resource;
 
 import org.labkey.api.util.Path;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
