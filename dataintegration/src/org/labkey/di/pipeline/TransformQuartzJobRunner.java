@@ -123,12 +123,12 @@ public class TransformQuartzJobRunner implements Job
         }
         catch (RuntimeException x)
         {
-            LOG.warn("Something went wrong while attempting to queue an ETL job " + jobName, x);
+            LOG.error("Something went wrong while attempting to queue an ETL job " + jobName, x);
             throw x;
         }
         catch (Exception x)
         {
-            LOG.warn("Something went wrong while attempting to queue an ETL job " + jobName, x);
+            LOG.error("Something went wrong while attempting to queue an ETL job " + jobName, x);
             throw new UnexpectedException(x);
         }
 
