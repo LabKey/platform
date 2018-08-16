@@ -34,7 +34,6 @@ import java.nio.file.WatchEvent;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -46,7 +45,7 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
  * User: kevink
  * Date: Mar 13, 2010 9:37:56 AM
  */
-public class DirectoryResource extends AbstractResourceCollection
+public class DirectoryResource extends MergedDirectoryResource
 {
     private static final Cache<Pair<Resolver, Path>, Map<String, Resource>> CHILDREN_CACHE = CacheManager.getBlockingCache(5000, CacheManager.DAY, "MergedDirectoryResourceCache", null);
     private static final FileSystemWatcher WATCHER = FileSystemWatchers.get();
@@ -153,13 +152,6 @@ public class DirectoryResource extends AbstractResourceCollection
     public Collection<String> listNames()
     {
         return new ArrayList<>(getChildren().keySet());
-    }
-
-    // TODO: Delete once trialServices no longer uses
-    @Deprecated
-    public List<File> getContents()
-    {
-        return _dir != null ? Collections.singletonList(_dir) : Collections.emptyList();
     }
 
     public File getDir()
