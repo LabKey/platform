@@ -119,8 +119,15 @@ public class RReport extends ExternalScriptEngineReport
     public ScriptEngine getScriptEngine(Container c)
     {
         LabkeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+        Container srcContainer = c;
 
-        return mgr.getEngineByExtension(c, "r", requestRemote(), true);
+        if (getDescriptor().isInherited(c))
+        {
+            // if this is an inherited report, get the engine scoped to the container that the report
+            // was defined in
+            srcContainer = ContainerManager.getForId(getContainerId()) != null ? ContainerManager.getForId(getContainerId()) : c;
+        }
+        return mgr.getEngineByExtension(srcContainer, "r", requestRemote(), true);
     }
 
     @Nullable
