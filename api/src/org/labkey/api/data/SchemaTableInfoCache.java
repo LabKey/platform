@@ -51,7 +51,7 @@ public class SchemaTableInfoCache
     void remove(@NotNull DbSchema schema, @NotNull String tableName)
     {
         if (schema.getType() == DbSchemaType.Module)
-            LOG.error("removing module schema table: " + schema.getName() + "." + tableName, new Throwable("removing module schema table: " + schema.getName() + "." + tableName));
+            LOG.warn("removing module schema table: " + schema.getName() + "." + tableName, new Throwable("removing module schema table: " + schema.getName() + "." + tableName));
         else
             LOG.debug("remove " + schema.getType() + " schema table: " + schema.getName() + "." + tableName);
         String key = getCacheKey(schema, tableName);
@@ -61,7 +61,7 @@ public class SchemaTableInfoCache
     void remove(@NotNull String schemaName, @NotNull String tableName, @NotNull DbSchemaType type)
     {
         if (type == DbSchemaType.Module)
-            LOG.error("removing module schema table: " + schemaName + "." + tableName, new Throwable("removing module schema table: " + schemaName + "." + tableName));
+            LOG.warn("removing module schema table: " + schemaName + "." + tableName, new Throwable("removing module schema table: " + schemaName + "." + tableName));
         else
             LOG.debug("remove " + type + " schema table: " + schemaName + "." + tableName);
         String key = getCacheKey(schemaName, tableName, type);
@@ -71,7 +71,7 @@ public class SchemaTableInfoCache
     void removeAllTables(@NotNull String schemaName, DbSchemaType type)
     {
         if (type == DbSchemaType.Module)
-            LOG.error("removing all module schema tables: " + schemaName, new Throwable("removing all module schema tables: " + schemaName));
+            LOG.warn("removing all module schema tables: " + schemaName, new Throwable("removing all module schema tables: " + schemaName));
         else
             LOG.debug("remove all " + type + " schema tables: " + schemaName);
         final String prefix = type.getCacheKey(schemaName);
