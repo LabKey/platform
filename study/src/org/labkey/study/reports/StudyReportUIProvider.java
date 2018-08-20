@@ -66,7 +66,6 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
         _typeToIconMap.put(ParticipantReport.TYPE, "/reports/participantReport.png");
         _typeToIconMap.put(StudyCrosstabReport.TYPE, "/reports/crosstab.png");
         _typeToIconMap.put(CrosstabReport.TYPE, "/reports/crosstab.png");
-        _typeToIconMap.put(EnrollmentReport.TYPE, "/reports/enrollment.png");
         _typeToIconMap.put(AssayProgressReport.TYPE, "/reports/grid.png");
 
         // font icons - some report image icons dont have corresponding font icon replacements yet
@@ -79,7 +78,6 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
         _typeToIconClsMap.put(ParticipantReport.TYPE, "fa fa-clipboard");
 //      _typeToIconClsMap.put(StudyCrosstabReport.TYPE, "/reports/crosstab.png");
 //      _typeToIconClsMap.put(CrosstabReport.TYPE, "/reports/crosstab.png");
-        _typeToIconClsMap.put(EnrollmentReport.TYPE, "fa fa-check");
         _typeToIconClsMap.put(AssayProgressReport.TYPE, "fa fa-calendar");
     }
 

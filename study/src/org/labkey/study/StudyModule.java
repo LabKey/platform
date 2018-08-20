@@ -148,7 +148,6 @@ import org.labkey.study.query.studydesign.StudyTreatmentDomainKind;
 import org.labkey.study.query.studydesign.StudyTreatmentProductDomainKind;
 import org.labkey.study.reports.AssayProgressReport;
 import org.labkey.study.reports.ChartReportView;
-import org.labkey.study.reports.EnrollmentReport;
 import org.labkey.study.reports.ExportExcelReport;
 import org.labkey.study.reports.ExternalReport;
 import org.labkey.study.reports.ParticipantReport;
@@ -212,7 +211,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     public static final WebPartFactory sampleSearchPartFactory = new SampleSearchWebPartFactory(HttpView.BODY);
     public static final WebPartFactory datasetsPartFactory = new DatasetsWebPartFactory();
     public static final WebPartFactory manageStudyPartFactory = new StudySummaryWebPartFactory();
-    public static final WebPartFactory enrollmentChartPartFactory = new EnrollmentChartWebPartFactory();
     public static final WebPartFactory studyDesignsWebPartFactory = new StudyDesignsWebPartFactory();
     public static final WebPartFactory studyDesignSummaryWebPartFactory = new StudyDesignSummaryWebPartFactory();
     public static final WebPartFactory assayListWebPartFactory = new AssayListWebPartFactory();
@@ -326,7 +324,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     {
         return new ArrayList<>(Arrays.asList(reportsPartFactory, samplesPartFactory,
                 datasetsPartFactory, manageStudyPartFactory,
-                enrollmentChartPartFactory, studyDesignsWebPartFactory, studyDesignSummaryWebPartFactory,
+                studyDesignsWebPartFactory, studyDesignSummaryWebPartFactory,
                 assayListWebPartFactory, assayBatchesWebPartFactory, assayRunsWebPartFactory, assayResultsWebPartFactory,
                 subjectDetailsWebPartFactory, assayList2WebPartFactory, studyListWebPartFactory, sampleSearchPartFactory,
                 subjectsWebPartFactory, dataToolsWebPartFactory,
@@ -400,7 +398,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         AuditLogService.get().registerAuditType(new SpecimenCommentAuditProvider());
 
         ReportService.get().registerReport(new StudyController.StudyChartReport());
-        ReportService.get().registerReport(new EnrollmentReport());
         ReportService.get().registerReport(new StudyQueryReport());
         ReportService.get().registerReport(new ChartReportView.DatasetChartReport());
         ReportService.get().registerReport(new ExternalReport());
@@ -682,24 +679,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 return new HtmlView("Datasets", "This folder does not contain a study.");
 
             return new DatasetsWebPartView();
-        }
-    }
-
-
-    private static class EnrollmentChartWebPartFactory extends BaseWebPartFactory
-    {
-        public EnrollmentChartWebPartFactory()
-        {
-            super("Enrollment Report");
-        }
-
-        public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
-        {
-            Container c = portalCtx.getContainer();
-            Report report = EnrollmentReport.getEnrollmentReport(portalCtx.getUser(), StudyManager.getInstance().getStudy(c), true);
-            WebPartView view = new EnrollmentReport.EnrollmentView(report);
-            view.setFrame(WebPartView.FrameType.PORTAL);
-            return view;
         }
     }
 

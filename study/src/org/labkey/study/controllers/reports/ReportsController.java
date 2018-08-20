@@ -99,7 +99,6 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.reports.AssayProgressReport;
-import org.labkey.study.reports.EnrollmentReport;
 import org.labkey.study.reports.ExportExcelReport;
 import org.labkey.study.reports.ExternalReport;
 import org.labkey.study.reports.ParticipantReport;
@@ -109,7 +108,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
@@ -219,94 +217,6 @@ public class ReportsController extends BaseStudyController
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public class EnrollmentReportAction extends SimpleViewAction
-    {
-        public ModelAndView getView(Object o, BindException errors)
-        {
-            Report report = EnrollmentReport.getEnrollmentReport(getUser(), getStudyRedirectIfNull(), true);
-
-            if (report.getDescriptor().getProperty(DatasetDefinition.DATASETKEY) == null)
-            {
-                if (!getViewContext().hasPermission(AdminPermission.class))
-                    return new HtmlView("<font class=labkey-error>This view must be configured by an administrator.</font>");
-
-                return HttpView.redirect(new ActionURL(ConfigureEnrollmentReportAction.class, getContainer()));
-            }
-
-            return new EnrollmentReport.EnrollmentView(report);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return _appendNavTrail(root, "Enrollment View");
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public class ConfigureEnrollmentReportAction extends FormViewAction<ColumnPickerForm>
-    {
-        public ModelAndView getView(ColumnPickerForm form, boolean reshow, BindException errors) throws Exception
-        {
-            StudyImpl study = getStudyRedirectIfNull();
-            setHelpTopic(new HelpTopic("enrollmentView"));
-            Report report = EnrollmentReport.getEnrollmentReport(getUser(), study, true);
-            final ReportDescriptor descriptor = report.getDescriptor();
-
-            if (form.getDatasetId() != null)
-                descriptor.setProperty(DatasetDefinition.DATASETKEY, Integer.toString(form.getDatasetId()));
-            if (form.getSequenceNum() >= 0)
-                descriptor.setProperty(VisitImpl.SEQUENCEKEY, VisitImpl.formatSequenceNum(form.getSequenceNum()));
-
-            if (reshow)
-            {
-                EnrollmentReport.saveEnrollmentReport(getViewContext(), report);
-                return HttpView.redirect(getViewContext().cloneActionURL().setAction(EnrollmentReportAction.class));
-            }
-
-            int datasetId = NumberUtils.toInt(descriptor.getProperty(DatasetDefinition.DATASETKEY));
-            double sequenceNum = NumberUtils.toDouble(descriptor.getProperty(VisitImpl.SEQUENCEKEY));
-
-            form.setDatasetId(datasetId);
-            form.setSequenceNum(sequenceNum);
-
-            DataPickerBean bean = new DataPickerBean(
-                    study, form,
-                    "Choose the form and column to use for the enrollment view.",
-                    PropertyType.DATE_TIME);
-            bean.pickColumn = false;
-            return new JspView<>("/org/labkey/study/view/columnPicker.jsp", bean);
-        }
-
-        public void validateCommand(ColumnPickerForm target, Errors errors)
-        {
-        }
-
-        public boolean handlePost(ColumnPickerForm columnPickerForm, BindException errors)
-        {
-            return true;
-        }
-
-        public ActionURL getSuccessURL(ColumnPickerForm columnPickerForm)
-        {
-            return null;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return _appendNavTrail(root, "Customize Enrollment View");
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public class RenderConfigureEnrollmentReportAction extends ConfigureEnrollmentReportAction
-    {
-        public ModelAndView getView(ColumnPickerForm form, boolean reshow, BindException errors) throws Exception
-        {
-            return super.getView(form, reshow, errors);
         }
     }
 
