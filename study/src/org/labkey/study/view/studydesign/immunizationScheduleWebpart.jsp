@@ -19,7 +19,6 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.WebThemeManager" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.model.CohortImpl" %>
 <%@ page import="org.labkey.study.model.ProductImpl" %>
@@ -55,9 +54,6 @@
 %>
 
 <style type="text/css">
-    .study-vaccine-design tr.header-row td {
-        background-color: #<%= WebThemeManager.getTheme(c).getGridColor() %> !important;
-    }
     .study-vaccine-design td.cell-display {
         height: auto;
     }

@@ -29,8 +29,6 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.WebTheme" %>
-<%@ page import="org.labkey.api.view.WebThemeManager" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.StudySchema" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
@@ -65,7 +63,6 @@
     Container container  = getContainer();
     User user            = getUser();
     Study study = StudyService.get().getStudy(container);
-    StudyManager manager = StudyManager.getInstance();
     StudyQuerySchema schema = StudyQuerySchema.createSchema((StudyImpl)study, user, true);
     String subjectTableName = StudyService.get().getSubjectTableName(container);
     String subjectColumnname = StudyService.get().getSubjectColumnName(container);
@@ -88,9 +85,7 @@
     String groupsPanelId  = "groupsPanel" + getRequestScopedUID();
 
     String viewObject = "subjectHandler" + bean.getIndex();
-    WebTheme theme    = WebThemeManager.getTheme(container);
 %>
-
 <script type="text/javascript">
 <%=viewObject%> = (function()
 {
@@ -748,10 +743,10 @@ Ext4.onReady(<%=viewObject%>.render, <%=viewObject%>);
             <% } %>
             <td style="padding-left: 10px;" valign=top class="iScroll">
                 <table><tr>
-                    <td><div style="" >Filter:&nbsp;<input id="<%=divId%>.filter" type="text" size="15" style="border:solid 1px #<%=theme.getWebPartColor()%>"></div></td>
+                    <td><div style="" >Filter:&nbsp;<input id="<%=divId%>.filter" type="text" size="15"></div></td>
                     <%--<td>&nbsp;<%if (hasCohorts){%><input type=checkbox>&nbsp;by&nbsp;cohort (NYI)<%}%></td>--%>
                 </tr></table>
-                <hr style="height:1px; border:0; background-color:#<%=theme.getWebPartColor()%>; color:#<%=theme.getWebPartColor()%>;">
+                <hr style="height:1px; border:0;">
                 <div><span id="<%=divId%>.status">Loading...</span></div>
                 <div style="overflow-x:auto; min-height:<%=Math.round(1.2*(ptidsPerCol+3))%>em;" id="<%= listDivId %>"></div>
             </td>

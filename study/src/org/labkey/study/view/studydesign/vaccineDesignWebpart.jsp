@@ -18,7 +18,6 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
-<%@ page import="org.labkey.api.view.WebThemeManager" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.controllers.StudyDesignController" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
@@ -37,15 +36,7 @@
     User user = getUser();
     Container container = getContainer();
     StudyImpl study = StudyManager.getInstance().getStudy(container);
-%>
 
-<style type="text/css">
-    .study-vaccine-design tr.header-row td {
-        background-color: #<%= WebThemeManager.getTheme(container).getGridColor() %> !important;
-    }
-</style>
-
-<%
     if (study != null)
     {
         %>This section describes the study products evaluated in the study.</br><%

@@ -17,7 +17,6 @@
 package org.labkey.core.admin;
 
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.SpringActionController;
@@ -57,11 +56,8 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.TabStripView;
-import org.labkey.api.view.ThemeFont;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.view.WebTheme;
-import org.labkey.api.view.WebThemeManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
@@ -71,7 +67,6 @@ import javax.servlet.ServletException;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -154,12 +149,6 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
             else
             {
                 props.setThemeName(form.getThemeName());
-
-                ThemeFont themeFont = ThemeFont.getThemeFont(form.getThemeFont());
-                if (themeFont != null)
-                {
-                    props.setThemeFont(themeFont.getFriendlyName());
-                }
             }
         }
         catch (IllegalArgumentException e)
@@ -455,7 +444,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                 }
                 case "properties":
                 {
-                    return new LookAndFeelView(c, _form.getThemeName(), _errors);
+                    return new LookAndFeelView(c, _errors);
                 }
                 case "menubar":
                     if (c.isRoot())
@@ -521,14 +510,14 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
     public static class LookAndFeelView extends JspView<LookAndFeelPropertiesBean>
     {
-        public LookAndFeelView(Container c, @Nullable String newThemeName, BindException errors)
+        public LookAndFeelView(Container c, BindException errors)
         {
-            super("/org/labkey/core/admin/lookAndFeelProperties.jsp", getBean(c, newThemeName), errors);
+            super("/org/labkey/core/admin/lookAndFeelProperties.jsp", getBean(c), errors);
         }
 
-        private static LookAndFeelPropertiesBean getBean(Container c, @Nullable String newThemeName)
+        private static LookAndFeelPropertiesBean getBean(Container c)
         {
-            return new LookAndFeelPropertiesBean(c, newThemeName);
+            return new LookAndFeelPropertiesBean(c);
         }
     }
 
@@ -555,19 +544,8 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
     public static class LookAndFeelPropertiesBean extends LookAndFeelBean
     {
-        public final Collection<WebTheme> themes = WebThemeManager.getWebThemes();
-        public final List<ThemeFont> themeFonts = ThemeFont.getThemeFonts();
-        public final ThemeFont currentThemeFont;
-        public final WebTheme currentTheme;
-        public final @Nullable WebTheme newTheme;
-
-        private LookAndFeelPropertiesBean(Container c, @Nullable String newThemeName)
+        private LookAndFeelPropertiesBean(Container c)
         {
-            currentTheme = WebThemeManager.getTheme(c);
-            currentThemeFont = ThemeFont.getThemeFont(c);
-
-            //if new color scheme defined, get new theme name from url
-            newTheme = newThemeName != null ? WebThemeManager.getTheme(newThemeName) : null;
         }
     }
 

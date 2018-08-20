@@ -22,8 +22,6 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.NotFoundException" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.view.WebTheme" %>
-<%@ page import="org.labkey.api.view.WebThemeManager" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.designer.StudyDesignManager" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
@@ -72,52 +70,8 @@
 
     StudyGWTView innerView = new StudyGWTView(gwt.client.org.labkey.study.designer.client.Designer.class, params);
 
-    WebTheme theme = WebThemeManager.getTheme(c);
     response.setContentType("text/css");
-
-    String link        = theme.getLinkColor();
-    String grid        = theme.getGridColor();
-
 %>
-<style type="text/css">
-
-    table.study-vaccine-design .labkey-col-header {
-        background-color: #<%= grid %>;
-    }
-
-    table.study-vaccine-design .labkey-col-header-active {
-        background-color: #<%= grid %>;
-    }
-
-    table.study-vaccine-design .labkey-col-header-active .gwt-Label {
-        color: #<%= link %>;
-    }
-
-    table.study-vaccine-design .labkey-col-header-active .gwt-Label:hover {
-        color: #<%= link %>;
-    }
-
-    table.study-vaccine-design .labkey-row-header {
-        background-color: #<%= grid %>;
-    }
-
-    table.study-vaccine-design .labkey-row-active .gwt-Label, table.study-vaccine-design .labkey-row-header .gwt-Label {
-        color: #<%= link %>;
-    }
-
-    table.study-vaccine-design .labkey-row-active .gwt-Label:hover, table.study-vaccine-design .labkey-row-header .gwt-Label:hover {
-        color: #<%= link %>;
-    }
-
-    table.study-vaccine-design .assay-corner {
-        background-color: #<%= grid %>;
-    }
-
-    a.labkey-button, a.labkey-button:visited, a.gwt-Anchor {
-        color: #<%= link %>;
-    }
-
-</style>
 <%
 include(innerView, out);
 %>
