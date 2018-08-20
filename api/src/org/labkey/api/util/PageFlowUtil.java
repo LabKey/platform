@@ -69,7 +69,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.WebTheme;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.writer.ContainerUser;
 import org.springframework.beans.PropertyValue;
@@ -1802,9 +1801,11 @@ public class PageFlowUtil
         return "ext-3.4.1";
     }
 
+    public static String DEFAULT_THEME_NAME = "Seattle";
+
     public static String resolveThemeName(Container c)
     {
-        String themeName = WebTheme.DEFAULT.getFriendlyName();
+        String themeName = DEFAULT_THEME_NAME;
 
         if (c != null)
         {
@@ -1818,7 +1819,7 @@ public class PageFlowUtil
                     !"ocean".equalsIgnoreCase(themeName) &&
                     !"mono".equalsIgnoreCase(themeName) &&
                     !"madison".equalsIgnoreCase(themeName))
-                return WebTheme.EXPERIMENTAL_DEFAULT_THEME_NAME;
+                return "overcast";
         }
 
         return themeName.toLowerCase();

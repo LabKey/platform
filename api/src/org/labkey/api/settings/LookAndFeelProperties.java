@@ -19,8 +19,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.FolderDisplayMode;
-import org.labkey.api.view.ThemeFont;
-import org.labkey.api.view.WebTheme;
+import org.labkey.api.util.PageFlowUtil;
 
 /**
  * Stores configuration to control basic rendering of the overall page template. May be associated with the full install
@@ -41,7 +40,6 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
     protected static final String DISCUSSION_ENABLED_PROP = "dicussionEnabled";
     protected static final String NAVIGATION_BAR_WIDTH = "navigationBarWidth";
     protected static final String LOGO_HREF_PROP = "logoHref";
-    protected static final String THEME_FONT_PROP = "themeFont";
 
     protected static final String COMPANY_NAME_PROP = "companyName";
     protected static final String SYSTEM_EMAIL_ADDRESS_PROP = "systemEmailAddress";
@@ -105,18 +103,12 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
 
     public String getThemeName()
     {
-        return lookupStringValue(THEME_NAME_PROP, WebTheme.DEFAULT.toString());
+        return lookupStringValue(THEME_NAME_PROP, PageFlowUtil.DEFAULT_THEME_NAME);
     }
 
     public boolean isThemeNameInherited()
     {
         return isPropertyInherited(_settingsContainer, THEME_NAME_PROP);
-    }
-
-
-    public String getThemeFont()
-    {
-        return lookupStringValue(THEME_FONT_PROP, ThemeFont.DEFAULT_THEME_FONT.getFriendlyName());
     }
 
     public FolderDisplayMode getFolderDisplayMode()

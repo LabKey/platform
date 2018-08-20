@@ -18,7 +18,6 @@ package org.labkey.api.settings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.PropertyManager;
 import org.labkey.api.util.ExceptionReportingLevel;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.UsageReportingLevel;
@@ -48,9 +47,6 @@ public interface AppProps
     String EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS = "resolve-property-uri-columns";
     String EXPERIMENTAL_STRICT_RETURN_URL = "strictReturnUrl";
 
-    // For Customisable web colour theme
-    String WEB_THEME_CONFIG_NAME = "WebThemeConfig";
-
     static AppProps getInstance()
     {
         return _instance;
@@ -59,12 +55,6 @@ public interface AppProps
     static WriteableAppProps getWriteableInstance()
     {
         return new WriteableAppProps(ContainerManager.getRoot());
-    }
-
-    // For Customisable web colour theme
-    static PropertyManager.PropertyMap getWebThemeConfigProperties()
-    {
-        return PropertyManager.getWritableProperties(AppPropsImpl.SITE_CONFIG_USER, ContainerManager.getRoot(), WEB_THEME_CONFIG_NAME, true);
     }
 
     String getServerSessionGUID();

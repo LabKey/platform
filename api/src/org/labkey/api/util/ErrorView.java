@@ -25,8 +25,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.WebTheme;
-import org.labkey.api.view.WebThemeManager;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -105,12 +103,9 @@ class ErrorView extends HttpView
             }
         }
 
-        // need the theme to apply style to ext-based body element
-        WebTheme theme = null == c ? WebTheme.DEFAULT : WebThemeManager.getTheme(c);
-
         //NOTE: Selenium tests expect errors to start with error number and include word "Error" in title
         out.println("<title>" + PageFlowUtil.filter(_renderer.getTitle()) + "</title>");
-        out.println("</head><body style=\"margin:40px; background-color:#" + theme.getLinkColor() + "\">");
+        out.println("</head><body style=\"margin:40px;\">");
         _renderer.renderStart(out);
 
         if (null != _renderer.getHeading())

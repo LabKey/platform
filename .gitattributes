@@ -1843,7 +1843,6 @@ api/src/org/labkey/api/view/SimpleWebPartFactoryCacheHandler.java -text
 api/src/org/labkey/api/view/SpringErrorView.java -text
 api/src/org/labkey/api/view/Stats.java -text
 api/src/org/labkey/api/view/TabStripView.java -text
-api/src/org/labkey/api/view/ThemeFont.java -text
 api/src/org/labkey/api/view/URLException.java -text
 api/src/org/labkey/api/view/ViewBackgroundInfo.java -text
 api/src/org/labkey/api/view/ViewContext.java -text
@@ -1852,8 +1851,6 @@ api/src/org/labkey/api/view/ViewService.java -text
 api/src/org/labkey/api/view/WebPartCache.java -text
 api/src/org/labkey/api/view/WebPartConfigurationException.java -text
 api/src/org/labkey/api/view/WebPartFactory.java -text
-api/src/org/labkey/api/view/WebTheme.java -text
-api/src/org/labkey/api/view/WebThemeManager.java -text
 api/src/org/labkey/api/view/jspTemplateTest.jsp -text
 api/src/org/labkey/api/view/menu/ContainerMenu.java -text
 api/src/org/labkey/api/view/menu/FolderAdminMenu.java -text
@@ -7282,9 +7279,6 @@ internal/webapp/_images/restricted.gif -text
 internal/webapp/_images/rss.gif -text
 internal/webapp/_images/search.png -text
 internal/webapp/_images/search_menu.png -text
-internal/webapp/_images/select_arrow.gif -text
-internal/webapp/_images/select_arrow_down.gif -text
-internal/webapp/_images/select_arrow_over.gif -text
 internal/webapp/_images/sigmoidal_curve.png -text
 internal/webapp/_images/slider_handle.gif -text
 internal/webapp/_images/square.gif -text
@@ -7448,7 +7442,6 @@ internal/webapp/codemirror-4.2/theme/xq-dark.css -text
 internal/webapp/codemirror-4.2/theme/xq-light.css -text
 internal/webapp/codemirror-4.2/util.js -text
 internal/webapp/codemirror.lib.xml -text
-internal/webapp/color_functions.js -text
 internal/webapp/completion.js -text
 internal/webapp/completion.lib.xml -text
 internal/webapp/dataregion/filter/Base.js -text
@@ -7868,8 +7861,6 @@ internal/webapp/internal/jQuery/jquery-1.12.4.min.js -text
 internal/webapp/internal/jQuery/jquery-dateFormat.js -text
 internal/webapp/internal/jQuery/jquery-dateFormat.min.js -text
 internal/webapp/internal/jQuery/jquery.menu-aim.js -text
-internal/webapp/js_color_picker_v2.css -text
-internal/webapp/js_color_picker_v2.js -text
 internal/webapp/labkey.js -text
 internal/webapp/miniprofiler.lib.xml -text
 internal/webapp/mothership.js -text

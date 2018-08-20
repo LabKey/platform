@@ -114,11 +114,6 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
         storeStringValue(SYSTEM_SHORT_NAME_PROP, systemShortName);
     }
 
-    public void setThemeFont(String themeFont)
-    {
-        storeStringValue(THEME_FONT_PROP, themeFont);
-    }
-
     public void setCompanyName(String companyName)
     {
         storeStringValue(COMPANY_NAME_PROP, companyName);
