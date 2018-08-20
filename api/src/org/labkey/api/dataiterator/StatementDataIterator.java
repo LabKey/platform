@@ -23,6 +23,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.SwapQueue;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
@@ -428,6 +429,14 @@ public class StatementDataIterator extends AbstractDataIterator
             {
                 throw new RuntimeSQLException(e);
             }
+        }
+    }
+
+    protected void setAllowClose(Connection conn, boolean allow)
+    {
+        if (conn instanceof ConnectionWrapper)
+        {
+            ((ConnectionWrapper) conn).setAllowClose(allow);
         }
     }
 

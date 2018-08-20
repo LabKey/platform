@@ -88,6 +88,8 @@ public class ConnectionWrapper implements java.sql.Connection
     /** For debugging issue 23044 */
     private static Method _transactionStateMethod;
 
+    private volatile boolean _allowClose = true;
+
     public ConnectionWrapper(Connection conn, DbScope scope, Integer spid, @Nullable Logger log)
     {
         _connection = conn;
@@ -364,6 +366,17 @@ public class ConnectionWrapper implements java.sql.Connection
                 throw logAndCheckException(e);
             }
         }
+
+        if (!_allowClose)
+        {
+            _allowClose = true;
+            throw new IllegalStateException("Not allowed to close this connection");
+        }
+    }
+
+    public void setAllowClose(boolean allowClose)
+    {
+        _allowClose = allowClose;
     }
 
     @Override
