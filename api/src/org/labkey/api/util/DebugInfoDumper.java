@@ -22,19 +22,18 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.files.FileSystemWatchers;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.writer.PrintWriters;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.management.ManagementFactory;
-import java.lang.management.RuntimeMXBean;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.nio.file.StandardWatchEventKinds;
 import java.time.LocalDateTime;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -66,7 +65,7 @@ public class DebugInfoDumper
         _threadDumpFile = new File(labkeyRoot, "threadDumpRequest");
         if (!_threadDumpFile.exists())
         {
-            try (PrintWriter writer = new PrintWriter(_threadDumpFile, StringUtilsLabKey.DEFAULT_CHARSET.name()))
+            try (PrintWriter writer = PrintWriters.getPrintWriter(_threadDumpFile))
             {
                 writer.println("Touch this file while LabKey Server is running and within 10 seconds the server will");
                 writer.println("dump all of its threads to its standard log file, including database connection SPIDs");
@@ -82,7 +81,7 @@ public class DebugInfoDumper
         _heapDumpFile = new File(labkeyRoot, "heapDumpRequest");
         if (!_heapDumpFile.exists())
         {
-            try (PrintWriter writer = new PrintWriter(_heapDumpFile, StringUtilsLabKey.DEFAULT_CHARSET.name()))
+            try (PrintWriter writer = PrintWriters.getPrintWriter(_heapDumpFile))
             {
                 writer.println("Touch this file while LabKey Server is running and within 10 seconds the server will");
                 writer.println("dump its heap to disk. The log file will contain information on where the dump was written,");
