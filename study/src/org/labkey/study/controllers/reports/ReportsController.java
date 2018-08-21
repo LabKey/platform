@@ -37,7 +37,6 @@ import org.labkey.api.data.BeanViewForm;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.exp.PropertyType;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.QueryDefinition;
@@ -643,7 +642,6 @@ public class ReportsController extends BaseStudyController
     @RequiresPermission(ReadPermission.class)
     public class ExportExcelConfigureAction extends SimpleViewAction
     {
-
         public ModelAndView getView(Object o, BindException errors)
         {
             setHelpTopic(new HelpTopic("exportExcel"));
@@ -844,74 +842,12 @@ public class ReportsController extends BaseStudyController
     }
 
 
-    public static class DataPickerBean
-    {
-        public StudyImpl study;
-        public ColumnPickerForm form;
-        public String caption;
-        public PropertyType propertyType;
-        public boolean pickColumn = true;
-
-        public DataPickerBean(StudyImpl study, ColumnPickerForm form, String caption, PropertyType type)
-        {
-            this.study = study;
-            this.form = form;
-            this.caption = caption;
-            this.propertyType = type;
-        }
-    }
-
-
-    public static class ColumnPickerForm
-    {
-        private Integer datasetId = null;
-        private double sequenceNum = -1;
-        private int propertyId = -1;
-
-        public Integer getDatasetId()
-        {
-            return datasetId;
-        }
-
-        public void setDatasetId(Integer datasetId)
-        {
-            this.datasetId = datasetId;
-        }
-
-        public double getSequenceNum()
-        {
-            return sequenceNum;
-        }
-
-        @Deprecated // needed so saved maps (e.g. EnrollmentReport configuration) still work
-        public void setVisitId(double sequenceNum)
-        {
-            this.sequenceNum = sequenceNum;
-        }
-
-        public void setSequenceNum(double sequenceNum)
-        {
-            this.sequenceNum = sequenceNum;
-        }
-
-        public int getPropertyId()
-        {
-            return propertyId;
-        }
-
-        public void setPropertyId(int propertyId)
-        {
-            this.propertyId = propertyId;
-        }
-    }
-
-
     public static class SaveReportWidget extends HttpView
     {
-        Report report;
-        private boolean confirm = false;
-        private String srcURL;
-        private boolean redirToReport;
+        private final Report _report;
+        private final boolean _confirm;
+        private final String _srcURL;
+        private final boolean _redirToReport;
 
         public SaveReportWidget(Report report)
         {
@@ -920,10 +856,10 @@ public class ReportsController extends BaseStudyController
 
         public SaveReportWidget(Report report, boolean confirm, String srcURL, boolean redirToReport)
         {
-            this.report = report;
-            this.confirm = confirm;
-            this.srcURL = srcURL;
-            this.redirToReport = redirToReport;
+            _report = report;
+            _confirm = confirm;
+            _srcURL = srcURL;
+            _redirToReport = redirToReport;
         }
 
         @Override
@@ -933,11 +869,11 @@ public class ReportsController extends BaseStudyController
             out.write(PageFlowUtil.filter(new ActionURL(SaveReportViewAction.class, getViewContext().getContainer())));
             out.write("'>");
             out.write("<table><tr>");
-            if (confirm)
+            if (_confirm)
             {
                 out.write("<td>");
                 out.write("There is already a report called: <i>");
-                out.write(PageFlowUtil.filter(report.getDescriptor().getReportName()));
+                out.write(PageFlowUtil.filter(_report.getDescriptor().getReportName()));
                 out.write("</i>.<br/>Overwrite the existing report?");
                 out.write("<input type=hidden name=confirmed value=1>");
                 out.write("<input type=hidden name=label value='");
@@ -947,23 +883,23 @@ public class ReportsController extends BaseStudyController
                 out.write("<td><b>Save Report&nbsp;</b> Name:&nbsp;");
                 out.write("<input name='label' value='");
             }
-            out.write(PageFlowUtil.filter(report.getDescriptor().getReportName()));
+            out.write(PageFlowUtil.filter(_report.getDescriptor().getReportName()));
             out.write("'></td>");
             out.write("<td>");
-            if (!confirm)
+            if (!_confirm)
             {
                 out.write("<input type=hidden name=srcURL value='");
                 out.write(PageFlowUtil.filter(getViewContext().getActionURL().getLocalURIString()));
                 out.write("'>");
             }
             out.write("<input type=hidden name=redirectToReport value='");
-            out.write(Boolean.toString(redirToReport));
+            out.write(Boolean.toString(_redirToReport));
             out.write("'>");
             out.write("<input type=hidden name=reportType value='");
-            out.write(report.getDescriptor().getReportType());
+            out.write(_report.getDescriptor().getReportType());
             out.write("'>");
             out.write("<input type=hidden name=params value='");
-            out.write(PageFlowUtil.filter(report.getDescriptor().toQueryString()));
+            out.write(PageFlowUtil.filter(_report.getDescriptor().toQueryString()));
             out.write("'></td>");
 
             Container c = getViewContext().getContainer();
@@ -972,7 +908,7 @@ public class ReportsController extends BaseStudyController
             out.write("<td>Add as Custom Report For: ");
             out.write("<select name=\"showWithDataset\">");
             //out.write("<option value=\"0\">Views and Reports Web Part</option>");
-            int showWithDataset = NumberUtils.toInt(report.getDescriptor().getProperty("showWithDataset"));
+            int showWithDataset = NumberUtils.toInt(_report.getDescriptor().getProperty("showWithDataset"));
             for (Dataset def : defs)
             {
                 out.write("<option ");
@@ -990,9 +926,9 @@ public class ReportsController extends BaseStudyController
             out.write("<input type=hidden name='" + CSRFUtil.csrfName + "' value='" + PageFlowUtil.filter(CSRFUtil.getExpectedToken(getViewContext())) + "'>");
             out.write("</form>");
 
-            if (confirm)
+            if (_confirm)
             {
-                out.write("&nbsp;" + PageFlowUtil.button("Cancel").href(srcURL));
+                out.write("&nbsp;" + PageFlowUtil.button("Cancel").href(_srcURL));
             }
             out.write("</td></tr></table>");
         }
@@ -1198,9 +1134,9 @@ public class ReportsController extends BaseStudyController
 
     public static class PlotForm
     {
-        private ReportIdentifier reportId;
-        private int datasetId = 0;
-        private int visitRowId = 0;
+        private ReportIdentifier _reportId;
+        private int _datasetId = 0;
+        private int _visitRowId = 0;
         private String _action;
         private int _chartsPerRow = 3;
         private Report[] _reports;
@@ -1213,32 +1149,32 @@ public class ReportsController extends BaseStudyController
 
         public int getDatasetId()
         {
-            return datasetId;
+            return _datasetId;
         }
 
         public void setDatasetId(int datasetId)
         {
-            this.datasetId = datasetId;
+            _datasetId = datasetId;
         }
 
         public int getVisitRowId()
         {
-            return visitRowId;
+            return _visitRowId;
         }
 
         public void setVisitRowId(int visitRowId)
         {
-            this.visitRowId = visitRowId;
+            _visitRowId = visitRowId;
         }
 
         public ReportIdentifier getReportId()
         {
-            return reportId;
+            return _reportId;
         }
 
         public void setReportId(ReportIdentifier reportId)
         {
-            this.reportId = reportId;
+            _reportId = reportId;
         }
 
         public Report[] getReports()
@@ -1451,55 +1387,6 @@ public class ReportsController extends BaseStudyController
                 _appendNavTrail(root, def.getDatasetId(), 0, null, qcState);
             }
             return root;
-        }
-    }
-
-    public static class TimePlotForm
-    {
-        private ReportIdentifier reportId;
-        private int datasetId;
-        /** UNDONE: should this be renamed sequenceNum? */
-        private double visitId;
-        private String columnX;
-
-        public int getDatasetId()
-        {
-            return datasetId;
-        }
-
-        public void setDatasetId(int datasetId)
-        {
-            this.datasetId = datasetId;
-        }
-
-        public String getColumnX()
-        {
-            return columnX;
-        }
-
-        public void setColumnX(String columnX)
-        {
-            this.columnX = columnX;
-        }
-
-        public double getVisitId()
-        {
-            return visitId;
-        }
-
-        public void setVisitId(double visitId)
-        {
-            this.visitId = visitId;
-        }
-
-        public ReportIdentifier getReportId()
-        {
-            return reportId;
-        }
-
-        public void setReportId(ReportIdentifier reportId)
-        {
-            this.reportId = reportId;
         }
     }
 
