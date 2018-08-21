@@ -2333,22 +2333,6 @@ public class UserController extends SpringActionController
         public List<ReplacementParam> getValidReplacements(){ return _replacements; }
     }
 
-    /**
-     * Wrapper to create required columninfos
-     */
-    private static class RequiredColumn extends ColumnInfo
-    {
-        public RequiredColumn(ColumnInfo col)
-        {
-            super(col, col.getParentTable());
-        }
-
-        public boolean isNullable()
-        {
-            return false;
-        }
-    }
-
     public static class GetUsersForm
     {
         private String _group;

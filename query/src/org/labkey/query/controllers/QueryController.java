@@ -101,6 +101,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.writer.PrintWriters;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
@@ -6346,9 +6347,10 @@ public class QueryController extends SpringActionController
                     }
                 }
 
-                PrintWriter writer = new PrintWriter(new File(form.getOutputDir(), form.getSourceSchema() + "_updateScript.sql"), StandardCharsets.UTF_8.name());
-                writer.print(importScript.toString());
-                writer.close();
+                try (PrintWriter writer = PrintWriters.getPrintWriter(new File(form.getOutputDir(), form.getSourceSchema() + "_updateScript.sql")))
+                {
+                    writer.print(importScript.toString());
+                }
             }
             catch (FileNotFoundException e)
             {
@@ -6375,7 +6377,6 @@ public class QueryController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class GetSchemasWithDataSourcesAction extends ApiAction
     {
-
         @Override
         public Object execute(Object o, BindException errors)
         {
