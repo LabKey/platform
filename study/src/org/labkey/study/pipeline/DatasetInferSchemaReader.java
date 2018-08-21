@@ -109,6 +109,14 @@ public class DatasetInferSchemaReader extends DatasetFileReader implements Schem
                         datasetInfo.category = def.getCategory();
                         datasetInfo.demographicData = def.isDemographicData();
                         datasetInfo.description = def.getDescription();
+                        datasetInfo.demographicData = def.isDemographicData();
+                        datasetInfo.keyManagementType = def.getKeyManagementType();
+                        datasetInfo.keyPropertyName = def.getKeyPropertyName();
+                        datasetInfo.isHidden = !def.isShowByDefault();
+                        datasetInfo.type = def.getType();
+                        datasetInfo.tag = def.getTag();
+                        datasetInfo.useTimeKeyField = def.getUseTimeKeyField();
+                        datasetInfo.visitDatePropertyName = def.getVisitDatePropertyName();
 
                         _datasetInfoMap.put(def.getDatasetId(), datasetInfo);
                     }
