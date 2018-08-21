@@ -419,14 +419,21 @@ public class StatementDataIterator extends AbstractDataIterator
     // Using temporarily to isolate #34735
     protected void checkConnection(Connection conn)
     {
+        checkConnection(conn, null);
+    }
+
+    protected void checkConnection(Connection conn, @Nullable String context)
+    {
         if (null != conn)
         {
+            String display = (null != context ? ". Context: " + context : "");
             try
             {
-                assert !conn.isClosed() : "Connection should not be closed!";
+                assert !conn.isClosed() : "Connection should not be closed!" + display;
             }
             catch (SQLException e)
             {
+                _log.error("Unexpected exception while checking isClosed()" + display);
                 throw new RuntimeSQLException(e);
             }
         }
@@ -458,7 +465,7 @@ public class StatementDataIterator extends AbstractDataIterator
             if (stmt != null)
             {
                 stmt.close();
-                checkConnection(conn);
+                checkConnection(conn, stmt.getDebugSql());
             }
         }
         checkConnection(conn);

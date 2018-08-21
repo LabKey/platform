@@ -728,9 +728,9 @@ public class Parameter implements AutoCloseable
                 _stmt.clearParameters();
                 _stmt.close();
             }
-            catch (SQLException ignored)
+            catch (SQLException e)
             {
-                LOG.warn("Failed to close backing statement during close operation", ignored);
+                LOG.warn("Failed to close backing statement during close operation", e);
                 if (_stmt instanceof StatementWrapper)
                 {
                     Throwable t = ((StatementWrapper)_stmt).getClosingStackTrace();

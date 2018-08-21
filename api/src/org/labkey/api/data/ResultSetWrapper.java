@@ -32,7 +32,7 @@ import java.util.Map;
 
 public class ResultSetWrapper implements ResultSet
 {
-    protected ResultSet resultset = null;
+    protected ResultSet resultset;
 
 
     public ResultSetWrapper(ResultSet rs)

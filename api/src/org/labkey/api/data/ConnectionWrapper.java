@@ -831,6 +831,9 @@ public class ConnectionWrapper implements java.sql.Connection
     @Override
     protected void finalize() throws Throwable
     {
+        if (!isClosed())
+            LOG.error("Connection was not closed! " + toString());
+
         super.finalize();
         close();
     }
