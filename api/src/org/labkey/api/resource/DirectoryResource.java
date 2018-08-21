@@ -45,9 +45,9 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
  * User: kevink
  * Date: Mar 13, 2010 9:37:56 AM
  */
-public class DirectoryResource extends MergedDirectoryResource
+public class DirectoryResource extends AbstractResourceCollection
 {
-    private static final Cache<Pair<Resolver, Path>, Map<String, Resource>> CHILDREN_CACHE = CacheManager.getBlockingCache(5000, CacheManager.DAY, "MergedDirectoryResourceCache", null);
+    private static final Cache<Pair<Resolver, Path>, Map<String, Resource>> CHILDREN_CACHE = CacheManager.getBlockingCache(5000, CacheManager.DAY, "DirectoryResource Cache", null);
     private static final FileSystemWatcher WATCHER = FileSystemWatchers.get();
     private static final Set<Pair<Resolver, Path>> KEYS_WITH_LISTENERS = new ConcurrentHashSet<>();
 
@@ -103,7 +103,7 @@ public class DirectoryResource extends MergedDirectoryResource
 
         if (!KEYS_WITH_LISTENERS.contains(_cacheKey))
         {
-            registerListener(WATCHER, new MergedDirectoryResourceListener(), ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
+            registerListener(WATCHER, new DirectoryResourceListener(), ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
             KEYS_WITH_LISTENERS.add(_cacheKey);
         }
     }
@@ -159,7 +159,7 @@ public class DirectoryResource extends MergedDirectoryResource
         return _dir;
     }
 
-    private class MergedDirectoryResourceListener implements FileSystemDirectoryListener
+    private class DirectoryResourceListener implements FileSystemDirectoryListener
     {
         @Override
         public void entryCreated(java.nio.file.Path directory, java.nio.file.Path entry)
