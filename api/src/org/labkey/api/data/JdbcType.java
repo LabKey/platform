@@ -30,8 +30,11 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedList;
 
 /**
  * ENUM version of java.sql.Types
@@ -50,7 +53,7 @@ public enum JdbcType
         @Override
         protected Object _fromString(String s)
         {
-            return new Long(s);
+            return Long.valueOf(s);
         }
     },
 
@@ -60,16 +63,35 @@ public enum JdbcType
     BOOLEAN(Types.BOOLEAN, Boolean.class, Boolean.TYPE)
     {
         @Override
+        protected void addSqlTypes(Collection<Integer> sqlTypes)
+        {
+            sqlTypes.add(Types.BIT);
+        }
+
+        @Override
         protected Object _fromNumber(Number n)
         {
             return _toBoolean(n);
         }
     },
 
-    CHAR(Types.CHAR, String.class),
+    CHAR(Types.CHAR, String.class)
+    {
+        @Override
+        protected void addSqlTypes(Collection<Integer> sqlTypes)
+        {
+            sqlTypes.add(Types.NCHAR);
+        }
+    },
 
     DECIMAL(Types.DECIMAL, BigDecimal.class, null, "numberfield")
     {
+        @Override
+        protected void addSqlTypes(Collection<Integer> sqlTypes)
+        {
+            sqlTypes.add(Types.NUMERIC);
+        }
+
         @Override
         protected Object _fromNumber(Number n)
         {
@@ -86,6 +108,12 @@ public enum JdbcType
     DOUBLE(Types.DOUBLE, Double.class, Double.TYPE, "numberfield")
     {
         @Override
+        protected void addSqlTypes(Collection<Integer> sqlTypes)
+        {
+            sqlTypes.add(Types.FLOAT);
+        }
+
+        @Override
         protected Object _fromNumber(Number n)
         {
             return n.doubleValue();
@@ -94,7 +122,7 @@ public enum JdbcType
         @Override
         protected Object _fromString(String s)
         {
-            return new Double(s);
+            return Double.valueOf(s);
         }
     },
 
@@ -109,14 +137,28 @@ public enum JdbcType
         @Override
         protected Object _fromString(String s)
         {
-            return new Integer(s);
+            return Integer.valueOf(s);
         }
     },
 
-    LONGVARBINARY(Types.LONGVARBINARY, String.class),
+    LONGVARBINARY(Types.LONGVARBINARY, String.class)
+    {
+        @Override
+        protected void addSqlTypes(Collection<Integer> sqlTypes)
+        {
+            sqlTypes.add(Types.BLOB);
+        }
+    },
 
     LONGVARCHAR(Types.LONGVARCHAR, String.class)
     {
+        @Override
+        protected void addSqlTypes(Collection<Integer> sqlTypes)
+        {
+            sqlTypes.add(Types.CLOB);
+            sqlTypes.add(Types.LONGNVARCHAR);
+        }
+
         @Override
         public Object convert(Object o) throws ConversionException
         {
@@ -135,7 +177,7 @@ public enum JdbcType
         @Override
         protected Object _fromString(String s)
         {
-            return new Float(s);
+            return Float.valueOf(s);
         }
     },
 
@@ -147,11 +189,10 @@ public enum JdbcType
             return _toShort(n);
         }
 
-
         @Override
         protected Object _fromString(String s)
         {
-            return new Short(s);
+            return Short.valueOf(s);
         }
     },
 
@@ -181,7 +222,7 @@ public enum JdbcType
         @Override
         protected Object _fromString(String s)
         {
-            return new Short(s);
+            return Short.valueOf(s);
         }
     },
 
@@ -189,6 +230,12 @@ public enum JdbcType
 
     VARCHAR(Types.VARCHAR, String.class)
     {
+        @Override
+        protected void addSqlTypes(Collection<Integer> sqlTypes)
+        {
+            sqlTypes.add(Types.NVARCHAR);
+        }
+
         @Override
         public Object convert(Object o) throws ConversionException
         {
@@ -203,7 +250,15 @@ public enum JdbcType
         }
     },
 
-    GUID(Types.VARCHAR, String.class),
+    GUID(Types.VARCHAR, String.class)
+    {
+        @Override
+        // Types.VARCHAR should map to VARCHAR, not GUID
+        protected Collection<Integer> getSqlTypes()
+        {
+            return Collections.emptySet();
+        }
+    },
 
     NULL(Types.NULL, Object.class),
 
@@ -229,7 +284,7 @@ public enum JdbcType
         this(type, cls, typeCls, "textfield");
     }
 
-    JdbcType(int type, Class cls, @Nullable Class typeCls, String xtype)
+    JdbcType(int type, @NotNull Class cls, @Nullable Class typeCls, String xtype)
     {
         // make sure ConvertHelper is initialized
         ConvertHelper.getPropertyEditorRegistrar();
@@ -242,45 +297,12 @@ public enum JdbcType
         this.converter = ConvertUtils.lookup(cls);
     }
 
-    public static JdbcType valueOf(int type)
-    {
-        switch (type)
-        {
-            case Types.BIT :
-            case Types.BOOLEAN : return BOOLEAN;
-            case Types.TINYINT : return TINYINT;
-            case Types.SMALLINT : return SMALLINT;
-            case Types.INTEGER : return INTEGER;
-            case Types.BIGINT : return BIGINT;
-            case Types.FLOAT : return DOUBLE;
-            case Types.REAL : return REAL;
-            case Types.DOUBLE : return DOUBLE;
-            case Types.NUMERIC : return DECIMAL;
-            case Types.DECIMAL : return DECIMAL;
-            case Types.NCHAR :
-            case Types.CHAR : return CHAR;
-            case Types.NVARCHAR:
-            case Types.VARCHAR : return VARCHAR;
-            case Types.CLOB :
-            case Types.LONGNVARCHAR :
-            case Types.LONGVARCHAR : return LONGVARCHAR;
-            case Types.DATE : return DATE;
-            case Types.TIME : return TIME;
-            case Types.TIMESTAMP : return TIMESTAMP;
-            case Types.BINARY : return BINARY;
-            case Types.VARBINARY : return VARBINARY;
-            case Types.BLOB :
-            case Types.LONGVARBINARY : return LONGVARBINARY;
-            default : return OTHER;
-        }
-    }
-
-
     private static final HashMap<Class, JdbcType> classMap = new HashMap<>();
+    private static final HashMap<Integer, JdbcType> sqlTypeMap = new HashMap<>();
 
     static
     {
-        for (JdbcType t : JdbcType.values())
+        for (JdbcType t : values())
             classMap.put(t.cls, t);
 
         // primitives
@@ -305,6 +327,80 @@ public enum JdbcType
         classMap.put( String.class, VARCHAR);
         classMap.put( java.util.Date.class, TIMESTAMP);
         classMap.put( java.sql.Timestamp.class, TIMESTAMP);
+
+        for (JdbcType t : values())
+        {
+            for (Integer sqlType : t.getSqlTypes())
+            {
+                JdbcType prev = sqlTypeMap.put(sqlType, t);
+
+                if (null != prev)
+                    throw new IllegalStateException(t + " and " + prev + " have registered the same SqlType!");
+            }
+        }
+    }
+
+
+    // By default, valueOf() maps each JdbcType constant's sql.Types int to that constant
+    protected Collection<Integer> getSqlTypes()
+    {
+        Collection<Integer> ret = new LinkedList<>();
+        ret.add(sqlType);
+        addSqlTypes(ret);
+
+        return ret;
+    }
+
+    // JdbcType constant can map additional sql.Types ints to itself (see valueOf()) by overriding this method
+    protected void addSqlTypes(Collection<Integer> sqlTypes)
+    {
+    }
+
+    public static JdbcType valueOf(int type)
+    {
+        JdbcType old = valueOfOld(type);
+
+        JdbcType jt = sqlTypeMap.get(type);
+        if (null == jt)
+            jt = OTHER;
+
+        if (old != jt)
+            throw new IllegalStateException(old + " vs. " + jt + " for " + type);
+
+        return old;
+    }
+
+    public static JdbcType valueOfOld(int type)
+    {
+        switch (type)
+        {
+            case Types.BIT :
+            case Types.BOOLEAN : return BOOLEAN;
+            case Types.TINYINT : return TINYINT;
+            case Types.SMALLINT : return SMALLINT;
+            case Types.INTEGER : return INTEGER;
+            case Types.BIGINT : return BIGINT;
+            case Types.REAL : return REAL;
+            case Types.FLOAT :
+            case Types.DOUBLE : return DOUBLE;
+            case Types.NUMERIC :
+            case Types.DECIMAL : return DECIMAL;
+            case Types.NCHAR :
+            case Types.CHAR : return CHAR;
+            case Types.NVARCHAR :
+            case Types.VARCHAR : return VARCHAR;
+            case Types.CLOB :
+            case Types.LONGNVARCHAR :
+            case Types.LONGVARCHAR : return LONGVARCHAR;
+            case Types.DATE : return DATE;
+            case Types.TIME : return TIME;
+            case Types.TIMESTAMP : return TIMESTAMP;
+            case Types.BINARY : return BINARY;
+            case Types.VARBINARY : return VARBINARY;
+            case Types.BLOB :
+            case Types.LONGVARBINARY : return LONGVARBINARY;
+            default : return OTHER;
+        }
     }
 
 
@@ -314,9 +410,9 @@ public enum JdbcType
         if (null != t)
             return t;
         if (Enum.class.isAssignableFrom(cls))
-            return JdbcType.VARCHAR;
+            return VARCHAR;
         if (java.util.Date.class.isAssignableFrom(cls))
-            return JdbcType.TIMESTAMP;
+            return TIMESTAMP;
         return null;
     }
 
@@ -596,23 +692,59 @@ public enum JdbcType
         }
 
         @Test
-        public void valueOf()
+        public void valueOfClass()
         {
-            assertEquals(JdbcType.VARCHAR, JdbcType.valueOf(String.class));
-            assertEquals(JdbcType.INTEGER, JdbcType.valueOf(Integer.class));
-            assertEquals(JdbcType.DOUBLE, JdbcType.valueOf(Double.class));
-            assertEquals(JdbcType.TIMESTAMP, JdbcType.valueOf(java.util.Date.class));
-            assertEquals(JdbcType.TIMESTAMP, JdbcType.valueOf(java.sql.Timestamp.class));
-            assertEquals(JdbcType.BIGINT, JdbcType.valueOf(Long.class));
+            assertEquals(VARCHAR, valueOf(String.class));
+            assertEquals(INTEGER, valueOf(Integer.class));
+            assertEquals(DOUBLE, valueOf(Double.class));
+            assertEquals(TIMESTAMP, valueOf(java.util.Date.class));
+            assertEquals(TIMESTAMP, valueOf(java.sql.Timestamp.class));
+            assertEquals(BIGINT, valueOf(Long.class));
 
-            assertEquals(JdbcType.BOOLEAN, JdbcType.valueOf(boolean.class));
-            assertEquals(JdbcType.TINYINT, JdbcType.valueOf(byte.class));
-            assertEquals(JdbcType.INTEGER, JdbcType.valueOf(char.class));
-            assertEquals(JdbcType.SMALLINT, JdbcType.valueOf(short.class));
-            assertEquals(JdbcType.INTEGER, JdbcType.valueOf(int.class));
-            assertEquals(JdbcType.BIGINT, JdbcType.valueOf(long.class));
-            assertEquals(JdbcType.REAL, JdbcType.valueOf(float.class));
-            assertEquals(JdbcType.DOUBLE, JdbcType.valueOf(double.class));
+            assertEquals(BOOLEAN, valueOf(boolean.class));
+            assertEquals(TINYINT, valueOf(byte.class));
+            assertEquals(INTEGER, valueOf(char.class));
+            assertEquals(SMALLINT, valueOf(short.class));
+            assertEquals(INTEGER, valueOf(int.class));
+            assertEquals(BIGINT, valueOf(long.class));
+            assertEquals(REAL, valueOf(float.class));
+            assertEquals(DOUBLE, valueOf(double.class));
+        }
+
+        @Test
+        public void valueOfTypeInt()
+        {
+            assertEquals(BOOLEAN, valueOf(Types.BIT));
+            assertEquals(BOOLEAN, valueOf(Types.BOOLEAN));
+            assertEquals(TINYINT, valueOf(Types.TINYINT));
+            assertEquals(SMALLINT, valueOf(Types.SMALLINT));
+            assertEquals(INTEGER, valueOf(Types.INTEGER));
+            assertEquals(BIGINT, valueOf(Types.BIGINT));
+            assertEquals(DOUBLE, valueOf(Types.FLOAT));
+            assertEquals(REAL, valueOf(Types.REAL));
+            assertEquals(DOUBLE, valueOf(Types.DOUBLE));
+            assertEquals(DECIMAL, valueOf(Types.NUMERIC));
+            assertEquals(DECIMAL, valueOf(Types.DECIMAL));
+            assertEquals(CHAR, valueOf(Types.NCHAR));
+            assertEquals(CHAR, valueOf(Types.CHAR));
+            assertEquals(VARCHAR, valueOf(Types.NVARCHAR));
+            assertEquals(VARCHAR, valueOf(Types.VARCHAR));
+            assertEquals(LONGVARCHAR, valueOf(Types.CLOB));
+            assertEquals(LONGVARCHAR, valueOf(Types.LONGNVARCHAR));
+            assertEquals(LONGVARCHAR, valueOf(Types.LONGVARCHAR));
+            assertEquals(DATE, valueOf(Types.DATE));
+            assertEquals(TIME, valueOf(Types.TIME));
+            assertEquals(TIMESTAMP, valueOf(Types.TIMESTAMP));
+            assertEquals(BINARY, valueOf(Types.BINARY));
+            assertEquals(VARBINARY, valueOf(Types.VARBINARY));
+            assertEquals(LONGVARBINARY, valueOf(Types.BLOB));
+            assertEquals(LONGVARBINARY, valueOf(Types.LONGVARBINARY));
+
+            assertEquals(OTHER, valueOf(Types.OTHER));
+            assertEquals(OTHER, valueOf(Types.SQLXML));
+            assertEquals(OTHER, valueOf(Types.DATALINK));
+            assertEquals(OTHER, valueOf(Types.JAVA_OBJECT));
+            assertEquals(OTHER, valueOf(Types.ROWID));
         }
     }
 }
