@@ -284,12 +284,11 @@ public class FileSystemResource extends AbstractWebdavResource
             resetMetadata();
         }
 
-        try (FileOutputStream fos = new FileOutputStream(file))
+        try
         {
-            long len = FileUtil.copyData(is.openInputStream(), fos);
-            fos.getFD().sync();
+            is.transferTo(file);
             resetMetadata();
-            return len;
+            return file.length();
         }
         catch (IOException x)
         {
@@ -297,6 +296,10 @@ public class FileSystemResource extends AbstractWebdavResource
             if (created)
                 file.delete();
             throw x;
+        }
+        finally
+        {
+            is.closeInputStream();
         }
     }
 

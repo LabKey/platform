@@ -16,6 +16,7 @@
 package org.labkey.api.util;
 
 import org.apache.commons.io.IOUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
 
@@ -25,12 +26,37 @@ import java.io.*;
  * Time: 9:29:16 PM
  *
  * Useful when we need to communicate the length of the stream (that is not a FileInputStream e.g.)
+ *
+ * NOTE: see org.apache.commons.fileupload.FileItem.  Perhaps this should be merged???
  */
 public interface FileStream
 {
     long getSize() throws IOException;
+
     InputStream openInputStream() throws IOException;
+
     void closeInputStream() throws IOException;
+
+    default void transferTo(File dest) throws IOException
+    {
+        transferToImpl(this, dest);
+    }
+
+    static void transferToImpl(FileStream s, File dest) throws IOException
+    {
+        // see CommonsMultipartFile.transferTo()
+        if (dest.exists() && !dest.delete())
+        {
+            throw new IOException("Destination file [" + dest.getAbsolutePath() + "] already exists and could not be deleted");
+        }
+
+        try (BufferedInputStream in = new BufferedInputStream(s.openInputStream());
+             BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(dest));
+        )
+        {
+            IOUtils.copy(in, out);
+        }
+    }
 
 
     FileStream EMPTY = new FileStream()
@@ -120,14 +146,22 @@ public interface FileStream
 
     class FileFileStream implements FileStream
     {
+        private File file = null;
+        boolean deleteOnClose = false;
         private FileInputStream in;
 
-        public FileFileStream(File f) throws IOException
+        public FileFileStream(@NotNull File f) throws IOException
         {
-            this(new FileInputStream(f));
+            file = f;
         }
 
-        public FileFileStream(FileInputStream fin)
+        public FileFileStream(@NotNull File f, boolean delete) throws IOException
+        {
+            file = f;
+            deleteOnClose = delete;
+        }
+
+        public FileFileStream(@NotNull FileInputStream fin)
         {
             in = fin;
             MemTracker.getInstance().put(in);
@@ -136,12 +170,17 @@ public interface FileStream
         @Override
         public long getSize() throws IOException
         {
-            return in.getChannel().size();
+            if (null != file)
+                return file.length();
+            else
+                return in.getChannel().size();
         }
 
         @Override
-        public InputStream openInputStream()
+        public InputStream openInputStream() throws IOException
         {
+            if (file != null && in == null)
+                in = new FileInputStream(file);
             return in;
         }
 
@@ -151,6 +190,17 @@ public interface FileStream
             IOUtils.closeQuietly(in);
             MemTracker.getInstance().remove(in);
             in = null;
+            if (deleteOnClose && null != file)
+                file.delete();
+        }
+
+        @Override
+        public void transferTo(File dest) throws IOException
+        {
+            if (null != file)
+                if (file.renameTo(dest))
+                    return;
+            FileStream.super.transferTo(dest);
         }
 
         @Override
