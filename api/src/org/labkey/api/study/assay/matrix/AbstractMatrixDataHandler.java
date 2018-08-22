@@ -42,6 +42,7 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -95,20 +96,25 @@ public abstract class AbstractMatrixDataHandler extends AbstractExperimentDataHa
 
     public static DataLoader createLoader(File file, String idColumnName) throws IOException, ExperimentException
     {
+        return createLoader(file, idColumnName, Collections.emptySet());
+    }
+
+    public static DataLoader createLoader(File file, String idColumnName, Set<String> aliases) throws IOException, ExperimentException
+    {
         DataLoaderFactory factory = DataLoader.get().findFactory(file, null);
         DataLoader loader = factory.createLoader(file, true);
-        ensureColumns(idColumnName, loader.getColumns());
+        ensureColumns(idColumnName, aliases, loader.getColumns());
         return loader;
     }
 
-    public static TabLoader createTabLoader(File file, String idColumnName) throws IOException, ExperimentException
+    public static TabLoader createTabLoader(File file, String idColumnName, Set<String> aliases) throws IOException, ExperimentException
     {
         TabLoader loader = new TabLoader(file, true);
-        ensureColumns(idColumnName, loader.getColumns());
+        ensureColumns(idColumnName, aliases, loader.getColumns());
         return loader;
     }
 
-    private static void ensureColumns(String idColumnName, ColumnDescriptor[] cols) throws ExperimentException
+    private static void ensureColumns(String idColumnName, Set<String> aliases, ColumnDescriptor[] cols) throws ExperimentException
     {
         boolean found = false;
 
@@ -118,6 +124,19 @@ public abstract class AbstractMatrixDataHandler extends AbstractExperimentDataHa
             {
                 found = true;
                 break;
+            }
+        }
+
+        if (!found)
+        {
+            for (ColumnDescriptor col : cols)
+            {
+                if (aliases.contains(col.name))
+                {
+                    col.name = idColumnName;
+                    found = true;
+                    break;
+                }
             }
         }
 

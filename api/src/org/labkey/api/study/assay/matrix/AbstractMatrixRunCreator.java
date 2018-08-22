@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public abstract class AbstractMatrixRunCreator <ProviderType extends AbstractAssayProvider> extends DefaultAssayRunCreator <ProviderType>
 {
@@ -48,6 +49,7 @@ public abstract class AbstractMatrixRunCreator <ProviderType extends AbstractAss
     }
 
     public abstract String getIdColumnName();
+    public abstract Set<String> getIdColumnAliases();
     public abstract String getSetPropertyName();
     public abstract String getRoleName();
     public abstract String getSetName();
@@ -129,7 +131,7 @@ public abstract class AbstractMatrixRunCreator <ProviderType extends AbstractAss
         try
         {
             File dataFile = getPrimaryFile(context);
-            try (TabLoader loader = AbstractMatrixDataHandler.createTabLoader(dataFile, getIdColumnName()))
+            try (TabLoader loader = AbstractMatrixDataHandler.createTabLoader(dataFile, getIdColumnName(), getIdColumnAliases()))
             {
                 ColumnDescriptor[] cols = loader.getColumns();
 
