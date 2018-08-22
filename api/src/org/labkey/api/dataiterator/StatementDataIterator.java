@@ -433,7 +433,7 @@ public class StatementDataIterator extends AbstractDataIterator
             }
             catch (SQLException e)
             {
-                _log.error("Unexpected exception while checking isClosed()" + display);
+                Logger.getLogger(StatementDataIterator.class).error("Unexpected exception while checking isClosed()" + display);
                 throw new RuntimeSQLException(e);
             }
         }

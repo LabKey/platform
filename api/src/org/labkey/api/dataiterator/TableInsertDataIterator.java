@@ -268,10 +268,16 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         if (_scope.isTransactionActive())
         {
             checkConnection(_conn);
-            setAllowClose(_conn, false);
-            super.close(_conn);
-            checkConnection(_conn);
-            setAllowClose(_conn, true);
+            try
+            {
+                setAllowClose(_conn, false);
+                super.close(_conn);
+                checkConnection(_conn);
+            }
+            finally
+            {
+                setAllowClose(_conn, true);
+            }
         }
         else
         {
