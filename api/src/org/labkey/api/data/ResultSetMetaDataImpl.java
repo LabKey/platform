@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
 
 /**
@@ -212,7 +213,7 @@ public class ResultSetMetaDataImpl implements ResultSetMetaData
             scale = 0;
             tableName = null;
             catalogName = null;
-            columnType = 0;
+            columnType = Types.OTHER;
             columnTypeName = "";
             isReadOnly = false;
             isWritable = true;
