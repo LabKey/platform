@@ -54,6 +54,7 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.premium.AntiVirusService;
 import org.labkey.api.premium.PremiumService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.resource.Resource;
@@ -90,6 +91,7 @@ import org.labkey.api.view.DefaultModelAndView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
@@ -128,7 +130,6 @@ import javax.servlet.http.HttpSession;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import java.beans.Introspector;
 import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -236,7 +237,6 @@ public class DavController extends SpringActionController
     void setUserResolver(WebdavResolver resolver)
     {
         _userresolver = resolver;
-
     }
     
     WebdavResolver getResolver()
@@ -1235,7 +1235,8 @@ public class DavController extends SpringActionController
                     return WebdavStatus.SC_METHOD_NOT_ALLOWED;
                 if (!dest.exists())
                     checkAllowedFileName(dest.getName());
-                setFileStream(stream);
+
+                setFileStream(stream, dest.getName());
 
                 setResource(dest);
                 WebdavStatus status = super.doMethod();
@@ -3015,9 +3016,12 @@ public class DavController extends SpringActionController
             return _resource;
         }
 
-        protected void setFileStream(final FileStream fis)
+        // CONSIDER: add name to FileStream interface
+        // NOTE: Very important, PostAction does not automatically handle AVS like other SpringController
+        // because it overrides handleRequest()
+        protected void setFileStream(final FileStream fis, String name) throws IOException, DavException
         {
-            _fis = new FileStream()
+            FileStream keepalive = new FileStream()
             {
                 @Override
                 public long getSize() throws IOException
@@ -3037,9 +3041,34 @@ public class DavController extends SpringActionController
                     fis.closeInputStream();
                 }
             };
+
+            AntiVirusService avs = AntiVirusService.get();
+
+            // if no virus checker, use input stream as is (POST requests are already scanned)
+            if (null == avs)
+            {
+                _fis = keepalive;
+                return;
+            }
+
+            // otherwise, save to temp directory, scan, return wrapper over saved file
+            File tmp = File.createTempFile(GUID.makeHash(), "");
+            fis.transferTo(tmp);
+
+            ViewBackgroundInfo info = new ViewBackgroundInfo(getContainer(), getUser(), null);
+            AntiVirusService.ScanResult result = avs.scan(tmp, name, info);
+            if (result.result == AntiVirusService.Result.OK)
+            {
+                _fis = new FileStream.FileFileStream(tmp, true);
+                return;
+            }
+            else if (result.result == AntiVirusService.Result.CONFIGURATION_ERROR)
+                throw new ConfigurationException(result.message);
+            else
+                throw new DavException(WebdavStatus.SC_BAD_REQUEST, result.message);
         }
 
-        FileStream getFileStream() throws DavException, IOException
+        FileStream getFileStream(String name) throws DavException, IOException
         {
             if (null == _fis)
             {
@@ -3072,7 +3101,7 @@ public class DavController extends SpringActionController
                         /* */
                     }
                 };
-                setFileStream(fis);
+                setFileStream(fis, name);
             }
             return _fis;
         }
@@ -3129,11 +3158,13 @@ public class DavController extends SpringActionController
                 {
                     if (resource.getContentType().startsWith("text/html") && !getContainer().hasPermission(getUser(), PlatformDeveloperPermission.class))
                         throw new DavException(WebdavStatus.SC_FORBIDDEN, "Partial writing of html files is not allowed");
+                    if (null != AntiVirusService.get())
+                        throw new DavException(WebdavStatus.SC_FORBIDDEN, "Partial writing not supported with virus scanner enabled");
                     if (range.start > raf.length() || (range.end - range.start) > Integer.MAX_VALUE)
                         throw new DavException(WebdavStatus.SC_REQUESTED_RANGE_NOT_SATISFIABLE);
                     // CONSIDER: use temp file
                     _ByteArrayOutputStream bos = new _ByteArrayOutputStream((int)(range.end-range.start));
-                    FileUtil.copyData(getFileStream().openInputStream(), bos);
+                    FileUtil.copyData(getFileStream(resource.getName()).openInputStream(), bos);
                     if (bos.size() != range.end-range.start)
                         throw new DavException(WebdavStatus.SC_BAD_REQUEST);
                     if (null == file)
@@ -3150,7 +3181,7 @@ public class DavController extends SpringActionController
                     if (resource.getContentType().startsWith("text/html") && !getContainer().hasPermission(getUser(), PlatformDeveloperPermission.class))
                     {
                         _ByteArrayOutputStream bos = new _ByteArrayOutputStream(4*1025);
-                        FileUtil.copyData(getFileStream().openInputStream(), bos);
+                        FileUtil.copyData(getFileStream(resource.getName()).openInputStream(), bos);
                         byte[] buf = bos.toByteArray();
                         String html = new String(buf, StringUtilsLabKey.DEFAULT_CHARSET);
                         List<String> errors = new ArrayList<>();
@@ -3164,7 +3195,7 @@ public class DavController extends SpringActionController
                     {
                         try
                         {
-                            resource.copyFrom(getUser(), getFileStream());
+                            resource.copyFrom(getUser(), getFileStream(resource.getName()));
                         }
                         catch (IOException io)
                         {
@@ -3192,7 +3223,7 @@ public class DavController extends SpringActionController
             }
             finally
             {
-                getFileStream().closeInputStream();
+                getFileStream(resource.getName()).closeInputStream();
                 close(os, "put action outputstream");
                 close(raf, "put action outputdata");
                 if (deleteFileOnFail)

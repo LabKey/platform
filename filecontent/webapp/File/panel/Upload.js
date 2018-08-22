@@ -295,7 +295,7 @@ Ext4.define('File.panel.Upload', {
                         else if (xhr.status == 200)
                         {
                             title = "Unauthorized";
-                            message = "You do not have privileges to upload." + (LABKEY.user.isGuest ? " Verify that you are signed in appropriately." : "")
+                            message = message || "You do not have privileges to upload." + (LABKEY.user.isGuest ? " Verify that you are signed in appropriately." : "")
                         }
                     }
 
