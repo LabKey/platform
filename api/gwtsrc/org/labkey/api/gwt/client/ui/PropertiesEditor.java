@@ -1373,7 +1373,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                 if (0==left && 0==top)
                     return;
             }
-            super.setPopupPosition(left, top);    //To change body of overridden methods use File | Settings | File Templates.
+            super.setPopupPosition(left, top);
         }
     }
 

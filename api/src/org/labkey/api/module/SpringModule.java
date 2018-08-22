@@ -619,7 +619,7 @@ public abstract class SpringModule extends DefaultModule
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException
     {
-        super.setApplicationContext(applicationContext);    //To change body of overridden methods use File | Settings | File Templates.
+        super.setApplicationContext(applicationContext);
         _parentApplicationContext = applicationContext;
     }
 
