@@ -42,7 +42,6 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 
-import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -886,8 +885,7 @@ public class DbSchema
         {
             // create a recovered objects project
             Random random = new Random();
-            int r = random.nextInt();
-            String cName = "/_RecoveredObjects" +  String.valueOf(r).substring(1,5);
+            String cName = "/_RecoveredObjects" +  String.valueOf((random.nextInt(9) + 1) * 1000 + random.nextInt(1000));
 
             final Container recovered = ContainerManager.ensureContainer(cName);
             final Set<Module> modulesOfOrphans = new HashSet<>();

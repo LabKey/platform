@@ -42,6 +42,7 @@ public class NameGenerator
 {
     private final TableInfo _parentTable;
     private final FieldKeyStringExpression _parsedNameExpression;
+    private static final Random RANDOM = new Random();
 
     // extracted from name expression after parsing
     private boolean _exprHasSampleCounterFormats = false;
@@ -261,7 +262,7 @@ public class NameGenerator
 
             // Create the name expression context shared for the entire batch of rows
             Map<String, Object> batchContext = new CaseInsensitiveHashMap<>();
-            batchContext.put("BatchRandomId", String.valueOf(new Random().nextInt()).substring(1,5));
+            batchContext.put("BatchRandomId", getRandomId());
             batchContext.put("Now", new Date());
             _batchExpressionContext = Collections.unmodifiableMap(batchContext);
 
@@ -354,7 +355,7 @@ public class NameGenerator
             Map<String, Object> ctx = new CaseInsensitiveHashMap<>();
             ctx.putAll(_batchExpressionContext);
             ctx.put("_rowNumber", _rowNumber);
-            ctx.put("RandomId", String.valueOf(new Random().nextInt()).substring(1,5));
+            ctx.put("RandomId", getRandomId());
             if (sampleCounts != null)
                 ctx.putAll(sampleCounts);
             ctx.putAll(rowMap);
@@ -482,6 +483,12 @@ public class NameGenerator
             return NameGenerator.parentNames(value, parentColName).collect(Collectors.toList());
         }
 
+    }
+
+    @NotNull
+    private static String getRandomId()
+    {
+        return String.valueOf((RANDOM.nextInt(9) + 1) * 1000 + RANDOM.nextInt(1000));
     }
 
     public class NameGenerationException extends Exception
