@@ -85,11 +85,6 @@ public class OutputStreamWrapper extends OutputStream
     @Override
     public String toString()
     {
-        return _out.toString();    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
-    @Override
-    protected void finalize()
-    {
+        return _out.toString();
     }
 }

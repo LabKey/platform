@@ -193,7 +193,7 @@ public class AssayPanel extends Composite
 
             public void removeChangeListener(ChangeListener listener)
             {
-                externalListeners.remove(listener);    //To change body of overridden methods use File | Settings | File Templates.
+                externalListeners.remove(listener);
             }
 
             public void onChange(Widget sender)
