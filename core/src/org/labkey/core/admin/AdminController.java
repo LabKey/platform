@@ -943,12 +943,12 @@ public class AdminController extends SpringActionController
         {
             String wikiSource = getCreditsFile(module, creditsFile);
 
-            Collection<String> filenames = null;
+            Collection<String> filenames = Collections.emptySet();
 
             if (null != filenameProvider)
                 filenames = filenameProvider.apply(module);
 
-            if (null != wikiSource || (null != filenames && !filenames.isEmpty()))
+            if (null != wikiSource || !filenames.isEmpty())
             {
                 CreditsView credits = new CreditsView(creditsFile, wikiSource, filenames, fileType, foundWhere, (null != descriptionPrefix ? descriptionPrefix : "") + "the " + module.getName() + " Module", wikiSourceSearchPattern);
                 views.addView(credits);
