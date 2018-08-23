@@ -114,8 +114,8 @@
 
     relatedIssues.append("{");
     relatedIssues.append("callbackURL : ").append(bean.getCallbackURL() == null ? null : q(bean.getCallbackURL()));
-    relatedIssues.append(", body :").append(hq(commentTextStr));
-    relatedIssues.append(", title :").append(hq(issue.getTitle()));
+    relatedIssues.append(", body :").append(q(commentTextStr));
+    relatedIssues.append(", title :").append(q(issue.getTitle()));
     relatedIssues.append(", skipPost :").append(true);
     relatedIssues.append(", assignedTo :").append(issue.getAssignedTo());
     relatedIssues.append(", priority :").append(issue.getPriority());
