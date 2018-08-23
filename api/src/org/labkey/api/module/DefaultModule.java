@@ -1418,38 +1418,12 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
 
     @Override
-    public @Nullable Collection<String> getJarFilenames()
+    public Collection<String> getJarFilenames()
     {
         if (!AppProps.getInstance().isDevMode())
-            return null;
+            return Collections.emptySet();
 
-        Set<String> filenames = getDependenciesFromFile();
-
-
-        if (filenames.isEmpty())
-        {
-            File lib = new File(getExplodedPath(), "lib");
-            File external = new File(getExplodedPath(), "external");
-
-            if (!lib.exists() && !external.exists())
-                return null;
-
-            Pattern moduleJarPattern = Pattern.compile("^" + _name.toLowerCase() + "(?:_schemas|_api|_jsp)?.*\\.jar$");
-
-            if (lib.exists())
-            {
-                filenames.addAll(Arrays.stream(lib.list(getJarFilenameFilter()))
-                        .filter(jarFilename -> !isInternalJar(jarFilename, moduleJarPattern))
-                        .collect(Collectors.toList()));
-            }
-            if (external.exists())
-            {
-                filenames.addAll(Arrays.stream(external.list(getJarFilenameFilter()))
-                        .collect(Collectors.toList()));
-            }
-        }
-
-        return filenames;
+        return getDependenciesFromFile();
     }
 
     protected FilenameFilter getJarFilenameFilter()
