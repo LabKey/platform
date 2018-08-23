@@ -967,7 +967,7 @@ public class AdminController extends SpringActionController
         private String _html;
         private String _errors = "";
 
-        CreditsView(String creditsFilename, @Nullable String wikiSource, @Nullable Collection<String> filenames, String fileType, String foundWhere, String component, String wikiSourceSearchPattern)
+        CreditsView(String creditsFilename, @Nullable String wikiSource, @NotNull Collection<String> filenames, String fileType, String foundWhere, String component, String wikiSourceSearchPattern)
         {
             super(fileType + " Files Distributed with " + (null == component ? "LabKey" : component));
 
@@ -975,7 +975,7 @@ public class AdminController extends SpringActionController
 
             // If both wikiSource and filenames are null there can't be a problem.
             // trims/empty check allow for problem reporting if one is null but not the other.
-            if (null != filenames)
+            if (!filenames.isEmpty())
             {
                 _errors = getErrors(wikiSource, creditsFilename, filenames, fileType, foundWhere, wikiSourceSearchPattern);
                 wikiSource = StringUtils.trimToEmpty(wikiSource) + _errors;
