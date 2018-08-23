@@ -32,7 +32,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
 import org.springframework.beans.factory.InitializingBean;
 
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -481,6 +480,7 @@ public class PropertyManager
                         insertMap.put("Encryption", _propertyEncryption.getSerializedName());
                         insertMap = Table.insert(_user, SCHEMA.getTableInfoPropertySets(), insertMap);
                         _set = (Integer) insertMap.get("Set");
+                        _log.info(String.format("Creating new property map [%d, %s, %s] returned set %d", _user.getUserId(), _objectId, _category, _set));
                     }
                     else
                     {
