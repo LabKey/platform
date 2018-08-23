@@ -110,7 +110,7 @@ Ext4.define('LABKEY.core.notification.NotificationViewAll', {
                 '<tpl for=".">',
                     '<div class="notification-body" id="notification-body-{RowId}">',
                         '<div class="notification-header <tpl if="ReadOn == null">notification-header-unread</tpl>">',
-                            '<span class="fa {IconCls}"></span> {CreatedDisplay} - {CreatedBy} ',
+                            '<span class="fa {IconCls}"></span> {CreatedDisplay} - {CreatedBy:htmlEncode} ',
                             '<span class="notification-readon">',
                                 '<tpl if="ReadOn == null">',
                                     '<a class="labkey-text-link notification-mark-as-read" notificationRowId="{RowId}">Mark As Read</a>',
