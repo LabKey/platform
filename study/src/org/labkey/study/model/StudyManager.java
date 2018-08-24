@@ -177,7 +177,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
@@ -3464,7 +3463,7 @@ public class StudyManager
         if (numDigits < ALTERNATEID_DEFAULT_NUM_DIGITS)
             numDigits = ALTERNATEID_DEFAULT_NUM_DIGITS;       // Should not happen, but be safe
 
-        HashSet<Integer> usedNumbers = new HashSet<>();
+        HashSet<String> usedNumbers = new HashSet<>();
         for (ParticipantInfo participantInfo : participantInfos.values())
         {
             String alternateId = participantInfo.getAlternateId();
@@ -3475,8 +3474,7 @@ public class StudyManager
                     if (0 == prefix.length() || alternateId.startsWith(prefix))
                     {
                         String alternateIdNoPrefix = alternateId.substring(prefix.length());
-                        int alternateIdInt = Integer.valueOf(alternateIdNoPrefix);
-                        usedNumbers.add(alternateIdInt);
+                        usedNumbers.add(alternateIdNoPrefix);
                     }
                 }
                 catch (NumberFormatException x)
@@ -3487,10 +3485,6 @@ public class StudyManager
             }
         }
 
-        Random random = new Random();
-        int firstRandom = (int)Math.pow(10, (numDigits - 1));
-        int maxRandom = (int)Math.pow(10, numDigits) - firstRandom;
-
         for (Map.Entry<String, ParticipantInfo> entry : participantInfos.entrySet())
         {
             ParticipantInfo participantInfo = entry.getValue();
@@ -3499,8 +3493,8 @@ public class StudyManager
             if (null == alternateId)
             {
                 String participantId = entry.getKey();
-                int newId = nextRandom(random, usedNumbers, firstRandom, maxRandom);
-                setAlternateId(study, participantInfo.getContainerId(), participantId, prefix + String.valueOf(newId));
+                String newId = nextRandom(usedNumbers, numDigits);
+                setAlternateId(study, participantInfo.getContainerId(), participantId, prefix + newId);
             }
         }
     }
@@ -3684,12 +3678,12 @@ public class StudyManager
         }
     }
 
-    private int nextRandom(Random random, HashSet<Integer> usedNumbers, int firstRandom, int maxRandom)
+    private String nextRandom(Set<String> usedNumbers, int numDigits)
     {
-        int newId;
+        String newId;
         do
         {
-            newId = random.nextInt(maxRandom) + firstRandom;
+            newId = StringUtilsLabKey.getUniquifier(numDigits);
         } while (usedNumbers.contains(newId));
         usedNumbers.add(newId);
         return newId;

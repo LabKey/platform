@@ -72,6 +72,7 @@ import org.labkey.api.util.MultiPhaseCPUTimer;
 import org.labkey.api.util.MultiPhaseCPUTimer.InvocationTimer.Order;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.TimeOnlyDate;
 import org.labkey.api.writer.VirtualFile;
@@ -108,7 +109,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
@@ -3622,7 +3622,7 @@ public class SpecimenImporter
         SqlDialect dialect = DbSchema.getTemp().getSqlDialect();
 
         StringBuilder sql = new StringBuilder();
-        int randomizer = (new Random().nextInt(900000000) + 100000000);  // Ensure 9-digit random number
+        String uniquifier = StringUtilsLabKey.getUniquifier(9);
 
         ArrayList<ColumnInfo> columns = new ArrayList<>();
 
@@ -3660,7 +3660,7 @@ public class SpecimenImporter
         tempTableInfo.track();
 
         // globalUniquId
-        final String globalUniqueIdIndexSql = "CREATE INDEX IX_SpecimenUpload" + randomizer + "_GlobalUniqueId ON " + fullTableName + "(GlobalUniqueId)";
+        final String globalUniqueIdIndexSql = "CREATE INDEX IX_SpecimenUpload" + uniquifier + "_GlobalUniqueId ON " + fullTableName + "(GlobalUniqueId)";
         if (DEBUG)
             info(globalUniqueIdIndexSql);
         executeSQL(DbSchema.getTemp(), globalUniqueIdIndexSql);
@@ -3671,9 +3671,9 @@ public class SpecimenImporter
         columns2.add(new ColumnInfo("SpecimenHash", JdbcType.VARCHAR, 300, true));
         TempTableInfo selectInsertTempTableInfo = new TempTableInfo("SpecimenUpload2", columns2, Collections.singletonList("RowId"));
 
-        final String rowIdIndexSql = "CREATE INDEX IX_SpecimenUpload" + randomizer + "_RowId ON " + fullTableName + "(RowId)";
-        final String lsidIndexSql = "CREATE INDEX IX_SpecimenUpload" + randomizer + "_LSID ON " + fullTableName + "(LSID)";
-        final String hashIndexSql = "CREATE INDEX IX_SpecimenUpload" + randomizer + "_SpecimenHash ON " + fullTableName + "(SpecimenHash)";
+        final String rowIdIndexSql = "CREATE INDEX IX_SpecimenUpload" + uniquifier + "_RowId ON " + fullTableName + "(RowId)";
+        final String lsidIndexSql = "CREATE INDEX IX_SpecimenUpload" + uniquifier + "_LSID ON " + fullTableName + "(LSID)";
+        final String hashIndexSql = "CREATE INDEX IX_SpecimenUpload" + uniquifier + "_SpecimenHash ON " + fullTableName + "(SpecimenHash)";
 
         // delay remaining indexes
         Runnable createIndexes = new Runnable()

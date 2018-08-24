@@ -113,10 +113,10 @@ public class TargetStudyTest extends AbstractAssayTest
     protected void setupLabels()
     {
         // Using a random label helps uniqueify the study when there is another "AwesomeStudy3" from a previous test run.
-        Random r = new Random();
-        _study1Label = STUDY1_LABEL + " " + r.nextInt();
-        _study2Label = STUDY2_LABEL + " " + r.nextInt();
-        _study3Label = STUDY3_LABEL + " " + r.nextInt();
+        int r = new Random().nextInt();
+        _study1Label = STUDY1_LABEL + " " + r;
+        _study2Label = STUDY2_LABEL + " " + r;
+        _study3Label = STUDY3_LABEL + " " + r;
 
         log("** Set some awesome study labels");
         beginAt("/study/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY1 + "/manageStudyProperties.view");
