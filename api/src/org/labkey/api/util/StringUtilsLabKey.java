@@ -74,21 +74,21 @@ public class StringUtilsLabKey
     }
 
     /**
-     * Generate a String of digits of the specified length. Doesn't allow leading zeros
+     * Generate a String of random digits of the specified length. Will not have leading zeros
      */
-    public static String getDigitString(int length)
+    public static String getUniquifier(int length)
     {
         if (length <= 0)
         {
             return "";
         }
-        return String.valueOf(RANDOM.nextInt(9) + 1) + getPaddedDigitString(length - 1);
+        return String.valueOf(RANDOM.nextInt(9) + 1) + getPaddedUniquifier(length - 1);
     }
 
     /**
-     * Generate a String of digits of the specified length. Allows leading zeros
+     * Generate a String of random digits of the specified length. May contain leading zeros
      */
-    public static String getPaddedDigitString(int length)
+    public static String getPaddedUniquifier(int length)
     {
         StringBuilder builder = new StringBuilder(length);
         int chunkLength = MAX_LONG_LENGTH;
@@ -402,12 +402,12 @@ public class StringUtilsLabKey
         }
 
         @Test
-        public void testGeneratePaddedIntString()
+        public void testPaddedUniquifier()
         {
             Set<String> digits = new HashSet<>(Arrays.asList("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"));
             for (int length = 0; length < 64; length++)
             {
-                String s = getPaddedDigitString(length);
+                String s = getPaddedUniquifier(length);
                 assertEquals("Generated a string with the wrong length: " + s, length, s.length());
                 if (!digits.isEmpty())
                 {
@@ -424,12 +424,12 @@ public class StringUtilsLabKey
         }
 
         @Test
-        public void testGenerateIntString()
+        public void testUniquifier()
         {
             Set<String> digits = new HashSet<>(Arrays.asList("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"));
             for (int length = 0; length < 64; length++)
             {
-                String s = getDigitString(length);
+                String s = getUniquifier(length);
                 assertEquals("Generated a string with the wrong length: " + s, length, s.length());
                 assertFalse("Generated a string with a leading zero: " + s, s.startsWith("0"));
                 if (!digits.isEmpty())

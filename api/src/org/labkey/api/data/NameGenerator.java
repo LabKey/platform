@@ -261,7 +261,7 @@ public class NameGenerator
 
             // Create the name expression context shared for the entire batch of rows
             Map<String, Object> batchContext = new CaseInsensitiveHashMap<>();
-            batchContext.put("BatchRandomId", StringUtilsLabKey.getDigitString(4));
+            batchContext.put("BatchRandomId", StringUtilsLabKey.getUniquifier(4));
             batchContext.put("Now", new Date());
             _batchExpressionContext = Collections.unmodifiableMap(batchContext);
 
@@ -354,7 +354,7 @@ public class NameGenerator
             Map<String, Object> ctx = new CaseInsensitiveHashMap<>();
             ctx.putAll(_batchExpressionContext);
             ctx.put("_rowNumber", _rowNumber);
-            ctx.put("RandomId", StringUtilsLabKey.getDigitString(4));
+            ctx.put("RandomId", StringUtilsLabKey.getUniquifier(4));
             if (sampleCounts != null)
                 ctx.putAll(sampleCounts);
             ctx.putAll(rowMap);

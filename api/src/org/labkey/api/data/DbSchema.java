@@ -884,7 +884,7 @@ public class DbSchema
         if (bfix)
         {
             // create a recovered objects project
-            String cName = "/_RecoveredObjects" +  StringUtilsLabKey.getDigitString(4);
+            String cName = "/_RecoveredObjects" +  StringUtilsLabKey.getUniquifier(4);
 
             final Container recovered = ContainerManager.ensureContainer(cName);
             final Set<Module> modulesOfOrphans = new HashSet<>();

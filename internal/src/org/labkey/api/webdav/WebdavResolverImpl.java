@@ -36,11 +36,10 @@ import org.labkey.api.util.Filter;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 
-import java.sql.SQLException;
 import java.util.Collection;
-import java.util.Random;
 
 
 /**
@@ -205,7 +204,7 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
             assertFalse("login before running this test", user.isGuest());
             
             Container junitContainer = JunitUtil.getTestContainer();
-            testContainer = ContainerManager.createContainer(junitContainer, "c" + (new Random().nextInt()));
+            testContainer = ContainerManager.createContainer(junitContainer, "c" + StringUtilsLabKey.getPaddedUniquifier(9));
             Container c = testContainer;
 
             WebdavResolver resolver = WebdavResolverImpl.get();
