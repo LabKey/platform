@@ -31,6 +31,8 @@ import org.labkey.pipeline.status.StatusController;
 import org.mule.util.StringUtils;
 
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 /**
  * User: jeckels
@@ -97,9 +99,10 @@ public abstract class AbstractPipelineQueue implements PipelineQueue
 
         try
         {
-            Notification n = new Notification(job.getJobGUID(), "pipeline", user);
+            PipelineJob.TaskStatus status = job.getActiveTaskStatus();
+            Notification n = new Notification(job.getJobGUID(), status.getNotificationType(), user);
             String description = StringUtils.defaultString(job.getDescription(), job.toString());
-            n.setContent("Background job completed\n" + description, "text/plain");
+            n.setContent(String.format("Background job %s\n%s", status.toString().toLowerCase(), description), "text/plain");
             if (null != job.getStatusHref())
             {
                 n.setActionLinkURL(job.getStatusHref().getLocalURIString());
@@ -119,6 +122,12 @@ public abstract class AbstractPipelineQueue implements PipelineQueue
                     n.setActionLinkText("pipeline");
                 }
             }
+            // Remove all previous notifications for this job
+            NotificationService.get().removeNotifications(
+                    job.getContainer(),
+                    job.getJobGUID(),
+                    Arrays.stream(PipelineJob.TaskStatus.values()).map(PipelineJob.TaskStatus::getNotificationType).collect(Collectors.toList()),
+                    user.getUserId());
             NotificationService.get().addNotification(job.getContainer(), user, n);
         }
         catch (ValidationException x)

@@ -17,6 +17,7 @@ package org.labkey.pipeline;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.admin.sitevalidation.SiteValidationService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -122,6 +123,10 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         EmailTemplateService.get().registerTemplate(PipelineManager.PipelineJobFailed.class);
         EmailTemplateService.get().registerTemplate(PipelineManager.PipelineDigestJobSuccess.class);
         EmailTemplateService.get().registerTemplate(PipelineManager.PipelineDigestJobFailed.class);
+
+        NotificationService.get().registerNotificationType(PipelineJob.TaskStatus.complete.getNotificationType(), "Pipeline", "fa-check-circle");
+        NotificationService.get().registerNotificationType(PipelineJob.TaskStatus.cancelled.getNotificationType(), "Pipeline", "fa-ban");
+        NotificationService.get().registerNotificationType(PipelineJob.TaskStatus.error.getNotificationType(), "Pipeline", "fa-exclamation-triangle");
 
         PipelineQuerySchema.register(this);
 
