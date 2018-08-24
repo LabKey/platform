@@ -24,9 +24,14 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import static java.lang.Math.min;
@@ -40,6 +45,9 @@ public class StringUtilsLabKey
 {
     /** Instead of relying on the platform default character encoding, use this Charset */
     public static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
+
+    private static final Random RANDOM = new Random();
+    private static final int MAX_LONG_LENGTH = String.valueOf(Long.MAX_VALUE).length() - 1;
 
     // Finds the longest common prefix present in all elements of the passed in string collection. In other words,
     // the longest string (prefix) such that, for all s in strings, s.startsWith(prefix). An empty collection returns
@@ -65,6 +73,44 @@ public class StringUtilsLabKey
         return first.substring(0, i);
     }
 
+    /**
+     * Generate a String of digits of the specified length. Doesn't allow leading zeros
+     */
+    public static String getDigitString(int length)
+    {
+        if (length <= 0)
+        {
+            return "";
+        }
+        return String.valueOf(RANDOM.nextInt(9) + 1) + getPaddedDigitString(length - 1);
+    }
+
+    /**
+     * Generate a String of digits of the specified length. Allows leading zeros
+     */
+    public static String getPaddedDigitString(int length)
+    {
+        StringBuilder builder = new StringBuilder(length);
+        int chunkLength = MAX_LONG_LENGTH;
+        long maxValue = new Double(Math.pow(10, MAX_LONG_LENGTH)).longValue();
+        while (length > 0)
+        {
+            if (length > MAX_LONG_LENGTH)
+            {
+                length -= MAX_LONG_LENGTH;
+            }
+            else
+            {
+                chunkLength = length;
+                maxValue = new Double(Math.pow(10, chunkLength)).longValue();
+                length = 0;
+            }
+            String unpadded = String.valueOf(Math.abs(RANDOM.nextLong()) % maxValue);
+            builder.append(StringUtils.repeat('0', chunkLength - unpadded.length()));
+            builder.append(unpadded);
+        }
+        return builder.toString();
+    }
 
     // Joins provided strings, separating with separator but skipping any strings that are null, blank, or all whitespace.
     public static String joinNonBlank(String separator, String... stringsToJoin)
@@ -244,10 +290,10 @@ public class StringUtilsLabKey
         public void testFindCommonPrefix()
         {
             assertEquals("", findCommonPrefix(Collections.emptySet()));
-            assertEquals("", findCommonPrefix(PageFlowUtil.set("")));
-            assertEquals("abcdefghijklmnopqrstuvwxyz", findCommonPrefix(PageFlowUtil.set("abcdefghijklmnopqrstuvwxyz")));
-            assertEquals("abc", findCommonPrefix(PageFlowUtil.set("abcdefghijklmnop", "abcxyz", "abcdefg")));
-            assertEquals("xyz", findCommonPrefix(PageFlowUtil.set("xyzabc", "xyzasdfj", "xyzafjf", "xyzpqr")));
+            assertEquals("", findCommonPrefix(Arrays.asList("")));
+            assertEquals("abcdefghijklmnopqrstuvwxyz", findCommonPrefix(Arrays.asList("abcdefghijklmnopqrstuvwxyz")));
+            assertEquals("abc", findCommonPrefix(Arrays.asList("abcdefghijklmnop", "abcxyz", "abcdefg")));
+            assertEquals("xyz", findCommonPrefix(Arrays.asList("xyzabc", "xyzasdfj", "xyzafjf", "xyzpqr")));
         }
 
         @Test
@@ -260,11 +306,13 @@ public class StringUtilsLabKey
             assertTrue(containsUpperCase("abcdefghijklmnopqrstuvwxyZ"));
             assertTrue(containsUpperCase("123908565938293487A120394902348"));
             assertTrue(containsUpperCase("A230948092830498"));
+            assertTrue(containsUpperCase("\u00E4\u00F6\u00FC\u00C5"));
             assertFalse(containsUpperCase("123409523987"));
             assertFalse(containsUpperCase("abcdefghijklmnoopqrstuvwxyz"));
             assertFalse(containsUpperCase("!@#$%^&*^)"));
             assertFalse(containsUpperCase("xyz"));
             assertFalse(containsUpperCase("abc"));
+            assertFalse(containsUpperCase("\u00E4\u00F6\u00FC"));
         }
 
         @Test
@@ -288,12 +336,14 @@ public class StringUtilsLabKey
             assertEquals("1 wombat", pluralize(1, "wombat"));
             assertEquals("2 wombats", pluralize(2, "wombat"));
             assertEquals("27 wombats", pluralize(27, "wombat"));
+            assertEquals("1,000,027 wombats", pluralize(1000027, "wombat"));
 
             assertEquals("-1 octopi", pluralize(-1, "octopus", "octopi"));
             assertEquals("0 octopi", pluralize(0, "octopus", "octopi"));
             assertEquals("1 octopus", pluralize(1, "octopus", "octopi"));
             assertEquals("2 octopi", pluralize(2, "octopus", "octopi"));
             assertEquals("27 octopi", pluralize(27, "octopus", "octopi"));
+            assertEquals("1,000,027 octopi", pluralize(1000027, "octopus", "octopi"));
         }
 
         @Test
@@ -349,6 +399,51 @@ public class StringUtilsLabKey
             assertTrue("domain name can contain double dashes", isValidDomainName("sub--domain"));
             assertTrue("domain name can contain only letters", isValidDomainName("subdomain"));
             assertTrue("domain name can contain only numbers", isValidDomainName("123445"));
+        }
+
+        @Test
+        public void testGeneratePaddedIntString()
+        {
+            Set<String> digits = new HashSet<>(Arrays.asList("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"));
+            for (int length = 0; length < 64; length++)
+            {
+                String s = getPaddedDigitString(length);
+                assertEquals("Generated a string with the wrong length: " + s, length, s.length());
+                if (!digits.isEmpty())
+                {
+                    Iterator<String> iter = digits.iterator();
+                    if (iter.hasNext())
+                    {
+                        String next = iter.next();
+                        if (s.contains(next))
+                            iter.remove();
+                    }
+                }
+            }
+            assertTrue("Didn't generate any Strings with: " + digits + ". This is quite unlikely.", digits.isEmpty());
+        }
+
+        @Test
+        public void testGenerateIntString()
+        {
+            Set<String> digits = new HashSet<>(Arrays.asList("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"));
+            for (int length = 0; length < 64; length++)
+            {
+                String s = getDigitString(length);
+                assertEquals("Generated a string with the wrong length: " + s, length, s.length());
+                assertFalse("Generated a string with a leading zero: " + s, s.startsWith("0"));
+                if (!digits.isEmpty())
+                {
+                    Iterator<String> iter = digits.iterator();
+                    if (iter.hasNext())
+                    {
+                        String next = iter.next();
+                        if (s.contains(next))
+                            iter.remove();
+                    }
+                }
+            }
+            assertTrue("Didn't generate any Strings with: " + digits + ". This is quite unlikely.", digits.isEmpty());
         }
     }
 }

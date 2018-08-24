@@ -37,6 +37,7 @@ import org.labkey.api.test.TestTimeout;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.data.xml.TableType;
@@ -54,7 +55,6 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 
 public class DbSchema
@@ -884,8 +884,7 @@ public class DbSchema
         if (bfix)
         {
             // create a recovered objects project
-            Random random = new Random();
-            String cName = "/_RecoveredObjects" +  String.valueOf((random.nextInt(9) + 1) * 1000 + random.nextInt(1000));
+            String cName = "/_RecoveredObjects" +  StringUtilsLabKey.getDigitString(4);
 
             final Container recovered = ContainerManager.ensureContainer(cName);
             final Set<Module> modulesOfOrphans = new HashSet<>();

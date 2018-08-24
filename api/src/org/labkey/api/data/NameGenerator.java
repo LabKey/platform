@@ -14,6 +14,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringExpressionFactory.AbstractStringExpression.NullValueBehavior;
 import org.labkey.api.util.StringExpressionFactory.FieldKeyStringExpression;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SubstitutionFormat;
 import org.labkey.api.util.Tuple3;
 
@@ -28,7 +29,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -42,7 +42,6 @@ public class NameGenerator
 {
     private final TableInfo _parentTable;
     private final FieldKeyStringExpression _parsedNameExpression;
-    private static final Random RANDOM = new Random();
 
     // extracted from name expression after parsing
     private boolean _exprHasSampleCounterFormats = false;
@@ -262,7 +261,7 @@ public class NameGenerator
 
             // Create the name expression context shared for the entire batch of rows
             Map<String, Object> batchContext = new CaseInsensitiveHashMap<>();
-            batchContext.put("BatchRandomId", getRandomId());
+            batchContext.put("BatchRandomId", StringUtilsLabKey.getDigitString(4));
             batchContext.put("Now", new Date());
             _batchExpressionContext = Collections.unmodifiableMap(batchContext);
 
@@ -355,7 +354,7 @@ public class NameGenerator
             Map<String, Object> ctx = new CaseInsensitiveHashMap<>();
             ctx.putAll(_batchExpressionContext);
             ctx.put("_rowNumber", _rowNumber);
-            ctx.put("RandomId", getRandomId());
+            ctx.put("RandomId", StringUtilsLabKey.getDigitString(4));
             if (sampleCounts != null)
                 ctx.putAll(sampleCounts);
             ctx.putAll(rowMap);
@@ -483,12 +482,6 @@ public class NameGenerator
             return NameGenerator.parentNames(value, parentColName).collect(Collectors.toList());
         }
 
-    }
-
-    @NotNull
-    private static String getRandomId()
-    {
-        return String.valueOf((RANDOM.nextInt(9) + 1) * 1000 + RANDOM.nextInt(1000));
     }
 
     public class NameGenerationException extends Exception
