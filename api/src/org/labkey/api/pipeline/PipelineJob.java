@@ -185,6 +185,11 @@ abstract public class PipelineJob extends Job implements Serializable
         {
             return toString().equalsIgnoreCase(statusText);
         }
+
+        public final String getNotificationType()
+        {
+            return getClass().getName() + "." + name();
+        }
     }
     
     /**
@@ -234,6 +239,7 @@ abstract public class PipelineJob extends Job implements Serializable
     private String _jobGUID;
     private String _parentGUID;
     private TaskId _activeTaskId;
+    @NotNull
     private TaskStatus _activeTaskStatus;
     private int _activeTaskRetries;
     @NotNull
@@ -370,13 +376,14 @@ abstract public class PipelineJob extends Job implements Serializable
         return !updateStatus || updateStatusForTask();
     }
 
+    @NotNull
     public TaskStatus getActiveTaskStatus()
     {
         return _activeTaskStatus;
     }
 
     /** @return whether or not the status was set successfully */
-    public boolean setActiveTaskStatus(TaskStatus activeTaskStatus)
+    public boolean setActiveTaskStatus(@NotNull TaskStatus activeTaskStatus)
     {
         _activeTaskStatus = activeTaskStatus;
         return updateStatusForTask();
