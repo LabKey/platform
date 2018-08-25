@@ -35,14 +35,19 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
@@ -123,35 +128,67 @@ public class JunitUtil
      * @param races Number of successive races to invoke
      * @param timeoutSeconds Maximum allowed timeout while awaiting termination
      */
-    public static void createRaces(final Runnable runnable, final int threads, final int races, final int timeoutSeconds) throws InterruptedException
+    public static void createRaces(final Runnable runnable, final int threads, final int races, final int timeoutSeconds) throws Throwable
     {
         final CyclicBarrier barrier = new CyclicBarrier(threads);
         final AtomicInteger iterations = new AtomicInteger(0);
+        final AtomicBoolean failFast = new AtomicBoolean(false);
 
-        Runnable runnableWrapper = () ->
-        {
+        Runnable runnableWrapper = () -> {
             for (int i = 0; i < races; i++)
             {
                 try
                 {
+                    if (failFast.get())
+                        return;
+
                     barrier.await();
                 }
                 catch (InterruptedException | BrokenBarrierException e)
                 {
                     return;
                 }
-                runnable.run();
+
+                try
+                {
+                    runnable.run();
+                }
+                catch (Throwable t)
+                {
+                    // Game over if any runnable throws... shut everybody down, otherwise the other threads will hang
+                    // waiting for a barrier condition that can never be met.
+                    failFast.set(true);
+                    barrier.reset();
+                    throw t;
+                }
+
                 iterations.incrementAndGet();
             }
         };
 
         ExecutorService pool = Executors.newFixedThreadPool(threads);
+        Collection<Future> futures = new LinkedList<>();
 
         for (int i = 0; i < threads; i++)
-            pool.execute(runnableWrapper);
+            futures.add(pool.submit(runnableWrapper));
 
         pool.shutdown();
         pool.awaitTermination(timeoutSeconds, TimeUnit.SECONDS);
+
+        for (Future future : futures)
+        {
+            try
+            {
+                if (future.isDone())
+                    future.get();
+                else
+                    future.cancel(true);
+            }
+            catch (ExecutionException e)
+            {
+                throw e.getCause();
+            }
+        }
 
         final int expected = threads * races;
 

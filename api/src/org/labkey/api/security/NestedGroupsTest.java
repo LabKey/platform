@@ -26,7 +26,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
 
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -100,7 +99,7 @@ public class NestedGroupsTest extends Assert
     }
 
     @Test
-    public void test() throws InterruptedException, SecurityManager.UserManagementException
+    public void test() throws Throwable
     {
         final User user = TestContext.get().getUser();
 

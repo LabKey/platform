@@ -349,7 +349,7 @@ public class DbSequenceManager
         }
 
         @Test
-        public void multiThreadIncrementStressTest() throws InterruptedException
+        public void multiThreadIncrementStressTest() throws Throwable
         {
             final int threads = 5;
             final int n = 1000;
@@ -390,23 +390,12 @@ public class DbSequenceManager
         // More real world test for #19673. Multiple threads should be able to ensure() the sequence without issues.
         public void multiThreadCreateTest() throws Throwable
         {
-            final Set<Throwable> failures = new ConcurrentHashSet<>();
             final int threads = 5;
             final String name = "org.labkey.api.data.DbSequence.Test/" + GUID.makeGUID();
 
             JunitUtil.createRaces(() -> {
-                try
-                {
-                    DbSequenceManager.ensure(JunitUtil.getTestContainer(), name, 0);
-                }
-                catch (Throwable t)
-                {
-                    failures.add(t);
-                }
+                DbSequenceManager.ensure(JunitUtil.getTestContainer(), name, 0);
             }, threads, 1, 60);
-
-            if (!failures.isEmpty())
-                throw failures.iterator().next();
         }
 
         @After

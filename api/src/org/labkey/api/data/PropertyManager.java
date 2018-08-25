@@ -22,7 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.data.SimpleFilter.SQLClause;
+import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.test.TestWhen;
@@ -39,6 +39,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
 
 
 /**
@@ -461,8 +462,11 @@ public class PropertyManager
 
             // Lock on code that changes the underlying database storage, to avoid constraint violations if we have multiple
             // threads manipulating at the same time
-            try (DbScope.Transaction transaction = SCHEMA.getSchema().getScope().ensureTransaction(DbScope.FINAL_COMMIT_UNLOCK_TRANSACTION_KIND, PROPERTY_MAP_LOCK_MANAGER.getLock(this)))
+            ReentrantLock lock = PROPERTY_MAP_LOCK_MANAGER.getLock(this);
+            try (Transaction transaction = SCHEMA.getSchema().getScope().ensureTransaction(DbScope.FINAL_COMMIT_UNLOCK_TRANSACTION_KIND, lock))
             {
+                _log.debug(String.format("<PropertyMap.save() [%d, %s, %s, %d, map.hashCode: %d, lock: %s]>", _user.getUserId(), _objectId, _category, _set, hashCode(), lock.toString()));
+
                 if (_set == -1)
                 {
                     Container container = ContainerManager.getForId(_objectId);
@@ -480,7 +484,6 @@ public class PropertyManager
                         insertMap.put("Encryption", _propertyEncryption.getSerializedName());
                         insertMap = Table.insert(_user, SCHEMA.getTableInfoPropertySets(), insertMap);
                         _set = (Integer) insertMap.get("Set");
-                        _log.info(String.format("Creating new property map [%d, %s, %s] returned set %d", _user.getUserId(), _objectId, _category, _set));
                     }
                     else
                     {
@@ -510,6 +513,8 @@ public class PropertyManager
                 // Make sure that we clear the previously cached version of the map
                 transaction.addCommitTask(() -> _store.clearCache(PropertyMap.this), DbScope.CommitTaskOption.IMMEDIATE, DbScope.CommitTaskOption.POSTCOMMIT);
                 transaction.commit();
+
+                _log.debug(String.format("</PropertyMap.save() [%d, %s, %s, %d, map.hashCode: %d, lock: %s]>", _user.getUserId(), _objectId, _category, _set, hashCode(), lock.toString()));
             }
         }
 
@@ -517,7 +522,7 @@ public class PropertyManager
         {
             // Lock on code that changes the underlying database storage, to avoid constraint violations if we have multiple
             // threads manipulating at the same time
-            try (DbScope.Transaction transaction = SCHEMA.getSchema().getScope().ensureTransaction(DbScope.FINAL_COMMIT_UNLOCK_TRANSACTION_KIND, PROPERTY_MAP_LOCK_MANAGER.getLock(this)))
+            try (Transaction transaction = SCHEMA.getSchema().getScope().ensureTransaction(DbScope.FINAL_COMMIT_UNLOCK_TRANSACTION_KIND, PROPERTY_MAP_LOCK_MANAGER.getLock(this)))
             {
                 deleteSetDirectly(_user, _objectId, _category, _store);
 
@@ -753,7 +758,7 @@ public class PropertyManager
 
             try
             {
-                child = ContainerManager.createContainer(parent, "Properties");
+                child = ContainerManager.ensureContainer(parent, "Properties");
 
                 test.runTest(store, user, child);
             }
@@ -770,7 +775,7 @@ public class PropertyManager
             for (String category : test.getCategories())
             {
                 Map m = store.getProperties(user, child, category);
-                assertTrue(m == AbstractPropertyStore.NULL_MAP);
+                assertSame(m, AbstractPropertyStore.NULL_MAP);
             }
         }
 
@@ -803,15 +808,36 @@ public class PropertyManager
         }
 
         @Test
-        public void testSynchronization() throws InterruptedException
+        public void testSynchronization() throws Throwable
         {
             final Container c = JunitUtil.getTestContainer();
             final String category = "TestPropertySetName";
             final PropertyStore store = PropertyManager.getNormalStore();
             final DbScope scope = PropertySchema.getInstance().getSchema().getScope();
 
-            JunitUtil.createRaces(() -> {
-                try (DbScope.Transaction transaction = scope.ensureTransaction())
+            // Set to false to repro #35178. TODO: Remove this once PropertyManager.save() synchronization is fixed.
+            final boolean testTransacted = true;
+
+            JunitUtil.createRaces(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    if (testTransacted)
+                    {
+                        try (Transaction transaction = scope.ensureTransaction())
+                        {
+                            testProps();
+                            transaction.commit();
+                        }
+                    }
+                    else
+                    {
+                        testProps();
+                    }
+                }
+
+                private void testProps()
                 {
                     PropertyMap map = store.getWritableProperties(c, category, true);
                     map.put("foo", "abc");
@@ -821,34 +847,8 @@ public class PropertyManager
                     map = store.getWritableProperties(c, category, true);
                     map.put("flam", "mno");
                     map.delete();
-
-                    transaction.commit();
                 }
             }, 20, 10, 30);
-        }
-
-        @Test  // Note: Fairly worthless test... there's now an FK constraint in place
-        public void testOrphanedPropertySets()
-        {
-            SimpleFilter filter = new SimpleFilter(new SQLClause("ObjectId NOT IN (SELECT EntityId FROM " + CoreSchema.getInstance().getTableInfoContainers() + ")", null, FieldKey.fromParts("ObjectId")));
-            Selector selector = new TableSelector(prop.getTableInfoPropertySets(), filter, null);
-            long count = selector.getRowCount();
-
-            // We found orphaned property sets... log them
-            if (count != 0)
-            {
-                String topMessage = count + " orphaned property sets detected";
-                final StringBuilder sb = new StringBuilder(topMessage + ":\ncategory\tset\tobjectid\n");
-                selector.forEachMap(new Selector.ForEachBlock<Map<String, Object>>() {
-                    @Override
-                    public void exec(Map map)
-                    {
-                        sb.append(map.get("category")).append("\t").append(map.get("set")).append("\t").append(map.get("objectid")).append("\n");
-                    }
-                });
-                _log.error(topMessage + ":\n" + sb);
-                fail(topMessage + "; see log for more details");
-            }
         }
     }
 }
