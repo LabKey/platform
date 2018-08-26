@@ -27,7 +27,6 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorContext;
-import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.gwt.client.model.GWTDomain;
@@ -51,14 +50,10 @@ import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.domainTemplate.DataClassOptionsType;
 import org.labkey.data.xml.domainTemplate.DataClassTemplateType;
 import org.labkey.data.xml.domainTemplate.DomainTemplateType;
-import org.labkey.data.xml.domainTemplate.EHRTemplateType;
-import org.labkey.data.xml.domainTemplate.EHRBillingTemplateType;
-import org.labkey.data.xml.domainTemplate.EHRLookupsTemplateType;
 import org.labkey.data.xml.domainTemplate.IndexType;
 import org.labkey.data.xml.domainTemplate.InitialDataType;
 import org.labkey.data.xml.domainTemplate.ListOptionsType;
 import org.labkey.data.xml.domainTemplate.ListTemplateType;
-import org.labkey.data.xml.domainTemplate.SNDTemplateType;
 import org.labkey.data.xml.domainTemplate.SampleSetOptionsType;
 import org.labkey.data.xml.domainTemplate.SampleSetTemplateType;
 
@@ -174,36 +169,16 @@ public class DomainTemplate
 
     private static String getDomainKind(String templateName, DomainTemplateType template, List<GWTPropertyDescriptor> properties)
     {
-        return (template instanceof ListTemplateType) ? getListDomainKind(templateName, (ListTemplateType)template, properties) :
-               (template instanceof SampleSetTemplateType) ? "SampleSet" :
-               (template instanceof DataClassTemplateType) ? "DataClass" :
-               (template instanceof SNDTemplateType) ? "SND" :
-               (template instanceof EHRTemplateType) ? "EHR" :
-               (template instanceof EHRBillingTemplateType) ? "EHR_Billing" :
-               (template instanceof EHRLookupsTemplateType) ? "EHR_Lookups" :
-                null;
-    }
 
-    private static String getListDomainKind(String templateName, ListTemplateType template, List<GWTPropertyDescriptor> properties)
-    {
-        ListOptionsType options = template.getOptions();
-        if (options == null)
-            throw new IllegalArgumentException("List template requires specifying a keyCol");
-
-        String keyName = options.getKeyCol();
-        if (keyName == null)
-            throw new IllegalArgumentException("List template requires specifying a keyCol");
-
-        Pair<GWTPropertyDescriptor, Integer> pair = findProperty(templateName, properties, keyName);
-        GWTPropertyDescriptor prop = pair.first;
-
-        PropertyType type = PropertyType.getFromURI(prop.getConceptURI(), prop.getRangeURI());
-        if (type == PropertyType.INTEGER)
-            return "IntList";
-        else if (type == PropertyType.STRING)
-            return "VarList";
-
-        throw new IllegalArgumentException("List template key column must be either of integer or string type");
+        List<DomainKind> domainKinds = PropertyService.get().getDomainKinds();
+        for (DomainKind domainKind : domainKinds)
+        {
+            if(domainKind.matchesTemplateXML(templateName, template, properties))
+            {
+                return domainKind.getKindName();
+            }
+        }
+        return null;
     }
 
     private static List<GWTPropertyDescriptor> getDomainTemplateProperties(String templateName, DomainTemplateType template)
@@ -327,7 +302,7 @@ public class DomainTemplate
         return Collections.unmodifiableMap(optionsMap);
     }
 
-    private static Pair<GWTPropertyDescriptor, Integer> findProperty(String templateName, List<GWTPropertyDescriptor> properties, String col)
+    public static Pair<GWTPropertyDescriptor, Integer> findProperty(String templateName, List<GWTPropertyDescriptor> properties, String col)
     {
         for (int i = 0; i < properties.size(); i++)
         {

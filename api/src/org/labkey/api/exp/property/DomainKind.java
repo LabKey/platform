@@ -33,6 +33,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -246,6 +247,15 @@ abstract public class DomainKind implements Handler<String>
     }
 
     public boolean ensurePropertyLookup()
+    {
+        return false;
+    }
+	
+	/**
+     * @return true if template type in .template.xml is an instance of a module specific TemplateType pojo (which is created when
+     * domainTemplate.xsd is processed resulting in auto-generated TemplateType classes)
+     */
+    public boolean matchesTemplateXML(String templateName, DomainTemplateType template, List<GWTPropertyDescriptor> properties)
     {
         return false;
     }
