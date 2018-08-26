@@ -24,7 +24,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Selector.ForEachBlock;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
@@ -44,7 +43,6 @@ import org.springframework.jdbc.BadSqlGrammarException;
 
 import java.io.File;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -318,22 +316,17 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         {
             final List<Map<String, Object>> missingExternalId = new ArrayList<>();
             Filter filter = SimpleFilter.createContainerFilter(c);
-            new TableSelector(table, PageFlowUtil.set(dbRowIdCol, dbIdCol, dbLabelCol), filter, new Sort("RowId")).forEachMap(new ForEachBlock<Map<String, Object>>()
-            {
-                @Override
-                public void exec(Map<String, Object> map)
+            new TableSelector(table, PageFlowUtil.set(dbRowIdCol, dbIdCol, dbLabelCol), filter, new Sort("RowId")).forEachMap(map -> {
+                Integer id = (Integer)map.get(dbIdCol);
+                if (id == null)
                 {
-                    Integer id = (Integer)map.get(dbIdCol);
-                    if (id == null)
-                    {
-                        missingExternalId.add(map);
-                    }
-                    else
-                    {
-                        existingKeyMap.put((String)map.get(dbLabelCol), id);
-                        minId = Math.min(minId, id);
-                        lastId = Math.max(lastId, id);
-                    }
+                    missingExternalId.add(map);
+                }
+                else
+                {
+                    existingKeyMap.put((String)map.get(dbLabelCol), id);
+                    minId = Math.min(minId, id);
+                    lastId = Math.max(lastId, id);
                 }
             });
 

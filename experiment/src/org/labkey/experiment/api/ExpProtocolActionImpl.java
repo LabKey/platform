@@ -17,7 +17,6 @@
 package org.labkey.experiment.api;
 
 import org.labkey.api.collections.CsvSet;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
@@ -27,8 +26,6 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -77,14 +74,7 @@ public class ExpProtocolActionImpl implements ExpProtocolAction
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("ActionId"), getRowId());
 
-        new TableSelector(ExperimentServiceImpl.get().getTinfoProtocolActionPredecessor(), new CsvSet("PredecessorId,ActionId"), filter, null).forEach(new Selector.ForEachBlock<ResultSet>()
-        {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                ret.add(fromRowId(rs.getInt("PredecessorId")));
-            }
-        });
+        new TableSelector(ExperimentServiceImpl.get().getTinfoProtocolActionPredecessor(), new CsvSet("PredecessorId,ActionId"), filter, null).forEach(rs -> ret.add(fromRowId(rs.getInt("PredecessorId"))));
 
         return ret;
     }
@@ -95,14 +85,7 @@ public class ExpProtocolActionImpl implements ExpProtocolAction
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("PredecessorId"), getRowId());
 
-        new TableSelector(ExperimentServiceImpl.get().getTinfoProtocolActionPredecessor(), new CsvSet("ActionId,PredecessorId"), filter, null).forEach(new Selector.ForEachBlock<ResultSet>()
-        {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                ret.add(fromRowId(rs.getInt("ActionId")));
-            }
-        });
+        new TableSelector(ExperimentServiceImpl.get().getTinfoProtocolActionPredecessor(), new CsvSet("ActionId,PredecessorId"), filter, null).forEach(rs -> ret.add(fromRowId(rs.getInt("ActionId"))));
 
         return ret;
     }

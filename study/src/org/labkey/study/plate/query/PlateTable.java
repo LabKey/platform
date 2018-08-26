@@ -18,7 +18,6 @@ package org.labkey.study.plate.query;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.Lsid;
@@ -29,7 +28,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PropertyForeignKey;
 import org.labkey.study.StudySchema;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -69,17 +67,12 @@ public class PlateTable extends BasePlateTable
         filter.addCondition(FieldKey.fromParts("PropertyURI"), propPrefix, CompareType.STARTS_WITH);
         final Map<String, PropertyDescriptor> map = new TreeMap<>();
 
-        new TableSelector(OntologyManager.getTinfoPropertyDescriptor(), filter, null).forEach(new Selector.ForEachBlock<PropertyDescriptor>()
-        {
-            @Override
-            public void exec(PropertyDescriptor pd)
-            {
-                if (pd.getPropertyType() == PropertyType.DOUBLE)
-                    pd.setFormat("0.##");
-                map.put(pd.getName(), pd);
-                visibleColumns.add(new FieldKey(keyProp, pd.getName()));
+        new TableSelector(OntologyManager.getTinfoPropertyDescriptor(), filter, null).forEach(pd -> {
+            if (pd.getPropertyType() == PropertyType.DOUBLE)
+                pd.setFormat("0.##");
+            map.put(pd.getName(), pd);
+            visibleColumns.add(new FieldKey(keyProp, pd.getName()));
 
-            }
         }, PropertyDescriptor.class);
 
         colProperty.setFk(new PropertyForeignKey(map, schema));

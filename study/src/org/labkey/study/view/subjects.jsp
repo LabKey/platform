@@ -19,7 +19,6 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.DbSchema" %>
 <%@ page import="org.labkey.api.data.SQLFragment" %>
-<%@ page import="org.labkey.api.data.Selector" %>
 <%@ page import="org.labkey.api.data.SqlSelector" %>
 <%@ page import="org.labkey.api.data.TableInfo" %>
 <%@ page import="org.labkey.api.security.User" %>
@@ -41,8 +40,6 @@
 <%@ page import="org.labkey.study.query.StudyQuerySchema" %>
 <%@ page import="org.labkey.study.view.SubjectsWebPart" %>
 <%@ page import="java.io.IOException" %>
-<%@ page import="java.sql.ResultSet" %>
-<%@ page import="java.sql.SQLException" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.BitSet" %>
 <%@ page import="java.util.HashMap" %>
@@ -112,14 +109,10 @@
             .append(tableParticipants.getFromSQL("P"))
             .append(" ORDER BY 1");
 
-        new SqlSelector(dbschema, sqlf).forEach(new Selector.ForEachBlock<ResultSet>()
-        {
-            public void exec(ResultSet rs) throws SQLException
-            {
-                String ptid = rs.getString(1);
-                ptidMap.put(ptid,ptidMap.size());
-                try { _out.write(commas[0]); _out.write(q(ptid)); commas[0]=(0==ptidMap.size()%10?",\n":","); } catch (IOException x) {}
-            }
+        new SqlSelector(dbschema, sqlf).forEach(rs-> {
+            String ptid = rs.getString(1);
+            ptidMap.put(ptid,ptidMap.size());
+            try { _out.write(commas[0]); _out.write(q(ptid)); commas[0]=(0==ptidMap.size()%10?",\n":","); } catch (IOException x) {}
         });
         %>];
     var _groups = [<%
@@ -219,15 +212,11 @@
                 .append(columnParticipant.getValueSql("P")).append(" AS participantid FROM ")
                 .append(tableParticipants.getFromSQL("P"));
 
-            new SqlSelector(dbschema, sqlf).forEach(new Selector.ForEachBlock<ResultSet>()
-            {
-                public void exec(ResultSet rs) throws SQLException
-                {
-                    Integer icohortid = cohortIndexMap.get(rs.getInt(1));
-                    Integer iptid = ptidMap.get(rs.getString(2));
-                    if (null!=icohortid && null!=iptid)
-                        memberSets[icohortid].set(iptid);
-                }
+            new SqlSelector(dbschema, sqlf).forEach(rs-> {
+                Integer icohortid = cohortIndexMap.get(rs.getInt(1));
+                Integer iptid = ptidMap.get(rs.getString(2));
+                if (null!=icohortid && null!=iptid)
+                    memberSets[icohortid].set(iptid);
             });
             BitSet setNoCohort = memberSets[nocohortIndex];
             setNoCohort.set(0,ptidMap.size());
@@ -246,16 +235,12 @@
         if (hasGroups)
         {
             SQLFragment sqlGroups = new SQLFragment("SELECT groupid, participantid FROM study.participantgroupmap WHERE groupid IN (select PG.rowid from study.participantgroup PG where PG.container=").append(container).append(")");
-            (new SqlSelector(dbschema, sqlGroups)).forEach(new Selector.ForEachBlock<ResultSet>()
-            {
-                public void exec(ResultSet rs) throws SQLException
+            (new SqlSelector(dbschema, sqlGroups)).forEach(rs-> {
+                Integer igroup = groupMap.get(rs.getInt(1));
+                Integer iptid = ptidMap.get(rs.getString(2));
+                if (null!=igroup && null!=iptid)
                 {
-                    Integer igroup = groupMap.get(rs.getInt(1));
-                    Integer iptid = ptidMap.get(rs.getString(2));
-                    if (null!=igroup && null!=iptid)
-                    {
-                        memberSets[igroup].set(iptid);
-                    }
+                    memberSets[igroup].set(iptid);
                 }
             });
             BitSet setNoGroup = memberSets[nogroupIndex];

@@ -16,20 +16,33 @@
 
 package org.labkey.experiment.api;
 
-import org.labkey.api.data.*;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.Filter;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.ProtocolParameter;
-import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.api.*;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpProtocolAction;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ProtocolImplementation;
 import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
 
-import java.sql.SQLException;
-import java.sql.ResultSet;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> implements ExpProtocol
 {
@@ -271,16 +284,11 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
 
         final Set<Container> containers = new TreeSet<>();
 
-        new SqlSelector(ExperimentService.get().getSchema(), sql).forEach(new Selector.ForEachBlock<ResultSet>()
-        {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                String containerId = rs.getString("Container");
-                Container container = ContainerManager.getForId(containerId);
-                assert container != null : "All runs should have a valid container.  Couldn't find container for ID " + containerId;
-                containers.add(container);
-            }
+        new SqlSelector(ExperimentService.get().getSchema(), sql).forEach(rs -> {
+            String containerId = rs.getString("Container");
+            Container container = ContainerManager.getForId(containerId);
+            assert container != null : "All runs should have a valid container.  Couldn't find container for ID " + containerId;
+            containers.add(container);
         });
 
         return containers;

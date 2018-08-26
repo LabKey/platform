@@ -501,14 +501,7 @@ public class SequenceVisitManager extends VisitManager
         final TreeSet<Double> sequenceNums = new TreeSet<>();
 
         info(logger, "Select distinct sequence numbers from participant visit table");
-        new SqlSelector(schema, sql).forEach(new Selector.ForEachBlock<ResultSet>()
-        {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                sequenceNums.add(rs.getDouble(1));
-            }
-        });
+        new SqlSelector(schema, sql).forEach(rs -> sequenceNums.add(rs.getDouble(1)));
 
         if (sequenceNums.size() > 0)
         {

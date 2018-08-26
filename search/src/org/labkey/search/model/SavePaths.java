@@ -392,18 +392,13 @@ public class SavePaths implements DavCrawler.SavePaths
 
         final Map<String,DavCrawler.ResourceInfo> map = new HashMap<>();
 
-        new SqlSelector(getSearchSchema(), s).forEach(new Selector.ForEachBlock<ResultSet>()
-        {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                String name = rs.getString("Name");
-                if (null == name)
-                    return;
-                Date modified = rs.getTimestamp("Modified");
-                Date lastIndex = rs.getTimestamp("LastIndexed");
-                map.put(name, new DavCrawler.ResourceInfo(lastIndex, modified));
-            }
+        new SqlSelector(getSearchSchema(), s).forEach(rs -> {
+            String name = rs.getString("Name");
+            if (null == name)
+                return;
+            Date modified = rs.getTimestamp("Modified");
+            Date lastIndex = rs.getTimestamp("LastIndexed");
+            map.put(name, new DavCrawler.ResourceInfo(lastIndex, modified));
         });
 
         return map;

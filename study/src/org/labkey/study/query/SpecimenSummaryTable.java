@@ -25,7 +25,6 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.property.Domain;
@@ -42,7 +41,6 @@ import org.labkey.study.model.SpecimenComment;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -264,21 +262,15 @@ public class SpecimenSummaryTable extends BaseStudyTable
                 final Set<String> hashes = new HashSet<>();
                 final Map<String, List<SpecimenComment>> hashToComments = new HashMap<>();
 
-                new TableSelector(_summaryTable, columns, ctx.getBaseFilter(), null).forEach(new Selector.ForEachBlock<ResultSet>()
-                {
-                    @Override
-                    public void exec(ResultSet rs) throws SQLException
+                new TableSelector(_summaryTable, columns, ctx.getBaseFilter(), null).forEach(rs -> {
+                    String maxPossibleCount = rs.getString("Comments");
+                    if (maxPossibleCount != null && !"0".equals(maxPossibleCount))
+                        hashes.add(rs.getString("SpecimenHash"));
+
+                    if (hashes.size() >= 1000)
                     {
-                        String maxPossibleCount = rs.getString("Comments");
-                        if (maxPossibleCount != null && !"0".equals(maxPossibleCount))
-                            hashes.add(rs.getString("SpecimenHash"));
-
-                        if (hashes.size() >= 1000)
-                        {
-                            addComments(ctx.getContainer(), hashes, hashToComments);
-                            hashes.clear();
-                        }
-
+                        addComments(ctx.getContainer(), hashes, hashToComments);
+                        hashes.clear();
                     }
                 });
 

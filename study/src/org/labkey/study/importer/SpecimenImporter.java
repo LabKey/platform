@@ -1811,14 +1811,7 @@ public class SpecimenImporter
         selectCommentsSql.add(true);
         selectCommentsSql.add(true);
 
-        new SqlSelector(StudySchema.getInstance().getSchema(), selectCommentsSql).forEach(new Selector.ForEachBlock<SpecimenComment>()
-        {
-            @Override
-            public void exec(SpecimenComment comment)
-            {
-                qcCommentMap.put(comment.getGlobalUniqueId(), comment);
-            }
-        }, SpecimenComment.class);
+        new SqlSelector(StudySchema.getInstance().getSchema(), selectCommentsSql).forEach(comment -> qcCommentMap.put(comment.getGlobalUniqueId(), comment), SpecimenComment.class);
 
 //        if (!merge)
 //            new SpecimenTablesProvider(getContainer(), getUser(), null).dropTableIndices(SpecimenTablesProvider.VIAL_TABLENAME);

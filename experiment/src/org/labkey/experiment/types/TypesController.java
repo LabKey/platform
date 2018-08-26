@@ -27,7 +27,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
@@ -42,7 +41,6 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
@@ -61,7 +59,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.IOException;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -578,21 +575,16 @@ public class TypesController extends SpringActionController
         {
             final TreeMap<String,String> set = new TreeMap<>();
 
-            new SqlSelector(ExperimentService.get().getSchema(), "SELECT DISTINCT SemanticType FROM exp.PropertyDescriptor").forEach(new Selector.ForEachBlock<ResultSet>()
-            {
-                @Override
-                public void exec(ResultSet rs) throws SQLException
+            new SqlSelector(ExperimentService.get().getSchema(), "SELECT DISTINCT SemanticType FROM exp.PropertyDescriptor").forEach(rs -> {
+                String value = rs.getString(1);
+                if (null == value || 0 == value.length())
+                    return;
+                String[] types = value.split("\\|");
+                for (String type : types)
                 {
-                    String value = rs.getString(1);
-                    if (null == value || 0 == value.length())
-                        return;
-                    String[] types = value.split("\\|");
-                    for (String type : types)
-                    {
-                        if (null == type || 0 == type.length())
-                            continue;
-                        set.put(type.toLowerCase(), type);
-                    }
+                    if (null == type || 0 == type.length())
+                        continue;
+                    set.put(type.toLowerCase(), type);
                 }
             });
 

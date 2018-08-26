@@ -22,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Selector.ForEachBlock;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
@@ -31,6 +30,7 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.security.User;
+import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.study.Study;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.StudySchema;
@@ -40,12 +40,10 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.query.DatasetTableImpl;
-import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.study.query.DataspaceQuerySchema;
 import org.labkey.study.query.ParticipantGroupFilterClause;
 import org.labkey.study.query.StudyQuerySchema;
 
-import java.sql.SQLException;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -273,15 +271,10 @@ public class RelativeDateVisitManager extends VisitManager
 
         final MutableInt days = new MutableInt(0);
 
-        new SqlSelector(schema, sql).forEach(new ForEachBlock<Integer>()
-        {
-            @Override
-            public void exec(Integer day)
-            {
-                double seqNum = null != day ? day : 0;
-                StudyManager.getInstance().ensureVisit(getStudy(), user, seqNum, null, true);
-                days.increment();
-            }
+        new SqlSelector(schema, sql).forEach(day -> {
+            double seqNum = null != day ? day : 0;
+            StudyManager.getInstance().ensureVisit(getStudy(), user, seqNum, null, true);
+            days.increment();
         }, Integer.class);
 
         if (days.intValue() > 0)

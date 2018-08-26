@@ -16,7 +16,6 @@
 package org.labkey.study.dataset;
 
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
@@ -31,7 +30,6 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyManager;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -49,32 +47,27 @@ public final class DatasetNotificationInfoProvider extends NotificationInfoProvi
         filter.addBetween(FieldKey.fromString("Modified"), modifiedRangeStart, modifiedRangeEnd);
         Sort sort = new Sort("DisplayOrder");
         TableSelector selector = new TableSelector(reportTableInfo, filter, sort);
-        selector.forEach(new Selector.ForEachBlock<DatasetDB>()
-        {
-            @Override
-            public void exec(DatasetDB report)
+        selector.forEach(report -> {
+            String containerId = report.getContainer();
+            if (!notificationInfoMap.containsKey(containerId))
+                notificationInfoMap.put(containerId, new HashMap<>());
+            Map<Integer, List<NotificationInfo>> subMap = notificationInfoMap.get(containerId);
+            if (null != report.getContainer())
             {
-                String containerId = report.getContainer();
-                if (!notificationInfoMap.containsKey(containerId))
-                    notificationInfoMap.put(containerId, new HashMap<Integer, List<NotificationInfo>>());
-                Map<Integer, List<NotificationInfo>> subMap = notificationInfoMap.get(containerId);
-                if (null != report.getContainer())
+                Study study = StudyManager.getInstance().getStudy(ContainerManager.getForId(report.getContainer()));
+                if (null != study)
                 {
-                    Study study = StudyManager.getInstance().getStudy(ContainerManager.getForId(report.getContainer()));
-                    if (null != study)
+                    DatasetDefinition datasetDefinition = StudyManager.getInstance().getDatasetDefinition(study, report.getDatasetId());
+                    if (null != datasetDefinition)
                     {
-                        DatasetDefinition datasetDefinition = StudyManager.getInstance().getDatasetDefinition(study, report.getDatasetId());
-                        if (null != datasetDefinition)
+                        NotificationInfo notificationInfo = new NotificationInfo(report, !datasetDefinition.isShowByDefault());
+                        if (null != notificationInfo.getContainer() && !notificationInfo.isHidden() && notificationInfo.isShared())
                         {
-                            NotificationInfo notificationInfo = new NotificationInfo(report, !datasetDefinition.isShowByDefault());
-                            if (null != notificationInfo.getContainer() && !notificationInfo.isHidden() && notificationInfo.isShared())
-                            {
-                                // Don't include hidden reports (or if container was deleted)
-                                int categoryId = null != report.getCategoryId() ? report.getCategoryId() : ViewCategoryManager.UNCATEGORIZED_ROWID;
-                                if (!subMap.containsKey(categoryId))
-                                    subMap.put(categoryId, new ArrayList<NotificationInfo>());
-                                subMap.get(categoryId).add(notificationInfo);
-                            }
+                            // Don't include hidden reports (or if container was deleted)
+                            int categoryId = null != report.getCategoryId() ? report.getCategoryId() : ViewCategoryManager.UNCATEGORIZED_ROWID;
+                            if (!subMap.containsKey(categoryId))
+                                subMap.put(categoryId, new ArrayList<>());
+                            subMap.get(categoryId).add(notificationInfo);
                         }
                     }
                 }

@@ -32,14 +32,9 @@ import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.query.AbstractBeanQueryUpdateService;
 import org.labkey.api.query.DetailsURL;
-import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FilteredTable;
-import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserIdQueryForeignKey;
-import org.labkey.api.query.ValidationException;
-import org.labkey.api.security.Group;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
@@ -48,7 +43,6 @@ import org.labkey.api.security.permissions.ReadPermission;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 

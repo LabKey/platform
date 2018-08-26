@@ -658,13 +658,7 @@ public class ParticipantGroupManager
             SimpleFilter participantFilter = new SimpleFilter();
             participantFilter.addInClause(FieldKey.fromParts(subjectColumnName), Arrays.asList(Arrays.copyOfRange(participantIds, start, end)));
             TableSelector ts = new TableSelector(participantTable, PageFlowUtil.set(subjectColumnName, "container"), participantFilter, null);
-            ts.forEachMap(new Selector.ForEachBlock<Map<String, Object>>() {
-                @Override
-                public void exec(Map<String, Object> m)
-                {
-                    participantIdMap.put((String) m.get(subjectColumnName), (String) m.get("container"));
-                }
-            });
+            ts.forEachMap(m -> participantIdMap.put((String) m.get(subjectColumnName), (String) m.get("container")));
 
             idx += BLOCK_SIZE;
         }

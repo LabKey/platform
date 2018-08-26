@@ -22,7 +22,6 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.RequiresPermission;
@@ -32,8 +31,6 @@ import org.labkey.api.view.AjaxCompletion;
 import org.labkey.study.StudySchema;
 import org.springframework.validation.BindException;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -97,14 +94,7 @@ public class AutoCompleteAction extends ApiAction<AutoCompleteAction.AutoComplet
         sql.append(" ORDER BY ").append(column);
         tinfo.getSqlDialect().limitRows(sql, 50);
 
-        new SqlSelector(tinfo.getSchema(), sql).forEach(new Selector.ForEachBlock<ResultSet>()
-        {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                completions.add(new AjaxCompletion(rs.getObject(1).toString()));
-            }
-        });
+        new SqlSelector(tinfo.getSchema(), sql).forEach(rs -> completions.add(new AjaxCompletion(rs.getObject(1).toString())));
 
         List<JSONObject> jsonCompletions = new ArrayList<>();
         for (AjaxCompletion completion : completions)

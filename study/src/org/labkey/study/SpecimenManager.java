@@ -37,8 +37,6 @@ import org.labkey.api.data.Filter;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Selector;
-import org.labkey.api.data.Selector.ForEachBlock;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
@@ -114,7 +112,6 @@ import org.labkey.study.specimen.settings.StatusSettings;
 import java.beans.PropertyChangeEvent;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -311,14 +308,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         final List<SpecimenEvent> specimenEvents = new ArrayList<>();
         TableInfo tableInfo = StudySchema.getInstance().getTableInfoSpecimenEvent(container);
 
-        new TableSelector(tableInfo, filter, null).forEachMap(new Selector.ForEachBlock<Map<String, Object>>()
-        {
-            @Override
-            public void exec(Map<String, Object> map)
-            {
-                specimenEvents.add(new SpecimenEvent(container, map));
-            }
-        });
+        new TableSelector(tableInfo, filter, null).forEachMap(map -> specimenEvents.add(new SpecimenEvent(container, map)));
 
         return specimenEvents;
     }
@@ -795,14 +785,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
     {
         final List<AdditiveType> additiveTypes = new ArrayList<>();
         new TableSelector(StudySchema.getInstance().getTableInfoSpecimenAdditive(container), filter, null).
-            forEachMap(new Selector.ForEachBlock<Map<String, Object>>()
-            {
-                @Override
-                public void exec(Map<String, Object> map)
-                {
-                    additiveTypes.add(new AdditiveType(container, map));
-                }
-            });
+            forEachMap(map -> additiveTypes.add(new AdditiveType(container, map)));
         return additiveTypes;
     }
 
@@ -825,14 +808,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
     {
         final List<DerivativeType> derivativeTypes = new ArrayList<>();
         new TableSelector(StudySchema.getInstance().getTableInfoSpecimenDerivative(container), filter, null).
-            forEachMap(new Selector.ForEachBlock<Map<String, Object>>()
-            {
-                @Override
-                public void exec(Map<String, Object> map)
-                {
-                    derivativeTypes.add(new DerivativeType(container, map));
-                }
-            });
+            forEachMap(map -> derivativeTypes.add(new DerivativeType(container, map)));
         return derivativeTypes;
     }
 
@@ -855,14 +831,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
     {
         final List<PrimaryType> primaryTypes = new ArrayList<>();
         new TableSelector(StudySchema.getInstance().getTableInfoSpecimenPrimaryType(container), filter, sort).
-            forEachMap(new Selector.ForEachBlock<Map<String, Object>>()
-            {
-                @Override
-                public void exec(Map<String, Object> map)
-                {
-                    primaryTypes.add(new PrimaryType(container, map));
-                }
-            });
+            forEachMap(map -> primaryTypes.add(new PrimaryType(container, map)));
         return primaryTypes;
     }
 
@@ -1059,14 +1028,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         // TODO: LinkedList?
         final List<Vial> vials = new ArrayList<>();
 
-        new SqlSelector(StudySchema.getInstance().getSchema(), sql).forEachMap(new ForEachBlock<Map<String, Object>>()
-        {
-            @Override
-            public void exec(Map<String, Object> map)
-            {
-                vials.add(new Vial(container, map));
-            }
-        });
+        new SqlSelector(StudySchema.getInstance().getSchema(), sql).forEachMap(map -> vials.add(new Vial(container, map)));
 
         return vials;
     }
@@ -1881,13 +1843,9 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         {
             sql.append(extraClause);
         }
-        new SqlSelector(StudySchema.getInstance().getSchema(), sql).forEach(new Selector.ForEachBlock<ResultSet>() {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                String specimenHash = rs.getString("SpecimenHash");
-                map.put(specimenHash, rs.getInt("AvailableCount"));
-            }
+        new SqlSelector(StudySchema.getInstance().getSchema(), sql).forEach(rs -> {
+            String specimenHash = rs.getString("SpecimenHash");
+            map.put(specimenHash, rs.getInt("AvailableCount"));
         });
 
         return map;
@@ -2452,34 +2410,29 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
         final List<SummaryByVisitType> ret = new ArrayList<>();
 
-        new SqlSelector(StudySchema.getInstance().getSchema(), sql).forEach(new Selector.ForEachBlock<ResultSet>()
-        {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                SummaryByVisitType summary = new SummaryByVisitType();
-                if (rs.getObject("Visit") != null)
-                    summary.setVisit(rs.getInt("Visit"));
-                summary.setTotalVolume(rs.getDouble("TotalVolume"));
-                Double vialCount = rs.getDouble("VialCount");
-                summary.setVialCount(vialCount.longValue());
-                Double participantCount = rs.getDouble("ParticipantCount");
-                summary.setParticipantCount(participantCount.longValue());
+        new SqlSelector(StudySchema.getInstance().getSchema(), sql).forEach(rs -> {
+            SummaryByVisitType summary = new SummaryByVisitType();
+            if (rs.getObject("Visit") != null)
+                summary.setVisit(rs.getInt("Visit"));
+            summary.setTotalVolume(rs.getDouble("TotalVolume"));
+            Double vialCount = rs.getDouble("VialCount");
+            summary.setVialCount(vialCount.longValue());
+            Double participantCount = rs.getDouble("ParticipantCount");
+            summary.setParticipantCount(participantCount.longValue());
 
-                for (Map.Entry<String, SpecimenTypeBeanProperty> typeProperty : viewSqlHelper.getAliasToTypePropertyMap().entrySet())
+            for (Map.Entry<String, SpecimenTypeBeanProperty> typeProperty : viewSqlHelper.getAliasToTypePropertyMap().entrySet())
+            {
+                String value = rs.getString(typeProperty.getKey());
+                try
                 {
-                    String value = rs.getString(typeProperty.getKey());
-                    try
-                    {
-                        PropertyUtils.setProperty(summary, typeProperty.getValue().getBeanProperty(), value);
-                    }
-                    catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e)
-                    {
-                        throw new RuntimeException(e);
-                    }
+                    PropertyUtils.setProperty(summary, typeProperty.getValue().getBeanProperty(), value);
                 }
-                ret.add(summary);
+                catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e)
+                {
+                    throw new RuntimeException(e);
+                }
             }
+            ret.add(summary);
         });
 
         SummaryByVisitType[] summaries = ret.toArray(new SummaryByVisitType[ret.size()]);
@@ -2569,18 +2522,13 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             return s1.getLabel().compareTo(s2.getLabel());
         });
 
-        new SqlSelector(StudySchema.getInstance().getSchema(), sql).forEach(new Selector.ForEachBlock<ResultSet>()
-        {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                // try getObject first to see if we have a value for our row; getInt will coerce the null to
-                // zero, which could (theoretically) be a valid site ID.
-                if (rs.getObject(idColumnName) == null)
-                    locations.add(null);
-                else
-                    locations.add(StudyManager.getInstance().getLocation(container, rs.getInt(idColumnName)));
-            }
+        new SqlSelector(StudySchema.getInstance().getSchema(), sql).forEach(rs -> {
+            // try getObject first to see if we have a value for our row; getInt will coerce the null to
+            // zero, which could (theoretically) be a valid site ID.
+            if (rs.getObject(idColumnName) == null)
+                locations.add(null);
+            else
+                locations.add(StudyManager.getInstance().getLocation(container, rs.getInt(idColumnName)));
         });
 
         return locations;
@@ -2720,34 +2668,29 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
         final List<RequestSummaryByVisitType> ret = new ArrayList<>();
 
-        new SqlSelector(StudySchema.getInstance().getSchema(), fragment).forEach(new Selector.ForEachBlock<ResultSet>()
-        {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
+        new SqlSelector(StudySchema.getInstance().getSchema(), fragment).forEach(rs -> {
+            RequestSummaryByVisitType summary = new RequestSummaryByVisitType();
+            summary.setDestinationSiteId(rs.getInt("DestinationSiteId"));
+            summary.setSiteLabel(rs.getString("SiteLabel"));
+            summary.setVisit(rs.getInt("Visit"));
+            summary.setTotalVolume(rs.getDouble("TotalVolume"));
+            Double vialCount = rs.getDouble("VialCount");
+            summary.setVialCount(vialCount.longValue());
+
+            for (Map.Entry<String, SpecimenTypeBeanProperty> typeProperty : sqlHelper.getAliasToTypePropertyMap().entrySet())
             {
-                RequestSummaryByVisitType summary = new RequestSummaryByVisitType();
-                summary.setDestinationSiteId(rs.getInt("DestinationSiteId"));
-                summary.setSiteLabel(rs.getString("SiteLabel"));
-                summary.setVisit(rs.getInt("Visit"));
-                summary.setTotalVolume(rs.getDouble("TotalVolume"));
-                Double vialCount = rs.getDouble("VialCount");
-                summary.setVialCount(vialCount.longValue());
+                String value = rs.getString(typeProperty.getKey());
 
-                for (Map.Entry<String, SpecimenTypeBeanProperty> typeProperty : sqlHelper.getAliasToTypePropertyMap().entrySet())
+                try
                 {
-                    String value = rs.getString(typeProperty.getKey());
-
-                    try
-                    {
-                        PropertyUtils.setProperty(summary, typeProperty.getValue().getBeanProperty(), value);
-                    }
-                    catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e)
-                    {
-                        Logger.getLogger(SpecimenManager.class).error(e);
-                    }
+                    PropertyUtils.setProperty(summary, typeProperty.getValue().getBeanProperty(), value);
                 }
-                ret.add(summary);
+                catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e)
+                {
+                    Logger.getLogger(SpecimenManager.class).error(e);
+                }
             }
+            ret.add(summary);
         });
 
         RequestSummaryByVisitType[] summaries = ret.toArray(new RequestSummaryByVisitType[ret.size()]);
@@ -2784,14 +2727,9 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             SimpleFilter filter = SimpleFilter.createContainerFilter(container);
             filter.addInClause(FieldKey.fromParts("GlobalUniqueId"), idToVial.keySet());
 
-            new TableSelector(StudySchema.getInstance().getTableInfoSpecimenComment(), filter, null).forEach(new Selector.ForEachBlock<SpecimenComment>()
-            {
-                @Override
-                public void exec(SpecimenComment comment)
-                {
-                    Vial vial = idToVial.get(comment.getGlobalUniqueId());
-                    result.put(vial, comment);
-                }
+            new TableSelector(StudySchema.getInstance().getTableInfoSpecimenComment(), filter, null).forEach(comment -> {
+                Vial vial = idToVial.get(comment.getGlobalUniqueId());
+                result.put(vial, comment);
             }, SpecimenComment.class);
 
             offset += GET_COMMENT_BATCH_SIZE;
@@ -2924,43 +2862,38 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
         final Map<String, Set<String>> cellToPtidSet = new HashMap<>();
 
-        new SqlSelector(StudySchema.getInstance().getSchema(), fragment).forEach(new Selector.ForEachBlock<ResultSet>()
-        {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
+        new SqlSelector(StudySchema.getInstance().getSchema(), fragment).forEach(rs -> {
+            String ptid = rs.getString(ptidColumnName);
+            Integer visit = rs.getInt(visitValueColumnName);
+            String primaryType = null;
+            String derivative = null;
+            String additive = null;
+
+            for (Map.Entry<String, SpecimenTypeBeanProperty> entry : aliasToTypeProperty.entrySet())
             {
-                String ptid = rs.getString(ptidColumnName);
-                Integer visit = rs.getInt(visitValueColumnName);
-                String primaryType = null;
-                String derivative = null;
-                String additive = null;
-
-                for (Map.Entry<String, SpecimenTypeBeanProperty> entry : aliasToTypeProperty.entrySet())
+                switch (entry.getValue().getLevel())
                 {
-                    switch (entry.getValue().getLevel())
-                    {
-                        case PrimaryType:
-                            primaryType = rs.getString(entry.getKey());
-                            break;
-                        case Derivative:
-                            derivative = rs.getString(entry.getKey());
-                            break;
-                        case Additive:
-                            additive = rs.getString(entry.getKey());
-                            break;
-                    }
+                    case PrimaryType:
+                        primaryType = rs.getString(entry.getKey());
+                        break;
+                    case Derivative:
+                        derivative = rs.getString(entry.getKey());
+                        break;
+                    case Additive:
+                        additive = rs.getString(entry.getKey());
+                        break;
                 }
-
-                String key = getPtidListKey(visit, primaryType, derivative, additive);
-
-                Set<String> ptids = cellToPtidSet.get(key);
-                if (ptids == null)
-                {
-                    ptids = new TreeSet<>();
-                    cellToPtidSet.put(key, ptids);
-                }
-                ptids.add(ptid != null ? ptid : "[unknown]");
             }
+
+            String key = getPtidListKey(visit, primaryType, derivative, additive);
+
+            Set<String> ptids = cellToPtidSet.get(key);
+            if (ptids == null)
+            {
+                ptids = new TreeSet<>();
+                cellToPtidSet.put(key, ptids);
+            }
+            ptids.add(ptid != null ? ptid : "[unknown]");
         });
 
         for (SummaryByVisitType summary : summaries)

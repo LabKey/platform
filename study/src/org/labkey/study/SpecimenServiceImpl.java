@@ -22,7 +22,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Selector.ForEachBlock;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
@@ -53,8 +52,6 @@ import org.labkey.study.pipeline.SpecimenReloadJob;
 import org.labkey.study.query.SpecimenTablesProvider;
 
 import java.io.IOException;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -229,15 +226,11 @@ public class SpecimenServiceImpl implements SpecimenService
 
         final Set<Pair<String, Date>> sampleInfo = new HashSet<>();
 
-        new SqlSelector(StudySchema.getInstance().getSchema(), sql).forEach(new ForEachBlock<ResultSet>(){
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                String participantId = rs.getString("PTID");
-                Date drawDate = rs.getDate("DrawTimestamp");
-                if (participantId != null && drawDate != null)
-                    sampleInfo.add(new Pair<>(participantId, drawDate));
-            }
+        new SqlSelector(StudySchema.getInstance().getSchema(), sql).forEach(rs -> {
+            String participantId = rs.getString("PTID");
+            Date drawDate = rs.getDate("DrawTimestamp");
+            if (participantId != null && drawDate != null)
+                sampleInfo.add(new Pair<>(participantId, drawDate));
         });
 
         return sampleInfo;
@@ -254,15 +247,11 @@ public class SpecimenServiceImpl implements SpecimenService
 
         final Set<Pair<String, Double>> sampleInfo = new HashSet<>();
 
-        new SqlSelector(StudySchema.getInstance().getSchema(), sql).forEach(new ForEachBlock<ResultSet>(){
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                String participantId = rs.getString("PTID");
-                double visit = rs.getDouble("VisitValue");    // Never returns null
-                if (participantId != null)
-                    sampleInfo.add(new Pair<>(participantId, visit));
-            }
+        new SqlSelector(StudySchema.getInstance().getSchema(), sql).forEach(rs -> {
+            String participantId = rs.getString("PTID");
+            double visit = rs.getDouble("VisitValue");    // Never returns null
+            if (participantId != null)
+                sampleInfo.add(new Pair<>(participantId, visit));
         });
 
         return sampleInfo;

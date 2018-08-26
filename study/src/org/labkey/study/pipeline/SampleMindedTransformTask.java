@@ -33,7 +33,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
@@ -76,7 +75,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringReader;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -441,20 +439,8 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
         String derivativeSelectName = StudySchema.getInstance().getTableInfoSpecimenDerivative(c).getSelectName();
         for (Location l : sm.getSites(c))
             _labIds.put(l.getLabel(), l.getRowId());
-        (new SqlSelector(study,"SELECT primaryType, rowId FROM " + primaryTypeSelectName + " WHERE container=?", c)).forEach(new Selector.ForEachBlock<ResultSet>(){
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                _primaryIds.put(rs.getString(1), rs.getInt(2));
-            }
-        });
-        (new SqlSelector(study,"SELECT derivative, rowId FROM " + derivativeSelectName + " WHERE container=?", c)).forEach(new Selector.ForEachBlock<ResultSet>(){
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                _derivativeIds.put(rs.getString(1), rs.getInt(2));
-            }
-        });
+        (new SqlSelector(study,"SELECT primaryType, rowId FROM " + primaryTypeSelectName + " WHERE container=?", c)).forEach(rs -> _primaryIds.put(rs.getString(1), rs.getInt(2)));
+        (new SqlSelector(study,"SELECT derivative, rowId FROM " + derivativeSelectName + " WHERE container=?", c)).forEach(rs -> _derivativeIds.put(rs.getString(1), rs.getInt(2)));
     }
 
     static void importNotDone(File source, PipelineJob job)

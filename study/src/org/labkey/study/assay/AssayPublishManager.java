@@ -32,7 +32,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
@@ -93,8 +92,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -889,39 +886,34 @@ public class AssayPublishManager implements AssayPublishService
 
                         SQLFragment sql = QueryService.get().getSelectSQL(resultTable, cols.values(), new SimpleFilter(runFK, run.getRowId()), null, Table.ALL_ROWS, Table.NO_OFFSET, false);
 
-                        new SqlSelector(resultTable.getSchema(), sql).forEach(new Selector.ForEachBlock<ResultSet>()
-                        {
-                            @Override
-                            public void exec(ResultSet rs) throws SQLException
+                        new SqlSelector(resultTable.getSchema(), sql).forEach(rs -> {
+                            // Be careful to not assume that we have participant or visit columns in our data domain
+                            Object ptidObject = ptidColumn == null ? null : ptidColumn.getValue(rs);
+                            String ptid = ptidObject == null ? null : ptidObject.toString();
+                            int objectId = ((Number) objectIdColumn.getValue(rs)).intValue();
+                            Object visit = visitColumn == null ? null : visitColumn.getValue(rs);
+                            // Only copy rows that have a participant and a visit/date
+                            if (ptid != null && visit != null)
                             {
-                                // Be careful to not assume that we have participant or visit columns in our data domain
-                                Object ptidObject = ptidColumn == null ? null : ptidColumn.getValue(rs);
-                                String ptid = ptidObject == null ? null : ptidObject.toString();
-                                int objectId = ((Number) objectIdColumn.getValue(rs)).intValue();
-                                Object visit = visitColumn == null ? null : visitColumn.getValue(rs);
-                                // Only copy rows that have a participant and a visit/date
-                                if (ptid != null && visit != null)
+                                AssayPublishKey key;
+                                // 13647: Conversion exception in assay auto copy-to-study
+                                if (study.getTimepointType().isVisitBased())
                                 {
-                                    AssayPublishKey key;
-                                    // 13647: Conversion exception in assay auto copy-to-study
-                                    if (study.getTimepointType().isVisitBased())
-                                    {
-                                        float visitId = Float.parseFloat(visit.toString());
-                                        key = new AssayPublishKey(targetStudyContainer, ptid, visitId, objectId);
-                                        LOG.debug("Resolved info (" + ptid + "/" + visitId + ") for auto-copy of row " + objectId + " for " + run.getName() + " from container " + container.getPath());
-                                    }
-                                    else
-                                    {
-                                        Date date = (Date) ConvertUtils.convert(visit.toString(), Date.class);
-                                        key = new AssayPublishKey(targetStudyContainer, ptid, date, objectId);
-                                        LOG.debug("Resolved info (" + ptid + "/" + date + ") for auto-copy of row " + objectId + " for " + run.getName() + " from container " + container.getPath());
-                                    }
-                                    keys.put(objectId, key);
+                                    float visitId = Float.parseFloat(visit.toString());
+                                    key = new AssayPublishKey(targetStudyContainer, ptid, visitId, objectId);
+                                    LOG.debug("Resolved info (" + ptid + "/" + visitId + ") for auto-copy of row " + objectId + " for " + run.getName() + " from container " + container.getPath());
                                 }
                                 else
                                 {
-                                    LOG.debug("Missing ptid and/or visit info for auto-copy of row " + objectId + " for " + run.getName() + " from container " + container.getPath());
+                                    Date date = (Date) ConvertUtils.convert(visit.toString(), Date.class);
+                                    key = new AssayPublishKey(targetStudyContainer, ptid, date, objectId);
+                                    LOG.debug("Resolved info (" + ptid + "/" + date + ") for auto-copy of row " + objectId + " for " + run.getName() + " from container " + container.getPath());
                                 }
+                                keys.put(objectId, key);
+                            }
+                            else
+                            {
+                                LOG.debug("Missing ptid and/or visit info for auto-copy of row " + objectId + " for " + run.getName() + " from container " + container.getPath());
                             }
                         });
 
