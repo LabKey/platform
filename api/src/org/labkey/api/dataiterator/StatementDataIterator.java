@@ -255,11 +255,15 @@ public class StatementDataIterator extends AbstractDataIterator
         {
             if (!ret)
             {
+                debug("<close() on _queue>");
                 _queue.close();
+                debug("</close() on _queue>");
                 if (null != _asyncThread)
                 {
+                    debug("<join() on _asyncThread>");
                     try {_asyncThread.join();} catch (InterruptedException x) {}
                     _asyncThread = null;
+                    debug("</join() on _asyncThread>");
                 }
                 checkBackgroundException();
             }
@@ -283,6 +287,7 @@ public class StatementDataIterator extends AbstractDataIterator
 
             if (hasNextRow)
             {
+                debug("<clear and set parameters on " + _currentStmt + ">");
                 _currentStmt.clearParameters();
                 for (Triple binding : _currentBinding)
                 {
@@ -300,6 +305,7 @@ public class StatementDataIterator extends AbstractDataIterator
                         binding.to.setValue(value);
                     }
                 }
+                debug("</clear and set parameters on " + _currentStmt + ">");
 
                 checkShouldCancel();
 
@@ -364,7 +370,9 @@ public class StatementDataIterator extends AbstractDataIterator
         if (_batchSize == 1)
         {
             /* use .execute() for handling keys */
+            debug("<execute() on " + _currentStmt + ">");
             _currentStmt.execute();
+            debug("</execute() on " + _currentStmt + ">");
         }
         else if (_useAsynchronousExecute && _stmts.length > 1 && _txSize==-1)
         {
@@ -372,7 +380,9 @@ public class StatementDataIterator extends AbstractDataIterator
             {
                 try
                 {
+                    debug("<swap() - old: " + _currentStmt + ">");
                     _currentStmt = _queue.swapFullForEmpty(_currentStmt);
+                    debug("</swap() - new: " + _currentStmt + ">");
                     break;
                 }
                 catch (InterruptedException x)
@@ -383,7 +393,9 @@ public class StatementDataIterator extends AbstractDataIterator
         }
         else
         {
+            debug("<executeBatch() on " + _currentStmt + ">");
             _currentStmt.executeBatch();
+            debug("</executeBatch() on " + _currentStmt + ">");
         }
 
         _currentBatchSize = 0;
@@ -392,6 +404,11 @@ public class StatementDataIterator extends AbstractDataIterator
         assert _execute.stop();
     }
 
+    private void debug(String message)
+    {
+        if (null != _log)
+            _log.debug(message);
+    }
 
     private void checkBackgroundException() throws BatchValidationException
     {
@@ -450,21 +467,29 @@ public class StatementDataIterator extends AbstractDataIterator
     public void close(@Nullable Connection conn) throws IOException
     {
         checkConnection(conn);
+        debug("<close() on _data>");
         _data.close();
+        debug("</close() on _data>");
         checkConnection(conn);
+        debug("<close() on _queue>");
         _queue.close();
+        debug("</close() on _queue>");
         checkConnection(conn);
         if (_asyncThread != null)
         {
+            debug("<join() on _asyncThread>");
             try {_asyncThread.join();}catch(InterruptedException x){}
             _asyncThread = null;
+            debug("</join() on _asyncThread>");
         }
         checkConnection(conn);
         for (ParameterMap stmt : _stmts)
         {
             if (stmt != null)
             {
+                debug("<close() on " + stmt + ">");
                 stmt.close();
+                debug("</close() on " + stmt + ">");
                 checkConnection(conn, stmt.getDebugSql());
             }
         }
@@ -512,7 +537,9 @@ public class StatementDataIterator extends AbstractDataIterator
             {
                 try
                 {
+                    debug("<executeBatch() on " + m + ">");
                     m.executeBatch();
+                    debug("</executeBatch() on " + m + ">");
                 }
                 catch (SQLException x)
                 {
