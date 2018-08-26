@@ -261,7 +261,9 @@ public class StatementDataIterator extends AbstractDataIterator
                 if (null != _asyncThread)
                 {
                     debug("<join() on _asyncThread>");
-                    try {_asyncThread.join();} catch (InterruptedException x) {}
+                    try {_asyncThread.join();} catch (InterruptedException x) {
+                        debug("<join() was interrupted! " + x.getMessage() + "/>");
+                    }
                     _asyncThread = null;
                     debug("</join() on _asyncThread>");
                 }
