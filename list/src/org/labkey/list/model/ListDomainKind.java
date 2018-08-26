@@ -28,6 +28,7 @@ import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
@@ -45,10 +46,14 @@ import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.list.client.ListEditorService;
+import org.labkey.data.xml.domainTemplate.DomainTemplateType;
+import org.labkey.data.xml.domainTemplate.ListOptionsType;
+import org.labkey.data.xml.domainTemplate.ListTemplateType;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -58,6 +63,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.labkey.api.exp.property.DomainTemplate.findProperty;
 
 /**
  * User: Nick
@@ -399,4 +406,27 @@ public abstract class ListDomainKind extends AbstractDomainKind
         if (list != null)
             ListManager.get().indexList(list);
     }
+
+    @Override
+    public boolean matchesTemplateXML(String templateName, DomainTemplateType template, List<GWTPropertyDescriptor> properties)
+    {
+        if(!(template instanceof ListTemplateType))
+            return false;
+
+        ListOptionsType options = ((ListTemplateType) template).getOptions();
+        if (options == null)
+            throw new IllegalArgumentException("List template requires specifying a keyCol");
+
+        String keyName = options.getKeyCol();
+        if (keyName == null)
+            throw new IllegalArgumentException("List template requires specifying a keyCol");
+
+        Pair<GWTPropertyDescriptor, Integer> pair = findProperty(templateName, properties, keyName);
+        GWTPropertyDescriptor prop = pair.first;
+
+        PropertyType type = PropertyType.getFromURI(prop.getConceptURI(), prop.getRangeURI());
+
+        return type.equals(getKeyType().getPropertyType());
+    }
+
 }

@@ -46,6 +46,8 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.data.xml.domainTemplate.DataClassTemplateType;
+import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -262,4 +264,9 @@ public class DataClassDomainKind extends AbstractDomainKind
             ExperimentServiceImpl.get().indexDataClass(dc);
     }
 
+    @Override
+    public boolean matchesTemplateXML(String templateName, DomainTemplateType template, List<GWTPropertyDescriptor> properties)
+    {
+        return template instanceof DataClassTemplateType;
+    }
 }

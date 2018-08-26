@@ -42,6 +42,8 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.data.xml.domainTemplate.DomainTemplateType;
+import org.labkey.data.xml.domainTemplate.SampleSetTemplateType;
 
 import java.sql.SQLException;
 import java.util.HashSet;
@@ -196,5 +198,11 @@ public class SampleSetDomainKind extends AbstractDomainKind
         ExpSampleSet ss = ExperimentService.get().getSampleSet(domain.getTypeURI());
         if (ss != null)
             ExperimentServiceImpl.get().indexSampleSet(ss);
+    }
+
+    @Override
+    public boolean matchesTemplateXML(String templateName, DomainTemplateType template, List<GWTPropertyDescriptor> properties)
+    {
+        return template instanceof SampleSetTemplateType;
     }
 }
