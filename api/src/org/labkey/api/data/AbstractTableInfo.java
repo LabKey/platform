@@ -78,8 +78,6 @@ import org.labkey.data.xml.TableType;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -227,7 +225,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         {
             return new LinkedHashMap<>();
         }
-        return new CaseInsensitiveMapWrapper<>(new LinkedHashMap<String, ColumnInfo>());
+        return new CaseInsensitiveMapWrapper<>(new LinkedHashMap<>());
     }
 
     // BUGBUG: This is suspect -- all other parts of LabKey expect column names to be case-insensitive including FieldKeys
@@ -335,14 +333,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
         Sort sort = new Sort();
         sort.insertSortColumn(titleColumn.getFieldKey(), titleColumn.getSortDirection());
-        new TableSelector(this, cols, null, sort).forEach(new Selector.ForEachBlock<ResultSet>()
-        {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                ret.put(new SimpleNamedObject(rs.getString(1), rs.getString(titleIndex)));
-            }
-        });
+        new TableSelector(this, cols, null, sort).forEach(rs -> ret.put(new SimpleNamedObject(rs.getString(1), rs.getString(titleIndex))));
 
         return ret;
     }

@@ -20,11 +20,8 @@ import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
-import org.labkey.api.data.JdbcMetaDataSelector.JdbcMetaDataResultSetFactory;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 
-import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Map;

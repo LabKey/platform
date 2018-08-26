@@ -25,7 +25,6 @@ import org.apache.commons.beanutils.PropertyUtilsBean;
 import org.apache.commons.beanutils.converters.BigDecimalConverter;
 import org.apache.commons.beanutils.converters.BigIntegerConverter;
 import org.apache.commons.beanutils.converters.BooleanArrayConverter;
-import org.apache.commons.beanutils.converters.BooleanConverter;
 import org.apache.commons.beanutils.converters.ByteArrayConverter;
 import org.apache.commons.beanutils.converters.ByteConverter;
 import org.apache.commons.beanutils.converters.CharacterArrayConverter;
@@ -45,6 +44,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.json.JSONObject;
 import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
@@ -83,7 +83,6 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Map;
 import java.util.Set;
-import org.junit.Test;
 
 
 public class ConvertHelper implements PropertyEditorRegistrar

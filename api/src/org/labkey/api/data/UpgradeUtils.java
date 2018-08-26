@@ -180,30 +180,25 @@ public class UpgradeUtils
 
         final List<SimpleFilter> filters = new LinkedList<>();
 
-        new SqlSelector(table.getSchema(), sql).forEachMap(new Selector.ForEachBlock<Map<String, Object>>()
-        {
-            @Override
-            public void exec(Map<String, Object> map)
+        new SqlSelector(table.getSchema(), sql).forEachMap(map -> {
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), map.get("Container"));
+
+            if (null != additionalGroupingColumn)
             {
-                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), map.get("Container"));
+                String alias = additionalGroupingColumn.getAlias();
+                assert map.containsKey(alias);
+                Object value = map.get(alias);
 
-                if (null != additionalGroupingColumn)
-                {
-                    String alias = additionalGroupingColumn.getAlias();
-                    assert map.containsKey(alias);
-                    Object value = map.get(alias);
-
-                    if (null != value)
-                        filter.addCondition(additionalGroupingColumn, value);
-                    else
-                        filter.addCondition(additionalGroupingColumn, null, CompareType.ISBLANK);
-                }
-
-                if (ignoreNulls)
-                    filter.addCondition(column, null, CompareType.NONBLANK);
-
-                filters.add(filter);
+                if (null != value)
+                    filter.addCondition(additionalGroupingColumn, value);
+                else
+                    filter.addCondition(additionalGroupingColumn, null, CompareType.ISBLANK);
             }
+
+            if (ignoreNulls)
+                filter.addCondition(column, null, CompareType.NONBLANK);
+
+            filters.add(filter);
         });
 
         return filters;

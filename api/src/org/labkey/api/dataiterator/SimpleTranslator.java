@@ -34,7 +34,6 @@ import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.MvUtil;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -1078,15 +1077,10 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 final String lookupTablePkColumnName = tableInfo.getPkColumns().get(0).getName();     // Expect only 1
                 columnNames.add(lookupColumnName);
                 columnNames.add(lookupTablePkColumnName);
-                new TableSelector(tableInfo, columnNames).forEachMap(new Selector.ForEachBlock<Map<String, Object>>()
-                {
-                    @Override
-                    public void exec(Map<String, Object> row)
-                    {
-                        Integer rowId = (Integer)row.get(lookupTablePkColumnName);
-                        String name = (String)row.get(lookupColumnName);
-                        lookupStringToRowIdMap.put(name, rowId);
-                    }
+                new TableSelector(tableInfo, columnNames).forEachMap(row -> {
+                    Integer rowId = (Integer)row.get(lookupTablePkColumnName);
+                    String name = (String)row.get(lookupColumnName);
+                    lookupStringToRowIdMap.put(name, rowId);
                 });
             }
         }

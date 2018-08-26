@@ -49,7 +49,6 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import java.beans.Introspector;
 import java.io.File;

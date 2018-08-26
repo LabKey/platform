@@ -15,8 +15,6 @@
  */
 package org.labkey.api.data;
 
-import java.sql.SQLException;
-
 /**
  * Created by adam on 9/8/2015.
  */

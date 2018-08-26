@@ -17,12 +17,8 @@ package org.labkey.api.data;
 
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.util.ResultSetUtil;
 
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 /**
  * Represents a dimension for a crosstab table info. A dimension maps to an

@@ -27,7 +27,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
 
-import java.sql.SQLException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;

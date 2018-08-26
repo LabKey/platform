@@ -24,7 +24,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
@@ -34,7 +33,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.Portal.WebPart;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -115,15 +113,10 @@ public class WebPartCache
 
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), containerId);
 
-            new TableSelector(Portal.getTableInfoPortalWebParts(), filter, new Sort("Index")).forEach(new Selector.ForEachBlock<WebPart>()
-            {
-                @Override
-                public void exec(WebPart wp)
-                {
-                    Portal.PortalPage p = pages.get(wp.getPageId());
-                    if (null != p)
-                        p.addWebPart(wp);
-                }
+            new TableSelector(Portal.getTableInfoPortalWebParts(), filter, new Sort("Index")).forEach(wp -> {
+                Portal.PortalPage p = pages.get(wp.getPageId());
+                if (null != p)
+                    p.addWebPart(wp);
             }, WebPart.class);
 
             return Collections.unmodifiableMap(pages);

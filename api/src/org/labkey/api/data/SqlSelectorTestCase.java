@@ -41,7 +41,7 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
             MutableInt count = new MutableInt(0);
             stream.forEach(id -> count.increment());
             assertEquals(0, count.intValue());
-        };
+        }
 
         try
         {

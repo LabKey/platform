@@ -1061,31 +1061,26 @@ public class OntologyManager
             }
         }
 
-        new SqlSelector(getExpSchema(), sql, c).forEach(new Selector.ForEachBlock<ResultSet>()
-        {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
+        new SqlSelector(getExpSchema(), sql, c).forEach(rs -> {
+            String objURI = rs.getString(1);
+            String objContainer = rs.getString(2);
+            Integer propId = rs.getInt(3);
+            String propURI = rs.getString(4);
+
+            sqlIn.append(sep).append(propId);
+
+            if (sep.length() == 0)
+                sep.append(", ");
+
+            Map<String, ObjectProperty> mtemp = getPropertyObjects(ContainerManager.getForId(objContainer), objURI);
+
+            if (null != mtemp)
             {
-                String objURI = rs.getString(1);
-                String objContainer = rs.getString(2);
-                Integer propId = rs.getInt(3);
-                String propURI = rs.getString(4);
-
-                sqlIn.append(sep).append(propId);
-
-                if (sep.length() == 0)
-                    sep.append(", ");
-
-                Map<String, ObjectProperty> mtemp = getPropertyObjects(ContainerManager.getForId(objContainer), objURI);
-
-                if (null != mtemp)
+                for (Map.Entry<String, ObjectProperty> entry : mtemp.entrySet())
                 {
-                    for (Map.Entry<String, ObjectProperty> entry : mtemp.entrySet())
-                    {
-                        entry.getValue().setPropertyId(0);
-                        if (entry.getValue().getPropertyURI().equals(propURI))
-                            mObjsUsingMyProps.put(entry.getKey(), entry.getValue());
-                    }
+                    entry.getValue().setPropertyId(0);
+                    if (entry.getValue().getPropertyURI().equals(propURI))
+                        mObjsUsingMyProps.put(entry.getKey(), entry.getValue());
                 }
             }
         });
@@ -1118,41 +1113,36 @@ public class OntologyManager
                 }
             }
 
-            new SqlSelector(getExpSchema(), sql).forEach(new Selector.ForEachBlock<ResultSet>()
-            {
-                @Override
-                public void exec(ResultSet rsMyProps) throws SQLException
+            new SqlSelector(getExpSchema(), sql).forEach(rsMyProps -> {
+                String propUri = rsMyProps.getString(1);
+                String domUri = rsMyProps.getString(2);
+                PropertyDescriptor pd = getPropertyDescriptor(propUri, c);
+
+                if (pd.getContainer().getId().equals(c.getId()))
                 {
-                    String propUri = rsMyProps.getString(1);
-                    String domUri = rsMyProps.getString(2);
-                    PropertyDescriptor pd = getPropertyDescriptor(propUri, c);
+                    propDescCache.remove(getCacheKey(pd));
+                    domainPropertiesCache.clear();
+                    pd.setContainer(project);
+                    pd.setProject(project);
+                    pd.setPropertyId(0);
+                    pd = ensurePropertyDescriptor(pd);
+                }
 
-                    if (pd.getContainer().getId().equals(c.getId()))
+                if (null != domUri)
+                {
+                    DomainDescriptor dd = getDomainDescriptor(domUri, c);
+                    if (dd.getContainer().getId().equals(c.getId()))
                     {
-                        propDescCache.remove(getCacheKey(pd));
+                        domainDescByURICache.remove(getURICacheKey(dd));
+                        domainDescByIDCache.remove(getIDCacheKey(dd));
                         domainPropertiesCache.clear();
-                        pd.setContainer(project);
-                        pd.setProject(project);
-                        pd.setPropertyId(0);
-                        pd = ensurePropertyDescriptor(pd);
-                    }
-
-                    if (null != domUri)
-                    {
-                        DomainDescriptor dd = getDomainDescriptor(domUri, c);
-                        if (dd.getContainer().getId().equals(c.getId()))
-                        {
-                            domainDescByURICache.remove(getURICacheKey(dd));
-                            domainDescByIDCache.remove(getIDCacheKey(dd));
-                            domainPropertiesCache.clear();
-                            dd = dd.edit()
-                                    .setContainer(project)
-                                    .setProject(project)
-                                    .setDomainId(0)
-                                    .build();
-                            dd = ensureDomainDescriptor(dd);
-                            ensurePropertyDomain(pd, dd);
-                        }
+                        dd = dd.edit()
+                                .setContainer(project)
+                                .setProject(project)
+                                .setDomainId(0)
+                                .build();
+                        dd = ensureDomainDescriptor(dd);
+                        ensurePropertyDomain(pd, dd);
                     }
                 }
             });
@@ -1255,29 +1245,24 @@ public class OntologyManager
             final StringBuilder sqlIn = new StringBuilder();
             final StringBuilder sep = new StringBuilder();
 
-            new SqlSelector(getExpSchema(), sql, c, _sharedContainer, newProject).forEach(new Selector.ForEachBlock<ResultSet>()
-            {
-                @Override
-                public void exec(ResultSet rs) throws SQLException
+            new SqlSelector(getExpSchema(), sql, c, _sharedContainer, newProject).forEach(rs -> {
+                String objURI = rs.getString(1);
+                String propURI = rs.getString(2);
+                Integer propId = rs.getInt(3);
+
+                sqlIn.append(sep).append(propId);
+
+                if (sep.length() == 0)
+                    sep.append(", ");
+
+                Map<String, ObjectProperty> mtemp = getPropertyObjects(c, objURI);
+
+                if (null != mtemp)
                 {
-                    String objURI = rs.getString(1);
-                    String propURI = rs.getString(2);
-                    Integer propId = rs.getInt(3);
-
-                    sqlIn.append(sep).append(propId);
-
-                    if (sep.length() == 0)
-                        sep.append(", ");
-
-                    Map<String, ObjectProperty> mtemp = getPropertyObjects(c, objURI);
-
-                    if (null != mtemp)
+                    for (Map.Entry<String, ObjectProperty> entry : mtemp.entrySet())
                     {
-                        for (Map.Entry<String, ObjectProperty> entry : mtemp.entrySet())
-                        {
-                            if (entry.getValue().getPropertyURI().equals(propURI))
-                                mMyObjsThatRefProjProps.put(entry.getKey(), entry.getValue());
-                        }
+                        if (entry.getValue().getPropertyURI().equals(propURI))
+                            mMyObjsThatRefProjProps.put(entry.getKey(), entry.getValue());
                     }
                 }
             });
@@ -1305,45 +1290,40 @@ public class OntologyManager
 
                 final Container fNewProject = newProject;
 
-                new SqlSelector(getExpSchema(), sql).forEach(new Selector.ForEachBlock<ResultSet>()
-                {
-                    @Override
-                    public void exec(ResultSet rsPropsRefdByMe) throws SQLException
+                new SqlSelector(getExpSchema(), sql).forEach(rsPropsRefdByMe -> {
+                    String propUri = rsPropsRefdByMe.getString(1);
+                    String domUri = rsPropsRefdByMe.getString(2);
+                    PropertyDescriptor pd = getPropertyDescriptor(propUri, oldProject);
+
+                    if (null != pd)
                     {
-                        String propUri = rsPropsRefdByMe.getString(1);
-                        String domUri = rsPropsRefdByMe.getString(2);
-                        PropertyDescriptor pd = getPropertyDescriptor(propUri, oldProject);
-
-                        if (null != pd)
+                        // To prevent iterating over a property descriptor update more than once
+                        // we check to make sure both the container and project are equivalent to the updated
+                        // location
+                        if (!pd.getContainer().equals(c) || !pd.getProject().equals(fNewProject))
                         {
-                            // To prevent iterating over a property descriptor update more than once
-                            // we check to make sure both the container and project are equivalent to the updated
-                            // location
-                            if (!pd.getContainer().equals(c) || !pd.getProject().equals(fNewProject))
-                            {
-                                pd.setContainer(c);
-                                pd.setProject(fNewProject);
-                                pd.setPropertyId(0);
-                            }
-
-                            pd = ensurePropertyDescriptor(pd);
+                            pd.setContainer(c);
+                            pd.setProject(fNewProject);
+                            pd.setPropertyId(0);
                         }
 
-                        if (null != domUri)
+                        pd = ensurePropertyDescriptor(pd);
+                    }
+
+                    if (null != domUri)
+                    {
+                        DomainDescriptor dd = getDomainDescriptor(domUri, oldProject);
+
+                        // To prevent iterating over a domain descriptor update more than once
+                        // we check to make sure both the container and project are equivalent to the updated
+                        // location
+                        if (!dd.getContainer().equals(c) || !dd.getProject().equals(fNewProject))
                         {
-                            DomainDescriptor dd = getDomainDescriptor(domUri, oldProject);
-
-                            // To prevent iterating over a domain descriptor update more than once
-                            // we check to make sure both the container and project are equivalent to the updated
-                            // location
-                            if (!dd.getContainer().equals(c) || !dd.getProject().equals(fNewProject))
-                            {
-                                dd = dd.edit().setContainer(c).setProject(fNewProject).setDomainId(0).build();
-                            }
-
-                            dd = ensureDomainDescriptor(dd);
-                            ensurePropertyDomain(pd, dd);
+                            dd = dd.edit().setContainer(c).setProject(fNewProject).setDomainId(0).build();
                         }
+
+                        dd = ensureDomainDescriptor(dd);
+                        ensurePropertyDomain(pd, dd);
                     }
                 });
 
@@ -3204,31 +3184,26 @@ public class OntologyManager
 
         String sql = "SELECT Container, Project FROM " + descriptorTable + " GROUP BY Container, Project";
 
-        new SqlSelector(getExpSchema(), sql).forEach(new Selector.ForEachBlock<ResultSet>()
-        {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
+        new SqlSelector(getExpSchema(), sql).forEach(rs -> {
+            String containerId = rs.getString("Container");
+            String projectId = rs.getString("Project");
+            Container container = ContainerManager.getForId(containerId);
+            if (null == container)
+                return;  // should be handled by container check
+            String newProjectId = container.getProject() == null ? container.getId() : container.getProject().getId();
+            if (!projectId.equals(newProjectId))
             {
-                String containerId = rs.getString("Container");
-                String projectId = rs.getString("Project");
-                Container container = ContainerManager.getForId(containerId);
-                if (null == container)
-                    return;  // should be handled by container check
-                String newProjectId = container.getProject() == null ? container.getId() : container.getProject().getId();
-                if (!projectId.equals(newProjectId))
+                if (bFix)
                 {
-                    if (bFix)
-                    {
-                        fixProjectColumn(descriptorTable, uriColumn, idColumn, container, projectId, newProjectId);
-                        msgBuilder.append("<br/>&nbsp;&nbsp;&nbsp;Fixed inconsistent project ids found for ")
-                                .append(descriptorTable).append(" in folder ")
-                                .append(ContainerManager.getForId(containerId).getPath());
+                    fixProjectColumn(descriptorTable, uriColumn, idColumn, container, projectId, newProjectId);
+                    msgBuilder.append("<br/>&nbsp;&nbsp;&nbsp;Fixed inconsistent project ids found for ")
+                            .append(descriptorTable).append(" in folder ")
+                            .append(ContainerManager.getForId(containerId).getPath());
 
-                    }
-                    else
-                        msgBuilder.append("<br/>&nbsp;&nbsp;&nbsp;ERROR: Inconsistent project ids found for ")
-                                .append(descriptorTable).append(" in folder ").append(container.getPath());
                 }
+                else
+                    msgBuilder.append("<br/>&nbsp;&nbsp;&nbsp;ERROR: Inconsistent project ids found for ")
+                            .append(descriptorTable).append(" in folder ").append(container.getPath());
             }
         });
     }
@@ -3253,17 +3228,12 @@ public class OntologyManager
         final String updsql2 = " UPDATE " + getTinfoPropertyDomain() + " SET " + idColumn + " = ? WHERE " + idColumn + " = ? ";
         final String delSql = " DELETE FROM " + descriptorTable + " WHERE " + idColumn + " = ? ";
 
-        new SqlSelector(getExpSchema(), sql, newProjId, projectId, container).forEach(new Selector.ForEachBlock<ResultSet>()
-        {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                int prevPropId = rs.getInt(1);
-                int curPropId = rs.getInt(2);
-                executor.execute(updsql1, curPropId, prevPropId);
-                executor.execute(updsql2, curPropId, prevPropId);
-                executor.execute(delSql, prevPropId);
-            }
+        new SqlSelector(getExpSchema(), sql, newProjId, projectId, container).forEach(rs -> {
+            int prevPropId = rs.getInt(1);
+            int curPropId = rs.getInt(2);
+            executor.execute(updsql1, curPropId, prevPropId);
+            executor.execute(updsql2, curPropId, prevPropId);
+            executor.execute(delSql, prevPropId);
         });
     }
 

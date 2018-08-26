@@ -40,8 +40,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -339,14 +337,9 @@ public class ContainerTable extends FilteredTable<UserSchema>
         Map<String, String> pathToEntityMap = new TreeMap<>();
         List<ColumnInfo> cols = Collections.singletonList(getColumn("EntityId"));
 
-        new TableSelector(this, cols, null, null).forEach(new Selector.ForEachBlock<ResultSet>()
-        {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                Container container = ContainerManager.getForId(rs.getString(1));
-                pathToEntityMap.put(container.getPath(), rs.getString(1));
-            }
+        new TableSelector(this, cols, null, null).forEach(rs -> {
+            Container container = ContainerManager.getForId(rs.getString(1));
+            pathToEntityMap.put(container.getPath(), rs.getString(1));
         });
 
         for (String path : pathToEntityMap.keySet())
@@ -355,7 +348,5 @@ public class ContainerTable extends FilteredTable<UserSchema>
         }
 
         return ret;
-
     }
-
 }
