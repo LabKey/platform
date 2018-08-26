@@ -131,7 +131,7 @@ public abstract class SnapshotDependency
                         }
                     }
                     else
-                        _log.info("Failed checking dependencies for container: " + dsDef.getContainer().getPath() + ", it has been deleted.");
+                        _log.debug("Failed checking dependencies for container: " + dsDef.getContainer().getPath() + ", it has been deleted.");
 
                     return new ArrayList<>(dependencies.values());
                 }

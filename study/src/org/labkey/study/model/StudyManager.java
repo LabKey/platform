@@ -5389,7 +5389,9 @@ public class StudyManager
 //                assertTrue(-1 != errors.get(0).indexOf("duplicate key value violates unique constraint"));
 
             //same participant, guid, different sequenceNum
-            importRowVerifyGuid(def, PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1.0, "SequenceNum", sequenceNum++, "GUID", guid), tt);
+            Logger testLogger = Logger.getLogger(this.getClass());
+            testLogger.setLevel(Level.DEBUG);
+            importRowVerifyGuid(def, PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1.0, "SequenceNum", sequenceNum++, "GUID", guid), tt, testLogger);
 
             //  same GUID,sequenceNum, different different participant
             importRowVerifyGuid(def, PageFlowUtil.map("SubjectId", "B2", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 2.0, "SequenceNum", sequenceNum, "GUID", guid), tt);
@@ -5489,9 +5491,9 @@ public class StudyManager
             importRow(def, PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 1, "Number", 99, "SequenceNum", sequenceNum++));
         }
 
-        private void importRowVerifyKey(Dataset def, Map map, TableInfo tt, String key, String... expectedErrors)  throws Exception
+        private void importRowVerifyKey(Dataset def, Map map, TableInfo tt, String key, @Nullable Logger logger, String... expectedErrors)  throws Exception
         {
-            importRow(def, map, expectedErrors);
+            importRow(def, map, logger, expectedErrors);
             String expectedKey = (String) map.get(key);
 
             try (ResultSet rs = new TableSelector(tt).getResultSet())
@@ -5503,8 +5505,13 @@ public class StudyManager
 
         private void importRowVerifyGuid(Dataset def, Map map, TableInfo tt, String... expectedErrors)  throws Exception
         {
+            importRowVerifyGuid(def, map, tt, null, expectedErrors);
+        }
+
+        private void importRowVerifyGuid(Dataset def, Map map, TableInfo tt, @Nullable Logger logger, String... expectedErrors)  throws Exception
+        {
             if(map.containsKey("GUID"))
-                importRowVerifyKey(def, map, tt, "GUID", expectedErrors);
+                importRowVerifyKey(def, map, tt, "GUID", logger, expectedErrors);
             else
             {
                 importRow(def, map, expectedErrors);
@@ -5518,7 +5525,12 @@ public class StudyManager
             }
         }
 
-        private void importRows(Dataset def, List<Map<String, Object>> rows, String... expectedErrors)  throws Exception
+        private void importRows(Dataset def, List<Map<String, Object>> rows, String... expectedErrors) throws Exception
+        {
+            importRows(def, rows, null, expectedErrors);
+        }
+
+        private void importRows(Dataset def, List<Map<String, Object>> rows, @Nullable Logger logger, String... expectedErrors) throws Exception
         {
             BatchValidationException errors = new BatchValidationException();
 
@@ -5528,7 +5540,7 @@ public class StudyManager
             StudyManager.getInstance().importDatasetData(
                     _context.getUser(),
                     (DatasetDefinition) def, dl, columnMap,
-                    errors, DatasetDefinition.CheckForDuplicates.sourceAndDestination, null, QueryUpdateService.InsertOption.IMPORT, null, null, false);
+                    errors, DatasetDefinition.CheckForDuplicates.sourceAndDestination, null, QueryUpdateService.InsertOption.IMPORT, null, logger, false);
 
             if(expectedErrors == null)
             {
@@ -5545,7 +5557,12 @@ public class StudyManager
 
         private void importRow(Dataset def, Map map, String... expectedErrors)  throws Exception
         {
-            importRows(def, Arrays.asList(map), expectedErrors);
+            importRow(def, map, null, expectedErrors);
+        }
+
+        private void importRow(Dataset def, Map map, @Nullable Logger logger, String... expectedErrors)  throws Exception
+        {
+            importRows(def, Arrays.asList(map), logger, expectedErrors);
         }
 
         private void _testImportDemographicDatasetData(Study study) throws Throwable
