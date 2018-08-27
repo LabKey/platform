@@ -101,7 +101,8 @@ public class RunFilterStrategy extends FilterStrategyImpl
         _runPkCol = _runsTable.getColumn(_pkColumnName);
         if (null == _runPkCol)
             throw new ConfigurationException("Column not found: " + _runTableName + "." + _pkColumnName);
-
+        if (!_runPkCol.getJdbcType().isNumeric())
+            throw new ConfigurationException("Run column: " + _runTableName + "." + _pkColumnName + " must be a numeric data type. Found: " + _runPkCol.getJdbcType().name());
 
         if (null != _config && _config.isUseSource())
         {
