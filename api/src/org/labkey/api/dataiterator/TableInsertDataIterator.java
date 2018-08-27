@@ -265,24 +265,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         if (_closed)
             return;
         _closed = true;
-        if (_scope.isTransactionActive())
-        {
-            checkConnection(_conn);
-            try
-            {
-                setAllowClose(_conn, false);
-                super.close(_conn);
-                checkConnection(_conn);
-            }
-            finally
-            {
-                setAllowClose(_conn, true);
-            }
-        }
-        else
-        {
-            super.close();
-        }
+        super.close();
         if (null != _scope && null != _conn)
         {
             if (_insertOption == InsertOption.IMPORT_IDENTITY ||

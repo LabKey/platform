@@ -23,7 +23,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.SwapQueue;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
@@ -246,6 +245,7 @@ public class StatementDataIterator extends AbstractDataIterator
     @Override
     public boolean next() throws BatchValidationException
     {
+        debug("<next>");
         boolean ret = false;
         try
         {
@@ -262,12 +262,13 @@ public class StatementDataIterator extends AbstractDataIterator
                 {
                     debug("<join() on _asyncThread>");
                     try {_asyncThread.join();} catch (InterruptedException x) {
-                        debug("<join() was interrupted! " + x.getMessage() + "/>");
+                        debug("join() was interrupted!", x);
                     }
                     _asyncThread = null;
                     debug("</join() on _asyncThread>");
                 }
                 checkBackgroundException();
+                debug("</next>");
             }
         }
         return ret;
@@ -412,6 +413,12 @@ public class StatementDataIterator extends AbstractDataIterator
             _log.debug(message);
     }
 
+    private void debug(String message, Exception e)
+    {
+        if (null != _log)
+            _log.debug(message, e);
+    }
+
     private void checkBackgroundException() throws BatchValidationException
     {
         Exception bkg = _backgroundException.getAndSet(null);
@@ -435,76 +442,47 @@ public class StatementDataIterator extends AbstractDataIterator
     }
 
 
-    // Using temporarily to isolate #34735
-    protected void checkConnection(Connection conn)
-    {
-        checkConnection(conn, null);
-    }
-
-    protected void checkConnection(Connection conn, @Nullable String context)
-    {
-        if (null != conn)
-        {
-            String display = (null != context ? ". Context: " + context : "");
-            try
-            {
-                assert !conn.isClosed() : "Connection should not be closed!" + display;
-            }
-            catch (SQLException e)
-            {
-                Logger.getLogger(StatementDataIterator.class).error("Unexpected exception while checking isClosed()" + display);
-                throw new RuntimeSQLException(e);
-            }
-        }
-    }
-
-    protected void setAllowClose(Connection conn, boolean allow)
-    {
-        if (conn instanceof ConnectionWrapper)
-        {
-            ((ConnectionWrapper) conn).setAllowClose(allow);
-        }
-    }
-
-    public void close(@Nullable Connection conn) throws IOException
-    {
-        checkConnection(conn);
-        debug("<close() on _data>");
-        _data.close();
-        debug("</close() on _data>");
-        checkConnection(conn);
-        debug("<close() on _queue>");
-        _queue.close();
-        debug("</close() on _queue>");
-        checkConnection(conn);
-        if (_asyncThread != null)
-        {
-            debug("<join() on _asyncThread>");
-            try {_asyncThread.join();}catch(InterruptedException x){}
-            _asyncThread = null;
-            debug("</join() on _asyncThread>");
-        }
-        checkConnection(conn);
-        for (ParameterMap stmt : _stmts)
-        {
-            if (stmt != null)
-            {
-                debug("<close() on " + stmt + ">");
-                stmt.close();
-                debug("</close() on " + stmt + ">");
-                checkConnection(conn, stmt.getDebugSql());
-            }
-        }
-        checkConnection(conn);
-        _stmts = new ParameterMap[0];
-        checkConnection(conn);
-    }
-
-
     @Override
     public void close() throws IOException
     {
-        close(null);
+        try
+        {
+            debug("<close()>");
+            debug("<close() on _data>");
+            _data.close();
+            debug("</close() on _data>");
+            debug("<close() on _queue>");
+            _queue.close();
+            debug("</close() on _queue>");
+            if (_asyncThread != null)
+            {
+                debug("<join() on _asyncThread>");
+                try
+                {
+                    _asyncThread.join();
+                }
+                catch (InterruptedException x)
+                {
+                    debug("join() was interrupted!", x);
+                }
+                _asyncThread = null;
+                debug("</join() on _asyncThread>");
+            }
+            for (ParameterMap stmt : _stmts)
+            {
+                if (stmt != null)
+                {
+                    debug("<close() on " + stmt + ">");
+                    stmt.close();
+                    debug("</close() on " + stmt + ">");
+                }
+            }
+            _stmts = new ParameterMap[0];
+        }
+        finally
+        {
+            debug("</close()>");
+        }
     }
 
 
@@ -526,6 +504,7 @@ public class StatementDataIterator extends AbstractDataIterator
             }
             catch (Exception x)
             {
+                debug("executeStatementsInBackground() threw", x);
                 _backgroundException.set(x);
                 _foregroundThread.interrupt();
             }
