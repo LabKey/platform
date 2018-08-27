@@ -22,6 +22,7 @@ import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -36,6 +37,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExpData;
@@ -85,6 +87,8 @@ import java.util.Map;
 import java.util.Set;
 
 import static java.util.stream.Collectors.joining;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 /**
  * User: kevink
@@ -165,6 +169,7 @@ public class ExpDataClassDataTestCase
         testTruncateRows(dataClass, table, expectedName, expectedSubName);
         testBulkImport(dataClass, table, user);
         testInsertAliases(dataClass, table);
+        testEmptyInsert(dataClass, table, user);
         testDeleteExpData(dataClass, user, 3);
         testDeleteExpDataClass(dataClass, user, table, domain.getTypeURI());
     }
@@ -184,17 +189,17 @@ public class ExpDataClassDataTestCase
             tx.commit();
         }
 
-        Assert.assertEquals(1, ret.size());
-        Assert.assertEquals(1, ret.get(0).get("genId"));
-        Assert.assertEquals(expectedName, ret.get(0).get("name"));
+        assertEquals(1, ret.size());
+        assertEquals(1, ret.get(0).get("genId"));
+        assertEquals(expectedName, ret.get(0).get("name"));
 
         Integer rowId = (Integer) ret.get(0).get("RowId");
         ExpData data = ExperimentService.get().getExpData(rowId);
         ExpData data1 = ExperimentService.get().getExpData(dataClass, expectedName);
-        Assert.assertEquals(data, data1);
+        assertEquals(data, data1);
 
         TableSelector ts = new TableSelector(table);
-        Assert.assertEquals(1L, ts.getRowCount());
+        assertEquals(1L, ts.getRowCount());
     }
 
     private void testInsertIntoSubfolder(ExpDataClassImpl dataClass, TableInfo table, Container sub, String expectedSubName) throws Exception
@@ -213,19 +218,19 @@ public class ExpDataClassDataTestCase
             tx.commit();
         }
 
-        Assert.assertEquals(1, ret.size());
-        Assert.assertEquals(sub.getId(), ret.get(0).get("container"));
+        assertEquals(1, ret.size());
+        assertEquals(sub.getId(), ret.get(0).get("container"));
 
         ExpData data = ExperimentService.get().getExpData(dataClass, expectedSubName);
         Assert.assertNotNull(data);
-        Assert.assertEquals(sub, data.getContainer());
+        assertEquals(sub, data.getContainer());
 
         // TODO: Why is my filter not working?
 //            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("container"), Arrays.asList(c, sub), CompareType.IN);
 //            TableSelector ts = new TableSelector(table, filter, null);
 //            Assert.assertEquals(2L, ts.getRowCount());
 
-        Assert.assertEquals(2, dataClass.getDatas().size());
+        assertEquals(2, dataClass.getDatas().size());
     }
 
     private void testInsertDuplicate(ExpDataClassImpl dataClass, TableInfo table) throws Exception
@@ -248,8 +253,8 @@ public class ExpDataClassDataTestCase
         }
 
         TableSelector ts = new TableSelector(table);
-        Assert.assertEquals(1L, ts.getRowCount());
-        Assert.assertEquals(1, dataClass.getDatas().size());
+        assertEquals(1L, ts.getRowCount());
+        assertEquals(1, dataClass.getDatas().size());
     }
 
     private void testTruncateRows(ExpDataClassImpl dataClass, TableInfo table, String expectedName, String expectedSubName)
@@ -262,9 +267,9 @@ public class ExpDataClassDataTestCase
             count = ExperimentServiceImpl.get().truncateDataClass(dataClass, TestContext.get().getUser(), null);
             tx.commit();
         }
-        Assert.assertEquals(2, count);
+        assertEquals(2, count);
 
-        Assert.assertEquals(0, dataClass.getDatas().size());
+        assertEquals(0, dataClass.getDatas().size());
         Assert.assertNull(ExperimentService.get().getExpData(dataClass, expectedName));
         Assert.assertNull(ExperimentService.get().getExpData(dataClass, expectedSubName));
     }
@@ -286,18 +291,18 @@ public class ExpDataClassDataTestCase
 
         MapLoader mapLoader = new MapLoader(rows);
         int count = table.getUpdateService().loadRows(user, c, mapLoader, new DataIteratorContext(), null);
-        Assert.assertEquals(2, count);
-        Assert.assertEquals(2, dataClass.getDatas().size());
+        assertEquals(2, count);
+        assertEquals(2, dataClass.getDatas().size());
         verifyAliases(new ArrayList<>(Arrays.asList("a", "b", "c")));
     }
 
     private void testDeleteExpData(ExpDataClassImpl dataClass, User user, int expectedCount)
     {
         List<? extends ExpData> datas = dataClass.getDatas();
-        Assert.assertEquals(expectedCount, datas.size());
+        assertEquals(expectedCount, datas.size());
 
         datas.get(0).delete(user);
-        Assert.assertEquals(expectedCount-1, dataClass.getDatas().size());
+        assertEquals(expectedCount-1, dataClass.getDatas().size());
     }
 
     private void testDeleteExpDataClass(ExpDataClassImpl dataClass, User user, TableInfo table, String typeURI)
@@ -343,10 +348,24 @@ public class ExpDataClassDataTestCase
     {
         for (String name : aliasNames)
         {
-            Assert.assertEquals(new TableSelector(ExperimentService.get().getTinfoAlias(),
+            assertEquals(new TableSelector(ExperimentService.get().getTinfoAlias(),
                     new SimpleFilter(FieldKey.fromParts("name"), name), null).getRowCount(), 1);
         }
     }
+
+    // Issue 35013: Importing a file with zero rows into a DataClass results in NPE
+    private void testEmptyInsert(ExpDataClassImpl dataClass, TableInfo table, User user) throws Exception
+    {
+        List<Map<String, Object>> rows = new ArrayList<>();
+        ListofMapsDataIterator.Builder b = new ListofMapsDataIterator.Builder(new CaseInsensitiveHashSet("name", "flag", "alias", "aa"), rows);
+
+        BatchValidationException errors = new BatchValidationException();
+        int count = table.getUpdateService().importRows(user, c, b, errors, null, null);
+        if (errors.hasErrors())
+            throw errors;
+        assertEquals(0, count);
+    }
+
 
     @Test
     public void testDeriveDuringImport() throws Exception
@@ -407,7 +426,7 @@ public class ExpDataClassDataTestCase
         final TableInfo table = schema.getTable(firstDataClassName);
         final MapLoader mapLoader = new MapLoader(rows);
         int count = table.getUpdateService().loadRows(user, c, mapLoader, new DataIteratorContext(), null);
-        Assert.assertEquals(3, count);
+        assertEquals(3, count);
 
         // Verify lineage
         ExpLineageOptions options = new ExpLineageOptions();
@@ -418,25 +437,25 @@ public class ExpDataClassDataTestCase
         final ExpData bob = ExperimentService.get().getExpData(firstDataClass, "bob");
         ExpLineage lineage = ExperimentService.get().getLineage(bob, options);
         Assert.assertTrue(lineage.getDatas().isEmpty());
-        Assert.assertEquals(1, lineage.getMaterials().size());
+        assertEquals(1, lineage.getMaterials().size());
         Assert.assertTrue(lineage.getMaterials().contains(s1));
 
         final ExpData jimbo = ExperimentService.get().getExpData(secondDataClass, "jimbo");
         final ExpData sally = ExperimentService.get().getExpData(firstDataClass, "sally");
         lineage = ExperimentService.get().getLineage(sally, options);
-        Assert.assertEquals(2, lineage.getDatas().size());
+        assertEquals(2, lineage.getDatas().size());
         Assert.assertTrue(lineage.getDatas().contains(bob));
         Assert.assertTrue(lineage.getDatas().contains(jimbo));
-        Assert.assertEquals(1, lineage.getMaterials().size(), 1);
+        assertEquals(1, lineage.getMaterials().size(), 1);
         Assert.assertTrue(lineage.getMaterials().contains(s2));
 
         final ExpData mike = ExperimentService.get().getExpData(firstDataClass, "mike");
         lineage = ExperimentService.get().getLineage(mike, options);
-        Assert.assertEquals("Expected 2 data, found: " + lineage.getDatas().stream().map(ExpData::getName).collect(joining(", ")),
+        assertEquals("Expected 2 data, found: " + lineage.getDatas().stream().map(ExpData::getName).collect(joining(", ")),
                 2, lineage.getDatas().size());
         Assert.assertTrue(lineage.getDatas().contains(bob));
         Assert.assertTrue(lineage.getDatas().contains(sally));
-        Assert.assertEquals("Expected 2 samples, found: " + lineage.getMaterials().stream().map(ExpMaterial::getName).collect(joining(", ")),
+        assertEquals("Expected 2 samples, found: " + lineage.getMaterials().stream().map(ExpMaterial::getName).collect(joining(", ")),
                 2, lineage.getMaterials().size());
         Assert.assertTrue(lineage.getMaterials().contains(s1));
         Assert.assertTrue(lineage.getMaterials().contains(s2));
@@ -456,24 +475,24 @@ public class ExpDataClassDataTestCase
         {
             Assert.assertTrue(rs.next());
             Map<FieldKey, Object> bobMap = rs.getFieldKeyRowMap();
-            Assert.assertEquals("bob", bobMap.get(FieldKey.fromParts("Name")));
+            assertEquals("bob", bobMap.get(FieldKey.fromParts("Name")));
             assertMultiValue(bobMap.get(FieldKey.fromParts("InputsMaterialSampleNames")), "S-1");
 
             Assert.assertTrue(rs.next());
             Map<FieldKey, Object> sallyMap = rs.getFieldKeyRowMap();
-            Assert.assertEquals("sally", sallyMap.get(FieldKey.fromParts("Name")));
+            assertEquals("sally", sallyMap.get(FieldKey.fromParts("Name")));
             assertMultiValue(sallyMap.get(FieldKey.fromParts("InputsDataAllNames")), "jimbo", "bob");
             assertMultiValue(sallyMap.get(FieldKey.fromParts("InputsDataFirstDataClassNames")), "bob");
             assertMultiValue(sallyMap.get(FieldKey.fromParts("InputsMaterialSampleNames")), "S-2", "S-1");
 
             Assert.assertTrue(rs.next());
             Map<FieldKey, Object> mikeMap = rs.getFieldKeyRowMap();
-            Assert.assertEquals("mike", mikeMap.get(FieldKey.fromParts("Name")));
+            assertEquals("mike", mikeMap.get(FieldKey.fromParts("Name")));
             assertMultiValue(mikeMap.get(FieldKey.fromParts("InputsDataAllNames")), "sally", "jimbo", "bob");
             assertMultiValue(mikeMap.get(FieldKey.fromParts("InputsDataFirstDataClassNames")), "bob", "sally");
             assertMultiValue(mikeMap.get(FieldKey.fromParts("InputsMaterialSampleNames")), "S-2", "S-1");
 
-            Assert.assertFalse(rs.next());
+            assertFalse(rs.next());
         }
     }
 
@@ -517,7 +536,7 @@ public class ExpDataClassDataTestCase
 
         DomainTemplateGroup templateGroup = DomainTemplateGroup.get(c, "TestingFromTemplate");
         Assert.assertNotNull(templateGroup);
-        Assert.assertFalse(
+        assertFalse(
                 "Errors in template: " + StringUtils.join(templateGroup.getErrors(), ", "),
                 templateGroup.hasErrors());
 
@@ -529,9 +548,9 @@ public class ExpDataClassDataTestCase
 
         TemplateInfo t = domain.getTemplateInfo();
         Assert.assertNotNull("Expected template information to be persisted", t);
-        Assert.assertEquals("simpletest", t.getModuleName());
-        Assert.assertEquals("TestingFromTemplate", t.getTemplateGroupName());
-        Assert.assertEquals("testingFromTemplate", t.getTableName());
+        assertEquals("simpletest", t.getModuleName());
+        assertEquals("TestingFromTemplate", t.getTemplateGroupName());
+        assertEquals("testingFromTemplate", t.getTableName());
 
         DomainKind kind = domain.getDomainKind();
         Assert.assertTrue(kind instanceof DataClassDomainKind);
@@ -553,8 +572,8 @@ public class ExpDataClassDataTestCase
         // verify that the lookup from the ConceptURI mapping is applied as a FK to the column
         TableInfo aaLookupTable = table.getColumn("aa").getFkTableInfo();
         Assert.assertNotNull(aaLookupTable);
-        Assert.assertEquals("lists", aaLookupTable.getPublicSchemaName());
-        Assert.assertEquals(listName, aaLookupTable.getName());
+        assertEquals("lists", aaLookupTable.getPublicSchemaName());
+        assertEquals(listName, aaLookupTable.getName());
         Assert.assertNull(table.getColumn("bb").getFkTableInfo());
 
         String expectedName = "TEST-1-20";
@@ -606,7 +625,7 @@ public class ExpDataClassDataTestCase
 
         DomainTemplateGroup templateGroup = DomainTemplateGroup.get(c, "todolist");
         Assert.assertNotNull(templateGroup);
-        Assert.assertFalse(
+        assertFalse(
                 "Errors in template: " + StringUtils.join(templateGroup.getErrors(), ", "),
                 templateGroup.hasErrors());
 
@@ -617,7 +636,7 @@ public class ExpDataClassDataTestCase
         TableInfo priorityTable = listSchema.getTable("Priority");
 
         Collection<Map<String, Object>> priorities = new TableSelector(priorityTable).getMapCollection();
-        Assert.assertEquals(5, priorities.size());
+        assertEquals(5, priorities.size());
 
         // Issue 27729: sequence not updated to max after bulk import with importIdentity turned on
         // verify that we can insert a new priority
@@ -636,9 +655,9 @@ public class ExpDataClassDataTestCase
             tx.commit();
         }
 
-        Assert.assertEquals(1, ret.size());
-        Assert.assertEquals(5, ((Integer)ret.get(0).get("pri")).longValue());
-        Assert.assertEquals("p5", ret.get(0).get("title"));
+        assertEquals(1, ret.size());
+        assertEquals(5, ((Integer)ret.get(0).get("pri")).longValue());
+        assertEquals("p5", ret.get(0).get("title"));
 
 
         // verify the "TodoList" DataCLass was created and data was imported
@@ -647,9 +666,9 @@ public class ExpDataClassDataTestCase
         Assert.assertNotNull("data class not in query schema", table);
 
         Collection<Map<String, Object>> todos = new TableSelector(table, TableSelector.ALL_COLUMNS, null, null).getMapCollection();
-        Assert.assertEquals(1, todos.size());
+        assertEquals(1, todos.size());
         Map<String, Object> todo = todos.iterator().next();
-        Assert.assertEquals("create xsd", todo.get("title"));
+        assertEquals("create xsd", todo.get("title"));
 
         ExpDataClass dataClass = ExperimentServiceImpl.get().getDataClass(sub, "TodoList");
         ExpData data = ExperimentServiceImpl.get().getExpData(dataClass, "TODO-1");
@@ -692,7 +711,7 @@ public class ExpDataClassDataTestCase
                 tx.commit();
             }
 
-            Assert.assertEquals(1, ret.size());
+            assertEquals(1, ret.size());
             dataRowId1 = ((Integer)ret.get(0).get("RowId")).intValue();
         }
 
@@ -712,7 +731,7 @@ public class ExpDataClassDataTestCase
                 tx.commit();
             }
 
-            Assert.assertEquals(1, ret.size());
+            assertEquals(1, ret.size());
             dataRowId2 = ((Integer)ret.get(0).get("RowId")).intValue();
         }
 

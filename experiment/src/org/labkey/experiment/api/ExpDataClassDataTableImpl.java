@@ -729,6 +729,8 @@ public class ExpDataClassDataTableImpl extends ExpProtocolOutputTableImpl<ExpDat
         public boolean next() throws BatchValidationException
         {
             boolean hasNext = super.next();
+            if (!hasNext)
+                return false;
 
             // skip processing if there are errors upstream
             if (getErrors().hasErrors())
@@ -756,7 +758,7 @@ public class ExpDataClassDataTableImpl extends ExpProtocolOutputTableImpl<ExpDat
                 }
 
             }
-            return hasNext;
+            return true;
         }
     }
 
@@ -818,6 +820,25 @@ public class ExpDataClassDataTableImpl extends ExpProtocolOutputTableImpl<ExpDat
             if (getErrors().hasErrors())
                 return hasNext;
 
+            // after the last row, insert all of the aliases
+            if (!hasNext)
+            {
+                final ExperimentService svc = ExperimentService.get();
+
+                try (DbScope.Transaction transaction = svc.getTinfoDataClass().getSchema().getScope().ensureTransaction())
+                {
+                    for (Map.Entry<String, Object> entry : _lsidAliasMap.entrySet())
+                    {
+                        String lsid = entry.getKey();
+                        Object aliases = entry.getValue();
+                        AliasInsertHelper.handleInsertUpdate(getContainer(), _user, lsid, svc.getTinfoDataAliasMap(), aliases);
+                    }
+                    transaction.commit();
+                }
+
+                return false;
+            }
+
             // For each iteration, collect the lsid and alias col values.
             if (_lsidCol != null && _aliasCol != null)
             {
@@ -828,24 +849,8 @@ public class ExpDataClassDataTableImpl extends ExpProtocolOutputTableImpl<ExpDat
                 {
                     _lsidAliasMap.put((String) lsidValue, aliasValue);
                 }
-
-                if (!hasNext)
-                {
-                    final ExperimentService svc = ExperimentService.get();
-
-                    try (DbScope.Transaction transaction = svc.getTinfoDataClass().getSchema().getScope().ensureTransaction())
-                    {
-                        for (Map.Entry<String, Object> entry : _lsidAliasMap.entrySet())
-                        {
-                            String lsid = entry.getKey();
-                            Object aliases = entry.getValue();
-                            AliasInsertHelper.handleInsertUpdate(getContainer(), _user, lsid, svc.getTinfoDataAliasMap(), aliases);
-                        }
-                        transaction.commit();
-                    }
-                }
             }
-            return hasNext;
+            return true;
         }
     }
 
