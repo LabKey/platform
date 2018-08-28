@@ -54,8 +54,7 @@ public class TempTableWriter
             if (col.load)
             {
                 JdbcType type = JdbcType.valueOf(col.clazz);
-                ColumnInfo colTT = new ColumnInfo(col.name);
-                colTT.setJdbcType(type);
+                ColumnInfo colTT = new ColumnInfo(col.name, type);
                 colTT.setNullable(true);
                 activeColumns.add(colTT);
             }

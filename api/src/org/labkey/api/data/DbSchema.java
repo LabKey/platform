@@ -23,7 +23,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.Selector.ForEachBlock;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
@@ -847,8 +846,7 @@ public class DbSchema
         DbSchema coreSchema = CoreSchema.getInstance().getSchema();
 
         List<ColumnInfo> listColInfos = new ArrayList<>();
-        ColumnInfo col = new ColumnInfo("RowId");
-        col.setSqlTypeName("INT");
+        ColumnInfo col = new ColumnInfo("RowId", JdbcType.INTEGER);
         col.setNullable(false);
         listColInfos.add(col);
 
@@ -923,11 +921,7 @@ public class DbSchema
         else
         {
             new SqlSelector(coreSchema, " SELECT * FROM " + tempTableName
-                    + " WHERE OrphanedContainer IS NOT NULL ORDER BY 1,3 ;").forEach(new ForEachBlock<ResultSet>()
-            {
-                @Override
-                public void exec(ResultSet rs) throws SQLException
-                {
+                + " WHERE OrphanedContainer IS NOT NULL ORDER BY 1,3 ;").forEach(rs -> {
                     sbOut.append("<br/>&nbsp;&nbsp;&nbsp;ERROR:  ");
                     sbOut.append(rs.getString(1));
                     sbOut.append(" &nbsp;&nbsp;&nbsp;&nbsp; ");
@@ -940,8 +934,7 @@ public class DbSchema
                     sbOut.append("&nbsp;&nbsp;&nbsp;Container:  ");
                     sbOut.append(rs.getString(6));
                     sbOut.append("\n");
-                }
-            });
+                });
 
             return sbOut.toString();
         }

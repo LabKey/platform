@@ -35,8 +35,7 @@ public class NullColumnInfo extends ColumnInfo
 
     public NullColumnInfo(TableInfo parent, FieldKey name, JdbcType jdbcType)
     {
-        super(name, parent);
-        setJdbcType(jdbcType);
+        super(name, parent, jdbcType);
         setReadOnly(true);
     }
 
@@ -49,8 +48,7 @@ public class NullColumnInfo extends ColumnInfo
 
     public NullColumnInfo(TableInfo parent, String name, JdbcType jdbcType)
     {
-        super(name, parent);
-        setJdbcType(jdbcType);
+        super(name, parent, jdbcType);
         setReadOnly(true);
     }
 

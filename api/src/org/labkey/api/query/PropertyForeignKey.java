@@ -139,7 +139,7 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
         if (parent == null)
         {
             // this happens from getLookupTableInfo()
-            ret = new ColumnInfo(pd.getName());
+            ret = new ColumnInfo(pd.getName(), pd.getJdbcType());
             initColumn(_schema.getUser(), ret, pd);
         }
         else

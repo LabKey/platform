@@ -26,19 +26,16 @@ import org.labkey.api.study.actions.AssayRunUploadForm;
  */
 public class AssayWarningsDisplayColumn extends DataColumn
 {
-    private AssayRunUploadForm _form;
 
     public AssayWarningsDisplayColumn(AssayRunUploadForm form)
     {
         super(createColumnInfo());
-        _form = form;
         setInputType("checkbox");
     }
 
     private static ColumnInfo createColumnInfo()
     {
-        ColumnInfo column = new ColumnInfo("ignoreWarnings");
-        return column;
+        return new ColumnInfo("ignoreWarnings");
     }
 
     public boolean isEditable()

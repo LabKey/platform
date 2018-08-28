@@ -115,7 +115,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
         {
             if (parent == null)
             {
-                return new ColumnInfo(pd.getName());
+                return new ColumnInfo(pd.getName(), pd.getJdbcType());
             }
             PropertyColumn qcColumn = new PropertyColumn(pd, parent, _schema.getContainer(), _schema.getUser(), false);
             qcColumn.setParentIsObjectId(_parentIsObjectId);

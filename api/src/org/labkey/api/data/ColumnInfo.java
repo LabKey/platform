@@ -221,10 +221,16 @@ public class ColumnInfo extends ColumnRenderProperties
         setAlias(rsmd.getColumnName(col));
     }
 
+    @Deprecated
     public ColumnInfo(String name, TableInfo parentTable)
     {
 //        assert -1 == name.indexOf('/');
         this(new FieldKey(null, name), parentTable);
+    }
+
+    public ColumnInfo(String name, TableInfo parentTable, JdbcType type)
+    {
+        this(new FieldKey(null, name), parentTable, type);
     }
 
     public ColumnInfo(FieldKey key, TableInfo parentTable, JdbcType type)
@@ -1558,12 +1564,11 @@ public class ColumnInfo extends ColumnRenderProperties
                 while (rsCols.next())
                 {
                     String metaDataName = reader.getName();
-                    ColumnInfo col = new ColumnInfo(metaDataName, parentTable);
+                    ColumnInfo col = new ColumnInfo(metaDataName, parentTable, dialect.getJdbcType(reader.getSqlType(), reader.getSqlTypeName()));
 
                     col._metaDataName = metaDataName;
                     col._selectName = dialect.getSelectNameFromMetaDataName(metaDataName);
                     col._sqlTypeName = reader.getSqlTypeName();
-                    col._jdbcType = dialect.getJdbcType(reader.getSqlType(), reader.getSqlTypeName());
                     col._isAutoIncrement = reader.isAutoIncrement();
                     col._scale = reader.getScale();
                     col._nullable = reader.isNullable();

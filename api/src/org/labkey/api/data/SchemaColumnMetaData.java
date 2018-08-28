@@ -58,11 +58,6 @@ public class SchemaColumnMetaData
     private Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> _allIndices;
     private static Logger _log = Logger.getLogger(SchemaColumnMetaData.class);
 
-    protected SchemaColumnMetaData(SchemaTableInfo tinfo) throws SQLException
-    {
-        this(tinfo, true);
-    }
-
     SchemaColumnMetaData(SchemaTableInfo tinfo, boolean load) throws SQLException
     {
         _tinfo = tinfo;
@@ -511,7 +506,7 @@ public class SchemaColumnMetaData
     {
         VirtualColumnInfo(String name, TableInfo tinfo)
         {
-            super(tinfo,name,(String)null);
+            super(tinfo, name, (String)null);
             setIsUnselectable(true);    // minor hack, to indicate to other code that wants to detect this
         }
     }

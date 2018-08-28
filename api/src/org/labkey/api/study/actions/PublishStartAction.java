@@ -22,7 +22,6 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
@@ -50,8 +49,6 @@ import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -217,14 +214,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
             // Pull out the data row ids
             ids = new ArrayList<>();
 
-            new TableSelector(table, Arrays.asList(dataRowIdColumn, runIdColumn), filter, new Sort(runFieldKey.toString())).setForDisplay(true).forEach(new Selector.ForEachBlock<ResultSet>()
-            {
-                @Override
-                public void exec(ResultSet rs) throws SQLException
-                {
-                    ids.add(dataRowIdColumn.getIntValue(rs));
-                }
-            });
+            new TableSelector(table, Arrays.asList(dataRowIdColumn, runIdColumn), filter, new Sort(runFieldKey.toString())).setForDisplay(true).forEach(rs -> ids.add(dataRowIdColumn.getIntValue(rs)));
         }
         else
         {
