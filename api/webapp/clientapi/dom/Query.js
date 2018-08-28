@@ -373,7 +373,7 @@ LABKEY.Query = new function(impl, $) {
         }
 
         return LABKEY.Ajax.request({
-            url: LABKEY.ActionURL.buildURL('query', 'import.api', config.containerPath),
+            url: config.importUrl || LABKEY.ActionURL.buildURL('query', 'import.api', config.containerPath),
             method: 'POST',
             success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope, false),
             failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),

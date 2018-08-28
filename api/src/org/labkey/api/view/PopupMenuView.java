@@ -191,7 +191,7 @@ public class PopupMenuView extends HttpView<PopupMenu>
         if (null != item.getScript())
             out.write(" onclick=\"" + PageFlowUtil.filter(item.getScript()) +"\" ");
         if (null != item.getHref())
-            out.write(" href=\"" + item.getHref() + "\"");
+            out.write(" href=\"" + PageFlowUtil.filter(item.getHref()) + "\"");
         else
             out.write(" href=\"javascript:void(0);\"");
         if (null != item.getTarget())

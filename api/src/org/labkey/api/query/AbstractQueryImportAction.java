@@ -399,9 +399,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             if (ve.hasErrors())
                 throw ve;
 
-            JSONObject response = new JSONObject();
-            response.put("success", true);
-            response.put("rowCount", rowCount);
+            JSONObject response = createSuccessResponse(rowCount);
             return new ApiSimpleResponse(response);
         }
         catch (IOException e)
@@ -416,6 +414,14 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             if (null != dataFile && !Boolean.parseBoolean(saveToPipeline))
                 dataFile.delete();
         }
+    }
+
+    protected JSONObject createSuccessResponse(int rowCount)
+    {
+        JSONObject response = new JSONObject();
+        response.put("success", true);
+        response.put("rowCount", rowCount);
+        return response;
     }
 
     @Override

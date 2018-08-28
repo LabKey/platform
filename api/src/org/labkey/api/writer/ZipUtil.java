@@ -76,19 +76,30 @@ public class ZipUtil
 
             while (null != (entry = zis.getNextEntry()))
             {
+                File destFile = new File(unzipDir, entry.getName());
+
+                if (!destFile.getCanonicalPath().startsWith(unzipDir.getCanonicalPath() + File.separator)) {
+                    throw new IOException("Zip entry is outside of the target dir: " + entry.getName());
+                }
+
                 if (entry.isDirectory())
                 {
-                    File newDir = new File(unzipDir, entry.getName());
-                    newDir.mkdir();
+                    destFile.mkdirs();
+                    if (!destFile.isDirectory())
+                    {
+                        throw new IOException("Failed to create directory: " + destFile.getName());
+                    }
                     continue;
                 }
 
                 if (null != log)
                     log.info("Expanding " + entry.getName());
 
-                File destFile = new File(unzipDir, entry.getName());
                 destFile.getParentFile().mkdirs();
-                destFile.createNewFile();
+                if (!destFile.createNewFile())
+                {
+                    throw new IOException("Failed to extract file: " + destFile.getName());
+                }
 
                 // We can't close() this, otherwise zis will get closed
                 BufferedInputStream bis = new BufferedInputStream(zis);

@@ -17,12 +17,14 @@
 package org.labkey.api.exp;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.writer.ZipUtil;
 
-import java.io.*;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipEntry;
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * User: jeckels
@@ -30,8 +32,6 @@ import java.util.zip.ZipEntry;
  */
 public class CompressedXarSource extends AbstractFileXarSource
 {
-    private final int BUFFER_SIZE = 2048;
-
     private final File _xarFile;
 
     public CompressedXarSource(File xarFile, PipelineJob job)
@@ -52,7 +52,7 @@ public class CompressedXarSource extends AbstractFileXarSource
         _xarFile = xarFile;
     }
 
-    public void init() throws IOException, ExperimentException
+    public void init() throws ExperimentException
     {
         File outputDir = new File(_xarFile.getPath() + ".exploded");
         FileUtil.deleteDir(outputDir);
@@ -66,54 +66,29 @@ public class CompressedXarSource extends AbstractFileXarSource
             throw new ExperimentException("Failed to create directory " + outputDir);
         }
 
-        try (FileInputStream fIn = new FileInputStream(_xarFile))
+        List<File> xarContents;
+        try
         {
-            ZipInputStream zIn = new ZipInputStream(new BufferedInputStream(fIn));
-            ZipEntry entry;
-            while ((entry = zIn.getNextEntry()) != null)
-            {
-                byte data[] = new byte[BUFFER_SIZE];
-                File destFile = new File(outputDir, entry.getName());
-                if (entry.isDirectory())
-                {
-                    destFile.mkdirs();
-                    if (!destFile.isDirectory())
-                    {
-                        throw new ExperimentException("Failed to create directory " + destFile);
-                    }
-                }
-                else
-                {
-                    int i;
-                    File destDir = destFile.getParentFile();
-                    destDir.mkdirs();
-                    if (!destDir.isDirectory())
-                    {
-                        throw new ExperimentException("Failed to create directory " + destDir);
-                    }
+            xarContents = ZipUtil.unzipToDirectory(_xarFile, outputDir);
+        }
+        catch (IOException e)
+        {
+            throw new ExperimentException("Failed to extract XAR file: " + _xarFile, e);
+        }
 
-                    try (OutputStream out = new BufferedOutputStream(new FileOutputStream(destFile), BUFFER_SIZE))
-                    {
-                        while ((i = zIn.read(data, 0, BUFFER_SIZE)) != -1)
-                        {
-                            out.write(data, 0, i);
-                        }
-                        if (destFile.getName().toLowerCase().endsWith(".xar.xml"))
-                        {
-                            if (_xmlFile != null)
-                            {
-                                throw new XarFormatException("XAR file " + _xarFile + " contains more than one .xar.xml file");
-                            }
-                            _xmlFile = destFile;
-                        }
-                    }
-                }
-            }
+        List<File> xarFiles = xarContents.stream().filter(f -> f.getName().toLowerCase().endsWith(".xar.xml")).collect(Collectors.toList());
 
-            if (_xmlFile == null)
-            {
-                throw new XarFormatException("XAR file " + _xarFile + " does not contain any .xar.xml files");
-            }
+        if (xarFiles.isEmpty())
+        {
+            throw new XarFormatException("XAR file " + _xarFile + " does not contain any .xar.xml files");
+        }
+        else if (xarFiles.size() > 1)
+        {
+            throw new XarFormatException("XAR file " + _xarFile + " contains more than one .xar.xml file");
+        }
+        else
+        {
+            _xmlFile = xarFiles.get(0);
         }
     }
 
