@@ -22,6 +22,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DeferredUpgrade;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -144,6 +145,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
     }
 
     /** Called from exp-17.23-17.24.sql */
+    @DeferredUpgrade
     public static void saveMvIndicatorStorageNames(ModuleContext context)
     {
         if (context.isNewInstall())
