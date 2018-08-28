@@ -75,28 +75,33 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
     {
         if (_configuration == null)
         {
-            JSONObject json = new JSONObject();
-
-            addIfNotNull(json, "extensions", _extensions);
-            addIfNotNull(json, "languageName", getLanguageName());
-            addIfNotNull(json, "languageVersion", getLanguageVersion());
-            addIfNotNull(json, "exePath", getExePath());
-            addIfNotNull(json, "exeCommand", getExeCommand());
-            addIfNotNull(json, "outputFileName", getOutputFileName());
-            addIfNotNull(json, "machine", getMachine());
-            addIfNotNull(json, "port", getPort());
-            addIfNotNull(json, "user", getUser());
-            addIfNotNull(json, "password", getPassword());
-            addIfNotNull(json, "external", isExternal());
-            addIfNotNull(json, "remote", isRemote());
-            addIfNotNull(json, "docker", isDocker());
-            addIfNotNull(json, "pandocEnabled", isPandocEnabled());
-            addIfNotNull(json, "pathMap", _pathMap);
-            addIfNotNull(json, "default", isDefault());
-
-            _configuration = json.toString();
+            updateConfiguration();
         }
         return _configuration;
+    }
+
+    public void updateConfiguration()
+    {
+        JSONObject json = new JSONObject();
+
+        addIfNotNull(json, "extensions", _extensions);
+        addIfNotNull(json, "languageName", getLanguageName());
+        addIfNotNull(json, "languageVersion", getLanguageVersion());
+        addIfNotNull(json, "exePath", getExePath());
+        addIfNotNull(json, "exeCommand", getExeCommand());
+        addIfNotNull(json, "outputFileName", getOutputFileName());
+        addIfNotNull(json, "machine", getMachine());
+        addIfNotNull(json, "port", getPort());
+        addIfNotNull(json, "user", getUser());
+        addIfNotNull(json, "password", getPassword());
+        addIfNotNull(json, "external", isExternal());
+        addIfNotNull(json, "remote", isRemote());
+        addIfNotNull(json, "docker", isDocker());
+        addIfNotNull(json, "pandocEnabled", isPandocEnabled());
+        addIfNotNull(json, "pathMap", _pathMap);
+        addIfNotNull(json, "default", isDefault());
+
+        _configuration = json.toString();
     }
 
     public void setConfiguration(String configuration)

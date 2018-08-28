@@ -2147,6 +2147,7 @@ public class CoreController extends SpringActionController
                     record.put("outputFileName", def.getOutputFileName());
                     record.put("pandocEnabled", String.valueOf(def.isPandocEnabled()));
                     record.put("docker", String.valueOf(def.isDocker()));
+                    record.put("default", String.valueOf(def.isDefault()));
 
                     if (def.isRemote())
                     {
@@ -2216,6 +2217,21 @@ public class CoreController extends SpringActionController
             LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
             svc.saveDefinition(getUser(), def);
 
+            // update default R engine
+            if (def.getType() == ExternalScriptEngineDefinition.Type.R && def.isDefault())
+            {
+                List<ExternalScriptEngineDefinition> rDefs = svc.getEngineDefinitions(ExternalScriptEngineDefinition.Type.R);
+                for (ExternalScriptEngineDefinition rDef : rDefs)
+                {
+                    if ((!rDef.getName().equals(def.getName())) && (rDef.isDocker() == def.isDocker() && rDef.isDefault()))
+                    {
+                        ExternalScriptEngineDefinitionImpl newDef = (ExternalScriptEngineDefinitionImpl) rDef;
+                        newDef.setDefault(false);
+                        newDef.updateConfiguration(); // update config json
+                        svc.saveDefinition(getUser(), newDef);
+                    }
+                }
+            }
             return new ApiSimpleResponse("success", true);
         }
     }

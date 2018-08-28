@@ -34,7 +34,7 @@
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
-        dependencies.add("Ext3");
+        dependencies.add("Ext4");
     }
 %>
 <%
@@ -50,77 +50,85 @@
 %>
 <style type="text/css">
 
-    .bmenu {
-        background-image: url(<%=getWebappURL("_icons/exe.png")%>) !important;
+    #enginesGrid .x4-grid-body {
+        border-top-width: 0;
     }
 
 </style>
 
 <script type="text/javascript">
-    Ext.QuickTips.init();
+    Ext4.QuickTips.init();
     var R_EXTENSIONS = 'R,r';
     var PERL_EXTENSIONS = 'pl';
     var R_ENGINE_NAME = 'R Scripting Engine';
     var REMOTE_R_ENGINE_NAME = 'Remote R Scripting Engine';
     var R_DOCKER_ENGINE_NAME = 'R Docker Scripting Engine';
+    var defaultR, defaultSandboxedR;
 
     function renderNameColumn(value, p, record)
     {
-        var txt;
+        var txt, data = record.data;
 
-        if (record.data.enabled)
+        if (data.enabled)
             txt = '<b>' + value + '</b><br>';
         else
-            txt = '<b><div class="labkey-disabled">' + value + '</div></b><br>';
+            txt = '<b><span class="labkey-disabled">' + value + '</span></b><br>';
 
-        txt = txt.concat('<i>enabled : ' + record.data.enabled + '</i><br>');
-        txt = txt.concat('<i>external : ' + record.data.external + '</i><br>');
+        if (data.extensions === R_EXTENSIONS)
+        {
+            if (data.default)
+                txt = txt.concat('<i style="font-weight: bold">default : true</i><br>');
+            if (data.docker)
+                txt = txt.concat('<i>sandboxed : true</i><br>');
+        }
+        txt = txt.concat('<i>enabled : ' + data.enabled + '</i><br>');
+        txt = txt.concat('<i>external : ' + data.external + '</i><br>');
 
         return txt;
     }
 
-    function recordsLoaded(records)
-    {
-        testItem.enable();
-        for (var i in records)
-        {
-            if (records[i].data)
-            {
-                if (records[i].data.extensions == 'R,r')
-                {
-                    testItem.disable();
-                }
-            }
-        }
-
-    }
-
     function getEngineSpecificItems(record) {
-        if (record.name === R_ENGINE_NAME || record.name === REMOTE_R_ENGINE_NAME)
+
+        if (record.extensions === R_EXTENSIONS)
         {
-            return getRSpecificFields(record.pandocEnabled)
-        }
-        else if (record.name === R_DOCKER_ENGINE_NAME)
-        {
-            return [{
-                name: 'pandocEnabled',
-                xtype: 'hidden',
-                value: true
-            }];
+            var items = [];
+            items.push({
+                fieldLabel: 'Site Default',
+                name: 'default',
+                id: 'editEngine_default',
+                labelAttrTpl: " data-qtitle='Set as default' data-qtip='Specify the default R engine to use'",
+                xtype: 'checkbox',
+                checked: record.default
+            });
+            if (record.docker) {
+                items = items.concat([{
+                    name: 'pandocEnabled',
+                    xtype: 'hidden',
+                    value: true
+                },{
+                    name: 'docker',
+                    xtype: 'hidden',
+                    value: record.docker
+                }]);
+            }
+            else {
+                items = items.concat(getNonSandboxRSpecificFields(record.pandocEnabled));
+            }
+
+            return items;
         }
 
         return null;
     }
 
-    function getRSpecificFields(enabled) {
+    function getNonSandboxRSpecificFields(enabled) {
         return [{
             fieldLabel: 'Use pandoc & rmarkdown',
             name: 'pandocEnabled',
             id: 'editEngine_pandocEnabled',
+            labelAttrTpl: " data-qtitle='Enable rmarkdown v2' data-qtip='Select this option if you have rmarkdown and pandoc installed. Please see knitr help documentation on labkey.org for more information.'",
             xtype: 'checkbox',
-            checked: enabled,
-            tooltip: {text: 'Select this option if you have rmarkdown and pandoc installed. Please see knitr help documentation on labkey.org for more information.', title: 'Enable rmarkdown v2'},
-            listeners: {render: setFormFieldTooltip}
+            checked: enabled
         }];
     }
 
@@ -128,7 +136,7 @@
     {
         // pre defined engine templates
 
-        var rEngineItem = new Ext.menu.Item({
+        var rEngineItem = new Ext4.menu.Item({
             id: 'add_rEngine',
             text:'New R Engine',
             listeners:{
@@ -154,7 +162,7 @@
         });
 
     <% if (isRemoteEnabled) { %>
-        var rserveEngineItem = new Ext.menu.Item({
+        var rserveEngineItem = new Ext4.menu.Item({
             id: 'add_rserveEngine',
             text:'New Remote R Engine',
             listeners:{
@@ -197,7 +205,7 @@
     <% } %>
 
     <% if (isRDockerAvailable) { %>
-        var rDockerEngineItem = new Ext.menu.Item({
+        var rDockerEngineItem = new Ext4.menu.Item({
             id: 'add_rDockerEngine',
             text:'New R Docker Engine',
             listeners:{
@@ -218,7 +226,7 @@
             }
         });
     <% } %>
-        var perlEngineItem = new Ext.menu.Item({
+        var perlEngineItem = new Ext4.menu.Item({
             id: 'add_perlEngine',
             text:'New Perl Engine',
             listeners:{click:function(button, event) {editRecord(button, grid,{
@@ -234,36 +242,16 @@
                 languageName:'Perl'});}}}
             );
 
-
-        var con = new Ext.data.HttpProxy(new Ext.data.Connection({
+        var store = new Ext4.data.Store({
+            model: 'LABKEY.model.ScriptEngineModel',
+            proxy: {
+                type: 'ajax',
                 url: LABKEY.ActionURL.buildURL("core", "scriptEnginesSummary", <%=q(getContainer().getPath())%>),
-                method: 'GET'
-            }));
-
-        var store = new Ext.data.Store({
-            reader: new Ext.data.JsonReader({root:'views',id:'rowId'},
-                    [
-                        {name:'name'},
-                        {name:'exePath'},
-                        {name:'exeCommand'},
-                        {name:'machine'},
-                        {name:'port'},
-                        {name:'pathMap'},
-                        {name:'user'},
-                        {name:'password'},
-                        {name:'extensions'},
-                        {name:'languageName'},
-                        {name:'languageVersion'},
-                        {name:'rowId'},
-                        {name:'type'},
-                        {name:'enabled', type:'boolean'},
-                        {name:'external', type:'boolean'},
-                        {name:'remote', type:'boolean'},
-                        {name:'docker', type:'boolean'},
-                        {name:'outputFileName'},
-                        {name:'pandocEnabled', type:'boolean'}
-                    ]),
-            proxy: con,
+                reader: {
+                    type: 'json',
+                    root:'views'
+                }
+            },
             autoLoad: true,
             listeners:{load:function(store, records, options) {
                 rEngineItem.enable();
@@ -277,16 +265,12 @@
                 for (var i in records) {
                     if (records[i].data) {
                         if (records[i].data.extensions == R_EXTENSIONS)  {
-                            <% if (isRemoteEnabled) { %>
-                                if (records[i].data.remote)
-                                    rserveEngineItem.disable();
-                            <%  } %>
-                            if (!records[i].data.remote)
-                                rEngineItem.disable();
-                            <% if (isRDockerAvailable) { %>
-                            if (records[i].data.docker)
-                                rDockerEngineItem.disable();
-                            <%  } %>
+                            if (records[i].data.default) {
+                                if (records[i].data.docker)
+                                    defaultSandboxedR = records[i].data;
+                                else
+                                    defaultR = records[i].data;
+                            }
                         }
 
                         if (records[i].data.extensions == PERL_EXTENSIONS)
@@ -294,9 +278,10 @@
                     }
                 }
             }},
-            sortInfo: {field:'name', direction:"ASC"}});
+            sorters: [{property:'languageName', direction:"ASC"},
+                {property:'name', direction:"ASC"}]});
 
-        var newMenu = new Ext.menu.Menu({
+        var newMenu = new Ext4.menu.Menu({
             id: 'mainMenu',
             cls:'extContainer',
             items: [rEngineItem,
@@ -317,7 +302,7 @@
                     external: true});}}
             }] });
 
-        var grid = new Ext.grid.GridPanel({
+        var grid = new Ext4.grid.Panel({
             el:'enginesGrid',
             autoScroll:false,
             autoHeight:true,
@@ -331,7 +316,7 @@
                 }
             },
             columns:[
-                {header:'Name', dataIndex:'name', renderer:renderNameColumn},
+                {header:'Name', dataIndex:'name', minWidth: 180, renderer:renderNameColumn},
                 {header:'Language', dataIndex:'languageName'},
                 {header:'Language Version', dataIndex:'languageVersion'},
                 {header:'File Extensions', dataIndex:'extensions'},
@@ -342,17 +327,14 @@
                 {header:'Run Command', dataIndex:'exeCommand', hidden:true},
                 {header:'Output File Name', dataIndex:'outputFileName', hidden:true}
             ],
-            view: new Ext.grid.GridView({
-                forceFit:true
-            }),
+            forceFit: true,
             buttons: [
                 {text:'Add', id: 'btn_addEngine', menu: newMenu, tooltip: {text:'Configure a new external script engine', title:'Add Engine'}, hidden: <%=!hasAdminOpsPerms%>},
                 {text:'Delete', id: 'btn_deleteEngine', tooltip: {text:'Delete the selected script engine', title:'Delete Engine'}, listeners:{click:function(button, event) {deleteSelected(grid);}}, hidden: <%=!hasAdminOpsPerms%>},
                 {text:'Edit', id: 'btn_editEngine', tooltip: {text:'Edit an existing script engine', title:'Edit Engine'}, listeners:{click:function(button, event) {editSelected(button, grid);}}, hidden: <%=!hasAdminOpsPerms%>},
                 {text:'Done', id: 'btn_done', tooltip: {text:'Return back to the Admin Console'}, listeners:{click:function(button, event) {window.location = LABKEY.ActionURL.buildURL('admin', 'showAdmin');}}}
             ],
-            buttonAlign:'left',
-            selModel: new Ext.grid.RowSelectionModel({singleSelect: true})
+            buttonAlign:'left'
         });
 
         grid.render();
@@ -360,11 +342,11 @@
 
     function deleteSelected(grid)
     {
-        var selections = grid.selModel.getSelections();
+        var selections = grid.getSelectionModel().getSelection();
 
         if (selections.length == 0)
         {
-            Ext.Msg.alert("Delete Engine Configuration", "There is no engine selected");
+            Ext4.Msg.alert("Delete Engine Configuration", "There is no engine selected");
             return false;
         }
 
@@ -373,42 +355,32 @@
 
         if (!record.external)
         {
-            Ext.Msg.alert("Delete Engine Configuration", "Java 6 script engines cannot be deleted but you can disable them.");
+            Ext4.Msg.alert("Delete Engine Configuration", "Java 6 script engines cannot be deleted but you can disable them.");
             return false;
         }
         params.push("rowId=" + record.rowId);
         params.push("extensions=" + record.extensions);
 
-        Ext.Msg.confirm('Delete Engine Configuration', "Are you sure you wish to delete the selected Configuration? : " + record.name, function(btn, text) {
+        Ext4.Msg.confirm('Delete Engine Configuration', "Are you sure you wish to delete the selected Configuration? : " + record.name, function(btn, text) {
             if (btn == 'yes')
             {
-                Ext.Ajax.request({
+                Ext4.Ajax.request({
 
                     url: LABKEY.ActionURL.buildURL("core", "scriptEnginesDelete") + '?' + params.join('&'),
                     method: "POST",
                     success: function(){grid.store.load();},
-                    failure: function(){Ext.Msg.alert("Delete Engine Configuration", "Deletion Failed");}
+                    failure: function(){Ext4.Msg.alert("Delete Engine Configuration", "Deletion Failed");}
                 });
             }
         });
     }
 
-    function setFormFieldTooltip(component)
-    {
-        var label = Ext.get('x-form-el-' + component.id).prev('label');
-        Ext.QuickTips.register({
-            target: label,
-            text: component.tooltip.text,
-            title: ''
-        });
-    }
-
     function editSelected(button, grid)
     {
-        var selections = grid.selModel.getSelections();
+        var selections = grid.getSelectionModel().getSelection();
         if (selections.length == 0)
         {
-            Ext.Msg.alert("Edit Engine Configuration", "There is no engine selected");
+            Ext4.Msg.alert("Edit Engine Configuration", "There is no engine selected");
             return false;
         }
 
@@ -421,10 +393,9 @@
             fieldLabel: 'Program Path',
             name: 'exePath',
             id: 'editEngine_exePath',
+            labelAttrTpl: " data-qtitle='Program Path' data-qtip='Specify the absolute path to the program including the program itself'",
             allowBlank: false,
             value: record.exePath,
-            tooltip: {text: 'Specify the absolute path to the program including the program itself', title: 'Program Path'},
-            listeners: {render: setFormFieldTooltip},
             disabled: !record.external,
             width: 275
         };
@@ -433,10 +404,9 @@
             fieldLabel: 'Machine Name',
             name: 'machine',
             id: 'editEngine_machine',
+            labelAttrTpl: " data-qtitle='Machine Name' data-qtip='Specify the machine name or IP address that Rserve is running on'",
             allowBlank: false,
             value: record.machine,
-            tooltip: {text: 'Specify the machine name or IP address that Rserve is running on', title: 'Machine Name'},
-            listeners: {render: setFormFieldTooltip},
             disabled: !record.external,
             width: 275
         };
@@ -445,8 +415,7 @@
             fieldLabel: 'Program Command',
             name: 'exeCommand',
             id: 'editEngine_exeCommand',
-            tooltip: {text: 'The command used when the program is invoked', title: 'Program Command'},
-            listeners: {render: setFormFieldTooltip},
+            labelAttrTpl: " data-qtitle='Program Command' data-qtip='The command used when the program is invoked'",
             disabled: !record.external,
             value: record.exeCommand,
             width: 275
@@ -456,14 +425,13 @@
             fieldLabel: 'Port',
             name: 'port',
             id: 'editEngine_port',
-            tooltip: {text: 'The port used to connect to Rserve', title: 'Port'},
-            listeners: {render: setFormFieldTooltip},
+            labelAttrTpl: " data-qtitle='Port' data-qtip='The port used to connect to Rserve'",
             disabled: !record.external,
             value: record.port,
             width: 275
         };
 
-        var pathMapStore = new Ext.data.JsonStore({
+        var pathMapStore = new Ext4.data.JsonStore({
             fields: [
                 {
                     name: 'localURI',
@@ -480,69 +448,66 @@
 
         if (record.pathMap)
         {
-            pathMapStore.loadData(record.pathMap);
+            pathMapStore.loadData(record.pathMap.paths);
         }
 
-        var editor = new Ext.form.TextField();
+        var fieldDisplayRenderer = function(val){
+            return Ext4.util.Format.htmlEncode(val);
+        };
 
-        var itemPathGrid = new Ext.grid.EditorGridPanel({
+        var itemPathGridInput = new Ext4.grid.Panel({
             xtype: 'grid',
-            fieldLabel: 'Path Mapping',
             name: 'pathMap',
             id: 'editEngine_pathMap',
-            tooltip: {text: 'Add or remove local to remote path mappings', title: 'Local to Remote Path Mapping'},
-            listeners: {render: setFormFieldTooltip},
             disabled: !record.external,
             stripeRows: true,
             autoEncode: true,
             enableColumnHide: false,
             store: pathMapStore,
-            colModel: new Ext.grid.ColumnModel({
-                defaults: {
-                    sortable: false
-                },
-                columns: [
-                    {id: 'localURI', header: 'Local', dataIndex: 'localURI', editable: true, editor: editor, width: 200, renderer: Ext.util.Format.htmlEncode},
-                    {id: 'remoteURI', header: 'Remote', dataIndex: 'remoteURI', editable: true, editor: editor, width: 200, renderer: Ext.util.Format.htmlEncode}
-                ]
-            }),
+            plugins: [
+                Ext4.create('Ext.grid.plugin.CellEditing', {
+                    clicksToEdit: 1
+                })
+            ],
+            columns: [
+                {id: 'localURI', header: 'Local', dataIndex: 'localURI', editable: true, editor: 'textfield', width: 200, renderer: fieldDisplayRenderer},
+                {id: 'remoteURI', header: 'Remote', dataIndex: 'remoteURI', editable: true, editor: 'textfield', width: 200, renderer: fieldDisplayRenderer}
+            ],
             tbar: [
                 {
                     text: 'Add',
                     handler: function ()
                     {
                         var data = {'localURI': '', 'remoteURI': ''};
-                        var record = new pathMapStore.recordType(data);
-                        pathMapStore.add(record);
+                        pathMapStore.add(data);
                     }
                 },
                 {
                     text: 'Remove',
                     handler: function (btn, evt)
                     {
-                        var record = itemPathGrid.getSelectionModel().getSelected();
+                        var record = itemPathGridInput.getSelectionModel().getSelection();
                         pathMapStore.remove(record);
                     }
                 }
             ],
-            sm: new Ext.grid.RowSelectionModel({singleSelect: true}),
             width: 430,
             height: 160,
-            viewConfig: {forceFit: true},
+            viewConfig: {forceFit: true}
+        });
 
-            // Get the JSON object used to submit
-            getValue: function ()
-            {
-                console.log("grid");
-            }
+        var itemPathGrid = new Ext4.form.FieldContainer({
+            fieldLabel: 'Path Mapping',
+            id: 'editEngine_pathMapContainer',
+            labelAttrTpl: " data-qtitle='Local to Remote Path Mapping' data-qtip='Add or remove local to remote path mappings'",
+            items: [itemPathGridInput]
         });
 
         var itemUser = {
             fieldLabel: 'Remote User',
             name: 'user',
             id: 'editEngine_user',
-            tooltip: {text: 'The user for the remote service login', title: 'Remote User'},
-            listeners: {render: setFormFieldTooltip},
+            labelAttrTpl: " data-qtitle='Remote User' data-qtip='The user for the remote service login'",
             disabled: !record.external,
             value: record.user,
             width: 275
@@ -552,8 +517,7 @@
             fieldLabel: 'Remote Password',
             name: 'password',
             id: 'editEngine_password',
-            tooltip: {text: 'The password for the remote service login account', title: 'Remote Password'},
-            listeners: {render: setFormFieldTooltip},
+            labelAttrTpl: " data-qtitle='Remote Password' data-qtip='The password for the remote service login account'",
             inputType: 'password',
             disabled: !record.external,
             value: record.password,
@@ -591,8 +555,7 @@
             name: 'extensions',
             id: 'editEngine_extensions',
             allowBlank: false,
-            tooltip: {text: 'The list of file extensions (separated by commas) that this engine is associated with', title: 'File Extensions'},
-            listeners: {render: setFormFieldTooltip},
+            labelAttrTpl: " data-qtitle='File Extensions' data-qtip='The list of file extensions (separated by commas) that this engine is associated with'",
             readOnly: !record.external || record.docker,
             value: record.extensions
         };
@@ -602,20 +565,18 @@
             name: 'outputFileName',
             id: 'editEngine_outputFileName',
             value: record.outputFileName,
-            tooltip: {text: 'If the console output is written to a file, the name should be specified here. The substitution syntax \\${scriptName} will be replaced with the name (minus the extension) of the script being executed.', title: 'Output File Name'},
+            labelAttrTpl: " data-qtitle='Output File Name' data-qtip='If the console output is written to a file, the name should be specified here. The substitution syntax \\${scriptName} will be replaced with the name (minus the extension) of the script being executed.'",
             disabled: !record.external,
-            readOnly:  record.docker,
-            listeners: {render: setFormFieldTooltip}
+            readOnly:  record.docker
         };
 
         var itemEnabled = {
             fieldLabel: 'Enabled',
             name: 'enabled',
             id: 'editEngine_enabled',
+            labelAttrTpl: " data-qtitle='Enable Engine' data-qtip='If a script engine is disabled, it cannot be used to run reports and scripts'",
             xtype: 'checkbox',
-            checked: record.enabled,
-            tooltip: {text: 'If a script engine is disabled, it cannot be used to run reports and scripts', title: 'Enable Engine'},
-            listeners: {render: setFormFieldTooltip}
+            checked: record.enabled
         };
 
         var itemExternal = {
@@ -642,12 +603,6 @@
             value: record.remote
         };
 
-        var itemDocker = {
-            name: 'docker',
-            xtype: 'hidden',
-            value: record.docker
-        };
-    
         // common items for both local and remote
         var panelItems = [
             itemName,
@@ -686,23 +641,21 @@
         panelItems.push(itemKey);
         panelItems.push(itemType);
         panelItems.push(itemRemote);
-        if (record.docker)
-            panelItems.push(itemDocker);
 
-        var formPanel = new Ext.FormPanel({
+        var formPanel = new Ext4.form.Panel({
             bodyStyle:'padding:5px 5px 0',
             defaultType: 'textfield',
             items: panelItems
         });
 
-        var win = new Ext.Window({
+        var win = new Ext4.Window({
             title: 'Edit Engine Configuration',
             layout:'form',
             border: false,
             width: record.remote ? 575 : 475,
             autoHeight : true,
-            closeAction:'close',
-            modal: false,
+            closeAction:'destroy',
+            modal: true,
             items: formPanel,
             resizable: false,
             buttons: [{
@@ -714,8 +667,7 @@
                 text: <%=q(!hasAdminOpsPerms ? "Close" : "Cancel")%>,
                 id: 'btn_cancel',
                 handler: function(){win.close();}
-            }],
-            bbar: [{ xtype: 'tbtext', text: '',id:'statusTxt' }]
+            }]
         });
 
         win.show(button);
@@ -727,78 +679,110 @@
         var form = panel.getForm();
         if (form && !form.isValid())
         {
-                Ext.Msg.alert('Engine Definition', 'Not all fields have been properly completed');
+                Ext4.Msg.alert('Engine Definition', 'Not all fields have been properly completed');
             return false;
         }
 
         var values = form.getFieldValues();
 
-        // Get the pathMap store data as an array of JSON objects of the form: {'localURI':'A', 'remoteURI':'B'}
-        var pathMapItem = panel.items.get('editEngine_pathMap');
-        if (pathMapItem)
-        {
-            var pathMapDatas = Ext.pluck(pathMapItem.store.data.items, 'data');
-            values['pathMap'] = {
-                paths: pathMapDatas
-            };
+        // confirm site default R engine modification
+        if (values.extensions  === R_EXTENSIONS) {
+            var confirmChange;
+            if (values.docker && defaultSandboxedR) {
+                if (values.rowId === defaultSandboxedR.rowId && !values.default) {
+                    confirmChange = "Are you sure to stop using '" + values.name + "' as the default site wide sandboxed R engine?"
+                }
+                else if (values.default) {
+                    confirmChange = "Are you sure to starting using '" + values.name + "' as the default site wide sandboxed R engine? The current default is '" + defaultSandboxedR.name + "'."
+                }
+            }
+            else if (!values.docker && defaultR) {
+                if (values.rowId === defaultR.rowId && !values.default) {
+                    confirmChange = "Are you sure to stop using '" + values.name + "' as the default site wide R engine?"
+                }
+                else if (values.default) {
+                    confirmChange = "Are you sure to starting using '" + values.name + "' as the default site wide R engine? The current default is '" + defaultR.name + "'."
+                }
+            }
+            if (confirmChange && !confirm(confirmChange))
+                return;
         }
 
-        win.getBottomToolbar().get(0).setText("");
-        Ext.Ajax.request({
+        // Get the pathMap store data as an array of JSON objects of the form: {'localURI':'A', 'remoteURI':'B'}
+        if (panel.items.get('editEngine_pathMapContainer')) {
+            var pathMapItem = panel.items.get('editEngine_pathMapContainer').items.get('editEngine_pathMap');
+            if (pathMapItem)
+            {
+                var pathMapDatas = Ext4.pluck(pathMapItem.store.data.items, 'data');
+                values['pathMap'] = {
+                    paths: pathMapDatas
+                };
+            }
+        }
+
+        Ext4.Ajax.request({
             url: LABKEY.ActionURL.buildURL("core", "scriptEnginesSave"),
             method: 'POST',
             jsonData: values,
             success: function(resp, opt){
-                var o = Ext.decode(resp.responseText);
+                var o = Ext4.decode(resp.responseText);
                 if (o.success)
                 {
                     win.close();
                     grid.store.load();
                 }
                 else
-                    handleAjaxError(o.errors, win);
+                    handleFailure(resp, opt);
             },
-            failure: function(form, action){handleError(win, action);}
+            failure: handleFailure
         })
     }
 
-    function handleAjaxError(errors, win)
-    {
-        if (errors)
+    function handleFailure(resp, opt) {
+        var jsonResp = LABKEY.Utils.decode(resp.responseText);
+        if (jsonResp && jsonResp.errors)
         {
-            var errorText = '<span style="color:red; white-space:normal;">';
-            for (var p in errors)
+            var errorHTML = '';
+            for (var p in jsonResp.errors)
             {
-                if (errors.hasOwnProperty(p))
+                if (jsonResp.errors.hasOwnProperty(p))
                 {
-                    errorText += errors[p] + '\n';
+                    errorHTML += jsonResp.errors[p] + '\n';
                 }
             }
-
-            errorText += "</span>";
-            win.getBottomToolbar().get(0).setText(errorText);
+            Ext4.Msg.alert('Error', errorHTML);
         }
+        else
+            LABKEY.Utils.displayAjaxErrorResponse(resp, opt);
     }
 
-    function handleError(win, action)
+    Ext4.onReady(function()
     {
-        var errorTxt = 'An error occurred saving the engine configuration.';
-
-        if (action.failureType == Ext.form.Action.SERVER_INVALID)
-        {
-            errorTxt = 'An error occurred, move your mouse over the fields highlighted<br>in red to see detailed information.';
-        }
-        else if (action.failureType == Ext.form.Action.CONNECT_FAILURE)
-        {
-            var jsonResponse = Ext.util.JSON.decode(action.response.responseText);
-            if (jsonResponse && jsonResponse.exception)
-                errorTxt = jsonResponse.exception;
-        }
-        win.getBottomToolbar().get(0).setText(errorTxt);
-    }
-
-    Ext.onReady(function()
-    {
+        Ext4.define('LABKEY.model.ScriptEngineModel', {
+            extend: 'Ext.data.Model',
+            fields: [
+                {name:'name'},
+                {name:'exePath'},
+                {name:'exeCommand'},
+                {name:'machine'},
+                {name:'port'},
+                {name:'pathMap'},
+                {name:'user'},
+                {name:'password'},
+                {name:'extensions'},
+                {name:'languageName'},
+                {name:'languageVersion'},
+                {name:'rowId'},
+                {name:'type'},
+                {name:'default', type:'boolean'},
+                {name:'enabled', type:'boolean'},
+                {name:'external', type:'boolean'},
+                {name:'remote', type:'boolean'},
+                {name:'docker', type:'boolean'},
+                {name:'outputFileName'},
+                {name:'pandocEnabled', type:'boolean'}
+            ]
+        });
         showEngines();
     });
 </script>
