@@ -61,39 +61,34 @@ class FileListTableInfo extends FilteredTable<CoreQuerySchema>
             _query.append(svc.listFilesQuery(schema.getUser()));
             _query.appendComment("</FileListTableInfo>", getSchema().getSqlDialect());
 
-            ColumnInfo containerCol = new ColumnInfo("Container", this);
-            containerCol.setJdbcType(JdbcType.VARCHAR);
+            ColumnInfo containerCol = new ColumnInfo("Container", this, JdbcType.VARCHAR);
             ContainerForeignKey.initColumn(containerCol, schema);
             addColumn(containerCol);
 
-            ColumnInfo createdCol = new ColumnInfo("Created", this);
-            createdCol.setJdbcType(JdbcType.DATE);
+            ColumnInfo createdCol = new ColumnInfo("Created", this, JdbcType.DATE);
             addColumn(createdCol);
 
-            ColumnInfo createdByCol = new ColumnInfo("CreatedBy", this);
+            ColumnInfo createdByCol = new ColumnInfo("CreatedBy", this, JdbcType.INTEGER);
             UserIdForeignKey.initColumn(createdByCol);
             addColumn(createdByCol);
 
-            ColumnInfo modifiedCol = new ColumnInfo("Modified", this);
-            modifiedCol.setJdbcType(JdbcType.DATE);
+            ColumnInfo modifiedCol = new ColumnInfo("Modified", this, JdbcType.DATE);
             modifiedCol.setHidden(true);
             addColumn(modifiedCol);
 
-            ColumnInfo modifiedByCol = new ColumnInfo("ModifiedBy", this);
+            ColumnInfo modifiedByCol = new ColumnInfo("ModifiedBy", this, JdbcType.INTEGER);
             UserIdForeignKey.initColumn(modifiedByCol);
             modifiedByCol.setHidden(true);
             addColumn(modifiedByCol);
 
-            ColumnInfo filePathCol = new ColumnInfo("FilePath", this);
-            filePathCol.setJdbcType(JdbcType.VARCHAR);
+            ColumnInfo filePathCol = new ColumnInfo("FilePath", this, JdbcType.VARCHAR);
             addColumn(filePathCol);
 
-            ColumnInfo sourceKeyCol = new ColumnInfo("SourceKey", this);
+            ColumnInfo sourceKeyCol = new ColumnInfo("SourceKey", this, JdbcType.INTEGER);
             sourceKeyCol.setHidden(true);
             addColumn(sourceKeyCol);
 
-            ColumnInfo sourceNameCol = new ColumnInfo("SourceName", this);
-            sourceNameCol.setJdbcType(JdbcType.VARCHAR);
+            ColumnInfo sourceNameCol = new ColumnInfo("SourceName", this, JdbcType.VARCHAR);
             sourceNameCol.setHidden(true);
             addColumn(sourceNameCol);
         }

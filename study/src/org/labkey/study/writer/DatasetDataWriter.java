@@ -25,6 +25,7 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.IndexInfo;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.Results;
@@ -504,7 +505,7 @@ public class DatasetDataWriter implements InternalStudyWriter
         public void testShouldExportColumn()
         {
             // true cases
-            ColumnInfo ci = new ColumnInfo("test");
+            ColumnInfo ci = new ColumnInfo("test", JdbcType.OTHER);
             assertTrue(shouldExport(ci, true, PHI.NotPHI, true));
             assertTrue(shouldExport(ci, true, PHI.NotPHI, false));
             assertTrue(shouldExport(ci, false, PHI.NotPHI, true));
@@ -531,15 +532,15 @@ public class DatasetDataWriter implements InternalStudyWriter
             assertTrue(shouldExport(ci, false, PHI.Limited, true));
 
             // false cases
-            ci = new ColumnInfo("test");
+            ci = new ColumnInfo("test", JdbcType.OTHER);
             ci.setUserEditable(false);
             assertFalse(shouldExport(ci, true, PHI.NotPHI, false));
 
-            ci = new ColumnInfo("test");
+            ci = new ColumnInfo("test", JdbcType.OTHER);
             ci.setFk(new ContainerForeignKey(null, null));
             assertFalse(shouldExport(ci, true, PHI.NotPHI, false));
 
-            ci = new ColumnInfo("test");
+            ci = new ColumnInfo("test", JdbcType.OTHER);
             ci.setPHI(PHI.Restricted);
             assertFalse(shouldExport(ci, false, PHI.PHI, false));
             assertFalse(shouldExport(ci, false, PHI.Limited, false));

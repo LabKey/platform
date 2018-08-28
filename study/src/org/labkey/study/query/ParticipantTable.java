@@ -364,9 +364,8 @@ public class ParticipantTable extends BaseStudyTable
             VirtualTable result = new VirtualTable(getSchema(), null);
             for (String source : getParticipantAliasSources(_datasetTable, _sourceColumn))
             {
-                ColumnInfo column = new ColumnInfo(source);
+                ColumnInfo column = new ColumnInfo(source, JdbcType.VARCHAR);
                 column.setParentTable(result);
-                column.setSqlTypeName(JdbcType.VARCHAR.toString());
                 result.safeAddColumn(column);
             }
             return result;

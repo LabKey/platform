@@ -25,6 +25,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.TSVGridWriter;
@@ -172,13 +173,13 @@ public abstract class DefaultStudyDesignWriter
         @Test
         public void testShouldRemovePhi()
         {
-            ColumnInfo ciNotPhi = new ColumnInfo("test");
+            ColumnInfo ciNotPhi = new ColumnInfo("test", JdbcType.OTHER);
             ciNotPhi.setPHI(PHI.NotPHI);
-            ColumnInfo ciLimitedPhi = new ColumnInfo("test");
+            ColumnInfo ciLimitedPhi = new ColumnInfo("test", JdbcType.OTHER);
             ciLimitedPhi.setPHI(PHI.Limited);
-            ColumnInfo ciPhi = new ColumnInfo("test");
+            ColumnInfo ciPhi = new ColumnInfo("test", JdbcType.OTHER);
             ciPhi.setPHI(PHI.PHI);
-            ColumnInfo ciRestrictedPhi = new ColumnInfo("test");
+            ColumnInfo ciRestrictedPhi = new ColumnInfo("test", JdbcType.OTHER);
             ciRestrictedPhi.setPHI(PHI.Restricted);
 
             // should remove if it is above PHI export level

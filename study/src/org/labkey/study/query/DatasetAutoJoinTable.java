@@ -17,6 +17,7 @@ package org.labkey.study.query;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.VirtualTable;
 import org.labkey.api.query.AliasedColumn;
@@ -145,8 +146,7 @@ public class DatasetAutoJoinTable extends VirtualTable
         ColumnInfo ret;
         if (_participantIdColumn == null)
         {
-            ret = new ColumnInfo(name, this);
-            ret.setSqlTypeName("VARCHAR");
+            ret = new ColumnInfo(name, this, JdbcType.VARCHAR);
         }
         else
         {

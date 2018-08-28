@@ -108,73 +108,57 @@ public class AuditLogUnionTable extends FilteredTable<AuditQuerySchema>
             }
             _query.appendComment("</AuditUnionTableInfo>", getSchema().getSqlDialect());
 
-            ColumnInfo createdByCol = new ColumnInfo("CreatedBy", this);
-            createdByCol.setJdbcType(JdbcType.INTEGER);
+            ColumnInfo createdByCol = new ColumnInfo("CreatedBy", this, JdbcType.INTEGER);
             UserIdForeignKey.initColumn(createdByCol);
             addColumn(createdByCol);
 
-            ColumnInfo impersonatedByCol = new ColumnInfo("ImpersonatedBy", this);
-            impersonatedByCol.setJdbcType(JdbcType.INTEGER);
+            ColumnInfo impersonatedByCol = new ColumnInfo("ImpersonatedBy", this, JdbcType.INTEGER);
             UserIdForeignKey.initColumn(impersonatedByCol);
             addColumn(impersonatedByCol);
 
-            ColumnInfo rowIdCol = new ColumnInfo("RowId", this);
+            ColumnInfo rowIdCol = new ColumnInfo("RowId", this, JdbcType.INTEGER);
             rowIdCol.setKeyField(true);
-            rowIdCol.setJdbcType(JdbcType.INTEGER);
             addColumn(rowIdCol);
 
-            ColumnInfo dateCol = new ColumnInfo("Date", this);
-            dateCol.setJdbcType(JdbcType.DATE);
+            ColumnInfo dateCol = new ColumnInfo("Date", this, JdbcType.DATE);
             addColumn(dateCol);
 
-            ColumnInfo eventTypeCol = new ColumnInfo("EventType", this);
-            eventTypeCol.setJdbcType(JdbcType.VARCHAR);
+            ColumnInfo eventTypeCol = new ColumnInfo("EventType", this, JdbcType.VARCHAR);
             addColumn(eventTypeCol);
 
-            ColumnInfo commentCol = new ColumnInfo("Comment", this);
-            commentCol.setJdbcType(JdbcType.VARCHAR);
+            ColumnInfo commentCol = new ColumnInfo("Comment", this, JdbcType.VARCHAR);
             addColumn(commentCol);
 
-            ColumnInfo containerCol = new ColumnInfo("ContainerId", this);
-            containerCol.setJdbcType(JdbcType.VARCHAR);
+            ColumnInfo containerCol = new ColumnInfo("ContainerId", this, JdbcType.VARCHAR);
             ContainerForeignKey.initColumn(containerCol, schema);
             addColumn(containerCol);
 
-            ColumnInfo projIdCol = new ColumnInfo("ProjectId", this);
-            projIdCol.setJdbcType(JdbcType.VARCHAR);
+            ColumnInfo projIdCol = new ColumnInfo("ProjectId", this, JdbcType.VARCHAR);
             ContainerForeignKey.initColumn(projIdCol, schema);
             addColumn(projIdCol);
 
-            ColumnInfo entityIdCol = new ColumnInfo("EntityId", this);
-            entityIdCol.setJdbcType(JdbcType.VARCHAR);
+            ColumnInfo entityIdCol = new ColumnInfo("EntityId", this, JdbcType.VARCHAR);
             addColumn(entityIdCol);
 
-            ColumnInfo lsidCol = new ColumnInfo("Lsid", this);
-            lsidCol.setJdbcType(JdbcType.VARCHAR);
+            ColumnInfo lsidCol = new ColumnInfo("Lsid", this, JdbcType.VARCHAR);
             addColumn(lsidCol);
 
-            ColumnInfo key1Col = new ColumnInfo("Key1", this);
-            key1Col.setJdbcType(JdbcType.VARCHAR);
+            ColumnInfo key1Col = new ColumnInfo("Key1", this, JdbcType.VARCHAR);
             addColumn(key1Col);
 
-            ColumnInfo key2Col = new ColumnInfo("Key2", this);
-            key2Col.setJdbcType(JdbcType.VARCHAR);
+            ColumnInfo key2Col = new ColumnInfo("Key2", this, JdbcType.VARCHAR);
             addColumn(key2Col);
 
-            ColumnInfo key3Col = new ColumnInfo("Key3", this);
-            key3Col.setJdbcType(JdbcType.VARCHAR);
+            ColumnInfo key3Col = new ColumnInfo("Key3", this, JdbcType.VARCHAR);
             addColumn(key3Col);
 
-            ColumnInfo intKey1Col = new ColumnInfo("IntKey1", this);
-            intKey1Col.setJdbcType(JdbcType.INTEGER);
+            ColumnInfo intKey1Col = new ColumnInfo("IntKey1", this, JdbcType.INTEGER);
             addColumn(intKey1Col);
 
-            ColumnInfo intKey2Col = new ColumnInfo("IntKey2", this);
-            intKey2Col.setJdbcType(JdbcType.INTEGER);
+            ColumnInfo intKey2Col = new ColumnInfo("IntKey2", this, JdbcType.INTEGER);
             addColumn(intKey2Col);
 
-            ColumnInfo intKey3Col = new ColumnInfo("IntKey3", this);
-            intKey3Col.setJdbcType(JdbcType.INTEGER);
+            ColumnInfo intKey3Col = new ColumnInfo("IntKey3", this, JdbcType.INTEGER);
             addColumn(intKey3Col);
         }
 

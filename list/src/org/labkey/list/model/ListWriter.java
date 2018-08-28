@@ -27,6 +27,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Results;
@@ -343,13 +344,13 @@ public class ListWriter
         @Test
         public void testShouldRemovePhi()
         {
-            ColumnInfo ciNotPhi = new ColumnInfo("test");
+            ColumnInfo ciNotPhi = new ColumnInfo("test", JdbcType.OTHER);
             ciNotPhi.setPHI(PHI.NotPHI);
-            ColumnInfo ciLimitedPhi = new ColumnInfo("test");
+            ColumnInfo ciLimitedPhi = new ColumnInfo("test", JdbcType.OTHER);
             ciLimitedPhi.setPHI(PHI.Limited);
-            ColumnInfo ciPhi = new ColumnInfo("test");
+            ColumnInfo ciPhi = new ColumnInfo("test", JdbcType.OTHER);
             ciPhi.setPHI(PHI.PHI);
-            ColumnInfo ciRestrictedPhi = new ColumnInfo("test");
+            ColumnInfo ciRestrictedPhi = new ColumnInfo("test", JdbcType.OTHER);
             ciRestrictedPhi.setPHI(PHI.Restricted);
 
             // should not include if it is above PHI export level

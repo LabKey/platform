@@ -39,6 +39,7 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.JsonWriter;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -743,7 +744,7 @@ public class SurveyManager
         public void testGetMetaDataForColumn()
         {
             SurveyManager sm = SurveyManager.get();
-            ColumnInfo ci = new ColumnInfo("test");
+            ColumnInfo ci = new ColumnInfo("test", JdbcType.OTHER);
             DisplayColumn dc = new DataColumn(ci, false);
             Map<String, Object> metaDataMap = JsonWriter.getMetaData(dc, null, false, true, false);
             Map<String, Object> trimmedMap = sm.getTrimmedMetaData(metaDataMap);

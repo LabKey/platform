@@ -22,6 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
@@ -226,8 +227,7 @@ public class ParticipantVisitDatasetTable extends VirtualTable
         ColumnInfo ret;
         if (_colParticipantId == null)
         {
-            ret = new ColumnInfo(name, this);
-            ret.setSqlTypeName("VARCHAR");
+            ret = new ColumnInfo(name, this, JdbcType.VARCHAR);
         }
         else
         {

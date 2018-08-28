@@ -398,15 +398,10 @@ public class VisualizationController extends SpringActionController
                             if (i >= 0)
                                 distinctSql.insert(i + "SELECT".length(), " DISTINCT");
 
-                            new SqlSelector(schema.getDbSchema().getScope(), distinctSql, queryLogging).forEach(new Selector.ForEachBlock<ResultSet>()
-                            {
-                                @Override
-                                public void exec(ResultSet rs) throws SQLException
-                                {
-                                    Object o = rs.getObject(1);
-                                    if (o != null)
-                                        values.add(Collections.singletonMap("value", ConvertUtils.convert(o)));
-                                }
+                            new SqlSelector(schema.getDbSchema().getScope(), distinctSql, queryLogging).forEach(rs -> {
+                                Object o = rs.getObject(1);
+                                if (o != null)
+                                    values.add(Collections.singletonMap("value", ConvertUtils.convert(o)));
                             });
                         }
                     }

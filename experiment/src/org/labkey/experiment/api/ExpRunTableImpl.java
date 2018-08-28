@@ -530,12 +530,10 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 };
                 t.setContainerFilter(new DelegatingContainerFilter(ExpRunTableImpl.this));
 
-                ColumnInfo runCol = new ColumnInfo("RunId", t);
-                runCol.setJdbcType(JdbcType.INTEGER);
+                ColumnInfo runCol = new ColumnInfo("RunId", t, JdbcType.INTEGER);
                 t.addColumn(runCol);
 
-                ColumnInfo dataCol = new ColumnInfo(dataIdName, t);
-                dataCol.setJdbcType(JdbcType.INTEGER);
+                ColumnInfo dataCol = new ColumnInfo(dataIdName, t, JdbcType.INTEGER);
                 dataCol.setFk(getExpSchema().getDataIdForeignKey());
                 t.addColumn(dataCol);
                 return t;
@@ -814,9 +812,8 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             VirtualTable result = new VirtualTable(ExperimentServiceImpl.get().getSchema(), "Experiments");
             for (ExpExperiment experiment : getExperiments())
             {
-                ColumnInfo column = new ColumnInfo(experiment.getName());
+                ColumnInfo column = new ColumnInfo(experiment.getName(), JdbcType.BOOLEAN);
                 column.setParentTable(result);
-                column.setSqlTypeName(JdbcType.BOOLEAN.toString());
                 result.safeAddColumn(column);
             }
             return result;

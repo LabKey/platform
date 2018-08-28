@@ -18,11 +18,11 @@ package org.labkey.study.query;
 
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.VirtualTable;
 import org.labkey.api.query.AliasedColumn;
-import org.labkey.api.query.QueryException;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.StringExpression;
@@ -67,7 +67,7 @@ public class ParticipantDatasetTable extends VirtualTable
         ColumnInfo column;
         if (_colParticipantId == null)
         {
-            column = new ColumnInfo(name, this);
+            column = new ColumnInfo(name, this, JdbcType.VARCHAR);
             column.setSqlTypeName("VARCHAR");
         }
         else
@@ -99,7 +99,7 @@ public class ParticipantDatasetTable extends VirtualTable
                     {
                         DatasetTableImpl dsTable = _schema.createDatasetTableInternal(def);
                         dsTable.hideParticipantLookups();
-                        dsTable.overlayMetadata(dsTable.getName(), _schema, new ArrayList<QueryException>());
+                        dsTable.overlayMetadata(dsTable.getName(), _schema, new ArrayList<>());
                         return dsTable;
                     }
                     catch (UnauthorizedException e)

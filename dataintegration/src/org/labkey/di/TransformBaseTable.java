@@ -20,8 +20,6 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
@@ -165,49 +163,41 @@ abstract public class TransformBaseTable extends VirtualTable
     protected void addBaseColumns()
     {
         // name
-        ColumnInfo transformId = new ColumnInfo(_nameMap.get("TransformId"), this);
-        transformId.setJdbcType(JdbcType.VARCHAR);
+        ColumnInfo transformId = new ColumnInfo(_nameMap.get("TransformId"), this, JdbcType.VARCHAR);
         addColumn(transformId);
 
         // container
         if (_schema.getContainer().isRoot())
         {
-            ColumnInfo container = new ColumnInfo(_nameMap.get("Container"), this);
-            container.setJdbcType(JdbcType.VARCHAR);
+            ColumnInfo container = new ColumnInfo(_nameMap.get("Container"), this, JdbcType.VARCHAR);
             container.setFk(new ContainerForeignKey(_schema));
             addColumn(container);
         }
 
         // version
-        ColumnInfo transformVersion = new ColumnInfo(_nameMap.get("TransformVersion"), this);
-        transformVersion.setJdbcType(JdbcType.INTEGER);
+        ColumnInfo transformVersion = new ColumnInfo(_nameMap.get("TransformVersion"), this, JdbcType.INTEGER);
         addColumn(transformVersion);
 
         //last run
-        ColumnInfo startTime = new ColumnInfo(_nameMap.get("StartTime"), this);
-        startTime.setJdbcType(JdbcType.TIMESTAMP);
+        ColumnInfo startTime = new ColumnInfo(_nameMap.get("StartTime"), this, JdbcType.TIMESTAMP);
         startTime.setFormat("MM/dd/yy HH:mm");
         startTime.setSortDirection(Sort.SortDirection.DESC);
         addColumn(startTime);
 
         // last status
-        ColumnInfo status = new ColumnInfo(_nameMap.get("Status"), this);
-        status.setJdbcType(JdbcType.VARCHAR);
+        ColumnInfo status = new ColumnInfo(_nameMap.get("Status"), this, JdbcType.VARCHAR);
         addColumn(status);
 
         // records processed
-        ColumnInfo recordCount = new ColumnInfo(_nameMap.get("RecordCount"), this);
-        recordCount.setJdbcType(JdbcType.INTEGER);
+        ColumnInfo recordCount = new ColumnInfo(_nameMap.get("RecordCount"), this, JdbcType.INTEGER);
         addColumn(recordCount);
 
         // execution time
-        ColumnInfo execTime = new ColumnInfo(_nameMap.get("ExecutionTime"), this);
-        execTime.setJdbcType(JdbcType.DOUBLE);
+        ColumnInfo execTime = new ColumnInfo(_nameMap.get("ExecutionTime"), this, JdbcType.DOUBLE);
         addColumn(execTime);
 
         // job id lookup to log file path
-        ColumnInfo jobId = new ColumnInfo(_nameMap.get("JobId"), this);
-        jobId.setJdbcType(JdbcType.INTEGER);
+        ColumnInfo jobId = new ColumnInfo(_nameMap.get("JobId"), this, JdbcType.INTEGER);
         jobId.setFk(new LookupForeignKey("rowId", "FilePath")
         {
             @Override
@@ -219,27 +209,17 @@ abstract public class TransformBaseTable extends VirtualTable
         jobId.setHidden(true);
         addColumn(jobId);
 
-        status.setDisplayColumnFactory(new DisplayColumnFactory()
-        {
-            @Override
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
-            {
-                return new StatusColumn(colInfo, _nameMap);
-            }
-        });
+        status.setDisplayColumnFactory(colInfo -> new StatusColumn(colInfo, _nameMap));
 
-        ColumnInfo transformRunId = new ColumnInfo("TransformRunId", this);
-        transformRunId.setJdbcType(JdbcType.INTEGER);
+        ColumnInfo transformRunId = new ColumnInfo("TransformRunId", this, JdbcType.INTEGER);
         transformRunId.setHidden(true);
         addColumn(transformRunId);
 
-        ColumnInfo expRunId = new ColumnInfo(_nameMap.get("ExpRunId"), this);
-        expRunId.setJdbcType(JdbcType.INTEGER);
+        ColumnInfo expRunId = new ColumnInfo(_nameMap.get("ExpRunId"), this, JdbcType.INTEGER);
         expRunId.setHidden(true);
         addColumn(expRunId);
 
-        ColumnInfo transformRunLog = new ColumnInfo(_nameMap.get("TransformRunLog"), this);
-        transformRunLog.setJdbcType(JdbcType.VARCHAR);
+        ColumnInfo transformRunLog = new ColumnInfo(_nameMap.get("TransformRunLog"), this, JdbcType.VARCHAR);
         addColumn(transformRunLog);
 
     }
