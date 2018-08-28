@@ -52,7 +52,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
     }
 
     @Override
-    public PipelineJob fromJSONTest(String json, Class<?> cls)
+    public Object fromJSONTest(String json, Class<?> cls)
     {
         Object obj = super.fromJSONTest(json, cls);
         if (obj instanceof PipelineJob)
@@ -62,7 +62,8 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
             job.restoreLocalDirectory();
             return job;
         }
-        throw new RuntimeException("Expected PipelineJob subclass: " + obj.getClass().getName());
+        _log.warn("Expected PipelineJob subclass: " + obj.getClass().getName());
+        return obj;
     }
 
     @Nullable

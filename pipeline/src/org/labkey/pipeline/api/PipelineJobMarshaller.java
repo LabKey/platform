@@ -36,6 +36,8 @@ import org.labkey.pipeline.xstream.URIXStreamConverter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -227,6 +229,8 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
         public static class TestJob
         {
             private String _name;
+            private Timestamp _timestamp;
+            private Time _time;
 /*            private int _migrateFilesOption;
             @JsonSerialize(keyUsing = StringKeySerialization.Serializer.class)
             @JsonDeserialize(keyUsing = StringKeySerialization.Deserializer.class)
@@ -262,7 +266,9 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
                 _propMap = new HashMap<>();
                 _propMap.put(new PropertyDescriptor(null, PropertyType.BIGINT, "foobar", ContainerManager.getRoot()), "foo");
                 _propMap.put(new PropertyDescriptor(null, PropertyType.STRING, "stringy", ContainerManager.getRoot()), "str"); */
-                _innerPair = new Pair<>(new Inner("31 Thunder Ave", 64102), new Inner("34 Boston St", 71101));
+//                _innerPair = new Pair<>(new Inner("31 Thunder Ave", 64102), new Inner("34 Boston St", 71101));
+                _timestamp = new Timestamp(1400938833L);
+                _time = new Time(1400938843L);
 
             }
 
@@ -279,6 +285,26 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
             public void setInnerPair(Pair<Inner, Inner> innerPair)
             {
                 _innerPair = innerPair;
+            }
+
+            public Timestamp getTimestamp()
+            {
+                return _timestamp;
+            }
+
+            public void setTimestamp(Timestamp timestamp)
+            {
+                _timestamp = timestamp;
+            }
+
+            public Time getTime()
+            {
+                return _time;
+            }
+
+            public void setTime(Time time)
+            {
+                _time = time;
             }
 /*            public int getMigrateFilesOption()
             {
