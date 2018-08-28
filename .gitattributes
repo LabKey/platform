@@ -948,8 +948,12 @@ api/src/org/labkey/api/pipeline/AbstractTaskFactorySettings.java -text
 api/src/org/labkey/api/pipeline/AnalyzeForm.java -text
 api/src/org/labkey/api/pipeline/CancelledException.java -text
 api/src/org/labkey/api/pipeline/DirectoryNotDeletedException.java -text
+api/src/org/labkey/api/pipeline/JacksonMixins.java -text
 api/src/org/labkey/api/pipeline/LocalDirectory.java -text
 api/src/org/labkey/api/pipeline/NoSuchJobException.java -text
+api/src/org/labkey/api/pipeline/NullSafeBindExceptionSerializer.java -text
+api/src/org/labkey/api/pipeline/ObjectKeySerialization.java -text
+api/src/org/labkey/api/pipeline/PairSerializer.java -text
 api/src/org/labkey/api/pipeline/ParamParser.java -text
 api/src/org/labkey/api/pipeline/PipeRoot.java -text
 api/src/org/labkey/api/pipeline/PipelineAction.java -text
@@ -973,6 +977,7 @@ api/src/org/labkey/api/pipeline/PropertiesJobSupport.java -text
 api/src/org/labkey/api/pipeline/RecordedAction.java -text
 api/src/org/labkey/api/pipeline/RecordedActionSet.java -text
 api/src/org/labkey/api/pipeline/RemoteExecutionEngine.java -text
+api/src/org/labkey/api/pipeline/StringKeySerialization.java -text
 api/src/org/labkey/api/pipeline/TaskFactory.java -text
 api/src/org/labkey/api/pipeline/TaskFactorySettings.java -text
 api/src/org/labkey/api/pipeline/TaskId.java -text
@@ -1760,6 +1765,7 @@ api/src/org/labkey/api/util/Result.java -text
 api/src/org/labkey/api/util/ReturnURLString.java -text
 api/src/org/labkey/api/util/SafeFileAppender.java -text
 api/src/org/labkey/api/util/ScalabilityProblem.java -text
+api/src/org/labkey/api/util/SerializeDumper.java -text
 api/src/org/labkey/api/util/SessionAppender.java -text
 api/src/org/labkey/api/util/SessionHelper.java -text
 api/src/org/labkey/api/util/ShutdownListener.java -text

@@ -15,6 +15,8 @@
  */
 package org.labkey.api.util;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.collections4.iterators.ArrayIterator;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -65,6 +67,21 @@ public class Path implements Serializable, Comparable, Iterable<String>
     final public static Path emptyPath = new Path(new String[0], 0, false, true);
     final public static Path rootPath = new Path(new String[0], 0, true, true);
     
+
+    @JsonCreator
+    private Path(@JsonProperty("_hash") int hash,
+                 @JsonProperty("_path") String[] path,
+                 @JsonProperty("_length") int length,
+                 @JsonProperty("_isAbsolute") boolean abs,
+                 @JsonProperty("_isDirectory") boolean dir)
+    {
+        _hash = hash;
+        _path = path;
+        _length = length;
+        _isAbsolute = abs;
+        _isDirectory = dir;
+        _parent = new AtomicReference<>();
+    }
 
     protected Path(String[] path, int length, boolean abs, boolean dir)
     {

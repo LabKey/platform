@@ -15,6 +15,11 @@
  */
 package org.labkey.api.pipeline;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Appender;
@@ -29,6 +34,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.security.User;
@@ -43,6 +49,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.writer.PrintWriters;
+import org.springframework.validation.BindException;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -55,6 +62,7 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -84,7 +92,7 @@ abstract public class PipelineJob extends Job implements Serializable
     public static final String PIPELINE_TASK_INFO_PARAM = "pipeline, taskInfo";
     public static final String PIPELINE_TASK_OUTPUT_PARAMS_PARAM = "pipeline, taskOutputParams";
 
-    private static Logger _log = Logger.getLogger(PipelineJob.class);
+    protected static Logger _log = Logger.getLogger(PipelineJob.class);
     // Send start/stop messages to a separate logger because the default logger for this class is set to
     // only write ERROR level events to the system log
     private static Logger _logJobStopStart = Logger.getLogger(Job.class);
@@ -92,6 +100,16 @@ abstract public class PipelineJob extends Job implements Serializable
     public static Logger getJobLogger(Class clazz)
     {
         return Logger.getLogger(PipelineJob.class.getName() + ".." + clazz.getName());
+    }
+
+    public boolean hasJacksonSerialization()
+    {
+        return false;
+    }
+
+    public static boolean isSerializedJson(String serialized)
+    {
+        return !StringUtils.startsWith(serialized, "<");
     }
 
     public RecordedActionSet getActionSet()
@@ -258,6 +276,11 @@ abstract public class PipelineJob extends Job implements Serializable
     private transient PipelineQueue _queue;
     private File _logFile;
     private LocalDirectory _localDirectory;
+
+    // Default constructor for serialization
+    protected PipelineJob()
+    {
+    }
 
     /** Although having a null provider is legal, it is recommended that one be used
      * so that it can respond to events as needed */ 
@@ -445,7 +468,7 @@ abstract public class PipelineJob extends Job implements Serializable
         _localDirectory = localDirectory;
     }
 
-    public static PipelineJob readFromFile(File file) throws IOException
+    public static PipelineJob readFromFile(File file) throws IOException, PipelineJobException
     {
         StringBuilder xml = new StringBuilder();
         try (InputStream fIn = new FileInputStream(file))
@@ -457,7 +480,13 @@ abstract public class PipelineJob extends Job implements Serializable
                 xml.append(line);
             }
         }
-        return PipelineJobService.get().getJobStore().fromXML(xml.toString());
+
+        PipelineJob job = PipelineJob.deserializeJob(xml.toString());
+        if (null == job)
+        {
+            throw new PipelineJobException("Unable to deserialize job");
+        }
+        return job;
     }
 
 
@@ -466,7 +495,7 @@ abstract public class PipelineJob extends Job implements Serializable
         File newFile = new File(file.getPath() + ".new");
         File origFile = new File(file.getPath() + ".orig");
 
-        String xml = PipelineJobService.get().getJobStore().toXML(this);
+        String xml = PipelineJob.serializeJob(this);
 
         try (FileOutputStream fOut = new FileOutputStream(newFile))
         {
@@ -632,7 +661,7 @@ abstract public class PipelineJob extends Job implements Serializable
         if (taskPipeline != null)
         {
             // Save the current job state marshalled to XML, in case of error.
-            String xml = PipelineJobService.get().getJobStore().toXML(this);
+            String xml = PipelineJob.serializeJob(this);
 
             // Note runStateMachine returns false, if the job cannot be run locally.
             // The job may still need to be put on a JMS queue for remote processing.
@@ -646,7 +675,12 @@ abstract public class PipelineJob extends Job implements Serializable
             {
                 try
                 {
-                    PipelineJobService.get().getJobStore().fromXML(xml).store();
+                    PipelineJob originalJob = PipelineJob.deserializeJob(xml);
+                    if (null != originalJob)
+                        originalJob.store();
+                    else
+                        warn("Failed to checkpoint '" + getDescription() + "' job.");
+
                 }
                 catch (Exception e)
                 {
@@ -1783,4 +1817,143 @@ abstract public class PipelineJob extends Job implements Serializable
             _queue.done(this);
         }
     }
+
+    public static String serializeJob(PipelineJob job)
+    {
+        return job.hasJacksonSerialization() ?
+                PipelineJobService.get().getJobStore().toJSONTest(job) :
+                PipelineJobService.get().getJobStore().toXML(job);
+    }
+
+    public static String getClassNameFromJson(String serialized)
+    {
+        // Expect [ "org.labkey....", {....
+        if (StringUtils.startsWith(serialized, "["))
+        {
+            return StringUtils.substringBetween(serialized, "\"");
+        }
+        else
+        {
+            throw new RuntimeException("Unexpected serialized JSON");
+        }
+    }
+
+    @Nullable
+    public static PipelineJob deserializeJob(@NotNull String serialized)
+    {
+        if (PipelineJob.isSerializedJson(serialized))
+        {
+            try
+            {
+                String className = PipelineJob.getClassNameFromJson(serialized);
+                Object job = PipelineJobService.get().getJobStore().fromJSONTest(serialized, Class.forName(className));
+                if (job instanceof PipelineJob)
+                    return (PipelineJob) job;
+
+                _log.error("Deserialized object not instance of PipelineJob: " + job.getClass().getName());
+            }
+            catch (ClassNotFoundException e)
+            {
+                _log.error("Deserialized class not found.", e);
+            }
+            return null;
+        }
+
+        return PipelineJobService.get().getJobStore().fromXML(serialized);
+    }
+
+    public static ObjectMapper createObjectMapper()
+    {
+        ObjectMapper mapper = new ObjectMapper()
+            .setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE)
+            .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
+            .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
+            .enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
+
+        SimpleModule module = new SimpleModule();
+//        module.addDeserializer(URI.class, new ToStringSerialization.JacksonDeserializer<URI>());
+//        module.addDeserializer(GUID.class, new ToStringSerialization.JacksonDeserializer<GUID>());
+//        module.addSerializer(new PairSerializer<>());
+//        mapper.registerModule(module);
+
+//        mapper.addMixIn(BindException.class, JacksonMixins.BindException.class);
+//        mapper.addMixIn(JacksonMixins.BeanPropertyBindingResult.class, JacksonMixins.BeanPropertyBindingResult.class);
+        return mapper;
+    }
+
+    public abstract static class TestSerialization extends org.junit.Assert
+    {
+        public void testSerialize(Object job, @Nullable Logger log)
+        {
+            PipelineStatusFile.JobStore jobStore = PipelineJobService.get().getJobStore();
+            try
+            {
+                if (null != log)
+                    log.info("Hi Logger is here!");
+                String json = jobStore.toJSONTest(job);
+                if (null != log)
+                    log.info(json);
+                Object job2 = jobStore.fromJSONTest(json, job.getClass());
+                if (null != log)
+                    log.info(job2.toString());
+
+                if (job instanceof PipelineJob)
+                {
+                    assert (job2 instanceof PipelineJob);
+                    List<String> errors = ((PipelineJob)job).compareJobs((PipelineJob)job2);
+                    if (!errors.isEmpty())
+                    {
+                        fail("Pipeline objects don't match: " + StringUtils.join(errors, ","));
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                if (null != log)
+                    log.error("Class not found", e);
+            }
+        }
+
+    }
+
+    public List<String> compareJobs(PipelineJob job2)
+    {
+        PipelineJob job1 = this;
+        List<String> errors = new ArrayList<>();
+        if (!PropertyUtil.nullSafeEquals(job1._activeTaskId, job2._activeTaskId))
+            errors.add("_activeTaskId");
+        if (job1._activeTaskRetries != job2._activeTaskRetries)
+            errors.add("_activeTaskRetries");
+        if (!PropertyUtil.nullSafeEquals(job1._activeTaskStatus, job2._activeTaskStatus))
+            errors.add("_activeTaskStatus");
+        if (job1._errors != job2._errors)
+            errors.add("_errors");
+        //if (job1._info != job2._info)
+        //    errors.add("_info");
+        if (job1._interrupted != job2._interrupted)
+            errors.add("_interrupted");
+        if (!PropertyUtil.nullSafeEquals(job1._jobGUID, job2._jobGUID))
+            errors.add("_jobGUID");
+        //if (job1._localDirectory != job2._localDirectory)
+        //    errors.add("_localDirectory");
+        if (!job1._logFile.equals(job2._logFile))
+            errors.add("_logFile");
+        if (!PropertyUtil.nullSafeEquals(job1._logFilePathName, job2._logFilePathName))
+            errors.add("_logFilePathName");
+        if (!PropertyUtil.nullSafeEquals(job1._parentGUID, job2._parentGUID))
+            errors.add("_parentGUID");
+        //if (!job1._pipeRoot.equals(job2._pipeRoot))
+        //    errors.add("_pipeRoot");
+        if (!PropertyUtil.nullSafeEquals(job1._provider, job2._provider))
+            errors.add("_provider");
+        //if (!job1._queue.equals(job2._queue))
+        //    errors.add("_queue");
+//        if (job1._settingStatus != job2._settingStatus)            // transient
+//            errors.add("_settingStatus");
+        if (job1._submitted != job2._submitted)
+            errors.add("_submitted");
+
+        return errors;
+    }
+
 }

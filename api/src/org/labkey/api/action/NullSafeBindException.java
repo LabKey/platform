@@ -15,6 +15,9 @@
  */
 package org.labkey.api.action;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.labkey.api.util.ExceptionUtil;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
@@ -30,6 +33,7 @@ import org.springframework.validation.ObjectError;
  *
  * See issue 10432.
  */
+@JsonIgnoreProperties("cause")
 public class NullSafeBindException extends org.springframework.validation.BindException
 {
     public NullSafeBindException(BindingResult bindingResult)
@@ -38,7 +42,8 @@ public class NullSafeBindException extends org.springframework.validation.BindEx
         checkErrors(bindingResult);
     }
 
-    public NullSafeBindException(Object target, String objectName)
+    @JsonCreator
+    public NullSafeBindException(@JsonProperty("target") Object target, @JsonProperty("objectName") String objectName)
     {
         super(target, objectName);
     }

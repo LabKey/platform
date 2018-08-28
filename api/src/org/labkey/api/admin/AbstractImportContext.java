@@ -15,6 +15,8 @@
  */
 package org.labkey.api.admin;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.Nullable;
@@ -42,7 +44,7 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
     private final Container _c;
     private final LoggerGetter _logger;
     private final @Nullable VirtualFile _root;
-    private final Map<Class<? extends ImportContext>, ImportContext> _contextMap = new HashMap<>();
+    private final Map<Class<? extends ImportContext>, ImportContext> _contextMap;
     private boolean _skipQueryValidation;
     private boolean _createSharedDatasets;
     private boolean _failForUndefinedVisits;
@@ -53,6 +55,19 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
 
     private boolean _locked = false;
 
+    @JsonCreator
+    protected AbstractImportContext(@JsonProperty("_dataTypes") Set<String> dataTypes, @JsonProperty("_user") User user,
+                                    @JsonProperty("_c") Container c, @JsonProperty("_logger") LoggerGetter logger, @JsonProperty("_root") VirtualFile root,
+                                    @JsonProperty("_contextMap") Map<Class<? extends ImportContext>, ImportContext> contextMap)
+    {
+        _dataTypes = dataTypes;
+        _user = user;
+        _c = c;
+        _logger = logger;
+        _root = root;
+        _contextMap = contextMap;
+    }
+
     protected AbstractImportContext(User user, Container c, XmlDocument document, Set<String> dataTypes, LoggerGetter logger, @Nullable VirtualFile root)
     {
         _user = user;
@@ -61,6 +76,7 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
         _logger = logger;
         _xmlDocument = document;
         _root = root;
+        _contextMap = new HashMap<>();
     }
 
     public User getUser()

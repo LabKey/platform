@@ -15,6 +15,11 @@
  */
 package org.labkey.api.pipeline;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
 import java.util.*;
 import java.io.File;
 import java.net.URI;
@@ -27,7 +32,16 @@ import java.net.URI;
 public class RecordedActionSet
 {
     private final Set<RecordedAction> _actions;
+    @JsonSerialize(keyUsing = StringKeySerialization.Serializer.class)
+    @JsonDeserialize(keyUsing = StringKeySerialization.Deserializer.class)
     private final Map<URI, String> _otherInputs;
+
+    @JsonCreator
+    private RecordedActionSet(@JsonProperty("_actions") Set<RecordedAction> actions)
+    {
+        _actions = actions;
+        _otherInputs = new LinkedHashMap<>();
+    }
 
     // No-args constructor to support de-serialization in Java 7
     public RecordedActionSet()

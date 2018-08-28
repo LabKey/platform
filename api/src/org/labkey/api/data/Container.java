@@ -16,7 +16,9 @@
 
 package org.labkey.api.data;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -122,6 +124,12 @@ public class Container implements Serializable, Comparable<Container>, Securable
     private String _title;
 
     // UNDONE: BeanFactory for Container
+
+    @JsonCreator
+    private Container(@JsonProperty("_searchable") boolean searchable)
+    {
+        _searchable = searchable;
+    }
 
     protected Container(Container dirParent, String name, String id, int rowId, int sortOrder, Date created, int createdBy, boolean searchable)
     {

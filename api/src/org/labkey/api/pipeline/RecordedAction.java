@@ -15,11 +15,14 @@
  */
 package org.labkey.api.pipeline;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.util.FileUtil;
 
 import java.io.File;
+import java.io.Serializable;
 import java.net.URI;
 import java.util.Collections;
 import java.util.Date;
@@ -40,8 +43,16 @@ public class RecordedAction
 
     private Set<DataFile> _inputs = new LinkedHashSet<>();
     private Set<DataFile> _outputs = new LinkedHashSet<>();
+
+    @JsonSerialize(keyUsing = ObjectKeySerialization.Serializer.class)
+    @JsonDeserialize(keyUsing = ObjectKeySerialization.Deserializer.class)
     private Map<ParameterType, Object> _params = new LinkedHashMap<>();
+    @JsonSerialize(keyUsing = ObjectKeySerialization.Serializer.class)
+    @JsonDeserialize(keyUsing = ObjectKeySerialization.Deserializer.class)
     private Map<ParameterType, Object> _outputParams = new LinkedHashMap<>();
+
+    @JsonSerialize(keyUsing = ObjectKeySerialization.Serializer.class)
+    @JsonDeserialize(keyUsing = ObjectKeySerialization.Deserializer.class)
     private Map<PropertyDescriptor, Object> _props = new LinkedHashMap<>();
     private String _name;
     private String _description;
@@ -238,7 +249,7 @@ public class RecordedAction
         return Collections.unmodifiableMap(_props);
     }
 
-    public static class ParameterType
+    public static class ParameterType implements Serializable
     {
         public static String createUri(String name)
         {

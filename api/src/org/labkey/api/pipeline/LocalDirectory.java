@@ -1,5 +1,7 @@
 package org.labkey.api.pipeline;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -39,6 +41,21 @@ public class LocalDirectory implements Serializable
         return !root.isCloudRoot() ?
                 new LocalDirectory(new File(localDirPath), moduleName, baseLogFileName) :
                 new LocalDirectory(root.getContainer(), moduleName, root, baseLogFileName);
+    }
+
+    @JsonCreator
+    private LocalDirectory(
+            @JsonProperty("_localDirectoryFile") File localDirectoryFile,
+            @JsonProperty("_isTemporary") boolean isTemporary,
+            @JsonProperty("_pipeRoot") PipeRoot pipeRoot,
+            @JsonProperty("_baseLogFileName") String baseLogFileName,
+            @JsonProperty("_moduleName") String moduleName)
+    {
+        _localDirectoryFile = localDirectoryFile;
+        _isTemporary = isTemporary;
+        _pipeRoot = pipeRoot;
+        _baseLogFileName = baseLogFileName;
+        _moduleName = moduleName;
     }
 
     // Constructor for runs and actions when pipeline root is cloud

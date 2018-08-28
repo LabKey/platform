@@ -83,6 +83,11 @@ public interface PipelineStatusFile
         void split(PipelineJob job) throws IOException;
 
         void join(PipelineJob job) throws IOException, NoSuchJobException;
+
+        // TODO: temp until we switch toXML and fromXML over to Jackson
+        String toJSONTest(Object job);
+
+        Object fromJSONTest(String xml, Class<?> cls);
     }
 
     Container lookupContainer();

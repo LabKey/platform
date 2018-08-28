@@ -15,6 +15,9 @@
  */
 package org.labkey.api.pipeline;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.io.Serializable;
 
 /**
@@ -42,6 +45,18 @@ public class TaskId implements Serializable
     final private Class _namespaceClass;
     final private String _name;
     final private double _version;
+
+    @JsonCreator
+    private TaskId(@JsonProperty("_moduleName") String moduleName, @JsonProperty("_type") Type type,
+                   @JsonProperty("_namespaceClass") Class namespaceClass, @JsonProperty("_name") String name,
+                   @JsonProperty("_version") double version)
+    {
+        _moduleName = moduleName;
+        _type = type;
+        _namespaceClass = namespaceClass;
+        _name = name;
+        _version = version;
+    }
 
     public TaskId(Class namespaceClass)
     {

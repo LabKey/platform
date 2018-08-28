@@ -43,6 +43,11 @@ public class ViewBackgroundInfo implements Serializable, ContainerUser
     private transient User _user;
     private transient ActionURL _url;
 
+    // Default constructor for serialization
+    protected ViewBackgroundInfo()
+    {
+    }
+
     public ViewBackgroundInfo(Container c, User u, ActionURL h)
     {
         setContainer(c);

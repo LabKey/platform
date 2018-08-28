@@ -25,6 +25,11 @@ import java.util.List;
 
 public class RowMap<V> extends ArrayListMap<String, V>     // TODO: Move ArrayListMap methods into here
 {
+    protected RowMap()
+    {
+        super();
+    }
+
     RowMap(FindMap<String> findMap, List<V> row)
     {
         super(findMap, row);

@@ -15,6 +15,8 @@
  */
 package org.labkey.api.util;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -269,14 +271,15 @@ public class GUID implements Serializable, Parameter.JdbcParameterValue
         _str = GUID.makeGUID();
     }
 
-    public GUID(String str)
+    @JsonCreator
+    public GUID(@JsonProperty("_str") String str)
     {
         if (!isGUID(str))
             throw new IllegalArgumentException(str);
         _str = str;
     }
 
-    @JsonValue
+//    @JsonValue         // TODO: check dataspace tests
     @Override
     public String toString()
     {

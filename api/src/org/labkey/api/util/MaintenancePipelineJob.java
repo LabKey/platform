@@ -15,6 +15,8 @@
  */
 package org.labkey.api.util;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
@@ -33,11 +35,23 @@ class MaintenancePipelineJob extends PipelineJob
 {
     private final Collection<MaintenanceTask> _tasks;
 
+    @JsonCreator
+    protected MaintenancePipelineJob(@JsonProperty("_tasks") Collection<MaintenanceTask> tasks)
+    {
+        _tasks = tasks;
+    }
+
     MaintenancePipelineJob(ViewBackgroundInfo info, PipeRoot pipeRoot, Collection<MaintenanceTask> tasks)
     {
         super(null, info, pipeRoot);
         setLogFile(new File(pipeRoot.getLogDirectory(), FileUtil.makeFileNameWithTimestamp("system_maintenance", "log")));
         _tasks = tasks;
+    }
+
+    @Override
+    public boolean hasJacksonSerialization()
+    {
+        return true;
     }
 
     @Override
