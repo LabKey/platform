@@ -936,7 +936,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 false);
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_STRICT_RETURN_URL,
                 "Check for return URL parameter casing as 'returnUrl'",
-                "Check return URL parameter is 'returnUrl' instead of 'returnURL' and throw error if it isn't.",
+                "Raise an error if the return URL parameter is capitalized incorrectly. It should be 'returnUrl' and not 'returnURL'.",
                 false);
 
         if (null != PropertyService.get())
