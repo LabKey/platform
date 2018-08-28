@@ -149,7 +149,7 @@ public class MultiValueTest
                 CaseInsensitiveHashMap.of("name", "test")
         );
         List<Map<String, Object>> insertedAntigens = antigensTable.getUpdateService().insertRows(getUser(), c, antigenRows, errors, null, null);
-        Assert.assertFalse(errors.hasErrors());
+        throwErrors(errors);
         Integer antigenId = (Integer)insertedAntigens.get(0).get("rowId");
 
         // insert a Label
@@ -159,7 +159,7 @@ public class MultiValueTest
                 CaseInsensitiveHashMap.of("name", "test")
         );
         List<Map<String, Object>> insertedLabels = labelsTable.getUpdateService().insertRows(getUser(), c, labelRows, errors, null, null);
-        Assert.assertFalse(errors.hasErrors());
+        throwErrors(errors);
         Integer labelId = (Integer)insertedLabels.get(0).get("rowId");
 
         // insert Species
@@ -172,7 +172,7 @@ public class MultiValueTest
                 CaseInsensitiveHashMap.of("name", "foo4")
         );
         List<Map<String, Object>> insertedSpecies = speciesTable.getUpdateService().insertRows(getUser(), c, speciesRows, errors, null, null);
-        Assert.assertFalse(errors.hasErrors());
+        throwErrors(errors);
         Integer speciesId1 = (Integer)insertedSpecies.get(0).get("rowId");
         Integer speciesId2 = (Integer)insertedSpecies.get(1).get("rowId");
         Integer speciesId3 = (Integer)insertedSpecies.get(2).get("rowId");
@@ -185,7 +185,7 @@ public class MultiValueTest
                 CaseInsensitiveHashMap.of("antigenId", antigenId, "labelId", labelId, "clone", "foo")
         );
         List<Map<String, Object>> insertedReagents = reagentsTable.getUpdateService().insertRows(getUser(), c, reagentRows, errors, null, null);
-        Assert.assertFalse(errors.hasErrors());
+        throwErrors(errors);
         Integer reagentId = (Integer)insertedReagents.get(0).get("rowId");
 
         // insert ReagentSpecies
@@ -198,7 +198,7 @@ public class MultiValueTest
                 CaseInsensitiveHashMap.of("reagentId", reagentId, "speciesId", speciesId4)
         );
         List<Map<String, Object>> insertedReagentSpecies = reagentSpeciesTable.getUpdateService().insertRows(getUser(), c, reagentSpeciesRows, errors, null, null);
-        Assert.assertFalse(errors.hasErrors());
+        throwErrors(errors);
 
         //
         // VERIFY - query Reagent table with Species multi-value column
@@ -251,4 +251,11 @@ public class MultiValueTest
         Assert.assertEquals(speciesId4, verifySpecies4);
     }
 
+    private void throwErrors(BatchValidationException errors) throws BatchValidationException
+    {
+        if (errors.hasErrors())
+        {
+            throw errors;
+        }
+    }
 }
