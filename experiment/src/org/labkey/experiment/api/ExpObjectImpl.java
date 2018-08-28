@@ -44,6 +44,9 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
 {
     protected boolean _locked = false;
 
+    // For serialization
+    protected ExpObjectImpl() {}
+
     public void lock()
     {
         _locked = true;

@@ -57,6 +57,7 @@ import org.labkey.pipeline.analysis.ProtocolManagementAuditProvider;
 import org.labkey.pipeline.analysis.ProtocolManagementWebPart;
 import org.labkey.pipeline.api.ExecTaskFactory;
 import org.labkey.pipeline.api.PipelineEmailPreferences;
+import org.labkey.pipeline.api.PipelineJobMarshaller;
 import org.labkey.pipeline.api.PipelineJobServiceImpl;
 import org.labkey.pipeline.api.PipelineManager;
 import org.labkey.pipeline.api.PipelineQuerySchema;
@@ -263,7 +264,8 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             PathMapperImpl.TestCase.class,
             PipelineCommandTestCase.class,
             PipelineJobServiceImpl.TestCase.class,
-            CommandTaskImpl.TestCase.class
+            CommandTaskImpl.TestCase.class,
+            PipelineJobMarshaller.TestCase.class
         ));
     }
 

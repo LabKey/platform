@@ -15,6 +15,8 @@
  */
 package org.labkey.study.importer;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.PipelineJobLoggerGetter;
 import org.labkey.api.data.Container;
@@ -25,6 +27,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.MemoryVirtualFile;
+import org.labkey.study.model.ChildStudyDefinition;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.ParticipantMapper;
 import org.labkey.study.model.StudyImpl;
@@ -44,6 +47,12 @@ import java.util.Set;
 public class SpecimenRefreshPipelineJob extends AbstractStudyPipelineJob
 {
     private final SnapshotSettings _settings;
+
+    @JsonCreator
+    protected SpecimenRefreshPipelineJob(@JsonProperty("_settings") SnapshotSettings settings)
+    {
+        _settings = settings;
+    }
 
     public SpecimenRefreshPipelineJob(Container source, Container destination, User user, ActionURL url, PipeRoot root, SnapshotSettings snapshotSettings)
     {

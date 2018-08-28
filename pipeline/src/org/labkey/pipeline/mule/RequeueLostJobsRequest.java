@@ -18,6 +18,7 @@ package org.labkey.pipeline.mule;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.pipeline.NoSuchJobException;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
@@ -83,7 +84,9 @@ public class RequeueLostJobsRequest implements StatusRequest
                                 }
                                 catch (IOException | NoSuchJobException e)
                                 {
-                                    PipelineJobService.get().getJobStore().fromXML(sf.getJobStore()).error("Failed to requeue job", e);
+                                    PipelineJob job = PipelineJob.deserializeJob(sf.getJobStore());
+                                    if (null != job)
+                                        job.error("Failed to requeue job", e);
                                 }
                             }
                         }

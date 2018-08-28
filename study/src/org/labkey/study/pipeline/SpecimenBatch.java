@@ -50,6 +50,9 @@ public class SpecimenBatch extends StudyBatch implements Serializable, StudyJobS
 
     public static final FileType ARCHIVE_FILE_TYPE = new FileType(".specimens");
 
+    // For serialization
+    protected SpecimenBatch() {}
+
     public SpecimenBatch(ViewBackgroundInfo info, File definitionFile, PipeRoot root, boolean merge)
     {
         super(info, definitionFile, root);

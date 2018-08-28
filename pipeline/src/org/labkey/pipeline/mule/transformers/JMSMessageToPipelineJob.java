@@ -43,8 +43,9 @@ public class JMSMessageToPipelineJob extends AbstractEventAwareTransformer
     public Object transform(Object src, String encoding, UMOEventContext context) throws TransformerException
     {
         String xml = (String) getJMSTransformer().doTransform(src, encoding);
-        PipelineJob result = PipelineJobService.get().getJobStore().fromXML(xml);
-        LOG.debug("Transformed XML to job: " + result);
+        PipelineJob result = PipelineJob.deserializeJob(xml);
+        if (null != result)
+            LOG.debug("Transformed XML to job: " + result);
         return result;
     }
 

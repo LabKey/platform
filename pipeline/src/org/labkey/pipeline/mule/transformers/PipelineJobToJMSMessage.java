@@ -53,7 +53,7 @@ public class PipelineJobToJMSMessage extends AbstractEventAwareTransformer
 
     protected Message transformJob(PipelineJob job) throws Exception
     {
-        String xml = PipelineJobService.get().getJobStore().toXML(job);
+        String xml =  PipelineJob.serializeJob(job);
 
         if (logger.isDebugEnabled())
             logger.debug("Job xml for " + job.getClass() + ":\n" + xml);

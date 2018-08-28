@@ -38,10 +38,19 @@ public abstract class StudyBatch extends PipelineJob implements Serializable
 {
     protected File _definitionFile;
 
+    // For serialization
+    protected StudyBatch() {}
+
     public StudyBatch(ViewBackgroundInfo info, File definitionFile, PipeRoot root)
     {
         super("Study", info, root);
         _definitionFile = definitionFile;
+    }
+
+    @Override
+    public boolean hasJacksonSerialization()
+    {
+        return true;
     }
 
     public ActionURL getStatusHref()

@@ -1,14 +1,24 @@
 package org.labkey.core.admin;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.apache.log4j.Logger;
+import org.junit.Test;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.CancelledException;
 import org.labkey.api.pipeline.LocalDirectory;
+import org.labkey.api.pipeline.PairSerializer;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.core.admin.AdminController.ProjectSettingsForm.MigrateFilesOption;
@@ -21,15 +31,27 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class CopyFileRootPipelineJob extends PipelineJob
 {
+    @JsonSerialize(contentUsing = PairSerializer.class)
     private final List<Pair<Container, String>> _sourceInfos;
     private final MigrateFilesOption _migrateFilesOption;
 
-    CopyFileRootPipelineJob(Container container, User user, List<Pair<Container, String>> sourceInfos, PipeRoot pipeRoot, MigrateFilesOption migrateFilesOption)
+    @JsonCreator
+    protected CopyFileRootPipelineJob(
+            @JsonProperty("_sourceInfos") List<Pair<Container, String>> sourceInfos,
+            @JsonProperty("_migrateFilesOption") MigrateFilesOption migrateFilesOption)
+    {
+        super();
+        _sourceInfos = sourceInfos;
+        _migrateFilesOption = migrateFilesOption;
+    }
+
+    public CopyFileRootPipelineJob(Container container, User user, List<Pair<Container, String>> sourceInfos, PipeRoot pipeRoot, MigrateFilesOption migrateFilesOption)
     {
         super(null, new ViewBackgroundInfo(container, user, null), pipeRoot);
         _sourceInfos = sourceInfos;
@@ -43,6 +65,12 @@ public class CopyFileRootPipelineJob extends PipelineJob
                 !pipeRoot.isCloudRoot() ? pipeRoot.getRootPath().getPath() : FileUtil.getTempDirectory().getPath());
         setLocalDirectory(localDirectory);
         setLogFile(localDirectory.determineLogFile());
+    }
+
+    @Override
+    public boolean hasJacksonSerialization()
+    {
+        return true;
     }
 
     @Override
@@ -338,5 +366,40 @@ public class CopyFileRootPipelineJob extends PipelineJob
     protected TaskStatus updateIfError(TaskStatus current, TaskStatus update)
     {
         return TaskStatus.error.equals(update) ? update : current;
+    }
+
+    @Override
+    public List<String> compareJobs(PipelineJob job2)
+    {
+        List<String> errors = super.compareJobs(job2);
+        if (job2 instanceof CopyFileRootPipelineJob)
+        {
+            CopyFileRootPipelineJob copyJob2 = (CopyFileRootPipelineJob)job2;
+            if (!this._migrateFilesOption.equals(copyJob2._migrateFilesOption))
+                errors.add("_migrateFilesOption");
+//            if (!this._sourceInfos.equals(copyJob2._sourceInfos))
+//                errors.add("_sourceInfos");
+        }
+        else
+        {
+            errors.add("Expected job2 to be CopyFileRootPipelineJob");
+        }
+        return errors;
+    }
+
+    public static class TestCase extends PipelineJob.TestSerialization
+    {
+        private static Logger LOG = Logger.getLogger(CopyFileRootPipelineJob.class);
+
+        @Test
+        public void testSerialize()
+        {
+            User user = TestContext.get().getUser();
+            Container container = ContainerManager.getRoot();
+            PipeRoot pipeRoot = PipelineService.get().getPipelineRootSetting(container);
+            CopyFileRootPipelineJob job = new CopyFileRootPipelineJob(container, user, Collections.emptyList(), pipeRoot, AdminController.ProjectSettingsForm.MigrateFilesOption.leave);
+            job.getActionSet().add(new RecordedAction("foo"));
+            testSerialize(job, LOG);
+        }
     }
 }

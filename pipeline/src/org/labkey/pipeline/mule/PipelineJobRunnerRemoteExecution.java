@@ -130,7 +130,9 @@ public class PipelineJobRunnerRemoteExecution implements Callable, ResumableDesc
     {
         boolean submitted = false;
         String xmlJob = eventContext.getMessageAsString();
-        PipelineJob job = PipelineJobService.get().getJobStore().fromXML(xmlJob);
+        PipelineJob job = PipelineJob.deserializeJob(xmlJob);
+        if (null == job)
+            return null;
 
         PipelineStatusFileImpl statusFile = PipelineStatusManager.getStatusFile(job.getLogFile());
         if (statusFile == null)

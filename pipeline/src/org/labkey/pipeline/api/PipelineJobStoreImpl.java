@@ -42,12 +42,27 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
 {
     private static Logger _log = Logger.getLogger(PipelineJobStoreImpl.class);
 
+    @Override
     public PipelineJob fromXML(String xml)
     {
         PipelineJob job = super.fromXML(xml);
         job.restoreQueue(PipelineService.get().getPipelineQueue());
         job.restoreLocalDirectory();
         return job;
+    }
+
+    @Override
+    public PipelineJob fromJSONTest(String json, Class<?> cls)
+    {
+        Object obj = super.fromJSONTest(json, cls);
+        if (obj instanceof PipelineJob)
+        {
+            PipelineJob job = (PipelineJob)obj;
+            job.restoreQueue(PipelineService.get().getPipelineQueue());
+            job.restoreLocalDirectory();
+            return job;
+        }
+        throw new RuntimeException("Expected PipelineJob subclass: " + obj.getClass().getName());
     }
 
     @Nullable
@@ -108,18 +123,17 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
     {
         if (xml == null || xml.length() == 0)
             return null;
-        
-        PipelineJob job = fromXML(xml);
 
-        // If it was stored, then it can't be on a queue.
-        job.clearQueue();
-        
+        PipelineJob job = PipelineJob.deserializeJob(xml);
+        if (null != job)
+            job.clearQueue();       // If it was stored, then it can't be on a queue.
+
         return job;
     }
 
     public void storeJob(PipelineJob job) throws NoSuchJobException
     {
-        PipelineStatusManager.storeJob(job.getJobGUID(), toXML(job));
+        PipelineStatusManager.storeJob(job.getJobGUID(), PipelineJob.serializeJob(job));
     }
 
     // Synchronize all spliting and joining to avoid SQL deadlocks.  Splitting

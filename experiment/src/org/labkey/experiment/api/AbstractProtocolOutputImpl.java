@@ -46,6 +46,9 @@ public abstract class AbstractProtocolOutputImpl<Type extends ProtocolOutput> ex
     private List<ExpProtocolApplication> _successorAppList;
     private List<Integer> _successorRunIdList;
 
+    // For serialization
+    protected AbstractProtocolOutputImpl() {}
+
     public AbstractProtocolOutputImpl(Type object)
     {
         super(object);

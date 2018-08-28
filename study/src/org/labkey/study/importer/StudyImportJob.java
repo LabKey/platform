@@ -15,11 +15,17 @@
  */
 package org.labkey.study.importer;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.apache.log4j.Logger;
+import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.admin.PipelineJobLoggerGetter;
 import org.labkey.api.data.Container;
+import org.labkey.api.pipeline.NullSafeBindExceptionSerializer;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
@@ -47,11 +53,26 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport, Stud
 {
     private static final transient Logger LOG = Logger.getLogger(StudyImportJob.class);
 
+    @JsonBackReference
     private final StudyImportContext _ctx;
     private final VirtualFile _root;
-    private final BindException _errors;
+    @JsonSerialize(using = NullSafeBindExceptionSerializer.class)
+    private final BindException _errors;          // TODO: do we need to save error messages
     private final boolean _reload;
     private final String _originalFilename;
+
+    @JsonCreator
+    protected StudyImportJob(@JsonProperty("_ctx") StudyImportContext ctx, @JsonProperty("_root") VirtualFile root,
+                             @JsonProperty("_errors") NullSafeBindException errors, @JsonProperty("_reload") boolean reload,
+                             @JsonProperty("_originalFilename") String originalFilename)
+    {
+        super();
+        _ctx = ctx;
+        _root = root;
+        _errors = errors;
+        _reload = reload;
+        _originalFilename = originalFilename;
+    }
 
     // Handles all four study import tasks: initial task, dataset import, specimen import, and final task
     public StudyImportJob(Container c, User user, ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipeRoot, ImportOptions options)
@@ -76,6 +97,12 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport, Stud
 
         for (String message : options.getMessages())
             _ctx.getLogger().info(message);
+    }
+
+    @Override
+    public boolean hasJacksonSerialization()
+    {
+        return true;
     }
 
     public StudyImpl getStudy()

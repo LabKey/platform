@@ -15,17 +15,28 @@
  */
 package org.labkey.pipeline.api;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.XppDriver;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.junit.Test;
 import org.labkey.api.pipeline.NoSuchJobException;
+import org.labkey.api.pipeline.PairSerializer;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.security.impersonation.AbstractImpersonationContextFactory;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.pipeline.xstream.FileXStreamConverter;
 import org.labkey.pipeline.xstream.TaskIdXStreamConverter;
 import org.labkey.pipeline.xstream.URIXStreamConverter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -112,5 +123,203 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
     public void join(PipelineJob job) throws IOException, NoSuchJobException
     {
         throw new UnsupportedOperationException("Method supported only on web server");
+    }
+
+    public String toJSONTest(Object job)
+    {
+        ObjectMapper mapper = PipelineJob.createObjectMapper();
+
+        try
+        {
+            String serialized = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(job);
+            if (AppProps.getInstance().isDevMode())
+            {
+                try
+                {
+                    Object unserialized = fromJSONTest(serialized, job.getClass());
+                    if (job instanceof PipelineJob)
+                    {
+                        List<String> errors = ((PipelineJob)job).compareJobs((PipelineJob)unserialized);
+                        if (!errors.isEmpty())
+                            LOG.error("Deserialized object differs from original: " + StringUtils.join(errors, ","));
+                    }
+                }
+                catch (Exception e)
+                {
+                    LOG.error("Unserializing test failed: " + job.getClass(), e);
+                }
+            }
+            return serialized;
+        }
+        catch (Exception e)
+        {
+            throw new UnexpectedException(e);
+        }
+
+    }
+
+    public Object fromJSONTest(String xml, Class<?> cls)
+    {
+
+        ObjectMapper mapper = PipelineJob.createObjectMapper();
+
+        try
+        {
+            return mapper.readValue(xml, cls);
+        }
+        catch (Exception e)
+        {
+            throw new UnexpectedException(e);
+        }
+    }
+
+    private static Logger LOG = Logger.getLogger(PipelineJobMarshaller.class);
+
+    public static class TestCase extends PipelineJob.TestSerialization
+    {
+
+        public static class Inner
+        {
+            private String _address;
+            private int _zip;
+
+            public Inner()
+            {
+
+            }
+            public Inner(String address, int zip)
+            {
+                _address = address;
+                _zip = zip;
+            }
+
+            public String getAddress()
+            {
+                return _address;
+            }
+
+            public int getZip()
+            {
+                return _zip;
+            }
+        }
+
+        public static class TestJob3
+        {
+            private List<List<Object>> objs;
+
+            public TestJob3()
+            {
+
+            }
+
+            public List<List<Object>> getObjs()
+            {
+                return objs;
+            }
+
+            public void setObjs(List<List<Object>> objs)
+            {
+                this.objs = objs;
+            }
+        }
+
+        public static class TestJob
+        {
+            private String _name;
+/*            private int _migrateFilesOption;
+            @JsonSerialize(keyUsing = StringKeySerialization.Serializer.class)
+            @JsonDeserialize(keyUsing = StringKeySerialization.Deserializer.class)
+            private Map<URI, Object> _map;
+
+            @JsonSerialize(keyUsing = ObjectKeySerialization.Serializer.class)
+            @JsonDeserialize(keyUsing = ObjectKeySerialization.Deserializer.class)
+            private Map<PropertyDescriptor, Object> _propMap;
+            private Inner _inner;
+            private List<Inner> _list;
+            private Object _obj;            */
+            @JsonSerialize(using = PairSerializer.class)
+            private Pair<Inner, Inner> _innerPair;
+
+            public TestJob()
+            {
+
+            }
+            public TestJob(String name, int option)
+            {
+                _name = name;
+ /*               _migrateFilesOption = option;
+                _map = new HashMap<>();
+                _map.put(URI.create("http://google.com"), "fooey");
+                _map.put(URI.create("file:///Users/daveb"), 324);
+                _map.put(URI.create("http://ftp.census.gov"), new Inner("329 Wiltshire Blvd", 90210));
+                _inner = new Inner("3234 Albert Ave", 98101);
+                _list = new ArrayList<>();
+                _list.add(new Inner("31 Thunder Ave", 64102));
+                _list.add(new Inner("34 Boston St", 71101));
+                _obj = new Inner("17 Boylston St", 10014);
+
+                _propMap = new HashMap<>();
+                _propMap.put(new PropertyDescriptor(null, PropertyType.BIGINT, "foobar", ContainerManager.getRoot()), "foo");
+                _propMap.put(new PropertyDescriptor(null, PropertyType.STRING, "stringy", ContainerManager.getRoot()), "str"); */
+                _innerPair = new Pair<>(new Inner("31 Thunder Ave", 64102), new Inner("34 Boston St", 71101));
+
+            }
+
+            public String getName()
+            {
+                return _name;
+            }
+
+            public Pair<Inner, Inner> getInnerPair()
+            {
+                return _innerPair;
+            }
+
+            public void setInnerPair(Pair<Inner, Inner> innerPair)
+            {
+                _innerPair = innerPair;
+            }
+/*            public int getMigrateFilesOption()
+            {
+                return _migrateFilesOption;
+            }
+            public Map<URI, Object> getMap()
+            {
+                return _map;
+            }
+            public Inner getInner()
+            {
+                return _inner;
+            }      */
+        }
+
+        @Test
+        public void testSerialize()
+        {
+            try
+            {
+                Object job = new TestJob("Johnny", 5);
+                testSerialize(job, LOG);
+
+/*                TestJob3 job3 = new TestJob3();
+                List<List<Object>> objs = new ArrayList<>();
+                List<Object> os = new ArrayList<>();
+                os.add("ToMe"); os.add(32); os.add(4.5);
+                objs.add(os);
+                List<Object> os1 = new ArrayList<>();
+                os1.add("FooBar"); os.add(99);
+                objs.add(os1);
+                job3.setObjs(objs);
+                testSerialize(job3, LOG);           */
+
+            }
+            catch (Exception e) // ClassNotFoundException e)
+            {
+                LOG.error("Class not found", e);
+            }
+        }
+
+
     }
 }

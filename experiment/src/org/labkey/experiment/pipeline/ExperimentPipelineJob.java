@@ -16,6 +16,8 @@
 
 package org.labkey.experiment.pipeline;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.view.ActionURL;
@@ -50,6 +52,25 @@ public class ExperimentPipelineJob extends PipelineJob
 
     private transient XarSource _xarSource;
 
+    @JsonCreator
+    protected ExperimentPipelineJob(@JsonProperty("_xarFile") File xarFile, @JsonProperty("_description") String description,
+                                    @JsonProperty("_deleteExistingRuns") boolean deleteExistingRuns)
+    {
+        _xarFile = xarFile;
+        _description = description;
+        _deleteExistingRuns = deleteExistingRuns;
+        _xarSource = createXarSource(xarFile);
+
+        try
+        {
+            setLogFile(_xarSource.getLogFile());
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
     public ExperimentPipelineJob(ViewBackgroundInfo info, File file, String description, boolean deleteExistingRuns, PipeRoot root) throws IOException
     {
         super(ExperimentPipelineProvider.NAME, info, root);
@@ -61,6 +82,12 @@ public class ExperimentPipelineJob extends PipelineJob
         setLogFile(_xarSource.getLogFile());
 
         header("XAR Import from " + _xarSource.toString());
+    }
+
+    @Override
+    public boolean hasJacksonSerialization()
+    {
+        return true;
     }
 
     protected XarSource createXarSource(File file)

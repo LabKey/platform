@@ -192,7 +192,7 @@ public class ConvertTaskFactory extends AbstractTaskFactory<ConvertTaskFactorySe
         if (factory == null)
         {
             job.warn("Unexpected missing converter for job. The pipeline configuration may have changed to remove a previously configured converter.");
-            LOG.warn("Unexpected missing converter for job. The pipeline configuration may have changed to remove a previously configured converter. \n" + PipelineJobService.get().getJobStore().toXML(job));
+            LOG.warn("Unexpected missing converter for job. The pipeline configuration may have changed to remove a previously configured converter. \n" + PipelineJob.serializeJob(job));
             return true;
         }
 

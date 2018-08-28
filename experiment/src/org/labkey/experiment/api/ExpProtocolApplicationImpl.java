@@ -46,6 +46,9 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
     private List<ExpMaterialImpl> _outputMaterials;
     private List<ExpDataImpl> _outputDatas;
 
+    // For serialization
+    protected ExpProtocolApplicationImpl() {}
+
     public ExpProtocolApplicationImpl(ProtocolApplication app)
     {
         super(app);

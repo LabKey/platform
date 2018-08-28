@@ -267,6 +267,8 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Diagnostics, "check database", new ActionURL(DbCheckerAction.class, root), AdminOperationsPermission.class);
         AdminConsole.addLink(Diagnostics, "credits", new ActionURL(CreditsAction.class, root));
         AdminConsole.addLink(Diagnostics, "dump heap", new ActionURL(DumpHeapAction.class, root));
+        if (AppProps.getInstance().isDevMode())
+            AdminConsole.addLink(Diagnostics, "Dump PipeJob Serialize Info", new ActionURL(DumpPipelineJobClassesSerializationAction.class, root));
         AdminConsole.addLink(Diagnostics, "environment variables", new ActionURL(EnvironmentVariablesAction.class, root));
         AdminConsole.addLink(Diagnostics, "memory usage", new ActionURL(MemTrackerAction.class, root));
         AdminConsole.addLink(Diagnostics, "queries", getQueriesURL(null));
@@ -8881,6 +8883,22 @@ public class AdminController extends SpringActionController
         }
     }
 
+    @RequiresPermission(AdminPermission.class)
+    public class DumpPipelineJobClassesSerializationAction extends SimpleViewAction<Object>
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            SerializeDumper.dumpPipelineJobClasses();
+            return new HtmlView(PageFlowUtil.filter("Serialization info dumped to labkey.log."));
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            PageFlowUtil.urlProvider(AdminUrls.class).appendAdminNavTrail(root, "Serialization dumped", null);
+            return root;
+        }
+
+    }
 
     public static class TestCase extends AbstractActionPermissionTest
     {

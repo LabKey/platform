@@ -15,7 +15,11 @@
  */
 package org.labkey.study.pipeline;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.labkey.api.action.NullSafeBindException;
+import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.PipelineJobLoggerGetter;
 import org.labkey.api.pipeline.PipeRoot;
@@ -41,10 +45,18 @@ import java.sql.SQLException;
  */
 public class StudyReloadSourceJob extends StudyBatch implements Serializable, StudyReloadSourceJobSupport, StudyImporter
 {
+    @JsonBackReference
     private final StudyImportContext _ctx;
     private final VirtualFile _root;
     private String _reloadSourceName;
     private BindException _errors;
+
+    @JsonCreator
+    protected StudyReloadSourceJob(@JsonProperty("_ctx") StudyImportContext ctx, @JsonProperty("_root") VirtualFile root)
+    {
+        _ctx = ctx;
+        _root = root;
+    }
 
     public StudyReloadSourceJob(ViewBackgroundInfo info, PipeRoot root, String reloadSourceName)
     {

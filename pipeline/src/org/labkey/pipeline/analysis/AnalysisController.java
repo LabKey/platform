@@ -534,7 +534,7 @@ public class AnalysisController extends SpringActionController
             {
                 if (PipelineJob.TaskStatus.waitingForFiles.matches(statusFile.getStatus()) && statusFile.getJobStore() != null)
                 {
-                    PipelineJob pipelineJob = PipelineJobService.get().getJobStore().fromXML(statusFile.getJobStore());
+                    PipelineJob pipelineJob = PipelineJob.deserializeJob(statusFile.getJobStore());
                     if (pipelineJob instanceof AbstractFileAnalysisJob)
                     {
                         List<File> inputFiles = ((AbstractFileAnalysisJob) pipelineJob).getInputFiles();

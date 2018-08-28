@@ -37,6 +37,9 @@ public class SpecimenReloadJob extends SpecimenBatch implements Serializable, Sp
     private String _transformName;
     private SpecimenTransform.ExternalImportConfig _importConfig;
 
+    // For serialization
+    protected SpecimenReloadJob() {}
+
     public SpecimenReloadJob(ViewBackgroundInfo info, PipeRoot root, String transformName)
     {
         super(info, null, root, false);

@@ -57,8 +57,9 @@ public class PipelineJobExceptionStrategy extends DefaultComponentExceptionStrat
                 try
                 {
                     String message = event.getMessageAsString();
-                    PipelineJob job = PipelineJobService.get().getJobStore().fromXML(message);
-                    handleJobError(t, job);
+                    PipelineJob job = PipelineJob.deserializeJob(message);
+                    if (null != job)
+                        handleJobError(t, job);
                 }
                 catch (Exception e)
                 {

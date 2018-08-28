@@ -170,6 +170,7 @@ import org.labkey.api.webdav.WebdavService;
 import org.labkey.core.admin.ActionsTsvWriter;
 import org.labkey.core.admin.AdminConsoleServiceImpl;
 import org.labkey.core.admin.AdminController;
+import org.labkey.core.admin.CopyFileRootPipelineJob;
 import org.labkey.core.admin.CustomizeMenuForm;
 import org.labkey.core.admin.FilesSiteSettingsAction;
 import org.labkey.core.admin.MenuViewFactory;
@@ -1187,7 +1188,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 MaterializedQueryHelper.TestCase.class,
                 ScriptEngineManagerImpl.TestCase.class,
                 ConvertHelper.TestCase.class,
-                RReport.TestCase.class
+                RReport.TestCase.class,
+                CopyFileRootPipelineJob.TestCase.class
         ));
     }
 

@@ -107,6 +107,9 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
         return ret;
     }
 
+    // For serialization
+    protected ExpDataImpl() {}
+
     public ExpDataImpl(Data data)
     {
         super(data);

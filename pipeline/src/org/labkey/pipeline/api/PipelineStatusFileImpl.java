@@ -128,7 +128,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
             // The taskId is not really valid for the joined job at this point,
             // so avoid asking the TaskFactory about it.
             setActiveTaskId(job.getActiveTaskId().toString());
-            setJobStore(PipelineJobService.get().getJobStore().toXML(job));
+            setJobStore(PipelineJob.serializeJob(job));
         }
         // If there is an active task and this is waiting state, then checkpoint the
         // job to the database for retry.
@@ -138,7 +138,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         {
             if (job.getActiveTaskFactory() != null)
                 setActiveTaskId(job.getActiveTaskFactory().getActiveId(job).toString());
-            setJobStore(PipelineJobService.get().getJobStore().toXML(job));
+            setJobStore(PipelineJob.serializeJob(job));
         }
     }
 
@@ -291,7 +291,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         if (_jobStore == null)
             return null;
 
-        return PipelineJobService.get().getJobStore().fromXML(_jobStore);
+        return PipelineJob.deserializeJob(_jobStore);
     }
 
     @Override

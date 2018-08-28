@@ -15,6 +15,9 @@ public class MasterPatientIndexUpdateTask extends PipelineJob
     public static final String PIPELINE_PROVIDER = "MasterPatientIndexPipelineProvider";
     private MasterPatientIndexService _svc;
 
+    // For serialization
+    protected MasterPatientIndexUpdateTask() {}
+
     public MasterPatientIndexUpdateTask(ViewBackgroundInfo info, @NotNull PipeRoot root, MasterPatientIndexService service) throws IOException
     {
         super(PIPELINE_PROVIDER, info, root);
@@ -22,6 +25,12 @@ public class MasterPatientIndexUpdateTask extends PipelineJob
         _svc = service;
         File logFile = File.createTempFile("patientIndexUpdateJob", ".log", root.getRootPath());
         setLogFile(logFile);
+    }
+
+    @Override
+    public boolean hasJacksonSerialization()
+    {
+        return true;
     }
 
     @Override

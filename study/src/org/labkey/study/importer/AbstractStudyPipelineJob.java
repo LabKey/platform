@@ -52,8 +52,8 @@ public abstract class AbstractStudyPipelineJob extends PipelineJob
     protected transient Container _dstContainer;
     protected String _dstContainerId;
 
-    // TODO: This is legacy error handling that we should remove
-    protected final BindException _errors;
+    // For serialization
+    protected AbstractStudyPipelineJob() {}
 
     public AbstractStudyPipelineJob(Container source, Container destination, User user, ActionURL url, PipeRoot root)
     {
@@ -63,8 +63,12 @@ public abstract class AbstractStudyPipelineJob extends PipelineJob
 
         File tempLogFile = new File(root.getLogDirectory(), FileUtil.makeFileNameWithTimestamp(getLogName(), "log"));
         setLogFile(tempLogFile);
+    }
 
-        _errors = new NullSafeBindException(this, getLogName());
+    @Override
+    public boolean hasJacksonSerialization()
+    {
+        return true;
     }
 
     public Container getDstContainer()

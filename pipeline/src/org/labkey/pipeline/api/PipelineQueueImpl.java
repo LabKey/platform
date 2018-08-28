@@ -167,7 +167,7 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
     {
         if (statusFile.getJobStore() != null)
         {
-            PipelineJob job = PipelineJobService.get().getJobStore().fromXML(statusFile.getJobStore());
+            PipelineJob job = PipelineJob.deserializeJob(statusFile.getJobStore());
             if (job != null)
             {
                 job.getLogger().info("Attempting to cancel as requested by " + user);

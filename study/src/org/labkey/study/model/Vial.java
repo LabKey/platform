@@ -16,6 +16,8 @@
 
 package org.labkey.study.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.study.StudyService;
@@ -41,7 +43,8 @@ public class Vial extends AbstractStudyCachable<Vial>
         _rowMap = new HashMap<>();
     }
 
-    public Vial(Container container, Map<String, Object> rowMap)
+    @JsonCreator
+    public Vial(@JsonProperty("_container") Container container, @JsonProperty("_rowMap") Map<String, Object> rowMap)
     {
         _container = container;
         _rowMap = rowMap;

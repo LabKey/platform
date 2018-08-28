@@ -67,6 +67,9 @@ public class ExpMaterialImpl extends AbstractProtocolOutputImpl<Material> implem
         return materials.stream().map(ExpMaterialImpl::new).collect(Collectors.toList());
     }
 
+    // For serialization
+    protected ExpMaterialImpl() {}
+    
     public ExpMaterialImpl(Material material)
     {
         super(material);

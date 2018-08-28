@@ -29,7 +29,10 @@ import org.labkey.api.security.User;
 public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> extends ExpObjectImpl
 {
     protected Type _object;
-    
+
+    // For serialization
+    protected ExpIdentifiableBaseImpl() {}
+
     public ExpIdentifiableBaseImpl(Type object)
     {
         _object = object;

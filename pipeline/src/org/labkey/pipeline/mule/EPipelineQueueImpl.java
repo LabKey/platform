@@ -104,7 +104,7 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
     {
         if (statusFile.getJobStore() != null)
         {
-            PipelineJob job = PipelineJobService.get().getJobStore().fromXML(statusFile.getJobStore());
+            PipelineJob job = PipelineJob.deserializeJob(statusFile.getJobStore());
             if (job != null)
             {
                 job.getLogger().info("Attempting to cancel job as requested by " + user + ".");
@@ -234,8 +234,9 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
             {
                 Message msg = (Message) msgs.nextElement();
 
-                PipelineJob job = PipelineJobService.get().getJobStore().fromXML(((TextMessage)msg).getText());
-                result.add(job);
+                PipelineJob job = PipelineJob.deserializeJob(((TextMessage)msg).getText());
+                if (null != job)
+                    result.add(job);
             }
         }
         catch (JMSException e)

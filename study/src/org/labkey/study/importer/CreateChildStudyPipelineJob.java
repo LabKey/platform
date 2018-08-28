@@ -15,6 +15,8 @@
  */
 package org.labkey.study.importer;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderImportContext;
@@ -83,6 +85,13 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
     private final ChildStudyDefinition _form;
     private final boolean _destFolderCreated;
 
+    @JsonCreator
+    protected CreateChildStudyPipelineJob(@JsonProperty("_form") ChildStudyDefinition form, @JsonProperty("_destFolderCreated") boolean destFolderCreated)
+    {
+        _form = form;
+        _destFolderCreated = destFolderCreated;
+    }
+
     public CreateChildStudyPipelineJob(ViewContext context, PipeRoot root, ChildStudyDefinition form, boolean destFolderCreated)
     {
         super(context.getContainer(), ContainerManager.getForPath(form.getDstPath()), context.getUser(), context.getActionURL(), root);
@@ -121,6 +130,8 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
 
             StudyImpl destStudy = StudyManager.getInstance().getStudy(getDstContainer());
             setStatus(TaskStatus.running);
+
+            BindException errors = new NullSafeBindException(this, getLogName());
 
             if (destStudy != null)
             {
@@ -255,33 +266,33 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 // import folder items (reports, lists, etc)
                 importFolderItems(destStudy, vf);
 
-                StudyImportContext studyImportContext = importToDestinationStudy(_errors, destStudy, vf);
+                StudyImportContext studyImportContext = importToDestinationStudy(errors, destStudy, vf);
 
                 // copy participants
                 exportParticipantGroups(_form, sourceStudy, participantGroups, folderExportContext, vf);
 
                 // assay schedule and treatment data (study design)
-                importStudyDesignData(_errors, vf, studyImportContext);
+                importStudyDesignData(errors, vf, studyImportContext);
 
                 // import dataset data or create snapshot datasets
-                importDatasetData(context, _form, sourceStudy, destStudy, snapshot, datasets, participantGroups, vf, _errors, studyImportContext);
+                importDatasetData(context, _form, sourceStudy, destStudy, snapshot, datasets, participantGroups, vf, errors, studyImportContext);
 
                 // import the specimen data and settings
-                importSpecimenMetadata(_errors, vf, studyImportContext);
-                importSpecimenSettings(_errors, vf, studyImportContext);
+                importSpecimenMetadata(errors, vf, studyImportContext);
+                importSpecimenSettings(errors, vf, studyImportContext);
                 importSpecimenData(destStudy, vf);
 
                 // import the cohort settings, needs to happen after the dataset data and specimen data is imported so the full ptid list is available
-                importCohortSettings(_errors, vf, studyImportContext);
+                importCohortSettings(errors, vf, studyImportContext);
 
                 // import TreatmentVisitMap, needs to happen after cohort info is loaded (issue 19947)
-                importTreatmentVisitMapData(_errors, vf, studyImportContext);
+                importTreatmentVisitMapData(errors, vf, studyImportContext);
             }
 
-            if (_errors.hasErrors())
+            if (errors.hasErrors())
             {
                 StringBuilder sb = new StringBuilder();
-                for (ObjectError error : _errors.getAllErrors())
+                for (ObjectError error : errors.getAllErrors())
                 {
                     sb.append(error.getDefaultMessage()).append('\n');
                 }

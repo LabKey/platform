@@ -139,8 +139,9 @@ public class RemoteServerStartup extends AbstractPipelineStartup
                 {
                     Message msg = (Message) msgs.nextElement();
 
-                    PipelineJob job = PipelineJobService.get().getJobStore().fromXML(((TextMessage)msg).getText());
-                    ids.add(job.getJobGUID());
+                    PipelineJob job = PipelineJob.deserializeJob(((TextMessage)msg).getText());
+                    if (null != job)
+                        ids.add(job.getJobGUID());
                 }
             }
         }
