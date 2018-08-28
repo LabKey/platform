@@ -49,7 +49,6 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.writer.PrintWriters;
-import org.springframework.validation.BindException;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -62,6 +61,7 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.nio.file.Path;
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -1874,7 +1874,9 @@ abstract public class PipelineJob extends Job implements Serializable
 //        module.addDeserializer(URI.class, new ToStringSerialization.JacksonDeserializer<URI>());
 //        module.addDeserializer(GUID.class, new ToStringSerialization.JacksonDeserializer<GUID>());
 //        module.addSerializer(new PairSerializer<>());
-//        mapper.registerModule(module);
+        module.addSerializer(new SqlTimeSerialization.SqlTimeSerializer());
+        module.addDeserializer(Time.class, new SqlTimeSerialization.SqlTimeDeserializer());
+        mapper.registerModule(module);
 
 //        mapper.addMixIn(BindException.class, JacksonMixins.BindException.class);
 //        mapper.addMixIn(JacksonMixins.BeanPropertyBindingResult.class, JacksonMixins.BeanPropertyBindingResult.class);
