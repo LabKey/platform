@@ -77,10 +77,12 @@ import org.labkey.list.view.ListItemAttachmentParent;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -291,20 +293,20 @@ public class ListManager implements SearchService.DocumentProvider
 
             for (ListDefinition list : lists.values())
             {
-                indexList(task, list);
+                indexList(task, list, false);
             }
         };
 
         task.addRunnable(r, SearchService.PRIORITY.group);
     }
 
-    public void indexList(final ListDefinition def)
+    public void indexList(final ListDefinition def, boolean designChange)
     {
-        indexList(((ListDefinitionImpl) def)._def);
+        indexList(((ListDefinitionImpl) def)._def, designChange);
     }
 
     // Index a single list
-    public void indexList(final ListDef def)
+    public void indexList(final ListDef def, boolean designChange)
     {
         SearchService ss = SearchService.get();
 
@@ -315,7 +317,7 @@ public class ListManager implements SearchService.DocumentProvider
             Runnable r = () ->
             {
                 ListDefinition list = ListDefinitionImpl.of(def);
-                indexList(task, list);
+                indexList(task, list, designChange);
             };
 
             task.addRunnable(r, SearchService.PRIORITY.item);
@@ -323,7 +325,7 @@ public class ListManager implements SearchService.DocumentProvider
     }
 
 
-    private void indexList(@NotNull IndexTask task, ListDefinition list)
+    private void indexList(@NotNull IndexTask task, ListDefinition list, boolean designChange)
     {
         Domain domain = list.getDomain();
 
@@ -339,7 +341,7 @@ public class ListManager implements SearchService.DocumentProvider
         indexModifiedItems(task, list);
 
         //If attachmentIndexing (checked within method) is enabled index attachment file(s)
-        indexAttachments(task, list);
+        indexAttachments(task, list, designChange);
     }
 
 
@@ -370,7 +372,7 @@ public class ListManager implements SearchService.DocumentProvider
             }
 
             //If attachmentIndexing (checked within method) is enabled index attachment file(s)
-            indexAttachments(task, list);
+            indexAttachments(task, list, false);
         }
     }
 
@@ -575,7 +577,7 @@ public class ListManager implements SearchService.DocumentProvider
                 @Override
                 public void setLastIndexed(long ms, long modified)
                 {
-                    ListManager.get().setItemLastIndexed(list, pk, ms);
+                    ListManager.get().setItemLastIndexed(list, pk, listTable, ms);
                 }
             };
 
@@ -599,18 +601,22 @@ public class ListManager implements SearchService.DocumentProvider
      * @param task indexing task
      * @param list containing file attachments
      */
-    private int indexAttachments(@NotNull final IndexTask task, ListDefinition list)
+    private int indexAttachments(@NotNull final IndexTask task, ListDefinition list, boolean designChange)
     {
+        TableInfo listTable = list.getTable(User.getSearchUser());
+        if (null == listTable)
+            return 0;
+
+        //If the index call was not due to a list design change and there are no attachment columns than don't try to index
+        if (!designChange && listTable.getColumns().stream().noneMatch(ci -> ci.getPropertyType() == PropertyType.ATTACHMENT))
+            return 0;
+
         //If FileAttachmentIndexing is disabled, remove any existing resources from the Index
         if (!list.getFileAttachmentIndex())
         {
             deleteIndexedAttachments(list);
             return 0;
         }
-
-        TableInfo listTable = list.getTable(User.getSearchUser());
-        if (null == listTable)
-            return 0;
 
         //Instantiate a counter
         MutableInt count = new MutableInt(0);
@@ -772,10 +778,6 @@ public class ListManager implements SearchService.DocumentProvider
 
     private void deleteIndexedAttachments(@NotNull ListDefinition list)
     {
-        // Can't delete attachments if list is already deleted
-        if (list == null)
-            return;
-
         AttachmentService as = AttachmentService.get();
 
         FieldKey entityIdKey = FieldKey.fromParts("EntityId");
@@ -783,11 +785,21 @@ public class ListManager implements SearchService.DocumentProvider
         if (null == listTable)
             return;
 
-        new TableSelector(listTable).getMapCollection().forEach(row -> {
-            String rowEntityId = (String)row.get(entityIdKey.getName());
-            AttachmentParent listItemParent = new ListItemAttachmentParent(rowEntityId, list.getContainer());
-            as.deleteAttachmentIndex(listItemParent);
+        List<String> parentIds = new ArrayList<>();
+        Set<String> cols = new HashSet<>(Arrays.asList("EntityId"));
+        new TableSelector(listTable, cols).forEachMap(row -> {
+            parentIds.add((String)row.get(entityIdKey.getName()));
+
+            // Delete in batches to minimize db queries
+            if (parentIds.size() > 10000)
+            {
+                as.deleteAttachmentIndexes(parentIds);
+                parentIds.clear();
+            }
         });
+
+        // Finish last batch
+        as.deleteAttachmentIndexes(parentIds);
     }
 
     // Un-index the entire list doc alone, but leave the list items alone
@@ -937,10 +949,8 @@ public class ListManager implements SearchService.DocumentProvider
     }
 
 
-    private void setItemLastIndexed(ListDefinition list, Object pk, long ms)
+    private void setItemLastIndexed(ListDefinition list, Object pk, TableInfo ti, long ms)
     {
-        TableInfo ti = list.getTable(User.getSearchUser());
-
         // The "search user" might not have access
         if (null != ti)
         {

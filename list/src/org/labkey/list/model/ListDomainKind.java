@@ -404,7 +404,7 @@ public abstract class ListDomainKind extends AbstractDomainKind
 
         ListDefinition list = ListService.get().getList(domain);
         if (list != null)
-            ListManager.get().indexList(list);
+            ListManager.get().indexList(list, true);
     }
 
     @Override

@@ -174,7 +174,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             }
 
             if (result.size() > 0 && !errors.hasErrors())
-                mgr.indexList(_list);
+                mgr.indexList(_list, false);
         }
 
         return result;
@@ -204,7 +204,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                         ListManager.get().addAuditEvent(_list, user, "Bulk inserted " + inserted + " rows to list.");
 
                     transaction.commit();
-                    ListManager.get().indexList(_list); // TODO: Add to a post-commit task?
+                    ListManager.get().indexList(_list, false); // TODO: Add to a post-commit task?
                     return inserted;
                 }
 
@@ -231,7 +231,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         DataIteratorContext context = getDataIteratorContext(errors, InsertOption.IMPORT, configParameters);
         int count = super._importRowsUsingDIB(user, container, rows, null, context, extraScriptContext);
         if (count > 0 && !errors.hasErrors())
-            ListManager.get().indexList(_list);
+            ListManager.get().indexList(_list, false);
         return count;
     }
 
@@ -242,7 +242,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     {
         List<Map<String, Object>> result = super.updateRows(user, container, rows, oldKeys, configParameters, extraScriptContext);
         if (result.size() > 0)
-            ListManager.get().indexList(_list);
+            ListManager.get().indexList(_list, false);
         return result;
     }
 

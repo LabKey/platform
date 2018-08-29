@@ -359,6 +359,34 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         }
     }
 
+    @Override
+    public void deleteAttachmentIndexes(List<String> parentIds)
+    {
+        TableSelector ts = new TableSelector(CoreSchema.getInstance().getTableInfoDocuments(),
+                PageFlowUtil.set("Parent", "DocumentName"),
+                new SimpleFilter(FieldKey.fromParts("Parent"), parentIds, CompareType.IN), null);
+
+        try (ResultSet rs = ts.getResultSet())
+        {
+            while(rs.next())
+            {
+                deleteAttachmentIndex(rs.getString("Parent"), rs.getString("DocumentName"));
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+
+    }
+
+    private void deleteAttachmentIndex(String parent, String name)
+    {
+        SearchService ss = SearchService.get();
+        if (ss != null)
+            ss.deleteResource(makeDocId(parent, name));
+    }
+
     private void deleteAttachmentIndex(AttachmentParent parent, List<Attachment> atts)
     {
         if (atts.isEmpty())
@@ -1196,9 +1224,13 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
     private static String makeDocId(AttachmentParent parent, String name)
     {
-        return "attachment:/" + parent.getEntityId() + "/" + PageFlowUtil.encode(name);
+        return makeDocId(parent.getEntityId(), PageFlowUtil.encode(name));
     }
-    
+
+    private static String makeDocId(String parentId, String name)
+    {
+        return "attachment:/" + parentId + "/" + PageFlowUtil.encode(name);
+    }
 
     private class AttachmentResource extends AbstractDocumentResource
     {
