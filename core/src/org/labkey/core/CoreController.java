@@ -2148,6 +2148,7 @@ public class CoreController extends SpringActionController
                     record.put("pandocEnabled", String.valueOf(def.isPandocEnabled()));
                     record.put("docker", String.valueOf(def.isDocker()));
                     record.put("default", String.valueOf(def.isDefault()));
+                    record.put("sandboxed", String.valueOf(def.isSandboxed()));
 
                     if (def.isRemote())
                     {
@@ -2223,7 +2224,7 @@ public class CoreController extends SpringActionController
                 List<ExternalScriptEngineDefinition> rDefs = svc.getEngineDefinitions(ExternalScriptEngineDefinition.Type.R);
                 for (ExternalScriptEngineDefinition rDef : rDefs)
                 {
-                    if ((!rDef.getName().equals(def.getName())) && (rDef.isDocker() == def.isDocker() && rDef.isDefault()))
+                    if ((!rDef.getName().equals(def.getName())) && (rDef.isSandboxed() == def.isSandboxed() && rDef.isDefault()))
                     {
                         ExternalScriptEngineDefinitionImpl newDef = (ExternalScriptEngineDefinitionImpl) rDef;
                         newDef.setDefault(false);

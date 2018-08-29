@@ -54,6 +54,10 @@
         border-top-width: 0;
     }
 
+    .readonlyField {
+        opacity: 0.7;
+    }
+
 </style>
 
 <script type="text/javascript">
@@ -63,7 +67,7 @@
     var R_ENGINE_NAME = 'R Scripting Engine';
     var REMOTE_R_ENGINE_NAME = 'Remote R Scripting Engine';
     var R_DOCKER_ENGINE_NAME = 'R Docker Scripting Engine';
-    var defaultR, defaultSandboxedR;
+    var defaultR, defaultSandboxedR, countR = 0, countSandboxedR = 0;
 
     function renderNameColumn(value, p, record)
     {
@@ -78,7 +82,7 @@
         {
             if (data.default)
                 txt = txt.concat('<i style="font-weight: bold">default : true</i><br>');
-            if (data.docker)
+            if (data.sandboxed)
                 txt = txt.concat('<i>sandboxed : true</i><br>');
         }
         txt = txt.concat('<i>enabled : ' + data.enabled + '</i><br>');
@@ -91,14 +95,24 @@
 
         if (record.extensions === R_EXTENSIONS)
         {
-            var items = [];
+            var items = [], isCurrentDefault = record.default && record.rowId;
             items.push({
                 fieldLabel: 'Site Default',
                 name: 'default',
                 id: 'editEngine_default',
-                labelAttrTpl: " data-qtitle='Set as default' data-qtip='Specify the default R engine to use'",
+                labelAttrTpl: isCurrentDefault ? " data-qtitle='Default engine' data-qtip='This engine is set as site default. To change site default, select another engine to set as default.'"
+                        : " data-qtitle='Set as default' data-qtip='Specify the default R engine to use'",
                 xtype: 'checkbox',
-                checked: record.default
+                checked: record.default,
+                readOnly: isCurrentDefault,
+                readOnlyCls: 'readonlyField'
+            },{
+                fieldLabel: 'Sandboxed',
+                name: 'sandboxed',
+                id: 'editEngine_sandboxed',
+                labelAttrTpl: " data-qtitle='Mark as sandboxed' data-qtip='Mark the R engine as sandboxed'",
+                xtype: 'checkbox',
+                checked: record.sandboxed
             });
             if (record.docker) {
                 items = items.concat([{
@@ -149,14 +163,21 @@
                             exePath: <%=q(RReport.getDefaultRPath())%>,
                         <% } %>
                         outputFileName: <%= q(ExternalScriptEngine.SCRIPT_NAME_REPLACEMENT + ".Rout") %>,
+                        'default': !defaultR,
                         external: true,
                         enabled: true,
                         remote: false,
                         languageName:'R',
                         type : <%=q(ExternalScriptEngineDefinition.Type.R.name())%>
                     };
-
-                    editRecord(button, grid, record);
+                    if (countR > 0 && !defaultR) {
+                        Ext4.Msg.confirm('Site default missing', "None of the existing R engine(s) has been set as 'Site Default'. A site default must be specified in order to add additional R engines. Continue?", function (btn, text) {
+                            if (btn == 'yes')
+                                editRecord(button, grid, record);
+                        });
+                    }
+                    else
+                        editRecord(button, grid, record);
                 }
             }
         });
@@ -174,6 +195,7 @@
                         port:<%=RReport.DEFAULT_R_PORT%>,
                         exeCommand:'<%=text(RReport.DEFAULT_RSERVE_CMD)%>',
                         outputFileName: <%= q(ExternalScriptEngine.SCRIPT_NAME_REPLACEMENT + ".Rout") %>,
+                        'default': !defaultR,
                         external: true,
                         enabled: true,
                         remote : true,
@@ -197,8 +219,14 @@
                             <% } %>
                         ]
                     };
-
-                    editRecord(button, grid, record);
+                    if (countR > 0 && !defaultR) {
+                        Ext4.Msg.confirm('Site default missing', "None of the existing R engine(s) has been set as 'Site Default'. A site default must be specified in order to add additional R engines. Continue?", function (btn, text) {
+                            if (btn == 'yes')
+                                editRecord(button, grid, record);
+                        });
+                    }
+                    else
+                        editRecord(button, grid, record);
                 }
             }
         });
@@ -216,12 +244,22 @@
                         external: true,
                         outputFileName: <%= q(ExternalScriptEngine.SCRIPT_NAME_REPLACEMENT + ".Rout") %>,
                         enabled: true,
+                        'default': !defaultSandboxedR,
                         docker: true,
+                        sandboxed: true,
                         remote: true,
                         languageName:'R',
                         type : <%=q(ExternalScriptEngineDefinition.Type.R.name())%>
                     };
-                    editRecord(button, grid, record);
+                    if (countSandboxedR > 0 && !defaultSandboxedR) {
+                        Ext4.Msg.confirm('Site default missing', "None of the existing sandboxed R engine(s) has been set as 'Site Default'. A site default must be specified in order to add additional sandboxed R engines.  Continue?", function (btn, text) {
+                            if (btn == 'yes')
+                                editRecord(button, grid, record);
+                        });
+                    }
+                    else
+                        editRecord(button, grid, record);
+
                 }
             }
         });
@@ -262,14 +300,23 @@
                 rDockerEngineItem.enable();
         <%  } %>
                 perlEngineItem.enable();
+                defaultSandboxedR = null;
+                defaultR = null;
+                countSandboxedR = 0;
+                countR = 0;
                 for (var i in records) {
                     if (records[i].data) {
-                        if (records[i].data.extensions == R_EXTENSIONS)  {
-                            if (records[i].data.default) {
-                                if (records[i].data.docker)
+                        var data = records[i].data;
+                        if (data.extensions == R_EXTENSIONS)  {
+                            if (data.sandboxed) {
+                                if (data.default)
                                     defaultSandboxedR = records[i].data;
-                                else
+                                countSandboxedR++;
+                            }
+                            else {
+                                if (data.default)
                                     defaultR = records[i].data;
+                                countR++;
                             }
                         }
 
@@ -358,10 +405,23 @@
             Ext4.Msg.alert("Delete Engine Configuration", "Java 6 script engines cannot be deleted but you can disable them.");
             return false;
         }
+
+        if (record.default) {
+            // deletion of site default engine is not allowed, unless there is only one engine present
+            if (record.sandboxed && countSandboxedR > 1) {
+                Ext4.Msg.alert("Delete Engine Configuration", "Site default sandboxed R engine cannot be deleted. Please choose another engine as sandboxed site default prior to delete this one.");
+                return false;
+            }
+            else if (!record.sandboxed && countR > 1) {
+                Ext4.Msg.alert("Delete Engine Configuration", "Site default R engine cannot be deleted. Please choose another engine as site default prior to delete this one.");
+                return false;
+            }
+        }
+
         params.push("rowId=" + record.rowId);
         params.push("extensions=" + record.extensions);
 
-        Ext4.Msg.confirm('Delete Engine Configuration', "Are you sure you wish to delete the selected Configuration? : " + record.name, function(btn, text) {
+        Ext4.Msg.confirm('Delete Engine Configuration', "Are you sure you wish to delete the selected configuration: " + record.name + "?", function(btn, text) {
             if (btn == 'yes')
             {
                 Ext4.Ajax.request({
@@ -679,7 +739,7 @@
         var form = panel.getForm();
         if (form && !form.isValid())
         {
-                Ext4.Msg.alert('Engine Definition', 'Not all fields have been properly completed');
+            Ext4.Msg.alert('Engine Definition', 'Not all fields have been properly completed');
             return false;
         }
 
@@ -687,21 +747,37 @@
 
         // confirm site default R engine modification
         if (values.extensions  === R_EXTENSIONS) {
+            var rowId = values.rowId ? parseInt(values.rowId) : -1;
+            if (values.default && !values.enabled) {
+                Ext4.Msg.alert("Engine Definition", "Site default engine must be enabled.");
+                return false;
+            }
+
+            if (!values.default && ((defaultSandboxedR && (rowId === defaultSandboxedR.rowId)) || (defaultR && (rowId === defaultR.rowId)))) {
+                Ext4.Msg.alert("Engine Definition", "This engine is used as site default. To change site default, set another engine to use as default.");
+                return false;
+            }
+
             var confirmChange;
-            if (values.docker && defaultSandboxedR) {
-                if (values.rowId === defaultSandboxedR.rowId && !values.default) {
-                    confirmChange = "Are you sure to stop using '" + values.name + "' as the default site wide sandboxed R engine?"
+            if (values.sandboxed) {
+                if (defaultSandboxedR) {
+                    if (values.default && rowId !== defaultSandboxedR.rowId)
+                        confirmChange = "Are you sure to starting using '" + values.name + "' as the default site wide sandboxed R engine? The current default is '" + defaultSandboxedR.name + "'."
                 }
-                else if (values.default) {
-                    confirmChange = "Are you sure to starting using '" + values.name + "' as the default site wide sandboxed R engine? The current default is '" + defaultSandboxedR.name + "'."
+                else if (!values.default){
+                    Ext4.Msg.alert('Engine Definition', 'Site default sandboxed R engine missing. You must specify one R engine to be site default.');
+                    return false;
                 }
             }
-            else if (!values.docker && defaultR) {
-                if (values.rowId === defaultR.rowId && !values.default) {
-                    confirmChange = "Are you sure to stop using '" + values.name + "' as the default site wide R engine?"
+            else if (!values.sandboxed) {
+                if (defaultR) {
+                    if (values.default && rowId !== defaultR.rowId) {
+                        confirmChange = "Are you sure to starting using '" + values.name + "' as the default site wide R engine? The current default is '" + defaultR.name + "'."
+                    }
                 }
-                else if (values.default) {
-                    confirmChange = "Are you sure to starting using '" + values.name + "' as the default site wide R engine? The current default is '" + defaultR.name + "'."
+                else if (!values.default) {
+                    Ext4.Msg.alert('Engine Definition', 'Site default R engine missing. You must specify one R engine to be site default.');
+                    return false;
                 }
             }
             if (confirmChange && !confirm(confirmChange))
@@ -775,6 +851,7 @@
                 {name:'rowId'},
                 {name:'type'},
                 {name:'default', type:'boolean'},
+                {name:'sandboxed', type:'boolean'},
                 {name:'enabled', type:'boolean'},
                 {name:'external', type:'boolean'},
                 {name:'remote', type:'boolean'},
