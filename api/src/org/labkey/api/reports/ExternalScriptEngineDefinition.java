@@ -66,6 +66,9 @@ public interface ExternalScriptEngineDefinition
     String getOutputFileName();
     void setOutputFileName(String name);
 
+    void setSandboxed(boolean sandboxed);
+    boolean isSandboxed();
+
     void setEnabled(boolean enabled);
     boolean isEnabled();
 
