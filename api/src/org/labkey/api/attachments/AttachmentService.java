@@ -108,6 +108,8 @@ public interface AttachmentService
 
     void addAuditEvent(User user, AttachmentParent parent, String filename, String comment);
 
+    void deleteAttachmentIndexes(List<String> parentIds);
+
     void deleteAttachmentIndex(AttachmentParent parent);
 
     void registerAttachmentType(AttachmentType type);
