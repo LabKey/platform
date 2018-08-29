@@ -87,7 +87,7 @@ public class ExperimentPipelineJob extends PipelineJob
     @Override
     public boolean hasJacksonSerialization()
     {
-        return true;
+        return false;
     }
 
     protected XarSource createXarSource(File file)
