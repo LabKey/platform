@@ -78,14 +78,14 @@ public class GroupMembershipCache
 
 
     // Return FLATTENED array of groups to which this principal belongs (recursive)
-    static int[] getAllGroupMemberships(@NotNull UserPrincipal user)
+    public static int[] getAllGroupMemberships(@NotNull UserPrincipal user)
     {
         return CACHE.get(ALL_GROUP_MEMBERSHIPS_PREFIX + user.getUserId(), user, ALL_GROUP_MEMBERSHIPS_LOADER);
     }
 
 
     // Return array of groups to which this principal directly belongs (non-recursive)
-    static int[] getGroupMemberships(int principalId)
+    public static int[] getGroupMemberships(int principalId)
     {
         return CACHE.get(IMMEDIATE_GROUP_MEMBERSHIPS_PREFIX + principalId, principalId, IMMEDIATE_GROUP_MEMBERSHIPS_LOADER);
     }
