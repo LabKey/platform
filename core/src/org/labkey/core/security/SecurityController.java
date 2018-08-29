@@ -1434,8 +1434,8 @@ public class SecurityController extends SpringActionController
 
             if (clone != null && user != null)
             {
-                // clone group membership
-                for (int groupId : clone.getGroups())
+                // clone direct group membership
+                for (int groupId : GroupMembershipCache.getGroupMemberships(clone.getUserId()))
                 {
                     if (!user.isInGroup(groupId))
                     {
