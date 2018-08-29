@@ -1212,7 +1212,7 @@ public class DataRegion extends DisplayElement
         AnalyticsProviderRegistry registry = AnalyticsProviderRegistry.get();
         boolean disableAnalytics = BooleanUtils.toBoolean(ctx.getViewContext().getActionURL().getParameter(ctx.getCurrentRegion().getName() + ".disableAnalytics"));
 
-        if (!disableAnalytics && registry != null && ctx.getBaseAnalyticsProviders() != null)
+        if (!disableAnalytics && registry != null && ctx.getBaseAnalyticsProviders() != null && ctx.getFieldMap() != null)
         {
             List<String> scripts = new ArrayList<>();
             for (AnalyticsProviderItem analyticsProviderItem : ctx.getBaseAnalyticsProviders())
