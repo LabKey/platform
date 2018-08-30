@@ -32,6 +32,7 @@ import org.apache.log4j.spi.LoggerFactory;
 import org.apache.log4j.spi.LoggerRepository;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.gwt.client.util.PropertyUtil;
@@ -1876,6 +1877,8 @@ abstract public class PipelineJob extends Job implements Serializable
 //        module.addSerializer(new PairSerializer<>());
         module.addSerializer(new SqlTimeSerialization.SqlTimeSerializer());
         module.addDeserializer(Time.class, new SqlTimeSerialization.SqlTimeDeserializer());
+        module.addSerializer(NullSafeBindException.class, new NullSafeBindExceptionSerializer());
+
         mapper.registerModule(module);
 
 //        mapper.addMixIn(BindException.class, JacksonMixins.BindException.class);
