@@ -56,7 +56,6 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport, Stud
     @JsonBackReference
     private final StudyImportContext _ctx;
     private final VirtualFile _root;
-    @JsonSerialize(using = NullSafeBindExceptionSerializer.class)
     private final BindException _errors;          // TODO: do we need to save error messages
     private final boolean _reload;
     private final String _originalFilename;
