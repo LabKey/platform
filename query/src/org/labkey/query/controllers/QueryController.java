@@ -2503,8 +2503,15 @@ public class QueryController extends SpringActionController
         @Override
         public boolean handlePost(QueryUpdateForm tableForm, BindException errors) throws Exception
         {
+            boolean ret;
+
             if (tableForm.isDataSubmit())
-                return super.handlePost(tableForm, errors);
+            {
+                ret = super.handlePost(tableForm, errors);
+                if (ret)
+                    DataRegionSelection.clearAll(getViewContext(), null);  // in case we altered primary keys, see issue #35055
+                return ret;
+            }
 
             return false;
         }
