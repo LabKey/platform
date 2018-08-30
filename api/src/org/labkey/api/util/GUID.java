@@ -272,14 +272,14 @@ public class GUID implements Serializable, Parameter.JdbcParameterValue
     }
 
     @JsonCreator
-    public GUID(@JsonProperty("_str") String str)
+    public GUID(String str)                   // No @JsonProperty("_str") needed
     {
         if (!isGUID(str))
             throw new IllegalArgumentException(str);
         _str = str;
     }
 
-//    @JsonValue         // TODO: check dataspace tests
+    @JsonValue
     @Override
     public String toString()
     {
