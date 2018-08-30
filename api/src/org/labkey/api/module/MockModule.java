@@ -382,9 +382,9 @@ public class MockModule implements Module
     }
 
     @Override
-    public @Nullable Collection<String> getJarFilenames()
+    public @NotNull Collection<String> getJarFilenames()
     {
-        return null;
+        return Collections.emptySet();
     }
 
     @Override

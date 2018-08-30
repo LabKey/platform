@@ -323,7 +323,7 @@ public interface Module extends Comparable<Module>
      * Used in dev mode to verify that the module credits pages is complete.
      * @return Jar filenames used by this module
      */
-    @Nullable Collection<String> getJarFilenames();
+    @NotNull Collection<String> getJarFilenames();
 
     // Should LabKey should automatically uninstall this module (drop its schemas, delete SqlScripts rows, delete Modules rows)
     // if the module no longer exists?  This setting gets saved to the Modules table.
