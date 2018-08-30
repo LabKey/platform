@@ -1001,12 +1001,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     private static final String LIB_PATH = "/WEB-INF/lib/";
     private static final Pattern LABKEY_JAR_PATTERN = Pattern.compile("^(?:schemas|labkey-client-api).*\\.jar$");
 
-    @Nullable
+    @NotNull
     @Override
     public Collection<String> getJarFilenames()
     {
         if (!AppProps.getInstance().isDevMode())
-            return null;
+            return Collections.emptySet();
 
         //noinspection unchecked
         Set<String> resources = ViewServlet.getViewServletContext().getResourcePaths(LIB_PATH);
