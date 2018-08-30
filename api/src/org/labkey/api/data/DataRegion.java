@@ -2221,7 +2221,7 @@ public class DataRegion extends DisplayElement
 
         for (DisplayColumn renderer : renderers)
         {
-            if (shouldRender(renderer, ctx) && null != renderer.getColumnInfo() && !renderer.getColumnInfo().isNullable())
+            if (shouldRender(renderer, ctx) && null != renderer.getColumnInfo() && !renderer.getColumnInfo().isNullable() && action != MODE_UPDATE_MULTIPLE)
             {
                 String msg = "Fields marked with an asterisk * are required.";
 
