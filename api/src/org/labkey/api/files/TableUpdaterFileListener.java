@@ -246,10 +246,12 @@ public class TableUpdaterFileListener implements FileListener
         if (!_pathGetter.matchParentAndFileName() || !Files.isDirectory(src))
         {
             // For fileRootPath, we need the parent of the files
+            String srcPathWithout = null;
             if (_pathGetter.matchParentAndFileName())
             {
                 srcPath = getParentWithSeparator(src);
-                destPath = getParentWithSeparator(dest);
+                srcPathWithout = getParentWithoutSeparator(src);
+                destPath = getParentWithoutSeparator(dest);
                 if (null == srcPath || null == destPath)
                     return;     // Nothing to do
             }
@@ -261,6 +263,13 @@ public class TableUpdaterFileListener implements FileListener
             singleEntrySQL.append(" = ?");
             singleEntrySQL.add(destPath);
             singleEntrySQL.add(srcPath);
+            if (null != srcPathWithout)
+            {
+                singleEntrySQL.append(" OR ");
+                singleEntrySQL.append(dbColumnName);
+                singleEntrySQL.append(" = ?");
+                singleEntrySQL.add(srcPathWithout);
+            }
 
             if (_pathGetter.matchParentAndFileName())
             {
@@ -334,6 +343,20 @@ public class TableUpdaterFileListener implements FileListener
                 return FileUtil.pathToString(parent) + File.separator;
             else
                 return parent.toFile().getPath() + File.separator;
+        }
+        return null;
+    }
+
+    @Nullable
+    private String getParentWithoutSeparator(Path path)
+    {
+        Path parent = path.getParent();
+        if (null != parent)
+        {
+            if (FileUtil.hasCloudScheme(parent))
+                return FileUtil.pathToString(parent);
+            else
+                return parent.toFile().getPath();
         }
         return null;
     }
