@@ -2826,18 +2826,7 @@ public class ExperimentController extends SpringActionController
 
         protected void deleteObjects(DeleteForm deleteForm)
         {
-            List<ExpMaterial> materials = getMaterials(deleteForm, true);
-
-            for (ExpRun run : getRuns(materials))
-            {
-                if (!run.getContainer().hasPermission(getUser(), DeletePermission.class))
-                    throw new UnauthorizedException();
-            }
-
-            for (ExpMaterial expMaterial : materials)
-            {
-                expMaterial.delete(getUser());
-            }
+            ExperimentServiceImpl.get().deleteMaterialByRowIds(getUser(), getContainer(), deleteForm.getIds(true));
         }
 
         public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors)

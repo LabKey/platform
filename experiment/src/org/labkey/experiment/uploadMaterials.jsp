@@ -140,10 +140,10 @@
         <tr>
             <td class="labkey-form-label">Insert/Update Options</td>
             <td>This sample set already exists.  Please choose how the uploaded samples should be merged with the existing samples.<br>
-                <labkey:radio name="insertUpdateChoice" id="insertOnlyChoice" value="<%=InsertUpdateChoice.insertOnly.toString()%>" currentValue="<%=form.getInsertUpdateChoice()%>" /> Insert only new samples; error if trying to update an existing sample.<br>
-                <labkey:radio name="insertUpdateChoice" id="insertIgnoreChoice" value="<%=InsertUpdateChoice.insertIgnore.toString()%>" currentValue="<%=form.getInsertUpdateChoice()%>" /> Insert only new samples; ignore any existing samples.<br>
-                <labkey:radio name="insertUpdateChoice" id="insertOrUpdateChoice" value="<%=InsertUpdateChoice.insertOrUpdate.toString()%>" currentValue="<%=form.getInsertUpdateChoice()%>" /> Insert any new samples and update existing samples.<br>
-                <labkey:radio name="insertUpdateChoice" id="updateOnlyChoice" value="<%=InsertUpdateChoice.updateOnly.toString()%>" currentValue="<%=form.getInsertUpdateChoice()%>" /> Update only existing samples with new values; error if sample doesn't already exist.<br>
+                <labkey:radio name="insertUpdateChoice" id="insertOnlyChoice" value="<%=InsertUpdateChoice.insertOnly.toString()%>" currentValue="<%=form.getInsertUpdateChoice()%>" /> <label for="insertOnlyChoice">Insert only new samples; error if trying to update an existing sample.</label><br>
+                <labkey:radio name="insertUpdateChoice" id="insertIgnoreChoice" value="<%=InsertUpdateChoice.insertIgnore.toString()%>" currentValue="<%=form.getInsertUpdateChoice()%>" /> <label for="insertIgnoreChoice">Insert only new samples; ignore any existing samples.</label><br>
+                <labkey:radio name="insertUpdateChoice" id="insertOrUpdateChoice" value="<%=InsertUpdateChoice.insertOrUpdate.toString()%>" currentValue="<%=form.getInsertUpdateChoice()%>" /> <label for="insertOrUpdateChoice">Insert any new samples and update existing samples.</label><br>
+                <labkey:radio name="insertUpdateChoice" id="updateOnlyChoice" value="<%=InsertUpdateChoice.updateOnly.toString()%>" currentValue="<%=form.getInsertUpdateChoice()%>" /> <label for="updateOnlyChoice">Update only existing samples with new values; error if sample doesn't already exist.</label><br>
 
                 <br>
                 By default, any additional columns in the uploaded sample data will be ignored.<br>

@@ -44,7 +44,7 @@ public class UploadMaterialSetForm extends ViewForm
     private int idColumn2 = -1;
     private int idColumn3 = -1;
     private int parentColumn = -1;
-    private InsertUpdateChoice insertUpdateChoice;
+    private InsertUpdateChoice insertUpdateChoice = InsertUpdateChoice.insertOnly;
     private Integer rowId;
     private boolean addUniqueSuffixForDuplicateNames = false;
     private boolean skipDerivation = false;

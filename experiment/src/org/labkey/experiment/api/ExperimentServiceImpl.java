@@ -3531,12 +3531,20 @@ public class ExperimentServiceImpl implements ExperimentService
             return;
 
         final SqlDialect dialect = getExpSchema().getSqlDialect();
-        try (DbScope.Transaction transaction = ensureTransaction())
+        try (DbScope.Transaction transaction = ensureTransaction();
+            Timing timing = MiniProfiler.step("delete materials"))
         {
-            SQLFragment sql = new SQLFragment("SELECT * FROM exp.Material WHERE RowId ");
-            dialect.appendInClauseSql(sql, selectedMaterialIds);
+            SQLFragment rowIdInFrag = new SQLFragment();
+            dialect.appendInClauseSql(rowIdInFrag, selectedMaterialIds);
 
-            List<ExpMaterialImpl> materials = ExpMaterialImpl.fromMaterials(new SqlSelector(getExpSchema(), sql).getArrayList(Material.class));
+            SQLFragment sql = new SQLFragment("SELECT * FROM exp.Material WHERE RowId ");
+            sql.append(rowIdInFrag);
+
+            List<ExpMaterialImpl> materials;
+            try (Timing t = MiniProfiler.step("fetch"))
+            {
+                materials = ExpMaterialImpl.fromMaterials(new SqlSelector(getExpSchema(), sql).getArrayList(Material.class));
+            }
 
             for (ExpMaterial material : materials)
             {
@@ -3544,53 +3552,95 @@ public class ExperimentServiceImpl implements ExperimentService
                     throw new UnauthorizedException();
             }
 
-            beforeDeleteMaterials(user, container, materials);
+            try (Timing t = MiniProfiler.step("beforeDelete"))
+            {
+                beforeDeleteMaterials(user, container, materials);
+            }
 
+            List<String> materialLsids = new ArrayList<>(materials.size());
             for (ExpMaterialImpl material : materials)
             {
                 // Delete any runs using the material if the ProtocolImplementation allows deleting the run when an input is deleted.
                 if (deleteRunsUsingMaterials)
                 {
-                    deleteRunsUsingInput(user, material.getDataObject());
+                    try (Timing t = MiniProfiler.step("deleteRunsUsingInput"))
+                    {
+                        deleteRunsUsingInput(user, material.getDataObject());
+                    }
                 }
 
-                SQLFragment deleteSql = new SQLFragment()
-                        .append("DELETE FROM ").append(String.valueOf(getTinfoMaterialAliasMap())).append(" WHERE LSID = ?;\n").add(material.getLSID())
-                        .append("DELETE FROM ").append(String.valueOf(getTinfoEdge())).append(" WHERE fromLsid = ? OR toLsid = ?;").add(material.getLSID()).add(material.getLSID());
-                new SqlExecutor(getExpSchema()).execute(deleteSql);
-
-                OntologyManager.deleteOntologyObjects(container, material.getLSID());
+                materialLsids.add(material.getLSID());
             }
 
-            // Delete MaterialInput exp.object and properties
-            SQLFragment inputObjects = new SQLFragment("SELECT ")
-                    .append(dialect.concatenate("'" + MaterialInput.lsidPrefix() + "'",
-                            "CAST(mi.materialId AS VARCHAR)", "'.'", "CAST(mi.targetApplicationId AS VARCHAR)"))
-                    .append(" FROM ").append(getTinfoMaterialInput(), "mi").append(" WHERE mi.materialId ");
-            dialect.appendInClauseSql(inputObjects, selectedMaterialIds);
-            OntologyManager.deleteOntologyObjects(getSchema(), inputObjects, container, false);
+            // generate in clause for the Material LSIDs
+            SQLFragment lsidInFrag = new SQLFragment();
+            getSchema().getSqlDialect().appendInClauseSql(lsidInFrag, materialLsids);
 
             SqlExecutor executor = new SqlExecutor(getExpSchema());
 
-            SQLFragment materialInputSQL = new SQLFragment("DELETE FROM exp.MaterialInput WHERE MaterialId ");
-            dialect.appendInClauseSql(materialInputSQL, selectedMaterialIds);
-            executor.execute(materialInputSQL);
+            try (Timing t = MiniProfiler.step("exp.materialAliasMap"))
+            {
+                SQLFragment deleteAliasSql = new SQLFragment("DELETE FROM ").append(String.valueOf(getTinfoMaterialAliasMap())).append(" WHERE LSID ")
+                        .append(lsidInFrag);
+                executor.execute(deleteAliasSql);
+            }
 
-            SQLFragment materialSQL = new SQLFragment("DELETE FROM exp.Material WHERE RowId ");
-            dialect.appendInClauseSql(materialSQL, selectedMaterialIds);
-            executor.execute(materialSQL);
+            try (Timing t = MiniProfiler.step("exp.edges"))
+            {
+                SQLFragment deleteEdgeSql = new SQLFragment("DELETE FROM ").append(String.valueOf(getTinfoEdge())).append(" WHERE ")
+                        .append("fromLsid ").append(lsidInFrag)
+                        .append(" OR toLsid ").append(lsidInFrag);
+                executor.execute(deleteEdgeSql);
+            }
+
+            // delete exp.objects
+            try (Timing t = MiniProfiler.step("exp.object"))
+            {
+                SQLFragment lsidFragFrag = new SQLFragment("SELECT o.ObjectUri FROM ").append(getTinfoObject(), "o").append(" WHERE o.ObjectURI ");
+                lsidFragFrag.append(lsidInFrag);
+                OntologyManager.deleteOntologyObjects(getSchema(), lsidFragFrag, container, false);
+            }
+
+            // Delete MaterialInput exp.object and properties
+            try (Timing t = MiniProfiler.step("MI exp.object"))
+            {
+                SQLFragment inputObjects = new SQLFragment("SELECT ")
+                        .append(dialect.concatenate("'" + MaterialInput.lsidPrefix() + "'",
+                                "CAST(mi.materialId AS VARCHAR)", "'.'", "CAST(mi.targetApplicationId AS VARCHAR)"))
+                        .append(" FROM ").append(getTinfoMaterialInput(), "mi").append(" WHERE mi.materialId ");
+                dialect.appendInClauseSql(inputObjects, selectedMaterialIds);
+                OntologyManager.deleteOntologyObjects(getSchema(), inputObjects, container, false);
+            }
+
+            // delete exp.MaterialInput
+            try (Timing t = MiniProfiler.step("exp.MaterialInput"))
+            {
+                SQLFragment materialInputSQL = new SQLFragment("DELETE FROM exp.MaterialInput WHERE MaterialId ");
+                materialInputSQL.append(rowIdInFrag);
+                executor.execute(materialInputSQL);
+            }
+
+            try (Timing t = MiniProfiler.step("exp.Material"))
+            {
+                SQLFragment materialSQL = new SQLFragment("DELETE FROM exp.Material WHERE RowId ");
+                materialSQL.append(rowIdInFrag);
+                executor.execute(materialSQL);
+            }
 
             // Remove from search index
             SearchService ss = SearchService.get();
             if (null != ss)
             {
-                for (ExpMaterial material : materials)
+                try (Timing t = MiniProfiler.step("search docs"))
                 {
-                    ss.deleteResource(material.getDocumentId());
+                    for (ExpMaterial material : materials)
+                        ss.deleteResource(material.getDocumentId());
                 }
             }
 
             transaction.commit();
+            if (timing != null)
+                LOG.info("SampleSet delete timings\n" + timing.dump());
         }
     }
 
@@ -4248,6 +4298,9 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public void deleteSampleSet(int rowId, Container c, User user) throws ExperimentException
     {
+        CPUTimer timer = new CPUTimer("delete sampleset");
+        timer.start();
+
         ExpSampleSetImpl source = getSampleSet(c, user, rowId);
         if (null == source)
             throw new IllegalArgumentException("Can't find SampleSet with rowId " + rowId);
@@ -4273,6 +4326,9 @@ public class ExperimentServiceImpl implements ExperimentService
 
         SchemaKey expMaterialsSchema = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, materials.toString());
         QueryService.get().fireQueryDeleted(user, c, null, expMaterialsSchema, singleton(source.getName()));
+
+        timer.stop();
+        LOG.info("Deleted SampleSet in " + timer.getDuration());
     }
 
     /**
