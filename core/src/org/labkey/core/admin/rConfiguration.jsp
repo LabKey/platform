@@ -54,9 +54,6 @@
 
     String currentName = currentEngine.getFactory().getEngineName();
     String parentName = form.getParentEngine().getFactory().getEngineName();
-
-    System.out.println(currentName);
-    System.out.println(parentName);
 %>
 <h4>Available R Configurations</h4>
 <hr/>
@@ -65,13 +62,13 @@
     run under a different R configuration in this folder and in child folders, e.g. different R version.
 </div>
 <labkey:form id="configForm" action="<%=postURL%>" method="POST">
-<div style="max-width: 400px">
+<div style="max-width: 425px">
     <div class="row">
         <div class="col-xs-6">
             Parent R Configuration:
         </div>
         <% if (form.getParentEngine() != null) { %>
-            <div class="col-xs-6">
+            <div id="parentConfig" class="col-xs-6">
                 <%= h(parentName) %>
             </div>
         <%}%>
@@ -107,27 +104,56 @@
 </div>
 </labkey:form>
 <script type="text/javascript">
-    var intialOverride = null;
-
+    var initialOverride = null;
     var saveBtn = document.getElementById("saveBtn");
     var overrideInput = document.getElementById("overrideInput");
     var engineSelect = document.getElementsByName("engineRowId")[0];
 
-    overrideInput.addEventListener("change", function() {
-        if ((initialOverride == null) == overrideInput.checked) {
-            saveBtn.removeAttribute("disabled");
-        } else {
-            saveBtn.setAttribute("disabled", true);
+    (function() {
+        // initial check/uncheck of override checkbox
+        if (<%= !currentName.equals(parentName) %>) {
+            overrideInput.checked = true;
         }
+
+        // hide dropdown if no initial override
+        if (!overrideInput.checked) {
+            engineSelect.style.display = "none";
+        }
+
+        // set value of initial override
+        if (overrideInput.checked) {
+            initialOverride = engineSelect.options[engineSelect.selectedIndex].text;
+        }
+    })();
+
+    overrideInput.addEventListener("click", function() {
+        if (overrideInput.checked) {
+            engineSelect.style.display = "inline";
+        } else {
+            engineSelect.style.display = "none";
+        }
+
+        setSaveDisableStatus();
     });
 
-    engineSelect.addEventListener("change", function() {
-        if (engineSelect[engineSelect.selectedIndex].value != initialOverride) {
-            saveBtn.removeAttribute("disabled");
+    engineSelect.addEventListener("change", setSaveDisableStatus);
+
+    // enables/disables the "Save" button if current state differs/matches the initial state respectively
+    function setSaveDisableStatus() {
+        if (initialOverride == null) {
+            if (overrideInput.checked) {
+                saveBtn.removeAttribute("disabled");
+            } else {
+                saveBtn.setAttribute("disabled", true);
+            }
         } else {
-            saveBtn.setAttribute("disabled", true);
+            if (engineSelect[engineSelect.selectedIndex].text != initialOverride) {
+                saveBtn.removeAttribute("disabled");
+            } else {
+                saveBtn.setAttribute("disabled", true);
+            }
         }
-    });
+    }
 
     function confirmSubmit() {
         if (!saveBtn.getAttribute("disabled")) {
@@ -139,24 +165,6 @@
                 });
         }
     }
-
-    +function($){
-        $(document).ready(function() {
-            initialOverride = $("select[name='engineRowId']").val();
-
-            if(<%= !currentName.equals(parentName) %>) {
-                $("#overrideInput").attr("checked", true);
-            }
-
-            if (!$("#overrideInput").attr("checked")) {
-                $("select[name='engineRowId']").css('display', 'none');
-            }
-        });
-
-        $('#overrideInput').click(function() {
-            $("select[name='engineRowId']").toggle(this.checked);
-        });
-    }(jQuery)
 </script>
 
 
