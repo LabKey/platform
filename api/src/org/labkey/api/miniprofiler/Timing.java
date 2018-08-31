@@ -17,7 +17,7 @@ package org.labkey.api.miniprofiler;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import org.apache.log4j.Logger;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.GUID;
 
@@ -236,5 +236,36 @@ public class Timing implements AutoCloseable
         if (_objects.isEmpty())
             return null;
         return Collections.unmodifiableMap(_objects);
+    }
+
+    // calling dump will have the side-effect of stopping the timer
+    public String dump()
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("%20s\t%12s\t%12s\t%8s\n",
+            "", "inclusive", "exclusive", "objects"));
+        dump(sb);
+        return sb.toString();
+    }
+
+    // calling dump will have the side-effect of stopping the timer
+    public void dump(StringBuilder sb)
+    {
+        if (_timer.started())
+            stop();
+
+        String name = StringUtils.repeat(" ", getDepth()) + _name;
+        if (_overflow)
+            name = name + "**";
+
+        sb.append(String.format("%20s\t%12d\t%12d\t%8d\n",
+                name, getDuration(), getDurationExclusive(), _objects.size()));
+
+        for (Timing child : _children)
+        {
+            if (child.isTrivial())
+                continue;
+            child.dump(sb);
+        }
     }
 }

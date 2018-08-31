@@ -17,7 +17,10 @@ package org.labkey.api.exp.form;
 
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.study.actions.ProtocolIdForm;
-import org.labkey.api.util.PageFlowUtil;
+
+import java.util.Set;
+
+import static java.util.Collections.singleton;
 
 /**
  * Created by aaronr on 1/26/15.
@@ -28,13 +31,13 @@ public class DeleteForm extends ProtocolIdForm implements DataRegionSelection.Da
     private String _dataRegionSelectionKey;
     private Integer _singleObjectRowId;
 
-    public int[] getIds(boolean clear)
+    public Set<Integer> getIds(boolean clear)
     {
         if (_singleObjectRowId != null)
         {
-            return new int[] {_singleObjectRowId};
+            return singleton(_singleObjectRowId);
         }
-        return PageFlowUtil.toInts(DataRegionSelection.getSelected(getViewContext(), clear));
+        return DataRegionSelection.getSelectedIntegers(getViewContext(), clear);
     }
 
     public Integer getSingleObjectRowId()
