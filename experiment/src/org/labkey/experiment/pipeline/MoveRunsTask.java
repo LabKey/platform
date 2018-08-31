@@ -159,7 +159,13 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
         {
             super(job);
             _xml = xml;
+            if (null == root)
+                throw new ExperimentException("File path root is null");
+
             _root = FileUtil.getAbsolutePath(job.getSourceContainer(), root);
+            if (null == _root)
+                throw new ExperimentException("Unable to create absolute file path for root");
+
             _sourceContainer = job.getSourceContainer();
 
             int retry = 0;
