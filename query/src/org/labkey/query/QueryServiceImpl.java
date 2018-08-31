@@ -1767,8 +1767,9 @@ public class QueryServiceImpl implements QueryService
             if (column.isUnselectable())
                 continue;
 
-            if (column.isMvIndicatorColumn())
-                continue;
+        // #35181: indicator won't show up when explicitly requested from executeSql. Removing this old check solves this.
+        //    if (column.isMvIndicatorColumn())
+        //        continue;
 
             ret.add(column);
         }
