@@ -257,26 +257,52 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
         return null;
     }
 
-    private void setEngineScope(Container container, ExternalScriptEngineDefinition def)
+    @Override
+    public ArrayList<String> getEngineScope(Container container)
+    {
+        SQLFragment select = new SQLFragment("SELECT engineId FROM ")
+                .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
+                .append(" WHERE Container = ?").add(container);
+
+        SqlSelector selector = new SqlSelector(CoreSchema.getInstance().getSchema(), select);
+        return selector.getArrayList(String.class);
+    }
+
+    @Override
+    public void setEngineScope(Container container, ExternalScriptEngineDefinition def)
     {
         if (def.getRowId() != null)
         {
-            SQLFragment sql = new SQLFragment("INSERT INTO ")
-                    .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
-                    .append(" (EngineId, Container) VALUES(?,?)")
-                    .add(def.getRowId())
-                    .add(container);
+            if(getEngineScope(container).size() == 0)
+            {
+                SQLFragment insert = new SQLFragment("INSERT INTO ")
+                        .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
+                        .append(" (EngineId, Container) VALUES(?,?)")
+                        .add(def.getRowId())
+                        .add(container);
 
-            new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(sql);
+                new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(insert);
+            }
+            else
+            {
+                SQLFragment update = new SQLFragment("UPDATE ")
+                        .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
+                        .append(" SET engineId = ? ").add(def.getRowId())
+                        .append(" WHERE container = ? ").add(container);
+
+                new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(update);
+            }
         }
     }
 
-    private void removeEngineScope(Container container, ExternalScriptEngineDefinition def)
+    @Override
+    public void removeEngineScope(Container container, ExternalScriptEngineDefinition def)
     {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addCondition(FieldKey.fromParts("EngineId"), def.getRowId());
+        SQLFragment sql = new SQLFragment("DELETE FROM ")
+                .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
+                .append(" WHERE container = ? ").add(container);
 
-        Table.delete(CoreSchema.getInstance().getTableInfoReportEngineMap(), filter);
+        new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(sql);
     }
 
     /**
@@ -387,6 +413,16 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
     public ExternalScriptEngineDefinition getEngineDefinition(String name, ExternalScriptEngineDefinition.Type type)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Name"), name);
+        filter.addCondition(FieldKey.fromParts("Type"), type);
+
+        return new TableSelector(CoreSchema.getInstance().getTableInfoReportEngines(), filter, null).getObject(ExternalScriptEngineDefinitionImpl.class);
+    }
+
+    @Override
+    @Nullable
+    public ExternalScriptEngineDefinition getEngineDefinition(int rowId, ExternalScriptEngineDefinition.Type type)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), rowId);
         filter.addCondition(FieldKey.fromParts("Type"), type);
 
         return new TableSelector(CoreSchema.getInstance().getTableInfoReportEngines(), filter, null).getObject(ExternalScriptEngineDefinitionImpl.class);

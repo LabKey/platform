@@ -101,6 +101,8 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reports.ExternalScriptEngineDefinition;
+import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
@@ -114,6 +116,7 @@ import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConceptURIProperties;
@@ -156,6 +159,7 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.mail.MessagingException;
+import javax.script.ScriptEngine;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.beans.Introspector;
@@ -180,9 +184,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.Connection;
 import java.sql.SQLException;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -310,6 +312,7 @@ public class AdminController extends SpringActionController
         addTab("Files", "files", FOLDERS_AND_PROJECTS, FileRootsAction.class);
         addTab("Formats", "settings", FOLDERS_ONLY, FolderSettingsAction.class);
         addTab("Information", "info", NOT_ROOT, FolderInformationAction.class);
+        addTab("R Config", "rConfig", EVERY_CONTAINER, RConfigurationAction.class);
     }
 
     public AdminController()
@@ -3951,6 +3954,100 @@ public class AdminController extends SpringActionController
         }
     }
 
+    public static class RConfigForm
+    {
+        int _engineRowId;
+        boolean _overrideDefault;
+        ScriptEngine _parentEngine;
+
+        public int getEngineRowId()
+        {
+            return _engineRowId;
+        }
+
+        public void setEngineRowId(int engineRowId)
+        {
+            _engineRowId = engineRowId;
+        }
+
+        public boolean getOverrideDefault()
+        {
+            return _overrideDefault;
+        }
+
+        public void setOverrideDefault(boolean overrideDefault)
+        {
+            _overrideDefault = overrideDefault;
+        }
+
+        public ScriptEngine getParentEngine()
+        {
+            return _parentEngine;
+        }
+
+        public void setParentEngine(ScriptEngine parentEngine)
+        {
+            _parentEngine = parentEngine;
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class RConfigurationAction extends FolderManagementViewPostAction<RConfigForm>
+    {
+        @Override
+        protected HttpView getTabView(RConfigForm rConfigForm, BindException errors) throws Exception
+        {
+            LabkeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+            if (null != mgr)
+            {
+                ScriptEngine parentEngine = mgr.getEngineByExtension(getContainer().getParent(), "r");
+                if(mgr.getEngineScope(getContainer()).size() <= 0)
+                {
+                    mgr.setEngineScope(getContainer(), mgr.getEngineDefinition(parentEngine.getFactory().getEngineName(), ExternalScriptEngineDefinition.Type.R));
+                }
+                rConfigForm.setParentEngine(parentEngine);
+            }
+
+            return new JspView<>("/org/labkey/core/admin/rConfiguration.jsp", rConfigForm, errors);
+        }
+
+        @Override
+        public void validateCommand(RConfigForm rConfigForm, Errors errors)
+        {
+            if (rConfigForm.getEngineRowId() < 0)
+            {
+                errors.reject("Must have a valid R Engine identifier");
+            }
+        }
+
+        @Override
+        public URLHelper getSuccessURL(RConfigForm rConfigForm)
+        {
+            return getContainer().getStartURL(getUser());
+        }
+
+        @Override
+        public boolean handlePost(RConfigForm rConfigForm, BindException errors) throws Exception
+        {
+            LabkeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+            if (null != mgr)
+            {
+                ExternalScriptEngineDefinition def = mgr.getEngineDefinition(rConfigForm.getEngineRowId(), ExternalScriptEngineDefinition.Type.R);
+                if (rConfigForm.getOverrideDefault())
+                {
+                    mgr.setEngineScope(getContainer(), def);
+                }
+                else
+                {
+                    mgr.removeEngineScope(getContainer(), def);
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+    }
 
     public static class ExportFolderForm
     {
