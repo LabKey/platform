@@ -6,13 +6,13 @@ import org.labkey.api.security.User;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
+import java.util.ArrayList;
 import java.util.List;
 
 public interface LabkeyScriptEngineManager
 {
     ScriptEngine getEngineByName(String name);
     List<ScriptEngineFactory> getEngineFactories();
-
     /**
      * Return a script engine appropriate for the specified extension.
      */
@@ -31,6 +31,10 @@ public interface LabkeyScriptEngineManager
     @Deprecated
     ScriptEngine getEngineByExtension(Container c, String extension, boolean requestRemote, boolean requestDocker);
 
+    ArrayList<String> getEngineScope(Container c);
+    void setEngineScope(Container c, ExternalScriptEngineDefinition def);
+    void removeEngineScope(Container c, ExternalScriptEngineDefinition def);
+
     void deleteDefinition(User user, ExternalScriptEngineDefinition def);
     ExternalScriptEngineDefinition saveDefinition(User user, ExternalScriptEngineDefinition def);
     boolean isFactoryEnabled(ScriptEngineFactory factory);
@@ -38,6 +42,7 @@ public interface LabkeyScriptEngineManager
     List<ExternalScriptEngineDefinition> getEngineDefinitions();
     List<ExternalScriptEngineDefinition> getEngineDefinitions(ExternalScriptEngineDefinition.Type type);
     ExternalScriptEngineDefinition getEngineDefinition(String name, ExternalScriptEngineDefinition.Type type);
+    ExternalScriptEngineDefinition getEngineDefinition(int rowId, ExternalScriptEngineDefinition.Type type);
 
     ExternalScriptEngineDefinition createEngineDefinition();
 }
