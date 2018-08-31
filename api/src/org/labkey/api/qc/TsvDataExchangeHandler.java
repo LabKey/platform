@@ -34,6 +34,8 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
@@ -798,6 +800,8 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         {
             try
             {
+                PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(context.getContainer());
+
                 List<Map<String, Object>> maps = parseRunInfo(runInfo);
                 Map<String, File> transformedData = new HashMap<>();
                 File transformedRunProps = null;
@@ -827,15 +831,15 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                     }
                 }
 
-                if(runDataUploadedFile == null)
-                {
-                    throw new ValidationException("runDataUploadedFile not found in assay run properties.");
-                }
-
                 List<File> tempOutputFiles = new ArrayList<>();
-                tempOutputFiles.add(runDataUploadedFile);
 
-                setWorkingDirectory(context, new File(runDataUploadedFile.getParentFile().getAbsolutePath()));
+                // Issue 35262: assay with transform script fails when using assay-importRun.api and dataRows
+                // The runDataUploadedFile will be null when importing via LABKEY.Assay.importRun() and using dataRows (instead of a file)
+                if (runDataUploadedFile != null)
+                {
+                    tempOutputFiles.add(runDataUploadedFile);
+                    setWorkingDirectory(context, new File(runDataUploadedFile.getParentFile().getAbsolutePath()));
+                }
 
                 // Loop through all of the files that are left after running the transform script
                 for (File file : runInfo.getParentFile().listFiles())
@@ -886,30 +890,39 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
                     for (Map.Entry<String, File> entry : transformedData.entrySet())
                     {
-                        // Copy to the working directory
+                        File file = entry.getValue();
+                        String type = entry.getKey();
+
                         File workingDir = getWorkingDirectory(context);
-                        if(workingDir == null)
+                        if (workingDir == null)
                         {
-                            throw new ValidationException("Working directory not found. Verify runDataUploadedFile in run properties.");
+                            // If we don't have a runDataUploadFile, check the transformed data path is under the pipeline root.
+                            // If the transformed data is under the pipeline root, don't move it and use it as is.
+                            if (pipeRoot == null || !pipeRoot.isUnderRoot(file))
+                                throw new ValidationException("Working directory not found. Either runDataUploadedFile property from runProperties.tsv must be present or the transformed data path must be under the pipeline root directory.");
+                        }
+                        else
+                        {
+                            // Copy to the working directory
+                            File tempDirCopy = new File(workingDir, file.getName());
+                            if (!file.equals(tempDirCopy))
+                            {
+                                FileUtils.moveFile(file, tempDirCopy);
+                                file = tempDirCopy;
+                            }
                         }
 
-                        File tempDirCopy = new File(workingDir, entry.getValue().getName());
-                        if (!entry.getValue().equals(tempDirCopy))
-                        {
-                            FileUtils.moveFile(entry.getValue(), tempDirCopy);
-                            entry.setValue(tempDirCopy);
-                        }
                         // Add it as an artifact the user can download
-                        tempOutputFiles.add(tempDirCopy);
+                        tempOutputFiles.add(file);
 
-                        ExpData data = ExperimentService.get().getExpDataByURL(entry.getValue(), context.getContainer());
+                        ExpData data = ExperimentService.get().getExpDataByURL(file, context.getContainer());
                         if (data == null)
                         {
-                            data = DefaultAssayRunCreator.createData(context.getContainer(), entry.getValue(), "transformed output", new DataType(entry.getKey()), true);
-                            data.setName(entry.getValue().getName());
+                            data = DefaultAssayRunCreator.createData(context.getContainer(), file, "transformed output", new DataType(type), true);
+                            data.setName(file.getName());
                         }
 
-                        dataMap.put(data, getDataSerializer().importRunData(context.getProtocol(), entry.getValue()));
+                        dataMap.put(data, getDataSerializer().importRunData(context.getProtocol(), file));
 
                         data.setSourceApplication(scriptPA);
                         data.save(context.getUser());
