@@ -1821,8 +1821,8 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public static String serializeJob(PipelineJob job)
     {
-        return job.hasJacksonSerialization() ?
-                PipelineJobService.get().getJobStore().toJSONTest(job) :
+        return // job.hasJacksonSerialization() ?
+               //  PipelineJobService.get().getJobStore().toJSONTest(job) :
                 PipelineJobService.get().getJobStore().toXML(job);
     }
 
