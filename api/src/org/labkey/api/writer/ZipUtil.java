@@ -96,6 +96,10 @@ public class ZipUtil
                     log.info("Expanding " + entry.getName());
 
                 destFile.getParentFile().mkdirs();
+                if (destFile.exists())
+                {
+                    throw new IOException("File already exists: " + destFile.getName());
+                }
                 if (!destFile.createNewFile())
                 {
                     throw new IOException("Failed to extract file: " + destFile.getName());
