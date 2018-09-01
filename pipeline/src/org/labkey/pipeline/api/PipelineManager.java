@@ -825,7 +825,11 @@ public class PipelineManager
                 if (!archiveFile.getParentFile().getAbsolutePath().equals(importDir.getAbsolutePath()))
                     importDir = pipelineRoot.getImportDirectoryPathAndEnsureDeleted();
 
-                ZipUtil.unzipToDirectory(archiveFile, importDir);
+                if (!importDir.exists() || importDir.listFiles(s -> !s.equals(archiveFile.getName())).length == 0)
+                {
+                    // Only unzip once
+                    ZipUtil.unzipToDirectory(archiveFile, importDir);
+                }
 
                 // when importing a folder archive for a study, the study.xml file may not be at the root
                 if ("study.xml".equals(xmlFileName) && archiveFile.getName().endsWith(".folder.zip"))
