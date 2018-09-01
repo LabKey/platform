@@ -102,7 +102,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             {
                 edition = valueOf(editionString);
             }
-            catch (IllegalArgumentException e)
+            catch (IllegalArgumentException ignored)
             {
             }
 
@@ -1835,29 +1835,19 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     @Override
-    public Collection<String> getQueryExecutionPlan(DbScope scope, SQLFragment sql)
+    public Collection<String> getQueryExecutionPlan(Connection conn, DbScope scope, SQLFragment sql)
     {
-        // Issue 35102 - use an unpooled connection so that nobody else tries to use the query when it's in SHOWPLAN_ALL
-        // mode. Other code on this same thread (and therefore the scope's normal connection) could be trying to do
-        // logging, etc
-        try (Connection conn = scope.getUnpooledConnection())
+        try
         {
-            try
-            {
-                new SqlExecutor(scope, conn).execute("SET SHOWPLAN_ALL ON");
+            new SqlExecutor(scope, conn).execute("SET SHOWPLAN_ALL ON");
 
-                // I don't want to inline all the parameters... but SQL Server / jTDS blow up with some (not all)
-                // prepared statements with parameters.
-                return new SqlSelector(scope, conn, sql.toDebugString()).getCollection(String.class);
-            }
-            finally
-            {
-                new SqlExecutor(scope, conn).execute("SET SHOWPLAN_ALL OFF");
-            }
+            // I don't want to inline all the parameters... but SQL Server / jTDS blow up with some (not all)
+            // prepared statements with parameters.
+            return new SqlSelector(scope, conn, sql.toDebugString()).getCollection(String.class);
         }
-        catch (SQLException e)
+        finally
         {
-            throw new RuntimeSQLException(e);
+            new SqlExecutor(scope, conn).execute("SET SHOWPLAN_ALL OFF");
         }
     }
 
