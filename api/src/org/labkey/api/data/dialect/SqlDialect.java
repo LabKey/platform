@@ -1320,15 +1320,21 @@ public abstract class SqlDialect
     }
 
     public abstract boolean canShowExecutionPlan();
-    protected abstract Collection<String> getQueryExecutionPlan(DbScope scope, SQLFragment sql);
+    protected abstract Collection<String> getQueryExecutionPlan(Connection conn, DbScope scope, SQLFragment sql);
 
-    // Public method ensures that execution plan queries are done in a transaction that is never committed.
-    // This ensures that unusual connection settings and other side effects are always discarded.
     public final Collection<String> getExecutionPlan(DbScope scope, SQLFragment sql)
     {
-        try (DbScope.Transaction ignored = scope.beginTransaction())
+        // Issue 35102 - use an unpooled connection so that nobody else tries to use this connection. Other code that
+        // executes on this same thread (and therefore the scope's normal connection) could be trying to retrieve
+        // properties, do logging, etc. This also ensures that unusual connection settings and other side effects are
+        // always discarded.
+        try (Connection conn = scope.getUnpooledConnection())
         {
-            return getQueryExecutionPlan(scope, sql);
+            return getQueryExecutionPlan(conn, scope, sql);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
         }
     }
 

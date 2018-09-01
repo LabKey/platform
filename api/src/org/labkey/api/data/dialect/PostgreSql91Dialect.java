@@ -1778,12 +1778,12 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     }
 
     @Override
-    protected Collection<String> getQueryExecutionPlan(DbScope scope, SQLFragment sql)
+    protected Collection<String> getQueryExecutionPlan(Connection conn, DbScope scope, SQLFragment sql)
     {
         SQLFragment copy = new SQLFragment(sql);
         copy.insert(0, "EXPLAIN ANALYZE ");
 
-        return new SqlSelector(scope, copy).getCollection(String.class);
+        return new SqlSelector(scope, conn, copy).getCollection(String.class);
     }
 
 
@@ -1848,5 +1848,4 @@ public abstract class PostgreSql91Dialect extends SqlDialect
 
         return super.formatJdbcFunction("timestampdiff", arguments);
     }
-
 }
