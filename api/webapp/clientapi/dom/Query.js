@@ -227,6 +227,11 @@ LABKEY.Query = new function(impl, $) {
                 includeField = filterFn.call(this, field);
             }
 
+            // issue 34203: if the field doesn't have a caption, don't include it
+            if (field.caption == null || field.caption ==='' || field.caption === '&nbsp;') {
+                includeField = false;
+            }
+
             if (includeField) {
                 fields.push($.extend({}, field));
             }
