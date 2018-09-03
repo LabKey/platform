@@ -35,10 +35,10 @@ import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.pipeline.query.TriggerConfigurationsTable;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -54,16 +54,6 @@ public class PipelineQuerySchema extends UserSchema
 
     public static final String JOB_TABLE_NAME = "Job";
     public static final String TRIGGER_CONFIGURATIONS_TABLE_NAME = "TriggerConfigurations";
-
-    private static final Set<String> TABLE_NAMES;
-
-    static
-    {
-        Set<String> names = new TreeSet<>();
-        names.add(JOB_TABLE_NAME);
-        names.add(TRIGGER_CONFIGURATIONS_TABLE_NAME);
-        TABLE_NAMES = Collections.unmodifiableSet(names);
-    }
 
     public static void register(Module module)
     {
@@ -176,7 +166,7 @@ public class PipelineQuerySchema extends UserSchema
             table.setTitleColumn("Description");
             return table;
         }
-        else if (TRIGGER_CONFIGURATIONS_TABLE_NAME.equalsIgnoreCase(name))
+        else if (TRIGGER_CONFIGURATIONS_TABLE_NAME.equalsIgnoreCase(name) && getUser().hasRootPermission(AdminOperationsPermission.class))
         {
             return new TriggerConfigurationsTable(this).init();
         }
@@ -186,7 +176,14 @@ public class PipelineQuerySchema extends UserSchema
 
     public Set<String> getTableNames()
     {
-        return TABLE_NAMES;
+        Set<String> names = new TreeSet<>();
+        names.add(JOB_TABLE_NAME);
+
+        // Issue 32063
+        if (getUser().hasRootPermission(AdminOperationsPermission.class))
+            names.add(TRIGGER_CONFIGURATIONS_TABLE_NAME);
+
+        return names;
     }
 
 }
