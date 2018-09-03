@@ -238,8 +238,8 @@ public class RScriptEngine extends ExternalScriptEngine
                 }
                 else
                 {
-                    // TODO: should the output_options list params match between these and the ones above (note missing theme=NULL and css=NULL here)
-                    sb.append("output_options=list(keep_md=TRUE, self_contained=FALSE, fig_caption=TRUE, smart=TRUE, highlight=\"default\"), ");
+                    sb.append("output_options=list(keep_md=TRUE, self_contained=FALSE, fig_caption=TRUE, " +
+                            "theme=NULL, css=NULL, smart=TRUE, highlight=\"default\"), ");
                 }
             }
             else
