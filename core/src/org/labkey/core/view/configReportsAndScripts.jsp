@@ -357,9 +357,9 @@
             width:800,
             store: store,
             listeners: {
-                rowdblclick: function(g, rowIndex, event) {
-                    event.stopEvent();
-                    editSelected(event, g);
+                itemdblclick: function(comp, record, item, index, e, eOpts) {
+                    e.stopEvent();
+                    editSelected(e, comp);
                 }
             },
             columns:[
@@ -762,7 +762,7 @@
             if (values.sandboxed) {
                 if (defaultSandboxedR) {
                     if (values.default && rowId !== defaultSandboxedR.rowId)
-                        confirmChange = "Are you sure to starting using '" + values.name + "' as the default site wide sandboxed R engine? The current default is '" + defaultSandboxedR.name + "'."
+                        confirmChange = "Are you sure to start using '" + values.name + "' as the default site wide sandboxed R engine? The current default is '" + defaultSandboxedR.name + "'."
                 }
                 else if (!values.default){
                     Ext4.Msg.alert('Engine Definition', 'Site default sandboxed R engine missing. You must specify one R engine to be site default.');
@@ -772,7 +772,7 @@
             else if (!values.sandboxed) {
                 if (defaultR) {
                     if (values.default && rowId !== defaultR.rowId) {
-                        confirmChange = "Are you sure to starting using '" + values.name + "' as the default site wide R engine? The current default is '" + defaultR.name + "'."
+                        confirmChange = "Are you sure to start using '" + values.name + "' as the default site wide R engine? The current default is '" + defaultR.name + "'."
                     }
                 }
                 else if (!values.default) {

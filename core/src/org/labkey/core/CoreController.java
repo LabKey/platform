@@ -51,10 +51,12 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.LookAndFeelResourceAttachmentParent;
 import org.labkey.api.data.CacheableWriter;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerType;
 import org.labkey.api.data.ContainerTypeRegistry;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.NormalContainerType;
@@ -62,6 +64,7 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.LsidManager;
@@ -81,6 +84,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.pipeline.file.PathMapperImpl;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
@@ -2209,6 +2213,15 @@ public class CoreController extends SpringActionController
                             }
                         }
                     }
+                }
+
+                SimpleFilter filter = new SimpleFilter();
+                filter.addCondition(FieldKey.fromParts("name"), def.getName());
+                if (def.getRowId() != null)
+                    filter.addCondition(FieldKey.fromParts("rowid"), def.getRowId(), CompareType.NEQ);
+                if (new TableSelector(CoreSchema.getInstance().getTableInfoReportEngines(), filter, null).exists())
+                {
+                    errors.rejectValue("Name", ERROR_MSG, "Unable to save duplicate engine name: " + def.getName());
                 }
             }
         }
