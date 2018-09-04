@@ -78,6 +78,7 @@ import org.labkey.api.search.SearchResultTemplate;
 import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchUrls;
 import org.labkey.api.security.CSRF;
+import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -85,7 +86,9 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.OwnerRole;
+import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.Button;
 import org.labkey.api.util.GUID;
@@ -973,7 +976,7 @@ public class IssuesController extends SpringActionController
                 for (int curIssueId : newIssues)
                 {
                     Issue relatedIssue = ChangeSummary.relatedIssueCommentHandler(issue.getIssueId(), curIssueId, user, false);
-                    IssueManager.saveIssue(user, getContainer(), relatedIssue);
+                    IssueManager.saveIssue(getRelatedIssueUser(user, relatedIssue), getContainer(), relatedIssue);
                 }
 
                 // this list represents all the ids which will need related handling for dropping a relatedIssue entry
@@ -985,7 +988,7 @@ public class IssuesController extends SpringActionController
                     for (int curIssueId : prevIssues)
                     {
                         Issue relatedIssue = ChangeSummary.relatedIssueCommentHandler(issue.getIssueId(), curIssueId, user, true);
-                        IssueManager.saveIssue(user, getContainer(), relatedIssue);
+                        IssueManager.saveIssue(getRelatedIssueUser(user, relatedIssue), getContainer(), relatedIssue);
                     }
                 }
                 transaction.commit();
@@ -1018,6 +1021,26 @@ public class IssuesController extends SpringActionController
             }
             changeSummary.sendUpdateEmail(c, user, form.getComment(), detailsUrl, change, getAttachmentFileList());
             return true;
+        }
+
+        /**
+         * To specify a related issue, the user just has to have read access to the container that the related
+         * issue resides in. Since we add comment updates to both issues, we need to ensure that the user has Update permissions
+         * to the related folder and if not, temporarily elevate the permissions so the user can perform the update.
+         */
+        private User getRelatedIssueUser(User user, Issue relatedIssue)
+        {
+            Container relatedContainer = ContainerManager.getForId(relatedIssue.getContainerId());
+            if (relatedContainer == null)
+                relatedContainer = getContainer();
+
+            if (!relatedContainer.hasPermission(user, UpdatePermission.class))
+            {
+                Set<Role> contextualRoles = new HashSet<>(user.getStandardContextualRoles());
+                contextualRoles.add(RoleManager.getRole(EditorRole.class));
+                return new LimitedUser(user, user.getGroups(), contextualRoles, false);
+            }
+            return user;
         }
 
         @Override
