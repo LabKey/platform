@@ -1044,9 +1044,13 @@ public class TransformManager implements DataIntegrationService
                             deletedRows += qus.truncateRows(user, c, null, null);
                             transaction.commit();
                         }
-                        catch(QueryUpdateServiceException | SQLException | BatchValidationException e)
+                        catch(QueryUpdateServiceException | SQLException | BatchValidationException | UnsupportedOperationException e)
                         {
                             String msg = "Unable to perform truncate transaction on " + target.toString();
+                            if (UnsupportedOperationException.class.isAssignableFrom(e.getClass()))
+                            {
+                                msg += "\nTruncate is not supported in " + qus.getClass().getName();
+                            }
                             errorBuilder.append(msg).append("\n");
                             errorBuilder.append(e.getMessage()).append("\n");
                             LOG.error(msg, e);
