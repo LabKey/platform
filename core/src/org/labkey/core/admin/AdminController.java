@@ -4001,7 +4001,7 @@ public class AdminController extends SpringActionController
             if (null != mgr)
             {
                 ScriptEngine parentEngine = mgr.getEngineByExtension(getContainer().getParent(), "r");
-                if(mgr.getEngineScope(getContainer()).size() <= 0)
+                if(parentEngine != null && mgr.getEngineScope(getContainer()).size() <= 0)
                 {
                     mgr.setEngineScope(getContainer(), mgr.getEngineDefinition(parentEngine.getFactory().getEngineName(), ExternalScriptEngineDefinition.Type.R));
                 }

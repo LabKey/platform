@@ -45,18 +45,23 @@
 
     LabkeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
     List<ExternalScriptEngineDefinition> engineDefinitions = new ArrayList<>();
+
     ScriptEngine currentEngine = null;
     if (null != mgr)
     {
         engineDefinitions.addAll(mgr.getEngineDefinitions(ExternalScriptEngineDefinition.Type.R));
         currentEngine = mgr.getEngineByExtension(getContainer(), "r");
     }
-
-    String currentName = currentEngine.getFactory().getEngineName();
-    String parentName = form.getParentEngine().getFactory().getEngineName();
+    String currentName = ((currentEngine != null) ? currentEngine.getFactory().getEngineName() : null);
 %>
 <h4>Available R Configurations</h4>
 <hr/>
+<%
+ScriptEngine parentEngine = form.getParentEngine();
+if (parentEngine != null)
+{
+    String parentName = form.getParentEngine().getFactory().getEngineName();
+%>
 <div style="max-width: 768px; margin-bottom: 20px">
     Overriding the default R configuration defined at the Site level or in a parent folder allows R reports to be
     run under a different R configuration in this folder and in child folders, e.g. different R version.
@@ -103,6 +108,7 @@
     </div>
 </div>
 </labkey:form>
+
 <script type="text/javascript">
     var initialOverride = null;
     var saveBtn = document.getElementById("saveBtn");
@@ -158,14 +164,26 @@
     function confirmSubmit() {
         if (!saveBtn.getAttribute("disabled")) {
             Ext4.Msg.confirm('Override Default R Configuration',
-                "Are you sure you wish to override the default R configuration? Existing reports may be affected by this action.", function (btn, text) {
-                    if (btn == "yes") {
-                        document.getElementById("configForm").submit();
-                    }
-                });
+                    "Are you sure you wish to override the default R configuration? Existing reports may be affected by this action.", function (btn, text) {
+                        if (btn == "yes") {
+                            document.getElementById("configForm").submit();
+                        }
+                    });
         }
     }
 </script>
+<%
+}
+else
+{
+%>
+<div>
+    No R Engines Configured
+</div>
+<%
+}
+%>
+
 
 
 
