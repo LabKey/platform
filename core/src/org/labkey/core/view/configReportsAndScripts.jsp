@@ -402,18 +402,18 @@
 
         if (!record.external)
         {
-            Ext4.Msg.alert("Delete Engine Configuration", "Java 6 script engines cannot be deleted but you can disable them.");
+            Ext4.Msg.alert("Delete Engine Configuration", "JVM script engines cannot be deleted but you can disable them.");
             return false;
         }
 
         if (record.default) {
             // deletion of site default engine is not allowed, unless there is only one engine present
             if (record.sandboxed && countSandboxedR > 1) {
-                Ext4.Msg.alert("Delete Engine Configuration", "Site default sandboxed R engine cannot be deleted. Please choose another engine as sandboxed site default prior to delete this one.");
+                Ext4.Msg.alert("Delete Engine Configuration", "The site default sandboxed R engine cannot be deleted. Please choose another engine as the sandboxed site default prior to deleting this configuration.");
                 return false;
             }
             else if (!record.sandboxed && countR > 1) {
-                Ext4.Msg.alert("Delete Engine Configuration", "Site default R engine cannot be deleted. Please choose another engine as site default prior to delete this one.");
+                Ext4.Msg.alert("Delete Engine Configuration", "The site default R engine cannot be deleted. Please choose another engine as the site default prior to deleting this configuration.");
                 return false;
             }
         }
@@ -754,7 +754,7 @@
             }
 
             if (!values.default && ((defaultSandboxedR && (rowId === defaultSandboxedR.rowId)) || (defaultR && (rowId === defaultR.rowId)))) {
-                Ext4.Msg.alert("Engine Definition", "This engine is used as site default. To change site default, set another engine to use as default.");
+                Ext4.Msg.alert("Engine Definition", "This engine is used as the site default. To change the site default, select another engine to use as the default.");
                 return false;
             }
 
@@ -762,21 +762,21 @@
             if (values.sandboxed) {
                 if (defaultSandboxedR) {
                     if (values.default && rowId !== defaultSandboxedR.rowId)
-                        confirmChange = "Are you sure to start using '" + values.name + "' as the default site wide sandboxed R engine? The current default is '" + defaultSandboxedR.name + "'."
+                        confirmChange = "Are you sure you want to set '" + values.name + "' as the default site wide sandboxed R engine? The current default is '" + defaultSandboxedR.name + "'."
                 }
                 else if (!values.default){
-                    Ext4.Msg.alert('Engine Definition', 'Site default sandboxed R engine missing. You must specify one R engine to be site default.');
+                    Ext4.Msg.alert('Engine Definition', 'Site default sandboxed R engine missing. You must specify one R engine to be the site default.');
                     return false;
                 }
             }
             else if (!values.sandboxed) {
                 if (defaultR) {
                     if (values.default && rowId !== defaultR.rowId) {
-                        confirmChange = "Are you sure to start using '" + values.name + "' as the default site wide R engine? The current default is '" + defaultR.name + "'."
+                        confirmChange = "Are you sure you want to set '" + values.name + "' as the default site wide R engine? The current default is '" + defaultR.name + "'."
                     }
                 }
                 else if (!values.default) {
-                    Ext4.Msg.alert('Engine Definition', 'Site default R engine missing. You must specify one R engine to be site default.');
+                    Ext4.Msg.alert('Engine Definition', 'Site default R engine missing. You must specify one R engine to be the site default.');
                     return false;
                 }
             }
