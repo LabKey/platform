@@ -532,6 +532,7 @@
         <description>A randomly generated alternate participant ID. This can be used in place of internal particiapnt IDs when publishing a study.</description>
       </column>
       <column columnName="LastIndexed"/>
+      <column columnName="Modified"/>
     </columns>
     <importTemplates>
       <template label="Export Participant Transforms" url="/study/exportParticipantTransforms.view"/>
