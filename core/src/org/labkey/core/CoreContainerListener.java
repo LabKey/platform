@@ -57,13 +57,16 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
         MvUtil.containerDeleted(c);
 
         // Delete any rows in test.TestTable associated with this container
-        Table.delete(TestSchema.getInstance().getTableInfoTestTable(), SimpleFilter.createContainerFilter(c));
+        SimpleFilter containerFilter = SimpleFilter.createContainerFilter(c);
+        Table.delete(TestSchema.getInstance().getTableInfoTestTable(), containerFilter);
 
         // QC States
-        Table.delete(CoreSchema.getInstance().getTableInfoQCState(), SimpleFilter.createContainerFilter(c));
+        Table.delete(CoreSchema.getInstance().getTableInfoQCState(), containerFilter);
+
+        // report engine folder mapping
+        Table.delete(CoreSchema.getInstance().getTableInfoReportEngineMap(), containerFilter);
 
         // Let containerManager delete ACLs, we want that to happen last
-
         Portal.containerDeleted(c);
     }
 
