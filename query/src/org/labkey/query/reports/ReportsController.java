@@ -1352,7 +1352,8 @@ public class ReportsController extends SpringActionController
             if (report.getDescriptor().isNew())
             {
                 if (!ReportUtil.canCreateScript(context))
-                    errors.add(new SimpleValidationError("Only members of the Site Admin and Site Developers groups are allowed to create script views."));
+                    //TODO update the message text
+                    errors.add(new SimpleValidationError("Only users with the site Analyst permission are allowed to create script views."));
             }
             else
                 report.canEdit(context.getUser(), context.getContainer(), errors);

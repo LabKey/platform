@@ -275,7 +275,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
         var accessIsPrivate = this.reportConfig.reportAccess == 'private';
 
         // boolean indicating if the user can create script reports (is developer and at least author in container)
-        var isScriptEditor = LABKEY.user.isDeveloper && LABKEY.user.canInsert;
+        var isScriptEditor = LABKEY.user.isAnalyst && LABKEY.user.canInsert;
 
         items.push({
             xtype : 'fieldset',

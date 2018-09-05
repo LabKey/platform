@@ -59,9 +59,11 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.AnalystPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.TrustedBrowserDeveloperPermission;
+import org.labkey.api.security.permissions.TrustedPermission;
 import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
@@ -2300,7 +2302,10 @@ public class WikiController extends SpringActionController
                     contextualRoles.add(RoleManager.getRole(PlatformDeveloperRole.class));
 
                 SecurityPolicy policy = SecurityPolicyManager.getPolicy(getContainer());
-                PageFlowUtil.validateHtml(body, tidyErrors, policy.hasPermission(user, TrustedBrowserDeveloperPermission.class, contextualRoles));
+                Set perms = new HashSet<Class<? extends Permission>>();
+                perms.add(AnalystPermission.class);
+                perms.add(TrustedPermission.class);
+                PageFlowUtil.validateHtml(body, tidyErrors, policy.hasPermissions(user, perms , contextualRoles));
 
                 if (!container.hasPermission(user, PlatformDeveloperPermission.class))
                 {

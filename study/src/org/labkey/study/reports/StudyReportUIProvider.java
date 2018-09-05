@@ -181,7 +181,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
                 rBean.setReportType(StudyRReport.TYPE);
                 rBean.setRedirectUrl(returnUrl.getLocalURIString());
 
-                designers.add(new DesignerInfoImpl(StudyRReport.TYPE, "R Report", null, ReportUtil.getRReportDesignerURL(context, rBean),
+                designers.add(new DesignerInfoImpl(StudyRReport.TYPE, "R Report", null, ReportUtil.getScriptReportDesignerURL(context, rBean),
                         _getIconPath(StudyRReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(StudyRReport.TYPE)));
             }
 
