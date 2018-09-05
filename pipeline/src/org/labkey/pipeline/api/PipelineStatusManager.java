@@ -55,6 +55,7 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -719,8 +720,11 @@ public class PipelineStatusManager
      */
     public static void cancelStatus(ViewBackgroundInfo info) throws PipelineProvider.HandlerException
     {
-        int failed = 0;
+        // Get waiting or running jobs
         SimpleFilter filter = SimpleFilter.createContainerFilter(info.getContainer());
+        filter.addCondition(FieldKey.fromParts("Status"), Arrays.asList(PipelineJob.TaskStatus.running.name(), PipelineJob.TaskStatus.waiting.name()), CompareType.IN);
+
+        int failed = 0;
         for (PipelineStatusFileImpl statusFile : PipelineStatusManager.getStatusFiles(filter))
         {
             if (!cancelStatus(info, statusFile))
