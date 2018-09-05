@@ -18,9 +18,7 @@ package org.labkey.bigiron.oracle;
 
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ConnectionWrapper;
-import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ResultSetWrapper;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
@@ -28,14 +26,10 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.JdbcHelper;
-import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.PkMetaDataReader;
 import org.labkey.api.data.dialect.SimpleSqlDialect;
 import org.labkey.api.data.dialect.StandardJdbcHelper;
-import org.labkey.api.data.dialect.StandardJdbcMetaDataLocator;
-import org.labkey.api.data.dialect.StandardTableResolver;
 import org.labkey.api.data.dialect.StatementWrapper;
-import org.labkey.api.data.dialect.TableResolver;
 
 import java.io.IOException;
 import java.math.BigDecimal;
