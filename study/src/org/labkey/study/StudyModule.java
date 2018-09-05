@@ -28,6 +28,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.views.DataViewService;
@@ -235,7 +236,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
     public double getVersion()
     {
-        return 18.20;
+        return 18.21;
     }
 
     protected void init()
@@ -762,6 +763,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
     public void indexDeleted()
     {
+        new SqlExecutor(StudySchema.getInstance().getSchema()).execute("UPDATE study.Participant SET LastIndexed = NULL");
     }
 
     @Override

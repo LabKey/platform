@@ -93,6 +93,7 @@ import org.labkey.api.reports.model.ViewCategoryListener;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchService.IndexTask;
+import org.labkey.api.search.SearchService.LastIndexedClause;
 import org.labkey.api.security.RoleAssignment;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
@@ -4649,10 +4650,19 @@ public class StudyManager
             StudySchema.getInstance().getSqlDialect().appendInClauseSql(f, ptids);
         }
 
-        // TODO: This won't work because the Participant table lacks Created and Modified columns. See #31139.
-//        SQLFragment lastIndexedFragment = new LastIndexedClause(StudySchema.getInstance().getTableInfoParticipant(), null, null).toSQLFragment(null, null);
-//        if (!lastIndexedFragment.isEmpty())
-//            f.append(" AND ").append(lastIndexedFragment);
+        SQLFragment lastIndexedFragment = new LastIndexedClause(StudySchema.getInstance().getTableInfoParticipant(), null, null).toSQLFragment(null, null);
+        if (!lastIndexedFragment.isEmpty())
+            f.append(" AND ").append(lastIndexedFragment);
+
+        @Nullable final TableInfo aliasTable = StudyQuerySchema.createSchema(study, User.getSearchUser(), true).getParticipantAliasesTable();
+
+        if (null != aliasTable)
+        {
+            // Need to reindex participants whose aliases have changed
+            f.append(" OR ParticipantId IN (\nSELECT ParticipantId FROM\n")
+                .append(aliasTable.getFromSQL("aliases"))
+                .append("WHERE Modified > p.LastIndexed)");
+        }
 
         final ActionURL indexURL = new ActionURL(StudyController.IndexParticipantAction.class, c);
         indexURL.setExtraPath(c.getId());
@@ -4669,11 +4679,14 @@ public class StudyManager
 
             String uniqueIds = ptid;
 
-            // Add all participant aliases as high priority uniqueIds
-            Map<String, String> aliasMap = StudyManager.getInstance().getAliasMap(study, User.getSearchUser(), ptid);
+            if (null != aliasTable)
+            {
+                // Add all participant aliases as high priority uniqueIds
+                Map<String, String> aliasMap = StudyManager.getInstance().getAliasMap(study, User.getSearchUser(), ptid);
 
-            if (!aliasMap.isEmpty())
-                uniqueIds = uniqueIds + " " + StringUtils.join(aliasMap.values(), " ");
+                if (!aliasMap.isEmpty())
+                    uniqueIds = uniqueIds + " " + StringUtils.join(aliasMap.values(), " ");
+            }
 
             Map<String, Object> props = new HashMap<>();
             props.put(SearchService.PROPERTY.categories.toString(), subjectCategory.getName());

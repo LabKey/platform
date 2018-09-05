@@ -897,7 +897,7 @@ public class StudyQuerySchema extends UserSchema
         return filterFragments;
     }
 
-    // Null if there's no alias dataset configured, otherwise a "skinny" table with just Participant, Source, and Alias,
+    // Null if there's no alias dataset configured, otherwise a "skinny" table with just Participant, Source, Alias, and Modified
     // in that order but having the configured names.
     @Nullable public TableInfo getParticipantAliasesTable()
     {
@@ -925,9 +925,11 @@ public class StudyQuerySchema extends UserSchema
                     {
                         FilteredTable aliasTable = new FilteredTable<>(datasetTable, this);
 
+                        // Note: Keep these columns in order... they are selected by ordinal since their column names vary
                         aliasTable.addWrapColumn(datasetTable.getColumn(study.getSubjectColumnName()));
                         aliasTable.addWrapColumn(aliasColumn);
                         aliasTable.addWrapColumn(sourceColumn);
+                        aliasTable.addWrapColumn(datasetTable.getColumn("Modified"));
 
                         return aliasTable;
                     }
