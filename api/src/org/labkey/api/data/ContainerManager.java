@@ -2450,6 +2450,7 @@ public class ContainerManager
 
         private void testOneFolderType(FolderType folderType)
         {
+            LOG.info("testOneFolderType(" + folderType.getName() + "): creating container");
             Container newFolder = createContainer(_testRoot, "folderTypeTest");
             FolderType ft = newFolder.getFolderType();
             assertEquals(ft, FolderType.NONE);
@@ -2457,6 +2458,7 @@ public class ContainerManager
             Container newFolderFromCache = getForId(newFolder.getId());
             assertNotNull(newFolderFromCache);
             assertEquals(newFolderFromCache.getFolderType(), FolderType.NONE);
+            LOG.info("testOneFolderType(" + folderType.getName() + "): setting folder type");
             newFolder.setFolderType(folderType, TestContext.get().getUser());
 
             newFolderFromCache = getForId(newFolder.getId());
@@ -2464,7 +2466,9 @@ public class ContainerManager
             assertEquals(newFolderFromCache.getFolderType().getName(), folderType.getName());
             assertEquals(newFolderFromCache.getFolderType().getDescription(), folderType.getDescription());
 
+            LOG.info("testOneFolderType(" + folderType.getName() + "): deleteAll");
             deleteAll(newFolder, TestContext.get().getUser());          // There might be subfolders because of container tabs
+            LOG.info("testOneFolderType(" + folderType.getName() + "): deleteAll complete");
             Container deletedContainer = getForId(newFolder.getId());
 
             if (deletedContainer != null)
