@@ -1042,36 +1042,6 @@ public class StudyController extends BaseStudyController
 
 
     @RequiresPermission(ReadPermission.class)
-    public class IndexParticipantAction extends ParticipantAction
-    {
-        ParticipantForm _form;
-        Study _study;
-
-        @Override
-        public ModelAndView getView(ParticipantForm form, BindException errors)
-        {
-            _form = form;
-            _study = getStudyRedirectIfNull();
-            if (null == _form.getParticipantId())
-                throw new NotFoundException();
-            getPageConfig().setTemplate(PageConfig.Template.Print);
-            getPageConfig().setNoIndex();
-            VBox box = new VBox();
-            box.addView(new HtmlView(PageFlowUtil.filter(_study.getLabel() + ": " + _form.getParticipantId())));
-            ModelAndView characteristicsView = StudyManager.getInstance().getParticipantDemographicsView(getContainer(), form, errors);
-            box.addView(characteristicsView);
-            return box;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            root.addChild(_study.getLabel() + ": " + _form.getParticipantId());
-            return root;
-        }
-    }
-
-
-    @RequiresPermission(ReadPermission.class)
     public class ParticipantAction extends SimpleViewAction<ParticipantForm>
     {
         private ParticipantForm _bean;

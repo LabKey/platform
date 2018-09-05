@@ -4664,8 +4664,6 @@ public class StudyManager
                 .append("WHERE Modified > p.LastIndexed)");
         }
 
-        final ActionURL indexURL = new ActionURL(StudyController.IndexParticipantAction.class, c);
-        indexURL.setExtraPath(c.getId());
         final ActionURL executeURL = new ActionURL(StudyController.ParticipantAction.class, c);
         executeURL.setExtraPath(c.getId());
 
