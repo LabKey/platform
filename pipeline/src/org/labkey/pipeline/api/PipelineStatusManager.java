@@ -714,6 +714,28 @@ public class PipelineStatusManager
         }
     }
 
+    /**
+     * Cancel all pending and running jobs in the container.
+     */
+    public static void cancelStatus(ViewBackgroundInfo info) throws PipelineProvider.HandlerException
+    {
+        int failed = 0;
+        SimpleFilter filter = SimpleFilter.createContainerFilter(info.getContainer());
+        for (PipelineStatusFileImpl statusFile : PipelineStatusManager.getStatusFiles(filter))
+        {
+            if (!cancelStatus(info, statusFile))
+                failed++;
+        }
+        if (failed == 1)
+        {
+            throw new PipelineProvider.HandlerException("Unable to cancel job - it may already be COMPLETE, ERROR, or CANCELLED");
+        }
+        else if (failed > 1)
+        {
+            throw new PipelineProvider.HandlerException("Unable to cancel " + failed + " jobs - they may already be COMPLETE, ERROR, or CANCELLED");
+        }
+    }
+
     public static void cancelStatus(ViewBackgroundInfo info, Collection<Integer> rowIds) throws PipelineProvider.HandlerException
     {
         if (rowIds.isEmpty())

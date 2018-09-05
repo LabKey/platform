@@ -18,6 +18,7 @@ package org.labkey.pipeline.api;
 import org.apache.log4j.Logger;
 import org.labkey.api.admin.notification.Notification;
 import org.labkey.api.admin.notification.NotificationService;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineQueue;
@@ -96,6 +97,13 @@ public abstract class AbstractPipelineQueue implements PipelineQueue
             return;
         if (null == job.getJobGUID())
             return;
+
+        // don't attempt to add a notification if the Container has been deleted or is deleting
+        if (ContainerManager.getForId(job.getContainerId()) == null || ContainerManager.isDeleting(job.getContainer()))
+        {
+            LOG.info("Job container has been deleted or is being deleted; skipping notification for '" + StringUtils.defaultString(job.getDescription(), job.toString()) + "'");
+            return;
+        }
 
         try
         {

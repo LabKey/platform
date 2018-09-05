@@ -33,6 +33,7 @@ import org.labkey.api.pipeline.CancelledException;
 import org.labkey.api.pipeline.NoSuchJobException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineQueue;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.RemoteExecutionEngine;
@@ -46,6 +47,7 @@ import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.DefaultWebPartFactory;
 import org.labkey.api.view.Portal;
+import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
@@ -223,6 +225,15 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 
     public void containerDeleted(Container c, User user)
     {
+        try
+        {
+            PipelineStatusManager.cancelStatus(new ViewBackgroundInfo(c, user, null));
+        }
+        catch (PipelineProvider.HandlerException e)
+        {
+            throw new RuntimeException(e.getMessage(), e);
+        }
+
         PipelineManager.purge(c, user);
     }
 
