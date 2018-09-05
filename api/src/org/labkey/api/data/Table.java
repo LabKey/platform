@@ -42,7 +42,6 @@ import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
-import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RuntimeValidationException;
@@ -53,7 +52,6 @@ import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
 
-import java.io.IOException;
 import java.sql.BatchUpdateException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -268,79 +266,77 @@ public class Table
 
     public static void batchExecute1Integer(DbSchema schema, @NotNull String sql1, @Nullable String sql100, List<Integer> paramList) throws SQLException
     {
-        Connection conn = schema.getScope().getConnection();
-        PreparedStatement stmt100 = null;
-        PreparedStatement stmt1 = null;
-
-        try
+        try (Connection conn = schema.getScope().getConnection())
         {
-            int paramCounter = 0;
-
-            // insert by 100's
-            int outerIndex = 0;
-            if (null != sql100 && paramList.size() >= 100)
+            try
             {
-                stmt100 = conn.prepareStatement(sql100);
-                for (; outerIndex < paramList.size() - 100; outerIndex += 100)
+                int paramCounter = 0;
+
+                // insert by 100's
+                int outerIndex = 0;
+                if (null != sql100 && paramList.size() >= 100)
                 {
-                    for (int index = outerIndex; index < outerIndex + 100; index++)
+                    try (PreparedStatement stmt100 = conn.prepareStatement(sql100))
+                    {
+                        for (; outerIndex < paramList.size() - 100; outerIndex += 100)
+                        {
+                            for (int index = outerIndex; index < outerIndex + 100; index++)
+                            {
+                                Integer I = paramList.get(index);
+                                if (null == I)
+                                    stmt100.setNull(index % 100 + 1, Types.INTEGER);
+                                else
+                                    stmt100.setInt(index % 100 + 1, I.intValue());
+                                paramCounter++;
+                            }
+                            stmt100.addBatch();
+                            if (paramCounter > 10000)
+                            {
+                                stmt100.executeBatch();
+                                paramCounter = 0;
+                            }
+                        }
+                        if (paramCounter > 0)
+                        {
+                            stmt100.executeBatch();
+                            paramCounter = 0;
+                        }
+                    }
+                }
+
+                // insert by 1's
+                try (PreparedStatement stmt1 = conn.prepareStatement(sql1))
+                {
+                    for (int index = outerIndex; index < paramList.size(); index++)
                     {
                         Integer I = paramList.get(index);
                         if (null == I)
-                            stmt100.setNull(index % 100 + 1, Types.INTEGER);
+                            stmt1.setNull(1, Types.INTEGER);
                         else
-                            stmt100.setInt(index % 100 + 1, I.intValue());
+                            stmt1.setInt(1, I.intValue());
+                        stmt1.addBatch();
                         paramCounter++;
+                        if (paramCounter > 1000)
+                        {
+                            stmt1.executeBatch();
+                            paramCounter = 0;
+                        }
                     }
-                    stmt100.addBatch();
-                    if (paramCounter > 10000)
-                    {
-                        stmt100.executeBatch();
-                        paramCounter = 0;
-                    }
-                }
-                if (paramCounter > 0)
-                {
-                    stmt100.executeBatch();
-                    paramCounter = 0;
+                    if (paramCounter > 0)
+                        stmt1.executeBatch();
                 }
             }
-
-            // insert by 1's
-            stmt1 = conn.prepareStatement(sql1);
-            for (int index=outerIndex ; index<paramList.size() ; index++)
+            catch (SQLException e)
             {
-                Integer I = paramList.get(index);
-                if (null == I)
-                    stmt1.setNull(1, Types.INTEGER);
-                else
-                    stmt1.setInt(1, I.intValue());
-                stmt1.addBatch();
-                paramCounter++;
-                if (paramCounter > 1000)
+                if (e instanceof BatchUpdateException)
                 {
-                    stmt1.executeBatch();
-                    paramCounter = 0;
+                    if (null != e.getNextException())
+                        e = e.getNextException();
                 }
-            }
-            if (paramCounter > 0)
-                stmt1.executeBatch();
-        }
-        catch (SQLException e)
-        {
-            if (e instanceof BatchUpdateException)
-            {
-                if (null != e.getNextException())
-                    e = e.getNextException();
-            }
 
-            logException(new SQLFragment(sql1), conn, e, Level.WARN);
-            throw(e);
-        }
-        finally
-        {
-            doClose(null, stmt100, conn, schema.getScope());
-            doClose(null, stmt1, conn, schema.getScope());
+                logException(new SQLFragment(sql1), conn, e, Level.WARN);
+                throw (e);
+            }
         }
     }
 

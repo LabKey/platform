@@ -16,16 +16,20 @@
 
 package org.labkey.api.query;
 
-import org.labkey.api.data.*;
-import org.labkey.api.gwt.client.model.GWTComparisonResult;
-import org.labkey.api.gwt.client.model.GWTComparisonMember;
+import org.labkey.api.data.CrosstabAxis;
+import org.labkey.api.data.CrosstabDimension;
+import org.labkey.api.data.CrosstabMember;
+import org.labkey.api.data.CrosstabTableInfo;
+import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.gwt.client.model.GWTComparisonGroup;
+import org.labkey.api.gwt.client.model.GWTComparisonMember;
+import org.labkey.api.gwt.client.model.GWTComparisonResult;
 import org.labkey.api.reports.ReportService;
 
-import javax.servlet.ServletException;
-import java.sql.SQLException;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringTokenizer;
 
 /**
  * User: jeckels
