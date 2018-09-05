@@ -16,10 +16,18 @@
 
 package org.labkey.api.reports.report;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BooleanFormat;
 import org.labkey.api.data.Container;
-import org.labkey.api.query.*;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.SimpleValidationError;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.permissions.ShareReportPermission;
 import org.labkey.api.reports.report.view.AjaxRunScriptReportView;
@@ -28,8 +36,13 @@ import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.AnalystPermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
+import org.labkey.api.security.permissions.TrustedPermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.TabStripView;
@@ -156,7 +169,7 @@ public abstract class ScriptReport extends AbstractReport
 
         if (errors.isEmpty())
         {
-            if (container.hasPermission(user, PlatformDeveloperPermission.class))
+            if (user.hasRootPermission(AnalystPermission.class))
             {
                 if (isPrivate() || getDescriptor().hasCustomAccess())
                 {
@@ -178,7 +191,7 @@ public abstract class ScriptReport extends AbstractReport
         {
             if (isPrivate())
             {
-                if (container.hasPermission(user, PlatformDeveloperPermission.class))
+                if (user.hasRootPermission(AnalystPermission.class))
                 {
                     if (!container.hasPermission(user, ShareReportPermission.class))
                         errors.add(new SimpleValidationError("You must be in the Author role to share a private script report."));
@@ -195,5 +208,53 @@ public abstract class ScriptReport extends AbstractReport
     {
         // Content modified if change to the "script" config property
         return hasDescriptorPropertyChanged(ScriptReportDescriptor.Prop.script.name());
+    }
+
+    @Override
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Container c, @NotNull Class<? extends Permission> perm)
+    {
+        return canExecuteReport(user, c, perm);
+    }
+
+    public final boolean canExecuteReport(@NotNull UserPrincipal user, @NotNull Container c, @NotNull Class<? extends Permission> perm)
+    {
+        UserPrincipal author = UserManager.getUser(getDescriptor().getCreatedBy());
+
+        return super.hasPermission(user, c, perm)  //User has required permissions to report
+                && ContainerManager.getRoot().hasPermission(author, AnalystPermission.class)
+
+                // System trust  -- Author is a Developer, or engine is Sandboxed
+                && (c.hasPermission(author, PlatformDeveloperPermission.class) || isEngineSandboxed())
+
+                // User trust -- User is the Author, or Author is Trusted
+                && (isPrivate() || isTrusted(user, author));
+    }
+
+    /**
+     * Method to check trust relationship between user and report's author
+     * @param user UserPrincipal to check
+     * @param author of report
+     * @return True if user has previously trusted author (//TODO)
+     */
+    private boolean isTrusted(UserPrincipal user, UserPrincipal author)
+    {
+        if (ContainerManager.getRoot().hasPermission(author, TrustedPermission.class))
+            return true;
+
+            //TODO (next sprint): add check analyst trust relationship
+        else return false;
+    }
+
+
+    protected boolean isEngineSandboxed()
+    {
+//        //TODO should this be cached?
+//        Map<String, String> requestedEngineProperties = getDescriptor().getScriptEngineProperties();
+//
+//        if (requestedEngineProperties.containsKey(ExternalScriptEngine.PROP_SANDBOX))
+//            return Boolean.valueOf(requestedEngineProperties.get(ExternalScriptEngine.PROP_SANDBOX));
+
+        //TODO: Using a stub for now
+        return false;
     }
 }

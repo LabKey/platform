@@ -19,7 +19,7 @@ package org.labkey.api.reports.report.view;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.ReportIdentifier;
-import org.labkey.api.security.permissions.PlatformDeveloperPermission;
+import org.labkey.api.security.permissions.AnalystPermission;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
@@ -53,7 +53,8 @@ public class AjaxScriptReportView extends JspView<ScriptReportBean>
 
         public boolean showSourceAndHelp(ViewContext context)
         {
-            return _allowSourceAndHelp && context.getContainer().hasPermission(context.getUser(), PlatformDeveloperPermission.class);
+            //TODO: this should check engine.isSandboxed
+            return _allowSourceAndHelp && context.getUser().hasRootPermission(AnalystPermission.class);
         }
 
         public String getUniqueID()

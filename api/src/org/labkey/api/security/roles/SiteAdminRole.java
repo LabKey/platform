@@ -46,7 +46,7 @@ public class SiteAdminRole extends AbstractContextualRole
                 CanUseSendMessageApiPermission.class,
                 FolderExportPermission.class,
                 PlatformDeveloperPermission.class,
-                TrustedAnalystPermission.class,
-                TrustedBrowserDeveloperPermission.class);
+                TrustedPermission.class,
+                AnalystPermission.class);
     }
 }

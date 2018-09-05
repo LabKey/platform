@@ -106,7 +106,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
     {
         try
         {
-            Report clone = (Report)super.clone();
+            Report clone = (Report) super.clone();
             clone.setDescriptor(clone.getDescriptor().clone());
 
             return clone;
@@ -132,7 +132,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
         if (getReportId() != null)
         {
             Report origReport = ReportService.get().getReport(ContainerManager.getForId(getContainerId()), getReportId().getRowId());
-            origPropStr = origReport != null  ? origReport.getDescriptor().getProperty(descriptorPropName) : null;
+            origPropStr = origReport != null ? origReport.getDescriptor().getProperty(descriptorPropName) : null;
         }
 
         return newPropStr != null && !newPropStr.equals(origPropStr);
@@ -422,14 +422,14 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
 
         if (isOwner(user))
         {
-            if(!container.hasPermission(user, ShareReportPermission.class))
+            if (!container.hasPermission(user, ShareReportPermission.class))
                 errors.add(new SimpleValidationError("You must be in the Author role to share your report."));
         }
         else
         {
             if (isPrivate() || getDescriptor().hasCustomAccess())
                 errors.add(new SimpleValidationError("You must be the owner to share a private or custom report."));
-            else if(!container.hasPermission(user, EditSharedReportPermission.class))
+            else if (!container.hasPermission(user, EditSharedReportPermission.class))
                 errors.add(new SimpleValidationError("You must be in the Editor role to share a public report."));
         }
         return errors.isEmpty();
@@ -600,7 +600,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
     }
 
     @Override
-    public final boolean hasPermission(@NotNull UserPrincipal user, @NotNull Container c, @NotNull Class<? extends Permission> perm)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Container c, @NotNull Class<? extends Permission> perm)
     {
         ReportDescriptor descriptor = getDescriptor();
 

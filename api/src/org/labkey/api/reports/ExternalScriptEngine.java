@@ -518,4 +518,9 @@ public class ExternalScriptEngine extends AbstractScriptEngine
 
         return null;
     }
+
+    public boolean isSandboxed()
+    {
+        return false;
+    }
 }

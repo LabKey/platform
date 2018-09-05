@@ -27,9 +27,11 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.security.impersonation.NotImpersonatingContext;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.AnalystPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.TrustedPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.ApplicationAdminRole;
 import org.labkey.api.security.roles.PlatformDeveloperRole;
@@ -516,6 +518,8 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         props.put("isSystemAdmin", user.isInSiteAdminGroup());
         props.put("isGuest", user.isGuest());
         props.put("isDeveloper", user.isDeveloper());
+        props.put("isAnalyst", user.hasRootPermission(AnalystPermission.class));
+        props.put("isTrusted", user.hasRootPermission(TrustedPermission.class));
         props.put("isSignedIn", 0 != user.getUserId() || !user.isGuest());
 
         return props;

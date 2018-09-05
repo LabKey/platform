@@ -41,8 +41,13 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.StorageProvisioner;
+import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.InvalidKeyException;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.PageFlowUtil;
@@ -54,6 +59,7 @@ import org.labkey.api.view.ViewContext;
 
 import java.beans.PropertyChangeListener;
 import java.io.File;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -65,6 +71,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -774,6 +781,7 @@ public class UserManager
             executor.execute("DELETE FROM " + CORE.getTableInfoLogins() + " WHERE Email=?", user.getEmail());
             executor.execute("DELETE FROM " + CORE.getTableInfoPrincipals() + " WHERE UserId=?", userId);
             executor.execute("DELETE FROM " + CORE.getTableAPIKeys() + " WHERE CreatedBy=?", userId);
+            executor.execute("DELETE FROM " + CORE.getTableInfoPrincipalRelations() + " WHERE userid=?", userId);
 
             OntologyManager.deleteOntologyObject(user.getEntityId(), ContainerManager.getSharedContainer(), true);
         }
@@ -1015,4 +1023,73 @@ public class UserManager
         }
         return parsed;
     }
+
+    //TODO is this worth creating a cache for?
+    public static Set<UserRelationships> getRelationships(User user, User other)
+    {
+        SQLFragment sql = new SQLFragment("SELECT relationship").append("\n")
+                .append("FROM ").append(CORE.getTableInfoPrincipalRelations(), "pr").append("\n")
+                .append("WHERE userid = ?").add(user.getEntityId()).append("\n")
+                .append("  AND otherid = ?").add(other.getEntityId());
+
+        Collection<UserRelationships> relationships = new SqlSelector(CORE.getScope(), sql).getCollection(UserRelationships.class);
+        return new HashSet<>(relationships);
+    }
+
+    public static void ensureRelationship(User user, User other, UserRelationships relationship)
+    {
+        Set<UserRelationships> existing = getRelationships(user, other);
+        if (existing.contains(relationship))
+            return;
+
+        try
+        {
+            addRelationship(user, other, relationship);
+        }
+        catch (SQLException | QueryUpdateServiceException | BatchValidationException | DuplicateKeyException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    private static void addRelationship(User user, User other, UserRelationships relationship) throws SQLException, QueryUpdateServiceException, BatchValidationException, DuplicateKeyException
+    {
+        Map<String, Object> values = new HashMap<>();
+        values.put("userid", user.getEntityId());
+        values.put("otherid", other.getEntityId());
+        values.put("relationship", relationship);
+
+        QueryUpdateService qus = CORE.getTableInfoPrincipalRelations().getUpdateService();
+        qus.insertRows(user, ContainerManager.getRoot(), Collections.singletonList(values), null, null, null);
+
+        addAuditEvent(user, ContainerManager.getRoot(), user,
+                String.format("Added [%1$s] relationship with user [%2$s]", relationship.name(), user.getEmail()));
+    }
+
+    public static void deleteRelationship(User user, User other, UserRelationships relationship) throws SQLException, QueryUpdateServiceException, BatchValidationException, InvalidKeyException
+    {
+        Map<String, Object> values = new HashMap<>();
+        values.put("userid", user.getEntityId());
+        values.put("otherid", other.getEntityId());
+        values.put("relationship", relationship);
+
+        QueryUpdateService qus = CORE.getTableInfoPrincipalRelations().getUpdateService();
+        qus.deleteRows(user, ContainerManager.getRoot(), Collections.singletonList(values), null, null);
+
+        addAuditEvent(user, ContainerManager.getRoot(), user,
+                String.format("Deleted [%1$s] relationship with user [%2$s]", relationship.name(), user.getEmail()));
+    }
+
+    public static boolean hasAllRelationships(User user, User other, Set<UserRelationships> relationships)
+    {
+        Set<UserRelationships> existing = getRelationships(user, other);
+        return existing.containsAll(relationships);
+    }
+
+    public static boolean hasAnyOfRelationships(User user, User other, Set<UserRelationships> relationships)
+    {
+        Set<UserRelationships> existing = getRelationships(user, other);
+        return relationships.stream().anyMatch(existing::contains);
+    }
+
 }

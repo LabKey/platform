@@ -77,6 +77,8 @@ public class RoleManager
         registerRole(new SeeFilePathsRole(), false);
         registerRole(new CanUseSendMessageApi(), false);
         registerRole(new PlatformDeveloperRole(), false);
+        registerRole(new TrustedAnalystRole(), false);
+        registerRole(new AnalystRole(), false);
     }
 
     public static Role getRole(String name)

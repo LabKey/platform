@@ -31,18 +31,20 @@ import org.labkey.api.data.ContainerService;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.security.permissions.AnalystPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.TrustedAnalystPermission;
-import org.labkey.api.security.permissions.TrustedBrowserDeveloperPermission;
+import org.labkey.api.security.permissions.TrustedPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
+import org.labkey.api.security.roles.AnalystRole;
 import org.labkey.api.security.roles.AuthorRole;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.TrustedAnalystRole;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
@@ -492,24 +494,57 @@ public class GroupManager
             User user = _testUser.cloneUser();
             MutableSecurityPolicy policy = new MutableSecurityPolicy(_project);
             assertFalse(policy.hasPermission(user, PlatformDeveloperPermission.class));
-            assertFalse(policy.hasPermission(user, TrustedBrowserDeveloperPermission.class));
-            assertFalse(policy.hasPermission(user, TrustedAnalystPermission.class));
+            assertFalse(policy.hasPermission(user, TrustedPermission.class));
+            assertFalse(policy.hasPermission(user, AnalystPermission.class));
 
             policy.addRoleAssignment(user, PlatformDeveloperRole.class);
             assertTrue(policy.hasPermission(user, PlatformDeveloperPermission.class));
-            assertTrue(policy.hasPermission(user, TrustedBrowserDeveloperPermission.class));
-            assertTrue(policy.hasPermission(user, TrustedAnalystPermission.class));
+            assertTrue(policy.hasPermission(user, TrustedPermission.class));
+            assertTrue(policy.hasPermission(user, AnalystPermission.class));
             policy.clearAssignedRoles(user);
 
             SecurityManager.addMember(_devGroup, user);
             user = _testUser.cloneUser();
             policy.addRoleAssignment(_devGroup, PlatformDeveloperRole.class);
             assertTrue(policy.hasPermission(user, PlatformDeveloperPermission.class));
-            assertTrue(policy.hasPermission(user, TrustedBrowserDeveloperPermission.class));
-            assertTrue(policy.hasPermission(user, TrustedAnalystPermission.class));
+            assertTrue(policy.hasPermission(user, TrustedPermission.class));
+            assertTrue(policy.hasPermission(user, AnalystPermission.class));
             policy.clearAssignedRoles(_devGroup);
             SecurityManager.deleteMember(_devGroup, user);
         }
+
+        @Test
+        public void testTrustedAnalystRole() throws Exception
+        {
+            User user = _testUser.cloneUser();
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(_project);
+            assertFalse(policy.hasPermission(user, PlatformDeveloperPermission.class));
+            assertFalse(policy.hasPermission(user, TrustedPermission.class));
+            assertFalse(policy.hasPermission(user, AnalystPermission.class));
+
+            policy.addRoleAssignment(user, TrustedAnalystRole.class);
+            assertFalse(policy.hasPermission(user, PlatformDeveloperPermission.class));
+            assertTrue(policy.hasPermission(user, TrustedPermission.class));
+            assertTrue(policy.hasPermission(user, AnalystPermission.class));
+            policy.clearAssignedRoles(user);
+        }
+
+        @Test
+        public void testAnalystRole() throws Exception
+        {
+            User user = _testUser.cloneUser();
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(_project);
+            assertFalse(policy.hasPermission(user, PlatformDeveloperPermission.class));
+            assertFalse(policy.hasPermission(user, TrustedPermission.class));
+            assertFalse(policy.hasPermission(user, AnalystPermission.class));
+
+            policy.addRoleAssignment(user, AnalystRole.class);
+            assertFalse(policy.hasPermission(user, PlatformDeveloperPermission.class));
+            assertFalse(policy.hasPermission(user, TrustedPermission.class));
+            assertTrue(policy.hasPermission(user, AnalystPermission.class));
+            policy.clearAssignedRoles(user);
+        }
+
 
         @Test
         public void testCopyGroupToContainer() throws Exception

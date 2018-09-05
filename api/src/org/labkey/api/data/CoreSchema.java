@@ -177,4 +177,9 @@ public class CoreSchema
     {
         return getSchema().getTable("ReportEngineMap");
     }
+
+    public TableInfo getTableInfoPrincipalRelations()
+    {
+        return getSchema().getTable("PrincipalRelations");
+    }
 }

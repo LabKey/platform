@@ -60,9 +60,8 @@ import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.AnalystPermission;
 import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.ReaderRole;
@@ -89,7 +88,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -439,10 +437,9 @@ public class ReportUtil
 
     public static boolean canCreateScript(ViewContext context)
     {
-        Set<Class<? extends Permission>> permissions = new HashSet<>();
-        permissions.add(InsertPermission.class);
-        permissions.add(PlatformDeveloperPermission.class);
-        return context.getContainer().hasPermissions(context.getUser(), permissions);
+        User u = context.getUser();
+        return context.getContainer().hasPermission(u, InsertPermission.class)
+                && u.hasRootPermission(AnalystPermission.class);
     }
 
     public static boolean isInRole(User user, Container container, Class<? extends Role> roleCls)
