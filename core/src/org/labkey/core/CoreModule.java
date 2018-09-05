@@ -20,7 +20,6 @@ import org.apache.log4j.Appender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.RollingFileAppender;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiXmlWriter;
 import org.labkey.api.admin.AdminConsoleService;
 import org.labkey.api.admin.FolderSerializationRegistry;
@@ -962,7 +961,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 Map<String, Object> results = new HashMap<>();
                 Map<String, Object> javaInfo = new HashMap<>();
                 javaInfo.put("java.vendor", System.getProperty("java.vendor"));
-                javaInfo.put("java.vm.name", System.getProperty("java.vendor"));
+                javaInfo.put("java.vm.name", System.getProperty("java.vm.name"));
                 results.put("javaRuntime", javaInfo);
                 return results;
             }
