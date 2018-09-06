@@ -331,7 +331,7 @@ if (!LABKEY.DataRegions) {
 
                 requestURL: isQWP ? window.location.href : (document.location.search.substring(1) /* strip the ? */ || ''),
 
-                returnUrl: isQWP ? encodeURI(window.location.href) : undefined,
+                returnUrl: isQWP ? window.location.href : undefined,
 
                 /**
                  * Schema name of the query to which this DataRegion is bound. Read-only.
@@ -3680,7 +3680,7 @@ if (!LABKEY.DataRegions) {
         params.schemaName = region.schemaName;
         params.viewName = region.viewName;
         params.reportId = region.reportId;
-        params.returnUrl = encodeURI(window.location.href);
+        params.returnUrl = window.location.href;
         params['webpart.name'] = 'Query';
 
         if (region.queryName) {
