@@ -50,7 +50,7 @@ public class ScheduledPipelineJobContext implements ContainerUser, Cloneable
         _containerId = container.getId();
         if (null != user)
             _userId = user.getUserId();
-        _key = container.getRowId() + "/" + descriptor.getId();
+        _key = makeKey(container, descriptor.getId());
     }
 
     public void setLocked()
@@ -152,4 +152,15 @@ public class ScheduledPipelineJobContext implements ContainerUser, Cloneable
         writeQuartzJobDataMap(map);
         return map;
     }
+
+    public static String makeKey(Container container, String id)
+    {
+        return getContainerPrefix(container) + id;
+    }
+
+    public static String getContainerPrefix(Container container)
+    {
+        return container.getRowId() + "/";
+    }
+
 }
