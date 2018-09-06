@@ -212,8 +212,7 @@ public class TransformManager implements DataIntegrationService
                 {
                     config.setEnabled(false);
                     get().saveTransformConfiguration(u, config);
-                    ScheduledPipelineJobDescriptor descriptor = DB_DESCRIPTOR_CACHE.get(c).get(def.getConfigId());
-                    get().unschedule(descriptor, c, u);
+                    get().unschedule(config.getTransformId(), c);
                 }
                 final TaskId pipelineId = new TaskId(def.getModule().getName(), TaskId.Type.pipeline, def.getConfigId(), 0);
                 PipelineJobService.get().removeTaskPipeline(pipelineId);
@@ -664,13 +663,17 @@ public class TransformManager implements DataIntegrationService
     }
 
 
-    public synchronized void unschedule(ScheduledPipelineJobDescriptor etlDescriptor, Container container, User user)
+    public synchronized void unschedule(ScheduledPipelineJobDescriptor etlDescriptor, Container container)
+    {
+        unschedule(etlDescriptor.getId(), container);
+    }
+
+    public synchronized void unschedule(String configId, Container container)
     {
         try
         {
-            TransformJobContext info = new TransformJobContext(etlDescriptor, container, user, null);
             Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
-            TriggerKey triggerKey = TriggerKey.triggerKey(info.getKey(), JOB_GROUP_NAME);
+            TriggerKey triggerKey = TriggerKey.triggerKey(ScheduledPipelineJobContext.makeKey(container, configId), JOB_GROUP_NAME);
             scheduler.unscheduleJob(triggerKey);
         }
         catch (SchedulerException e)
@@ -690,7 +693,7 @@ public class TransformManager implements DataIntegrationService
         {
             Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
             Set<TriggerKey> keys = scheduler.getTriggerKeys(GroupMatcher.groupEquals(JOB_GROUP_NAME));
-            String containerPrefix = "" + container.getRowId() + "/";
+            String containerPrefix = ScheduledPipelineJobContext.getContainerPrefix(container);
             for (TriggerKey key : keys)
             {
                 if (key.getName().startsWith(containerPrefix))
@@ -1225,7 +1228,7 @@ public class TransformManager implements DataIntegrationService
                 sleep(1);
             assertTrue(counter.get() >= 12);
 
-            TransformManager.get().unschedule(d, c, user);
+            TransformManager.get().unschedule(d, c);
             sleep(1);
             int count = counter.get();
             sleep(2);
@@ -1266,12 +1269,12 @@ public class TransformManager implements DataIntegrationService
             Module simpleTest = ModuleLoader.getInstance().getModule("simpletest");
 
             if (null != simpleTest)
-                assertEquals("ETL descriptors from the simpletest module", 2, MODULE_DESCRIPTOR_CACHE.getResourceMap(simpleTest).size());
+                assertEquals("ETL descriptors from the simpletest module", 3, MODULE_DESCRIPTOR_CACHE.getResourceMap(simpleTest).size());
 
             Module etlTest = ModuleLoader.getInstance().getModule("ETLTest");
 
             if (null != etlTest)
-                assertEquals("ETL descriptors from the ETLTest module", 60, MODULE_DESCRIPTOR_CACHE.getResourceMap(etlTest).size());
+                assertEquals("ETL descriptors from the ETLTest module", 61, MODULE_DESCRIPTOR_CACHE.getResourceMap(etlTest).size());
         }
     }
 

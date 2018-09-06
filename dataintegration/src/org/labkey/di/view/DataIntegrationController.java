@@ -442,7 +442,7 @@ public class DataIntegrationController extends SpringActionController
                 }
                 else
                 {
-                    TransformManager.get().unschedule(etl, getContainer(), getUser());
+                    TransformManager.get().unschedule(etl.getId(), getContainer());
                 }
             }
 
