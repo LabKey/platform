@@ -55,6 +55,6 @@ public class ResourceURL extends URLHelper
             throw new ServletException("invalid path");
 
         setContextPath(request.getContextPath());
-        _path = Path.decode(request.getServletPath());
+        _path = Path.parse(request.getServletPath());
     }
 }
