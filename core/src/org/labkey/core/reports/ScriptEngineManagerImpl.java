@@ -264,11 +264,9 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
         {
             SQLFragment sql = new SQLFragment("SELECT EngineId FROM ")
                     .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
-                    .append(" WHERE EngineId = ? AND Container = ?")
-                    .add(def.getRowId())
-                    .add(container);
+                    .append(" WHERE Container = ?").add(container);
 
-            if(new SqlSelector(CoreSchema.getInstance().getSchema(), sql).exists())
+            if(!new SqlSelector(CoreSchema.getInstance().getSchema(), sql).exists())
             {
                 SQLFragment insert = new SQLFragment("INSERT INTO ")
                         .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")

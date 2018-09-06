@@ -165,18 +165,35 @@ if (parentEngine != null)
         }
     }
 
-    // confirm submit
     saveBtn.click(function() {
         if (!saveBtn.hasClass("labkey-disabled-button")) {
-            Ext4.Msg.confirm("Override Default R Configuration",
-                    "Are you sure you wish to override the default R configuration? Existing reports may be affected by this action.", function (btn, text) {
-                        if (btn == "yes") {
-                            saveBtn.addClass("labkey-disabled-button");
-                            document.getElementById("configForm").submit();
-                        }
-                    });
+            LABKEY.Utils.modal("Override Default R Configuration", null, submitForm, null);
         }
     });
+
+    // confirm submit modal
+    var submitForm = function() {
+        var html = [
+            "<div style='margin-bottom: 20px;'>",
+            "<div id='message'>",
+            "Are you sure you wish to override the default R configuration? Existing reports may be affected by this action.",
+            "</div>",
+            "<a class='btn btn-default' style='float: right' id='cancelSubmitBtn'>No</a>",
+            "<a class='btn btn-default' style='float: right; margin-right: 8px' id='confirmSubmitBtn'>Yes</a>",
+            "</div>"
+        ].join("");
+
+        $("#modal-fn-body").html(html);
+
+        $("#confirmSubmitBtn").on("click", function() {
+            saveBtn.addClass("labkey-disabled-button");
+            $("#configForm").submit();
+        });
+
+        $("#cancelSubmitBtn").on("click", function() {
+            $('#lk-utils-modal').modal('hide');
+        });
+    };
 })(jQuery);
 </script>
 <%
