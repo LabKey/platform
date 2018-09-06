@@ -1269,12 +1269,12 @@ public class TransformManager implements DataIntegrationService
             Module simpleTest = ModuleLoader.getInstance().getModule("simpletest");
 
             if (null != simpleTest)
-                assertEquals("ETL descriptors from the simpletest module", 3, MODULE_DESCRIPTOR_CACHE.getResourceMap(simpleTest).size());
+                assertEquals("ETL descriptors from the simpletest module", 2, MODULE_DESCRIPTOR_CACHE.getResourceMap(simpleTest).size());
 
             Module etlTest = ModuleLoader.getInstance().getModule("ETLTest");
 
             if (null != etlTest)
-                assertEquals("ETL descriptors from the ETLTest module", 61, MODULE_DESCRIPTOR_CACHE.getResourceMap(etlTest).size());
+                assertEquals("ETL descriptors from the ETLTest module", 60, MODULE_DESCRIPTOR_CACHE.getResourceMap(etlTest).size());
         }
     }
 
