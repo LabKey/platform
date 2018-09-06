@@ -70,10 +70,8 @@ Ext4.define('LABKEY.ext.ImportPanel', {
 
     goToReturnUrl: function() {
         var returnUrl = LABKEY.ActionURL.getParameter('srcURL') || LABKEY.ActionURL.getParameter('returnURL') || LABKEY.ActionURL.getParameter('returnUrl');
-        if (returnUrl) {
-            returnUrl = decodeURI(returnUrl);
-        }
-        else {
+
+        if (!returnUrl) {
             // default to using the project-begin action
             returnUrl = LABKEY.ActionURL.buildURL('project', 'begin');
         }
