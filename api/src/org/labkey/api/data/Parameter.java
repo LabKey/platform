@@ -455,12 +455,17 @@ public class Parameter implements AutoCloseable
         Integer _selectObjectIdIndex = null;
         Integer _rowId;
         Integer _objectId;
-        CaseInsensitiveHashMap<Integer> _map;
-        Parameter[] _parameters;
+        protected CaseInsensitiveHashMap<Integer> _map;
+        protected Parameter[] _parameters;
         DbScope _scope;
         Connection _conn;       // only used for copy()
         SqlDialect _dialect;
+        boolean _closed = false;
 
+        protected ParameterMap()
+        {
+            //for testing subclasses (see NoopParameterMap)
+        }
 
         public ParameterMap(DbScope scope, PreparedStatement stmt, Collection<Parameter> parameters)
         {
@@ -723,26 +728,40 @@ public class Parameter implements AutoCloseable
         @Override
         public void close()
         {
-            try
+            if (!_closed)
             {
-                _stmt.clearParameters();
-                _stmt.close();
-            }
-            catch (SQLException e)
-            {
-                LOG.warn("Failed to close backing statement during close operation", e);
-                if (_stmt instanceof StatementWrapper)
+                try
                 {
-                    Throwable t = ((StatementWrapper)_stmt).getClosingStackTrace();
-                    if (t != null)
+                    if (null != _stmt)
                     {
-                        LOG.warn("Stack trace of the operation that previously closed the statement:", t);
+                        _stmt.clearParameters();
+                        _stmt.close();
                     }
                 }
+                catch (SQLException e)
+                {
+                    LOG.warn("Failed to close backing statement during close operation", e);
+                    if (_stmt instanceof StatementWrapper)
+                    {
+                        Throwable t = ((StatementWrapper) _stmt).getClosingStackTrace();
+                        if (t != null)
+                        {
+                            LOG.warn("Stack trace of the operation that previously closed the statement:", t);
+                        }
+                    }
+                }
+                finally
+                {
+                    afterClose();
+                    _closed = true;
+                }
             }
-            afterClose();
         }
 
+        public boolean isClosed()
+        {
+            return _closed;
+        }
 
 //        public PreparedStatement getStatement()
 //        {

@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.SwapQueue;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
@@ -39,6 +40,7 @@ import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.GUID;
 
@@ -49,6 +51,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
@@ -529,6 +532,7 @@ public class StatementDataIterator extends AbstractDataIterator
                     // NOTE some constraint exceptions are recoverable (especially on sql server), but treat all sql exceptions as fatal
                     //noinspection ThrowableResultOfMethodCallIgnored
                     getRowError().addGlobalError(x);
+                    m.close();
                     throw _context.getErrors();
                 }
             }
@@ -673,6 +677,96 @@ public class StatementDataIterator extends AbstractDataIterator
                 if (null != conn)
                     scope.releaseConnection(conn);
                 new SqlExecutor(tempdb).execute("DROP TABLE " + tableName);
+            }
+        }
+
+
+        static class NoopParameterMap extends ParameterMap
+        {
+            AtomicInteger errorWhen;
+
+            NoopParameterMap(AtomicInteger errorWhen) throws SQLException
+            {
+                super();
+                this.errorWhen = errorWhen;
+                _map = new CaseInsensitiveHashMap<>();
+                _parameters = new Parameter[1];
+                _parameters[0] = new Parameter("I",JdbcType.INTEGER);
+                _map.put(_parameters[0].getName(),0);
+            }
+
+            @Override
+            public void executeBatch() throws SQLException
+            {
+                if (0 == errorWhen.getAndDecrement())
+                    throw new SQLException("boom");
+            }
+
+            @Override
+            public boolean execute() throws SQLException
+            {
+                if (0 == errorWhen.getAndDecrement())
+                    throw new SQLException("boom");
+                return true;
+            }
+
+            @Override
+            public void addBatch() throws SQLException
+            {
+            }
+
+            @Override
+            public void clearParameters()
+            {
+            }
+
+            @Override
+            public void put(String name, Object value) throws ValidationException
+            {
+            }
+
+            @Override
+            public void putAll(Map<String, Object> values)
+            {
+            }
+        }
+
+        @Test
+        public void testException() throws Exception
+        {
+            _testException(1);
+            _testException(2);
+            _testException(3);
+        }
+
+        public void _testException(int when) throws Exception
+        {
+            try
+            {
+                AtomicInteger intWhen = new AtomicInteger(when);
+                ParameterMap pm1 = new NoopParameterMap(intWhen);
+                ParameterMap pm2 = new NoopParameterMap(intWhen);
+
+                DataIteratorContext context = new DataIteratorContext();
+                DataIterator source = getSource(100);
+                StatementDataIterator sdi = new StatementDataIterator(source, context, pm1, pm2)
+                {
+                    @Override
+                    void init()
+                    {
+                        super.init();
+                        _batchSize = 10;
+                    }
+                };
+                sdi._useAsynchronousExecute = true;
+
+                new Pump(sdi,context).run();
+                assertTrue(pm1.isClosed());
+                assertTrue(pm2.isClosed());
+                assertEquals(1, context.getErrors().getRowErrors().size());
+            }
+            finally
+            {
             }
         }
     }
