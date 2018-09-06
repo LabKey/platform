@@ -3975,9 +3975,9 @@ public class AdminController extends SpringActionController
             return _overrideDefault;
         }
 
-        public void setOverrideDefault(boolean overrideDefault)
+        public void setOverrideDefault(String overrideDefault)
         {
-            _overrideDefault = overrideDefault;
+            _overrideDefault = ((overrideDefault.equals("override")) ? true : false);
         }
 
         public ScriptEngine getParentEngine()
@@ -3997,17 +3997,6 @@ public class AdminController extends SpringActionController
         @Override
         protected HttpView getTabView(RConfigForm rConfigForm, BindException errors) throws Exception
         {
-            LabkeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
-            if (null != mgr)
-            {
-                ScriptEngine parentEngine = mgr.getEngineByExtension(getContainer().getParent(), "r");
-                if(parentEngine != null && mgr.getEngineScope(getContainer()).size() <= 0)
-                {
-                    mgr.setEngineScope(getContainer(), mgr.getEngineDefinition(parentEngine.getFactory().getEngineName(), ExternalScriptEngineDefinition.Type.R));
-                }
-                rConfigForm.setParentEngine(parentEngine);
-            }
-
             return new JspView<>("/org/labkey/core/admin/rConfiguration.jsp", rConfigForm, errors);
         }
 

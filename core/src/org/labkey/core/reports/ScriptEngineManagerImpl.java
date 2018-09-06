@@ -258,22 +258,17 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
     }
 
     @Override
-    public ArrayList<String> getEngineScope(Container container)
-    {
-        SQLFragment select = new SQLFragment("SELECT engineId FROM ")
-                .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
-                .append(" WHERE Container = ?").add(container);
-
-        SqlSelector selector = new SqlSelector(CoreSchema.getInstance().getSchema(), select);
-        return selector.getArrayList(String.class);
-    }
-
-    @Override
     public void setEngineScope(Container container, ExternalScriptEngineDefinition def)
     {
         if (def.getRowId() != null)
         {
-            if(getEngineScope(container).size() == 0)
+            SQLFragment sql = new SQLFragment("SELECT EngineId FROM ")
+                    .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
+                    .append(" WHERE EngineId = ? AND Container = ?")
+                    .add(def.getRowId())
+                    .add(container);
+
+            if(new SqlSelector(CoreSchema.getInstance().getSchema(), sql).exists())
             {
                 SQLFragment insert = new SQLFragment("INSERT INTO ")
                         .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
@@ -308,7 +303,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
     /**
      * Returns the list of engines scoped to the specified container
      */
-    private List<ExternalScriptEngineDefinition> getScopedEngines(Container container)
+    public List<ExternalScriptEngineDefinition> getScopedEngines(Container container)
     {
         SimpleFilter.createContainerFilter(container);
         SQLFragment sql = new SQLFragment("SELECT * FROM ")
@@ -405,6 +400,14 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
     public List<ExternalScriptEngineDefinition> getEngineDefinitions(ExternalScriptEngineDefinition.Type type)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Type"), type);
+        return new ArrayList<>(new TableSelector(CoreSchema.getInstance().getTableInfoReportEngines(), filter, null).getCollection(ExternalScriptEngineDefinitionImpl.class));
+    }
+
+    @Override
+    public List<ExternalScriptEngineDefinition> getEngineDefinitions(ExternalScriptEngineDefinition.Type type, boolean enabled)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Type"), type);
+        filter.addCondition(FieldKey.fromParts("Enabled"), enabled);
         return new ArrayList<>(new TableSelector(CoreSchema.getInstance().getTableInfoReportEngines(), filter, null).getCollection(ExternalScriptEngineDefinitionImpl.class));
     }
 

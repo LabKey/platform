@@ -49,7 +49,7 @@
     ScriptEngine currentEngine = null;
     if (null != mgr)
     {
-        engineDefinitions.addAll(mgr.getEngineDefinitions(ExternalScriptEngineDefinition.Type.R));
+        engineDefinitions.addAll(mgr.getEngineDefinitions(ExternalScriptEngineDefinition.Type.R, true));
         currentEngine = mgr.getEngineByExtension(getContainer(), "r");
     }
     String currentName = ((currentEngine != null) ? currentEngine.getFactory().getEngineName() : null);
@@ -57,120 +57,127 @@
 <h4>Available R Configurations</h4>
 <hr/>
 <%
-ScriptEngine parentEngine = form.getParentEngine();
+ScriptEngine parentEngine = mgr.getEngineByExtension(getContainer().getParent(), "r");
 if (parentEngine != null)
 {
-    String parentName = form.getParentEngine().getFactory().getEngineName();
+    String parentName = parentEngine.getFactory().getEngineName();
 %>
 <div style="max-width: 768px; margin-bottom: 20px">
     Overriding the default R configuration defined at the Site level or in a parent folder allows R reports to be
-    run under a different R configuration in this folder and in child folders, e.g. different R version.
+    run under a different R configuration in this folder and in child folders.
 </div>
 <labkey:form id="configForm" action="<%=postURL%>" method="POST">
-<div style="max-width: 425px">
-    <div class="row">
-        <div class="col-xs-6">
+<div style="max-width: 535px">
+    <div class="row" style="height: 25px;">
+        <div class="col-xs-5">
             Parent R Configuration:
         </div>
-        <% if (form.getParentEngine() != null) { %>
-            <div id="parentConfig" class="col-xs-6">
-                <%= h(parentName) %>
-            </div>
-        <%}%>
-    </div>
-    <div class="row" style="margin-bottom: 10px">
-        <div class="col-xs-6">
-            <label for="overrideInput">Override R Configuration?</label>
+        <div id="parentConfig" class="col-xs-7">
+            <labkey:radio name="overrideDefault" value="parent" currentValue="parent"/><%=h(parentName)%>
         </div>
-        <div class="col-xs-6 form-inline">
-            <labkey:input id="overrideInput" name="overrideDefault" type="checkbox"/>
+    </div>
+    <div class="row" style="height: 30px;">
+        <div class="col-xs-5">
+            <label for="overrideDefault">Override R Configuration?</label>
+        </div>
+        <div class="col-xs-7 form-inline">
+            <labkey:radio name="overrideDefault" value="override" currentValue="parent"/>
             <labkey:select name="engineRowId">
-                <%
+            <%
+            if (engineDefinitions.size() == 1) {
+            %>
+                <option>No additional configurations available</option>
+            <%
+            } else {
+            %>
+                <option disabled <%= selected(currentName.equals(parentName)) %> value="">
+                    Select a configuration...
+                </option>
+            <%
                 for (ExternalScriptEngineDefinition def : engineDefinitions)
                 {
                     if (!parentName.equals(def.getName()))
                     {
-                %>
-                        <option <%= selected(currentName.equals(def.getName())) %> value="<%=h(def.getRowId())%>">
-                            <%=h(def.getName())%>
-                        </option>
-                <%
+            %>
+                    <option <%= selected(currentName.equals(def.getName())) %> value="<%=h(def.getRowId())%>">
+                        <%=h(def.getName())%>
+                    </option>
+            <%
                     }
                 }
-                %>
+            }
+            %>
             </labkey:select>
+
         </div>
     </div>
     <div class="row" id="rButtonGroup" style="margin-left: 0">
         <div class="btn-group" role="group" aria-label="Form Buttons">
-            <%= button("Save").id("saveBtn").attributes("disabled").primary(true).disableOnClick(true).submit(false).onClick("confirmSubmit();") %>
+            <%= button("Save").id("saveBtn").enabled(false).submit(false).primary(true) %>
         </div>
     </div>
 </div>
 </labkey:form>
 
 <script type="text/javascript">
-    var initialOverride = null;
-    var saveBtn = document.getElementById("saveBtn");
-    var overrideInput = document.getElementById("overrideInput");
-    var engineSelect = document.getElementsByName("engineRowId")[0];
+(function($) {
+    var initialOverride = "<%=h(parentName)%>";
+    var useParent = $("input[name='overrideDefault'][value='parent']");
+    var overrideParent = $("input[name='overrideDefault'][value='override']");
+    var engineSelect = $("select[name='engineRowId']");
+    var saveBtn = $("#saveBtn");
 
-    (function() {
-        // initial check/uncheck of override checkbox
-        if (<%= !currentName.equals(parentName) %>) {
-            overrideInput.checked = true;
+    window.onload = function() {
+        if (<%=parentName.equals(currentName)%>) {
+            useParent.prop("checked", true);
+            engineSelect.prop("disabled", true);
+        }
+        else {
+            overrideParent.prop("checked", true);
+            initialOverride = engineSelect.find(":selected").text();
         }
 
-        // hide dropdown if no initial override
-        if (!overrideInput.checked) {
-            engineSelect.style.display = "none";
-        }
-
-        // set value of initial override
-        if (overrideInput.checked) {
-            initialOverride = engineSelect.options[engineSelect.selectedIndex].text;
-        }
-    })();
-
-    overrideInput.addEventListener("click", function() {
-        if (overrideInput.checked) {
-            engineSelect.style.display = "inline";
-        } else {
-            engineSelect.style.display = "none";
-        }
-
-        setSaveDisableStatus();
-    });
-
-    engineSelect.addEventListener("change", setSaveDisableStatus);
-
-    // enables/disables the "Save" button if current state differs/matches the initial state respectively
-    function setSaveDisableStatus() {
-        if (initialOverride == null) {
-            if (overrideInput.checked) {
-                saveBtn.removeAttribute("disabled");
-            } else {
-                saveBtn.setAttribute("disabled", true);
-            }
-        } else {
-            if (engineSelect[engineSelect.selectedIndex].text != initialOverride) {
-                saveBtn.removeAttribute("disabled");
-            } else {
-                saveBtn.setAttribute("disabled", true);
-            }
+        if(<%=engineDefinitions.size() == 1%>) {
+            overrideParent.prop("disabled", true);
         }
     }
 
-    function confirmSubmit() {
-        if (!saveBtn.getAttribute("disabled")) {
-            Ext4.Msg.confirm('Override Default R Configuration',
+    useParent.click(function() {
+        engineSelect.prop("disabled", true);
+        setSaveDisableStatus();
+    });
+
+    overrideParent.click(function() {
+        engineSelect.prop("disabled", false);
+        setSaveDisableStatus();
+    });
+
+    engineSelect.change(setSaveDisableStatus);
+
+    // enables/disables the "Save" button if current state differs/matches the initial state respectively
+    function setSaveDisableStatus() {
+        if (((initialOverride == "<%=h(parentName)%>") && useParent.prop("checked")) ||
+                ((initialOverride == engineSelect.find(":selected").text()) && overrideParent.prop("checked")) ||
+                ((engineSelect.find(":selected").text().trim() == "Select a configuration...") && overrideParent.prop("checked"))) {
+            saveBtn.addClass("labkey-disabled-button");
+        } else {
+            saveBtn.removeClass("labkey-disabled-button");
+        }
+    }
+
+    // confirm submit
+    saveBtn.click(function() {
+        if (!saveBtn.hasClass("labkey-disabled-button")) {
+            Ext4.Msg.confirm("Override Default R Configuration",
                     "Are you sure you wish to override the default R configuration? Existing reports may be affected by this action.", function (btn, text) {
                         if (btn == "yes") {
+                            saveBtn.addClass("labkey-disabled-button");
                             document.getElementById("configForm").submit();
                         }
                     });
         }
-    }
+    });
+})(jQuery);
 </script>
 <%
 }
@@ -178,7 +185,8 @@ else
 {
 %>
 <div>
-    No R Engines Configured
+    No R engines are configured. For more information on how to configure R engines, click
+    <a href="https://www.labkey.org/Documentation/wiki-page.view?name=configureScripting&_docid=wiki%3A32d70ce8-ed56-1034-b734-fe851e088836">here</a>.
 </div>
 <%
 }
