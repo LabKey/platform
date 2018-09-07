@@ -3,7 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-function sampleSetDomainTypeTest(queryName, rows, description, additionalCallBack) {
+function sampleSetDomainTypeTest(queryName, rows, description, additionalCallBack, xmlMetadata) {
 
     function getSuccessHandler(dd, queryName) {
         console.log('The Sample Set \'' + queryName + '\' already exists.', true);
@@ -33,25 +33,25 @@ function sampleSetDomainTypeTest(queryName, rows, description, additionalCallBac
         };
 
         function createSuccessHandler() {
-            console.log('Successfully created the \'' + queryName + '\' Sample Set.');
-            LABKEY.Domain.get(function(_dd){
-
-                LABKEY.Query.insertRows({
-                    containerPath: LABKEY.containerPath,
-                    schemaName: 'Samples',
-                    queryName: queryName,
-                    rows: rows,
-                    successCallback: function() {
-                        location.reload();
-                    }
-                });
-
-            }, function(response) {
-                console.log('Failed to update the \'' + queryName + '\' Sample Set');
-            }, 'Samples', queryName);
-            if (additionalCallBack) {
-                additionalCallBack.call();
-            }
+            saveQueryXML('Samples', queryName, xmlMetadata, function() {
+                console.log('Successfully created the \'' + queryName + '\' Sample Set.');
+                LABKEY.Domain.get(function() {
+                    LABKEY.Query.insertRows({
+                        containerPath: LABKEY.containerPath,
+                        schemaName: 'Samples',
+                        queryName: queryName,
+                        rows: rows,
+                        success: function() {
+                            location.reload();
+                        }
+                    });
+                }, function(response) {
+                    console.log('Failed to update the \'' + queryName + '\' Sample Set');
+                }, 'Samples', queryName);
+                if (additionalCallBack) {
+                    additionalCallBack.call();
+                }
+            });
         }
 
         function createErrorHandler(response) {
@@ -65,8 +65,27 @@ function sampleSetDomainTypeTest(queryName, rows, description, additionalCallBac
     // See if the domain already exists
     LABKEY.Domain.get(getSuccessHandler, getErrorHandler, 'Samples', queryName);
 }
-function setUpDomains()
-{
+
+function saveQueryXML(schemaName, queryName, xmlMetadata, cb) {
+    if (xmlMetadata) {
+        LABKEY.Ajax.request({
+            url: LABKEY.ActionURL.buildURL('query', 'saveSourceQuery.api'),
+            method: 'POST',
+            jsonData: {
+                ff_metadataText: xmlMetadata,
+                schemaName: schemaName,
+                queryName: queryName
+            },
+            success: LABKEY.Utils.getCallbackWrapper(function() { cb(); }),
+            failure: LABKEY.Utils.getCallbackWrapper(undefined, undefined, /* isErrorCallback */ true)
+        })
+    }
+    else {
+        cb();
+    }
+}
+
+function setUpDomains() {
     var rows1 =[{"Alias":  'alias 1', "Id": 1, "Sort": 100, "Tag": 'blue'},
                 {"Alias":  'alias 2', "Id": 2, "Sort": 90,  "Tag": 'red'},
                 {"Alias":  'alias 3', "Id": 3, "Sort": 80,  "Tag": 'yellow'},
@@ -75,14 +94,23 @@ function setUpDomains()
                 {"Alias":  'alias 6', "Id": 6, "Sort": 50,  "Tag": 'blue'}];
     var rows2 =[ {"Alias":  'alias 2-1', "Id": 201, "Sort": 1000, "Tag": 'square'}];
     var rows3 =[ {"Alias":  'alias 3-1', "Id": 301, "Sort": 500,  "Tag": 'Hispanic'}];
-    sampleSetDomainTypeTest('sampleDataTest1', rows1, 'A sample set with color tags', function(){
+    sampleSetDomainTypeTest('sampleDataTest1', rows1, 'A sample set with color tags', function() {
         sampleSetDomainTypeTest('sampleDataTest2', rows2, 'A sample set with shape tags', function(){
             sampleSetDomainTypeTest('sampleDataTest3', rows3, 'A sample set with race tags');
         });
-    });
+    }, ([
+    '<tables xmlns="http://labkey.org/data/xml">',
+        '<table tableName="sampleDataTest1" tableDbType="TABLE">',
+            '<buttonBarOptions includeStandardButtons="true">',
+                '<includeScript>QWPDemoBar.js</includeScript>',
+                '<onRender>QWPDemoBar.confirm.render</onRender>',
+            '</buttonBarOptions>',
+        '</table>',
+    '</tables>'
+    ].join('\n').trim()));
 }
-function dropDomains()
-{
+
+function dropDomains() {
     var completeCt = 0;
     var queries = ["sampleDataTest1", "sampleDataTest2", "sampleDataTest3"];
     var dropSuccess = function() {

@@ -27,7 +27,8 @@
             testHidePagingCount: testHidePagingCount,
             testShowAllTotalRows: testShowAllTotalRows,
             testGetBaseFilters: testGetBaseFilters,
-            testFilterOnSortColumn: testFilterOnSortColumn
+            testFilterOnSortColumn: testFilterOnSortColumn,
+            testButtonBarConfig: testButtonBarConfig
         };
 
         var PAGE_OFFSET = 4;
@@ -807,6 +808,45 @@
                             }
 
                             LABKEY.Utils.signalWebDriverTest('testFilterOnSortColumn');
+                        }
+                    }
+                }
+            });
+        }
+
+        function testButtonBarConfig() {
+            // This flag is toggled by the method called in <onRender>. See QWPDemoBar.js
+            window.testQWPRendered = false;
+
+            var loadCount = 0;
+            new LABKEY.QueryWebPart({
+                title: 'Use onRender via ButtonBarOptions (Regression #35396)',
+                schemaName: 'Samples',
+                queryName: 'sampleDataTest1',
+                renderTo: RENDERTO,
+                failure: function() {
+                    alert('Failed test: Use onRender via ButtonBarOptions');
+                },
+                listeners: {
+                    render: function(dr) {
+                        if (loadCount === 0) {
+                            if (window.testQWPRendered !== true) {
+                                alert('onRender did not run!');
+                                return;
+                            }
+
+                            // reset flag and ensure loads on subsequent renders
+                            window.testQWPRendered = false;
+                            loadCount++;
+                            dr.refresh();
+                        }
+                        else if (loadCount === 1) {
+                            if (window.testQWPRendered !== true) {
+                                alert('onRender did not run on subsequent refresh!');
+                                return;
+                            }
+
+                            LABKEY.Utils.signalWebDriverTest('testButtonBarConfig');
                         }
                     }
                 }
