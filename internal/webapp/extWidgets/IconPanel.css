@@ -20,12 +20,18 @@
     width: 100%;
     float: left;
     display: block;
+    height: 20px;
+    margin-bottom: 0;
+}
+.labkey-iconpanel .thumb-wrap-side .fa{
+    width: auto;
+    height: auto;
 }
 
 .labkey-iconpanel .thumb-img-side{
 	float: left;
     position: relative;
-    padding-right: 3px;
+    padding-right: 8px;
 }
 
 .labkey-iconpanel .thumb-label-side{
