@@ -266,7 +266,9 @@ public class Table
 
     public static void batchExecute1Integer(DbSchema schema, @NotNull String sql1, @Nullable String sql100, List<Integer> paramList) throws SQLException
     {
-        try (Connection conn = schema.getScope().getConnection())
+        Connection conn = schema.getScope().getConnection();
+
+        try
         {
             try
             {
@@ -337,6 +339,10 @@ public class Table
                 logException(new SQLFragment(sql1), conn, e, Level.WARN);
                 throw (e);
             }
+        }
+        finally
+        {
+            schema.getScope().releaseConnection(conn);
         }
     }
 
