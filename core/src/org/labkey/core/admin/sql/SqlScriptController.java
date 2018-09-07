@@ -996,8 +996,8 @@ public class SqlScriptController extends SpringActionController
                 unclaimedFiles.remove("group_concat_install.sql");
                 unclaimedFiles.remove("group_concat_install_1.00.23696.sql");
                 unclaimedFiles.remove("group_concat_uninstall.sql");
-                unclaimedFiles.remove("naturalize_install.sql");      // From the LDK module
-
+                unclaimedFiles.remove("Naturalize_install_1.0.1.sql");      // From the LDK module
+                unclaimedFiles.remove("Naturalize_uninstall.sql");      // From the LDK module
                 unclaimedFiles.remove("PremiumStats_install_1.0.1.sql");
                 unclaimedFiles.remove("PremiumStats_uninstall.sql");
             }
