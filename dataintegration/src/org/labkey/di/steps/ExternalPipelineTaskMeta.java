@@ -104,7 +104,12 @@ public class ExternalPipelineTaskMeta extends StepMetaImpl
     @Override
     public boolean isUseSource()
     {
-        throw new UnsupportedOperationException();
+        return false;
     }
 
+    @Override
+    public boolean isUseTarget()
+    {
+        return false;
+    }
 }

@@ -165,7 +165,7 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
     }
 
 
-    public void logRunFinish(TaskStatus status, Integer recordCount)
+    public void logRunFinish(TaskStatus status, Integer recordCount, String runLogMessage)
     {
         TransformRun run = getTransformRun();
         if (run != null)
@@ -174,6 +174,8 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
             run.setStatus(status.toString());
             run.setEndTime(new Date());
             run.setRecordCount(recordCount);
+            if (runLogMessage != null)
+                run.setTransformRunLog(runLogMessage);
             update(run);
         }
 
@@ -358,12 +360,17 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
     public boolean cancel(boolean mayInterruptIfRunning)
     {
         super.cancel(mayInterruptIfRunning);
-        logRunFinish(TaskStatus.cancelled, null);
+        logRunFinish(TaskStatus.cancelled, null, null);
         return true;
     }
 
     @Override
     public void done(Throwable throwable)
+    {
+        done(throwable, null);
+    }
+
+    void done(Throwable throwable, @Nullable String logMsg)
     {
         super.done(throwable);
 
@@ -375,7 +382,7 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
         if (TaskStatus.error.equals(this.getActiveTaskStatus()))
             status = TaskStatus.error;
 
-        logRunFinish(status, _recordCount);
+        logRunFinish(status, _recordCount, logMsg);
     }
 
 

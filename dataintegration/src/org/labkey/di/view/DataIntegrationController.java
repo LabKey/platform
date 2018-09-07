@@ -42,6 +42,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.di.DataIntegrationUrls;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
@@ -51,6 +52,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -463,6 +465,7 @@ public class DataIntegrationController extends SpringActionController
             ScheduledPipelineJobDescriptor etl = getDescriptor(form);
             if (null == etl)
                 throw new NotFoundException(form.getTransformId());
+            boolean success = true;
             String status;
             JSONObject ret = new JSONObject();
             if (etl.isPending(getViewContext()) && !etl.isAllowMultipleQueuing())
@@ -499,17 +502,23 @@ public class DataIntegrationController extends SpringActionController
                 {
                     context.setIncrementalWindow(new Pair<>(form.getIntWindowMin(), form.getIntWindowMax()));
                 }
-
-                Integer jobId = TransformManager.get().runNowPipeline(etl, context);
-                ActionURL pipelineURL = jobId == null ? null : PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlDetails(getContainer(), jobId);
-                status = null == pipelineURL ? "No work" : "Queued";
-                if (null != pipelineURL)
-                    ret.put("pipelineURL", pipelineURL.toString());
-                if (null != jobId)
-                    ret.put("jobId", jobId.toString());
+                try
+                {
+                    Integer jobId = TransformManager.get().runNowPipeline(etl, context);
+                    ActionURL pipelineURL = jobId == null ? null : PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlDetails(getContainer(), jobId);
+                    status = null == pipelineURL ? "No work" : "Queued";
+                    if (null != pipelineURL)
+                        ret.put("pipelineURL", pipelineURL.toString());
+                    if (null != jobId)
+                        ret.put("jobId", jobId.toString());
+                }
+                catch (PipelineJobException ex)
+                {
+                    throw new ConfigurationException(ex.getMessage(), ex);
+                }
             }
 
-            ret.put("success", true);
+            ret.put("success", success);
             ret.put("status", status);
             return new ApiSimpleResponse(ret);
         }

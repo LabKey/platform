@@ -543,14 +543,22 @@ public class TransformManager implements DataIntegrationService
             if (null != baseName)
                 job.setBaseName(baseName);
 
+            boolean initialStatusSet = false;
             try
             {
                 PipelineService.get().setStatus(job, PipelineJob.TaskStatus.waiting.toString(), null, true);
+                initialStatusSet = true;
                 PipelineService.get().queueJob(job);
                 return PipelineService.get().getJobId(context.getUser(), context.getContainer(), job.getJobGUID());
             }
             catch (Exception e)
             {
+                if (initialStatusSet)
+                {
+                    String msg = "Unable to queue ETL job. " + e.getMessage();
+                    job.setStatus(PipelineJob.TaskStatus.error, msg);
+                    job.done(null, msg);
+                }
                 throw new PipelineJobException(e);
             }
         }
