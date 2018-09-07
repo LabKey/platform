@@ -79,6 +79,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 
 public class DataRegion extends DisplayElement
@@ -129,6 +130,7 @@ public class DataRegion extends DisplayElement
     private Integer _rowCount = null; // number of rows in the result set or null if unknown
     private boolean _complete = false; // true if all rows are in the ResultSet
     private List<ButtonBarConfig> _buttonBarConfigs = new ArrayList<>();
+    private boolean _buttonBarRendered = false;
 
     public static final int MODE_NONE = 0;
     public static final int MODE_INSERT = 1;
@@ -520,6 +522,13 @@ public class DataRegion extends DisplayElement
         }
     }
 
+    private List<String> getButtonBarOnRenders()
+    {
+        return _buttonBarConfigs.stream()
+                .filter(bb -> bb.getOnRenderScript() != null)
+                .map(ButtonBarConfig::getOnRenderScript)
+                .collect(Collectors.toList());
+    }
 
     public void setButtonBar(ButtonBar buttonBar)
     {
@@ -1332,7 +1341,10 @@ public class DataRegion extends DisplayElement
             setButtonBarPosition(_gridButtonBar.getConfiguredPosition());
 
         if (_buttonBarPosition.atTop())
+        {
             _gridButtonBar.render(ctx, out);
+            _buttonBarRendered = true;
+        }
     }
 
     /**
@@ -1426,6 +1438,10 @@ public class DataRegion extends DisplayElement
                 containerFilterJSON.put(type.toString());
             }
         }
+
+        if (_buttonBarRendered)
+            dataRegionJSON.put("buttonBarOnRenders", getButtonBarOnRenders());
+
         return dataRegionJSON;
     }
 

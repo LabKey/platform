@@ -1868,6 +1868,29 @@ if (!LABKEY.DataRegions) {
             ctxBar.find('.ctx-clear-var').off('click').on('click', $.proxy(this.clearAllParameters, this));
             ctxBar.find('.ctx-clear-all').off('click').on('click', $.proxy(this.clearAllFilters, this));
         }
+
+        // 35396: Support ButtonBarOptions <onRender>
+        if (LABKEY.Utils.isArray(this.buttonBarOnRenders)) {
+            for (var i=0; i < this.buttonBarOnRenders.length; i++) {
+                var scriptFnName = this.buttonBarOnRenders[i];
+                var fnParts = scriptFnName.split('.');
+                var scope = window;
+                var called = false;
+
+                for (var j=0; j < fnParts.length; j++) {
+                    scope = scope[fnParts[j]];
+                    if (!scope) break;
+                    if (j === fnParts.length - 1 && LABKEY.Utils.isFunction(scope)) {
+                        scope(this);
+                        called = true;
+                    }
+                }
+
+                if (!called) {
+                    console.warn('Unable to call "' + scriptFnName + '" for DataRegion.ButtonBar.onRender.');
+                }
+            }
+        }
     };
 
     //
