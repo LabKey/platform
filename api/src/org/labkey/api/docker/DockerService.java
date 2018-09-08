@@ -181,7 +181,7 @@ public interface DockerService
         public final boolean mountVolumes;
         public final boolean reuseExisting;
         public final Map<InputStream, String> streamsForContainer = new LinkedHashMap<>(); // <Stream, Target location>
-        public final List<String> extraSessionContext = new ArrayList<>();
+        public final List<String> extraSessionContext = new ArrayList<>(); //TODO remove after merge viewer branch
 
         public ContainerUsage(String workingDirectory, boolean exposePorts, boolean mountVolumes, boolean reuseExisting)
         {
