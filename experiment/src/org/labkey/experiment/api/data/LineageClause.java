@@ -22,7 +22,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.api.ExpLineageOptions;
-import org.labkey.api.exp.api.ExpProtocolOutput;
+import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.query.FieldKey;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 
@@ -40,7 +40,7 @@ public abstract class LineageClause extends CompareType.CompareClause
         super(fieldKey, CompareType.MEMBER_OF, value);
     }
 
-    protected ExpProtocolOutput getStart()
+    protected ExpRunItem getStart()
     {
         Object o = getParamVals().length == 0 ? null : getParamVals()[0];
         if (o == null)
@@ -50,7 +50,7 @@ public abstract class LineageClause extends CompareType.CompareClause
         String lsid = String.valueOf(o);
 
         ExperimentServiceImpl svc = ExperimentServiceImpl.get();
-        ExpProtocolOutput start = svc.getExpMaterial(lsid);
+        ExpRunItem start = svc.getExpMaterial(lsid);
         if (start == null)
             start = svc.getExpData(lsid);
 
@@ -70,7 +70,7 @@ public abstract class LineageClause extends CompareType.CompareClause
         ColumnInfo colInfo = columnMap != null ? columnMap.get(getFieldKey()) : null;
         String alias = colInfo != null ? colInfo.getAlias() : getFieldKey().getName();
 
-        ExpProtocolOutput start = getStart();
+        ExpRunItem start = getStart();
         if (start == null)
             return new SQLFragment("(1 = 2)");
 
@@ -96,7 +96,7 @@ public abstract class LineageClause extends CompareType.CompareClause
     @Override
     protected void appendFilterText(StringBuilder sb, SimpleFilter.ColumnNameFormatter formatter)
     {
-        ExpProtocolOutput start = getStart();
+        ExpRunItem start = getStart();
         if (start == null)
             sb.append("Invalid '").append(filterTextType()).append("' filter");
         else

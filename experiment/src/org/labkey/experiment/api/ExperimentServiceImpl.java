@@ -77,7 +77,7 @@ import org.labkey.api.exp.api.ExpMaterialRunInput;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
-import org.labkey.api.exp.api.ExpProtocolOutput;
+import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpRunAttachmentParent;
 import org.labkey.api.exp.api.ExpSampleSet;
@@ -143,7 +143,6 @@ import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
@@ -1700,7 +1699,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public Pair<Set<ExpData>, Set<ExpMaterial>> getParents(ExpProtocolOutput start)
+    public Pair<Set<ExpData>, Set<ExpMaterial>> getParents(ExpRunItem start)
     {
         if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_LEGACY_LINEAGE))
         {
@@ -1717,7 +1716,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     // Make boolean so it can hide behind 'assert' and no-op in production mode
-    private boolean assertLineage(ExpProtocolOutput seed, Pair<Set<ExpData>, Set<ExpMaterial>> newHotness, Pair<Set<ExpData>, Set<ExpMaterial>> oldAndBusted)
+    private boolean assertLineage(ExpRunItem seed, Pair<Set<ExpData>, Set<ExpMaterial>> newHotness, Pair<Set<ExpData>, Set<ExpMaterial>> oldAndBusted)
     {
         if (newHotness.first.equals(oldAndBusted.first) &&
                 newHotness.second.equals(oldAndBusted.second))
@@ -1768,7 +1767,7 @@ public class ExperimentServiceImpl implements ExperimentService
     /**
      * walk experiment graph in memory, with tons queries, mostly repetitive queries over and over again
      **/
-    private Pair<Set<ExpData>, Set<ExpMaterial>> getParentsOldAndBusted(ExpProtocolOutput start)
+    private Pair<Set<ExpData>, Set<ExpMaterial>> getParentsOldAndBusted(ExpRunItem start)
     {
         if (isUnknownMaterial(start))
             return Pair.of(Collections.emptySet(), Collections.emptySet());
@@ -1809,7 +1808,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
 
     @Override
-    public Pair<Set<ExpData>, Set<ExpMaterial>> getChildren(ExpProtocolOutput start)
+    public Pair<Set<ExpData>, Set<ExpMaterial>> getChildren(ExpRunItem start)
     {
         if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_LEGACY_LINEAGE))
         {
@@ -1826,7 +1825,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
 
-    private Pair<Set<ExpData>, Set<ExpMaterial>> getChildrenOldAndBusted(ExpProtocolOutput start)
+    private Pair<Set<ExpData>, Set<ExpMaterial>> getChildrenOldAndBusted(ExpRunItem start)
     {
         if (isUnknownMaterial(start))
             return Pair.of(Collections.emptySet(), Collections.emptySet());
@@ -1887,7 +1886,7 @@ public class ExperimentServiceImpl implements ExperimentService
      * each row in the result represents one 'edge' or 'leaf/root' in the experiment graph, that is to say
      * nodes (material,data,protocolapplication) may appear more than once, but edges shouldn't
      **/
-    private Pair<Set<ExpData>, Set<ExpMaterial>> getParentsVeryNewHotness(ExpProtocolOutput start)
+    private Pair<Set<ExpData>, Set<ExpMaterial>> getParentsVeryNewHotness(ExpRunItem start)
     {
         ExpLineageOptions options = new ExpLineageOptions();
         options.setChildren(false);
@@ -1900,7 +1899,7 @@ public class ExperimentServiceImpl implements ExperimentService
     /**
      * walk experiment graph with one tricky recursive query
      **/
-    public Pair<Set<ExpData>, Set<ExpMaterial>> getChildrenVeryNewHotness(ExpProtocolOutput start)
+    public Pair<Set<ExpData>, Set<ExpMaterial>> getChildrenVeryNewHotness(ExpRunItem start)
     {
         ExpLineageOptions options = new ExpLineageOptions();
         options.setParents(false);
@@ -1955,7 +1954,7 @@ public class ExperimentServiceImpl implements ExperimentService
         }
     }
 
-    public List<ExpRun> oldCollectRunsToInvestigate(ExpProtocolOutput start, ExpLineageOptions options)
+    public List<ExpRun> oldCollectRunsToInvestigate(ExpRunItem start, ExpLineageOptions options)
     {
         List<ExpRun> runsToInvestigate = new ArrayList<>();
         boolean up = options.isParents();
@@ -1979,7 +1978,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     // Get lisd of ExpRun LSIDs for the start Data or Material
-    public List<String> collectRunsToInvestigate(ExpProtocolOutput start, ExpLineageOptions options)
+    public List<String> collectRunsToInvestigate(ExpRunItem start, ExpLineageOptions options)
     {
         Pair<Map<String, String>, Map<String, String>> pair = collectRunsAndRolesToInvestigate(start, options);
         List<String> runLsids = new ArrayList<>(pair.first.size() + pair.second.size());
@@ -1990,7 +1989,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     // Get up and down maps of ExpRun LSID to Role
-    public Pair<Map<String, String>, Map<String, String>> collectRunsAndRolesToInvestigate(ExpProtocolOutput start, ExpLineageOptions options)
+    public Pair<Map<String, String>, Map<String, String>> collectRunsAndRolesToInvestigate(ExpRunItem start, ExpLineageOptions options)
     {
         Map<String, String> runsUp = new HashMap<>();
         Map<String, String> runsDown = new HashMap<>();
@@ -2028,7 +2027,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return runLsidToRoleMap;
     }
 
-    private boolean checkRunsAndRoles(ExpProtocolOutput start, ExpLineageOptions options, Map<String, String> runsUp, Map<String, String> runsDown)
+    private boolean checkRunsAndRoles(ExpRunItem start, ExpLineageOptions options, Map<String, String> runsUp, Map<String, String> runsDown)
     {
         Set<ExpRun> runs = new HashSet<>();
         runsUp.keySet().stream().map(this::getExpRun).forEach(runs::add);
@@ -2045,7 +2044,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
     @Override
     @NotNull
-    public ExpLineage getLineage(@NotNull ExpProtocolOutput start, @NotNull ExpLineageOptions options)
+    public ExpLineage getLineage(@NotNull ExpRunItem start, @NotNull ExpLineageOptions options)
     {
         if (isUnknownMaterial(start))
             return new ExpLineage(start);
@@ -2724,7 +2723,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
 
 
-    public boolean isUnknownMaterial(@NotNull ExpProtocolOutput output)
+    public boolean isUnknownMaterial(@NotNull ExpRunItem output)
     {
         return "Unknown".equals(output.getName()) &&
                 ParticipantVisit.ASSAY_RUN_MATERIAL_NAMESPACE.equals(output.getLSIDNamespacePrefix());
@@ -3644,7 +3643,7 @@ public class ExperimentServiceImpl implements ExperimentService
         }
     }
 
-    private void deleteRunsUsingInput(User user, ProtocolOutput item)
+    private void deleteRunsUsingInput(User user, RunItem item)
     {
         List<? extends ExpRun> runsUsingItem;
         if (item instanceof Data)

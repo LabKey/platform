@@ -56,7 +56,7 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
-import org.labkey.api.exp.api.ExpProtocolOutput;
+import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
@@ -5038,7 +5038,7 @@ public class ExperimentController extends SpringActionController
         }
 
         // Helper class that prepares and executes the QueryUpdateService.insertRows() on the data or material table.
-        private abstract class DerivedOutputs<T extends ExpProtocolOutput>
+        private abstract class DerivedOutputs<T extends ExpRunItem>
         {
             private final @NotNull Map<String, String> _parentInputNames;
             private final @Nullable Map<String, Object> _defaultValues;
@@ -5876,7 +5876,7 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class LineageAction extends ApiAction<ExpLineageOptions>
     {
-        private ExpProtocolOutput _output;
+        private ExpRunItem _output;
 
         @Override
         public void validateForm(ExpLineageOptions options, Errors errors)

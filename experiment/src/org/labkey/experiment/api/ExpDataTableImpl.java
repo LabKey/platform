@@ -60,7 +60,7 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ExpDataTableImpl extends ExpProtocolOutputTableImpl<ExpDataTable.Column> implements ExpDataTable
+public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> implements ExpDataTable
 {
     protected ExpExperiment _experiment;
     protected boolean _runSpecified;

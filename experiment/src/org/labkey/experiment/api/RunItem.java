@@ -21,11 +21,11 @@ import org.labkey.api.data.Container;
 import java.util.Date;
 
 /**
- * Output of a protocol, like a data file or a material
+ * Input or output of a run, like a data file or a material.
  * User: jeckels
  * Date: Oct 17, 2005
  */
-public abstract class ProtocolOutput extends IdentifiableBase
+public abstract class RunItem extends IdentifiableBase
 {
     private Container _container;
     private Integer _runId;

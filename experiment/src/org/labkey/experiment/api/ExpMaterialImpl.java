@@ -58,7 +58,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class ExpMaterialImpl extends AbstractProtocolOutputImpl<Material> implements ExpMaterial
+public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements ExpMaterial
 {
     public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory("material", "Material/Sample");
 

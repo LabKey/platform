@@ -9,9 +9,9 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.UserSchema;
 
-public abstract class ExpProtocolOutputTableImpl<C extends Enum> extends ExpTableImpl<C>
+public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C>
 {
-    protected ExpProtocolOutputTableImpl(String name, TableInfo rootTable, UserSchema schema, @Nullable ExpObjectImpl objectType)
+    protected ExpRunItemTableImpl(String name, TableInfo rootTable, UserSchema schema, @Nullable ExpObjectImpl objectType)
     {
         super(name, rootTable, schema, objectType);
     }

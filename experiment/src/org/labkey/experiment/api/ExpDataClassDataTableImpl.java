@@ -52,7 +52,6 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DetailsURL;
-import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
@@ -61,7 +60,6 @@ import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
@@ -104,7 +102,7 @@ import java.util.stream.Collectors;
  * User: kevink
  * Date: 9/29/15
  */
-public class ExpDataClassDataTableImpl extends ExpProtocolOutputTableImpl<ExpDataClassDataTable.Column> implements ExpDataClassDataTable
+public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassDataTable.Column> implements ExpDataClassDataTable
 {
     private static final Logger LOG = Logger.getLogger(ExpDataClassDataTableImpl.class);
 

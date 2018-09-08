@@ -24,7 +24,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
-import org.labkey.api.exp.api.ExpProtocolOutput;
+import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.User;
@@ -36,20 +36,20 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * Base class for both types of objects that can be the output from a protocol - material and data.
+ * Base class for both types of objects that can be the input and output from an experiment run - material and data.
  * User: jeckels
  * Date: Jul 28, 2008
  */
-public abstract class AbstractProtocolOutputImpl<Type extends ProtocolOutput> extends ExpIdentifiableBaseImpl<Type> implements ExpProtocolOutput
+public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdentifiableBaseImpl<Type> implements ExpRunItem
 {
     private ExpProtocolApplicationImpl _sourceApp;
     private List<ExpProtocolApplication> _successorAppList;
     private List<Integer> _successorRunIdList;
 
     // For serialization
-    protected AbstractProtocolOutputImpl() {}
+    protected AbstractRunItemImpl() {}
 
-    public AbstractProtocolOutputImpl(Type object)
+    public AbstractRunItemImpl(Type object)
     {
         super(object);
     }

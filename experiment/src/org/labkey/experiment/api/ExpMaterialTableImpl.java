@@ -70,7 +70,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class ExpMaterialTableImpl extends ExpProtocolOutputTableImpl<ExpMaterialTable.Column> implements ExpMaterialTable
+public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.Column> implements ExpMaterialTable
 {
     ExpSampleSetImpl _ss;
 

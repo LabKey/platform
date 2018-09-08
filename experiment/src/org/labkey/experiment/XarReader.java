@@ -1092,7 +1092,7 @@ public class XarReader extends AbstractXarImporter
         return material;
     }
 
-    private void updateSourceInfo(ProtocolOutput output, Integer sourceApplicationId,
+    private void updateSourceInfo(RunItem output, Integer sourceApplicationId,
                                   Integer runId, XarContext context, TableInfo tableInfo)
             throws XarFormatException
     {

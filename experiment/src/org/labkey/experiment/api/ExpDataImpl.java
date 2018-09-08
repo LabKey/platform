@@ -47,7 +47,6 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchResultTemplate;
 import org.labkey.api.search.SearchScope;
@@ -87,7 +86,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements ExpData
+public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
 {
     public static final SearchService.SearchCategory expDataCategory = new SearchService.SearchCategory("data", "ExpData");
 

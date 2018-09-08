@@ -20,7 +20,7 @@ package org.labkey.experiment.api;
  * User: migra
  * Date: Jun 14, 2005
  */
-public class Material extends ProtocolOutput
+public class Material extends RunItem
 {
     public Material()
     {

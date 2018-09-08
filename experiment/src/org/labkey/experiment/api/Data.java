@@ -20,7 +20,6 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.util.FileUtil;
 
 import java.io.File;
-import java.net.URISyntaxException;
 import java.net.URI;
 import java.nio.file.Path;
 
@@ -29,7 +28,7 @@ import java.nio.file.Path;
  * User: migra
  * Date: Jun 14, 2005
  */
-public class Data extends ProtocolOutput
+public class Data extends RunItem
 {
     private String dataFileUrl;
     private boolean generated;

@@ -22,7 +22,7 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
-import org.labkey.api.exp.api.ExpProtocolOutput;
+import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
@@ -332,7 +332,7 @@ public class ExperimentRunGraph
     /**
      * Sort first by role, if present, and then by name.
      */
-    private static class RoleAndNameComparator<Type extends ExpProtocolOutput> implements Comparator<Type>
+    private static class RoleAndNameComparator<Type extends ExpRunItem> implements Comparator<Type>
     {
         private final Map<Type, String> _roles;
 

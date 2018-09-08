@@ -24,7 +24,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpMaterial;
-import org.labkey.api.exp.api.ExpProtocolOutput;
+import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpDataTable;
@@ -56,7 +56,7 @@ import java.util.stream.Collectors;
  */
 public class ParentChildView extends VBox
 {
-    public ParentChildView(ExpProtocolOutput output, ViewContext context)
+    public ParentChildView(ExpRunItem output, ViewContext context)
     {
         setViewContext(context);
         setFrame(FrameType.PORTAL);

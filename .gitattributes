@@ -980,8 +980,8 @@ experiment/src/org/labkey/experiment/XarExportType.java -text
 experiment/src/org/labkey/experiment/XarExporter.java -text
 experiment/src/org/labkey/experiment/XarReader.java -text
 experiment/src/org/labkey/experiment/addXarFile.jsp -text
-experiment/src/org/labkey/experiment/api/AbstractProtocolOutputImpl.java -text
 experiment/src/org/labkey/experiment/api/AbstractRunInput.java -text
+experiment/src/org/labkey/experiment/api/AbstractRunItemImpl.java -text
 experiment/src/org/labkey/experiment/api/Data.java -text
 experiment/src/org/labkey/experiment/api/DataAlias.java -text
 experiment/src/org/labkey/experiment/api/DataClass.java -text
@@ -1015,12 +1015,12 @@ experiment/src/org/labkey/experiment/api/ExpProtocolActionImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpProtocolApplicationImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpProtocolApplicationTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpProtocolImpl.java -text
-experiment/src/org/labkey/experiment/api/ExpProtocolOutputTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpProtocolTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpQCFlagTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpRunGroupMapTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpRunImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpRunInputImpl.java -text
+experiment/src/org/labkey/experiment/api/ExpRunItemTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpRunTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpSampleSetImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpSampleSetTableImpl.java -text
@@ -1047,7 +1047,7 @@ experiment/src/org/labkey/experiment/api/ProtocolAction.java -text
 experiment/src/org/labkey/experiment/api/ProtocolActionPredecessor.java -text
 experiment/src/org/labkey/experiment/api/ProtocolActionStepDetail.java -text
 experiment/src/org/labkey/experiment/api/ProtocolApplication.java -text
-experiment/src/org/labkey/experiment/api/ProtocolOutput.java -text
+experiment/src/org/labkey/experiment/api/RunItem.java -text
 experiment/src/org/labkey/experiment/api/SampleSetDomainKind.java -text
 experiment/src/org/labkey/experiment/api/SampleSetUpdateService.java -text
 experiment/src/org/labkey/experiment/api/data/ChildOfClause.java -text

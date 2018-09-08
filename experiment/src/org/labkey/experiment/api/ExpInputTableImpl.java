@@ -15,25 +15,16 @@
  */
 package org.labkey.experiment.api;
 
-import org.jetbrains.annotations.NotNull;
-import org.json.JSONObject;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.query.ExpInputTable;
-import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.util.PageFlowUtil;
-
-import java.util.Map;
 
 /**
  * User: jeckels
@@ -44,7 +35,7 @@ public abstract class ExpInputTableImpl<C extends Enum> extends ExpTableImpl<C> 
     private ExpRun _run;
     private ExpProtocol.ApplicationType _type;
 
-    public ExpInputTableImpl(String name, TableInfo rootTable, UserSchema schema, AbstractProtocolOutputImpl objectType)
+    public ExpInputTableImpl(String name, TableInfo rootTable, UserSchema schema, AbstractRunItemImpl objectType)
     {
         super(name, rootTable, schema, objectType);
     }
