@@ -274,6 +274,16 @@ abstract class OracleDialect extends SimpleSqlDialect
         return new SQLFragment("CASE WHEN\n").append(existsSQL).append("\nTHEN 1 ELSE 0 END FROM DUAL");
     }
 
+    @Override
+    protected void addSqlTypeNames(Map<String, Integer> sqlTypeNameMap)
+    {
+        sqlTypeNameMap.put("RAW", Types.VARBINARY);
+        sqlTypeNameMap.put("ROWID", Types.OTHER);
+        sqlTypeNameMap.put("VARCHAR2", Types.VARCHAR);
+        sqlTypeNameMap.put("NUMBER", Types.DECIMAL);
+    }
+
+
     private class OracleColumnMetaDataReader extends ColumnMetaDataReader
     {
         private OracleColumnMetaDataReader(ResultSet rsCols)
@@ -301,8 +311,8 @@ abstract class OracleDialect extends SimpleSqlDialect
         {
             int sqlType = super.getSqlType();
 
-            // Oracle claims all numbers are NUMBER... convert to INTEGER if decimal digits == 0
-            if (3 == sqlType && 0 == _rsCols.getInt("DECIMAL_DIGITS"))
+            // Oracle claims all numbers are DECIMAL... convert to INTEGER if decimal digits == 0
+            if (Types.DECIMAL == sqlType && 0 == _rsCols.getInt("DECIMAL_DIGITS"))
                 return Types.INTEGER;
 
             return sqlType;
@@ -314,9 +324,9 @@ abstract class OracleDialect extends SimpleSqlDialect
             String typeName = super.getSqlTypeName();
 
             if ("NUMBER".equals(typeName) && 0 == _rsCols.getInt("DECIMAL_DIGITS"))
-                return "INTEGER";
+                typeName = "INTEGER";
 
-                return typeName;
+            return typeName;
         }
     }
 

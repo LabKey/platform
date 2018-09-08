@@ -152,7 +152,6 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         sqlTypeNameMap.put("INT IDENTITY", Types.INTEGER);
         sqlTypeNameMap.put("BIGINT IDENTITY", Types.BIGINT);
         sqlTypeNameMap.put("DATETIME", Types.TIMESTAMP);
-        sqlTypeNameMap.put("TEXT", Types.LONGVARCHAR);
         sqlTypeNameMap.put("NTEXT", Types.LONGVARCHAR);
         sqlTypeNameMap.put("NVARCHAR", Types.VARCHAR);
         sqlTypeNameMap.put("UNIQUEIDENTIFIER", Types.VARCHAR);
