@@ -820,15 +820,15 @@ LABKEY.Exp.ChildObject.prototype = new LABKEY.Exp.ExpObject;
 LABKEY.Exp.ChildObject.prototype.constructor = LABKEY.Exp.ChildObject;
 
 /**
- * The ProtocolOutput constructor is private.
- * @class Experiment Protocol Output.  Base class for {@link LABKEY.Exp.Data}
+ * The RunItem constructor is private.
+ * @class Experiment Run Item.  Base class for {@link LABKEY.Exp.Data}
  * and {@link LABKEY.Exp.Material}.
  * @extends LABKEY.Exp.ExpObject
  * @memberOf LABKEY.Exp
  * @param {Object} [config] Private configuration object. Inherits config properties of {@link LABKEY.Exp.ExpObject}.
  * @ignore hide from JsDoc for now
  */
-LABKEY.Exp.ProtocolOutput = function (config) {
+LABKEY.Exp.RunItem = function (config) {
     LABKEY.Exp.ExpObject.call(this, config);
     config = config || {};
 
@@ -839,21 +839,21 @@ LABKEY.Exp.ProtocolOutput = function (config) {
     this.sucessorRuns = config.sucessorRuns;
     this.cpasType = config.cpasType;
 };
-LABKEY.Exp.ProtocolOutput.prototype = new LABKEY.Exp.ExpObject;
-LABKEY.Exp.ProtocolOutput.prototype.constructor = LABKEY.Exp.ProtocolOutput;
+LABKEY.Exp.RunItem.prototype = new LABKEY.Exp.ExpObject;
+LABKEY.Exp.RunItem.prototype.constructor = LABKEY.Exp.RunItem;
 
 /**
  * Constructs a new experiment material object.
  * @class The Exp.Material class describes an experiment material.  "Material" is a synonym for both
  * "sample" and "specimen."  Thus, for example, the input to an assay could be called a material.
  * The fields of this class are inherited from the {@link LABKEY.Exp.ExpObject} object and
- * the private LABKEY.Exp.ProtocolOutput object.
+ * the private LABKEY.Exp.RunItem object.
  *            <p>Additional Documentation:
  *              <ul>
  *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=experiment">LabKey Experiment</a></li>
  *              </ul>
  *           </p>
- * @extends LABKEY.Exp.ProtocolOutput
+ * @extends LABKEY.Exp.RunItem
  * @extends LABKEY.Exp.ExpObject
  * @memberOf LABKEY.Exp
  *
@@ -863,12 +863,12 @@ LABKEY.Exp.ProtocolOutput.prototype.constructor = LABKEY.Exp.ProtocolOutput;
  * @param {String} [config.sampleSet.name] The name of the SampleSet.
  */
 LABKEY.Exp.Material = function (config) {
-    LABKEY.Exp.ProtocolOutput.call(this, config);
+    LABKEY.Exp.RunItem.call(this, config);
     config = config || {};
 
     this.sampleSet = config.sampleSet;
 };
-LABKEY.Exp.Material.prototype = new LABKEY.Exp.ProtocolOutput;
+LABKEY.Exp.Material.prototype = new LABKEY.Exp.RunItem;
 LABKEY.Exp.Material.prototype.constructor = LABKEY.Exp.Material;
 
 /**
@@ -889,7 +889,7 @@ LABKEY.Exp.Material.prototype.constructor = LABKEY.Exp.Material;
  *              </ul>
  *           </p>
  *
- * @extends LABKEY.Exp.ProtocolOutput
+ * @extends LABKEY.Exp.RunItem
  * @extends LABKEY.Exp.ExpObject
  * @memberOf LABKEY.Exp
  *
@@ -971,7 +971,7 @@ LABKEY.Exp.Material.prototype.constructor = LABKEY.Exp.Material;
  * &lt;/script>
  */
 LABKEY.Exp.Data = function (config) {
-    LABKEY.Exp.ProtocolOutput.call(this, config);
+    LABKEY.Exp.RunItem.call(this, config);
     config = config || {};
 
     this.dataType = config.dataType;
@@ -982,7 +982,7 @@ LABKEY.Exp.Data = function (config) {
     if (config.role)
         this.role = config.role;
 };
-LABKEY.Exp.Data.prototype = new LABKEY.Exp.ProtocolOutput;
+LABKEY.Exp.Data.prototype = new LABKEY.Exp.RunItem;
 LABKEY.Exp.Data.prototype.constructor = LABKEY.Exp.Data;
 
 /**

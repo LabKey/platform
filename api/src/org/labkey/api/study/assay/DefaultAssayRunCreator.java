@@ -42,7 +42,7 @@ import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpProtocolOutput;
+import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
@@ -863,10 +863,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
 
     // Disallow creating a run with inputs which are also outputs
-    protected void checkForCycles(AssayRunUploadContext<ProviderType> context, Map<? extends ExpProtocolOutput, String> inputs, Map<? extends ExpProtocolOutput, String> outputs) throws ExperimentException
+    protected void checkForCycles(AssayRunUploadContext<ProviderType> context, Map<? extends ExpRunItem, String> inputs, Map<? extends ExpRunItem, String> outputs) throws ExperimentException
     {
         Logger logger = context.getLogger() != null ? context.getLogger() : LOG;
-        for (ExpProtocolOutput input : inputs.keySet())
+        for (ExpRunItem input : inputs.keySet())
         {
             if (outputs.containsKey(input))
             {

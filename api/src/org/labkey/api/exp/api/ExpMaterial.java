@@ -23,7 +23,7 @@ import org.labkey.api.security.User;
 import java.util.Map;
 
 /** Represents a physical object in the experiment data model - typically a sample or specimen */
-public interface ExpMaterial extends ExpProtocolOutput
+public interface ExpMaterial extends ExpRunItem
 {
     String DEFAULT_CPAS_TYPE = "Material";
     String MATERIAL_INPUT_PARENT = "MaterialInputs";

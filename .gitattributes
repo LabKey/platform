@@ -764,11 +764,11 @@ api/src/org/labkey/api/exp/api/ExpObject.java -text
 api/src/org/labkey/api/exp/api/ExpProtocol.java -text
 api/src/org/labkey/api/exp/api/ExpProtocolAction.java -text
 api/src/org/labkey/api/exp/api/ExpProtocolApplication.java -text
-api/src/org/labkey/api/exp/api/ExpProtocolOutput.java -text
 api/src/org/labkey/api/exp/api/ExpRun.java -text
 api/src/org/labkey/api/exp/api/ExpRunAttachmentParent.java -text
 api/src/org/labkey/api/exp/api/ExpRunAttachmentType.java -text
 api/src/org/labkey/api/exp/api/ExpRunInput.java -text
+api/src/org/labkey/api/exp/api/ExpRunItem.java -text
 api/src/org/labkey/api/exp/api/ExpSampleSet.java -text
 api/src/org/labkey/api/exp/api/ExperimentJSONConverter.java -text
 api/src/org/labkey/api/exp/api/ExperimentListener.java -text

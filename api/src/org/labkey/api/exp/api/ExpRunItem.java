@@ -21,11 +21,12 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
 import java.util.List;
 
-/*
-* User: jeckels
-* Date: Jul 28, 2008
-*/
-public interface ExpProtocolOutput extends ExpObject
+/**
+ * Input or output of a run, like a data file or a material.
+ * User: jeckels
+ * Date: Jul 28, 2008
+ */
+public interface ExpRunItem extends ExpObject
 {
     @Nullable
     String getDescription();

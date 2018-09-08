@@ -32,18 +32,18 @@ import java.util.Set;
  */
 public class ExpLineage
 {
-    private ExpProtocolOutput _seed;
+    private ExpRunItem _seed;
     private Set<ExpData> _datas;
     private Set<ExpMaterial> _materials;
     private Set<ExpRun> _runs;
     private Set<Edge> _edges;
 
-    public ExpLineage(ExpProtocolOutput seed)
+    public ExpLineage(ExpRunItem seed)
     {
         this(seed, Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
     }
 
-    public ExpLineage(ExpProtocolOutput seed, Set<ExpData> data, Set<ExpMaterial> materials, Set<ExpRun> runs, Set<Edge> edges)
+    public ExpLineage(ExpRunItem seed, Set<ExpData> data, Set<ExpMaterial> materials, Set<ExpRun> runs, Set<Edge> edges)
     {
         _seed = seed;
         _datas = data;
@@ -121,7 +121,7 @@ public class ExpLineage
         return findRelatedChildSamples(_seed, nodes, edges);
     }
 
-    private Set<ExpMaterial> findRelatedChildSamples(ExpProtocolOutput seed, Map<String, ExpObject> nodes, Map<String, Pair<Set<Edge>, Set<Edge>>> edges)
+    private Set<ExpMaterial> findRelatedChildSamples(ExpRunItem seed, Map<String, ExpObject> nodes, Map<String, Pair<Set<Edge>, Set<Edge>>> edges)
     {
         if (edges.size() == 0)
             return Collections.emptySet();
@@ -176,7 +176,7 @@ public class ExpLineage
         return findNearestParentDatas(_seed, nodes, edges);
     }
 
-    private Set<ExpData> findNearestParentDatas(ExpProtocolOutput seed, Map<String, ExpObject> nodes, Map<String, Pair<Set<Edge>, Set<Edge>>> edges)
+    private Set<ExpData> findNearestParentDatas(ExpRunItem seed, Map<String, ExpObject> nodes, Map<String, Pair<Set<Edge>, Set<Edge>>> edges)
     {
         if (edges.size() == 0)
             return Collections.emptySet();
@@ -274,9 +274,9 @@ public class ExpLineage
         if (expObject != null)
         {
             String cpasType = null;
-            if (expObject instanceof ExpProtocolOutput)
+            if (expObject instanceof ExpRunItem)
             {
-                cpasType = ((ExpProtocolOutput) expObject).getCpasType();
+                cpasType = ((ExpRunItem) expObject).getCpasType();
             }
             else if (expObject instanceof ExpRun)
             {

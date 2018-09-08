@@ -31,7 +31,7 @@ import java.sql.SQLException;
 /**
  * Represents a virtual experiment object. Typically a file on disk, but could be something pointed at by a URI.
  */
-public interface ExpData extends ExpProtocolOutput
+public interface ExpData extends ExpRunItem
 {
     String DEFAULT_CPAS_TYPE = "Data";
     String DATA_INPUT_PARENT = "DataInputs";

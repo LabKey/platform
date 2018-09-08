@@ -65,9 +65,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.util.Pair;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -337,9 +335,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     @Nullable ExpMaterialRunInput getMaterialInput(Lsid lsid);
 
-    Pair<Set<ExpData>, Set<ExpMaterial>> getParents(ExpProtocolOutput start);
+    Pair<Set<ExpData>, Set<ExpMaterial>> getParents(ExpRunItem start);
 
-    Pair<Set<ExpData>, Set<ExpMaterial>> getChildren(ExpProtocolOutput start);
+    Pair<Set<ExpData>, Set<ExpMaterial>> getChildren(ExpRunItem start);
 
     /**
      * Find all child and grandchild samples Samples that are direct descendants of <code>start</code> ExpData,
@@ -354,7 +352,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     Set<ExpData> getNearestParentDatas(ExpMaterial start);
 
     @NotNull
-    ExpLineage getLineage(@NotNull ExpProtocolOutput start, @NotNull ExpLineageOptions options);
+    ExpLineage getLineage(@NotNull ExpRunItem start, @NotNull ExpLineageOptions options);
 
     /**
      * The following methods return TableInfo's suitable for using in queries.
