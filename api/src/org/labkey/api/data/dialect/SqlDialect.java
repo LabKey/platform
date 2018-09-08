@@ -222,8 +222,10 @@ public abstract class SqlDialect
         _sqlTypeNameMap.put("REF", Types.REF);
         _sqlTypeNameMap.put("SMALLINT", Types.SMALLINT);
         _sqlTypeNameMap.put("STRUCT", Types.STRUCT);
+        _sqlTypeNameMap.put("TEXT", Types.LONGVARCHAR);
         _sqlTypeNameMap.put("TIME", Types.TIME);
         _sqlTypeNameMap.put("TINYINT", Types.TINYINT);
+        _sqlTypeNameMap.put("UNKNOWN", Types.OTHER);
         _sqlTypeNameMap.put("VARBINARY", Types.VARBINARY);
         _sqlTypeNameMap.put("VARCHAR", Types.VARCHAR);
 
@@ -272,7 +274,7 @@ public abstract class SqlDialect
             return i;
         else
         {
-            LOG.info("Unknown SQL Type Name \"" + sqlTypeName + "\"; using String instead.");
+            LOG.info("Unknown SQL Type Name \"" + sqlTypeName + "\"; using OTHER instead.");
             return Types.OTHER;
         }
     }

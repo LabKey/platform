@@ -21,7 +21,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Types;
 
 // Handles standard reading of column meta data
 public abstract class ColumnMetaDataReader
@@ -41,12 +40,7 @@ public abstract class ColumnMetaDataReader
 
     public int getSqlType() throws SQLException
     {
-        int sqlType = _rsCols.getInt(_sqlTypeKey);
-
-        if (Types.OTHER == sqlType)
-            return Types.NULL;
-        else
-            return sqlType;
+        return _rsCols.getInt(_sqlTypeKey);
     }
 
     public String getSqlTypeName() throws SQLException

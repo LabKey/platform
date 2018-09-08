@@ -358,51 +358,10 @@ public enum JdbcType
 
     public static JdbcType valueOf(int type)
     {
-        JdbcType old = valueOfOld(type);
-
         JdbcType jt = sqlTypeMap.get(type);
-        if (null == jt)
-            jt = OTHER;
 
-        if (old != jt)
-            throw new IllegalStateException(old + " vs. " + jt + " for " + type);
-
-        return old;
+        return null != jt ? jt : OTHER;
     }
-
-    public static JdbcType valueOfOld(int type)
-    {
-        switch (type)
-        {
-            case Types.BIT :
-            case Types.BOOLEAN : return BOOLEAN;
-            case Types.TINYINT : return TINYINT;
-            case Types.SMALLINT : return SMALLINT;
-            case Types.INTEGER : return INTEGER;
-            case Types.BIGINT : return BIGINT;
-            case Types.REAL : return REAL;
-            case Types.FLOAT :
-            case Types.DOUBLE : return DOUBLE;
-            case Types.NUMERIC :
-            case Types.DECIMAL : return DECIMAL;
-            case Types.NCHAR :
-            case Types.CHAR : return CHAR;
-            case Types.NVARCHAR :
-            case Types.VARCHAR : return VARCHAR;
-            case Types.CLOB :
-            case Types.LONGNVARCHAR :
-            case Types.LONGVARCHAR : return LONGVARCHAR;
-            case Types.DATE : return DATE;
-            case Types.TIME : return TIME;
-            case Types.TIMESTAMP : return TIMESTAMP;
-            case Types.BINARY : return BINARY;
-            case Types.VARBINARY : return VARBINARY;
-            case Types.BLOB :
-            case Types.LONGVARBINARY : return LONGVARBINARY;
-            default : return OTHER;
-        }
-    }
-
 
     public static JdbcType valueOf(Class cls)
     {
