@@ -18,10 +18,10 @@ package org.labkey.study.importer;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.labkey.api.action.NullSafeBindException;
+import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporterImpl;
-import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.PipelineJobLoggerGetter;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -60,9 +60,9 @@ import org.labkey.study.model.Vial;
 import org.labkey.study.pipeline.StudyImportDatasetTask;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.writer.ParticipantGroupWriter;
+import org.labkey.study.writer.StudyArchiveDataTypes;
 import org.labkey.study.writer.StudyExportContext;
 import org.labkey.study.writer.StudyWriterFactory;
-import org.labkey.study.writer.StudyArchiveDataTypes;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 import org.springframework.validation.ObjectError;
@@ -243,6 +243,12 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                     studyExportContext.setVials(_form.getVials());
                 }
 
+                // This "study XML modifier" will replace exported source study properties with the values entered in the wizard
+                studyExportContext.setStudyXmlModifier(study -> {
+                    study.setLabel(_form.getName());
+                    study.setDescription(_form.getDescription());
+                });
+
                 folderExportContext.addContext(StudyExportContext.class, studyExportContext);
 
                 // Save these snapshot settings to support specimen refresh and provide history
@@ -287,6 +293,8 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
 
                 // import TreatmentVisitMap, needs to happen after cohort info is loaded (issue 19947)
                 importTreatmentVisitMapData(errors, vf, studyImportContext);
+
+                new TopLevelStudyPropertiesImporter().process(studyImportContext, vf, errors);
             }
 
             if (errors.hasErrors())

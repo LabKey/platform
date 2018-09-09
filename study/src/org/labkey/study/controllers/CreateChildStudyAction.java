@@ -42,7 +42,6 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.importer.CreateChildStudyPipelineJob;
 import org.labkey.study.importer.SpecimenSchemaImporter;
 import org.labkey.study.model.ChildStudyDefinition;
-import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.SpecimenRequest;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -204,43 +203,24 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
 
     private StudyImpl createNewStudy(ChildStudyDefinition form)
     {
-        StudyImpl study = new StudyImpl(_dstContainer, form.getName());
-
-        // new studies should default to read only
-        SecurityType securityType = _sourceStudy.getSecurityType();
-        switch (_sourceStudy.getSecurityType())
-        {
-            case BASIC_WRITE:
-                securityType = SecurityType.BASIC_READ;
-                break;
-            case ADVANCED_WRITE:
-                securityType = SecurityType.ADVANCED_READ;
-                break;
-        }
-        study.setSecurityType(securityType);
+        // Minimum set of properties needed to create a study (due to NOT NULL constraints). All other study properties are
+        // round-tripped from the source study by StudyXmlWriter and TopLevelStudyPropertiesImporter to ensure consistency
+        // with export/import, create from template, etc. #35422
+        StudyImpl study = new StudyImpl(_dstContainer, null);
         study.setTimepointType(_sourceStudy.getTimepointType());
-        study.setStartDate(_sourceStudy.getStartDate());
-        study.setEndDate(_sourceStudy.getEndDate());
-        study.setInvestigator(_sourceStudy.getInvestigator());
-        study.setGrant(_sourceStudy.getGrant());
-        study.setSpecies(_sourceStudy.getSpecies());
-        study.setAssayPlan(_sourceStudy.getAssayPlan());
-        Container sourceContainer = ContainerManager.getForPath(form.getSrcPath());
-        if (form.isUpdate())
-        {
-            study.setSourceStudyContainerId(sourceContainer.getId());
-        }
         study.setSubjectNounSingular(_sourceStudy.getSubjectNounSingular());
         study.setSubjectNounPlural(_sourceStudy.getSubjectNounPlural());
         study.setSubjectColumnName(_sourceStudy.getSubjectColumnName());
-        study.setAlternateIdPrefix(_sourceStudy.getAlternateIdPrefix());
-        study.setAlternateIdDigits(_sourceStudy.getAlternateIdDigits());
 
-        // description for the new study comes from the form instead of copied from the source study
-        study.setDescription(form.getDescription());
+        // This setting is specific to ancillary / publish study
+        if (form.isUpdate())
+        {
+            study.setSourceStudyContainerId(_sourceStudy.getContainer().getId());
+        }
 
         StudyManager.getInstance().createStudy(getUser(), study);
 
+        // Set a default folder type. Will be overridden if user has chosen to copy from source.
         FolderType folderType = FolderTypeManager.get().getFolderType(StudyFolderType.NAME);
         _dstContainer.setFolderType(folderType, ModuleLoader.getInstance().getUpgradeUser());
 

@@ -44,8 +44,6 @@ public class TopLevelStudyPropertiesImporter implements InternalStudyImporter
         if (!ctx.isDataTypeSelected(getDataType()))
             return;
 
-        // TODO: update CreateChildStudyAction.createNewStudy usage to use this importer
-
         StudyImpl origStudy = StudyManager.getInstance().getStudy(ctx.getContainer());
         if (origStudy != null)
         {

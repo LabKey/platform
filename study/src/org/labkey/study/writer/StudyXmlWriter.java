@@ -106,7 +106,10 @@ class StudyXmlWriter implements InternalStudyWriter
         ExportDirType dir = studyXml.addNewProperties();
         dir.setDir(PROPERTIES_DIRECTORY);
 
-        // Save the study.xml file.  This gets called last, after all other writers have populated the other sections.
+        // Override exported property values (e.g., label and description entered in publish study wizard)
+        ctx.getStudyXmlModifier().accept(studyXml);
+
+        // Save the study.xml file. This gets called last, after all other writers have populated the other sections.
         vf.saveXmlBean("study.xml", ctx.getDocument());
 
         ctx.lockDocument();

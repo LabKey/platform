@@ -24,12 +24,14 @@ import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.ParticipantMapper;
 import org.labkey.study.model.Vial;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.xml.StudyDocument;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 
 /**
  * User: adam
@@ -43,9 +45,11 @@ public class StudyExportContext extends AbstractContext
     private final PHI _phiLevel;
     private final boolean _maskClinic;
     private final ParticipantMapper _participantMapper;
+
     private Set<Integer> _visitIds = null;
     private List<String> _participants = new ArrayList<>();
     private List<Vial> _vials = null;
+    private Consumer<StudyDocument.Study> _studyXmlModifier = study -> {};  // By default, make no changes to exported study XML
 
     public StudyExportContext(StudyImpl study, User user, Container c, Set<String> dataTypes, LoggerGetter logger)
     {
@@ -174,5 +178,15 @@ public class StudyExportContext extends AbstractContext
     public void setVials(List<Vial> vials)
     {
         _vials = vials;
+    }
+
+    public Consumer<StudyDocument.Study> getStudyXmlModifier()
+    {
+        return _studyXmlModifier;
+    }
+
+    public void setStudyXmlModifier(Consumer<StudyDocument.Study> studyXmlModifier)
+    {
+        _studyXmlModifier = studyXmlModifier;
     }
 }

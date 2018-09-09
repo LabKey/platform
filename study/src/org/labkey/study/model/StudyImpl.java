@@ -693,8 +693,8 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             return PageFlowUtil.filter((getLabel() == null ? "This study" : getLabel()) + " tracks data in ")
                     + "<a href=\"" + new ActionURL(StudyController.DatasetsAction.class, getContainer()) + "\">"
                     + getDatasets().size() + " dataset" + (getDatasets().size() == 1 ? "" : "s") + "</a>" +
-                    (timepointType != TimepointType.CONTINUOUS ? (PageFlowUtil.filter(" over " + getVisits(Visit.Order.DISPLAY).size() + " "
-                    + (timepointType.isVisitBased() ? "visit" : "time point") + (getVisits(Visit.Order.DISPLAY).size() == 1 ? "" : "s"))) : "" )
+                    (null != timepointType ? (timepointType != TimepointType.CONTINUOUS ? (PageFlowUtil.filter(" over " + getVisits(Visit.Order.DISPLAY).size() + " "
+                    + (timepointType.isVisitBased() ? "visit" : "time point") + (getVisits(Visit.Order.DISPLAY).size() == 1 ? "" : "s"))) : "" ) : "")
                     + ". Data is present for " + PageFlowUtil.filter(DecimalFormat.getNumberInstance().format(count)) + " " + PageFlowUtil.filter(subjectNoun) + ".";
         }
         else
