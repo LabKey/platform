@@ -56,7 +56,6 @@ import org.labkey.study.query.StudyQuerySchema;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -148,11 +147,14 @@ public class DatasetDataWriter implements InternalStudyWriter
 
     private void writeResultsToTSV(Results rs, VirtualFile vf, String fileName) throws IOException
     {
-        TSVGridWriter tsvWriter = new TSVGridWriter(rs);
-        tsvWriter.setApplyFormats(false);
-        tsvWriter.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
-        PrintWriter out = vf.getPrintWriter(fileName);
-        tsvWriter.write(out);     // NOTE: TSVGridWriter closes PrintWriter and ResultSet
+        // NOTE: TSVGridWriter.close() closes PrintWriter and ResultSet
+        try (TSVGridWriter tsvWriter = new TSVGridWriter(rs))
+        {
+            tsvWriter.setApplyFormats(false);
+            tsvWriter.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
+            PrintWriter out = vf.getPrintWriter(fileName);
+            tsvWriter.write(out);
+        }
     }
 
     public static void createDateShiftColumns(TableInfo ti, Collection<ColumnInfo> columns, Container c)

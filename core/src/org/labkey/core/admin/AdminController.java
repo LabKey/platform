@@ -2626,8 +2626,10 @@ public class AdminController extends SpringActionController
     {
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
-            QueryProfiler.QueryStatTsvWriter writer = new QueryProfiler.QueryStatTsvWriter();
-            writer.write(response);
+            try (QueryProfiler.QueryStatTsvWriter writer = new QueryProfiler.QueryStatTsvWriter())
+            {
+                writer.write(response);
+            }
         }
     }
 

@@ -164,11 +164,15 @@ public class ListWriter
                     Sort sort = ti.getPkColumnNames().size() != 1 ? null : new Sort(ti.getPkColumnNames().get(0));
 
                     Results rs = QueryService.get().select(ti, columns, null, sort);
-                    TSVGridWriter tsvWriter = new TSVGridWriter(rs, displayColumns);
-                    tsvWriter.setApplyFormats(false);
-                    tsvWriter.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
-                    PrintWriter out = listsDir.getPrintWriter(def.getName() + ".tsv");
-                    tsvWriter.write(out);     // NOTE: TSVGridWriter closes PrintWriter and ResultSet
+
+                    // NOTE: TSVGridWriter closes PrintWriter and ResultSet
+                    try (TSVGridWriter tsvWriter = new TSVGridWriter(rs, displayColumns))
+                    {
+                        tsvWriter.setApplyFormats(false);
+                        tsvWriter.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
+                        PrintWriter out = listsDir.getPrintWriter(def.getName() + ".tsv");
+                        tsvWriter.write(out);
+                    }
 
                     writeAttachments(ti, def, c, listsDir, exportPhiLevel);
                 }
@@ -187,7 +191,6 @@ public class ListWriter
 
     public static void createAlternateIdColumns(TableInfo ti, Collection<ColumnInfo> columns, Container c)
     {
-
         Collection<ColumnInfo> colCopy = new LinkedList<>(columns);
         String participantIdColumnName = StudyService.get().getSubjectColumnName(c);
         for (ColumnInfo column : colCopy)

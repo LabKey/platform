@@ -1038,8 +1038,8 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
                 {
                     public void close() throws IOException
                     {
-                        ResultSetUtil.close(fstmt);
                         ResultSetUtil.close(frs);
+                        ResultSetUtil.close(fstmt);
                         schema.getScope().releaseConnection(fconn);
                         super.close();
                     }
@@ -1062,8 +1062,8 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         }
         finally
         {
-            ResultSetUtil.close(stmt);
             ResultSetUtil.close(rs);
+            ResultSetUtil.close(stmt);
             if (null != conn) schema.getScope().releaseConnection(conn);
         }
     }

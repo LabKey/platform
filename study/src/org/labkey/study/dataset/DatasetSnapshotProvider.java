@@ -223,11 +223,17 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
                     // TODO: Create class ResultSetDataLoader and use it here instead of round-tripping through a TSV StringBuilder
                     StringBuilder sb = new StringBuilder();
-                    TSVGridWriter tsvWriter = new TSVGridWriter(results);
-                    tsvWriter.setApplyFormats(false);
-                    tsvWriter.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
-                    tsvWriter.write(sb);
-                    Map<FieldKey,ColumnInfo> fieldMap = tsvWriter.getFieldMap();
+
+                    Map<FieldKey,ColumnInfo> fieldMap;
+
+                    try (TSVGridWriter tsvWriter = new TSVGridWriter(results))
+                    {
+                        tsvWriter.setApplyFormats(false);
+                        tsvWriter.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
+                        tsvWriter.write(sb);
+
+                        fieldMap = tsvWriter.getFieldMap();
+                    }
 
                     try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
                     {
@@ -446,11 +452,16 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
                         // TODO: Create class ResultSetDataLoader and use it here instead of round-tripping through a TSV StringBuilder
                         StringBuilder sb = new StringBuilder();
-                        TSVGridWriter tsvWriter = new TSVGridWriter(results);
-                        tsvWriter.setApplyFormats(false);
-                        tsvWriter.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
-                        tsvWriter.write(sb);
-                        Map<FieldKey,ColumnInfo> fieldMap = tsvWriter.getFieldMap();
+                        Map<FieldKey,ColumnInfo> fieldMap;
+
+                        try (TSVGridWriter tsvWriter = new TSVGridWriter(results))
+                        {
+                            tsvWriter.setApplyFormats(false);
+                            tsvWriter.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
+                            tsvWriter.write(sb);
+
+                            fieldMap = tsvWriter.getFieldMap();
+                        }
 
                         try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
                         {

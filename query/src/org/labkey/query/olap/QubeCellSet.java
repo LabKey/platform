@@ -15,7 +15,6 @@
  */
 package org.labkey.query.olap;
 
-import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.MemTracker;
 import org.olap4j.AllocationPolicy;
 import org.olap4j.Axis;
@@ -27,7 +26,6 @@ import org.olap4j.CellSetMetaData;
 import org.olap4j.OlapException;
 import org.olap4j.OlapStatement;
 import org.olap4j.Position;
-import org.olap4j.impl.ArrayNamedListImpl;
 import org.olap4j.impl.Named;
 import org.olap4j.impl.NamedListImpl;
 import org.olap4j.metadata.Cube;
@@ -49,7 +47,6 @@ import java.sql.NClob;
 import java.sql.Ref;
 import java.sql.ResultSet;
 import java.sql.RowId;
-import java.sql.SQLException;
 import java.sql.SQLWarning;
 import java.sql.SQLXML;
 import java.sql.Time;
@@ -60,8 +57,6 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -72,12 +67,12 @@ import java.util.Map;
 public class QubeCellSet implements CellSet
 {
     // COLUMN,ROWS,PAGES,CHAPTERS,SECTIONS
-    final Cube _cube;
-    final List<CellSetAxis> _axes = new ArrayList<>(3);
-    final int _columnCount;
+    private final Cube _cube;
+    private final List<CellSetAxis> _axes = new ArrayList<>(3);
+    private final int _columnCount;
 //    final CellSetAxis _filterAxis;
-    List<Number> _results;
-    boolean _closed = false;
+    private List<Number> _results;
+    private boolean _closed = false;
 
 
     QubeCellSet(Cube cube, BitSetQueryImpl.MeasureDef measure, List<Number> results, Collection<Member> columns, Collection<Member> rows)
@@ -1023,7 +1018,7 @@ public class QubeCellSet implements CellSet
     @Override
     public boolean isClosed()
     {
-        throw new UnsupportedOperationException();
+        return _closed;
     }
 
     @Override

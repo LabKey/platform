@@ -221,10 +221,10 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
         sql.append("\nORDER BY se.ExternalId");
 
         // Note: must be uncached result set -- this query can be very large
-        try (
-                ResultSet rs = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getResultSet(false);
-                TSVGridWriter gridWriter = new TSVGridWriter(new ResultsImpl(rs, selectColumns), displayColumns)
-            )
+        ResultSet rs = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getResultSet(false);
+
+        // TSVGridWriter.close() closes the ResultSet
+        try (TSVGridWriter gridWriter = new TSVGridWriter(new ResultsImpl(rs, selectColumns), displayColumns))
         {
             gridWriter.write(pw);
         }

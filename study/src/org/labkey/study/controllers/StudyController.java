@@ -7491,11 +7491,14 @@ public class StudyController extends BaseStudyController
                 filter.addCondition(ti.getColumn("container"), getContainer());
                 Results rs = QueryService.get().select(ti, cols, filter, new Sort("participantid"));
 
-                TSVGridWriter writer = new TSVGridWriter(rs);
-                writer.setApplyFormats(false);
-                writer.setFilenamePrefix("ParticipantTransforms");
-                writer.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
-                writer.write(getViewContext().getResponse()); // NOTE: TSVGridWriter closes PrintWriter and ResultSet
+                // NOTE: TSVGridWriter.close() closes PrintWriter and ResultSet
+                try (TSVGridWriter writer = new TSVGridWriter(rs))
+                {
+                    writer.setApplyFormats(false);
+                    writer.setFilenamePrefix("ParticipantTransforms");
+                    writer.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
+                    writer.write(getViewContext().getResponse());
+                }
 
                 return null;
             }

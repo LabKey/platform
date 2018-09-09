@@ -56,6 +56,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.di.TransformDataIteratorBuilder;
@@ -354,9 +355,13 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
         // Also, who's to say the output columns match the existing file?
         // Update 3/3/16 ... and now that we're adding feature to write to multiple files based on batch size, I'm not sure what an
         // append would look like at all.
+
+        boolean success = false;  // Ensures that Results is closed in error cases. Can't use try-with-resources because TSVGridWriter also closes Results.
+        Results results = null;
+
         try
         {
-            Results results = new DataIteratorResultsImpl(source.getDataIterator(context));
+            results = new DataIteratorResultsImpl(source.getDataIterator(context));
             FieldKey batchColumn = meta.getBatchColumn() == null ? null : FieldKey.fromParts(meta.getBatchColumn());
             if (meta.getBatchSize() > 0 && null != batchColumn && !results.hasColumn(batchColumn))
             {
@@ -370,7 +375,6 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
                 throw new ConfigurationException(sb.toString());
             }
 
-
             File outputDir = _txJob.getPipeRoot().resolvePath(meta.getTargetFileProperties().get(CopyConfig.TargetFileProperties.dir));
             if (null == outputDir || (!outputDir.exists() && !outputDir.mkdirs()))
             {
@@ -378,22 +382,29 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
                 return -1;
             }
 
-            TSVGridWriter tsv = new TSVGridWriter(results);
-            tsv.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
-            String specialChar = meta.getTargetFileProperties().get(CopyConfig.TargetFileProperties.columnDelimiter);
-            if (specialChar != null)
-                tsv.setDelimiterCharacter(specialChar.charAt(0));
-            specialChar = meta.getTargetFileProperties().get(CopyConfig.TargetFileProperties.rowDelimiter);
-            if (specialChar != null)
-                tsv.setRowSeparator(specialChar);
-            specialChar = meta.getTargetFileProperties().get(CopyConfig.TargetFileProperties.quote);
-            if (specialChar != null)
-                tsv.setQuoteCharacter(specialChar.charAt(0));
-
             String baseName = makeFileBaseName(meta);
             String extension = meta.getTargetFileProperties().get(CopyConfig.TargetFileProperties.extension);
-            List<File> outputFiles = tsv.writeBatchFiles(outputDir, baseName, extension, meta.getBatchSize(), batchColumn);
-            int rowCount = tsv.getDataRowCount();
+            List<File> outputFiles;
+            int rowCount;
+
+            try (TSVGridWriter tsv = new TSVGridWriter(results))
+            {
+                success = true;
+                tsv.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
+                String specialChar = meta.getTargetFileProperties().get(CopyConfig.TargetFileProperties.columnDelimiter);
+                if (specialChar != null)
+                    tsv.setDelimiterCharacter(specialChar.charAt(0));
+                specialChar = meta.getTargetFileProperties().get(CopyConfig.TargetFileProperties.rowDelimiter);
+                if (specialChar != null)
+                    tsv.setRowSeparator(specialChar);
+                specialChar = meta.getTargetFileProperties().get(CopyConfig.TargetFileProperties.quote);
+                if (specialChar != null)
+                    tsv.setQuoteCharacter(specialChar.charAt(0));
+
+                outputFiles = tsv.writeBatchFiles(outputDir, baseName, extension, meta.getBatchSize(), batchColumn);
+                rowCount = tsv.getDataRowCount();
+            }
+
             if (rowCount == 0)
                 getJob().getParameters().put("etlOutputHadRows", "false");
             log.info("Wrote " + rowCount + " total rows to file" + (outputFiles.size() == 1 ? "" : "s") +":\n");
@@ -413,6 +424,11 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
         catch (IOException e)
         {
             throw new RuntimeException(e);
+        }
+        finally
+        {
+            if (!success)
+                ResultSetUtil.close(results);
         }
     }
 

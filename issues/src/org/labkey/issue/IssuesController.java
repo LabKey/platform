@@ -386,16 +386,19 @@ public class IssuesController extends SpringActionController
             QueryView view = QueryView.create(form, errors);
             HttpServletResponse response = getViewContext().getResponse();
             response.setHeader("X-Robots-Tag", "noindex");
-            final TSVGridWriter writer = view.getTsvWriter();
-            return new HttpView()
+
+            try (TSVGridWriter writer = view.getTsvWriter())
             {
-                @Override
-                protected void renderInternal(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
+                return new HttpView()
                 {
-                    writer.setColumnHeaderType(ColumnHeaderType.Caption);
-                    writer.write(getViewContext().getResponse());
-                }
-            };
+                    @Override
+                    protected void renderInternal(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
+                    {
+                        writer.setColumnHeaderType(ColumnHeaderType.Caption);
+                        writer.write(getViewContext().getResponse());
+                    }
+                };
+            }
         }
 
         public NavTree appendNavTrail(NavTree root)

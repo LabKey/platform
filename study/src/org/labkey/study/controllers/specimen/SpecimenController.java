@@ -52,7 +52,6 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExcelColumn;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.MenuButton;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TSVWriter;
@@ -2825,12 +2824,7 @@ public class SpecimenController extends BaseStudyController
                     LocationImpl notifyLocation = null;
                     if (notifyActor.isPerSite() && ids[2] >= 0)
                         notifyLocation = StudyManager.getInstance().getLocation(getContainer(), ids[2]);
-                    List<ActorNotificationRecipientSet> emailRecipients = notifications.get(originatingOrProvidingLocation);
-                    if (emailRecipients == null)
-                    {
-                        emailRecipients = new ArrayList<>();
-                        notifications.put(originatingOrProvidingLocation, emailRecipients);
-                    }
+                    List<ActorNotificationRecipientSet> emailRecipients = notifications.computeIfAbsent(originatingOrProvidingLocation, k -> new ArrayList<>());
                     emailRecipients.add(new ActorNotificationRecipientSet(notifyActor, notifyLocation));
                 }
 
@@ -2840,28 +2834,22 @@ public class SpecimenController extends BaseStudyController
                     List<AttachmentFile> formFiles = getAttachmentFileList();
                     if (form.isSendTsv())
                     {
-                        TSVGridWriter tsvWriter = getUtils().getSpecimenListTsvWriter(request, originatingOrProvidingLocation, receivingLocation, type);
-                        StringBuilder tsvBuilder = new StringBuilder();
-                        tsvWriter.write(tsvBuilder);
-                        formFiles.add(new ByteArrayAttachmentFile(tsvWriter.getFilenamePrefix() + ".tsv", tsvBuilder.toString().getBytes(Charsets.UTF_8), TSVWriter.DELIM.TAB.contentType));
+                        try (TSVGridWriter tsvWriter = getUtils().getSpecimenListTsvWriter(request, originatingOrProvidingLocation, receivingLocation, type))
+                        {
+                            StringBuilder tsvBuilder = new StringBuilder();
+                            tsvWriter.write(tsvBuilder);
+                            formFiles.add(new ByteArrayAttachmentFile(tsvWriter.getFilenamePrefix() + ".tsv", tsvBuilder.toString().getBytes(Charsets.UTF_8), TSVWriter.DELIM.TAB.contentType));
+                        }
                     }
 
                     if (form.isSendXls())
                     {
-                        OutputStream ostream = null;
-                        try
+                        try (ByteArrayOutputStream byteStream = new ByteArrayOutputStream(); OutputStream ostream = new BufferedOutputStream(byteStream))
                         {
-                            ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-                            ostream = new BufferedOutputStream(byteStream);
                             ExcelWriter xlsWriter = getUtils().getSpecimenListXlsWriter(request, originatingOrProvidingLocation, receivingLocation, type);
                             xlsWriter.write(ostream);
                             ostream.flush();
                             formFiles.add(new ByteArrayAttachmentFile(xlsWriter.getFilenamePrefix() + "." + xlsWriter.getDocumentType().name(), byteStream.toByteArray(), xlsWriter.getDocumentType().getMimeType()));
-                        }
-                        finally
-                        {
-                            if (ostream != null)
-                                ostream.close();
                         }
                     }
 
@@ -2987,8 +2975,10 @@ public class SpecimenController extends BaseStudyController
             {
                 if (EXPORT_TSV.equals(form.getExport()))
                 {
-                    TSVGridWriter writer = getUtils().getSpecimenListTsvWriter(specimenRequest, sourceLocation, destLocation, type);
-                    writer.write(getViewContext().getResponse());
+                    try (TSVGridWriter writer = getUtils().getSpecimenListTsvWriter(specimenRequest, sourceLocation, destLocation, type))
+                    {
+                        writer.write(getViewContext().getResponse());
+                    }
                 }
                 else if (EXPORT_XLS.equals(form.getExport()))
                 {

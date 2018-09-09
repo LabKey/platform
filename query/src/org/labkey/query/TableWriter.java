@@ -153,15 +153,18 @@ public class TableWriter
                 xmlWriter.writeTable(tableXml);
 
                 // Write data
-                TSVGridWriter tsv = view.getTsvWriter();
-                tsv.setDelimiterCharacter(TSVWriter.DELIM.TAB);
-                tsv.setQuoteCharacter(TSVWriter.QUOTE.DOUBLE);
-                if (header != null)
-                    tsv.setColumnHeaderType(header);
+                // NOTE: TSVGridWriter.close() closes PrintWriter and ResultSet
+                try (TSVGridWriter tsv = view.getTsvWriter())
+                {
+                    tsv.setDelimiterCharacter(TSVWriter.DELIM.TAB);
+                    tsv.setQuoteCharacter(TSVWriter.QUOTE.DOUBLE);
+                    if (header != null)
+                        tsv.setColumnHeaderType(header);
 
-                String name = view.getQueryDef().getName();
-                PrintWriter out = dir.getPrintWriter(name + ".tsv");
-                tsv.write(out);     // NOTE: TSVGridWriter closes PrintWriter and ResultSet
+                    String name = view.getQueryDef().getName();
+                    PrintWriter out = dir.getPrintWriter(name + ".tsv");
+                    tsv.write(out);
+                }
             }
 
             dir.saveXmlBean(SCHEMA_FILENAME, tablesDoc);

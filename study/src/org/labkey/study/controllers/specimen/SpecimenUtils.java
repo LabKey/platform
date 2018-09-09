@@ -75,7 +75,6 @@ import org.springframework.web.servlet.mvc.Controller;
 import javax.mail.Address;
 import javax.mail.Message;
 import javax.mail.internet.InternetAddress;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.Writer;

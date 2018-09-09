@@ -210,9 +210,12 @@ public class ExternalReport extends AbstractReport
                 rs = new TableSelector(mainTable).getResults();
             }
 
-            TSVGridWriter tsv = new TSVGridWriter(rs);
-            tsv.setColumnHeaderType(ColumnHeaderType.Name); // CONSIDER: Use FieldKey instead
-            tsv.write(dataFile);
+            // TSVGridWriter.close() closes the ResultSet
+            try (TSVGridWriter tsv = new TSVGridWriter(rs))
+            {
+                tsv.setColumnHeaderType(ColumnHeaderType.Name); // CONSIDER: Use FieldKey instead
+                tsv.write(dataFile);
+            }
 
             List<String> params = new LinkedList<>();
             params.add(getProgram());

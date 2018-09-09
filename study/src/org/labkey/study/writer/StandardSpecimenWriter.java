@@ -66,9 +66,10 @@ class StandardSpecimenWriter implements Writer<StandardSpecimenWriter.QueryInfo,
 
         SQLFragment sql = generateSql(ctx, tinfo, columns);
 
-        // TSVGridWriter.close() closes ResultSet and PrintWriter
-        try (ResultSet rs = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getResultSet(false);
-             TSVGridWriter gridWriter = new TSVGridWriter(new ResultsImpl(rs), displayColumns))
+        // TSVGridWriter.close() closes the ResultSet and PrintWriter
+        ResultSet rs = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getResultSet(false);
+
+        try (TSVGridWriter gridWriter = new TSVGridWriter(new ResultsImpl(rs), displayColumns))
         {
             gridWriter.write(pw);
         }
