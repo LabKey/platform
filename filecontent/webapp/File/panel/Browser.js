@@ -2239,10 +2239,13 @@ Ext4.define('File.panel.Browser', {
                     btn = Ext4.getCmp(this.linkIdMap[providerId]);
 
                     //
-                    // Check if the action button supports multiple selection
+                    // Check if the action button supports multiple selection, or the empty selection
                     //
                     if (btn) {
-                        disable = selections.length == 0 || (!action.supportsMultiSelect() && selections.length > 1);
+                        if (emptySelection && !action.supportsEmptySelect())
+                            disable = true;
+                        else
+                            disable = selections.length == 0 || (!action.supportsMultiSelect() && selections.length > 1);
                         btn.setDisabled(disable);
                     }
 
