@@ -72,8 +72,8 @@ public class RoleManager
         registerRole(new TroubleshooterRole());
         registerRole(new SeeEmailAddressesRole());
         registerRole(new CanSeeAuditLogRole());
-        registerRole(new EmailNonUsersRole(), false);
         registerRole(new SharedViewEditorRole());
+        registerRole(new EmailNonUsersRole(), false);
         registerRole(new SeeFilePathsRole(), false);
         registerRole(new CanUseSendMessageApi(), false);
         registerRole(new PlatformDeveloperRole(), false);
@@ -197,14 +197,6 @@ public class RoleManager
         getRole(FolderAdminRole.class).addPermission(perm);
     }
 
-    public static Set<Class<? extends Permission>> permSet(Class<? extends Permission>... perms)
-    {
-        //for some reason, Collections.asSet() will not compile with these kinds of generics
-        Set<Class<? extends Permission>> set = new HashSet<>();
-        set.addAll(Arrays.asList(perms));
-        return set;
-    }
-
     /**
      * Returns a set of Role objects based on the provided role classes
      * @param roleClasses The role classes
@@ -248,7 +240,7 @@ public class RoleManager
             Collection<Class<? extends Permission>> permissions = CollectionUtils.intersection(role.getPermissions(), permCollection);
 
             if (shouldBePresent)
-                Assert.assertTrue(role.getName() + " should have been granted these permissions: " + permCollection, permissions.equals(permCollection));
+                Assert.assertTrue(role.getName() + " should have been granted these permissions: " + permCollection, CollectionUtils.isEqualCollection(permCollection, permissions));
             else
                 Assert.assertTrue(role.getName() + " should not have been granted these permissions: " + permissions, permissions.isEmpty());
         });

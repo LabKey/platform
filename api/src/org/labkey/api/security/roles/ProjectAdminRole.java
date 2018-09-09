@@ -20,7 +20,6 @@ import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.permissions.*;
 
 /*
 * User: Dave
@@ -32,14 +31,9 @@ public class ProjectAdminRole extends AbstractRole
     public ProjectAdminRole()
     {
         super("Project Administrator",
-                "Project Administrators have full control over the project, but not the entire system.",
-                ReadPermission.class,
-                ReadSomePermission.class,
-                InsertPermission.class,
-                UpdatePermission.class,
-                DeletePermission.class,
-                AdminPermission.class,
-                EditSharedViewPermission.class);
+            "Project Administrators have full control over the project, but not the entire system.",
+            FolderAdminRole.PERMISSIONS
+        );
 
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupGuests));
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupUsers));

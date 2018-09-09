@@ -15,9 +15,10 @@
  */
 package org.labkey.api.security.roles;
 
-import org.labkey.api.admin.FolderExportPermission;
-import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.security.permissions.*;
+
+import java.util.Arrays;
+import java.util.Collection;
 
 /**
  * The Site Administrator role. Site admins are equivalent to root in *nix - they can do anything.
@@ -26,27 +27,21 @@ import org.labkey.api.security.permissions.*;
  */
 public class SiteAdminRole extends AbstractContextualRole
 {
+    private static final Collection<Class<? extends Permission>> PERMISSIONS = Arrays.asList(
+        AdminOperationsPermission.class,
+        AnalystPermission.class,
+        CanUseSendMessageApiPermission.class,
+        EmailNonUsersPermission.class,
+        PlatformDeveloperPermission.class,
+        TrustedPermission.class
+    );
+
     public SiteAdminRole()
     {
         super("Site Administrator", "Site Administrators have full control over the entire system.",
-                ReadPermission.class,
-                ReadSomePermission.class,
-                UpdatePermission.class,
-                InsertPermission.class, 
-                DeletePermission.class,
-                UserManagementPermission.class,
-                AdminOperationsPermission.class,
-                AdminReadPermission.class,
-                AdminPermission.class,
-                EditSharedViewPermission.class,
-                SeeUserEmailAddressesPermission.class,
-                EmailNonUsersPermission.class,
-                EnableRestrictedModules.class,
-                CanSeeAuditLogPermission.class,
-                CanUseSendMessageApiPermission.class,
-                FolderExportPermission.class,
-                PlatformDeveloperPermission.class,
-                TrustedPermission.class,
-                AnalystPermission.class);
+            FolderAdminRole.PERMISSIONS,
+            ApplicationAdminRole.PERMISSIONS,
+            PERMISSIONS
+        );
     }
 }

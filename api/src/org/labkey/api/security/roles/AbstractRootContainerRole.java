@@ -27,14 +27,22 @@ import org.labkey.api.security.permissions.Permission;
  */
 public abstract class AbstractRootContainerRole extends AbstractRole
 {
+    @SafeVarargs
     protected AbstractRootContainerRole(String name, String description, Class<? extends Permission>... perms)
     {
         super(name, description, perms);
     }
 
+    @SafeVarargs
     protected AbstractRootContainerRole(String name, String description, Class<? extends Module> sourceModuleClass, Class<? extends Permission>... perms)
     {
         super(name, description, sourceModuleClass, perms);
+    }
+
+    @SafeVarargs
+    public AbstractRootContainerRole(String name, String description, Iterable<Class<? extends Permission>>... permCollections)
+    {
+        super(name, description, permCollections);
     }
 
     @Override

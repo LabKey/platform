@@ -15,6 +15,8 @@
  */
 package org.labkey.api.security.roles;
 
+import java.util.Collections;
+
 /*
 * User: Dave
 * Date: Apr 27, 2009
@@ -24,6 +26,6 @@ public class NoPermissionsRole extends AbstractContextualRole
 {
     public NoPermissionsRole()
     {
-        super("No Permissions", "Granted no access whatsoever.");
+        super("No Permissions", "Granted no access whatsoever.", Collections.emptyList());
     }
 }

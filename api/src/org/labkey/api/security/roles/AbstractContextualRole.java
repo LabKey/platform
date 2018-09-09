@@ -30,6 +30,12 @@ public abstract class AbstractContextualRole extends AbstractRole implements Con
         super(name, description, perms);
     }
 
+    @SafeVarargs
+    public AbstractContextualRole(String name, String description, Iterable<Class<? extends Permission>>... permCollections)
+    {
+        super(name, description, permCollections);
+    }
+
     @Override
     public boolean isAssignable()
     {

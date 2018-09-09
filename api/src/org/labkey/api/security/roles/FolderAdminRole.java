@@ -16,10 +16,13 @@
 package org.labkey.api.security.roles;
 
 import org.labkey.api.admin.FolderExportPermission;
-import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.permissions.*;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.Permission;
+
+import java.util.Arrays;
+import java.util.Collection;
 
 /*
 * User: Dave
@@ -28,20 +31,18 @@ import org.labkey.api.security.permissions.*;
 */
 public class FolderAdminRole extends AbstractRole
 {
+    // Most permissions are assigned to all admin roles automatically, and shouldn't be added to this list
+    static Collection<Class<? extends Permission>> PERMISSIONS = Arrays.asList(
+        AdminPermission.class,
+        FolderExportPermission.class
+    );
+
     public FolderAdminRole()
     {
         super("Folder Administrator",
-                "Folder Administrators have full control over their particular folder, but not others.",
-                ReadPermission.class,
-                ReadSomePermission.class,
-                InsertPermission.class,
-                UpdatePermission.class,
-                DeletePermission.class,
-                AdminPermission.class,
-                EditSharedViewPermission.class,
-                SeeUserEmailAddressesPermission.class,
-                CanSeeAuditLogPermission.class,
-                FolderExportPermission.class);
+            "Folder Administrators have full control over their particular folder, but not others.",
+            PERMISSIONS
+        );
 
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupGuests));
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupUsers));

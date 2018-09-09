@@ -15,6 +15,7 @@
  */
 package org.labkey.api.security.roles;
 
+import com.google.common.collect.Iterables;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -23,13 +24,13 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.Permission;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.Collections;
 
 /**
  * Abstract base class for roles
@@ -41,13 +42,20 @@ public abstract class AbstractRole implements Role
     private final String _name;
     private final String _description;
     private final Module _sourceModule;
-    private Set<Class<? extends Permission>> _permissions = Collections.unmodifiableSet(new HashSet<Class<? extends Permission>>());
     private final Set<UserPrincipal> _excludedPrincipals = new HashSet<>();
+
+    private Set<Class<? extends Permission>> _permissions = Collections.unmodifiableSet(new HashSet<>());
 
     @SafeVarargs
     protected AbstractRole(String name, String description, Class<? extends Permission>... perms)
     {
         this(name, description, ModuleLoader.getInstance().getCoreModule(), perms);
+    }
+
+    @SafeVarargs
+    protected AbstractRole(String name, String description, Iterable<Class<? extends Permission>>... permCollections)
+    {
+        this(name, description, ModuleLoader.getInstance().getCoreModule(), Iterables.toArray(Iterables.concat(permCollections), Class.class));
     }
 
     @SafeVarargs
@@ -65,8 +73,7 @@ public abstract class AbstractRole implements Role
 
         if (null != perms && perms.length > 0)
         {
-            Set<Class<? extends Permission>> p = new HashSet<>();
-            p.addAll(Arrays.asList(perms));
+            Set<Class<? extends Permission>> p = new HashSet<>(Arrays.asList(perms));
             _permissions = Collections.unmodifiableSet(p);
         }
     }
@@ -97,8 +104,7 @@ public abstract class AbstractRole implements Role
 
     public synchronized void addPermission(@NotNull Class<? extends Permission> perm)
     {
-        Set<Class<? extends Permission>> p = new HashSet<>();
-        p.addAll(_permissions);
+        Set<Class<? extends Permission>> p = new HashSet<>(_permissions);
         p.add(perm);
         _permissions = Collections.unmodifiableSet(p);
     }
