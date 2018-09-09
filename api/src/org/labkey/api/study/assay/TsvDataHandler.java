@@ -144,11 +144,14 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
 
                         try
                         {
-                            TSVGridWriter writer = new TSVGridWriter(rs);
-                            writer.setColumnHeaderType(ColumnHeaderType.FieldKey);
                             File tempFile = File.createTempFile(FileUtil.getBaseName(FileUtil.getFileName(dataFile)), ".tsv");
-                            writer.write(tempFile);
-                            writer.close();
+
+                            try (TSVGridWriter writer = new TSVGridWriter(rs))
+                            {
+                                writer.setColumnHeaderType(ColumnHeaderType.FieldKey);
+                                writer.write(tempFile);
+                            }
+
                             FileUtils.copyFile(tempFile, out);
                         }
                         catch (Exception e)

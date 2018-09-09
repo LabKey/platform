@@ -42,11 +42,6 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
 
     private int _dataRowCount;
 
-    public TSVGridWriter(RenderContext ctx, TableInfo tinfo, List<DisplayColumn> displayColumns) throws IOException
-    {
-        this(ctx, tinfo, displayColumns, tinfo.getName());
-    }
-
     public TSVGridWriter(RenderContext ctx, TableInfo tinfo, List<DisplayColumn> displayColumns, String name) throws IOException
     {
         try
@@ -151,7 +146,6 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
         }
         catch (SQLException ex)
         {
-            closeResults();
             throw new RuntimeSQLException(ex);
         }
     }
@@ -214,7 +208,7 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
                     if (currentBatchSize > batchSize)
                     {
                         // Close this file and start the next
-                        closeBatchFile(false);
+                        closeBatchFile();
                         currentBatchSize = 1;
                         outputFiles.add(startBatchFile(outputDir, baseName, extension, batchSize, ++totalBatches));
                     }
@@ -224,10 +218,9 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
         }
         catch (SQLException ex)
         {
-            closeResults();
             throw new RuntimeSQLException(ex);
         }
-        closeBatchFile(true);
+        closeBatchFile();
         return outputFiles;
     }
 
@@ -243,25 +236,17 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
         return file;
     }
 
-    private void closeBatchFile(boolean closeResultSet) throws IOException
+    private void closeBatchFile() throws IOException
     {
         writeFileFooter();
-        if (closeResultSet)
-            close();
-        else
-            super.close();
+        super.close();
     }
 
     @Override
     public void close() throws IOException
     {
-        closeResults();
-        super.close();
-    }
-
-    private void closeResults()
-    {
         ResultSetUtil.close(_rs);
+        super.close();
     }
 
     protected void writeRow(RenderContext ctx, List<DisplayColumn> displayColumns)
@@ -275,5 +260,4 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
     {
         return _dataRowCount;
     }
-
 }

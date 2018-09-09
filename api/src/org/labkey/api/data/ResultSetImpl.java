@@ -17,8 +17,10 @@
 package org.labkey.api.data;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.ResultSetUtil;
 
 import javax.sql.rowset.CachedRowSet;
 import java.sql.Connection;
@@ -38,7 +40,7 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
 
     private final @Nullable DbScope _scope;
     private final @Nullable Connection _connection;
-    private int _maxRows = Table.ALL_ROWS;
+    private int _maxRows;
 
     private boolean _isComplete = true;
 
@@ -63,7 +65,7 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
     {
         super(rs, queryLogging);
         MemTracker.getInstance().put(this);
-        //noinspection ConstantConditions
+        //noinspection ConstantConditions,AssertWithSideEffects
         assert null != (_debugCreated = new Throwable("created ResultSetImpl"));
         _maxRows = maxRows;
         _connection = connection;
@@ -109,21 +111,29 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
 
     public void close() throws SQLException
     {
-        // Uncached case... close everything down
-        if (null != _scope)
+        if (_wasClosed)
         {
-            Statement stmt = getStatement();
-            super.close();
-            if (stmt != null)
-            {
-                stmt.close();
-            }
-            _scope.releaseConnection(_connection);
+            if (ResultSetUtil.STRICT_CHECKING)
+                throw new IllegalStateException("ResultSet has already been closed!");
         }
         else
-            super.close();
+        {
+            // Uncached case... close everything down
+            if (null != _scope)
+            {
+                Statement stmt = getStatement();
+                super.close();
+                if (stmt != null)
+                {
+                    stmt.close();
+                }
+                _scope.releaseConnection(_connection);
+            }
+            else
+                super.close();
 
-        _wasClosed = true;
+            _wasClosed = true;
+        }
     }
 
 
@@ -135,7 +145,7 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
     }
 
 
-    public Iterator<Map<String, Object>> iterator()
+    public @NotNull Iterator<Map<String, Object>> iterator()
     {
         return new ResultSetIterator(this);
     }

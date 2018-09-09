@@ -1642,16 +1642,15 @@ public class DataRegion extends DisplayElement
     {
         Results results = ctx.getResults();
         int rowIndex = 0;
-        // unwrap for efficient use of ResultSetRowMapFactory
-        try (ResultSet rs = results.getResultSet())
-        {
-            ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
 
-            while (rs.next())
-            {
-                ctx.setRow(factory.getRowMap(rs));
-                renderTableRow(ctx, out, showRecordSelectors, renderers, rowIndex++);
-            }
+        // unwrap for efficient use of ResultSetRowMapFactory
+        ResultSet rs = results.getResultSet();
+        ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
+
+        while (rs.next())
+        {
+            ctx.setRow(factory.getRowMap(rs));
+            renderTableRow(ctx, out, showRecordSelectors, renderers, rowIndex++);
         }
 
         return rowIndex;
@@ -2196,7 +2195,6 @@ public class DataRegion extends DisplayElement
     private void renderForm(RenderContext ctx, Writer out) throws IOException
     {
         int action = ctx.getMode();
-        Map valueMap = ctx.getRow();
 
         //if user doesn't have read permissions, don't render anything
         if ((action == MODE_INSERT && !hasPermission(ctx, InsertPermission.class)) ||
@@ -2207,6 +2205,8 @@ public class DataRegion extends DisplayElement
                     " data in this " + ctx.getContainer().getContainerNoun());
             return;
         }
+
+        Map<String, Object> valueMap = ctx.getRow();
 
         // Check if we have any value to update
         if (action == MODE_UPDATE && valueMap == null)
@@ -2390,13 +2390,12 @@ public class DataRegion extends DisplayElement
         //Make sure all pks are included
         if (action == MODE_UPDATE)
         {
-            if (valueMap != null)
-            {
-                if (valueMap instanceof BoundMap)
-                    renderOldValues(out, ((BoundMap) valueMap).getBean());
-                else
-                    renderOldValues(out, valueMap, ctx.getFieldMap());
-            }
+            // Note: valueMap != null, since we checked this above
+
+            if (valueMap instanceof BoundMap)
+                renderOldValues(out, ((BoundMap) valueMap).getBean());
+            else
+                renderOldValues(out, valueMap, ctx.getFieldMap());
 
             TableViewForm viewForm = ctx.getForm();
             List<ColumnInfo> pkCols = getTable().getPkColumns();
@@ -2411,7 +2410,7 @@ public class DataRegion extends DisplayElement
                     if (null != viewForm)
                         pkVal = viewForm.get(pkColName);
 
-                    if (pkVal == null && valueMap != null)
+                    if (pkVal == null)
                         pkVal = valueMap.get(pkColName);
 
                     if (null != pkVal)

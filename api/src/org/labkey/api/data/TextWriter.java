@@ -106,15 +106,8 @@ public abstract class TextWriter implements AutoCloseable
     // Create a file and stream it to the browser.
     public void write(HttpServletResponse response) throws IOException
     {
-        try
-        {
-            prepare(response);
-            write();
-        }
-        finally
-        {
-            close();
-        }
+        prepare(response);
+        write();
     }
 
     // Write a newly created file to the file system.
@@ -122,14 +115,12 @@ public abstract class TextWriter implements AutoCloseable
     {
         prepare(file);
         write();
-        close();
     }
 
     public void write(OutputStream os) throws IOException
     {
         prepare(os);
         write();
-        close();
     }
 
     // Write a newly created file to the PrintWriter.
@@ -137,7 +128,6 @@ public abstract class TextWriter implements AutoCloseable
     {
         _pw = pw;
         write();
-        close();
     }
 
     // Write content to a string builder.
@@ -145,7 +135,6 @@ public abstract class TextWriter implements AutoCloseable
     {
         prepare(builder);
         write();
-        close();
     }
 
     public void close() throws IOException

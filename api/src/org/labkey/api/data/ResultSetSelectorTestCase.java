@@ -18,7 +18,6 @@ package org.labkey.api.data;
 import org.junit.Test;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.User;
-import org.labkey.api.util.ResultSetUtil;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -44,61 +43,49 @@ public class ResultSetSelectorTestCase extends AbstractSelectorTestCase<ResultSe
 
         // Test using metadata ResultSet
         DbScope scope = core.getSchema().getScope();
-        ResultSet rs = null;
-        Connection conn = null;
 
-        try
+        try (Connection conn = scope.getConnection())
         {
-            conn = scope.getConnection();
             DatabaseMetaData dbmd = conn.getMetaData();
 
-            rs = dbmd.getSchemas();
-
-            test(scope, rs, SchemaBean.class);
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-            scope.releaseConnection(conn);
+            try (ResultSet rs = dbmd.getSchemas())
+            {
+                test(scope, rs, SchemaBean.class);
+            }
         }
     }
 
     private <K> void test(TableInfo tinfo, Class<K> clazz) throws SQLException
     {
-        test(tinfo.getSchema().getScope(), new TableSelector(tinfo).getResultSet(), clazz);
+        try (ResultSet rs = new TableSelector(tinfo).getResultSet())
+        {
+            test(tinfo.getSchema().getScope(), rs, clazz);
+        }
     }
 
     private <K> void test(DbScope scope, ResultSet rs, Class<K> clazz) throws SQLException
     {
-        try
+        // If we're passed a non-scrollable ResultSet we need to wrap it... but first, test exception handling
+        if (rs.getType() == ResultSet.TYPE_FORWARD_ONLY)
         {
-            // If we're passed a non-scrollable ResultSet we need to wrap it... but first, test exception handling
-            if (rs.getType() == ResultSet.TYPE_FORWARD_ONLY)
+            try
             {
-                try
-                {
-                    ResultSetSelector selector = new ResultSetSelector(scope, rs);
-                    selector.setCompletionAction(ResultSetSelector.CompletionAction.ScrollToTop);
-                    fail("ScrollToTop should have thrown with non-scrollable ResultSet");
-                }
-                catch (IllegalStateException e)
-                {
-                    assertEquals("Non-scrollable ResultSet can't be used with ScrollToTop", e.getMessage());
-                }
-
-                rs = CachedResultSets.create(rs, true, Table.ALL_ROWS);
+                ResultSetSelector selector = new ResultSetSelector(scope, rs);
+                selector.setCompletionAction(ResultSetSelector.CompletionAction.ScrollToTop);
+                fail("ScrollToTop should have thrown with non-scrollable ResultSet");
+            }
+            catch (IllegalStateException e)
+            {
+                assertEquals("Non-scrollable ResultSet can't be used with ScrollToTop", e.getMessage());
             }
 
-            ResultSetSelector selector = new ResultSetSelector(scope, rs);
-            selector.setCompletionAction(ResultSetSelector.CompletionAction.ScrollToTop);
+            rs = CachedResultSets.create(rs, true, Table.ALL_ROWS);
+        }
 
-            test(selector, clazz);
-        }
-        finally
-        {
-            // Just in case a failure occurs during the test
-            ResultSetUtil.close(rs);
-        }
+        ResultSetSelector selector = new ResultSetSelector(scope, rs);
+        selector.setCompletionAction(ResultSetSelector.CompletionAction.ScrollToTop);
+
+        test(selector, clazz);
     }
 
     @Override

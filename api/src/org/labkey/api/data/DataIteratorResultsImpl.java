@@ -62,6 +62,7 @@ public class DataIteratorResultsImpl implements Results, TableResultSet
 
     // JDBC-style 1-based row id index, 0 means before first row.
     private int _rowId = 0;
+    private boolean _closed = false;
 
     public DataIteratorResultsImpl(DataIterator di)
     {
@@ -347,6 +348,7 @@ public class DataIteratorResultsImpl implements Results, TableResultSet
     {
         try
         {
+            _closed = true;
             _di.close();
         }
         catch (IOException e)
@@ -1244,7 +1246,7 @@ public class DataIteratorResultsImpl implements Results, TableResultSet
     @Override
     public boolean isClosed()
     {
-        throw new UnsupportedOperationException();
+        return _closed;
     }
 
     @Override

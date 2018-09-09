@@ -2592,11 +2592,13 @@ public class QueryView extends WebPartView<Object>
 
     private int doExport(HttpServletResponse response, final TSVWriter.DELIM delim, final TSVWriter.QUOTE quote, ColumnHeaderType headerType) throws IOException
     {
-        TSVGridWriter tsv = getTsvWriter(headerType);
-        tsv.setDelimiterCharacter(delim);
-        tsv.setQuoteCharacter(quote);
-        tsv.write(response);
-        return tsv.getDataRowCount();
+        try (TSVGridWriter tsv = getTsvWriter(headerType))
+        {
+            tsv.setDelimiterCharacter(delim);
+            tsv.setQuoteCharacter(quote);
+            tsv.write(response);
+            return tsv.getDataRowCount();
+        }
     }
 
     @Nullable
@@ -2608,23 +2610,26 @@ public class QueryView extends WebPartView<Object>
         if (table != null)
         {
             StringBuilder tsvBuilder = new StringBuilder();
-            TSVGridWriter tsvWriter = getTsvWriter(headerType);
-            tsvWriter.setDelimiterCharacter(delim);
-            tsvWriter.setQuoteCharacter(quote);
-            if (null != commentLines)
-                tsvWriter.setFileHeader(commentLines);
-            tsvWriter.write(tsvBuilder);
-            String extension = delim.extension;
-            String filename = includeTimestamp ?
-                    FileUtil.makeFileNameWithTimestamp(tsvWriter.getFilenamePrefix(), extension) :
-                    tsvWriter.getFilenamePrefix() + "." + extension;
-            String contentType = delim.contentType;
-            ByteArrayAttachmentFile byteArrayAttachmentFile = new ByteArrayAttachmentFile(filename, tsvBuilder.toString().getBytes(StringUtilsLabKey.DEFAULT_CHARSET), contentType);
 
-            if (null != rowsOut)
-                rowsOut.add(tsvWriter.getDataRowCount());
-            logAuditEvent("Exported to TSV file", tsvWriter.getDataRowCount());
-            return byteArrayAttachmentFile;
+            try (TSVGridWriter tsvWriter = getTsvWriter(headerType))
+            {
+                tsvWriter.setDelimiterCharacter(delim);
+                tsvWriter.setQuoteCharacter(quote);
+                if (null != commentLines)
+                    tsvWriter.setFileHeader(commentLines);
+                tsvWriter.write(tsvBuilder);
+                String extension = delim.extension;
+                String filename = includeTimestamp ?
+                        FileUtil.makeFileNameWithTimestamp(tsvWriter.getFilenamePrefix(), extension) :
+                        tsvWriter.getFilenamePrefix() + "." + extension;
+                String contentType = delim.contentType;
+                ByteArrayAttachmentFile byteArrayAttachmentFile = new ByteArrayAttachmentFile(filename, tsvBuilder.toString().getBytes(StringUtilsLabKey.DEFAULT_CHARSET), contentType);
+
+                if (null != rowsOut)
+                    rowsOut.add(tsvWriter.getDataRowCount());
+                logAuditEvent("Exported to TSV file", tsvWriter.getDataRowCount());
+                return byteArrayAttachmentFile;
+            }
         }
 
         return null;

@@ -67,7 +67,6 @@ import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.VBox;
@@ -227,19 +226,14 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
 
         if (context != null)
         {
-            Results r = null;
-            try
+            Results r = generateResults(context, true);
+            if (r != null && r.getResultSet() != null)
             {
-                r = generateResults(context, true);
-                if (r != null && r.getResultSet() != null)
+                // TSVGridWriter.close() closes the ResultSet
+                try (TSVGridWriter tsv = createGridWriter(r))
                 {
-                    TSVGridWriter tsv = createGridWriter(r);
                     tsv.write(resultFile);
                 }
-            }
-            finally
-            {
-                ResultSetUtil.close(r);
             }
         }
 

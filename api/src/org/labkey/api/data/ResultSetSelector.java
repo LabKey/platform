@@ -32,7 +32,7 @@ public class ResultSetSelector extends NonSqlExecutingSelector<ResultSetSelector
     private CompletionAction _completionAction = CompletionAction.Nothing;  // Default assumption is that caller closes the ResultSet (e.g., using try-with-resources)
 
     /*
-        Note: By default, this class does not close the passed in ResultSet; caller must either close the ResultSet
+        Note: By default, this class does not close the passed in ResultSet; caller must either close that ResultSet
         themselves or call setCompletionAction(Close).
     */
 

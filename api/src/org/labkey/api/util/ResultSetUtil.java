@@ -42,7 +42,8 @@ import java.util.Map;
 
 public class ResultSetUtil
 {
-    private static Logger _log = Logger.getLogger(ResultSetUtil.class);
+    private static final Logger _log = Logger.getLogger(ResultSetUtil.class);
+    public static final boolean STRICT_CHECKING = false;  // If true, throws when ResultSets are closed more than once. Clean up ResultSet closing for #34406.
 
     private ResultSetUtil()
     {
@@ -56,7 +57,16 @@ public class ResultSetUtil
 
         try
         {
-            rs.close();
+            if (rs.isClosed())
+            {
+                if (STRICT_CHECKING)
+                    throw new IllegalStateException("ResultSet has already been closed!");
+            }
+            else
+            {
+                rs.close();
+            }
+
             return null;
         }
         catch (SQLException x)
@@ -67,6 +77,8 @@ public class ResultSetUtil
     }
 
 
+    // Note: Always close the ResultSet before closing the Statement. Closing the Statement may attempt to close the
+    // ResultSet, which could mean a double close.
     public static void close(Statement stmt)
     {
         if (null == stmt)
