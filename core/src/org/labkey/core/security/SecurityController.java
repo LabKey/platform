@@ -34,7 +34,9 @@ import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.FolderExportPermission;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
@@ -56,7 +58,13 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.EditSharedViewPermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.ReadSomePermission;
+import org.labkey.api.security.permissions.SeeUserEmailAddressesPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.roles.ApplicationAdminRole;
 import org.labkey.api.security.roles.FolderAdminRole;
@@ -99,7 +107,6 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.mail.MessagingException;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
@@ -110,8 +117,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -2043,6 +2048,19 @@ public class SecurityController extends SpringActionController
             RoleManager.testPermissionsInAdminRoles(true, siteAdminRoleSet, UserManagementPermission.class);
             RoleManager.testPermissionsInAdminRoles(true, appAdminRoleSet, UserManagementPermission.class);
             RoleManager.testPermissionsInAdminRoles(false, otherAdminRoleSet, UserManagementPermission.class);
+
+            RoleManager.testPermissionsInAdminRoles(true,
+                ReadPermission.class,
+                ReadSomePermission.class,
+                InsertPermission.class,
+                UpdatePermission.class,
+                DeletePermission.class,
+                AdminPermission.class,
+                EditSharedViewPermission.class,
+                SeeUserEmailAddressesPermission.class,
+                CanSeeAuditLogPermission.class,
+                FolderExportPermission.class
+            );
         }
     }
 }
