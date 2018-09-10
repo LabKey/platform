@@ -30,6 +30,12 @@ public class VirtualTable<SchemaType extends UserSchema> extends AbstractContain
 {
     protected final SchemaType _userSchema;
 
+    /**
+     *
+     * @param userSchema If a subclass of VirtualTable has a UserSchema member, do not pass null here.
+     *                  Pass it into the typed constructor so it is available via getUserSchema(),
+     *                  and likely eliminate the redundant private member from the subclass.
+     */
     public VirtualTable(DbSchema schema, String name, @Nullable SchemaType userSchema)
     {
         super(schema, name);
@@ -37,6 +43,10 @@ public class VirtualTable<SchemaType extends UserSchema> extends AbstractContain
         setName(name);
     }
 
+    /**
+     * @deprecated Use constructor with SchemaType parameter instead
+     */
+    @Deprecated
     public VirtualTable(DbSchema schema, String name)
     {
         this(schema, name, null);

@@ -46,7 +46,13 @@ public class ReportingApiQueryResponse extends ExtendedApiQueryResponse
     {
         // Mostly piggybacking on ApiQueryResponse constructor
         super(view, schemaEditable, includeLookupInfo, "", queryName, offset, fieldKeys, metaDataOnly, includeDetailsColumn, includeUpdateColumn, includeMetaData);
-        _schemaPath = view.getTable().getUserSchema().getSchemaPath();
+        if (view.getTable().getUserSchema() != null)
+            _schemaPath = view.getTable().getUserSchema().getSchemaPath();
+        else if (view.getSchema() != null)
+            _schemaPath = view.getSchema().getSchemaPath();
+        else
+            _schemaPath = SchemaKey.fromParts(view.getTable().getSchema().getQuerySchemaName());
+
         _metaDataOnlyIncludesEmptyRowset = false;
     }
 
