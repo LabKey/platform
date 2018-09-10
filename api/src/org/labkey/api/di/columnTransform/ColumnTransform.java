@@ -15,6 +15,7 @@
  */
 package org.labkey.api.di.columnTransform;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
@@ -77,6 +78,7 @@ public abstract class ColumnTransform implements Serializable
     // These properties are specific to a job, not a configuration, and will be initialized in the addTransform() call for each run.
     private transient SimpleTranslator _data;
     private transient int _transformRunId;
+    private transient Logger _statusLogger;
     private transient Integer _inputPosition;
     private transient Set<ColumnInfo> _outColumns;
     private transient ContainerUser _containerUser;
@@ -205,6 +207,12 @@ public abstract class ColumnTransform implements Serializable
         return _transformRunId;
     }
 
+    @NotNull
+    public Logger getStatusLogger()
+    {
+        return _statusLogger;
+    }
+
     @Nullable
     public Integer getInputPosition()
     {
@@ -264,14 +272,16 @@ public abstract class ColumnTransform implements Serializable
      * @param data SimpleTranslator holding the columns to be output into the ETL destination
      * @param transformRunId transformRunId of this run
      * @param inputPosition the index of the source column in the source query. If null, no source column was specified in the ETL xml
+     * @param statusLogger the logger, typically provided by the PipelineJob
      * @return The set of output columns, if any, added by the transform class implementation
      */
     @NotNull
-    public Set<ColumnInfo> addTransform(ContainerUser cu, @NotNull SimpleTranslator data, int transformRunId, @Nullable Integer inputPosition)
+    public Set<ColumnInfo> addTransform(ContainerUser cu, @NotNull SimpleTranslator data, int transformRunId, @Nullable Integer inputPosition, @NotNull Logger statusLogger)
     {
         _containerUser = cu;
         _data = data;
         _transformRunId = transformRunId;
+        _statusLogger = statusLogger;
         _inputPosition = inputPosition;
         _outColumns = new HashSet<>();
         reset();
