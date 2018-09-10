@@ -34,6 +34,7 @@ import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 
 import java.io.IOException;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Map;
@@ -232,6 +233,11 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
             {
                 iw.commit();
                 _manager.maybeRefresh();
+            }
+            catch (AccessDeniedException e)
+            {
+                // Index is unwritable wrap in configuration exception to notify Admin
+                throw new ConfigurationException("Unable to write to Full-Text search index: " + e.getMessage(), e);
             }
             catch (IOException e)
             {

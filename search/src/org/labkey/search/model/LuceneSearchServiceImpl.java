@@ -49,6 +49,7 @@ import org.apache.lucene.search.SortField;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.WildcardQuery;
+import org.apache.lucene.store.AlreadyClosedException;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.BytesRef;
 import org.apache.tika.config.LoadErrorHandler;
@@ -83,6 +84,7 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileStream.FileFileStream;
@@ -1231,6 +1233,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         {
             _log.debug("Committing index");
             _indexManager.commit();
+        }
+        catch (ConfigurationException e)
+        {
+            // Index may have become unwriteable don't log to mothership, and dont reinitialize index
+            throw e;
         }
         catch (Throwable t)
         {
