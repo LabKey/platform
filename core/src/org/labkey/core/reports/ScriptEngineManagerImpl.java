@@ -230,10 +230,18 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
 
         // look through all the registered engines at the site level
         List<ExternalScriptEngineDefinition> definitions = new ArrayList<>();
+        List<ExternalScriptEngineDefinition> dockerDefinitions = new ArrayList<>();
+        List<ExternalScriptEngineDefinition> remoteDefinitions = new ArrayList<>();
         for (ExternalScriptEngineDefinition def : getEngineDefinitions())
         {
             if (Arrays.asList(def.getExtensions()).contains(extension) && def.isEnabled())
+            {
                 definitions.add(def);
+                if (def.isDocker())
+                    dockerDefinitions.add(def);
+                if (def.isRemote())
+                    remoteDefinitions.add(def);
+            }
         }
 
         if (!definitions.isEmpty())
@@ -242,19 +250,42 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
             if (definitions.size() == 1)
                 return definitions.get(0);
 
-            // more than one registered engine, choose the one marked as the site default
-            for (ExternalScriptEngineDefinition def : definitions)
+            if (requestDocker && AppProps.getInstance().isExperimentalFeatureEnabled(RStudioService.R_DOCKER_SANDBOX) && dockerDefinitions.size() > 0)
             {
-                if (requestDocker && AppProps.getInstance().isExperimentalFeatureEnabled(RStudioService.R_DOCKER_SANDBOX) && def.isDocker())
-                    return def;
-                else if (def.isDefault() && (!requestRemote || def.isRemote()))
+                ExternalScriptEngineDefinition def = chooseOneEngineDef(dockerDefinitions);
+                if (def != null)
                     return def;
             }
 
             if (requestRemote)
-                return definitions.stream().filter(ExternalScriptEngineDefinition::isRemote).findFirst().orElse(null);
+            {
+                ExternalScriptEngineDefinition def = chooseOneEngineDef(remoteDefinitions);
+                if (def != null)
+                    return def;
+            }
+
+            ExternalScriptEngineDefinition def = definitions.stream().filter(d -> d.isDefault() && d.isDocker() == requestDocker && d.isRemote() == requestRemote).findFirst().orElse(null);
+            if (def != null)
+                return def;
+
+            def = definitions.stream().filter(d -> d.isDocker() == requestDocker && d.isRemote() == requestRemote).findFirst().orElse(null);
+            if (def != null)
+                return def;
+
+            return definitions.get(0);
         }
         return null;
+    }
+
+    private ExternalScriptEngineDefinition chooseOneEngineDef(List<ExternalScriptEngineDefinition> definitions)
+    {
+        if (definitions.size() == 1)
+            return definitions.get(0);
+        else
+        {
+            // more than one registered docker engine, choose the one marked as the site default
+            return definitions.stream().filter(ExternalScriptEngineDefinition::isDefault).findFirst().orElse(null);
+        }
     }
 
     @Override
