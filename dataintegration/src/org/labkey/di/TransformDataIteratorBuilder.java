@@ -56,7 +56,8 @@ public class TransformDataIteratorBuilder implements DataIteratorBuilder
 {
     private final int _transformRunId;
     private final DataIteratorBuilder _input;
-    private Logger _statusLogger = null;
+    private Logger _statusLogger;
+
     @NotNull
     private PipelineJob _job;
     private final String _statusName;
@@ -68,7 +69,7 @@ public class TransformDataIteratorBuilder implements DataIteratorBuilder
     {
         _transformRunId = transformRunId;
         _input = input;
-        _statusLogger = statusLogger;
+        _statusLogger = statusLogger == null ? job.getLogger() : statusLogger;
         _job = job;
         _statusName = statusName;
         _columnTransforms = columnTransforms;
@@ -141,7 +142,7 @@ public class TransformDataIteratorBuilder implements DataIteratorBuilder
             {
                 for (ColumnTransform ct : _columnTransforms.get(c.getColumnName()))
                 {
-                    outCols.addAll(ct.addTransform(((TransformPipelineJob)_job).getTransformJobContext(), out, _transformRunId, i));
+                    outCols.addAll(ct.addTransform(((TransformPipelineJob)_job).getTransformJobContext(), out, _transformRunId, i, _statusLogger));
                 }
             }
             else
@@ -157,7 +158,7 @@ public class TransformDataIteratorBuilder implements DataIteratorBuilder
         {
             for (ColumnTransform ct : _columnTransforms.get(null))
             {
-                outCols.addAll(ct.addTransform(((TransformPipelineJob)_job).getTransformJobContext(), out, _transformRunId, null));
+                outCols.addAll(ct.addTransform(((TransformPipelineJob)_job).getTransformJobContext(), out, _transformRunId, null, _statusLogger));
             }
         }
 
