@@ -310,3 +310,9 @@ a div.x4-menu-item-icon.fa-users {
 .x4-boundlist-selected {
   color: $lk-dropdown-link-hover-color;
 }
+
+// 35368: Ext.chart.Chart uses hidden="false" which is not supported -- just causes the element to be hidden
+// Scoped fix for ExtJS "x4-surface" elements to undo normalize.css setting of [hidden] to display: none
+.x4-surface [hidden] {
+  display: inherit;
+}
