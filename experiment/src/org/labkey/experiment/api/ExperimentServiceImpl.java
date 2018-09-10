@@ -5595,8 +5595,8 @@ public class ExperimentServiceImpl implements ExperimentService
         return run;
     }
 
-
-    private ExpProtocol ensureSampleDerivationProtocol(User user) throws ExperimentException
+    @Override
+    public ExpProtocol ensureSampleDerivationProtocol(User user) throws ExperimentException
     {
         ExpProtocol protocol = getExpProtocol(SAMPLE_DERIVATION_PROTOCOL_LSID);
         if (protocol == null)

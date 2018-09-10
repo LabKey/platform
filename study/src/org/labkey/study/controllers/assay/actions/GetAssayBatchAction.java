@@ -15,27 +15,24 @@
  */
 package org.labkey.study.controllers.assay.actions;
 
-import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.exp.api.AssayJSONConverter;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.assay.DefaultAssaySaveHandler;
 import org.springframework.validation.BindException;
-
-import java.sql.SQLException;
 
 /**
  * User: jeckels
  * Date: Jan 15, 2009
  */
 @RequiresPermission(ReadPermission.class)
-public class GetAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonForm>
+public class GetAssayBatchAction extends BaseProtocolAPIAction<SimpleApiJsonForm>
 {
-    public ApiResponse executeAction(ExpProtocol assay, AssayProvider provider, SimpleApiJsonForm form, BindException errors)
+    public ApiResponse executeAction(ExpProtocol protocol, SimpleApiJsonForm form, BindException errors)
     {
         ExpExperiment batch = null;
         if (form.getJsonObject().has(AssayJSONConverter.BATCH_ID))
@@ -44,6 +41,6 @@ public class GetAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFor
             batch = DefaultAssaySaveHandler.lookupBatch(getContainer(), batchId);
         }
 
-        return AssayJSONConverter.serializeResult(provider, assay, batch, getUser());
+        return AssayJSONConverter.serializeResult(getAssayProvider(), protocol, batch, getUser());
     }
 }

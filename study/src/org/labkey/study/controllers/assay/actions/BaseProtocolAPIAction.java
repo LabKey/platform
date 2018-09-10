@@ -36,8 +36,9 @@ import java.util.stream.Collectors;
  * User: jeckels
  * Date: Jan 15, 2009
  */
-public abstract class AbstractAssayAPIAction<FORM extends SimpleApiJsonForm> extends ApiAction<FORM>
+public abstract class BaseProtocolAPIAction<FORM extends SimpleApiJsonForm> extends ApiAction<FORM>
 {
+    private AssayProvider _provider;
 
     public final ApiResponse execute(FORM form, BindException errors) throws Exception
     {
@@ -46,11 +47,27 @@ public abstract class AbstractAssayAPIAction<FORM extends SimpleApiJsonForm> ext
             form.bindProperties(new JSONObject());
         }
 
-        Pair<ExpProtocol, AssayProvider> pair = getProtocolProvider(form.getJsonObject(), getContainer());
-        ExpProtocol protocol = pair.first;
-        AssayProvider provider = pair.second;
+        JSONObject json = form.getJsonObject();
+        ExpProtocol protocol;
 
-        return executeAction(protocol, provider, form, errors);
+        // if there is either an assay name or ID, assume this is an assay backed protocol
+        // else use a non-assay protocol
+        if (json.has(AssayJSONConverter.ASSAY_ID) || json.has(AssayJSONConverter.ASSAY_NAME))
+        {
+            Pair<ExpProtocol, AssayProvider> pair = getProtocolProvider(form.getJsonObject(), getContainer());
+            protocol = pair.first;
+            _provider = pair.second;
+        }
+        else
+        {
+            protocol = ExperimentService.get().ensureSampleDerivationProtocol(getUser());
+        }
+        return executeAction(protocol, form, errors);
+    }
+
+    protected AssayProvider getAssayProvider()
+    {
+        return _provider;
     }
 
     public static Pair<ExpProtocol, AssayProvider> getProtocolProvider(JSONObject json, Container c)
@@ -107,5 +124,5 @@ public abstract class AbstractAssayAPIAction<FORM extends SimpleApiJsonForm> ext
         return Pair.of(protocols.get(0), provider);
     }
 
-    protected abstract ApiResponse executeAction(ExpProtocol assay, AssayProvider provider, FORM form, BindException errors) throws Exception;
+    protected abstract ApiResponse executeAction(ExpProtocol protocol, FORM form, BindException errors) throws Exception;
 }

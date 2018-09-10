@@ -105,7 +105,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
 
         if (json != null)
         {
-            Pair<ExpProtocol, AssayProvider> pp = AbstractAssayAPIAction.getProtocolProvider(json, getContainer());
+            Pair<ExpProtocol, AssayProvider> pp = BaseProtocolAPIAction.getProtocolProvider(json, getContainer());
             protocol = pp.first;
             provider = pp.second;
 
@@ -131,7 +131,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         }
         else
         {
-            Pair<ExpProtocol, AssayProvider> pp = AbstractAssayAPIAction.getProtocolProvider(form.getAssayId(), getContainer());
+            Pair<ExpProtocol, AssayProvider> pp = BaseProtocolAPIAction.getProtocolProvider(form.getAssayId(), getContainer());
             protocol = pp.first;
             provider = pp.second;
 

@@ -22,13 +22,14 @@ import org.labkey.api.action.ApiVersion;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.exp.api.AssayJSONConverter;
+import org.labkey.api.exp.api.DefaultExperimentSaveHandler;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExperimentSaveHandler;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.assay.AssayProvider;
-import org.labkey.api.study.assay.AssaySaveHandler;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
@@ -40,9 +41,9 @@ import java.util.List;
  */
 @RequiresPermission(InsertPermission.class)
 @ApiVersion(9.1)
-public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonForm>
+public class SaveAssayBatchAction extends BaseProtocolAPIAction<SimpleApiJsonForm>
 {
-    public ApiResponse executeAction(ExpProtocol protocol, AssayProvider provider, SimpleApiJsonForm form, BindException errors) throws Exception
+    public ApiResponse executeAction(ExpProtocol protocol, SimpleApiJsonForm form, BindException errors) throws Exception
     {
         JSONObject rootJsonObject = form.getJsonObject();
 
@@ -66,9 +67,17 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         if ((null != batchJsonObject) && (null != batchesJsonArray))
             throw new IllegalArgumentException("You cannot specify both a batch object and a batches array");
 
-        AssaySaveHandler saveHandler = provider.getSaveHandler();
-        if (null == saveHandler)
-            throw new IllegalArgumentException("SaveAssayBatch is not supported for assay provider: " + provider);
+        AssayProvider provider = getAssayProvider();
+        ExperimentSaveHandler saveHandler;
+
+        if (provider != null)
+        {
+            saveHandler = provider.getSaveHandler();
+            if (null == saveHandler)
+                throw new IllegalArgumentException("SaveAssayBatch is not supported for assay provider: " + provider);
+        }
+        else
+            saveHandler = new DefaultExperimentSaveHandler();
 
         if (null != batchJsonObject)
             return executeAction(saveHandler, protocol, provider, rootJsonObject, batchJsonObject);
@@ -76,7 +85,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         return executeAction(saveHandler, protocol, provider, rootJsonObject, batchesJsonArray);
     }
 
-    private ApiResponse executeAction(AssaySaveHandler saveHandler, ExpProtocol protocol, AssayProvider provider,
+    private ApiResponse executeAction(ExperimentSaveHandler saveHandler, ExpProtocol protocol, AssayProvider provider,
                                       JSONObject rootJsonObject, JSONArray batchesJsonArray) throws Exception
     {
         saveHandler.beforeSave(getViewContext(), rootJsonObject, protocol);
@@ -96,7 +105,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
 
     }
 
-    private ApiResponse executeAction(AssaySaveHandler saveHandler, ExpProtocol protocol, AssayProvider provider,
+    private ApiResponse executeAction(ExperimentSaveHandler saveHandler, ExpProtocol protocol, AssayProvider provider,
                                       JSONObject rootJsonObject, JSONObject batchJsonObject) throws Exception
     {
         List<ExpExperiment> batches = new ArrayList<>(1);
