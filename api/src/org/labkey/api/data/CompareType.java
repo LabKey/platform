@@ -23,6 +23,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.SimpleFilter.ColumnNameFormatter;
 import org.labkey.api.data.SimpleFilter.FilterClause;
@@ -67,6 +69,9 @@ import java.util.Set;
  */
 public abstract class CompareType
 {
+    public static final String JSON_MARKER_START = "{json:";
+    public static final String JSON_MARKER_END = "}";
+
     //
     // These operators require a data value
     //
@@ -816,12 +821,41 @@ public abstract class CompareType
         return QueryService.get().getCompareTypes();
     }
 
-    private static Set<String> parseParams(Object value, String separator)
+    private static Set<String> parseParams(Object value_, String separator)
     {
+        if (value_ == null)
+            return Collections.emptySet();
+        String value = value_.toString();
+        if (StringUtils.isBlank(value))
+            return Collections.emptySet();
+        // check for JSON marker
         Set<String> values = new LinkedHashSet<>();
-        if (value != null && !value.toString().trim().equals(""))
+        if (value.startsWith(JSON_MARKER_START) && value.endsWith(JSON_MARKER_END))
         {
-            String[] st = value.toString().split("\\s*" + separator + "\\s*", -1);
+            value = value.substring(JSON_MARKER_START.length(), value.length()-JSON_MARKER_END.length());
+            if (value.startsWith("[") && value.endsWith("]"))
+            {
+                try
+                {
+                    // TODO what do we do with malformed parameters???
+                    JSONArray array = new JSONArray(value);
+                    for (int i = 0; i < array.length(); i++)
+                        values.add(array.get(i).toString());
+                }
+                catch (JSONException ex)
+                {
+                    // pass
+                }
+            }
+            else
+            {
+                // Unsupported
+                // pass
+            }
+        }
+        else
+        {
+            String[] st = value.split("\\s*" + separator + "\\s*", -1);
             Collections.addAll(values, st);
         }
         return values;

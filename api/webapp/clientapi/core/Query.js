@@ -1520,7 +1520,23 @@ LABKEY.Query.Filter.prototype.getValue = function ()
  */
 LABKEY.Query.Filter.prototype.getURLParameterValue = function ()
 {
-    return this.filterType.isDataValueRequired() ? this.value : ''
+    if (!this.filterType.isDataValueRequired())
+        return '';
+    if (LABKEY.Utils.isArray(this.value))
+    {
+        if (this.filterType === LABKEY.Filter.Types.IN || this.filterType === LABKEY.Filter.Types.NOT_IN)
+        {
+            var containsSemi = false;
+            this.value.forEach(function (v) {
+                if (LABKEY.Utils.isString(v) && v.indexOf(';') !== -1) containsSemi = true;
+            });
+            if (containsSemi)
+                return "{json:" + JSON.stringify(this.value) + "}";
+            else
+                return this.value.join(";");
+        }
+    }
+    return this.value;
 };
 
 /**
