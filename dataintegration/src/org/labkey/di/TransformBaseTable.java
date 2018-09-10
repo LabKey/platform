@@ -49,10 +49,9 @@ import java.util.Set;
  * Date: 9/13/13
  * Time: 12:27 PM
  */
-abstract public class TransformBaseTable extends VirtualTable
+abstract public class TransformBaseTable extends VirtualTable<UserSchema>
 {
     protected SQLFragment _sql;
-    private final UserSchema _schema;
     // map base table column name to alias name
     private HashMap<String, String> _nameMap;
 
@@ -84,9 +83,8 @@ abstract public class TransformBaseTable extends VirtualTable
 
     public TransformBaseTable(UserSchema schema, String name)
     {
-        super(DataIntegrationQuerySchema.getSchema(), name);
+        super(DataIntegrationQuerySchema.getSchema(), name, schema);
         _nameMap = buildNameMap();
-        _schema = schema;
     }
 
     protected String getBaseSql()
@@ -140,12 +138,12 @@ abstract public class TransformBaseTable extends VirtualTable
         sqlWhere.append("Status <> '");
         sqlWhere.append(TransformRun.TransformRunStatus.NO_WORK.getDisplayName());
         sqlWhere.append("'");
-        if (!_schema.getContainer().isRoot())
+        if (!_userSchema.getContainer().isRoot())
         {
             sqlWhere.append(" AND ");
             appendAlias(tableAlias, sqlWhere);
             sqlWhere.append(" Container = '");
-            sqlWhere.append(_schema.getContainer().getId());
+            sqlWhere.append(_userSchema.getContainer().getId());
             sqlWhere.append("'");
         }
         return sqlWhere.toString();
@@ -167,10 +165,10 @@ abstract public class TransformBaseTable extends VirtualTable
         addColumn(transformId);
 
         // container
-        if (_schema.getContainer().isRoot())
+        if (_userSchema.getContainer().isRoot())
         {
             ColumnInfo container = new ColumnInfo(_nameMap.get("Container"), this, JdbcType.VARCHAR);
-            container.setFk(new ContainerForeignKey(_schema));
+            container.setFk(new ContainerForeignKey(_userSchema));
             addColumn(container);
         }
 
@@ -203,7 +201,7 @@ abstract public class TransformBaseTable extends VirtualTable
             @Override
             public TableInfo getLookupTableInfo()
             {
-                return PipelineService.get().getJobsTable(_schema.getUser(), _schema.getContainer());
+                return PipelineService.get().getJobsTable(_userSchema.getUser(), _userSchema.getContainer());
             }
         });
         jobId.setHidden(true);

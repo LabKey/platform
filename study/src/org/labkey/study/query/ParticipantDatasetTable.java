@@ -32,17 +32,15 @@ import org.labkey.study.model.DatasetDefinition;
 
 import java.util.ArrayList;
 
-public class ParticipantDatasetTable extends VirtualTable
+public class ParticipantDatasetTable extends VirtualTable<StudyQuerySchema>
 {
-    StudyQuerySchema _schema;
     ColumnInfo _colParticipantId;
 
     public ParticipantDatasetTable(StudyQuerySchema schema, ColumnInfo colParticipantId)
     {
-        super(StudySchema.getInstance().getSchema(), null);
-        _schema = schema;
+        super(StudySchema.getInstance().getSchema(), null, schema);
         _colParticipantId = colParticipantId;
-        for (DatasetDefinition dataset : _schema.getStudy().getDatasets())
+        for (DatasetDefinition dataset : schema.getStudy().getDatasets())
         {
             // verify that the current user has permission to read this dataset (they may not if
             // advanced study security is enabled).
@@ -97,9 +95,9 @@ public class ParticipantDatasetTable extends VirtualTable
                 {
                     try
                     {
-                        DatasetTableImpl dsTable = _schema.createDatasetTableInternal(def);
+                        DatasetTableImpl dsTable = _userSchema.createDatasetTableInternal(def);
                         dsTable.hideParticipantLookups();
-                        dsTable.overlayMetadata(dsTable.getName(), _schema, new ArrayList<>());
+                        dsTable.overlayMetadata(dsTable.getName(), _userSchema, new ArrayList<>());
                         return dsTable;
                     }
                     catch (UnauthorizedException e)
@@ -124,7 +122,7 @@ public class ParticipantDatasetTable extends VirtualTable
                 {
                     if (displayField == null)
                         return null;
-                    ColumnInfo ret = new ParticipantVisitDatasetTable(_schema, def, parent).getColumn(displayField);
+                    ColumnInfo ret = new ParticipantVisitDatasetTable(_userSchema, def, parent).getColumn(displayField);
                     if (ret == null)
                         return null;
                     ret.setLabel(parent.getLabel() + " " + ret.getLabel());
@@ -133,7 +131,7 @@ public class ParticipantDatasetTable extends VirtualTable
 
                 public TableInfo getLookupTableInfo()
                 {
-                    return new ParticipantVisitDatasetTable(_schema, def, null);
+                    return new ParticipantVisitDatasetTable(_userSchema, def, null);
                 }
 
                 public StringExpression getURL(ColumnInfo parent)

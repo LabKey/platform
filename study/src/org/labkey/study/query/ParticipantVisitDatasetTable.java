@@ -51,23 +51,21 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-public class ParticipantVisitDatasetTable extends VirtualTable
+public class ParticipantVisitDatasetTable extends VirtualTable<StudyQuerySchema>
 {
     private final StudyImpl _study;
-    private final StudyQuerySchema _schema;
     private final DatasetDefinition _dataset;
     private final ColumnInfo _colParticipantId;
     private final Map<Double,ColumnInfo> _seqColumnMap = new HashMap<>();
 
     public ParticipantVisitDatasetTable(StudyQuerySchema schema, DatasetDefinition dsd, ColumnInfo colParticipantId)
     {
-        super(StudySchema.getInstance().getSchema(), null);
+        super(StudySchema.getInstance().getSchema(), null, schema);
         StudyManager studyManager = StudyManager.getInstance();
         _study = studyManager.getStudy(schema.getContainer());
         assert _study.getTimepointType() != TimepointType.CONTINUOUS;
         _colParticipantId = colParticipantId;
         _dataset = dsd;
-        _schema = schema;
 
         // all visits
         VisitManager visitManager = studyManager.getVisitManager(_study);
@@ -101,7 +99,7 @@ public class ParticipantVisitDatasetTable extends VirtualTable
         }
         //Now find all the sequenceNums where data actually exists.
         //Make sure their visits show up...
-        List<Double> currentSequenceNumbers = _schema.getSequenceNumsForDataset(_dataset);
+        List<Double> currentSequenceNumbers = _userSchema.getSequenceNumsForDataset(_dataset);
         if (null != currentSequenceNumbers)
         {
             for (Double d : currentSequenceNumbers)
@@ -123,7 +121,7 @@ public class ParticipantVisitDatasetTable extends VirtualTable
             VisitImpl visit = visitManager.findVisitBySequence(seq);
             if (null == visit)
                 continue;
-            labelMap.put(_schema.decideTableName(visit), seq);
+            labelMap.put(_userSchema.decideTableName(visit), seq);
         }
 
         // nested loop preserves visit display order
@@ -258,7 +256,7 @@ public class ParticipantVisitDatasetTable extends VirtualTable
             {
                 try
                 {
-                    DatasetTableImpl dsTable = _schema.createDatasetTableInternal(_dataset);
+                    DatasetTableImpl dsTable = _userSchema.createDatasetTableInternal(_dataset);
                     dsTable.hideParticipantLookups();
                     return dsTable;
                 }
