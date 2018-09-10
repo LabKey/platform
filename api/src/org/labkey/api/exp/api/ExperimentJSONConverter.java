@@ -30,6 +30,7 @@ import org.labkey.api.util.URIUtil;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,7 +72,7 @@ public class ExperimentJSONConverter
 
     public static JSONObject serializeRunGroup(ExpExperiment runGroup, Domain domain)
     {
-        JSONObject jsonObject = serializeStandardProperties(runGroup, domain.getProperties());
+        JSONObject jsonObject = serializeStandardProperties(runGroup, domain != null ? domain.getProperties() : Collections.emptyList());
         jsonObject.put(COMMENT, runGroup.getComments());
         return jsonObject;
     }

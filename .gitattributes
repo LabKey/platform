@@ -752,6 +752,7 @@ api/src/org/labkey/api/exp/api/AssayDomainType.java -text
 api/src/org/labkey/api/exp/api/AssayJSONConverter.java -text
 api/src/org/labkey/api/exp/api/DataType.java -text
 api/src/org/labkey/api/exp/api/DefaultExperimentDataHandler.java -text
+api/src/org/labkey/api/exp/api/DefaultExperimentSaveHandler.java -text
 api/src/org/labkey/api/exp/api/ExpData.java -text
 api/src/org/labkey/api/exp/api/ExpDataClass.java -text
 api/src/org/labkey/api/exp/api/ExpDataRunInput.java -text
@@ -772,6 +773,7 @@ api/src/org/labkey/api/exp/api/ExpRunItem.java -text
 api/src/org/labkey/api/exp/api/ExpSampleSet.java -text
 api/src/org/labkey/api/exp/api/ExperimentJSONConverter.java -text
 api/src/org/labkey/api/exp/api/ExperimentListener.java -text
+api/src/org/labkey/api/exp/api/ExperimentSaveHandler.java -text
 api/src/org/labkey/api/exp/api/ExperimentService.java -text
 api/src/org/labkey/api/exp/api/ExperimentUrls.java -text
 api/src/org/labkey/api/exp/api/IAssayDomainType.java -text

@@ -652,6 +652,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     void onMaterialsCreated(List<? extends ExpMaterial> materials, Container container, User user);
 
+    // creates a non-assay backed sample derivation protocol
+    ExpProtocol ensureSampleDerivationProtocol(User user) throws ExperimentException;
+
     // see org.labkey.experiment.LSIDRelativizer
     public static final String LSID_OPTION_ABSOLUTE = "ABSOLUTE";
     public static final String LSID_OPTION_FOLDER_RELATIVE = "FOLDER_RELATIVE";

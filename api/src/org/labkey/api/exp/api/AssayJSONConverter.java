@@ -60,7 +60,7 @@ public class AssayJSONConverter
 
     public static JSONObject serializeBatch(ExpExperiment batch, AssayProvider provider, ExpProtocol protocol, User user)
     {
-        JSONObject jsonObject = ExperimentJSONConverter.serializeRunGroup(batch, provider.getBatchDomain(protocol));
+        JSONObject jsonObject = ExperimentJSONConverter.serializeRunGroup(batch, provider != null ? provider.getBatchDomain(protocol) : null);
 
         JSONArray runsArray = new JSONArray();
         for (ExpRun run : batch.getRuns())
@@ -112,22 +112,25 @@ public class AssayJSONConverter
 
     public static JSONObject serializeRun(ExpRun run, AssayProvider provider, ExpProtocol protocol, User user)
     {
-        JSONObject jsonObject = ExperimentJSONConverter.serializeRun(run, provider.getRunDomain(protocol));
+        JSONObject jsonObject = ExperimentJSONConverter.serializeRun(run, provider != null ? provider.getRunDomain(protocol) : null);
 
         JSONArray dataRows = new JSONArray();
-        List<? extends ExpData> datas = run.getOutputDatas(provider.getDataType());
+        if (provider != null)
+        {
+            List<? extends ExpData> datas = run.getOutputDatas(provider.getDataType());
 
-        if (datas.size() == 1)
-        {
-            dataRows = serializeDataRows(datas.get(0), provider, protocol, user);
-        }
-        else if (datas.size() > 1)
-        {
-            // more than one output datas, check for a transformed data object
-            List<? extends ExpData> transformedDatas = run.getInputDatas(ExpDataRunInput.IMPORTED_DATA_ROLE,  ExpProtocol.ApplicationType.ExperimentRunOutput);
-            if (transformedDatas.size() == 1)
+            if (datas.size() == 1)
             {
-                dataRows = serializeDataRows(transformedDatas.get(0), provider, protocol, user);
+                dataRows = serializeDataRows(datas.get(0), provider, protocol, user);
+            }
+            else if (datas.size() > 1)
+            {
+                // more than one output datas, check for a transformed data object
+                List<? extends ExpData> transformedDatas = run.getInputDatas(ExpDataRunInput.IMPORTED_DATA_ROLE,  ExpProtocol.ApplicationType.ExperimentRunOutput);
+                if (transformedDatas.size() == 1)
+                {
+                    dataRows = serializeDataRows(transformedDatas.get(0), provider, protocol, user);
+                }
             }
         }
         jsonObject.put(DATA_ROWS, dataRows);
