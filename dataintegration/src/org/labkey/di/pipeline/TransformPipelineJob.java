@@ -19,12 +19,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.property.SystemProperty;
 import org.labkey.api.pipeline.ParamParser;
+import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineService;
@@ -77,11 +79,11 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
     private transient DbScope.Transaction _sourceTx;
     private transient DbScope.Transaction _targetTx;
 
-    public TransformPipelineJob(@NotNull TransformJobContext info, TransformDescriptor etlDescriptor)
+    public TransformPipelineJob(@NotNull TransformJobContext info, TransformDescriptor etlDescriptor) throws PipelineJobException
     {
         super(ETLPipelineProvider.NAME,
                 new ViewBackgroundInfo(info.getContainer(), info.getUser(), null),
-                PipelineService.get().findPipelineRoot(info.getContainer()));
+                findPipelineRoot(info));
         _etlDescriptor = etlDescriptor;
 
         File etlLogDir = getPipeRoot().resolvePath("etlLogs");
@@ -97,6 +99,18 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
         setBaseName(StringUtils.substringBefore(etlLogFile.getName(), "." + LOG_EXTENSION));
         initVariableMap(info);
         _parameters.putAll(etlDescriptor.getPipelineParameters());
+    }
+
+    @NotNull
+    private static PipeRoot findPipelineRoot(@NotNull TransformJobContext info) throws PipelineJobException
+    {
+        Container c = info.getContainer();
+        if (null == c)
+            throw new PipelineJobException("Container not found for etl " + info.getTransformId());
+        PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(c);
+        if (null == pipeRoot)
+            throw new PipelineJobException("Pipeline root is misconfigured for container " + c);
+        return pipeRoot;
     }
 
     @NotNull
