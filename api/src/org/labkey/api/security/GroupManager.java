@@ -538,11 +538,13 @@ public class GroupManager
             assertFalse(policy.hasPermission(user, TrustedPermission.class));
             assertFalse(policy.hasPermission(user, AnalystPermission.class));
 
+/*
             policy.addRoleAssignment(user, AnalystRole.class);
             assertFalse(policy.hasPermission(user, PlatformDeveloperPermission.class));
             assertFalse(policy.hasPermission(user, TrustedPermission.class));
             assertTrue(policy.hasPermission(user, AnalystPermission.class));
             policy.clearAssignedRoles(user);
+*/
         }
 
 

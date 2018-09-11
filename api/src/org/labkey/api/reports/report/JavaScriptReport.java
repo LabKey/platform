@@ -17,11 +17,15 @@
 package org.labkey.api.reports.report;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.Container;
 import org.labkey.api.query.JavaScriptExportScriptModel;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.reports.LabkeyScriptEngineManager;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.ClientDependency;
 
+import javax.script.ScriptEngine;
 import java.util.LinkedHashSet;
 
 /*
@@ -111,6 +115,13 @@ public class JavaScriptReport extends ScriptReport
         view.setFrame(WebPartView.FrameType.NONE);
         view.setClientDependencies(getDescriptor().getClientDependencies());
         return view;
+    }
+
+    @Override
+    public ScriptEngine getScriptEngine(Container c)
+    {
+        LabkeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+        return mgr.getEngineByExtension(c, "js");
     }
 
     public class JavaScriptReportBean

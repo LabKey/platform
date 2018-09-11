@@ -519,8 +519,8 @@ public class ExternalScriptEngine extends AbstractScriptEngine
         return null;
     }
 
-    public boolean isSandboxed()
+    public ExternalScriptEngineDefinition getEngineDefinition()
     {
-        return false;
+        return _def;
     }
 }

@@ -39,6 +39,8 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
+import org.labkey.api.reports.ExternalScriptEngine;
+import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.model.ReportPropsManager;
@@ -62,11 +64,13 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AnalystPermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
@@ -82,6 +86,7 @@ import org.labkey.api.view.ViewContext;
 import org.springframework.validation.Errors;
 
 import javax.imageio.ImageIO;
+import javax.script.ScriptEngine;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -435,11 +440,32 @@ public class ReportUtil
         return false;
     }
 
-    public static boolean canCreateScript(ViewContext context)
+    /**
+     * Helper to determine if the user can create a script report.
+     */
+    public static boolean canCreateScript(ViewContext context, String extension)
     {
         User u = context.getUser();
-        return context.getContainer().hasPermission(u, InsertPermission.class)
-                && u.hasRootPermission(AnalystPermission.class);
+
+        if (!context.getContainer().hasPermission(u, InsertPermission.class))
+            return false;
+
+        // if you are a platform developer you can create a script report
+        if (u.hasRootPermission(PlatformDeveloperPermission.class))
+            return true;
+        else if (u.hasRootPermission(AnalystPermission.class))
+        {
+            // analysts can only create reports on sandboxed engine instances
+            LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+            ScriptEngine engine = svc.getEngineByExtension(context.getContainer(), extension);
+            if (engine instanceof ExternalScriptEngine)
+            {
+                return ((ExternalScriptEngine)engine).getEngineDefinition().isSandboxed();
+            }
+            else
+                return true;    // most likely internal rhino engine
+        }
+        return false;
     }
 
     public static boolean isInRole(User user, Container container, Class<? extends Role> roleCls)
