@@ -95,7 +95,7 @@ LABKEY.discuss.removeAttachment = function(eid, name, xid) {
 (function($) {
 
     var _init = function() {
-        $('a[data-toggle="tab"]').on('show.bs.tab', function (e) {
+        $('#preview-tab').on('show.bs.tab', function (e) {
             var currentText = $("#body")[0].value;
             if (e.target.hash === '#preview') {
                 _convertFormat('MARKDOWN', 'HTML', currentText, 'preview');
