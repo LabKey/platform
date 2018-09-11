@@ -104,9 +104,9 @@ abstract public class TransformBaseTable extends VirtualTable<UserSchema>
         sql.append(_nameMap.get("Status"));
         sql.append(", t.RecordCount AS ");
         sql.append(_nameMap.get("RecordCount"));
-        sql.append(", (CAST("); // get the number of seconds as n.nnn
-        sql.append(dialect.getDateDiff(Calendar.MILLISECOND, "t.EndTime", "t.StartTime"));
-        sql.append(" AS FLOAT)/1000)");
+        sql.append(", (CAST("); // get the number of seconds
+        sql.append(dialect.getDateDiff(Calendar.SECOND, "t.EndTime", "t.StartTime"));
+        sql.append(" AS FLOAT))");
         sql.append(" AS ");
         sql.append(_nameMap.get("ExecutionTime"));
         sql.append(", t.JobId AS ");
