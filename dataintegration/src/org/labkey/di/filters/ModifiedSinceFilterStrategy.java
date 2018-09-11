@@ -239,11 +239,11 @@ public class ModifiedSinceFilterStrategy extends FilterStrategyImpl
         }
         catch (DataIntegrityViolationException ex)
         {
-            throw new ConfigurationException("Timestamp column '"+ _table.getName() + "." + tsCol.getColumnName()+"' contains value not castable to a legal type.", ex);
+            throw new ConfigurationException("Timestamp column '"+ _table.getName() + "." + tsCol.getColumnName() + "' contains value not castable to a legal type.", ex);
         }
         catch (Exception ex)
         {
-            throw new ConfigurationException("Problem with configured timestamp column '"+ _table.getName() + "." + tsCol.getColumnName(), ex);
+            throw new ConfigurationException("Problem checking value of configured ETL timestamp column '" + _table.getName() + "." + tsCol.getColumnName() + "' for ETL.", ex);
         }
 
         List<Aggregate.Result> list = results.get(tsCol.getName());
