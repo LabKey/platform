@@ -244,9 +244,8 @@ public class AnnouncementManager
         {
             List<Integer> userIds = ann.getMemberListIds();
 
-            // Always attach member list to initial message
-            int first = (null == ann.getParent() ? ann.getRowId() : getParentRowId(ann));
-            insertMemberList(user, userIds, first);
+            // Attach member list to current message/response. This gives us a history of changes and is needed to handle moderator reviews.
+            saveMemberList(user, userIds, ann.getRowId());
         }
         catch (Exception e)
         {
@@ -300,7 +299,7 @@ public class AnnouncementManager
         String name = AnnouncementManager.getMessageBoardSettings(c).getConversationName();
         BulkEmailer emailer = new BulkEmailer(user);
         List<String> toList = SecurityManager.getUsersWithPermissions(c, Collections.singleton(AdminPermission.class)).stream()
-            .map(admin->admin.getEmail())
+            .map(User::getEmail)
             .collect(Collectors.toList());
 
         if (toList.isEmpty())
@@ -317,9 +316,9 @@ public class AnnouncementManager
                 msg.setSubject("New " + name.toLowerCase() + " in " + c.getPath() + " (" + c.getTitle() + ") requires moderator review");
 
                 StringBuilder content = new StringBuilder();
-                content.append("Please visit the Moderator Review page at " + new ActionURL(ModeratorReviewAction.class, c).getURIString());
+                content.append("Please visit the Moderator Review page at ").append(new ActionURL(ModeratorReviewAction.class, c).getURIString());
                 content.append("\n\nSubject: ").append(ann.getTitle());
-                content.append("\nUser: ").append(user.getDisplayName(user) + " (" + user.getEmail() + ")");
+                content.append("\nUser: ").append(user.getDisplayName(user)).append(" (").append(user.getEmail()).append(")");
                 content.append("\n").append(name).append(": ").append(AnnouncementsController.getThreadURL(c, ann.getEntityId(), ann.getRowId()).getURIString());
 
                 msg.setTextContent(content.toString());
@@ -330,7 +329,7 @@ public class AnnouncementManager
             {
                 ExceptionUtil.logExceptionToMothership(null, e);
             }
-        };
+        }
     }
 
     // Magic date value used to mark an announcement that a moderator has reviewed and marked as spam
@@ -402,7 +401,7 @@ public class AnnouncementManager
                             reason = EmailNotificationBean.Reason.memberList;
                             changePreferenceURL = new ActionURL(AnnouncementsController.RemoveFromMemberListAction.class, c);
                             changePreferenceURL.addParameter("userId", String.valueOf(recipient.getUserId()));
-                            changePreferenceURL.addParameter("messageId", String.valueOf(parent.getRowId()));
+                            changePreferenceURL.addParameter("messageId", String.valueOf(a.getRowId())); // Most recent member list is always attached to the most recent response
                         }
                         else
                         {
@@ -449,7 +448,7 @@ public class AnnouncementManager
         }
     }
 
-    private static synchronized void insertMemberList(User user, List<Integer> userIds, int messageId)
+    private static synchronized void saveMemberList(User user, List<Integer> userIds, int messageId)
     {
         // TODO: Should delete/insert only on diff
         if (null != userIds)
@@ -462,27 +461,12 @@ public class AnnouncementManager
     }
 
 
-    private static int getParentRowId(AnnouncementModel ann)
-    {
-        return new SqlSelector(_comm.getSchema(), "SELECT RowId FROM " + _comm.getTableInfoAnnouncements() + " WHERE EntityId = ?", ann.getParent()).getObject(Integer.class);
-    }
-
-
+    // Most recent member list is attached to the most recent approved post
     static List<Integer> getMemberList(AnnouncementModel ann)
     {
-        SQLFragment sql;
+        SQLFragment sql = new SQLFragment("SELECT UserId FROM " + _comm.getTableInfoMemberList() + " WHERE MessageId = ?", ann.getRowId());
 
-        if (null == ann.getParent())
-            sql = new SQLFragment("SELECT UserId FROM " + _comm.getTableInfoMemberList() + " WHERE MessageId = ?", ann.getRowId());
-        else
-            sql = new SQLFragment("SELECT UserId FROM " + _comm.getTableInfoMemberList() + " WHERE MessageId = (SELECT RowId FROM " + _comm.getTableInfoAnnouncements() + " WHERE EntityId = ?)", ann.getParent());
-
-        Collection<Integer> userIds = new SqlSelector(_comm.getSchema(), sql).getCollection(Integer.class);
-        List<Integer> ids = new ArrayList<>(userIds.size());
-
-        ids.addAll(userIds);
-
-        return ids;
+        return new SqlSelector(_comm.getSchema(), sql).getArrayList(Integer.class);
     }
 
 
@@ -491,9 +475,8 @@ public class AnnouncementManager
         update.beforeUpdate(user);
         AnnouncementModel result = Table.update(user, _comm.getTableInfoAnnouncements(), update, update.getRowId());
 
-        // Always attach member list to initial message
-        int first = (null == result.getParent() ? result.getRowId() : getParentRowId(result));
-        insertMemberList(user, result.getMemberListIds(), first);
+        // Member list is attached to each post/response
+        saveMemberList(user, result.getMemberListIds(), result.getRowId());
 
         try
         {
@@ -511,6 +494,8 @@ public class AnnouncementManager
     private static void deleteAnnouncement(AnnouncementModel ann)
     {
         Table.delete(_comm.getTableInfoAnnouncements(), ann.getRowId());
+        // Delete the member list associated with this announcement
+        Table.delete(_comm.getTableInfoMemberList(), new SimpleFilter(FieldKey.fromParts("MessageId"), ann.getRowId()));
         AttachmentService.get().deleteAttachments(ann.getAttachmentParent());
     }
 
@@ -528,9 +513,6 @@ public class AnnouncementManager
             {
                 deleteAnnouncement(ann);
 
-                // Delete the member list associated with this thread
-                Table.delete(_comm.getTableInfoMemberList(), new SimpleFilter(FieldKey.fromParts("MessageId"), ann.getRowId()));
-
                 ann.getResponses().forEach(AnnouncementManager::deleteAnnouncement);
             }
 
@@ -546,6 +528,8 @@ public class AnnouncementManager
         Table.delete(_comm.getTableInfoMemberList(), new SimpleFilter(FieldKey.fromParts("UserId"), user.getUserId()));
     }
 
+    // Deletes user from a single announcement (we should be passing in the most recent response). If the most recent response is then
+    // deleted, the user will be back on the member list.
     public static void deleteUserFromMemberList(User user, int messageId)
     {
         Table.delete(_comm.getTableInfoMemberList(), new SimpleFilter(FieldKey.fromParts("UserId"), user.getUserId()).addCondition(FieldKey.fromParts("MessageId"), messageId));

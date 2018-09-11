@@ -17,19 +17,19 @@
 -- For each thread, select RowId, EntityId, Container, Body, RendererType, CreatedBy, and Created from the original post and add Title, Status,
 --   Expires, CreatedBy, and Created from either the most recent response or the original post, if no responses.
 CREATE VIEW comm.Threads AS
-    SELECT y.RowId, y.EntityId, y.Container, y.Body, y.RendererType, PropsId AS LatestId, props.Title, props.AssignedTo,
-        props.Status, props.Expires, props.CreatedBy AS ResponseCreatedBy, props.Created AS ResponseCreated,
-        y.DiscussionSrcIdentifier, y.DiscussionSrcURL, y.CreatedBy, y.Created,
-        y.modified, y.lastIndexed,
-      (SELECT COUNT(*) FROM comm.Announcements WHERE Parent = y.EntityId AND Container = y.Container AND Approved > '1970-01-01') AS ResponseCount FROM
+    SELECT threads.*, PropsId AS LatestId, props.Title, props.AssignedTo, props.Status, props.Expires, props.CreatedBy AS ResponseCreatedBy, props.Created AS ResponseCreated FROM
     (
-        SELECT *, CASE WHEN LastResponseId IS NULL THEN x.RowId ELSE LastResponseId END AS PropsId FROM
+        SELECT parents.RowId, parents.EntityId, parents.Container, parents.Body, parents.RendererType, parents.DiscussionSrcIdentifier, parents.DiscussionSrcURL,
+            parents.CreatedBy, parents.Created, parents.Modified, parents.LastIndexed, COALESCE(LastResponseId, RowId) AS PropsId, COALESCE(ResponseCount, 0) AS ResponseCount
+        FROM comm.Announcements parents LEFT OUTER JOIN
         (
-            SELECT *, (SELECT MAX(RowId) FROM comm.Announcements response WHERE response.Parent = message.EntityId AND response.Container = message.Container) AS LastResponseId
-            FROM comm.Announcements message
-            WHERE Parent IS NULL AND Approved > '1970-01-01'
-        ) x
-    ) y LEFT OUTER JOIN comm.Announcements props ON props.RowId = PropsId;
+            SELECT Container, Parent, MAX(RowId) AS LastResponseId, COUNT(*) AS ResponseCount FROM comm.Announcements
+            WHERE Parent IS NOT NULL AND Approved > '1970-01-01'
+            GROUP BY Container, Parent
+        ) responses ON responses.Container = parents.Container AND responses.Parent = parents.EntityId
+        WHERE parents.parent IS NULL AND Approved > '1970-01-01'
+    ) threads
+    LEFT OUTER JOIN comm.Announcements props ON props.RowId = PropsId;
 
 GO
 

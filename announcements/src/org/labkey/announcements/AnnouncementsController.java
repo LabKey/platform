@@ -69,7 +69,6 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.settings.AbstractConfigTypeProvider;
@@ -449,12 +448,12 @@ public class AnnouncementsController extends SpringActionController
     {
         public ModelAndView getConfirmView(MemberListRemovalForm form, BindException errors)
         {
-            AnnouncementModel thread = validateAndGetThread(form, errors);
+            AnnouncementModel ann = validateAndGetAnnouncement(form, errors);
 
             if (errors.hasErrors())
                 return new SimpleErrorView(errors);
             else
-                return new RemoveUserView(thread, getUser().getEmail(), getSettings());
+                return new RemoveUserView(ann, getUser().getEmail(), getSettings());
         }
 
         @Override
@@ -489,15 +488,15 @@ public class AnnouncementsController extends SpringActionController
 
         public void validateCommand(MemberListRemovalForm form, Errors errors)
         {
-            validateAndGetThread(form, errors);
+            validateAndGetAnnouncement(form, errors);
         }
 
-        private AnnouncementModel validateAndGetThread(MemberListRemovalForm form, Errors errors)
+        private AnnouncementModel validateAndGetAnnouncement(MemberListRemovalForm form, Errors errors)
         {
             User user = getUser();
             Settings settings = getSettings();
 
-            AnnouncementModel thread = AnnouncementManager.getAnnouncement(getContainer(), form.getMessageId());
+            AnnouncementModel ann = AnnouncementManager.getAnnouncement(getContainer(), form.getMessageId());
 
             if (form.getUserId() != user.getUserId())
             {
@@ -508,16 +507,16 @@ public class AnnouncementsController extends SpringActionController
                 else
                     errors.reject(ERROR_MSG, "You need to be logged in as " + removeUser.getEmail() + ".");
             }
-            else if (null == thread)
+            else if (null == ann)
             {
                 errors.reject(ERROR_MSG, settings.getConversationName() + " not found.");
             }
-            else if (!thread.getMemberListIds().contains(getUser().getUserId()))
+            else if (!ann.getMemberListIds().contains(getUser().getUserId()))
             {
                 errors.reject(ERROR_MSG, "You are not on the member list for this " + settings.getConversationName().toLowerCase() + ".");
             }
 
-            return thread;
+            return ann;
         }
     }
 
@@ -767,14 +766,6 @@ public class AnnouncementsController extends SpringActionController
             try
             {
                 AnnouncementManager.insertAnnouncement(c, u, insert, files);
-
-                // update the parent message setting it match the status of the update
-                AnnouncementModel parent = AnnouncementManager.getAnnouncement(getContainer(), insert.getParent());
-                if (parent != null)
-                {
-                    parent.setStatus(insert.getStatus());
-                    Table.update(u, _comm.getTableInfoAnnouncements(), parent, parent.getRowId());
-                }
             }
             catch (IOException e)
             {
@@ -1717,32 +1708,28 @@ public class AnnouncementsController extends SpringActionController
         @Override
         public URLHelper getRedirectURL(Object o)
         {
-            Thread digestThread = new Thread(){
-                @Override
-                public void run()
+            Thread digestThread = new Thread(() -> {
+                // Normally, daily digest stops at previous midnight; override to include all messages through now
+                DailyMessageDigest messageDigest = new DailyMessageDigest() {
+                    @Override
+                    protected Date getEndRange(Date current, Date last)
+                    {
+                        return current;
+                    }
+                };
+
+                // Just announcements
+                messageDigest.addProvider(new AnnouncementDigestProvider());
+
+                try
                 {
-                    // Normally, daily digest stops at previous midnight; override to include all messages through now
-                    DailyMessageDigest messageDigest = new DailyMessageDigest() {
-                        @Override
-                        protected Date getEndRange(Date current, Date last)
-                        {
-                            return current;
-                        }
-                    };
-
-                    // Just announcements
-                    messageDigest.addProvider(new AnnouncementDigestProvider());
-
-                    try
-                    {
-                        messageDigest.sendMessageDigest();
-                    }
-                    catch (Exception e)
-                    {
-                        Logger.getLogger(AnnouncementsController.class).error(e);
-                    }
+                    messageDigest.sendMessageDigest();
                 }
-            };
+                catch (Exception e)
+                {
+                    Logger.getLogger(AnnouncementsController.class).error(e);
+                }
+            });
             digestThread.start();
 
             return getBeginURL(getContainer());
@@ -2653,14 +2640,7 @@ public class AnnouncementsController extends SpringActionController
                         else if ((emailOption == EmailOption.MESSAGES_MINE.getValue())
                                 || (emailOption == EmailOption.MESSAGES_MINE_DAILY_DIGEST.getValue()))
                         {
-                            if (ann.getAuthors().contains(getViewContext().getUser()))
-                            {
-                                forumSubscription = true;
-                            }
-                            else
-                            {
-                                forumSubscription = false;
-                            }
+                            forumSubscription = ann.getAuthors().contains(getViewContext().getUser());
                         }
                         else
                         {
@@ -2887,7 +2867,7 @@ public class AnnouncementsController extends SpringActionController
             QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT);
             settings.setQueryName(AnnouncementSchema.MODERATOR_REVIEW_TABLE_NAME);
 
-            QueryView qv = new QueryView(schema, settings, errors) {
+            return new QueryView(schema, settings, errors) {
                 @Override
                 protected void populateButtonBar(DataView view, ButtonBar bar)
                 {
@@ -2900,15 +2880,13 @@ public class AnnouncementsController extends SpringActionController
                     bar.add(approveButton);
                 }
             };
-
-            return qv;
         }
 
         @Override
         public boolean handlePost(ModeratorReviewForm form, BindException errors)
         {
             Stream<AnnouncementModel> stream = getViewContext().getList(DataRegion.SELECT_CHECKBOX_NAME).stream()
-                .map(s -> Integer.parseInt(s))
+                .map(Integer::parseInt)
                 .map(rowId -> AnnouncementManager.getAnnouncement(getContainer(), rowId));
 
             if (form.isSpam())
