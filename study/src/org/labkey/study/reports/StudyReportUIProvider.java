@@ -175,7 +175,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
             }
 
             // r report
-            if (ReportUtil.canCreateScript(context) && RReport.isEnabled())
+            if (ReportUtil.canCreateScript(context, "r") && RReport.isEnabled())
             {
                 RReportBean rBean = new RReportBean(settings);
                 rBean.setReportType(StudyRReport.TYPE);

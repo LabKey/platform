@@ -101,7 +101,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
             DesignerInfoImpl di = new DesignerInfoImpl(RReport.TYPE, "R Report", null, ReportUtil.getScriptReportDesignerURL(context, bean),
                     _getIconPath(RReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(RReport.TYPE));
             di.setId("create_rReport");
-            di.setDisabled(!ReportUtil.canCreateScript(context));
+            di.setDisabled(!ReportUtil.canCreateScript(context, "r"));
 
             designers.add(di);
         }
@@ -158,7 +158,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
             }
         }
 
-        boolean canCreateScript = ReportUtil.canCreateScript(context);
+        boolean canCreateScript = ReportUtil.canCreateScript(context, "r");
 
         if (canCreateScript && RReport.isEnabled())
         {

@@ -92,6 +92,7 @@ import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.ScriptOutput;
+import org.labkey.api.reports.report.ScriptReport;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
@@ -159,6 +160,7 @@ import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
@@ -940,7 +942,7 @@ public class ReportsController extends SpringActionController
         {
             _report = form.getReport(getViewContext());
             List<ValidationError> reportErrors = new ArrayList<>();
-            validatePermissions(getViewContext(), _report, reportErrors);
+            validatePermissions(getViewContext(), (ScriptReport)_report, reportErrors);
 
             if (reportErrors.isEmpty())
                 return new AjaxScriptReportView(null, form, Mode.create);
@@ -1345,15 +1347,21 @@ public class ReportsController extends SpringActionController
     }
 
 
-    protected void validatePermissions(ViewContext context, Report report, List<ValidationError> errors)
+    protected void validatePermissions(ViewContext context, ScriptReport report, List<ValidationError> errors)
     {
         if (report != null)
         {
             if (report.getDescriptor().isNew())
             {
-                if (!ReportUtil.canCreateScript(context))
-                    //TODO update the message text
-                    errors.add(new SimpleValidationError("Only users with the site Analyst permission are allowed to create script views."));
+                ScriptEngine engine = report.getScriptEngine(context.getContainer());
+                if (engine != null)
+                {
+                    if (!ReportUtil.canCreateScript(context, engine.getFactory().getExtensions().get(0)))
+                        //TODO update the message text
+                        errors.add(new SimpleValidationError("Only users with the site Analyst permission are allowed to create script views."));
+                }
+                else
+                    errors.add(new SimpleValidationError("Unable to find a configured script engine for this report."));
             }
             else
                 report.canEdit(context.getUser(), context.getContainer(), errors);
@@ -1380,7 +1388,7 @@ public class ReportsController extends SpringActionController
                     report = form.getReport(getViewContext());
 
                 List<ValidationError> reportErrors = new ArrayList<>();
-                validatePermissions(getViewContext(), report, reportErrors);
+                validatePermissions(getViewContext(), (ScriptReport)report, reportErrors);
 
                 if (!reportErrors.isEmpty())
                 {
