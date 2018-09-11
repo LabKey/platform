@@ -15,6 +15,7 @@
  */
 package org.labkey.api.rstudio;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.security.User;
@@ -75,7 +76,16 @@ public interface RStudioService
     }
 
     // the no-explanation version, just return null if user is not eligible
-    ActionURL getRStudioLink(User user);
+    default ActionURL getRStudioLink(User user) //TODO remove after merge
+    {
+        return null;
+    }
+
+    // the no-explanation version, just return null if user is not eligible
+    default ActionURL getRStudioLink(User user, Container container)
+    {
+        return getRStudioLink(user); //TODO change after merge
+    }
 
     default HttpView getExportToRStudioView(QueryView.TextExportOptionsBean textBean)
     {

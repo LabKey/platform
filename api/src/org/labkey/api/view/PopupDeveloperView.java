@@ -64,7 +64,7 @@ public class PopupDeveloperView extends PopupMenuView
         RStudioService rstudio = RStudioService.get();
         if (null != rstudio)
         {
-            ActionURL url = rstudio.getRStudioLink(context.getUser());
+            ActionURL url = rstudio.getRStudioLink(context.getUser(), context.getContainer());
             if (null != url)
             {
                 NavTree rss = new NavTree("RStudio Server",url+"&method=LAUNCH");
