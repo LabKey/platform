@@ -17,10 +17,10 @@
 -- For each thread, select RowId, EntityId, Container, Body, RendererType, CreatedBy, and Created from the original post and add Title, Status,
 --   Expires, CreatedBy, and Created from either the most recent response or the original post, if no responses.
 CREATE VIEW comm.Threads AS
-    SELECT threads.*, PropsId AS LatestId, props.Title, props.AssignedTo, props.Status, props.Expires, props.CreatedBy AS ResponseCreatedBy, props.Created AS ResponseCreated FROM
+    SELECT threads.*, props.Title, props.AssignedTo, props.Status, props.Expires, props.CreatedBy AS ResponseCreatedBy, props.Created AS ResponseCreated FROM
     (
         SELECT parents.RowId, parents.EntityId, parents.Container, parents.Body, parents.RendererType, parents.DiscussionSrcIdentifier, parents.DiscussionSrcURL,
-            parents.CreatedBy, parents.Created, parents.Modified, parents.LastIndexed, COALESCE(LastResponseId, RowId) AS PropsId, COALESCE(ResponseCount, 0) AS ResponseCount
+            parents.CreatedBy, parents.Created, parents.Modified, parents.LastIndexed, COALESCE(LastResponseId, RowId) AS LatestId, COALESCE(ResponseCount, 0) AS ResponseCount
         FROM comm.Announcements parents LEFT OUTER JOIN
         (
             SELECT Container, Parent, MAX(RowId) AS LastResponseId, COUNT(*) AS ResponseCount FROM comm.Announcements
@@ -29,7 +29,7 @@ CREATE VIEW comm.Threads AS
         ) responses ON responses.Container = parents.Container AND responses.Parent = parents.EntityId
         WHERE parents.parent IS NULL AND Approved > '1970-01-01'
     ) threads
-    LEFT OUTER JOIN comm.Announcements props ON props.RowId = PropsId;
+    LEFT OUTER JOIN comm.Announcements props ON props.RowId = LatestId;
 
 GO
 
