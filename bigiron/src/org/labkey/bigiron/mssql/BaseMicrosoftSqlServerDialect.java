@@ -1204,7 +1204,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
                         StringUtils.join(index.columnNames, ", "), change.getSchemaName(), change.getTableName()));
 
                 final String legalColumnName = makeLegalIdentifier(columnName);
-                final String hashedColumn = makeLegalIdentifier("_hashed_" + columnName);
+                final String hashedColumn = makeLegalIdentifier(PropertyStorageSpec.HASHED_COLUMN_PREFIX + columnName);
                 final String tableName = makeTableIdentifier(change);
 
                 // Create computed hash column
@@ -1378,7 +1378,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         ));
 
         final String columnName = index.columnNames[0];
-        final String hashedColumn = makeLegalIdentifier("_hashed_" + columnName);
+        final String hashedColumn = makeLegalIdentifier(PropertyStorageSpec.HASHED_COLUMN_PREFIX + columnName);
         final String tableName = makeTableIdentifier(change);
 
         statements.add(String.format("IF EXISTS (SELECT 1 FROM sys.triggers i WHERE i.name = '%s') DROP TRIGGER %s.%s",
@@ -1441,7 +1441,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
                 else
                 {
                     final String columnName = index.columnNames[0];
-                    final String hashedColumn = makeLegalIdentifier("_hashed_" + columnName);
+                    final String hashedColumn = makeLegalIdentifier(PropertyStorageSpec.HASHED_COLUMN_PREFIX + columnName);
                     final String tableName = makeTableIdentifier(change);
 
                     statements.add(String.format("IF EXISTS (SELECT 1 FROM sys.triggers i WHERE i.name = '%s') DROP TRIGGER %s.%s",
