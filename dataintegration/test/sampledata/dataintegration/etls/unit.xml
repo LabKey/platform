@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<etl xmlns="http://labkey.org/etl/xml">
+    <name>Four</name>
+    <description>junit job with two test task types</description>
+    <transforms>
+        <transform id="Step1" type="org.labkey.di.steps.TestTask">
+            <description>valid</description>
+            <source schemaName="junit" queryName="etl_step1_source" />
+            <destination schemaName="junit" queryName="etl_step1_target"/>
+        </transform>
+        <transform id="Step2" type="org.labkey.di.steps.TestTask">
+            <description>valid</description>
+            <source schemaName="junit" queryName="etl_step2_source" />
+            <destination schemaName="junit" queryName="etl_step2_target"/>
+        </transform>
+    </transforms>
+    <schedule><poll interval="5m"></poll></schedule>
+</etl>

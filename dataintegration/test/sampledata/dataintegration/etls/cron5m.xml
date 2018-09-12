@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<etl xmlns="http://labkey.org/etl/xml">
+    <name>One</name>
+    <description>chron 5m</description>
+    <transforms>
+        <transform id="One" type="org.labkey.di.pipeline.TransformTask">
+            <description>valid</description>
+            <source schemaName="vehicle" queryName="etl_source" />
+            <destination schemaName="vehicle" queryName="etl_target2" targetOption="merge"/>
+        </transform>
+    </transforms>
+    <schedule><cron expression="0 0/5 * * * ?" /></schedule>
+</etl>

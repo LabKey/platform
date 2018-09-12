@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<etl xmlns="http://labkey.org/etl/xml">
+    <name>TaskrefBadSetting</name>
+    <description>junit job with one task</description>
+    <transforms>
+        <transform id="One" type="TaskrefTransformStep">
+            <taskref ref="org.labkey.di.steps.TestTaskRefTask"/>
+        </transform>
+    </transforms>
+</etl>

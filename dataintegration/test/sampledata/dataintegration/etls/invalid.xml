@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<etl xmlns="http://labkey.org/etl/xml">
+    <name>Invalid</name>
+    <description>invalid junit job with a non-dataintegration task type</description>
+    <transforms>
+        <transform id="Invalid" type="org.labkey.study.importer.StudyImportInitialTask">
+            <description>valid</description>
+            <source schemaName="vehicle" queryName="etl_source" />
+            <destination schemaName="vehicle" queryName="etl_target2" targetOption="merge"/>
+        </transform>
+    </transforms>
+    <schedule><poll interval="5m"></poll></schedule>
+</etl>

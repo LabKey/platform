@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<etl xmlns="http://labkey.org/etl/xml">
+    <name>Unknown</name>
+    <description>invalid junit job with unknown task type</description>
+    <transforms>
+        <transform id="bogus" type="org.labkey.di.pipeline.UnknownTask">
+            <description>valid</description>
+            <source schemaName="vehicle" queryName="etl_source" />
+            <destination schemaName="vehicle" queryName="etl_target2" targetOption="merge"/>
+        </transform>
+    </transforms>
+    <schedule><poll interval="5m"></poll></schedule>
+</etl>

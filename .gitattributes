@@ -781,6 +781,27 @@ dataintegration/src/org/labkey/di/view/etlDefinition.jsp -text
 dataintegration/src/org/labkey/di/view/transformConfiguration.jsp -text
 dataintegration/src/org/labkey/di/view/transformDetails.jsp -text
 dataintegration/src/org/labkey/di/view/transformHistory.jsp -text
+dataintegration/test/sampledata/dataintegration/ETLTestStudy.zip -text
+dataintegration/test/sampledata/dataintegration/etls/badQueryParameterType.xml -text svneol=unset#application/xml
+dataintegration/test/sampledata/dataintegration/etls/badprocedure.xml -text
+dataintegration/test/sampledata/dataintegration/etls/badsource.xml -text
+dataintegration/test/sampledata/dataintegration/etls/badsourceopt.xml -text
+dataintegration/test/sampledata/dataintegration/etls/badtarget.xml -text
+dataintegration/test/sampledata/dataintegration/etls/badtargetopt.xml -text
+dataintegration/test/sampledata/dataintegration/etls/cron1h.xml -text
+dataintegration/test/sampledata/dataintegration/etls/cron5m.xml -text
+dataintegration/test/sampledata/dataintegration/etls/duplicate.xml -text
+dataintegration/test/sampledata/dataintegration/etls/four.xml -text
+dataintegration/test/sampledata/dataintegration/etls/interval1sec.xml -text
+dataintegration/test/sampledata/dataintegration/etls/interval2.xml -text
+dataintegration/test/sampledata/dataintegration/etls/interval5m.xml -text
+dataintegration/test/sampledata/dataintegration/etls/invalid.xml -text
+dataintegration/test/sampledata/dataintegration/etls/noclass.xml -text
+dataintegration/test/sampledata/dataintegration/etls/noid.xml -text
+dataintegration/test/sampledata/dataintegration/etls/one.xml -text
+dataintegration/test/sampledata/dataintegration/etls/taskrefbadsetting.xml -text
+dataintegration/test/sampledata/dataintegration/etls/unit.xml -text
+dataintegration/test/sampledata/dataintegration/etls/unknown.xml -text
 dataintegration/test/src/org/labkey/test/pages/di/ConfirmDeletePage.java -text
 dataintegration/test/src/org/labkey/test/pages/di/DefinitionPage.java -text
 dataintegration/test/src/org/labkey/test/pages/di/DefinitionsQueryView.java -text

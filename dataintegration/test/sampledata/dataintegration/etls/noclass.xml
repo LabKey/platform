@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<etl xmlns="http://labkey.org/etl/xml">
+    <name>Noclass</name>
+    <description>valid junit job with no task type specified. Should get default type provided on load</description>
+    <transforms>
+        <transform id="Noclass">
+            <description>valid</description>
+            <source schemaName="vehicle" queryName="etl_source" />
+            <destination schemaName="vehicle" queryName="etl_target2" targetOption="merge"/>
+        </transform>
+    </transforms>
+    <schedule><poll interval="5m"></poll></schedule>
+</etl>

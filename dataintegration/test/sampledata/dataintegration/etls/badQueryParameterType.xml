@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<etl xmlns="http://labkey.org/etl/xml">
+<name>Bad Query Parameter Type</name>
+<description>Specify a parameter type not in enum</description>
+<transforms>
+    <transform id="step1" type="org.labkey.di.pipeline.TransformTask">
+        <description>Copy to target</description>
+        <source schemaName="etltest" queryName="source" />
+        <destination schemaName="etltest" queryName="target" />
+    </transform>
+</transforms>
+    <parameters>
+        <parameter name="badParameter" type="DATETIME"/>
+    </parameters>
+<incrementalFilter className="ModifiedSinceFilterStrategy" timestampColumnName="modified">
+    <deletedRowsSource schemaName="etltest" queryName="delete" deletedSourceKeyColumnName="id" timestampColumnName="rowversion" targetKeyColumnName="id"/>
+</incrementalFilter>
+    <schedule>
+        <poll interval="15s" />
+    </schedule>
+</etl>
