@@ -54,14 +54,14 @@
     }
     String currentName = ((currentEngine != null) ? currentEngine.getFactory().getEngineName() : null);
 %>
-<h4>Available R Configurations</h4>
-<hr/>
 <%
 ScriptEngine parentEngine = mgr.getEngineByExtension(getContainer().getParent(), "r");
 if (parentEngine != null)
 {
     String parentName = parentEngine.getFactory().getEngineName();
 %>
+<h4>Available R Configurations</h4>
+<hr/>
 <div style="max-width: 768px; margin-bottom: 20px">
     Overriding the default R configuration defined at the Site level or in a parent folder allows R reports to be
     run under a different R configuration in this folder and in child folders.
@@ -201,6 +201,8 @@ if (parentEngine != null)
 else
 {
 %>
+<h4>No Available R Configurations</h4>
+<hr/>
 <div>
     No R engines are configured. For more information on how to configure R engines, click
     <a href="https://www.labkey.org/Documentation/wiki-page.view?name=configureScripting&_docid=wiki%3A32d70ce8-ed56-1034-b734-fe851e088836">here</a>.
