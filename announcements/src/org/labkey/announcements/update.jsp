@@ -84,7 +84,7 @@ if (settings.hasMemberList())
     %><tr>
         <td class="labkey-form-label">Members</td>
         <td><labkey:autoCompleteTextArea name="memberListInput" id="memberListInput" rows="5" cols="30" url="<%=h(completeUserUrl)%>" value="<%=h(bean.memberList)%>"/></td>
-        <td width="100%"><i><%
+        <td><i><%
     if (settings.isSecure())
     {
         %> This <%=h(settings.getConversationName().toLowerCase())%> is private; only editors and the users on this list can view it.  These users will also<%
@@ -98,7 +98,7 @@ if (settings.hasMemberList())
 
 if (settings.hasExpires())
 {
-    %><tr><td class="labkey-form-label">Expires</td><td><labkey:input name="expires" size="23" value="<%=formatDate(ann.getExpires())%>"/></td><td width="100%"><i>Expired messages are not deleted, they are just no longer shown on the Portal page.</i></td></tr><%
+    %><tr><td class="labkey-form-label">Expires</td><td><labkey:input name="expires" size="23" value="<%=formatDate(ann.getExpires())%>"/></td><td><i>Expired messages are not deleted, they are just no longer shown on the Portal page.</i></td></tr><%
 }
 
 %>

@@ -88,7 +88,7 @@
         %><tr>
             <td class='labkey-form-label'>Members</td>
             <td><labkey:autoCompleteTextArea name="memberListInput" id="memberListInput" rows="5" cols="40" url="<%=completeUserUrl%>" value="<%=bean.memberList%>"/></td>
-            <td width="100%"><i><%
+            <td><i><%
         if (settings.isSecure())
         {
             %> This <%=h(settings.getConversationName().toLowerCase())%> is private; only editors and the users on this list can view it. These users will also<%
@@ -101,7 +101,7 @@
     }
     if (settings.hasExpires())
     {
-        %><tr><td class='labkey-form-label'>Expires</td><td><labkey:input type='text' size='23' name='expires' value='<%=h(form.get(\"expires\"))%>' /></td><td width="100%"><i>By default the Expires field is set to one month from today. <br>Expired messages are not deleted, they are just no longer shown on the Portal page.</i></td></tr><%
+        %><tr><td class='labkey-form-label'>Expires</td><td><labkey:input type='text' size='23' name='expires' value='<%=h(form.get(\"expires\"))%>' /></td><td><i>By default the Expires field is set to one month from today. <br>Expired messages are not deleted, they are just no longer shown on the Portal page.</i></td></tr><%
     }
 %>
 
