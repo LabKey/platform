@@ -167,11 +167,11 @@ public class TableChange
                         // SQLServer creates a non-unique index for single large text columns with a "_hashed_" prefix.
                         // The uniqueness is enforced by a database trigger.
                         boolean unique = index.first == TableInfo.IndexType.Unique ||
-                                (schema.getSqlDialect().isSqlServer() && columnNames.size() == 1 && columnNames.get(0).startsWith("_hashed_"));
+                                (schema.getSqlDialect().isSqlServer() && columnNames.size() == 1 && columnNames.get(0).startsWith(PropertyStorageSpec.HASHED_COLUMN_PREFIX));
 
                         // remove the _hashed_ column prefix for SQLServer
                         if (schema.getSqlDialect().isSqlServer() && unique)
-                            columnNames = columnNames.stream().map(s -> s.startsWith("_hashed_") ? s.substring("_hashed_".length()) : s).collect(Collectors.toList());
+                            columnNames = columnNames.stream().map(s -> s.startsWith(PropertyStorageSpec.HASHED_COLUMN_PREFIX) ? s.substring(PropertyStorageSpec.HASHED_COLUMN_PREFIX.length()) : s).collect(Collectors.toList());
 
                         Index idx = new Index(unique, columnNames);
 

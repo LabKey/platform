@@ -42,6 +42,12 @@ public class PropertyStorageSpec
     /** Default length for string fields, and the storage used in the generic exp.ObjectProperty table */
     public static final int DEFAULT_SIZE = 4000;
 
+    /**
+     * Prefix added to column name for a auto-generated hashed column required for SQLServer when
+     * adding a unique constraint over large text fields.
+     */
+    public static final String HASHED_COLUMN_PREFIX = "_hashed_";
+
     public String getDescription()
     {
         return description;
