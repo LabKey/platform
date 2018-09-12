@@ -1272,12 +1272,12 @@ public class TransformManager implements DataIntegrationService
 
             LOG.info(descriptorCount + " ETL descriptors defined in all modules");
 
-            // Make sure the cache retrieves the expected number of ETL descriptors from a couple test modules, if present
+            // Make sure the cache retrieves the expected number of ETL descriptors from a couple of modules, if present
 
-            Module simpleTest = ModuleLoader.getInstance().getModule("simpletest");
+            Module nlp = ModuleLoader.getInstance().getModule("NLP");
 
-            if (null != simpleTest)
-                assertEquals("ETL descriptors from the simpletest module", 2, MODULE_DESCRIPTOR_CACHE.getResourceMap(simpleTest).size());
+            if (null != nlp)
+                assertEquals("ETL descriptors from the NLP module", 2, MODULE_DESCRIPTOR_CACHE.getResourceMap(nlp).size());
 
             Module etlTest = ModuleLoader.getInstance().getModule("ETLTest");
 
