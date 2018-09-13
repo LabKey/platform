@@ -99,6 +99,7 @@ public class ETLListTest extends BaseWebDriverTest
         _etlHelper.runTransform(ETL_LIST_MERGE);
         expectedKeys.add("K4");
 
+        goToManageLists();
         clickAndWait(Locator.linkWithText(DEST_LIST));
         dest = new DataRegionTable("query", this);
         actualKeys = dest.getColumnDataAsText("Key");
@@ -122,6 +123,7 @@ public class ETLListTest extends BaseWebDriverTest
         _etlHelper.runTransform(ETL_AUTO_INCR_LIST_TRUNCATE);
         expectedRows.add("new");
 
+        goToManageLists();
         clickAndWait(Locator.linkWithText(AUTO_INCR_DEST_LIST));
         dest = new DataRegionTable("query", this);
         actualRows = dest.getColumnDataAsText("Field1");
