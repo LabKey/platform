@@ -54,8 +54,11 @@ public interface PropertyService
 
     List<DomainKind> getDomainKinds();
 
-    /** Get all the domains in the same project as the specified container. They may not be in use in the container directly */
+    /** Get all the domains in the specified container. */
     List<? extends Domain> getDomains(Container container);
+
+    /** Get all the domains in the specified container and optionally project and shared. */
+    List<? extends Domain> getDomains(Container container, User user, boolean includeProjectAndShared);
 
     /** Creates an in-memory Domain. It is not automatically saved to the database */
     @NotNull

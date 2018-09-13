@@ -46,6 +46,7 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.test.TestTimeout;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.CPUTimer;
@@ -2081,27 +2082,47 @@ public class OntologyManager
      */
     public static Collection<DomainDescriptor> getDomainDescriptors(Container container)
     {
-        Map<String, DomainDescriptor> ret = new LinkedHashMap<>();
-        String sql = "SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE Project = ?";
-        Container project = container.getProject();
+        return getDomainDescriptors(container, null, false);
+    }
 
-        if (null != project)
+    public static Collection<DomainDescriptor> getDomainDescriptors(Container container, User user, boolean includeProjectAndShared)
+    {
+        if (container == null)
+            return Collections.emptyList();
+
+        if (includeProjectAndShared && user == null)
+            throw new IllegalArgumentException("Can't include data from other containers without a user to check permissions on");
+
+        Map<String, DomainDescriptor> ret = new LinkedHashMap<>();
+        String sql = "SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE Container = ?";
+
+        for (DomainDescriptor dd : new SqlSelector(getExpSchema(), sql, container).getArrayList(DomainDescriptor.class))
         {
-            for (DomainDescriptor dd : new SqlSelector(getExpSchema(), sql, project).getArrayList(DomainDescriptor.class))
+            ret.put(dd.getDomainURI(), dd);
+        }
+
+        if (includeProjectAndShared)
+        {
+            Container project = container.getProject();
+            if (project != null && project.hasPermission(user, ReadPermission.class))
             {
-                ret.put(dd.getDomainURI(), dd);
-            }
-            if (!project.equals(_sharedContainer))
-            {
-                for (DomainDescriptor dd : new SqlSelector(getExpSchema(), sql, ContainerManager.getSharedContainer()).getArrayList(DomainDescriptor.class))
+                for (DomainDescriptor dd : new SqlSelector(getExpSchema(), sql, project).getArrayList(DomainDescriptor.class))
                 {
                     if (!ret.containsKey(dd.getDomainURI()))
-                    {
                         ret.put(dd.getDomainURI(), dd);
-                    }
+                }
+            }
+
+            if (_sharedContainer.hasPermission(user, ReadPermission.class))
+            {
+                for (DomainDescriptor dd : new SqlSelector(getExpSchema(), sql, _sharedContainer).getArrayList(DomainDescriptor.class))
+                {
+                    if (!ret.containsKey(dd.getDomainURI()))
+                        ret.put(dd.getDomainURI(), dd);
                 }
             }
         }
+
         return Collections.unmodifiableCollection(ret.values());
     }
 
