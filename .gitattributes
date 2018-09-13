@@ -699,14 +699,6 @@ api/src/org/labkey/api/defaults/DomainIdForm.java -text
 api/src/org/labkey/api/defaults/SetDefaultValuesAction.java -text
 api/src/org/labkey/api/defaults/SetDefaultValuesAssayAction.java -text
 api/src/org/labkey/api/defaults/SetDefaultValuesDatasetAction.java -text
-api/src/org/labkey/api/di/DataIntegrationService.java -text
-api/src/org/labkey/api/di/DataIntegrationUrls.java -text
-api/src/org/labkey/api/di/ScheduledPipelineJobContext.java -text
-api/src/org/labkey/api/di/ScheduledPipelineJobDescriptor.java -text
-api/src/org/labkey/api/di/TaskRefTask.java -text
-api/src/org/labkey/api/di/TaskRefTaskImpl.java -text
-api/src/org/labkey/api/di/columnTransform/ColumnTransform.java -text
-api/src/org/labkey/api/di/columnTransform/ColumnTransformException.java -text
 api/src/org/labkey/api/docker/DockerService.java -text
 api/src/org/labkey/api/docker/DockerSessionListener.java -text
 api/src/org/labkey/api/event/PropertyChange.java -text
