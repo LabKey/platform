@@ -366,10 +366,10 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
             if (meta.getBatchSize() > 0 && null != batchColumn && !results.hasColumn(batchColumn))
             {
                 StringBuilder sb = new StringBuilder("Batch column '").append(batchColumn).append("' not found in etl source results.");
-                if (meta.getColumnTransforms().containsKey(batchColumn.toString()))
+                if (_meta.getColumnTransforms().containsKey(batchColumn.toString()))
                 {
                     sb.append("\nThis source column name is mapped in the etl xml via destination columnTransforms. Specify the target column name '")
-                            .append(meta.getColumnTransforms().get(batchColumn.toString()))
+                            .append(_meta.getColumnTransforms().get(batchColumn.toString()))
                             .append("' as the batch column instead.");
                 }
                 throw new ConfigurationException(sb.toString());

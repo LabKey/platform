@@ -52,6 +52,7 @@ public abstract class StepMetaImpl extends CopyConfig implements StepMeta
     protected StepProvider provider;
     private final Map<ParameterDescription, Object> _constants = new LinkedHashMap<>();
     private String _etlName;
+    private Map<String,List<ColumnTransform>> _columnTransforms = new CaseInsensitiveHashMap<>();
 
     @Override
     public StepProvider getProvider()
@@ -316,5 +317,10 @@ public abstract class StepMetaImpl extends CopyConfig implements StepMeta
     public void setEtlName(String etlName)
     {
         _etlName = etlName;
+    }
+
+    public Map<String, List<ColumnTransform>> getColumnTransforms()
+    {
+        return Collections.unmodifiableMap(_columnTransforms);
     }
 }

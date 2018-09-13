@@ -683,6 +683,14 @@ core/webapp/notification/NotificationViewAll.js -text
 core/webapp/register.js -text
 core/webpack/buildThemes.js -text
 core/webpack/style.config.js -text
+dataintegration/api-src/org/labkey/api/di/DataIntegrationService.java -text
+dataintegration/api-src/org/labkey/api/di/DataIntegrationUrls.java -text
+dataintegration/api-src/org/labkey/api/di/ScheduledPipelineJobContext.java -text
+dataintegration/api-src/org/labkey/api/di/ScheduledPipelineJobDescriptor.java -text
+dataintegration/api-src/org/labkey/api/di/TaskRefTask.java -text
+dataintegration/api-src/org/labkey/api/di/TaskRefTaskImpl.java -text
+dataintegration/api-src/org/labkey/api/di/columnTransform/ColumnTransform.java -text
+dataintegration/api-src/org/labkey/api/di/columnTransform/ColumnTransformException.java -text
 dataintegration/module.properties -text
 dataintegration/resources/schemas/dataintegration.xml -text
 dataintegration/resources/schemas/dbscripts/postgresql/dataintegration-0.00-15.30.sql -text
