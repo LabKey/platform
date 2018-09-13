@@ -72,6 +72,12 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
         return _provider.getBatchDomain(protocol).getProperties();
     }
 
+    @Override
+    protected List<? extends DomainProperty> getRunDomainProperties(ExpProtocol protocol)
+    {
+        return _provider.getRunDomain(protocol).getProperties();
+    }
+
     protected ExpRun createRun(String name, Container container, ExpProtocol protocol)
     {
         return AssayService.get().createExperimentRun(name, container, protocol, null);
