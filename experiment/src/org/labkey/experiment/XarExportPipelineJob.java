@@ -16,6 +16,8 @@
 
 package org.labkey.experiment;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.view.ActionURL;
@@ -42,6 +44,19 @@ public class XarExportPipelineJob extends PipelineJob
     private XarExportSelection _selection;
     private final String _xarXmlFileName;
 
+    @JsonCreator
+    protected XarExportPipelineJob(@JsonProperty("_exportFile") File exportFile, @JsonProperty("_fileName") String fileName,
+                                   @JsonProperty("_lsidRelativizer") LSIDRelativizer lsidRelativizer, @JsonProperty("_selection") XarExportSelection selection,
+                                   @JsonProperty("_xarXmlFileName") String xarXmlFileName)
+    {
+        super();
+        _exportFile = exportFile;
+        _fileName = fileName;
+        _lsidRelativizer = lsidRelativizer;
+        _selection = selection;
+        _xarXmlFileName = xarXmlFileName;
+    }
+
     public XarExportPipelineJob(ViewBackgroundInfo info, PipeRoot root, String fileName, LSIDRelativizer lsidRelativizer, XarExportSelection selection, String xarXmlFileName)
     {
         super(ExperimentPipelineProvider.NAME, info, root);
@@ -59,6 +74,12 @@ public class XarExportPipelineJob extends PipelineJob
 
         header("Experiment export to " + _exportFile.getName());
         setStatus(TaskStatus.waiting);
+    }
+
+    @Override
+    public boolean hasJacksonSerialization()
+    {
+        return true;
     }
 
     public ActionURL getStatusHref()

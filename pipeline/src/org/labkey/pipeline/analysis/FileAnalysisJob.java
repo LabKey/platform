@@ -43,6 +43,9 @@ public class FileAnalysisJob extends AbstractFileAnalysisJob
 
     private static final Logger LOG = Logger.getLogger(FileAnalysisJob.class);
 
+    // For serialization
+    protected FileAnalysisJob() {}
+
     public FileAnalysisJob(FileAnalysisProtocol protocol,
                            String providerName,
                            ViewBackgroundInfo info,
@@ -67,6 +70,12 @@ public class FileAnalysisJob extends AbstractFileAnalysisJob
 
         _taskPipelineId = job._taskPipelineId;
         _variableMap = job._variableMap;
+    }
+
+    @Override
+    public boolean hasJacksonSerialization()
+    {
+        return true;
     }
 
     @Override

@@ -1,5 +1,7 @@
 package org.labkey.list.pipeline;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
@@ -20,12 +22,25 @@ public class ListReloadJob extends PipelineJob
     private File _dataFile;
     private ListImportContext _importContext;
 
+    @JsonCreator
+    protected ListReloadJob(@JsonProperty("_dataFile") File dataFile, @JsonProperty("_importContext") ListImportContext importContext)
+    {
+        _dataFile = dataFile;
+        _importContext = importContext;
+    }
+
     public ListReloadJob(ViewBackgroundInfo info, @NotNull PipeRoot root, File dataFile, File logFile, @NotNull ListImportContext importContext)
     {
         super(null, info, root);
         _dataFile = dataFile;
         _importContext = importContext;
         setLogFile(logFile);
+    }
+
+    @Override
+    public boolean hasJacksonSerialization()
+    {
+        return true;
     }
 
     @Override

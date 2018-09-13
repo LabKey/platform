@@ -27,6 +27,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.security.impersonation.AbstractImpersonationContextFactory;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.pipeline.xstream.FileXStreamConverter;
@@ -231,6 +232,7 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
             private String _name;
             private Timestamp _timestamp;
             private Time _time;
+            public GUID _guid;
 /*            private int _migrateFilesOption;
             @JsonSerialize(keyUsing = StringKeySerialization.Serializer.class)
             @JsonDeserialize(keyUsing = StringKeySerialization.Deserializer.class)
@@ -269,6 +271,7 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
 //                _innerPair = new Pair<>(new Inner("31 Thunder Ave", 64102), new Inner("34 Boston St", 71101));
                 _timestamp = new Timestamp(1400938833L);
                 _time = new Time(1400938843L);
+                _guid = new GUID();
 
             }
 

@@ -276,10 +276,19 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
     {
         AtomicInteger _counter;
 
+        // For serialization
+        protected TestJob() {}
+        
         TestJob(Container c, AtomicInteger counter)
         {
             super(null, new ViewBackgroundInfo(c, null, null), PipelineService.get().findPipelineRoot(c));
             _counter = counter;
+        }
+
+        @Override
+        public boolean hasJacksonSerialization()
+        {
+            return true;
         }
 
         public void run()

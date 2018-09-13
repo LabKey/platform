@@ -16,6 +16,8 @@
 
 package org.labkey.experiment.pipeline;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ActionURL;
@@ -23,9 +25,6 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExpRun;
-
-
-import java.io.IOException;
 
 /**
  * User: jeckels
@@ -35,6 +34,14 @@ public class MoveRunsPipelineJob extends PipelineJob
 {
     private final int[] _runIds;
     private Container _sourceContainer;
+
+    @JsonCreator
+    protected MoveRunsPipelineJob(@JsonProperty("_runIds") int[] runIds, @JsonProperty("_sourceContainer") Container sourceContainer)
+    {
+        super();
+        _runIds = runIds;
+        _sourceContainer = sourceContainer;
+    }
 
     public MoveRunsPipelineJob(ViewBackgroundInfo info, Container sourceContainer, int[] runIds, PipeRoot root)
     {
@@ -62,6 +69,12 @@ public class MoveRunsPipelineJob extends PipelineJob
                 getLogger().info(run.getName() + " (RowId = " + runId + ")");
             }
         }
+    }
+
+    @Override
+    public boolean hasJacksonSerialization()
+    {
+        return true;
     }
 
     public String getDescription()

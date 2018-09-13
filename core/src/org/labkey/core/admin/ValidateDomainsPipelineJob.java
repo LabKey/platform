@@ -32,6 +32,10 @@ import java.io.IOException;
  */
 public class ValidateDomainsPipelineJob extends PipelineJob
 {
+    // For serialization
+    protected ValidateDomainsPipelineJob()
+    {}
+    
     public ValidateDomainsPipelineJob(ViewBackgroundInfo info, PipeRoot root)
     {
         super(null, info, root);
@@ -45,6 +49,12 @@ public class ValidateDomainsPipelineJob extends PipelineJob
         {
             throw new UnexpectedException(e);
         }
+    }
+
+    @Override
+    public boolean hasJacksonSerialization()
+    {
+        return true;
     }
 
     @Override

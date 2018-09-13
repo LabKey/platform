@@ -56,19 +56,10 @@ public class ExperimentPipelineJob extends PipelineJob
     protected ExperimentPipelineJob(@JsonProperty("_xarFile") File xarFile, @JsonProperty("_description") String description,
                                     @JsonProperty("_deleteExistingRuns") boolean deleteExistingRuns)
     {
+        super();
         _xarFile = xarFile;
         _description = description;
         _deleteExistingRuns = deleteExistingRuns;
-        _xarSource = createXarSource(xarFile);
-
-        try
-        {
-            setLogFile(_xarSource.getLogFile());
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
     }
 
     public ExperimentPipelineJob(ViewBackgroundInfo info, File file, String description, boolean deleteExistingRuns, PipeRoot root) throws IOException
@@ -78,16 +69,14 @@ public class ExperimentPipelineJob extends PipelineJob
         _description = description + " - " + file.getName();
         _deleteExistingRuns = deleteExistingRuns;
 
-        _xarSource = createXarSource(file);
-        setLogFile(_xarSource.getLogFile());
-
-        header("XAR Import from " + _xarSource.toString());
+        XarSource xarSource = getXarSource();
+        header("XAR Import from " + xarSource.toString());
     }
 
     @Override
     public boolean hasJacksonSerialization()
     {
-        return false;
+        return true;
     }
 
     protected XarSource createXarSource(File file)
