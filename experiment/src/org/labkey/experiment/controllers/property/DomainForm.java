@@ -138,42 +138,6 @@ public class DomainForm extends ViewForm
         return typeURI;
     }
 
-    public boolean allowDomainAsRangeURI(Domain dd)
-    {
-        return false;
-        //return dd.getTypeKind() != null;
-    }
-
-    public Map<String, String> getTypeOptions(String currentValue)
-    {
-        LinkedHashMap<String, String> ret = new LinkedHashMap<>();
-        for (PropertyType pt : new PropertyType[] {
-                PropertyType.STRING,
-                PropertyType.MULTI_LINE,
-                PropertyType.DOUBLE,
-                PropertyType.INTEGER,
-                PropertyType.BOOLEAN,
-                PropertyType.DATE_TIME,
-                PropertyType.FILE_LINK,
-                PropertyType.ATTACHMENT
-            })
-        {
-            ret.put(pt.getTypeUri(), typeURItoString(pt.getTypeUri()));
-        }
-        for (Domain dd : PropertyService.get().getDomains(getContainer()))
-        {
-            if (allowDomainAsRangeURI(dd))
-            {
-                ret.put(dd.getTypeURI(), dd.getLabel(getContainer()));
-            }
-        }
-        if (currentValue != null && !ret.containsKey(currentValue))
-        {
-            ret.put(currentValue, typeURItoString(currentValue));
-        }
-        return ret;
-    }
-
     public boolean isCreateOrEdit()
     {
         return _createOrEdit;

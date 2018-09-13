@@ -24,6 +24,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ContainerType;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
@@ -248,14 +249,19 @@ public class TypesController extends SpringActionController
 
         public ModelAndView getView(Object o, BindException errors)
         {
-            Collection<DomainDescriptor> types = OntologyManager.getDomainDescriptors(getContainer());
+            Container container = getContainer();
+            Collection<? extends Domain> types = PropertyService.get().getDomains(container, getUser(), true);
             TypeBean bean = new TypeBean();
             Container shared = ContainerManager.getSharedContainer();
 
-            for (DomainDescriptor t : types)
+            getContainer().getContainersFor(ContainerType.DataType.domainDefinitions);
+            Container project = !container.isProject() ? container.getProject() : null;
+            for (Domain t : types)
             {
                 if (null == t.getContainer() || t.getContainer().equals(shared))
                     bean.globals.put(t.getName(), t);
+                else if (project != null && t.getContainer().equals(project))
+                    bean.project.put(t.getName(), t);
                 else
                     bean.locals.put(t.getName(), t);
             }
@@ -274,8 +280,9 @@ public class TypesController extends SpringActionController
 
     public static class TypeBean
     {
-        public TreeMap<String, DomainDescriptor> locals = new TreeMap<>();
-        public TreeMap<String, DomainDescriptor> globals = new TreeMap<>();
+        public TreeMap<String, Domain> locals = new TreeMap<>();
+        public TreeMap<String, Domain> globals = new TreeMap<>();
+        public TreeMap<String, Domain> project = new TreeMap<>();
     }
 
 

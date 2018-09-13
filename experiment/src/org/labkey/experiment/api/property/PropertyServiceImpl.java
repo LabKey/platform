@@ -163,6 +163,17 @@ public class PropertyServiceImpl implements PropertyService
         return Collections.unmodifiableList(result);
     }
 
+    public List<? extends Domain> getDomains(Container container, User user, boolean includeProjectAndShared)
+    {
+        List<Domain> result = new ArrayList<>();
+        for (DomainDescriptor dd : OntologyManager.getDomainDescriptors(container, user, includeProjectAndShared))
+        {
+            result.add(new DomainImpl(dd));
+        }
+
+        return Collections.unmodifiableList(result);
+    }
+
     public void registerValidatorKind(ValidatorKind validatorKind)
     {
         if (_validatorTypes.containsKey(validatorKind.getTypeURI()))

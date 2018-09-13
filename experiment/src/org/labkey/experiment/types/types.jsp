@@ -21,17 +21,74 @@
 <%@ page import="org.labkey.experiment.types.TypesController.TypeBean" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.experiment.types.TypesController" %>
+<%@ page import="org.labkey.api.exp.property.Domain" %>
+<%@ page import="org.labkey.api.exp.property.DomainKind" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     TypeBean bean = (TypeBean)getModelBean();
-%><h3>global types</h3><%
-for (DomainDescriptor type : bean.globals.values())
-{
-    %><%=PageFlowUtil.unstyledTextLink(type.getName(), new ActionURL(TypesController.TypeDetailsAction.class, getContainer()).addParameter("type", type.getDomainURI()))%><br/><%
-}
-%><h3>local types</h3><%
-for (DomainDescriptor type : bean.locals.values())
-{
-    %><%=PageFlowUtil.unstyledTextLink(type.getName(), new ActionURL(TypesController.TypeDetailsAction.class, getContainer()).addParameter("type", type.getDomainURI()))%><br/><%
-}
 %>
+
+<h3>local types</h3>
+<table>
+    <% for (Domain type : bean.locals.values()) { %>
+<tr>
+    <td><%=PageFlowUtil.unstyledTextLink(type.getName(), new ActionURL(TypesController.TypeDetailsAction.class, getContainer()).addParameter("type", type.getTypeURI()))%></td>
+    <%
+        DomainKind kind = type.getDomainKind();
+        if (kind != null)
+        {
+            ActionURL showData = kind.urlShowData(type, getViewContext());
+            ActionURL editType = kind.urlEditDefinition(type, getViewContext());
+            %>
+    <td><% if (showData != null) { %> <labkey:link text="view data" href="<%=showData%>"/><% } %></td>
+    <td><% if (editType != null) { %> <labkey:link text="edit type" href="<%=editType%>"/><% } %></td>
+            <%
+        }
+    %>
+</tr>
+    <% } %>
+</table>
+
+<h3>project types</h3>
+<table>
+    <% for (Domain type : bean.project.values()) { %>
+    <tr>
+        <td><%=PageFlowUtil.unstyledTextLink(type.getName(), new ActionURL(TypesController.TypeDetailsAction.class, type.getContainer()).addParameter("type", type.getTypeURI()))%></td>
+        <%
+            DomainKind kind = type.getDomainKind();
+            if (kind != null)
+            {
+                ActionURL showData = kind.urlShowData(type, getViewContext());
+                ActionURL editType = kind.urlEditDefinition(type, getViewContext());
+        %>
+        <td><% if (showData != null) { %> <labkey:link text="view data" href="<%=showData%>"/><% } %></td>
+        <td><% if (editType != null) { %> <labkey:link text="edit type" href="<%=editType%>"/><% } %></td>
+        <%
+            }
+        %>
+    </tr>
+    <% } %>
+</table>
+
+<h3>global types</h3>
+<table>
+    <% for (Domain type : bean.globals.values()) { %>
+    <tr>
+        <td><%=PageFlowUtil.unstyledTextLink(type.getName(), new ActionURL(TypesController.TypeDetailsAction.class, type.getContainer()).addParameter("type", type.getTypeURI()))%></td>
+        <%
+            DomainKind kind = type.getDomainKind();
+            if (kind != null)
+            {
+                ActionURL showData = kind.urlShowData(type, getViewContext());
+                ActionURL editType = kind.urlEditDefinition(type, getViewContext());
+        %>
+        <td><% if (showData != null) { %> <labkey:link text="view data" href="<%=showData%>"/><% } %></td>
+        <td><% if (editType != null) { %> <labkey:link text="edit type" href="<%=editType%>"/><% } %></td>
+        <%
+            }
+        %>
+    </tr>
+    <% } %>
+</table>
+
+
