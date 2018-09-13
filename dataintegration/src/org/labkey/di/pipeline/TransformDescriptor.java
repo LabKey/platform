@@ -695,7 +695,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
 
         private File getFile(String file) throws IOException
         {
-            return JunitUtil.getSampleData(null, BASE_PATH + file);
+            return JunitUtil.getSampleData(module, BASE_PATH + file);
         }
 
         @Test
