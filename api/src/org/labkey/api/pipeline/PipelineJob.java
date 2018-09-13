@@ -75,6 +75,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * A job represents the invocation of a pipeline on a certain set out inputs. It can be monolithic (a single run() method)
@@ -1821,8 +1822,8 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public static String serializeJob(PipelineJob job)
     {
-        return // job.hasJacksonSerialization() ?
-               //  PipelineJobService.get().getJobStore().toJSONTest(job) :
+        return job.hasJacksonSerialization() ?
+                PipelineJobService.get().getJobStore().toJSONTest(job) :
                 PipelineJobService.get().getJobStore().toXML(job);
     }
 
@@ -1877,6 +1878,7 @@ abstract public class PipelineJob extends Job implements Serializable
 //        module.addSerializer(new PairSerializer<>());
         module.addSerializer(new SqlTimeSerialization.SqlTimeSerializer());
         module.addDeserializer(Time.class, new SqlTimeSerialization.SqlTimeDeserializer());
+        module.addDeserializer(AtomicLong.class, new AtomicLongDeserializer());
         module.addSerializer(NullSafeBindException.class, new NullSafeBindExceptionSerializer());
 
         mapper.registerModule(module);

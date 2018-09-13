@@ -45,6 +45,9 @@ public class FileType implements Serializable
 {
     private static final Detector DETECTOR = new DefaultDetector(MimeTypes.getDefaultMimeTypes());
 
+    // For serialization
+    protected FileType() {}
+    
     public File findInputFile(FileAnalysisJobSupport support, String baseName)
     {
         if (_suffixes.size() > 1)

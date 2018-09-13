@@ -48,6 +48,10 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
     private boolean _forceSaveBatchProps;
     private ExpRun _run;
 
+    // For serialization
+    protected AssayUploadPipelineJob()
+    {}
+
     /**
      * @param forceSaveBatchProps whether we need to save the batch properties, or if it's already been handled
      */
@@ -66,6 +70,12 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
         _context = context;
         _batchId = batch.getRowId();
         _primaryFile = primaryFile;
+    }
+
+    @Override
+    public boolean hasJacksonSerialization()
+    {
+        return true;
     }
 
     /** Finds a file name that hasn't been used yet, appending ".2", ".3", etc as needed */

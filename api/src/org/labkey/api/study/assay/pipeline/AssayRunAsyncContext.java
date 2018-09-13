@@ -85,6 +85,10 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     private transient TransformResult _transformResult;
     private transient Logger _logger;
 
+    // For serialization
+    protected AssayRunAsyncContext()
+    {}
+
     public AssayRunAsyncContext(AssayRunUploadContext<ProviderType> originalContext) throws ExperimentException
     {
         // Cache the values, and remember their ids so that we can refetch the objects if needed

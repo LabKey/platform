@@ -74,6 +74,9 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
 
     public static final String ANALYSIS_PARAMETERS_ROLE_NAME = "AnalysisParameters";
 
+    // For serialization
+    protected AbstractFileAnalysisJob() {}
+
     public AbstractFileAnalysisJob(AbstractFileAnalysisProtocol protocol,
                                    String providerName,
                                    ViewBackgroundInfo info,

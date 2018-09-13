@@ -15,6 +15,7 @@
  */
 package org.labkey.api.view;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -373,7 +374,7 @@ public class ActionURL extends URLHelper implements Cloneable
         }
     }
 
-
+    @JsonCreator
     public ActionURL(String url)
     {
         this();
