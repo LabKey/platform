@@ -1095,7 +1095,7 @@ public class AnnouncementsController extends SpringActionController
                 assert null == form.get("expires");
 
                 form.set("title", latestPost.getTitle());
-                form.set("status", latestPost.getStatus());
+                form.set("status", "Active");  // By default, every new response resets status to active, #35047
                 form.setTypedValue("expires", DateUtil.formatDate(c, latestPost.getExpires()));
 
                 assignedTo = latestPost.getAssignedTo();

@@ -92,6 +92,7 @@ announcements/src/org/labkey/announcements/query/AnnouncementSubscriptionTable.j
 announcements/src/org/labkey/announcements/query/AnnouncementTable.java -text
 announcements/src/org/labkey/announcements/query/ForumSubscriptionTable.java -text
 announcements/src/org/labkey/announcements/query/RSSFeedsTable.java -text
+announcements/src/org/labkey/announcements/query/ThreadsTable.java -text
 announcements/src/org/labkey/announcements/query/ToursTable.java -text
 announcements/src/org/labkey/announcements/respond.jsp -text
 announcements/src/org/labkey/announcements/rss.jsp -text

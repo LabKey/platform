@@ -500,8 +500,12 @@
   </table>
   <table tableName="Threads" tableDbType="VIEW">
     <columns>
-      <column columnName="RowId"/>
-      <column columnName="EntityId"/>
+      <column columnName="RowId">
+        <isHidden>true</isHidden>
+      </column>
+      <column columnName="EntityId">
+        <isHidden>true</isHidden>
+      </column>
       <column columnName="CreatedBy">
         <fk>
           <fkColumnName>UserId</fkColumnName>

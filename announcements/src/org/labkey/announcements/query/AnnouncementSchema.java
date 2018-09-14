@@ -47,6 +47,7 @@ public class AnnouncementSchema extends UserSchema
     public static final String EMAIL_FORMAT_TABLE_NAME = "EmailFormat";
     public static final String RSS_FEEDS_TABLE_NAME = "RSSFeeds";
     public static final String TOURS_TABLE_NAME = "Tours";
+    public static final String THREADS_TABLE_NAME = "Threads";
 
     public static final int PAGE_TYPE_ID = 0;
 
@@ -62,6 +63,7 @@ public class AnnouncementSchema extends UserSchema
         names.add(EMAIL_FORMAT_TABLE_NAME);
         names.add(RSS_FEEDS_TABLE_NAME);
         names.add(TOURS_TABLE_NAME);
+        names.add(THREADS_TABLE_NAME);
         TABLE_NAMES = Collections.unmodifiableSet(names);
     }
 
@@ -127,6 +129,10 @@ public class AnnouncementSchema extends UserSchema
         if (TOURS_TABLE_NAME.equalsIgnoreCase(name))
         {
             return createToursTable();
+        }
+        if (THREADS_TABLE_NAME.equalsIgnoreCase(name))
+        {
+            return createThreadsTable();
         }
         return null;
     }
@@ -197,6 +203,11 @@ public class AnnouncementSchema extends UserSchema
     private TableInfo createToursTable()
     {
         return new ToursTable(this);
+    }
+
+    public TableInfo createThreadsTable()
+    {
+        return new ThreadsTable(this);
     }
 
     @Override
