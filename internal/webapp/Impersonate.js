@@ -12,6 +12,7 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
     closeAction: 'destroy',
     title: 'Impersonate User',
     defaultFocus: '#impersonate',
+    impersonatePath: LABKEY.user.isAdmin || LABKEY.project === undefined ? LABKEY.container.path : LABKEY.project.path,
 
     initComponent : function() {
         this.buttons = ['->', {
@@ -93,7 +94,7 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
             autoLoad: true,
             proxy: {
                 type: 'ajax',
-                url: LABKEY.ActionURL.buildURL('user', 'getImpersonationUsers', LABKEY.user.isAdmin || LABKEY.project === undefined ? LABKEY.container.path : LABKEY.project.path),
+                url: LABKEY.ActionURL.buildURL('user', 'getImpersonationUsers', this.impersonatePath),
                 reader: {
                     type: 'json',
                     root: 'users'
@@ -107,7 +108,7 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
             return;
 
         LABKEY.Ajax.request({
-            url: LABKEY.ActionURL.buildURL('user', 'impersonateUser.api'),
+            url: LABKEY.ActionURL.buildURL('user', 'impersonateUser.api', this.impersonatePath),
             method: 'POST',
             params: {
                 userId: this.userCombo.getValue(),
@@ -138,6 +139,7 @@ Ext4.define('LABKEY.Security.ImpersonateGroup', {
     closeAction: 'destroy',
     title: 'Impersonate Group',
     defaultFocus: '#impersonate',
+    impersonatePath: LABKEY.user.isAdmin || LABKEY.project === undefined ? LABKEY.container.path : LABKEY.project.path,
 
     initComponent : function() {
         this.buttons = ['->',{
@@ -210,7 +212,7 @@ Ext4.define('LABKEY.Security.ImpersonateGroup', {
             autoLoad: true,
             proxy: {
                 type: 'ajax',
-                url: LABKEY.ActionURL.buildURL('user', 'getImpersonationGroups', LABKEY.user.isAdmin || LABKEY.project === undefined ? LABKEY.container.path : LABKEY.project.path),
+                url: LABKEY.ActionURL.buildURL('user', 'getImpersonationGroups', this.impersonatePath),
                 reader: {
                     type: 'json',
                     root: 'groups'
@@ -225,7 +227,7 @@ Ext4.define('LABKEY.Security.ImpersonateGroup', {
 
         var groupId = this.groupCombo.getValue();
         LABKEY.Ajax.request({
-            url: LABKEY.ActionURL.buildURL('user', 'impersonateGroup.api'),
+            url: LABKEY.ActionURL.buildURL('user', 'impersonateGroup.api', this.impersonatePath),
             method: 'POST',
             params: {
                 groupId: groupId,
@@ -255,6 +257,7 @@ Ext4.define('LABKEY.Security.ImpersonateRoles', {
     layout: 'fit',
     closeAction: 'destroy',
     title: 'Impersonate Roles',
+    impersonatePath: LABKEY.user.isAdmin || LABKEY.project === undefined ? LABKEY.container.path : LABKEY.project.path,
 
     initComponent : function() {
         this.impersonateButton = Ext4.create('Ext.Button', {
@@ -365,7 +368,7 @@ Ext4.define('LABKEY.Security.ImpersonateRoles', {
             autoLoad: true,
             proxy: {
                 type: 'ajax',
-                url: LABKEY.ActionURL.buildURL('user', 'getImpersonationRoles', LABKEY.user.isAdmin || LABKEY.project === undefined ? LABKEY.container.path : LABKEY.project.path),
+                url: LABKEY.ActionURL.buildURL('user', 'getImpersonationRoles', this.impersonatePath),
                 reader: {
                     type: 'json',
                     root: 'roles'
@@ -382,7 +385,7 @@ Ext4.define('LABKEY.Security.ImpersonateRoles', {
             roleNames.push(selected[i].data.roleName);
 
         LABKEY.Ajax.request({
-            url: LABKEY.ActionURL.buildURL('user', 'impersonateRoles.api'),
+            url: LABKEY.ActionURL.buildURL('user', 'impersonateRoles.api', this.impersonatePath),
             method: 'POST',
             params: {
                 roleNames: roleNames,
