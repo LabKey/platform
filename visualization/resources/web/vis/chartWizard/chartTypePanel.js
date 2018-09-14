@@ -1104,17 +1104,20 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
                                     + Ext4.String.htmlEncode(LABKEY.vis.GenericChartHelper.getSelectedMeasureLabel(chartTypeName, fieldName, values))
                                     + '</div>';
 
-                            if (chartTypeName == 'time_chart')
-                            {
-                                // for time chart, add query label to display since the UI allows cross query measure selection
+                            // for time chart, add query label to display since the UI allows cross query measure selection
+                            if (chartTypeName === 'time_chart') {
                                 label += '<div class="field-selection-subtext">Query: ' + Ext4.String.htmlEncode(values.queryLabel) + '</div>';
+                            }
 
-                                // also allow Y Axis Side selection for the measures
-                                var leftSide = '<i class="fa fa-arrow-circle-left ' + (values.yAxis != 'left' ? 'unselected' : '') + '"></i>',
-                                    rightSide = '<i class="fa fa-arrow-circle-right ' + (values.yAxis != 'right' ? 'unselected' : '') + '"></i>';
+                            // also allow Y Axis Side selection for the measures
+                            if (chartTypeName === 'time_chart' || chartTypeName === 'line_plot' || chartTypeName === 'scatter_plot')
+                            {
+                                var leftSide = '<i class="fa fa-arrow-circle-left ' + (values.yAxis !== 'left' ? 'unselected' : '') + '"></i>',
+                                    rightSide = '<i class="fa fa-arrow-circle-right ' + (values.yAxis !== 'right' ? 'unselected' : '') + '"></i>';
                                 label += '<div class="field-selection-subtext">Y Axis Side: ' + leftSide + ' ' + rightSide + '</div>';
                             }
-                            else if (chartTypeName == 'bar_chart' && fieldName == 'y')
+
+                            if (chartTypeName === 'bar_chart' && fieldName === 'y')
                             {
                                 label += '<div class="field-selection-subtext always-show"><span class="aggregate-method"></span></div>';
                             }
@@ -1302,7 +1305,7 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
 
     toggleYAxisSide : function(index, record)
     {
-        var newSide = record.get('yAxis') == 'left' ? 'right' : 'left';
+        var newSide = record.get('yAxis') === 'left' ? 'right' : 'left';
 
         if (Ext4.isObject(this.selection))
             this.selection.yAxis = newSide;

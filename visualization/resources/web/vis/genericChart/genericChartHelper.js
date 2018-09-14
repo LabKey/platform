@@ -46,10 +46,10 @@ LABKEY.vis.GenericChartHelper = new function(){
                 imgUrl: LABKEY.contextPath + '/visualization/images/timechart.png',
                 fields: [
                     {name: 'x', label: 'X Axis', required: true, numericOrDateOnly: true},
-                    {name: 'y', label: 'Y Axis', required: true, numericOnly: true},
+                    {name: 'y', label: 'Y Axis', required: true, numericOnly: true, allowMultiple: true},
                     {name: 'series', label: 'Series', nonNumericOnly: true}
                 ],
-                layoutOptions: {opacity: true, axisBased: true, series: true}
+                layoutOptions: {opacity: true, axisBased: true, series: true, chartLayout: true}
             },
             {
                 name: 'pie_chart',
@@ -68,11 +68,11 @@ LABKEY.vis.GenericChartHelper = new function(){
                 imgUrl: LABKEY.contextPath + '/visualization/images/scatterplot.png',
                 fields: [
                     {name: 'x', label: 'X Axis', required: true},
-                    {name: 'y', label: 'Y Axis', required: true, numericOnly: true},
+                    {name: 'y', label: 'Y Axis', required: true, numericOnly: true, allowMultiple: true},
                     {name: 'color', label: 'Color', nonNumericOnly: true},
                     {name: 'shape', label: 'Shape', nonNumericOnly: true}
                 ],
-                layoutOptions: {point: true, opacity: true, axisBased: true, binnable: true}
+                layoutOptions: {point: true, opacity: true, axisBased: true, binnable: true, chartLayout: true}
             },
             {
                 name: 'time_chart',
@@ -83,7 +83,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                     {name: 'x', label: 'X Axis', required: true, altSelectionOnly: true, altFieldType: 'LABKEY.vis.TimeChartXAxisField'},
                     {name: 'y', label: 'Y Axis', required: true, numericOnly: true, allowMultiple: true}
                 ],
-                layoutOptions: {time: true, axisBased: true}
+                layoutOptions: {time: true, axisBased: true, chartLayout: true}
             }
         ];
     };
@@ -118,16 +118,18 @@ LABKEY.vis.GenericChartHelper = new function(){
      * Generate a default label for the selected measure for the given renderType.
      * @param renderType
      * @param measureName - the chart type's measure name
-     * @param properties - properties for the selected column
+     * @param properties - properties for the selected column, note that this can be an array of properties
      */
     var getSelectedMeasureLabel = function(renderType, measureName, properties)
     {
-        var label = properties ? properties.label || properties.queryName : '';
+        var label = getDefaultMeasuresLabel(properties);
 
-        if (label != '' && measureName == 'y' && (renderType == 'bar_chart' || renderType == 'pie_chart')) {
-            if (Ext4.isDefined(properties.aggregate)) {
-                var aggLabel = Ext4.isObject(properties.aggregate) ? properties.aggregate.name
-                        : Ext4.String.capitalize(properties.aggregate.toLowerCase());
+        if (label !== '' && measureName === 'y' && (renderType === 'bar_chart' || renderType === 'pie_chart')) {
+            var aggregateProps = Ext4.isArray(properties) && properties.length === 1
+                    ? properties[0].aggregate : properties.aggregate;
+
+            if (Ext4.isDefined(aggregateProps)) {
+                var aggLabel = Ext4.isObject(aggregateProps) ? aggregateProps.name : Ext4.String.capitalize(aggregateProps.toLowerCase());
                 label = aggLabel + ' of ' + label;
             }
             else {
@@ -300,6 +302,38 @@ LABKEY.vis.GenericChartHelper = new function(){
     };
 
     /**
+     * Return the distinct set of y-axis sides for the given measures object.
+     * @param measures
+     */
+    var getDistinctYAxisSides = function(measures)
+    {
+        return Ext4.Array.unique(Ext4.Array.pluck(measures.y || [], 'yAxis'));
+    };
+
+    /**
+     * Generate a default label for an array of measures by concatenating each meaures label together.
+     * @param measures
+     * @returns string concatenation of all measure labels
+     */
+    var getDefaultMeasuresLabel = function(measures)
+    {
+        if (Ext4.isDefined(measures)) {
+            if (!Ext4.isArray(measures)) {
+                return measures.label || measures.queryName || '';
+            }
+
+            var label = '', sep = '';
+            Ext4.each(measures, function(m) {
+                label += sep + (m.label || m.queryName);
+                sep = ', ';
+            });
+            return label;
+        }
+
+        return '';
+    };
+
+    /**
      * Given the saved labels object we convert it to include all label types (main, x, and y). Each label type defaults
      * to empty string ('').
      * @param {Object} labels The saved labels object.
@@ -307,21 +341,12 @@ LABKEY.vis.GenericChartHelper = new function(){
      */
     var generateLabels = function(labels) {
         return {
-            main: {
-                value: labels.main ? labels.main : ''
-            },
-            subtitle: {
-                value: labels.subtitle ? labels.subtitle : ''
-            },
-            footer: {
-                value: labels.footer ? labels.footer : ''
-            },
-            x: {
-                value: labels.x ? labels.x : ''
-            },
-            y: {
-                value: labels.y ? labels.y : ''
-            }
+            main: { value: labels.main || '' },
+            subtitle: { value: labels.subtitle || '' },
+            footer: { value: labels.footer || '' },
+            x: { value: labels.x || '' },
+            y: { value: labels.y || '' },
+            yRight: { value: labels.yRight || '' }
         };
     };
 
@@ -407,9 +432,14 @@ LABKEY.vis.GenericChartHelper = new function(){
                 }
             }
 
+            // add both y (i.e. yLeft) and yRight, in case multiple y-axis measures are being plotted
             scales.y = {
                 scaleType: 'continuous',
                 trans: savedScales.y ? savedScales.y.trans : 'linear'
+            };
+            scales.yRight = {
+                scaleType: 'continuous',
+                trans: savedScales.yRight ? savedScales.yRight.trans : 'linear'
             };
         }
 
@@ -419,25 +449,29 @@ LABKEY.vis.GenericChartHelper = new function(){
         if (scales.y && data.length == 0)
             scales.y.domain = [0,1];
 
+        // apply the field formatFn to the tick marks on the scales object
         for (var i = 0; i < fields.length; i++) {
             var type = fields[i].displayFieldJsonType ? fields[i].displayFieldJsonType : fields[i].type;
-            var isMeasureXMatch = measures.x && (fields[i].fieldKey == measures.x.name || fields[i].fieldKey == measures.x.fieldKey);
-            var isMeasureYMatch = measures.y && (fields[i].fieldKey == measures.y.name || fields[i].fieldKey == measures.y.fieldKey);
-            var isConvertedYMeasure = isMeasureYMatch && measures.y.converted;
 
-            if (isNumericType(type) || isConvertedYMeasure) {
-                if (isMeasureXMatch) {
-                    if (fields[i].extFormatFn) {
-                        scales.x.tickFormat = eval(fields[i].extFormatFn);
-                    }
-                    else if (defaultFormatFn) {
-                        scales.x.tickFormat = defaultFormatFn;
-                    }
+            var isMeasureXMatch = measures.x && _isFieldKeyMatch(measures.x, fields[i].fieldKey);
+            if (isMeasureXMatch && measures.x.name === subjectColumn && LABKEY.demoMode) {
+                scales.x.tickFormat = function(){return '******'};
+            }
+            else if (isMeasureXMatch && isNumericType(type)) {
+                if (fields[i].extFormatFn) {
+                    scales.x.tickFormat = eval(fields[i].extFormatFn);
                 }
+                else if (defaultFormatFn) {
+                    scales.x.tickFormat = defaultFormatFn;
+                }
+            }
 
-                if (isMeasureYMatch) {
+            var yMeasures = _ensureMeasuresAsArray(measures.y);
+            Ext4.each(yMeasures, function(yMeasure) {
+                var isMeasureYMatch = yMeasure && _isFieldKeyMatch(yMeasure, fields[i].fieldKey);
+                var isConvertedYMeasure = isMeasureYMatch && yMeasure.converted;
+                if (isMeasureYMatch && (isNumericType(type) || isConvertedYMeasure)) {
                     var tickFormatFn;
-
                     if (fields[i].extFormatFn) {
                         tickFormatFn = eval(fields[i].extFormatFn);
                     }
@@ -445,7 +479,8 @@ LABKEY.vis.GenericChartHelper = new function(){
                         tickFormatFn = defaultFormatFn;
                     }
 
-                    scales.y.tickFormat = function(value) {
+                    var ySide = yMeasure.yAxis === 'right' ? 'yRight' : 'y';
+                    scales[ySide].tickFormat = function(value) {
                         if (Ext4.isNumber(value) && Math.abs(Math.round(value)).toString().length >= valExponentialDigits) {
                             return value.toExponential();
                         }
@@ -455,25 +490,40 @@ LABKEY.vis.GenericChartHelper = new function(){
                         return value;
                     };
                 }
-            }
-            else if (isMeasureXMatch && measures.x.name == subjectColumn && LABKEY.demoMode) {
-                    scales.x.tickFormat = function(){return '******'};
-            }
+            }, this);
         }
 
-        if (savedScales.x && (savedScales.x.min != null || savedScales.x.max != null)) {
-            scales.x.domain = [savedScales.x.min, savedScales.x.max];
+        _applySavedScaleDomain(scales, savedScales, 'x');
+        if (Ext4.isDefined(measures.xSub)) {
+            _applySavedScaleDomain(scales, savedScales, 'xSub');
         }
-
-        if (Ext4.isDefined(measures.xSub) && savedScales.xSub && (savedScales.xSub.min != null || savedScales.xSub.max != null)) {
-            scales.xSub.domain = [savedScales.xSub.min, savedScales.xSub.max];
-        }
-
-        if (savedScales.y && (savedScales.y.min != null || savedScales.y.max != null)) {
-            scales.y.domain = [savedScales.y.min, savedScales.y.max];
+        if (Ext4.isDefined(measures.y)) {
+            _applySavedScaleDomain(scales, savedScales, 'y');
+            _applySavedScaleDomain(scales, savedScales, 'yRight');
         }
 
         return scales;
+    };
+
+    var _isFieldKeyMatch = function(measure, fieldKey) {
+        if (Ext4.isFunction(fieldKey.getName)) {
+            return fieldKey.getName() === measure.name || fieldKey.getName() === measure.fieldKey;
+        }
+
+        return fieldKey === measure.name || fieldKey === measure.fieldKey;
+    };
+
+    var _ensureMeasuresAsArray = function(measures) {
+        if (Ext4.isDefined(measures)) {
+            return Ext4.isArray(measures) ? Ext4.Array.clone(measures) : [Ext4.clone(measures)];
+        }
+        return [];
+    };
+
+    var _applySavedScaleDomain = function(scales, savedScales, scaleName) {
+        if (savedScales[scaleName] && (savedScales[scaleName].min != null || savedScales[scaleName].max != null)) {
+            scales[scaleName].domain = [savedScales[scaleName].min, savedScales[scaleName].max];
+        }
     };
 
     /**
@@ -504,7 +554,8 @@ LABKEY.vis.GenericChartHelper = new function(){
             aes.x = generateDiscreteAcc(xMeasureName, measures.x.label);
         }
 
-        if (measures.y)
+        // charts that have multiple y-measures selected will need to put the aes.y function on their specific layer
+        if (Ext4.isDefined(measures.y) && !Ext4.isArray(measures.y))
         {
             var yMeasureName = measures.y.converted ? measures.y.convertedName : measures.y.name;
             aes.y = generateContinuousAcc(yMeasureName);
@@ -568,6 +619,11 @@ LABKEY.vis.GenericChartHelper = new function(){
         return aes;
     };
 
+    var getYMeasureAes = function(measure) {
+        var yMeasureName = measure.converted ? measure.convertedName : measure.name;
+        return generateContinuousAcc(yMeasureName);
+    };
+
     /**
      * Generates a function that returns the text used for point hovers.
      * @param {Object} measures The measures object from the saved chart config.
@@ -578,13 +634,16 @@ LABKEY.vis.GenericChartHelper = new function(){
         return function(row) {
             var hover = '', sep = '', distinctNames = [];
 
-            Ext4.Object.each(measures, function(key, measure) {
-                if (Ext4.isObject(measure) && distinctNames.indexOf(measure.name) == -1) {
-                    hover += sep + measure.label + ': ' + _getRowValue(row, measure.name);
-                    sep = ', \n';
+            Ext4.Object.each(measures, function(key, measureObj) {
+                var measureArr = _ensureMeasuresAsArray(measureObj);
+                Ext4.each(measureArr, function(measure) {
+                    if (Ext4.isObject(measure) && distinctNames.indexOf(measure.name) == -1) {
+                        hover += sep + measure.label + ': ' + _getRowValue(row, measure.name);
+                        sep = ', \n';
 
-                    distinctNames.push(measure.name);
-                }
+                        distinctNames.push(measure.name);
+                    }
+                }, this);
             });
 
             return hover;
@@ -726,14 +785,10 @@ LABKEY.vis.GenericChartHelper = new function(){
             queryName: queryName
         };
 
-        if (measures.y)
-            measureInfo.yAxis = measures.y.name;
-        if (measures.x)
-            measureInfo.xAxis = measures.x.name;
+        _addPointClickMeasureInfo(measureInfo, measures, 'x', 'xAxis');
+        _addPointClickMeasureInfo(measureInfo, measures, 'y', 'yAxis');
         Ext4.each(['color', 'shape', 'series'], function(name) {
-            if (measures[name]) {
-                measureInfo[name + 'Name'] = measures[name].name;
-            }
+            _addPointClickMeasureInfo(measureInfo, measures, name, name + 'Name');
         }, this);
 
         // using new Function is quicker than eval(), even in IE.
@@ -741,6 +796,20 @@ LABKEY.vis.GenericChartHelper = new function(){
         return function(clickEvent, data){
             pointClickFn(data, measureInfo, clickEvent);
         };
+    };
+
+    var _addPointClickMeasureInfo = function(measureInfo, measures, name, key) {
+        if (Ext4.isDefined(measures[name])) {
+            var measuresArr = _ensureMeasuresAsArray(measures[name]);
+            Ext4.each(measuresArr, function(measure) {
+                if (!Ext4.isDefined(measureInfo[key])) {
+                    measureInfo[key] = measure.name;
+                }
+                else if (!Ext4.isDefined(measureInfo[measure.name])) {
+                    measureInfo[measure.name] = measure.name;
+                }
+            }, this);
+        }
     };
 
     /**
@@ -827,6 +896,84 @@ LABKEY.vis.GenericChartHelper = new function(){
     };
 
     /**
+     * Generate an array of plot configs for the given chart renderType and config options.
+     * @param renderTo
+     * @param chartConfig
+     * @param labels
+     * @param aes
+     * @param scales
+     * @param geom
+     * @param data
+     * @returns {Array} array of plot config objects
+     */
+    var generatePlotConfigs = function(renderTo, chartConfig, labels, aes, scales, geom, data)
+    {
+        var plotConfigArr = [];
+
+        // if we have multiple y-measures and the request is to plot them separately, call the generatePlotConfig function
+        // for each y-measure separately with its own copy of the chartConfig object
+        if (chartConfig.geomOptions.chartLayout === 'per_measure' && Ext4.isArray(chartConfig.measures.y)) {
+
+            // if 'automatic across charts' scales are requested, need to manually calculate the min and max
+            if (chartConfig.scales.y && chartConfig.scales.y.type === 'automatic') {
+                scales.y = Ext4.apply(scales.y, _getScaleDomainValuesForAllMeasures(data, chartConfig.measures.y, 'left'));
+            }
+            if (chartConfig.scales.yRight && chartConfig.scales.yRight.type === 'automatic') {
+                scales.yRight = Ext4.apply(scales.yRight, _getScaleDomainValuesForAllMeasures(data, chartConfig.measures.y, 'right'));
+            }
+
+            Ext4.each(chartConfig.measures.y, function(yMeasure) {
+                // copy the config and reset the measures.y array with the single measure
+                var newChartConfig = Ext4.clone(chartConfig);
+                newChartConfig.measures.y = Ext4.clone(yMeasure);
+
+                // copy the labels object so that we can set the subtitle based on the y-measure
+                var newLabels = Ext4.clone(labels);
+                newLabels.subtitle = {value: yMeasure.label || yMeasure.name};
+
+                // only copy over the scales that are needed for this measures
+                var side = yMeasure.yAxis || 'left';
+                var newScales = {x: Ext4.clone(scales.x)};
+                if (side === 'left') {
+                    newScales.y = Ext4.clone(scales.y);
+                }
+                else {
+                    newScales.yRight = Ext4.clone(scales.yRight);
+                }
+
+                plotConfigArr.push(generatePlotConfig(renderTo, newChartConfig, newLabels, aes, newScales, geom, data));
+            }, this);
+        }
+        else {
+            plotConfigArr.push(generatePlotConfig(renderTo, chartConfig, labels, aes, scales, geom, data));
+        }
+
+        return plotConfigArr;
+    };
+
+    var _getScaleDomainValuesForAllMeasures = function(data, measures, side) {
+        var min = null, max = null;
+
+        Ext4.each(measures, function(measure) {
+            var measureSide = measure.yAxis || 'left';
+            if (side === measureSide) {
+                var accFn = LABKEY.vis.GenericChartHelper.getYMeasureAes(measure);
+                var tempMin = d3.min(data, accFn);
+                var tempMax = d3.max(data, accFn);
+
+                if (min == null || tempMin < min) {
+                    min = tempMin;
+                }
+                if (max == null || tempMax > max) {
+                    max = tempMax;
+                }
+            }
+        }, this);
+
+        return {domain: [min, max]};
+    };
+
+    /**
      * Generate the plot config for the given chart renderType and config options.
      * @param renderTo
      * @param chartConfig
@@ -841,6 +988,7 @@ LABKEY.vis.GenericChartHelper = new function(){
     {
         var renderType = chartConfig.renderType,
             layers = [], clipRect,
+            emptyTextFn = function(){return '';},
             plotConfig = {
                 renderTo: renderTo,
                 rendererType: 'd3',
@@ -848,13 +996,16 @@ LABKEY.vis.GenericChartHelper = new function(){
                 height: chartConfig.height
             };
 
-        if (renderType == 'pie_chart')
+        if (renderType === 'pie_chart') {
             return _generatePieChartConfig(plotConfig, chartConfig, labels, data);
+        }
 
         clipRect = (scales.x && Ext4.isArray(scales.x.domain)) || (scales.y && Ext4.isArray(scales.y.domain));
 
-        if (renderType == 'bar_chart')
-        {
+        // account for one or many y-measures by ensuring that we have an array of y-measures
+        var yMeasures = _ensureMeasuresAsArray(chartConfig.measures.y);
+
+        if (renderType === 'bar_chart') {
             aes = { x: 'label', y: 'value' };
 
             if (Ext4.isDefined(chartConfig.measures.xSub))
@@ -875,45 +1026,56 @@ LABKEY.vis.GenericChartHelper = new function(){
                 scales.y.domain = [min, max];
             }
         }
-        else if (renderType == 'box_plot' && chartConfig.pointType == 'all')
+        else if (renderType === 'box_plot' && chartConfig.pointType === 'all')
         {
             layers.push(
                 new LABKEY.vis.Layer({
-                    data: data,
                     geom: LABKEY.vis.GenericChartHelper.generatePointGeom(chartConfig.geomOptions),
                     aes: {hoverText: LABKEY.vis.GenericChartHelper.generatePointHover(chartConfig.measures)}
                 })
             );
         }
-        else if (renderType == 'line_plot') {
+        else if (renderType === 'line_plot') {
             var xName = chartConfig.measures.x.name,
-                isDate = isDateType(getMeasureType(chartConfig.measures.x)),
-                    pathAes = {};
+                isDate = isDateType(getMeasureType(chartConfig.measures.x));
 
-            pathAes.sortFn = function(a, b) {
-                // No need to handle the case for a or b or a.getValue() or b.getValue() null as they are
-                // not currently included in this plot.
-                if (isDate){
-                    return new Date(a.getValue(xName)) - new Date(b.getValue(xName));
+            Ext4.each(yMeasures, function(yMeasure) {
+                var pathAes = {
+                    sortFn: function(a, b) {
+                        // No need to handle the case for a or b or a.getValue() or b.getValue() null as they are
+                        // not currently included in this plot.
+                        if (isDate){
+                            return new Date(a.getValue(xName)) - new Date(b.getValue(xName));
+                        }
+                        return a.getValue(xName) - b.getValue(xName);
+                    }
+                };
+
+                pathAes[yMeasure.yAxis === 'right' ? 'yRight' : 'yLeft'] = getYMeasureAes(yMeasure);
+
+                // use the series measure's values for the distinct colors and grouping
+                if (chartConfig.measures.series) {
+                    pathAes.pathColor = generateGroupingAcc(chartConfig.measures.series.name);
+                    pathAes.group = generateGroupingAcc(chartConfig.measures.series.name);
                 }
-                return a.getValue(xName) - b.getValue(xName);
-            };
+                // if no series measures but we have multiple y-measures, force the color and grouping to be distinct for each measure
+                else if (yMeasures.length > 1) {
+                    pathAes.pathColor = emptyTextFn;
+                    pathAes.group = emptyTextFn;
+                }
 
-            if (chartConfig.measures.series) {
-                pathAes.pathColor = generateGroupingAcc(chartConfig.measures.series.name);
-                pathAes.group = generateGroupingAcc(chartConfig.measures.series.name);
-            }
-
-            layers.push(
-                new LABKEY.vis.Layer({
-                    geom: new LABKEY.vis.Geom.Path({
-                        color: '#' + chartConfig.geomOptions.pointFillColor,
-                        size: chartConfig.geomOptions.lineWidth?chartConfig.geomOptions.lineWidth:3,
-                        opacity:chartConfig.geomOptions.opacity
-                    }),
-                    aes: pathAes
-                })
-            );
+                layers.push(
+                    new LABKEY.vis.Layer({
+                        name: yMeasures.length > 1 ? yMeasure.label || yMeasure.name : undefined,
+                        geom: new LABKEY.vis.Geom.Path({
+                            color: '#' + chartConfig.geomOptions.pointFillColor,
+                            size: chartConfig.geomOptions.lineWidth?chartConfig.geomOptions.lineWidth:3,
+                            opacity:chartConfig.geomOptions.opacity
+                        }),
+                        aes: pathAes
+                    })
+                );
+            }, this);
         }
 
         // Issue 34711: better guess at the max number of discrete x-axis tick mark labels to show based on the plot width
@@ -935,12 +1097,36 @@ LABKEY.vis.GenericChartHelper = new function(){
             }
         }
 
-        layers.push(
-            new LABKEY.vis.Layer({
-                data: data,
-                geom: geom
-            })
-        );
+        if ((renderType === 'line_plot' || renderType === 'scatter_plot') && yMeasures.length > 0) {
+            Ext4.each(yMeasures, function (yMeasure) {
+                var layerAes = {};
+                layerAes[yMeasure.yAxis === 'right' ? 'yRight' : 'yLeft'] = getYMeasureAes(yMeasure);
+
+                // if no series measures but we have multiple y-measures, force the color and shape to be distinct for each measure
+                if (!aes.color && yMeasures.length > 1) {
+                    layerAes.color = emptyTextFn;
+                }
+                if (!aes.shape && yMeasures.length > 1) {
+                    layerAes.shape = emptyTextFn;
+                }
+
+                layers.push(
+                    new LABKEY.vis.Layer({
+                        name: yMeasures.length > 1 ? yMeasure.label || yMeasure.name : undefined,
+                        geom: geom,
+                        aes: layerAes
+                    })
+                );
+            }, this);
+        }
+        else {
+            layers.push(
+                new LABKEY.vis.Layer({
+                    data: data,
+                    geom: geom
+                })
+            );
+        }
 
         plotConfig = Ext4.apply(plotConfig, {
             clipRect: clipRect,
@@ -1055,7 +1241,7 @@ LABKEY.vis.GenericChartHelper = new function(){
      * can be rendered. Message will contain an error or warning message if applicable. If message is not null and success
      * is true, there is a warning.
      * @param {String} chartType The chartType from getChartType.
-     * @param {Object} chartConfig The saved chartConfig object.
+     * @param {Object} chartConfigOrMeasure The saved chartConfig object or a specific measure object.
      * @param {String} measureName The name of the axis measure property.
      * @param {Object} aes The aes object from generateAes.
      * @param {Object} scales The scales object from generateScales.
@@ -1063,7 +1249,12 @@ LABKEY.vis.GenericChartHelper = new function(){
      * @param {Boolean} dataConversionHappened Whether we converted any values in the measure data
      * @returns {Object}
      */
-    var validateAxisMeasure = function(chartType, chartConfig, measureName, aes, scales, data, dataConversionHappened) {
+    var validateAxisMeasure = function(chartType, chartConfigOrMeasure, measureName, aes, scales, data, dataConversionHappened) {
+        var measure = Ext4.isObject(chartConfigOrMeasure) && chartConfigOrMeasure.measures ? chartConfigOrMeasure.measures[measureName] : chartConfigOrMeasure;
+        return _validateAxisMeasure(chartType, measure, measureName, aes, scales, data, dataConversionHappened);
+    };
+
+    var _validateAxisMeasure = function(chartType, measure, measureName, aes, scales, data, dataConversionHappened) {
         var dataIsNull = true, measureUndefined = true, invalidLogValues = false, hasZeroes = false, message = null;
 
         // no need to check measures if we have no data
@@ -1090,13 +1281,13 @@ LABKEY.vis.GenericChartHelper = new function(){
 
         if (measureUndefined)
         {
-            message = 'The measure ' + chartConfig.measures[measureName].label + ' was not found. It may have been renamed or removed.';
+            message = 'The measure ' + measure.label + ' was not found. It may have been renamed or removed.';
             return {success: false, message: message};
         }
 
         if ((chartType == 'scatter_plot' || chartType == 'line_plot' || measureName == 'y') && dataIsNull && !dataConversionHappened)
         {
-            message = 'All data values for ' + chartConfig.measures[measureName].label + ' are null. Please choose a different measure.';
+            message = 'All data values for ' + measure.label + ' are null. Please choose a different measure.';
             return {success: false, message: message};
         }
 
@@ -1133,7 +1324,7 @@ LABKEY.vis.GenericChartHelper = new function(){
     };
 
     var getMeasureType = function(measure) {
-        return measure ? (measure.normalizedType || measure.type) : null;
+        return Ext4.isObject(measure) ? (measure.normalizedType || measure.type) : null;
     };
 
     var isNumericType = function(type)
@@ -1347,6 +1538,8 @@ LABKEY.vis.GenericChartHelper = new function(){
         getMeasureType: getMeasureType,
         getQueryColumns : getQueryColumns,
         getChartTypeBasedWidth : getChartTypeBasedWidth,
+        getDistinctYAxisSides : getDistinctYAxisSides,
+        getYMeasureAes : getYMeasureAes,
         isNumericType: isNumericType,
         generateLabels: generateLabels,
         generateScales: generateScales,
@@ -1363,6 +1556,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         generateGeom: generateGeom,
         generateBoxplotGeom: generateBoxplotGeom,
         generatePointGeom: generatePointGeom,
+        generatePlotConfigs: generatePlotConfigs,
         generatePlotConfig: generatePlotConfig,
         validateResponseHasData: validateResponseHasData,
         validateAxisMeasure: validateAxisMeasure,

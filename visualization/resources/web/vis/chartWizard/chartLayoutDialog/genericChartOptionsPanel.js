@@ -452,25 +452,49 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             name: 'hideDataPoints',
             getInputValue: this.getHideDataPoints,
             fieldLabel: 'Hide Data Points',
-            labelWidth: 135,
+            labelWidth: 110,
             padding: '0 0 10px 0',
             layoutOptions: ['time', 'series'],
-            value: false
+            value: false,
+            listeners: {
+                scope: this,
+                change: function(cb, newValue)
+                {
+                    this.hideTrendLineCheckbox.setDisabled(newValue);
+                }
+            }
+        });
+
+        this.hideTrendLineCheckbox = Ext4.create('Ext.form.field.Checkbox', {
+            name: 'hideTrendLine',
+            getInputValue: this.getHideTrendLine,
+            fieldLabel: 'Hide Trend Line',
+            labelWidth: 110,
+            padding: '0 0 10px 0',
+            layoutOptions: ['time'],
+            value: false,
+            listeners: {
+                scope: this,
+                change: function(cb, newValue)
+                {
+                    this.hideDataPointsCheckbox.setDisabled(newValue);
+                }
+            }
         });
 
         this.chartLayoutRadioGroup = Ext4.create('Ext.form.RadioGroup', {
             name: 'chartLayout',
             fieldLabel: 'Number of Charts',
-            labelWidth: 135,
             getInputValue: this.getChartLayout,
             columns: 1,
             padding: '0 0 10px 0',
-            layoutOptions: 'time',
+            layoutOptions: ['chartLayout'],
             items: [
                 {boxLabel: 'One Chart', inputValue: 'single', name: 'chartLayoutOption', checked: true},
                 {boxLabel: 'One Per Group', inputValue: 'per_group', name: 'chartLayoutOption', hidden: true},
-                {boxLabel: 'One Per ' + subjectInfo.nounSingular, inputValue: 'per_subject', name: 'chartLayoutOption'},
-                {boxLabel: 'One Per Measure/Dimension', inputValue: 'per_dimension', name: 'chartLayoutOption'}
+                {boxLabel: 'One Per ' + subjectInfo.nounSingular, inputValue: 'per_subject', name: 'chartLayoutOption', hidden: this.renderType !== 'time_chart'},
+                {boxLabel: 'One Per Measure/Dimension', inputValue: 'per_dimension', name: 'chartLayoutOption', hidden: this.renderType !== 'time_chart'},
+                {boxLabel: 'One Per Measure', inputValue: 'per_measure', name: 'chartLayoutOption', hidden: this.renderType === 'time_chart'}
             ]
         });
 
@@ -482,7 +506,6 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         this.chartSubjectSelectionRadioGroup = Ext4.create('Ext.form.RadioGroup', {
             name: 'chartSubjectSelection',
             fieldLabel: 'Subject Selection',
-            labelWidth: 135,
             getInputValue: this.getChartSubjectSelection,
             columns: 1,
             layoutOptions: 'time',
@@ -540,7 +563,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             hideFieldLabel: true,
             layoutOptions: 'time',
             width: 450,
-            padding: '0 0 0 160px',
+            padding: '0 0 0 135px',
             items: [this.displayIndividualLinesCheckbox]
         });
 
@@ -593,7 +616,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             layoutOptions: 'time',
             layout: 'hbox',
             width: 450,
-            padding: '0 0 10px 160px',
+            padding: '0 0 10px 135px',
             items: [
                 this.displayAggregateLinesCheckbox,
                 this.errorBarsCombobox
@@ -648,6 +671,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             this.lineWidthSlider,
             this.lineColorPicker,
             this.fillColorPicker,
+            this.hideTrendLineCheckbox,
             this.hideDataPointsCheckbox,
             this.colorPaletteComboBox,
             this.colorPaletteFieldContainer
@@ -779,8 +803,8 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
     validateChanges : function()
     {
-        var hasValidWidth = this.widthBox.isDisabled() || this.getWidth() == null || this.getWidth() > 0,
-            hasValidHeight = this.heightBox.isDisabled() || this.getHeight() == null || this.getHeight() > 0,
+        var hasValidWidth = this.widthBox.isDisabled() || this.getWidth() == null || this.getWidth() >= 250,
+            hasValidHeight = this.heightBox.isDisabled() || this.getHeight() == null || this.getHeight() >= 250,
             hasValidBinThreshold = this.getBinThreshold() <= 10000 && this.getBinThreshold() >= 1;
 
         return hasValidWidth && hasValidHeight && hasValidBinThreshold;
@@ -857,6 +881,9 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
         if (Ext4.isDefined(chartConfig.hideDataPoints))
             this.setHideDataPoints(chartConfig.hideDataPoints);
+
+        if (Ext4.isDefined(chartConfig.hideTrendLine))
+            this.setHideTrendLine(chartConfig.hideTrendLine);
 
         if (Ext4.isDefined(chartConfig.chartLayout))
             this.setChartLayout(chartConfig.chartLayout);
@@ -1015,6 +1042,14 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
     setHideDataPoints: function(value) {
         this.hideDataPointsCheckbox.setValue(value);
+    },
+
+    getHideTrendLine: function() {
+        return this.hideTrendLineCheckbox.getValue();
+    },
+
+    setHideTrendLine: function(value) {
+        this.hideTrendLineCheckbox.setValue(value);
     },
 
     getChartLayout: function() {

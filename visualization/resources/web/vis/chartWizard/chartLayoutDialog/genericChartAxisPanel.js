@@ -57,7 +57,7 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
             fieldLabel: 'Scale Type',
             columns: 2,
             width: 250,
-            layoutOptions: ['point', 'time'],
+            layoutOptions: ['point', 'time', 'series'],
             items: [
                 Ext4.create('Ext.form.field.Radio', {
                     boxLabel: 'Linear',
@@ -289,15 +289,14 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
     adjustScaleAndRangeOptions: function(isNumeric, overrideAsHidden)
     {
         //disable for non-numeric types
-        if (Ext4.isBoolean(isNumeric))
-        {
+        if (Ext4.isBoolean(isNumeric)) {
             this.setRangeOptionVisible(isNumeric);
             this.setScaleTypeOptionVisible(isNumeric);
         }
 
         //some render type axis options should always be hidden
-        if ((this.axisName == 'x' && (this.renderType == 'bar_chart' || this.renderType == 'box_plot')) || overrideAsHidden)
-        {
+        var fixXChartTypes = this.renderType === 'bar_chart' || this.renderType === 'box_plot';
+        if ((this.axisName === 'x' && fixXChartTypes) || overrideAsHidden) {
             this.setRangeOptionVisible(false);
             this.setScaleTypeOptionVisible(false);
         }
@@ -364,15 +363,19 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
 
     onMeasureChangesGenericChart : function(measures, renderType)
     {
-        var properties;
+        var properties = measures[this.axisName];
         if (renderType === 'bar_chart' && this.axisName === 'x' && measures['xSub']) {
             properties = measures['xSub'];
-        } else {
-            properties = measures[this.axisName];
+        } else if (this.axisName === 'yRight') {
+            properties = this.getYMeasuresForSide(measures.y, 'right');
+        } else if (this.axisName === 'y') {
+            properties = this.getYMeasuresForSide(measures.y, 'left');
         }
-        var type = LABKEY.vis.GenericChartHelper.getMeasureType(properties),
-            isNumeric = LABKEY.vis.GenericChartHelper.isNumericType(type);
 
+        // use first measure for type check if properties is an array of measures
+        var prop = Ext4.isArray(properties) && properties.length > 0 ? properties[0] : properties;
+        var type = LABKEY.vis.GenericChartHelper.getMeasureType(prop),
+            isNumeric = LABKEY.vis.GenericChartHelper.isNumericType(type);
         this.adjustScaleAndRangeOptions(isNumeric);
 
         this.defaultAxisLabel = LABKEY.vis.GenericChartHelper.getSelectedMeasureLabel(renderType, this.axisName, properties);
@@ -383,6 +386,27 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
             else
                 this.setAxisLabel('');
         }
+    },
+
+    getYMeasuresForSide : function(measures, side) {
+        var returnMeasures = [];
+
+        if (Ext4.isArray(measures)) {
+            Ext4.each(measures, function(m) {
+                if (this.isYMeasureForSide(m, side)) {
+                    returnMeasures.push(m);
+                }
+            }, this);
+        }
+        else if (this.isYMeasureForSide(measures, side)) {
+            returnMeasures.push(measures);
+        }
+
+        return returnMeasures;
+    },
+
+    isYMeasureForSide : function(measure, side) {
+        return measure && (measure.yAxis === side || (!measure.yAxis && side === 'left'));
     },
 
     onChartLayoutChange : function(multipleCharts)

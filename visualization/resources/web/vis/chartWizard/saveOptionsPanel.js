@@ -339,8 +339,8 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
     updateCurrentChartThumbnail: function(chartSVGStr, size)
     {
         // resize the svg by resetting the viewBox and width/height attributes
-        chartSVGStr = chartSVGStr.replace(/width="\d+"/, 'width="300"');
-        chartSVGStr = chartSVGStr.replace(/height="\d+"/, 'height="175"');
+        chartSVGStr = chartSVGStr.replace(/width="\d+.\d+"/, 'width="300"');
+        chartSVGStr = chartSVGStr.replace(/height="\d+.\d+"/, 'height="175"');
         if (size)
             chartSVGStr = chartSVGStr.replace(/<svg /, '<svg viewBox="0 0 ' + size.width + ' ' + size.height + '"');
         else

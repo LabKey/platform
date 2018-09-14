@@ -698,6 +698,9 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             if (Ext4.isBoolean(chartConfig.hideDataPoints))
                 this.chartLayoutOptions.general.hideDataPoints = chartConfig.hideDataPoints;
 
+            if (Ext4.isBoolean(chartConfig.hideTrendLine))
+                this.chartLayoutOptions.general.hideTrendLine = chartConfig.hideTrendLine;
+
             if (Ext4.isString(chartConfig.chartLayout))
                 this.chartLayoutOptions.general.chartLayout = chartConfig.chartLayout;
 
@@ -1021,6 +1024,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         simplified.parameters = config.parameters ? config.parameters : defaultConfig.parameters;
         simplified.title = config.title;
         simplified.hideDataPoints = config.hideDataPoints ? config.hideDataPoints : defaultConfig.hideDataPoints;
+        simplified.hideTrendLine = config.hideTrendLine ? config.hideTrendLine : defaultConfig.hideTrendLine;
         simplified.lineWidth = config.lineWidth ? config.lineWidth : defaultConfig.lineWidth;
         simplified.pointClickFn = config.pointClickFn ? config.pointClickFn : defaultConfig.pointClickFn;
 
@@ -1492,6 +1496,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             chartSubjectSelection: 'subjects',
             lineWidth: 3,
             hideDataPoints: false,
+            hideTrendLine: false,
             pointClickFn: null,
             errorBars: "None",
             aggregateType: "Mean",
@@ -1512,11 +1517,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
     getChartInfoFromOptionPanels: function()
     {
-        // use the saved report config if not in edit mode
-        // TODO we should be able to just use the saved report chartInfo if not in edit mode
-        //if (!this.editMode && !this.isNew())
-        //    return this.chartInfo;
-
         var config = {};
         config.measures = [];
         config.axis = [];
@@ -1527,6 +1527,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         config.width = this.chartLayoutOptions.general.width;
         config.lineWidth = this.chartLayoutOptions.general.lineWidth;
         config.hideDataPoints = this.chartLayoutOptions.general.hideDataPoints;
+        config.hideTrendLine = this.chartLayoutOptions.general.hideTrendLine;
         config.chartLayout = this.chartLayoutOptions.general.chartLayout;
         config.chartSubjectSelection = this.chartLayoutOptions.general.chartSubjectSelection;
         config.displayIndividual = this.chartLayoutOptions.general.displayIndividual;

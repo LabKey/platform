@@ -380,15 +380,17 @@ LABKEY.vis.TimeChartHelper = new function() {
             var columnName = individualColumnAliases ? LABKEY.vis.getColumnAlias(individualColumnAliases, chartSeries.aliasLookupInfo) : LABKEY.vis.getColumnAlias(aggregateColumnAliases, chartSeries.aliasLookupInfo);
             if (individualColumnAliases)
             {
-                var pathLayerConfig = {
-                    geom: new LABKEY.vis.Geom.Path({size: config.lineWidth}),
-                    aes: generateLayerAes(chartSeriesName, chartSeries.yAxisSide, columnName)
-                };
+                if (!config.hideTrendLine) {
+                    var pathLayerConfig = {
+                        geom: new LABKEY.vis.Geom.Path({size: config.lineWidth}),
+                        aes: generateLayerAes(chartSeriesName, chartSeries.yAxisSide, columnName)
+                    };
 
-                if (seriesList.length > 1)
-                    pathLayerConfig.name = chartSeriesName;
+                    if (seriesList.length > 1)
+                        pathLayerConfig.name = chartSeriesName;
 
-                layers.push(new LABKEY.vis.Layer(pathLayerConfig));
+                    layers.push(new LABKEY.vis.Layer(pathLayerConfig));
+                }
 
                 if (!config.hideDataPoints)
                 {
@@ -428,16 +430,18 @@ LABKEY.vis.TimeChartHelper = new function() {
 
                 var errorColumnName = errorBarType ? LABKEY.vis.getColumnAlias(aggregateColumnAliases, chartSeries.aliasLookupInfo) + errorBarType : null;
 
-                var aggregatePathLayerConfig = {
-                    data: aggregateData,
-                    geom: new LABKEY.vis.Geom.Path({size: config.lineWidth}),
-                    aes: generateAggregateLayerAes(chartSeriesName, chartSeries.yAxisSide, columnName, intervalKey, aggregateSubjectColumn, errorColumnName)
-                };
+                if (!config.hideTrendLine) {
+                    var aggregatePathLayerConfig = {
+                        data: aggregateData,
+                        geom: new LABKEY.vis.Geom.Path({size: config.lineWidth}),
+                        aes: generateAggregateLayerAes(chartSeriesName, chartSeries.yAxisSide, columnName, intervalKey, aggregateSubjectColumn, errorColumnName)
+                    };
 
-                if (seriesList.length > 1)
-                    aggregatePathLayerConfig.name = chartSeriesName;
+                    if (seriesList.length > 1)
+                        aggregatePathLayerConfig.name = chartSeriesName;
 
-                layers.push(new LABKEY.vis.Layer(aggregatePathLayerConfig));
+                    layers.push(new LABKEY.vis.Layer(aggregatePathLayerConfig));
+                }
 
                 if (errorColumnName)
                 {

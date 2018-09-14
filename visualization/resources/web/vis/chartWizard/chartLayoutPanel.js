@@ -353,28 +353,34 @@ Ext4.define('LABKEY.vis.ChartLayoutPanel', {
 
     shouldIncludeAxisPanel : function(selectedChartType, measures, axisName)
     {
-        if (selectedChartType.name == 'time_chart')
-        {
+        if (selectedChartType.name === 'time_chart') {
             var sides = LABKEY.vis.TimeChartHelper.getDistinctYAxisSides(measures),
-                showX = axisName == 'x',
-                showLeft = axisName == 'y' && sides.indexOf('left') > -1,
-                showRight = axisName == 'yRight' && sides.indexOf('right') > -1;
+                showX = axisName === 'x',
+                showLeft = axisName === 'y' && sides.indexOf('left') > -1,
+                showRight = axisName === 'yRight' && sides.indexOf('right') > -1;
 
             return showX || showLeft || showRight;
         }
         else
         {
-            return Ext4.Object.getKeys(measures).indexOf(axisName) > -1;
+            var sides = LABKEY.vis.GenericChartHelper.getDistinctYAxisSides(measures),
+                showX = axisName === 'x' && Ext4.isDefined(measures.x),
+                showLeft = axisName === 'y' && (sides.length === 0 || sides.indexOf('left') > -1),
+                showRight = axisName === 'yRight' && sides.indexOf('right') > -1;
+
+            return showX || showLeft || showRight;
         }
     },
 
     updateNavPanelTitle : function(selectedChartType, measures, navRecord)
     {
-        // for time charts, if both y-axis sides are in use, update the labels to make it clear
-        if (selectedChartType.name == 'time_chart' && (navRecord.get('name') == 'y' || navRecord.get('name') == 'yRight'))
-        {
-            var sides = LABKEY.vis.TimeChartHelper.getDistinctYAxisSides(measures),
-                label = sides.length == 2 ? ' (' + (navRecord.get('name') == 'y' ? 'Left' : 'Right') + ')' : '';
+        if ((navRecord.get('name') === 'y' || navRecord.get('name') === 'yRight')) {
+            // if both y-axis sides are in use, update the labels to make it clear
+            var sides = selectedChartType.name === 'time_chart'
+                ? LABKEY.vis.TimeChartHelper.getDistinctYAxisSides(measures)
+                : LABKEY.vis.GenericChartHelper.getDistinctYAxisSides(measures);
+
+            var label = sides.length > 1 ? ' (' + (navRecord.get('name') === 'y' ? 'Left' : 'Right') + ')' : '';
             navRecord.set('label', 'Y-Axis' + label);
         }
     },
