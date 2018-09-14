@@ -17,6 +17,7 @@ LABKEY.vis.SVGConverter = {
      * Converts the passed in svg string to a static image that the user will be prompted to save
      * @param svg SVG as String or Dom Node.
      * @param format Either LABKEY.vis.SVGConverter.FORMAT_PDF ("pdf") or LABKEY.vis.SVGConverter.FORMAT_PNG ("png")
+     * @param title The file name to use for the exported image/pdf
      */
     convert: function(svg, format, title) {
         if (null != svg && typeof svg != "string")
