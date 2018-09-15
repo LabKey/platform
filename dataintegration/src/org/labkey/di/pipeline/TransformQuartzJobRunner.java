@@ -86,7 +86,7 @@ public class TransformQuartzJobRunner implements Job
                 LOG.info(TransformManager.getJobPendingMessage(d.getId()));
                 return;
             }
-            boolean hasWork = d.checkForWork(info, true, info.isVerbose());
+            boolean hasWork = d.checkForWork(info, true, true);
 
             if (!hasWork)
             {

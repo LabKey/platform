@@ -267,9 +267,15 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 {
     private static final Logger LOG = Logger.getLogger(CoreModule.class);
 
-    // Register dialect extra early, since we need to initialize the data sources before calling DefaultModule.initialize()
     static
     {
+        // Accept most of the standard Quartz properties, but set a system property to skip Quartz's update check.
+        // These properties need to be set here (previously set in startBackgroundThreads()), so that if any other module touches Quartz in its setup, it initializes with these setting.
+        Properties props = System.getProperties();
+        props.setProperty(StdSchedulerFactory.PROP_SCHED_SKIP_UPDATE_CHECK, "true");
+        props.setProperty("org.quartz.jobStore.misfireThreshold", "300000");
+
+        // Register dialect extra early, since we need to initialize the data sources before calling DefaultModule.initialize()
         SqlDialectRegistry.register(new PostgreSqlDialectFactory());
     }
 
@@ -980,9 +986,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // Start up the default Quartz scheduler, used in many places
         try
         {
-            // Accept most of the standard Quartz properties, but set a system property to skip Quartz's update check.
-            Properties props = System.getProperties();
-            props.setProperty(StdSchedulerFactory.PROP_SCHED_SKIP_UPDATE_CHECK, "true");
             StdSchedulerFactory.getDefaultScheduler().start();
         }
         catch (SchedulerException e)
