@@ -18,7 +18,6 @@ package org.labkey.api.module;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
-import org.apache.commons.lang3.JavaVersion;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.log4j.Appender;
@@ -913,6 +912,9 @@ public class ModuleLoader implements Filter
         return _webappDir;
     }
 
+    private static final int LOWEST_SUPPORTED_JAVA = 8;
+    private static final int HIGHEST_TESTED_JAVA = 11;
+
     /**
      * Checks Java version and throws if it's not supported.
      *
@@ -923,17 +925,21 @@ public class ModuleLoader implements Filter
     @JavaRuntimeVersion
     private void verifyJavaVersion() throws ConfigurationException
     {
-        if (!SystemUtils.IS_JAVA_1_8)
-        {
-            if (SystemUtils.isJavaVersionAtLeast(JavaVersion.JAVA_9))
-            {
-                _log.warn("LabKey Server has not been tested against Java runtime version " + SystemUtils.JAVA_VERSION + ".");
-            }
-            else
-            {
-                throw new ConfigurationException("Unsupported Java runtime version: " + SystemUtils.JAVA_VERSION + ". LabKey Server requires Java 8.");
-            }
-        }
+        int version = getJavaVersion();
+
+        if (version < LOWEST_SUPPORTED_JAVA)
+            throw new ConfigurationException("Unsupported Java runtime version: " + SystemUtils.JAVA_VERSION + ". LabKey Server requires Java 8, 9, 10, or 11.");
+        else if (version > HIGHEST_TESTED_JAVA)
+            _log.warn("LabKey Server has not been tested against Java runtime version " + SystemUtils.JAVA_VERSION + ".");
+    }
+
+    // Return current Java version, normalized to an int (e.g., 6, 7, 8, 9, 10, 11...). Note that commons lang methods
+    // like SystemUtils.isJavaVersionAtLeast() no longer work with the Java 6-month release cadence.
+    private int getJavaVersion()
+    {
+        String[] version = SystemUtils.JAVA_VERSION.split("\\.");
+
+        return Integer.parseInt("1".equals(version[0]) ? version[1] : version[0]);
     }
 
     /**
