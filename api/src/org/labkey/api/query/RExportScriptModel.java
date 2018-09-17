@@ -132,7 +132,7 @@ public class RExportScriptModel extends ExportScriptModel
             sb.append("\n");
             sb.append("library(Rlabkey)").append("\n");
             sb.append("\n");
-            sb.append("# Select rows into a data frame called 'mydata'").append("\n");
+            sb.append("# Select rows into a data frame called '" + variableName + "'").append("\n");
             sb.append("\n");
         }
         String nl = "\n"; //clean ? "" : "\n";
