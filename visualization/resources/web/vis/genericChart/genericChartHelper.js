@@ -1540,6 +1540,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         getChartTypeBasedWidth : getChartTypeBasedWidth,
         getDistinctYAxisSides : getDistinctYAxisSides,
         getYMeasureAes : getYMeasureAes,
+        getDefaultMeasuresLabel: getDefaultMeasuresLabel,
         isNumericType: isNumericType,
         generateLabels: generateLabels,
         generateScales: generateScales,
