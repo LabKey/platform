@@ -307,7 +307,8 @@ LABKEY.vis.GenericChartHelper = new function(){
      */
     var getDistinctYAxisSides = function(measures)
     {
-        return Ext4.Array.unique(Ext4.Array.pluck(measures.y || [], 'yAxis'));
+        var measuresArr = ensureMeasuresAsArray(measures.y);
+        return Ext4.Array.unique(Ext4.Array.pluck(measuresArr, 'yAxis'));
     };
 
     /**
@@ -556,8 +557,9 @@ LABKEY.vis.GenericChartHelper = new function(){
         // charts that have multiple y-measures selected will need to put the aes.y function on their specific layer
         if (Ext4.isDefined(measures.y) && !Ext4.isArray(measures.y))
         {
+            var sideAesName = (measures.y.yAxis || 'left') === 'left' ? 'y' : 'yRight';
             var yMeasureName = measures.y.converted ? measures.y.convertedName : measures.y.name;
-            aes.y = generateContinuousAcc(yMeasureName);
+            aes[sideAesName] = generateContinuousAcc(yMeasureName);
         }
 
         if (chartType === "scatter_plot" || chartType === "line_plot")
