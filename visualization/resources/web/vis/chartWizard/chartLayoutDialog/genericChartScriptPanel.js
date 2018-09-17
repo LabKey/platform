@@ -30,21 +30,32 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
             "        if (hasNoDataMsg != null)\n" +
             "            return {success: false, messages: [hasNoDataMsg]};\n" +
             "\n" +
-            "        var measureNames = Object.keys(chartConfig.measures);\n" +
+            "        var messages = [], firstRecord = measureStore.records()[0], measureNames = Object.keys(chartConfig.measures);\n" +
             "        for (var i = 0; i < measureNames.length; i++) {\n" +
-            "            var measureProps = chartConfig.measures[measureNames[i]];\n" +
-            "            if (measureProps && measureProps.name && measureStore.records()[0][measureProps.name] == undefined)\n" +
-            "                return {success: false, messages: ['The measure, ' + measureProps.label + ', is not available. It may have been renamed or removed.']};\n" +
-            "        }\n" +
+            "            var measuresArr = LABKEY.vis.GenericChartHelper.ensureMeasuresAsArray(chartConfig.measures[measureNames[i]]);\n" +
+            "            for (var j = 0; j < measuresArr.length; j++) {\n" +
+            "                var measure = measuresArr[j];\n" +
+            "                if (Ext4.isObject(measure)) {\n" +
+            "                    if (measure.name && !Ext4.isDefined(firstRecord[measure.name])) {\n" +
+            "                        return {success: false, messages: ['The measure, ' + measure.label + ', is not available. It may have been renamed or removed.']};\n" +
+            "                    }\n" +
             "\n" +
-            "        var messages = [], axisMeasureNames = ['x', 'xSub', 'y'];\n" +
-            "        for (var i = 0; i < axisMeasureNames.length; i++) {\n" +
-            "            if (measureNames.indexOf(axisMeasureNames[i]) > 0) {\n" +
-            "                var validation = LABKEY.vis.GenericChartHelper.validateAxisMeasure(chartConfig.renderType, chartConfig, axisMeasureNames[i], aes, scales, measureStore.records());\n" +
-            "                if (validation.message != null)\n" +
-            "                    messages.push(validation.message);\n" +
-            "                if (!validation.success)\n" +
-            "                    return {success: false, messages: messages};\n" +
+            "                    var validation;\n" +
+            "                    if (measureNames[i] === 'y') {\n" +
+            "                        var yAes = {y: LABKEY.vis.GenericChartHelper.getYMeasureAes(measure)};\n" +
+            "                        validation = LABKEY.vis.GenericChartHelper.validateAxisMeasure(chartConfig.renderType, measure, 'y', yAes, scales, measureStore.records());\n" +
+            "                    }\n" +
+            "                    else if (measureNames[i] === 'x' || measureNames[i] === 'xSub') {\n" +
+            "                        validation = LABKEY.vis.GenericChartHelper.validateAxisMeasure(chartConfig.renderType, measure, measureNames[i], aes, scales, measureStore.records());\n" +
+            "                    }\n" +
+            "\n" +
+            "                    if (Ext4.isObject(validation)) {\n" +
+            "                        if (validation.message != null)\n" +
+            "                            messages.push(validation.message);\n" +
+            "                        if (!validation.success)\n" +
+            "                            return {success: false, messages: messages};\n" +
+            "                    }\n" +
+            "                }\n" +
             "            }\n" +
             "        }\n" +
             "\n" +
@@ -101,21 +112,21 @@ Ext4.define('LABKEY.vis.GenericChartScriptPanel', {
             "            data = LABKEY.vis.getAggregateData(data, dimName, subDimName, measureName, aggType, '[Blank]', false);\n" +
             "        }\n" +
             "\n" +
-            "        var plotConfig = LABKEY.vis.GenericChartHelper.generatePlotConfig(chartId, chartConfig, labels, aes, scales, geom, data);\n" +
-            "\n" +
             "        var validation = validateChartConfig(chartConfig, aes, scales, measureStore);\n" +
             "        renderMessages(chartId, validation.messages);\n" +
             "        if (!validation.success)\n" +
             "            return;\n" +
             "\n" +
-            "        var plot;\n" +
-            "        if (chartType == 'pie_chart') {\n" +
-            "            new LABKEY.vis.PieChart(plotConfig);\n" +
-            "        }\n" +
-            "        else {\n" +
-            "            plot = new LABKEY.vis.Plot(plotConfig);\n" +
-            "            plot.render();\n" +
-            "        }\n" +
+            "        var plotConfigArr = LABKEY.vis.GenericChartHelper.generatePlotConfigs(chartId, chartConfig, labels, aes, scales, geom, data);\n" +
+            "        Ext4.each(plotConfigArr, function(plotConfig) {\n" +
+            "            if (chartType === 'pie_chart') {\n" +
+            "                new LABKEY.vis.PieChart(plotConfig);\n" +
+            "            }\n" +
+            "            else {\n" +
+            "                var plot = new LABKEY.vis.Plot(plotConfig);\n" +
+            "                plot.render();\n" +
+            "            }\n" +
+            "        }, this);\n" +
             "    };\n" +
             "\n" +
             "    var dependencyCallback = function() {\n" +

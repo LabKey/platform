@@ -466,7 +466,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                 }
             }
 
-            var yMeasures = _ensureMeasuresAsArray(measures.y);
+            var yMeasures = ensureMeasuresAsArray(measures.y);
             Ext4.each(yMeasures, function(yMeasure) {
                 var isMeasureYMatch = yMeasure && _isFieldKeyMatch(yMeasure, fields[i].fieldKey);
                 var isConvertedYMeasure = isMeasureYMatch && yMeasure.converted;
@@ -513,7 +513,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         return fieldKey === measure.name || fieldKey === measure.fieldKey;
     };
 
-    var _ensureMeasuresAsArray = function(measures) {
+    var ensureMeasuresAsArray = function(measures) {
         if (Ext4.isDefined(measures)) {
             return Ext4.isArray(measures) ? Ext4.Array.clone(measures) : [Ext4.clone(measures)];
         }
@@ -536,8 +536,7 @@ LABKEY.vis.GenericChartHelper = new function(){
      * @returns {Object}
      */
     var generateAes = function(chartType, measures, schemaName, queryName) {
-        var aes = {},
-            xMeasureType = getMeasureType(measures.x);
+        var aes = {}, xMeasureType = getMeasureType(measures.x);
 
         if (chartType == "box_plot" && !measures.x)
         {
@@ -635,7 +634,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             var hover = '', sep = '', distinctNames = [];
 
             Ext4.Object.each(measures, function(key, measureObj) {
-                var measureArr = _ensureMeasuresAsArray(measureObj);
+                var measureArr = ensureMeasuresAsArray(measureObj);
                 Ext4.each(measureArr, function(measure) {
                     if (Ext4.isObject(measure) && distinctNames.indexOf(measure.name) == -1) {
                         hover += sep + measure.label + ': ' + _getRowValue(row, measure.name);
@@ -800,7 +799,7 @@ LABKEY.vis.GenericChartHelper = new function(){
 
     var _addPointClickMeasureInfo = function(measureInfo, measures, name, key) {
         if (Ext4.isDefined(measures[name])) {
-            var measuresArr = _ensureMeasuresAsArray(measures[name]);
+            var measuresArr = ensureMeasuresAsArray(measures[name]);
             Ext4.each(measuresArr, function(measure) {
                 if (!Ext4.isDefined(measureInfo[key])) {
                     measureInfo[key] = measure.name;
@@ -1003,7 +1002,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         clipRect = (scales.x && Ext4.isArray(scales.x.domain)) || (scales.y && Ext4.isArray(scales.y.domain));
 
         // account for one or many y-measures by ensuring that we have an array of y-measures
-        var yMeasures = _ensureMeasuresAsArray(chartConfig.measures.y);
+        var yMeasures = ensureMeasuresAsArray(chartConfig.measures.y);
 
         if (renderType === 'bar_chart') {
             aes = { x: 'label', y: 'value' };
@@ -1258,7 +1257,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         var dataIsNull = true, measureUndefined = true, invalidLogValues = false, hasZeroes = false, message = null;
 
         // no need to check measures if we have no data
-        if (data.length == 0) {
+        if (data.length === 0) {
             return {success: true, message: message};
         }
 
@@ -1541,6 +1540,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         getDistinctYAxisSides : getDistinctYAxisSides,
         getYMeasureAes : getYMeasureAes,
         getDefaultMeasuresLabel: getDefaultMeasuresLabel,
+        ensureMeasuresAsArray: ensureMeasuresAsArray,
         isNumericType: isNumericType,
         generateLabels: generateLabels,
         generateScales: generateScales,

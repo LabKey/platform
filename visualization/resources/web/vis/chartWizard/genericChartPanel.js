@@ -1447,7 +1447,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         // validate that the y axis measure exists and data is valid, handle case for single or multiple y-measures selected
         if (hasYMeasure) {
-            var yMeasures = Ext4.isArray(this.measures['y']) ? Ext4.Array.clone(this.measures['y']) : [this.measures['y']];
+            var yMeasures = LABKEY.vis.GenericChartHelper.ensureMeasuresAsArray(this.measures['y']);
             for (var i = 0; i < yMeasures.length; i++) {
                 var yMeasure = yMeasures[i];
                 var yAes = {y: LABKEY.vis.GenericChartHelper.getYMeasureAes(yMeasure)};
@@ -1686,7 +1686,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 var propMeasures = this.measures[propName];
 
                 // some properties allowMultiple so treat all as arrays
-                propMeasures = Ext4.isArray(propMeasures) ? Ext4.Array.clone(propMeasures) : [propMeasures];
+                propMeasures = LABKEY.vis.GenericChartHelper.ensureMeasuresAsArray(propMeasures);
 
                 Ext4.each(propMeasures, function(propMeasure) {
                     var indexByFieldKey = store.find('fieldKey', propMeasure.fieldKey, null, null, null, true),
@@ -1907,8 +1907,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         queryConfig.columns = [];
 
         Ext4.each(['x', 'y', 'color', 'shape', 'series'], function(name) {
-            if (chartConfig.measures[name]) {
-                queryConfig.columns.push(chartConfig.measures[name].name);
+            if (Ext4.isDefined(chartConfig.measures[name])) {
+                var measuresArr = LABKEY.vis.GenericChartHelper.ensureMeasuresAsArray(chartConfig.measures[name]);
+                Ext4.each(measuresArr, function(measure) {
+                    queryConfig.columns.push(measure.name);
+                }, this);
             }
         }, this);
 
