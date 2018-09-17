@@ -189,7 +189,7 @@ LABKEY.Query = new function()
                  </ul>
          * @param {Function} [config.failure] Function called when execution of the "executeSql" function fails.
          *                   See {@link LABKEY.Query.selectRows} for more information on the parameters passed to this function.
-         * @param {Integer} [config.maxRows] The maximum number of rows to return from the server (defaults to returning all rows).
+         * @param {Integer} [config.maxRows] The maximum number of rows to return from the server (defaults to returning 100,000 rows).
          * @param {Integer} [config.offset] The index of the first row to return from the server (defaults to 0).
          *        Use this along with the maxRows config property to request pages of data.
          * @param {Boolean} [config.includeTotalCount] Include the total number of rows available (defaults to true).
