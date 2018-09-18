@@ -307,8 +307,16 @@ LABKEY.vis.GenericChartHelper = new function(){
      */
     var getDistinctYAxisSides = function(measures)
     {
-        var measuresArr = ensureMeasuresAsArray(measures.y);
-        return Ext4.Array.unique(Ext4.Array.pluck(measuresArr, 'yAxis'));
+        var distinctSides = [];
+        Ext4.each(ensureMeasuresAsArray(measures.y), function (measure) {
+            if (Ext4.isObject(measure)) {
+                var side = measure.yAxis || 'left';
+                if (distinctSides.indexOf(side) === -1) {
+                    distinctSides.push(side);
+                }
+            }
+        }, this);
+        return distinctSides;
     };
 
     /**
