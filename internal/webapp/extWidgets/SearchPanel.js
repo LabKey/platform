@@ -383,19 +383,7 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
             'query.queryName': this.store.queryName
         };
 
-        var cf = this.down('#containerFilterName');
-        if (cf && cf.getValue()){
-            params['query.containerFilterName'] = cf.getValue();
-        }
-        else if (this.defaultContainerFilter){
-            params['query.containerFilterName'] = this.defaultContainerFilter;
-        }
-
-        var vf = this.down('#viewNameField');
-        if (vf && vf.getValue()){
-            params['query.viewName'] = vf.getValue();
-        }
-
+        Ext4.apply(params, this.getBaseParams());
         Ext4.apply(params, this.getParams());
 
         window.location = LABKEY.ActionURL.buildURL(
@@ -404,6 +392,26 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
             (this.containerPath || LABKEY.ActionURL.getContainer()),
             params
         );
+    },
+
+    getBaseParams: function(dataRegionName) {
+        dataRegionName = dataRegionName || 'query';
+        var params = {};
+
+        var cf = this.down('#containerFilterName');
+        if (cf && cf.getValue()){
+            params[dataRegionName + '.containerFilterName'] = cf.getValue();
+        }
+        else if (this.defaultContainerFilter){
+            params[dataRegionName + '.containerFilterName'] = this.defaultContainerFilter;
+        }
+
+        var vf = this.down('#viewNameField');
+        if (vf && vf.getValue()){
+            params[dataRegionName + '.viewName'] = vf.getValue();
+        }
+
+        return params;
     },
 
     getParams: function(dataRegionName){
