@@ -815,7 +815,7 @@
     }
 
     function handleFailure(resp, opt) {
-        var jsonResp = LABKEY.Utils.decode(resp.responseText);
+        var jsonResp = Ext4.decode(resp.responseText);
         if (jsonResp && jsonResp.errors)
         {
             var errorHTML = '';
