@@ -572,13 +572,16 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
         String name = props.get(Props.name.name());
         String exePath = props.get(Props.exePath.name());
         String extensionStr = props.get(Props.extensions.name());
+        List<String> extensions = Collections.emptyList();
+        if (extensionStr != null)
+            extensions = Arrays.asList(StringUtils.split(extensionStr, ","));
         String pathMapStr = props.get(Props.pathMap.name());
         boolean isRemote = Boolean.valueOf(props.get(Props.remote.name()));
         ExternalScriptEngineDefinition.Type type = ExternalScriptEngineDefinition.Type.External;
 
-        if (extensionStr.contains("r"))
+        if (extensions.contains("r"))
             type = ExternalScriptEngineDefinition.Type.R;
-        else if (extensionStr.contains("pl"))
+        else if (extensions.contains("pl"))
             type = ExternalScriptEngineDefinition.Type.Perl;
 
         if ((key != null || isFromStartupProps) && name != null && extensionStr != null && (isRemote || (exePath!=null)))
