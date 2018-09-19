@@ -15,12 +15,15 @@ import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.xar.LsidUtils;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 
 import java.util.ArrayList;
@@ -74,6 +77,12 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     {
         ExpRun run = ExperimentService.get().createExperimentRun(container, name);
         run.setProtocol(protocol);
+        PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(container);
+        if (pipeRoot == null)
+        {
+            throw new NotFoundException("Pipeline root is not configured for folder " + container);
+        }
+        run.setFilePathRoot(pipeRoot.getRootPath());
 
         return run;
     }
@@ -388,7 +397,10 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
                                               Map<ExpMaterial, String> inputMaterial,
                                               Map<ExpMaterial, String> outputMaterial) throws ExperimentException, ValidationException
     {
-        return null;
+        ViewBackgroundInfo info = new ViewBackgroundInfo(context.getContainer(), context.getUser(), context.getActionURL());
+        ExperimentService.get().saveSimpleExperimentRun(run, inputMaterial,inputData, outputMaterial, outputData, Collections.emptyMap(), info, null, false);
+
+        return batch;
     }
 
     @Override

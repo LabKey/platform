@@ -90,6 +90,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     String SCHEMA_LOCATION = "http://cpas.fhcrc.org/exp/xml http://www.labkey.org/download/XarSchema/V2.3/expTypes.xsd";
 
     String SAMPLE_DERIVATION_PROTOCOL_LSID = "urn:lsid:labkey.org:Protocol:SampleDerivationProtocol";
+    String SAMPLE_DERIVATION_PROTOCOL_NAME = "Sample Derivation Protocol";
 
     int SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE = 1;
     int SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE = 10;

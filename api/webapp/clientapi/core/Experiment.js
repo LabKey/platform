@@ -56,6 +56,7 @@ LABKEY.Experiment = new function()
                 assayId: config.assayId,
                 assayName: config.assayName,
                 providerName: config.providerName,
+                protocolName : config.protocolName,
                 batches: config.batches
             },
             success: getSuccessCallbackWrapper(createExps, config.success, config.scope),
@@ -85,6 +86,7 @@ LABKEY.Experiment = new function()
         wrapConfig.assayId = config.assayId;
         wrapConfig.assayName = config.assayName;
         wrapConfig.providerName = config.providerName;
+        wrapConfig.protocolName = config.protocolName;
         wrapConfig.scope = config.scope;
         wrapConfig.success = LABKEY.Utils.getOnSuccess(config);
         wrapConfig.failure = LABKEY.Utils.getOnFailure(config);
@@ -93,6 +95,8 @@ LABKEY.Experiment = new function()
 
     /** @scope LABKEY.Experiment */
     return {
+
+        SAMPLE_DERIVATION_PROTOCOL : "Sample Derivation Protocol",
 
         /**
          * Create or recycle an existing run group. Run groups are the basis for some operations, like comparing
@@ -258,7 +262,9 @@ LABKEY.Experiment = new function()
          * Runs within the batch may refer to existing data and material objects, either inputs or outputs, by ID or LSID.
          * Runs may also define new data and materials objects by not specifying an ID or LSID in their properties.
          * @param config An object that contains the following configuration parameters
-         * @param {Number} config.assayId The assay protocol id.
+         * @param {Number} [config.assayId] Optional assay protocol id, either assayId or protocolName must be specified.
+         * @param {String} [config.protocolName] Optional protocol name to be used for non-assay backed runs. Currently only
+         * SAMPLE_DERIVATION_PROTOCOL is supported.
          * @param {LABKEY.Exp.RunGroup} config.batch The modified batch object.
          * @param {function} config.success The function to call when the function finishes successfully.
          * This function will be called with the following parameters:
@@ -392,7 +398,6 @@ LABKEY.Experiment = new function()
             });
         }
     };
-
 };
 
 if (typeof LABKEY.Exp == "undefined")

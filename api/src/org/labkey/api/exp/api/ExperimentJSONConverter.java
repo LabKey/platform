@@ -56,6 +56,7 @@ public class ExperimentJSONConverter
     public static final String DATA_FILE_URL = "dataFileURL";
     public static final String ABSOLUTE_PATH = "absolutePath";
     public static final String PIPELINE_PATH = "pipelinePath"; //path relative to pipeline root
+    public static final String PROTOCOL_NAME = "protocolName"; // non-assay backed protocol name
 
     // Run properties
     public static final String DATA_INPUTS = "dataInputs";
