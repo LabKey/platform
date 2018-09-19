@@ -17,8 +17,6 @@
 package org.labkey.api.admin;
 
 import org.apache.commons.lang3.time.DateUtils;
-import org.labkey.api.action.HasViewContext;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.module.Module;
@@ -27,7 +25,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Pair;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.core.admin.AdminConsoleHeaderLinkProvider;
@@ -39,21 +36,25 @@ import java.util.List;
 
 public class AdminBean
 {
+    public final String javaVendor = System.getProperty("java.vendor");
+    public final String javaRuntimeName = System.getProperty("java.runtime.name");
+    public final String javaVersion = System.getProperty("java.runtime.version");
+    public final String javaHome = System.getProperty("java.home");
+    public final String userName = System.getProperty("user.name");
+    public final String userHomeDir = System.getProperty("user.home");
+    public final String webappDir = ModuleLoader.getServletContext().getRealPath("");
+    public final String workingDir = new File("file").getAbsoluteFile().getParent();
+    public final String osName = System.getProperty("os.name");
+    public final String mode = AppProps.getInstance().isDevMode() ? "Development" : "Production";
+    public final String serverGuid = AppProps.getInstance().getServerGUID();
+    public final String servletContainer = ModuleLoader.getServletContext().getServerInfo();
+    public final DbScope scope = CoreSchema.getInstance().getSchema().getScope();
+    public final List<Pair<String, Long>> active = UserManager.getRecentUsers(System.currentTimeMillis() - DateUtils.MILLIS_PER_HOUR);
+
+    public final String userEmail;
     public final List<Module> modules;
-    public String javaVersion = System.getProperty("java.version");
-    public String javaHome = System.getProperty("java.home");
-    public String userName = System.getProperty("user.name");
-    public String userHomeDir = System.getProperty("user.home");
-    public String webappDir = ModuleLoader.getServletContext().getRealPath("");
-    public String workingDir = new File("file").getAbsoluteFile().getParent();
-    public String osName = System.getProperty("os.name");
-    public String mode = AppProps.getInstance().isDevMode() ? "Development" : "Production";
+
     public String asserts = "disabled";
-    public String serverGuid = AppProps.getInstance().getServerGUID();
-    public String servletContainer = ModuleLoader.getServletContext().getServerInfo();
-    public DbScope scope = CoreSchema.getInstance().getSchema().getScope();
-    public List<Pair<String, Long>> active = UserManager.getRecentUsers(System.currentTimeMillis() - DateUtils.MILLIS_PER_HOUR);
-    public String userEmail;
 
     public AdminBean(User user)
     {
