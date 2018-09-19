@@ -108,7 +108,9 @@
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Mode</td><td><%=h(bean.mode)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Asserts</td><td><%=h(bean.asserts)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Servlet Container</td><td><%=h(bean.servletContainer)%></td></tr>
-                <tr class="<%=getShadeRowClass(row++)%>"><td>Java Runtime</td><td><%=h(bean.javaVersion)%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Java Runtime Vendor</td><td><%=h(bean.javaVendor)%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Java Runtime Name</td><td><%=h(bean.javaRuntimeName)%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Java Runtime Version</td><td><%=h(bean.javaVersion)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Java Home</td><td><%=h(bean.javaHome)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Username</td><td><%=h(bean.userName)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>User Home Dir</td><td><%=h(bean.userHomeDir)%></td></tr>
