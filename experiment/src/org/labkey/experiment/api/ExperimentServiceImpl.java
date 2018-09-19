@@ -5601,7 +5601,7 @@ public class ExperimentServiceImpl implements ExperimentService
         ExpProtocol protocol = getExpProtocol(SAMPLE_DERIVATION_PROTOCOL_LSID);
         if (protocol == null)
         {
-            ExpProtocolImpl baseProtocol = createExpProtocol(ContainerManager.getSharedContainer(), ExpProtocol.ApplicationType.ExperimentRun, "Sample Derivation Protocol");
+            ExpProtocolImpl baseProtocol = createExpProtocol(ContainerManager.getSharedContainer(), ExpProtocol.ApplicationType.ExperimentRun, SAMPLE_DERIVATION_PROTOCOL_NAME);
             baseProtocol.setLSID(SAMPLE_DERIVATION_PROTOCOL_LSID);
             baseProtocol.setMaxInputDataPerInstance(0);
             baseProtocol.setProtocolDescription("Simple protocol for creating derived samples that may have different properties from the original sample.");

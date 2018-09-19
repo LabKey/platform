@@ -22,6 +22,7 @@ import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.AssayJSONConverter;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
@@ -58,10 +59,19 @@ public abstract class BaseProtocolAPIAction<FORM extends SimpleApiJsonForm> exte
             protocol = pair.first;
             _provider = pair.second;
         }
-        else
+        else if (json.has(ExperimentJSONConverter.PROTOCOL_NAME))
         {
-            protocol = ExperimentService.get().ensureSampleDerivationProtocol(getUser());
+            String protocolName = json.optString(ExperimentJSONConverter.PROTOCOL_NAME);
+            {
+                if (ExperimentService.SAMPLE_DERIVATION_PROTOCOL_NAME.equals(protocolName))
+                    protocol = ExperimentService.get().ensureSampleDerivationProtocol(getUser());
+                else
+                    throw new IllegalArgumentException("protocol name is only supported for :" + ExperimentService.SAMPLE_DERIVATION_PROTOCOL_NAME);
+            }
         }
+        else
+            throw new IllegalArgumentException("assayId or assayName or protocolName must be provided.");
+
         return executeAction(protocol, form, errors);
     }
 
