@@ -645,12 +645,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
     private void deferReload(SnapshotDependency.SourceDataType sourceData)
     {
-        Map<Container, List<QuerySnapshotDefinition>> deferredStudies = _coalesceMap.get(sourceData.getContainer());
-        for (QuerySnapshotDefinition snapshotDef : getDependencies(sourceData))
-        {
-            List<QuerySnapshotDefinition> deferredQuerySnapshots = deferredStudies.computeIfAbsent(snapshotDef.getContainer(), k -> new LinkedList<>());
-            deferredQuerySnapshots.add(snapshotDef);
-        }
+        _deferredSourceTypes.add(sourceData);
     }
 
     private static List<QuerySnapshotDefinition> getDependencies(SnapshotDependency.SourceDataType sourceData)
@@ -720,6 +715,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
     // Unfortunately complex generics here.  In English, the container key of the outer map is the source
     // container where the dataset change events are generated.  The value is a map from the study that
     // contains the snapshot datasets to a list of snapshots that need to be refreshed.
+    private static final List<SnapshotDependency.SourceDataType> _deferredSourceTypes = new ArrayList<>();
     private static final Map<Container, Map<Container, List<QuerySnapshotDefinition>>> _coalesceMap = new HashMap<>();
 
     public void pauseUpdates(Container sourceContainer)
@@ -731,32 +727,8 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
     public void resumeUpdates(User user, Container sourceContainer)
     {
-        if (!_coalesceMap.containsKey(sourceContainer))
-            throw new IllegalStateException("Not coalescing for container " + sourceContainer.getPath());
-        Map<Container, List<QuerySnapshotDefinition>> snapshotDefSet = _coalesceMap.remove(sourceContainer);
-        // update each study container than contains relevant snapshots
-        for (Map.Entry<Container, List<QuerySnapshotDefinition>> snapshotEntry : snapshotDefSet.entrySet())
-        {
-            Container snapshotContainer = snapshotEntry.getKey();
-            StudyImpl study = StudyManager.getInstance().getStudy(snapshotContainer);
-            List<QuerySnapshotDefinition> snapshotDefs = snapshotEntry.getValue();
-            Set<DatasetDefinition> deferredDatasets = new HashSet<>(snapshotDefs.size());
-            for (QuerySnapshotDefinition def : snapshotDefs)
-            {
-                DatasetDefinition deferredDataset = StudyManager.getInstance().getDatasetDefinitionByName(study, def.getName());
-                if (deferredDataset == null)
-                {
-                    LOG.warn("Unable to find dataset " + def.getName() + " to update for query snapshot " + def.getName() + " in study in " + snapshotContainer.getPath() + ", skipping");
-                }
-                else
-                {
-                    deferredDatasets.add(deferredDataset);
-                    TimerTask task = new SnapshotUpdateTask(def, true);
-                    task.run();
-                }
-            }
-            StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, deferredDatasets);
-        }
+        DeferredUpdateHandler handler = new DeferredUpdateHandler(user, sourceContainer);
+        handler.start();
     }
 
     private static void autoUpdateSnapshot(QuerySnapshotDefinition def) throws Exception
@@ -819,6 +791,62 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             catch(Exception e)
             {
                 ExceptionUtil.logExceptionToMothership(null, e);
+            }
+        }
+    }
+
+    private static class DeferredUpdateHandler extends Thread
+    {
+        private User _user;
+        private Container _sourceContainer;
+
+        public DeferredUpdateHandler(User user, Container sourceContainer)
+        {
+            _user = user;
+            _sourceContainer = sourceContainer;
+        }
+
+        @Override
+        public void run()
+        {
+            for (SnapshotDependency.SourceDataType sourceData : _deferredSourceTypes)
+            {
+                Map<Container, List<QuerySnapshotDefinition>> deferredStudies = _coalesceMap.get(sourceData.getContainer());
+                for (QuerySnapshotDefinition snapshotDef : getDependencies(sourceData))
+                {
+                    List<QuerySnapshotDefinition> deferredQuerySnapshots = deferredStudies.computeIfAbsent(snapshotDef.getContainer(), k -> new LinkedList<>());
+                    deferredQuerySnapshots.add(snapshotDef);
+                }
+            }
+            _deferredSourceTypes.clear();
+
+            if (!_coalesceMap.containsKey(_sourceContainer))
+                throw new IllegalStateException("Not coalescing for container " + _sourceContainer.getPath());
+
+            Map<Container, List<QuerySnapshotDefinition>> snapshotDefSet = _coalesceMap.remove(_sourceContainer);
+
+            // update each study container than contains relevant snapshots
+            for (Map.Entry<Container, List<QuerySnapshotDefinition>> snapshotEntry : snapshotDefSet.entrySet())
+            {
+                Container snapshotContainer = snapshotEntry.getKey();
+                StudyImpl study = StudyManager.getInstance().getStudy(snapshotContainer);
+                List<QuerySnapshotDefinition> snapshotDefs = snapshotEntry.getValue();
+                Set<DatasetDefinition> deferredDatasets = new HashSet<>(snapshotDefs.size());
+                for (QuerySnapshotDefinition def : snapshotDefs)
+                {
+                    DatasetDefinition deferredDataset = StudyManager.getInstance().getDatasetDefinitionByName(study, def.getName());
+                    if (deferredDataset == null)
+                    {
+                        LOG.warn("Unable to find dataset " + def.getName() + " to update for query snapshot " + def.getName() + " in study in " + snapshotContainer.getPath() + ", skipping");
+                    }
+                    else
+                    {
+                        deferredDatasets.add(deferredDataset);
+                        TimerTask task = new SnapshotUpdateTask(def, true);
+                        task.run();
+                    }
+                }
+                StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(_user, deferredDatasets);
             }
         }
     }
