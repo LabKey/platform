@@ -1052,16 +1052,17 @@ public class AdminController extends SpringActionController
     }
 
 
+    @NotNull
     private Set<String> getTomcatJars()
     {
         if (!AppProps.getInstance().isDevMode())
-            return null;
+            return Collections.emptySet();
 
         // Note: Keep this path in sync with gradlePlugin StagingExtension.groovy
         File tomcat = new File(AppProps.getInstance().getProjectRoot(), "build/staging/tomcat-lib");
 
         if (!tomcat.exists())
-            return null;
+            return Collections.emptySet();
 
         Set<String> filenames = new CaseInsensitiveTreeSet();
 
