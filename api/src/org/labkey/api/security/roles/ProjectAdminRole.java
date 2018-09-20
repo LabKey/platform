@@ -35,7 +35,7 @@ public class ProjectAdminRole extends AbstractRole
             FolderAdminRole.PERMISSIONS
         );
 
-        addExcludedPrincipal(SecurityManager.getGroup(Group.groupGuests));
+        excludeGuests();
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupUsers));
     }
 

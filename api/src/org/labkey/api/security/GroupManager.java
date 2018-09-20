@@ -379,6 +379,7 @@ public class GroupManager
     {
         private User _user;
         private User _testUser;
+        private Container _root;
         private Container _project;
         private Group _groupA;
         private Group _groupB;
@@ -393,6 +394,7 @@ public class GroupManager
         @Before
         public void setUp() throws ValidEmail.InvalidEmailException, SecurityManager.UserManagementException
         {
+            _root = ContainerManager.getRoot();
             _project = JunitUtil.getTestContainer().getProject();
             assertNotNull(_project);
 
@@ -492,7 +494,7 @@ public class GroupManager
         public void testPlatformDeveloperRole() throws Exception
         {
             User user = _testUser.cloneUser();
-            MutableSecurityPolicy policy = new MutableSecurityPolicy(_project);
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(_root);
             assertFalse(policy.hasPermission(user, PlatformDeveloperPermission.class));
             assertFalse(policy.hasPermission(user, TrustedPermission.class));
             assertFalse(policy.hasPermission(user, AnalystPermission.class));
@@ -517,7 +519,7 @@ public class GroupManager
         public void testTrustedAnalystRole() throws Exception
         {
             User user = _testUser.cloneUser();
-            MutableSecurityPolicy policy = new MutableSecurityPolicy(_project);
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(_root);
             assertFalse(policy.hasPermission(user, PlatformDeveloperPermission.class));
             assertFalse(policy.hasPermission(user, TrustedPermission.class));
             assertFalse(policy.hasPermission(user, AnalystPermission.class));
@@ -533,7 +535,7 @@ public class GroupManager
         public void testAnalystRole() throws Exception
         {
             User user = _testUser.cloneUser();
-            MutableSecurityPolicy policy = new MutableSecurityPolicy(_project);
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(_root);
             assertFalse(policy.hasPermission(user, PlatformDeveloperPermission.class));
             assertFalse(policy.hasPermission(user, TrustedPermission.class));
             assertFalse(policy.hasPermission(user, AnalystPermission.class));

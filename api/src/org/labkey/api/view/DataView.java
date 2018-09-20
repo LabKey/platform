@@ -254,7 +254,7 @@ public abstract class DataView extends WebPartView<RenderContext>
                 if (null != resolveURL && seen.add(resolveURL))
                 {
                     User user = getRenderContext().getViewContext().getUser();
-                    if (user.isInSiteAdminGroup() || getRenderContext().getContainer().hasPermission(user, PlatformDeveloperPermission.class))
+                    if (user.isInSiteAdminGroup() || user.isPlatformDeveloper())
                     {
                         out.write("&nbsp;");
                         out.write(PageFlowUtil.textLink(StringUtils.defaultString(resolveText, "resolve"), resolveURL));

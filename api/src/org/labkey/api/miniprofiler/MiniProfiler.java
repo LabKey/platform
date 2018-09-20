@@ -85,7 +85,7 @@ public class MiniProfiler
         // CONSIDER: Add CanSeeProfilingPermission ?
         User user = context.getUser();
         return ModuleLoader.getInstance().isStartupComplete() && user != null && getSettings().isEnabled() &&
-                context.getContainer() != null && context.getContainer().hasPermission(user, PlatformDeveloperPermission.class);
+                context.getContainer() != null && user.isPlatformDeveloper();
     }
 
     /** Get site-wide settings. */

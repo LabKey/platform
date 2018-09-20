@@ -23,7 +23,7 @@ import org.labkey.api.security.Group;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicyManager;
-import org.labkey.api.security.roles.ProjectAdminRole;
+import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.JunitUtil;
@@ -101,7 +101,7 @@ public class TableViewFormTestCase extends Assert
     {
         Container test = JunitUtil.getTestContainer();
         MutableSecurityPolicy policy = new MutableSecurityPolicy(test);
-        policy.addRoleAssignment(SecurityManager.getGroup(Group.groupAdministrators), RoleManager.getRole(ProjectAdminRole.class));
+        policy.addRoleAssignment(SecurityManager.getGroup(Group.groupAdministrators), RoleManager.getRole(FolderAdminRole.class));
         SecurityPolicyManager.savePolicy(policy);
 
         ViewContext ctx = new ViewContext(HttpView.currentContext());

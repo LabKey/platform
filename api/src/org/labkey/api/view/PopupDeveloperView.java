@@ -19,6 +19,7 @@ import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.QueryUrls;
 import org.labkey.api.rstudio.RStudioService;
+import org.labkey.api.security.permissions.BrowserDeveloperPermission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.util.PageFlowUtil;
 
@@ -36,7 +37,7 @@ public class PopupDeveloperView extends PopupMenuView
     {
         NavTree navTree = new NavTree("Developer");
 
-        if (context.getContainer().hasPermission(context.getUser(), PlatformDeveloperPermission.class))
+        if (context.getUser().hasRootPermission(BrowserDeveloperPermission.class))
             navTree.addChildren(getNavTree(context));
 
         navTree.setId("devMenu");
@@ -49,18 +50,27 @@ public class PopupDeveloperView extends PopupMenuView
     {
         Container container = context.getContainer();
         ArrayList<NavTree> items = new ArrayList<>();
+
         if (!container.isRoot())
             items.add(new NavTree("Schema Browser", PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(container)));
-        String consoleURL = PageFlowUtil.urlProvider(AdminUrls.class).getSessionLoggingURL().getLocalURIString(false);
-        NavTree consoleNavTree = new NavTree("Server JavaScript Console");
-        consoleNavTree.setScript("window.open('" + consoleURL + "','javascriptconsole','width=400,height=400,location=0,menubar=0,resizable=1,status=0,alwaysRaised=yes')");
-        items.add(consoleNavTree);
+
+        if (context.getUser().hasRootPermission(PlatformDeveloperPermission.class))
+        {
+            String consoleURL = PageFlowUtil.urlProvider(AdminUrls.class).getSessionLoggingURL().getLocalURIString(false);
+            NavTree consoleNavTree = new NavTree("Server JavaScript Console");
+            consoleNavTree.setScript("window.open('" + consoleURL + "','javascriptconsole','width=400,height=400,location=0,menubar=0,resizable=1,status=0,alwaysRaised=yes')");
+            items.add(consoleNavTree);
+        }
+
         String memTrackerURL = PageFlowUtil.urlProvider(AdminUrls.class).getTrackedAllocationsViewerURL().getLocalURIString(false);
         NavTree memTrackerNavTree = new NavTree("Memory Allocations");
         memTrackerNavTree.setScript("window.open('" + memTrackerURL + "','memoryallocations','width=500,height=400,location=0,menubar=0,resizable=1,status=0,alwaysRaised=yes')");
         items.add(memTrackerNavTree);
+
         items.add(new NavTree("JavaScript API Reference", "https://www.labkey.org/download/clientapi_docs/javascript-api/"));
+
         items.add(new NavTree("XML Schema Reference", "https://www.labkey.org/download/schema-docs/xml-schemas"));
+
         RStudioService rstudio = RStudioService.get();
         if (null != rstudio)
         {

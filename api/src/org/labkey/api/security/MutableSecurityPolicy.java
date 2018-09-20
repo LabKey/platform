@@ -17,6 +17,9 @@ package org.labkey.api.security;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.security.roles.ContextualRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.NoPermissionsRole;
@@ -40,19 +43,28 @@ import java.util.*;
  */
 public class MutableSecurityPolicy extends SecurityPolicy
 {
+    @Nullable
+    final SecurableResource _resource;
+
     public MutableSecurityPolicy(@NotNull SecurityPolicy sourcePolicy)
     {
         super(sourcePolicy);
+        if (_containerId.equals(_resourceId))
+            _resource = ContainerManager.getForId(_containerId);
+        else
+            _resource = null;
     }
 
     public MutableSecurityPolicy(@NotNull SecurableResource resource)
     {
         super(resource);
+        _resource = resource;
     }
 
     public MutableSecurityPolicy(@NotNull SecurableResource resource, @NotNull SecurityPolicy sourcePolicy)
     {
         super(resource, sourcePolicy);
+        _resource = resource;
     }
 
     public void addRoleAssignment(@NotNull UserPrincipal principal, @NotNull Class<? extends Role> roleClass)
@@ -62,9 +74,15 @@ public class MutableSecurityPolicy extends SecurityPolicy
 
     public void addRoleAssignment(@NotNull UserPrincipal principal, @NotNull Role role)
     {
+        // I want to check role.isAssignable() but see CopyTargetedMSExperimentRole??
+        // instead check instanceof ContextualRole
+        if (role instanceof ContextualRole && !(role instanceof NoPermissionsRole))
+            throw new IllegalArgumentException("This role may not be assigned: " + role.getName());
         if (role.getExcludedPrincipals().contains(principal))
             throw new IllegalArgumentException("The principal " + principal.getName() + " may not be assigned the role " + role.getName() + "!");
-        
+        if (null != _resource && !role.isApplicable(this, _resource))
+            throw new IllegalArgumentException("The role " + role.getName() + " is not applicable to this resource '" + _resource.getDebugName() + "'!");
+
         RoleAssignment assignment = new RoleAssignment(getResourceId(), principal, role);
         assignment.setUserId(principal.getUserId());
         assignment.setRole(role);
@@ -78,16 +96,13 @@ public class MutableSecurityPolicy extends SecurityPolicy
 
     public void removeRoleAssignment(@NotNull UserPrincipal principal, @NotNull Role role)
     {
-        if (role.getExcludedPrincipals().contains(principal))
-            throw new IllegalArgumentException("The principal " + principal.getName() + " may not be assigned the role " + role.getName() + "!");
-
         RoleAssignment assignment = new RoleAssignment(getResourceId(), principal, role);
         assignment.setUserId(principal.getUserId());
         assignment.setRole(role);
         removeAssignment(assignment);
     }
 
-    protected void removeAssignment(RoleAssignment assignment)
+    public void removeAssignment(RoleAssignment assignment)
     {
         _assignments.remove(assignment);
     }

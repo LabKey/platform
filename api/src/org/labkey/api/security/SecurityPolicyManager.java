@@ -73,8 +73,8 @@ public class SecurityPolicyManager
     }
 
     /**
-     *  Retrieve the SecurityPolicy directly associated with this resource, if any. Does not check inheritance.
-     *  @return The SecurityPolicy, if one exists, otherwise null
+     * Retrieve the SecurityPolicy directly associated with this resource, if any. Does not check inheritance.
+     * @return The SecurityPolicy, if one exists, otherwise null
      */
     @Nullable
     public static SecurityPolicy getPolicy(@NotNull Container c, @NotNull String resourceId)
@@ -128,6 +128,11 @@ public class SecurityPolicyManager
 
     public static void savePolicy(@NotNull MutableSecurityPolicy policy)
     {
+        savePolicy(policy, true);
+    }
+
+    public static void savePolicy(@NotNull MutableSecurityPolicy policy, boolean validateUsers)
+    {
         DbScope scope = core.getSchema().getScope();
 
         try (DbScope.Transaction transaction = scope.ensureTransaction())
@@ -162,11 +167,16 @@ public class SecurityPolicyManager
             //insert rows for the policy entries
             for (RoleAssignment assignment : policy.getAssignments())
             {
-                UserPrincipal principal = SecurityManager.getPrincipal(assignment.getUserId());
-                if (principal == null)
-                    logger.info("Principal " + assignment.getUserId() + " no longer in database. Removing from policy.");
-                else
-                    Table.insert(null, table, assignment);
+                if (validateUsers)
+                {
+                    UserPrincipal principal = SecurityManager.getPrincipal(assignment.getUserId());
+                    if (principal == null)
+                    {
+                        logger.info("Principal " + assignment.getUserId() + " no longer in database. Removing from policy.");
+                        continue;
+                    }
+                }
+                Table.insert(null, table, assignment);
             }
 
             //commit transaction
@@ -349,7 +359,12 @@ public class SecurityPolicyManager
         for (RoleAssignmentType assignmentXml : assignments.getRoleAssignmentArray())
         {
             Role role = RoleManager.getRole(assignmentXml.getRole().getName());
-            if (role != null)
+            if (role == null)
+            {
+                ctx.getLogger().warn("Invalid role name ignored: " + assignmentXml.getRole());
+                continue;
+            }
+            try
             {
                 if (assignmentXml.isSetGroups())
                 {
@@ -391,11 +406,12 @@ public class SecurityPolicyManager
                     }
                 }
             }
-            else
+            catch (IllegalArgumentException x)
             {
-                ctx.getLogger().warn("Invalid role name ignored: " + assignmentXml.getRole());
+                // can happen if assignment contains invalid role (e.g. projectadmin for non-project folder)
+                ctx.getLogger().warn(x.getMessage());
             }
-            SecurityPolicyManager.savePolicy(policy);
         }
+        SecurityPolicyManager.savePolicy(policy);
     }
 }

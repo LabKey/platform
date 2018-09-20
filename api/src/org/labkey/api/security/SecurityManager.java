@@ -2249,7 +2249,8 @@ public class SecurityManager
         static String TEST_USER_2_EMAIL = "testuser2@test.com";
         static String TEST_USER_2_GROUP_NAME = "Administrators";
         static String TEST_GROUP_1_NAME = "testGroup1";
-        static String TEST_GROUP_1_ROLE_NAME = "org.labkey.api.security.roles.EditorRole";
+        // this has to be a role that is applicable to root container
+        static String TEST_GROUP_1_ROLE_NAME = "org.labkey.api.security.roles.CanSeeAuditLogRole";
 
         @Before
         public void setUp()
@@ -2432,9 +2433,10 @@ public class SecurityManager
         public void testACLS()
         {
             Container fakeRoot = ContainerManager.createFakeContainer(null, null);
+            Container fakeFolder = ContainerManager.createFakeContainer("project", fakeRoot);
 
             // Ignore all contextual roles
-            MutableSecurityPolicy policy = new MutableSecurityPolicy(fakeRoot) {
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(fakeFolder) {
                 @NotNull
                 @Override
                 protected Set<Role> getContextualRoles(UserPrincipal principal)
@@ -2619,15 +2621,15 @@ public class SecurityManager
             MultiValuedMap<String, ConfigProperty> testConfigPropertyMap = new HashSetValuedHashMap<>();
 
             // prepare test UserRole properties
-            ConfigProperty testUserRoleProp =  new ConfigProperty(TEST_USER_1_EMAIL, TEST_USER_1_ROLE_NAME, "startup", ConfigProperty.SCOPE_USER_ROLES);
+            ConfigProperty testUserRoleProp =  new ConfigProperty(TEST_USER_1_EMAIL, ",," + TEST_USER_1_ROLE_NAME + ",,", "startup", ConfigProperty.SCOPE_USER_ROLES);
             testConfigPropertyMap.put(ConfigProperty.SCOPE_USER_ROLES, testUserRoleProp);
 
             // prepare test GroupRole properties
-            ConfigProperty testGroupRoleProp =  new ConfigProperty(TEST_GROUP_1_NAME, TEST_GROUP_1_ROLE_NAME, "startup", ConfigProperty.SCOPE_GROUP_ROLES);
+            ConfigProperty testGroupRoleProp =  new ConfigProperty(TEST_GROUP_1_NAME, ",," + TEST_GROUP_1_ROLE_NAME + ",,", "startup", ConfigProperty.SCOPE_GROUP_ROLES);
             testConfigPropertyMap.put(ConfigProperty.SCOPE_GROUP_ROLES, testGroupRoleProp);
 
             // prepare test UserRole properties
-            ConfigProperty testUserGroupProp =  new ConfigProperty(TEST_USER_2_EMAIL, TEST_USER_2_GROUP_NAME, "startup", ConfigProperty.SCOPE_USER_GROUPS);
+            ConfigProperty testUserGroupProp =  new ConfigProperty(TEST_USER_2_EMAIL, ",," + TEST_USER_2_GROUP_NAME + ",,", "startup", ConfigProperty.SCOPE_USER_GROUPS);
             testConfigPropertyMap.put(ConfigProperty.SCOPE_USER_GROUPS, testUserGroupProp);
 
             // set these test startup properties to be used by the entire server
@@ -2889,13 +2891,8 @@ public class SecurityManager
         Group userGroup = SecurityManager.createGroup(project, "Users");
 
         // Set default permissions
-        // CONSIDER: get/set permissions on Container, rather than going behind its back
         Role noPermsRole = RoleManager.getRole(NoPermissionsRole.class);
         MutableSecurityPolicy policy = new MutableSecurityPolicy(project);
-        policy.addRoleAssignment(userGroup, noPermsRole);
-
-        //users and guests have no perms by default
-        policy.addRoleAssignment(getGroup(Group.groupUsers), noPermsRole);
         policy.addRoleAssignment(getGroup(Group.groupGuests), noPermsRole);
         
         SecurityPolicyManager.savePolicy(policy);
@@ -3260,37 +3257,41 @@ public class SecurityManager
                     String[] groups = prop.getValue().split(",");
                     for (String groupName : groups)
                     {
-                        groupName = StringUtils.stripStart(groupName, null);
-                        Group group = GroupManager.getGroup(rootContainer, groupName, GroupEnumType.SITE);
-                        if (null == group)
+                        groupName = StringUtils.trimToNull(groupName);
+                        if (null != groupName)
                         {
-                            try
+                            Group group = GroupManager.getGroup(rootContainer, groupName, GroupEnumType.SITE);
+                            if (null == group)
                             {
-                                group = SecurityManager.createGroup(rootContainer, groupName, PrincipalType.GROUP);
-                            }
-                            catch (IllegalArgumentException e)
-                            {
-                                throw new ConfigurationException("The group specified in startup properties scope UserGroups did not exist. User: " + prop.getName() + "Group: " + groupName, e);
-                            }
-                        }
-                        try
-                        {
-                            String canUserBeAddedToGroup = SecurityManager.getAddMemberError(group, user);
-                            if (null == canUserBeAddedToGroup) {
-                                SecurityManager.addMember(group, user);
-                            }
-                            else
-                            {
-                                // ok if the user is already a member of this group, but everything else throw an exception
-                                if (!"Principal is already a member of this group".equals(canUserBeAddedToGroup))
+                                try
                                 {
-                                    throw new ConfigurationException("Startup properties UserGroups misconfigured. Could not add the user: " + prop.getName() + ", to group: " + groupName + " because: " + canUserBeAddedToGroup);
+                                    group = SecurityManager.createGroup(rootContainer, groupName, PrincipalType.GROUP);
+                                }
+                                catch (IllegalArgumentException e)
+                                {
+                                    throw new ConfigurationException("The group specified in startup properties scope UserGroups did not exist. User: " + prop.getName() + "Group: " + groupName, e);
                                 }
                             }
-                        }
-                        catch (InvalidGroupMembershipException e)
-                        {
-                            throw new ConfigurationException("Startup properties UserGroups misconfigured. Could not add the user: " + prop.getName() + ", to group: " + groupName, e);
+                            try
+                            {
+                                String canUserBeAddedToGroup = SecurityManager.getAddMemberError(group, user);
+                                if (null == canUserBeAddedToGroup)
+                                {
+                                    SecurityManager.addMember(group, user);
+                                }
+                                else
+                                {
+                                    // ok if the user is already a member of this group, but everything else throw an exception
+                                    if (!"Principal is already a member of this group".equals(canUserBeAddedToGroup))
+                                    {
+                                        throw new ConfigurationException("Startup properties UserGroups misconfigured. Could not add the user: " + prop.getName() + ", to group: " + groupName + " because: " + canUserBeAddedToGroup);
+                                    }
+                                }
+                            }
+                            catch (InvalidGroupMembershipException e)
+                            {
+                                throw new ConfigurationException("Startup properties UserGroups misconfigured. Could not add the user: " + prop.getName() + ", to group: " + groupName, e);
+                            }
                         }
                     }
                 });
@@ -3324,13 +3325,16 @@ public class SecurityManager
                     MutableSecurityPolicy policy = new MutableSecurityPolicy(rootContainer);
                     for (String roleName : roles)
                     {
-                        roleName = StringUtils.stripStart(roleName, null);
-                        Role role = RoleManager.getRole(roleName);
-                        if (null == role)
+                        roleName = StringUtils.trimToNull(roleName);
+                        if (null != roleName)
                         {
-                            throw new ConfigurationException("Invalid role for group specified in startup properties GroupRoles: " + prop.getValue());
+                            Role role = RoleManager.getRole(roleName);
+                            if (null == role)
+                            {
+                                throw new ConfigurationException("Invalid role for group specified in startup properties GroupRoles: " + prop.getValue());
+                            }
+                            policy.addRoleAssignment(group, role);
                         }
-                        policy.addRoleAssignment(group, role);
                     }
                     SecurityPolicyManager.savePolicy(policy);
                 });
@@ -3353,13 +3357,16 @@ public class SecurityManager
                     MutableSecurityPolicy policy = new MutableSecurityPolicy(SecurityPolicyManager.getPolicy(rootContainer));
                     for (String roleName : roles)
                     {
-                        roleName = StringUtils.stripStart(roleName, null);
-                        Role role = RoleManager.getRole(roleName);
-                        if (null == role)
+                        roleName = StringUtils.trimToNull(roleName);
+                        if (null != roleName)
                         {
-                            throw new ConfigurationException("Invalid role for user specified in startup properties UserRoles: " + prop.getValue());
+                            Role role = RoleManager.getRole(roleName);
+                            if (null == role)
+                            {
+                                throw new ConfigurationException("Invalid role for user specified in startup properties UserRoles: " + prop.getValue());
+                            }
+                            policy.addRoleAssignment(user, role);
                         }
-                        policy.addRoleAssignment(user, role);
                     }
                     SecurityPolicyManager.savePolicy(policy);
                 });

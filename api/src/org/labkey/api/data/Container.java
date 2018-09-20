@@ -256,7 +256,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     @NotNull
     public String getResourceName()
     {
-        return _path.getName();
+        return isRoot() ? "/" : _path.getName();
     }
 
     public Date getCreated()

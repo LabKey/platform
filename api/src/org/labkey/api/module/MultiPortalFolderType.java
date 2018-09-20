@@ -434,7 +434,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                     folderAdmin.addChildren(FolderAdminMenu.getFolderElements(ctx, tabContainer));
                     menu.addChild(folderAdmin);
                 }
-                if (ctx.hasPermission("MultiPortalFolderType", PlatformDeveloperPermission.class))
+                if (ctx.getUser().isBrowserDev())
                 {
                     menu.addChild(new NavTree("Schema Browser", PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(tabContainer)));
                 }

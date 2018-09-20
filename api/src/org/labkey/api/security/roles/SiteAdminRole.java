@@ -25,11 +25,12 @@ import java.util.Collection;
  * User: Dave
  * Date: Apr 23, 2009
  */
-public class SiteAdminRole extends AbstractContextualRole
+public class SiteAdminRole extends AbstractRootContainerRole
 {
     private static final Collection<Class<? extends Permission>> PERMISSIONS = Arrays.asList(
         AdminOperationsPermission.class,
         AnalystPermission.class,
+        BrowserDeveloperPermission.class,
         CanUseSendMessageApiPermission.class,
         EmailNonUsersPermission.class,
         PlatformDeveloperPermission.class,

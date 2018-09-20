@@ -24,7 +24,6 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.UserPrincipal;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -133,7 +132,7 @@ public abstract class AbstractPermission implements Permission
     @NotNull
     public Set<UserPrincipal> getExcludedPrincipals()
     {
-        return Collections.emptySet();
+        throw new IllegalStateException("Should only be called on roles, not permissions");
     }
 
     @Override

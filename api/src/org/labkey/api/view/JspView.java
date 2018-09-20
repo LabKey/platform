@@ -161,7 +161,7 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
 
         boolean devMode = AppProps.getInstance().isDevMode() ||
                 (_viewContext != null && _viewContext.getUser() != null && _viewContext.getContainer() != null &&
-                        _viewContext.getContainer().hasPermission(_viewContext.getUser(), PlatformDeveloperPermission.class));
+                        _viewContext.getUser().isPlatformDeveloper());
         boolean isDebugHtml = devMode && this.getFrame() != FrameType.NOT_HTML && StringUtils.startsWith(response.getContentType(), "text/html");
         if (isDebugHtml)
             response.getWriter().print("<!--" + _page.getClass() + "-->");

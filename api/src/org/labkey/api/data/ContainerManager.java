@@ -2166,10 +2166,9 @@ public class ContainerManager
         // create a "support" container. Admins can do anything,
         // Users can read/write, Guests can read.
         return bootstrapContainer(Container.DEFAULT_SUPPORT_PROJECT_PATH,
-                RoleManager.getRole(SiteAdminRole.class),
                 RoleManager.getRole(AuthorRole.class),
                 RoleManager.getRole(ReaderRole.class),
-                RoleManager.getRole(PlatformDeveloperRole.class));
+                null);
     }
 
     public static String[] getAliasesForContainer(Container c)
@@ -2235,7 +2234,7 @@ public class ContainerManager
      * are dropped.
      */
     @NotNull
-    public static Container bootstrapContainer(String path, Role adminRole, Role userRole, Role guestRole, Role devRole)
+    public static Container bootstrapContainer(String path, Role userRole, @Nullable Role guestRole, @Nullable Role devRole)
     {
         Container c = null;
 
@@ -2275,10 +2274,11 @@ public class ContainerManager
         {
             LOG.debug("Setting permissions for '" + path + "'");
             MutableSecurityPolicy policy = new MutableSecurityPolicy(c);
-            policy.addRoleAssignment(SecurityManager.getGroup(Group.groupAdministrators), adminRole);
             policy.addRoleAssignment(SecurityManager.getGroup(Group.groupUsers), userRole);
-            policy.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), guestRole);
-            policy.addRoleAssignment(SecurityManager.getGroup(Group.groupDevelopers), devRole);
+            if (guestRole != null)
+                policy.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), guestRole);
+            if (devRole != null)
+                policy.addRoleAssignment(SecurityManager.getGroup(Group.groupDevelopers), devRole);
             SecurityPolicyManager.savePolicy(policy);
         }
 

@@ -15,6 +15,9 @@
  */
 package org.labkey.api.security.roles;
 
+import org.labkey.api.security.SecurableResource;
+import org.labkey.api.security.SecurityPolicy;
+
 import java.util.Collections;
 
 /*
@@ -27,5 +30,11 @@ public class NoPermissionsRole extends AbstractContextualRole
     public NoPermissionsRole()
     {
         super("No Permissions", "Granted no access whatsoever.", Collections.emptyList());
+    }
+
+    @Override
+    public boolean isApplicable(SecurityPolicy policy, SecurableResource resource)
+    {
+        return true;
     }
 }

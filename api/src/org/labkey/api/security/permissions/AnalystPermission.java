@@ -1,6 +1,6 @@
 package org.labkey.api.security.permissions;
 
-public class AnalystPermission extends AbstractPermission
+public class AnalystPermission extends AbstractSitePermission
 {
     public AnalystPermission()
     {

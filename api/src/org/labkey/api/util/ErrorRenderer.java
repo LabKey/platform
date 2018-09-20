@@ -129,7 +129,7 @@ public class ErrorRenderer
             renderException(_exception, out);
 
             // Since there might be SQL in here, maybe don't dump for non-admin/dev
-            if (null != user && context.getContainer().hasPermission(user, PlatformDeveloperPermission.class))
+            if (null != user && user.isPlatformDeveloper())
             {
                 Map<Enum,String> decorations = ExceptionUtil.getExceptionDecorations(_exception);
                 for (Map.Entry<Enum,String> e : decorations.entrySet())

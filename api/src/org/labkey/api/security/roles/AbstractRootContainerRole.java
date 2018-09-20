@@ -31,18 +31,29 @@ public abstract class AbstractRootContainerRole extends AbstractRole
     protected AbstractRootContainerRole(String name, String description, Class<? extends Permission>... perms)
     {
         super(name, description, perms);
+        excludeGuests();
+    }
+
+    @SafeVarargs
+    protected AbstractRootContainerRole(String name, String description, boolean allowGuests, Class<? extends Permission>... perms)
+    {
+        super(name, description, perms);
+        if (!allowGuests)
+            excludeGuests();
     }
 
     @SafeVarargs
     protected AbstractRootContainerRole(String name, String description, Class<? extends Module> sourceModuleClass, Class<? extends Permission>... perms)
     {
         super(name, description, sourceModuleClass, perms);
+        excludeGuests();
     }
 
     @SafeVarargs
     public AbstractRootContainerRole(String name, String description, Iterable<Class<? extends Permission>>... permCollections)
     {
         super(name, description, permCollections);
+        excludeGuests();
     }
 
     @Override

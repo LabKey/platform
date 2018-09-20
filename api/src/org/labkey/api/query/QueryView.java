@@ -357,7 +357,7 @@ public class QueryView extends WebPartView<Object>
                 if (null != resolveURL && seen.add(resolveURL))
                 {
                     String resolveText = ExceptionUtil.getExceptionDecoration(e, ExceptionUtil.ExceptionInfo.ResolveText);
-                    if (getContainer().hasPermission(getUser(), PlatformDeveloperPermission.class))
+                    if (getUser().isPlatformDeveloper())
                     {
                         out.write(" ");
                         out.print(PageFlowUtil.textLink(StringUtils.defaultString(resolveText, "resolve"), resolveURL));

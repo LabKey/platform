@@ -28,13 +28,15 @@ import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.security.impersonation.NotImpersonatingContext;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.AnalystPermission;
+import org.labkey.api.security.permissions.BrowserDeveloperPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.TrustedPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.ApplicationAdminRole;
-import org.labkey.api.security.roles.PlatformDeveloperRole;
+import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
@@ -266,10 +268,48 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     }
 
     // Note: site administrators are always developers; see GroupManager.computeAllGroups().
+    @Deprecated
     public boolean isDeveloper()
     {
-        return isAllowedGlobalRoles() && isInGroup(Group.groupDevelopers);
+        return isAllowedGlobalRoles() && hasRootPermission(PlatformDeveloperPermission.class);
     }
+
+    static final Set<Class<? extends Permission>> trustedanalyst = Collections.unmodifiableSet(new HashSet<Class<? extends Permission>>(Arrays.asList(
+            AnalystPermission.class,
+            TrustedPermission.class
+    )));
+    static final Set<Class<? extends Permission>> trustedbrowserdev = Collections.unmodifiableSet(new HashSet<Class<? extends Permission>>(Arrays.asList(
+            BrowserDeveloperPermission.class,
+            TrustedPermission.class
+    )));
+
+    // NOTE all PlatformDeveloper are TrustedAnalyst and all TrustedAnalyst are TrustedBrowserDev
+    // Usually you should only have one of these tests
+    public boolean isPlatformDeveloper()
+    {
+        return isAllowedGlobalRoles() && hasRootPermission(PlatformDeveloperPermission.class);
+    }
+
+    public boolean isTrustedAnalyst()
+    {
+        return isAllowedGlobalRoles() && hasRootPermissions(trustedanalyst);
+    }
+
+    public boolean isAnalyst()
+    {
+        return isAllowedGlobalRoles() && hasRootPermission(AnalystPermission.class);
+    }
+
+    public boolean isTrustedBrowserDev()
+    {
+        return isAllowedGlobalRoles() && hasRootPermissions(trustedbrowserdev);
+    }
+
+    public boolean isBrowserDev()
+    {
+        return isAllowedGlobalRoles() && hasRootPermission(BrowserDeveloperPermission.class);
+    }
+
 
     /**
      * Check if the user has AdminPermission at the root container.
@@ -288,6 +328,11 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     public boolean hasRootPermission(Class<? extends Permission> perm)
     {
         return ContainerManager.getRoot().hasPermission(this, perm);
+    }
+
+    public boolean hasRootPermissions(Set<Class<? extends Permission>> perms)
+    {
+        return ContainerManager.getRoot().hasPermissions(this, perms);
     }
 
     public boolean isAllowedGlobalRoles()
@@ -310,15 +355,16 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     // Return the usual contextual roles
     public Set<Role> getStandardContextualRoles()
     {
-        Set<Role> roles = new HashSet<>();
-
+        Container root = ContainerManager.getRoot();
+        SecurityPolicy policy = root.getPolicy();
+        Set<Role> roles = policy.getRoles(getGroups());
+        roles.remove(RoleManager.getRole(NoPermissionsRole.class));
+        for (Role role : roles)
+            assert role.isApplicable(policy, root);
         if (isInSiteAdminGroup())
             roles.add(RoleManager.siteAdminRole);
         if (isApplicationAdmin())
             roles.add(RoleManager.getRole(ApplicationAdminRole.class));
-        if (isDeveloper())
-            roles.add(RoleManager.getRole(PlatformDeveloperRole.class));
-
         return roles;
     }
 
@@ -391,7 +437,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     {
         if (search == null)
         {
-            search = new LimitedUser(new GuestUser("search"), new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
+            search = new LimitedUser(new GuestUser("@search"), new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
             search.setPrincipalType(PrincipalType.SERVICE);
         }
         return search;
@@ -401,6 +447,20 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     {
         return this == getSearchUser();
     }
+
+/*    public static synchronized User getSystemUser()
+    {
+        if (system == null)
+        {
+            Set<Role> roles = new HashSet<>();
+            roles.add(RoleManager.getRole(SiteAdminRole.class));
+            roles.add(RoleManager.getRole(PlatformDeveloperRole.class));
+            system = new LimitedUser(new User("@system", userSystem), new int[0], roles, true);
+            system.setPrincipalType(PrincipalType.SERVICE);
+        }
+        return system;
+    }
+*/
 
     public boolean isServiceUser()
     {
@@ -517,7 +577,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         props.put("isRootAdmin", user.hasRootAdminPermission());
         props.put("isSystemAdmin", user.isInSiteAdminGroup());
         props.put("isGuest", user.isGuest());
-        props.put("isDeveloper", user.isDeveloper());
+        props.put("isDeveloper", user.isBrowserDev());
         props.put("isAnalyst", user.hasRootPermission(AnalystPermission.class));
         props.put("isTrusted", user.hasRootPermission(TrustedPermission.class));
         props.put("isSignedIn", 0 != user.getUserId() || !user.isGuest());

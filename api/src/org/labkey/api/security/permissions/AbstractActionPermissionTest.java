@@ -76,15 +76,15 @@ public abstract class AbstractActionPermissionTest extends Assert
         _users = createUsers(ALL_EMAILS);
 
         MutableSecurityPolicy policy = new MutableSecurityPolicy(_c, _c.getPolicy());
-        policy.addRoleAssignment(_users.get(SITE_ADMIN_EMAIL), RoleManager.getRole(SiteAdminRole.class));
-        policy.addRoleAssignment(_users.get(APPLICATION_ADMIN_EMAIL), RoleManager.getRole(ApplicationAdminRole.class));
-        policy.addRoleAssignment(_users.get(PROJECT_ADMIN_EMAIL), RoleManager.getRole(ProjectAdminRole.class));
         policy.addRoleAssignment(_users.get(FOLDER_ADMIN_EMAIL), RoleManager.getRole(FolderAdminRole.class));
         policy.addRoleAssignment(_users.get(EDITOR_EMAIL), RoleManager.getRole(EditorRole.class));
         policy.addRoleAssignment(_users.get(AUTHOR_EMAIL), RoleManager.getRole(AuthorRole.class));
         policy.addRoleAssignment(_users.get(READER_EMAIL), RoleManager.getRole(ReaderRole.class));
         policy.addRoleAssignment(_users.get(SUBMITTER_EMAIL), RoleManager.getRole(SubmitterRole.class));
         SecurityPolicyManager.savePolicy(policy);
+
+        MutableSecurityPolicy projectPolicy = new MutableSecurityPolicy(_c.getProject(), _c.getProject().getPolicy());
+        projectPolicy.addRoleAssignment(_users.get(PROJECT_ADMIN_EMAIL), RoleManager.getRole(ProjectAdminRole.class));
 
         MutableSecurityPolicy rootPolicy = new MutableSecurityPolicy(ContainerManager.getRoot(), ContainerManager.getRoot().getPolicy());
         rootPolicy.addRoleAssignment(_users.get(SITE_ADMIN_EMAIL), RoleManager.getRole(SiteAdminRole.class));
@@ -150,7 +150,11 @@ public abstract class AbstractActionPermissionTest extends Assert
 
             assertPermission(_c, action,
                 _users.get(READER_EMAIL), _users.get(AUTHOR_EMAIL), _users.get(EDITOR_EMAIL),
-                _users.get(FOLDER_ADMIN_EMAIL), _users.get(PROJECT_ADMIN_EMAIL),
+                _users.get(FOLDER_ADMIN_EMAIL),
+                /*
+                ProjectAdmin doesn't automatically get read permission in subfolder!
+                _users.get(PROJECT_ADMIN_EMAIL),
+                */
                 _users.get(APPLICATION_ADMIN_EMAIL), _users.get(SITE_ADMIN_EMAIL)
             );
 
@@ -169,7 +173,8 @@ public abstract class AbstractActionPermissionTest extends Assert
             assertPermission(_c, action,
                 _users.get(SUBMITTER_EMAIL), _users.get(AUTHOR_EMAIL),
                 _users.get(EDITOR_EMAIL), _users.get(FOLDER_ADMIN_EMAIL),
-                _users.get(PROJECT_ADMIN_EMAIL), _users.get(APPLICATION_ADMIN_EMAIL),
+                /* _users.get(PROJECT_ADMIN_EMAIL), */
+                _users.get(APPLICATION_ADMIN_EMAIL),
                 _users.get(SITE_ADMIN_EMAIL)
             );
 
@@ -187,7 +192,8 @@ public abstract class AbstractActionPermissionTest extends Assert
 
             assertPermission(_c, action,
                 _users.get(EDITOR_EMAIL), _users.get(FOLDER_ADMIN_EMAIL),
-                _users.get(PROJECT_ADMIN_EMAIL), _users.get(APPLICATION_ADMIN_EMAIL),
+                /* _users.get(PROJECT_ADMIN_EMAIL), */
+                _users.get(APPLICATION_ADMIN_EMAIL),
                 _users.get(SITE_ADMIN_EMAIL)
             );
 
@@ -214,8 +220,10 @@ public abstract class AbstractActionPermissionTest extends Assert
 
             if (c.isRoot())
                 assertNoPermission(c, action, _users.get(FOLDER_ADMIN_EMAIL), _users.get(PROJECT_ADMIN_EMAIL));
-            else
+            else if (c.isProject())
                 assertPermission(c, action, _users.get(FOLDER_ADMIN_EMAIL), _users.get(PROJECT_ADMIN_EMAIL));
+            else
+                assertPermission(c, action, _users.get(FOLDER_ADMIN_EMAIL));
 
             assertNoPermission(c, action,
                 _users.get(SUBMITTER_EMAIL), _users.get(READER_EMAIL),

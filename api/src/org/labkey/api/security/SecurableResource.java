@@ -59,4 +59,9 @@ public interface SecurableResource
 
     /** @return whether this resource may inherit the security policy associated with its parent */
     public boolean mayInheritPolicy();
+
+    default public String getDebugName()
+    {
+        return getClass().getName() + ":" + getResourceName();
+    }
 }

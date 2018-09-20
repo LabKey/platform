@@ -26,7 +26,7 @@ import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.AdminReadPermission;
-import org.labkey.api.security.permissions.PlatformDeveloperPermission;
+import org.labkey.api.security.permissions.AnalystPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.menu.FolderAdminMenu;
 import org.labkey.api.view.menu.ProjectAdminMenu;
@@ -138,7 +138,7 @@ public class PopupAdminView extends PopupMenuView
             }
         }
 
-        if (c.hasPermission(user, PlatformDeveloperPermission.class))
+        if (user.hasRootPermission(AnalystPermission.class))
         {
             NavTree devMenu = new NavTree("Developer Links");
             devMenu.addChildren(PopupDeveloperView.getNavTree(context));

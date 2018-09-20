@@ -1,6 +1,6 @@
 package org.labkey.api.security.permissions;
 
-public class PlatformDeveloperPermission extends AbstractPermission
+public class PlatformDeveloperPermission extends AbstractSitePermission
 {
     public PlatformDeveloperPermission()
     {

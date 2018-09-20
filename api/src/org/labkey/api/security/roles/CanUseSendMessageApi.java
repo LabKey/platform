@@ -7,6 +7,7 @@ public class CanUseSendMessageApi extends AbstractRootContainerRole
     public CanUseSendMessageApi()
     {
         super("Use SendMessage API", "Allows users to use the send message API.  This API can be used to author code which sends emails to users and potentially non-users of the system.",
+                true,
                 CanUseSendMessageApiPermission.class);
     }
 }

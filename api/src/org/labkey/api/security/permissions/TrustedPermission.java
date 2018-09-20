@@ -1,6 +1,6 @@
 package org.labkey.api.security.permissions;
 
-public class TrustedPermission extends AbstractPermission
+public class TrustedPermission extends AbstractSitePermission
 {
     public TrustedPermission()
     {
