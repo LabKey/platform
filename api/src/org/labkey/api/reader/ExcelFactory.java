@@ -22,6 +22,7 @@ import org.apache.poi.ss.format.CellGeneralFormatter;
 import org.apache.poi.ss.formula.FormulaParseException;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DataFormat;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.DateUtil;
@@ -293,15 +294,15 @@ public class ExcelFactory
 
             if ("General".equals(cell.getCellStyle().getDataFormatString()))
             {
-                switch (cell.getCellType())
+                switch (cell.getCellTypeEnum())
                 {
-                    case Cell.CELL_TYPE_BOOLEAN:
+                    case BOOLEAN:
                         return formatter.format(cell.getBooleanCellValue());
-                    case Cell.CELL_TYPE_NUMERIC:
+                    case NUMERIC:
                         return formatter.format(cell.getNumericCellValue());
-                    case Cell.CELL_TYPE_FORMULA:
+                    case FORMULA:
                     {
-                        if (cell.getCachedFormulaResultType() == Cell.CELL_TYPE_STRING)
+                        if (cell.getCachedFormulaResultTypeEnum() == CellType.STRING)
                         {
                             return cell.getStringCellValue();
                         }
@@ -320,14 +321,14 @@ public class ExcelFactory
                         }
                         return "";
                     }
-                    case Cell.CELL_TYPE_ERROR:
+                    case ERROR:
                         return ((Byte)cell.getErrorCellValue()).toString();
                 }
                 return cell.getStringCellValue();
             }
             else if (isCellNumeric(cell) && DateUtil.isCellDateFormatted(cell) && cell.getDateCellValue() != null)
                 return formatter.format(cell.getDateCellValue());
-            else if (cell.getCellType() == Cell.CELL_TYPE_FORMULA && cell.getCachedFormulaResultType() == Cell.CELL_TYPE_STRING)
+            else if (cell.getCellTypeEnum() == CellType.FORMULA && cell.getCachedFormulaResultTypeEnum() == CellType.STRING)
                 return cell.getStringCellValue();
             else
             {
@@ -345,12 +346,12 @@ public class ExcelFactory
     {
         if (cell != null)
         {
-            int type = cell.getCellType();
-            if (type == Cell.CELL_TYPE_FORMULA)
+            CellType type = cell.getCellTypeEnum();
+            if (type == CellType.FORMULA)
             {
-                type = cell.getCachedFormulaResultType();
+                type = cell.getCachedFormulaResultTypeEnum();
             }
-            return type == Cell.CELL_TYPE_NUMERIC;
+            return type == CellType.NUMERIC;
         }
         return false;
     }
@@ -435,16 +436,16 @@ public class ExcelFactory
                             formatString = null;
                         }
 
-                        int effectiveCellType = cell.getCellType();
-                        if (effectiveCellType == Cell.CELL_TYPE_FORMULA)
+                        CellType effectiveCellType = cell.getCellTypeEnum();
+                        if (effectiveCellType == CellType.FORMULA)
                         {
-                            effectiveCellType = cell.getCachedFormulaResultType();
+                            effectiveCellType = cell.getCachedFormulaResultTypeEnum();
                             metadataMap.put("formula", cell.getCellFormula());
                         }
 
                         switch (effectiveCellType)
                         {
-                            case Cell.CELL_TYPE_NUMERIC:
+                            case NUMERIC:
                                 if (DateUtil.isCellDateFormatted(cell))
                                 {
                                     value = cell.getDateCellValue();
@@ -503,12 +504,12 @@ public class ExcelFactory
                                 }
                                 break;
 
-                            case Cell.CELL_TYPE_BOOLEAN:
+                            case BOOLEAN:
                                 value = cell.getBooleanCellValue();
                                 formattedValue = value == null ? null : value.toString();
                                 break;
 
-                            case Cell.CELL_TYPE_ERROR:
+                            case ERROR:
                                 FormulaError error = FormulaError.forInt(cell.getErrorCellValue());
                                 metadataMap.put("error", true);
                                 if (error != null)

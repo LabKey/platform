@@ -17,15 +17,13 @@
 package org.labkey.api.study.assay.plate;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderFactory;
-import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.study.PlateTemplate;
 
 import java.io.File;
@@ -83,7 +81,7 @@ public class ExcelPlateReader extends AbstractPlateReader implements PlateReader
         {
             for (Cell cell : sheetRow)
             {
-                if (cell.getCellType() == Cell.CELL_TYPE_STRING && StringUtils.equalsIgnoreCase(cell.getStringCellValue(), "A"))
+                if (cell.getCellTypeEnum() == CellType.STRING && StringUtils.equalsIgnoreCase(cell.getStringCellValue(), "A"))
                 {
                     int col = cell.getColumnIndex();
                     char start = 'B';
@@ -94,7 +92,7 @@ public class ExcelPlateReader extends AbstractPlateReader implements PlateReader
                         if (r != null)
                         {
                             Cell c = r.getCell(col);
-                            if (c == null || c.getCellType() != Cell.CELL_TYPE_STRING || !StringUtils.equalsIgnoreCase(c.getStringCellValue(), val))
+                            if (c == null || cell.getCellTypeEnum() == CellType.STRING || !StringUtils.equalsIgnoreCase(c.getStringCellValue(), val))
                                 return false;
                         }
                         else

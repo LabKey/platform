@@ -19,6 +19,7 @@ package org.labkey.api.exp;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -46,7 +47,7 @@ import java.util.TimeZone;
  */
 public enum PropertyType
 {
-    BOOLEAN("http://www.w3.org/2001/XMLSchema#boolean", "Boolean", 'f', JdbcType.BOOLEAN, 10, null, Cell.CELL_TYPE_BOOLEAN, Boolean.class, Boolean.TYPE)
+    BOOLEAN("http://www.w3.org/2001/XMLSchema#boolean", "Boolean", 'f', JdbcType.BOOLEAN, 10, null, CellType.BOOLEAN, Boolean.class, Boolean.TYPE)
             {
                 protected Object convertExcelValue(Cell cell) throws ConversionException
                 {
@@ -69,7 +70,7 @@ public enum PropertyType
                     return SimpleTypeNames.BOOLEAN;
                 }
             },
-    STRING("http://www.w3.org/2001/XMLSchema#string", "String", 's', JdbcType.VARCHAR, 4000, "text", Cell.CELL_TYPE_STRING, String.class)
+    STRING("http://www.w3.org/2001/XMLSchema#string", "String", 's', JdbcType.VARCHAR, 4000, "text", CellType.STRING, String.class)
             {
                 protected Object convertExcelValue(Cell cell) throws ConversionException
                 {
@@ -89,7 +90,7 @@ public enum PropertyType
                     return SimpleTypeNames.STRING;
                 }
             },
-    MULTI_LINE("http://www.w3.org/2001/XMLSchema#multiLine", "MultiLine", 's', JdbcType.VARCHAR, 4000, "textarea", Cell.CELL_TYPE_STRING, String.class)
+    MULTI_LINE("http://www.w3.org/2001/XMLSchema#multiLine", "MultiLine", 's', JdbcType.VARCHAR, 4000, "textarea", CellType.STRING, String.class)
             {
                 protected Object convertExcelValue(Cell cell) throws ConversionException
                 {
@@ -109,7 +110,7 @@ public enum PropertyType
                     return SimpleTypeNames.STRING;
                 }
             },
-    RESOURCE("http://www.w3.org/2000/01/rdf-schema#Resource", "PropertyURI", 's', JdbcType.VARCHAR, 4000, null, Cell.CELL_TYPE_STRING, Identifiable.class)
+    RESOURCE("http://www.w3.org/2000/01/rdf-schema#Resource", "PropertyURI", 's', JdbcType.VARCHAR, 4000, null, CellType.STRING, Identifiable.class)
             {
                 protected Object convertExcelValue(Cell cell) throws ConversionException
                 {
@@ -131,7 +132,7 @@ public enum PropertyType
                     return SimpleTypeNames.STRING;
                 }
             },
-    INTEGER("http://www.w3.org/2001/XMLSchema#int", "Integer", 'f', JdbcType.INTEGER, 10, null, Cell.CELL_TYPE_NUMERIC, Integer.class, Integer.TYPE, Long.class, Long.TYPE)
+    INTEGER("http://www.w3.org/2001/XMLSchema#int", "Integer", 'f', JdbcType.INTEGER, 10, null, CellType.NUMERIC, Integer.class, Integer.TYPE, Long.class, Long.TYPE)
             {
                 protected Object convertExcelValue(Cell cell) throws ConversionException
                 {
@@ -153,7 +154,7 @@ public enum PropertyType
                     return SimpleTypeNames.INTEGER;
                 }
             },
-    BIGINT("http://www.w3.org/2001/XMLSchema#long", "Long", 'f', JdbcType.BIGINT, 10, null, Cell.CELL_TYPE_NUMERIC, Long.class, Long.TYPE)
+    BIGINT("http://www.w3.org/2001/XMLSchema#long", "Long", 'f', JdbcType.BIGINT, 10, null, CellType.NUMERIC, Long.class, Long.TYPE)
             {
                 protected Object convertExcelValue(Cell cell) throws ConversionException
                 {
@@ -175,7 +176,7 @@ public enum PropertyType
                     throw new UnsupportedOperationException();
                 }
             },
-    BINARY("http://www.w3.org/2001/XMLSchema#binary", "Binary", 'f', JdbcType.BINARY, 10, null, Cell.CELL_TYPE_NUMERIC, ByteBuffer.class)
+    BINARY("http://www.w3.org/2001/XMLSchema#binary", "Binary", 'f', JdbcType.BINARY, 10, null, CellType.NUMERIC, ByteBuffer.class)
             {
                 protected Object convertExcelValue(Cell cell) throws ConversionException
                 {
@@ -197,7 +198,7 @@ public enum PropertyType
                     throw new UnsupportedOperationException();
                 }
             },    /** Stored as a path to a file on the server's file system */
-    FILE_LINK("http://cpas.fhcrc.org/exp/xml#fileLink", "FileLink", 's', JdbcType.VARCHAR, 400, "file", Cell.CELL_TYPE_STRING, File.class)
+    FILE_LINK("http://cpas.fhcrc.org/exp/xml#fileLink", "FileLink", 's', JdbcType.VARCHAR, 400, "file", CellType.STRING, File.class)
             {
                 protected Object convertExcelValue(Cell cell) throws ConversionException
                 {
@@ -220,7 +221,7 @@ public enum PropertyType
                 }
             },
     /** Stored in the database as a BLOB using AttachmentService */
-    ATTACHMENT("http://www.labkey.org/exp/xml#attachment", "Attachment", 's', JdbcType.VARCHAR, 100, "file", Cell.CELL_TYPE_STRING, File.class)
+    ATTACHMENT("http://www.labkey.org/exp/xml#attachment", "Attachment", 's', JdbcType.VARCHAR, 100, "file", CellType.STRING, File.class)
             {
                 protected Object convertExcelValue(Cell cell) throws ConversionException
                 {
@@ -242,7 +243,7 @@ public enum PropertyType
                     throw new UnsupportedOperationException();
                 }
             },
-    DATE_TIME("http://www.w3.org/2001/XMLSchema#dateTime", "DateTime", 'd', JdbcType.TIMESTAMP, 100, null, Cell.CELL_TYPE_NUMERIC, Date.class)
+    DATE_TIME("http://www.w3.org/2001/XMLSchema#dateTime", "DateTime", 'd', JdbcType.TIMESTAMP, 100, null, CellType.NUMERIC, Date.class)
             {
                 protected Object convertExcelValue(Cell cell) throws ConversionException
                 {
@@ -286,7 +287,7 @@ public enum PropertyType
                     return SimpleTypeNames.DATE_TIME;
                 }
             },
-    DATE("http://www.w3.org/2001/XMLSchema#date", "Date", 'd', JdbcType.DATE, 100, null, Cell.CELL_TYPE_NUMERIC, Date.class)
+    DATE("http://www.w3.org/2001/XMLSchema#date", "Date", 'd', JdbcType.DATE, 100, null, CellType.NUMERIC, Date.class)
             {
                 protected Object convertExcelValue(Cell cell) throws ConversionException
                 {
@@ -304,7 +305,7 @@ public enum PropertyType
                     return SimpleTypeNames.DATE_TIME;
                 }
             },
-    TIME("http://www.w3.org/2001/XMLSchema#time", "Time", 'd', JdbcType.TIME, 100, null, Cell.CELL_TYPE_NUMERIC, Date.class)
+    TIME("http://www.w3.org/2001/XMLSchema#time", "Time", 'd', JdbcType.TIME, 100, null, CellType.NUMERIC, Date.class)
             {
                 protected Object convertExcelValue(Cell cell) throws ConversionException
                 {
@@ -322,7 +323,7 @@ public enum PropertyType
                     return SimpleTypeNames.DATE_TIME;
                 }
             },
-    DOUBLE("http://www.w3.org/2001/XMLSchema#double", "Double", 'f', JdbcType.DOUBLE, 20, null, Cell.CELL_TYPE_NUMERIC, Double.class, Double.TYPE, Float.class, Float.TYPE)
+    DOUBLE("http://www.w3.org/2001/XMLSchema#double", "Double", 'f', JdbcType.DOUBLE, 20, null, CellType.NUMERIC, Double.class, Double.TYPE, Float.class, Float.TYPE)
             {
                 protected Object convertExcelValue(Cell cell) throws ConversionException
                 {
@@ -344,7 +345,7 @@ public enum PropertyType
                     return SimpleTypeNames.DOUBLE;
                 }
             },
-    FLOAT("http://www.w3.org/2001/XMLSchema#float", "Float", 'f', JdbcType.REAL, 20, null, Cell.CELL_TYPE_NUMERIC, Float.class, Float.TYPE)
+    FLOAT("http://www.w3.org/2001/XMLSchema#float", "Float", 'f', JdbcType.REAL, 20, null, CellType.NUMERIC, Float.class, Float.TYPE)
             {
                 protected Object convertExcelValue(Cell cell) throws ConversionException
                 {
@@ -366,7 +367,7 @@ public enum PropertyType
                     throw new UnsupportedOperationException();
                 }
             },
-    DECIMAL("http://www.w3.org/2001/XMLSchema#decimal", "Decimal", 'f', JdbcType.DECIMAL, 20, null, Cell.CELL_TYPE_NUMERIC, BigDecimal.class)
+    DECIMAL("http://www.w3.org/2001/XMLSchema#decimal", "Decimal", 'f', JdbcType.DECIMAL, 20, null, CellType.NUMERIC, BigDecimal.class)
             {
                 protected Object convertExcelValue(Cell cell) throws ConversionException
                 {
@@ -388,7 +389,7 @@ public enum PropertyType
                     throw new UnsupportedOperationException();
                 }
             },
-    XML_TEXT("http://cpas.fhcrc.org/exp/xml#text-xml", "XmlText", 's', JdbcType.LONGVARCHAR, 4000, null, Cell.CELL_TYPE_STRING, null)
+    XML_TEXT("http://cpas.fhcrc.org/exp/xml#text-xml", "XmlText", 's', JdbcType.LONGVARCHAR, 4000, null, CellType.STRING, null)
             {
                 protected Object convertExcelValue(Cell cell) throws ConversionException
                 {
@@ -412,7 +413,7 @@ public enum PropertyType
     private String typeURI;
     private String xarName;
     private char storageType;
-    private int excelCellType;
+    private CellType excelCellType;
     private @NotNull JdbcType jdbcType;
     private int scale;
     private String inputType;
@@ -428,7 +429,7 @@ public enum PropertyType
                  @NotNull JdbcType jdbcType,
                  int scale,
                  String inputType,
-                 int excelCellType,
+                 CellType excelCellType,
                  Class javaType,
                  Class... additionalTypes)
     {
@@ -584,8 +585,6 @@ public enum PropertyType
     {
         for (PropertyType t : values())
         {
-            if (t.jdbcType == null)
-                continue;
             if (t.jdbcType.equals(jdbcType))
                 return t;
         }
@@ -597,8 +596,6 @@ public enum PropertyType
     {
         for (PropertyType t : values())
         {
-            if (t.jdbcType == null)
-                continue;
             if (typeName.equalsIgnoreCase(t.jdbcType.name()))
                 return t;
         }
@@ -626,7 +623,7 @@ public enum PropertyType
 
         for (PropertyType t : values())
         {
-            if (t.excelCellType == cell.getCellType())
+            if (t.excelCellType == cell.getCellTypeEnum())
                 return t.convertExcelValue(cell);
         }
         return ExcelFactory.getCellStringValue(cell);

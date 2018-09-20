@@ -82,13 +82,14 @@ public class JxlFormulaEvaluator implements FormulaEvaluator
     }
 
     @Override
-    public Cell evaluateInCell(Cell cell)
+    public CellType evaluateFormulaCellEnum(Cell cell)
     {
-        throw new UnsupportedOperationException("method not yet supported");
+        // Assume that the formula result is unchanged, works fine for unmodified data
+        return cell.getCachedFormulaResultTypeEnum();
     }
 
     @Override
-    public CellType evaluateFormulaCellEnum(Cell cell)
+    public Cell evaluateInCell(Cell cell)
     {
         throw new UnsupportedOperationException("method not yet supported");
     }

@@ -93,6 +93,28 @@ public class JxlCell implements Cell
     }
 
     @Override
+    public org.apache.poi.ss.usermodel.CellType getCellTypeEnum()
+    {
+        CellType type = _cell.getType();
+
+        if (type.equals(CellType.EMPTY))
+            return org.apache.poi.ss.usermodel.CellType.BLANK;
+        else if (type.equals(CellType.BOOLEAN))
+            return org.apache.poi.ss.usermodel.CellType.BOOLEAN;
+        else if (type.equals(CellType.ERROR))
+            return org.apache.poi.ss.usermodel.CellType.ERROR;
+        else if (type.equals(CellType.BOOLEAN_FORMULA) || type.equals(CellType.DATE_FORMULA) ||
+                type.equals(CellType.NUMBER_FORMULA) || type.equals(CellType.STRING_FORMULA))
+            return org.apache.poi.ss.usermodel.CellType.FORMULA;
+        else if (type.equals(CellType.NUMBER) || type.equals(CellType.DATE))
+            return org.apache.poi.ss.usermodel.CellType.NUMERIC;
+        else if (type.equals(CellType.LABEL))
+            return org.apache.poi.ss.usermodel.CellType.STRING;
+
+        return org.apache.poi.ss.usermodel.CellType.STRING;
+    }
+
+    @Override
     public int getCellType()
     {
         CellType type = _cell.getType();
@@ -112,6 +134,20 @@ public class JxlCell implements Cell
             return Cell.CELL_TYPE_STRING;
 
         return Cell.CELL_TYPE_STRING;
+    }
+
+    @Override
+    public org.apache.poi.ss.usermodel.CellType getCachedFormulaResultTypeEnum()
+    {
+        CellType type = _cell.getType();
+        if (type.equals(CellType.BOOLEAN_FORMULA))
+            return org.apache.poi.ss.usermodel.CellType.BOOLEAN;
+        else if (type.equals(CellType.DATE_FORMULA) || type.equals(CellType.NUMBER_FORMULA))
+            return org.apache.poi.ss.usermodel.CellType.NUMERIC;
+        else if (type.equals(CellType.STRING_FORMULA))
+            return org.apache.poi.ss.usermodel.CellType.STRING;
+
+        throw new IllegalStateException("Only formula cells have cached results");
     }
 
     @Override
@@ -214,12 +250,12 @@ public class JxlCell implements Cell
     @Override
     public RichTextString getRichStringCellValue()
     {
-        switch(getCellType()) {
-            case CELL_TYPE_BLANK:
+        switch(getCellTypeEnum()) {
+            case BLANK:
                 return new JxlRichTextString("");
-            case CELL_TYPE_STRING:
+            case STRING:
                 return new JxlRichTextString(_cell.getContents());
-            case CELL_TYPE_FORMULA:
+            case FORMULA:
                 return null;
             default:
                 throw new IllegalStateException("Expected string cell type, got '" + _cell.getType() + "'");
@@ -383,18 +419,6 @@ public class JxlCell implements Cell
 
     @Override
     public void setCellType(org.apache.poi.ss.usermodel.CellType cellType)
-    {
-        throw new UnsupportedOperationException("method not yet supported");
-    }
-
-    @Override
-    public org.apache.poi.ss.usermodel.CellType getCellTypeEnum()
-    {
-        return org.apache.poi.ss.usermodel.CellType.forInt(getCellType());
-    }
-
-    @Override
-    public org.apache.poi.ss.usermodel.CellType getCachedFormulaResultTypeEnum()
     {
         throw new UnsupportedOperationException("method not yet supported");
     }

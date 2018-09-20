@@ -36,10 +36,10 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Row.MissingCellPolicy;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.util.Units;
 import org.apache.poi.xssf.usermodel.XSSFAnchor;
 import org.apache.poi.xssf.usermodel.XSSFClientAnchor;
 import org.apache.poi.xssf.usermodel.XSSFPicture;
-import org.apache.poi.xssf.usermodel.XSSFShape;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
 
@@ -485,10 +485,10 @@ public class ExcelColumn extends RenderColumn
             // format is XSSF
             // full cell size is 1023 width and 255 height
             // each multiplied by XSSFShape.EMU_PER_PIXEL
-            anchor.setDx1(XSSFShape.EMU_PER_PIXEL);
-            anchor.setDy1(XSSFShape.EMU_PER_PIXEL);
-            anchor.setDx2((int)(1022 * XSSFShape.EMU_PER_PIXEL * colRatio) - XSSFShape.EMU_PER_PIXEL);
-            anchor.setDy2((int)(254 * XSSFShape.EMU_PER_PIXEL * rowRatio) - XSSFShape.EMU_PER_PIXEL);
+            anchor.setDx1(Units.EMU_PER_PIXEL);
+            anchor.setDy1(Units.EMU_PER_PIXEL);
+            anchor.setDx2((int)(1022 * Units.EMU_PER_PIXEL * colRatio) - Units.EMU_PER_PIXEL);
+            anchor.setDy2((int)(254 * Units.EMU_PER_PIXEL * rowRatio) - Units.EMU_PER_PIXEL);
         } else {
             // format is HSSF
             // full cell size is 1023 width and 255 height
@@ -668,8 +668,8 @@ public class ExcelColumn extends RenderColumn
             {
                 XSSFPicture picture = (XSSFPicture) pict;
                 XSSFAnchor anchor = picture.getAnchor();
-                anchor.setDx2(adjustedWidth * XSSFShape.EMU_PER_POINT);
-                anchor.setDy2(adjustedHeight * XSSFShape.EMU_PER_POINT);
+                anchor.setDx2(adjustedWidth * Units.EMU_PER_POINT);
+                anchor.setDy2(adjustedHeight * Units.EMU_PER_POINT);
             }
             else if (pict instanceof  HSSFPicture)
             {
@@ -731,9 +731,9 @@ public class ExcelColumn extends RenderColumn
 
                 // Need to be careful here, checking _simpleType again and verifying legal values. See #18561 for an example
                 // of a problem that occurred because we assumed all date values could be formatted by FastDateFormat.
-                switch (cell.getCellType())
+                switch (cell.getCellTypeEnum())
                 {
-                    case Cell.CELL_TYPE_NUMERIC:
+                    case NUMERIC:
                         switch (_simpleType)
                         {
                             case(TYPE_DATE):
@@ -747,11 +747,11 @@ public class ExcelColumn extends RenderColumn
                         }
                         break;
 
-                    case Cell.CELL_TYPE_ERROR:
+                    case ERROR:
                         formatted = FormulaError.forInt(cell.getErrorCellValue()).getString();
                         break;
 
-                    case Cell.CELL_TYPE_BLANK:
+                    case BLANK:
                         if (_simpleType == TYPE_FILE) {
                             Pair<Integer, Integer> size = getImageSize(ctx, row, column);
                             if (size != null)
