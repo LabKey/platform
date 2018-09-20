@@ -15,6 +15,8 @@
  */
 package org.labkey.api.security.impersonation;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
@@ -37,6 +39,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -53,6 +56,26 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
     private final ActionURL _returnURL;
     private final String _cacheKey;
 
+    @JsonCreator
+    protected RoleImpersonationContextFactory(
+            @JsonProperty("_projectId") GUID projectId,
+            @JsonProperty("_adminUserId") int adminUserId,
+            @JsonProperty("_roleNames") Set<String> roleNames,
+            @JsonProperty("_previousRoleNames") Set<String> previousRoleNames,
+            @JsonProperty("_returnURL") ActionURL returnURL,
+            @JsonProperty("_cacheKey") String cacheKey,
+            @JsonProperty("_adminSessionAttributes") Map<String, Object> adminSessionAttributes
+    )
+    {
+        super(adminSessionAttributes);
+        _projectId = projectId;
+        _adminUserId = adminUserId;
+        _roleNames = roleNames;
+        _previousRoleNames = previousRoleNames;
+        _returnURL = returnURL;
+        _cacheKey = cacheKey;
+    }
+    
     public RoleImpersonationContextFactory(@Nullable Container project, User adminUser, Collection<Role> newImpersonationRoles, Set<Role> currentImpersonationRoles, ActionURL returnURL)
     {
         _projectId = null != project ? project.getEntityId() : null;
@@ -89,7 +112,7 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
     {
         Container project = (null != _projectId ? ContainerManager.getForId(_projectId) : null);
 
-        return new RoleImpersonationContext(project, getAdminUser(), _roleNames, _returnURL);
+        return new RoleImpersonationContext(project, getAdminUser(), _roleNames, _returnURL, this, this._cacheKey);
     }
 
     @Override
@@ -176,18 +199,27 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         return validRoles;
     }
 
-    private class RoleImpersonationContext extends AbstractImpersonationContext
+    private static class RoleImpersonationContext extends AbstractImpersonationContext
     {
         /** Hold on to the role names and not the Roles themselves for serialization purposes. See issue #15660 */
         // TODO: Hold only Set<Role> and use custom serialization, see below
         private final Set<String> _roleNames;
         private transient Set<Role> _roles;
+        private final String _cacheKey;
 
-        private RoleImpersonationContext(@Nullable Container project, User user, Set<String> roleNames, ActionURL returnURL)
+        @JsonCreator
+        private RoleImpersonationContext(
+                @JsonProperty("_project") @Nullable Container project,
+                @JsonProperty("_adminUser") User adminUser,
+                @JsonProperty("_roleNames") Set<String> roleNames,
+                @JsonProperty("_returnURL") ActionURL returnURL,
+                @JsonProperty("_factory") ImpersonationContextFactory factory,
+                @JsonProperty("_cacheKey") String cacheKey)
         {
-            super(user, project, returnURL);
-            verifyPermissions(project, user);
+            super(adminUser, project, returnURL, factory);
+            verifyPermissions(project, adminUser);
             _roleNames = roleNames;
+            _cacheKey = cacheKey;
         }
 
         // Throws if user is not authorized.
@@ -222,12 +254,6 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         public int[] getGroups(User user)
         {
             return new int[0];
-        }
-
-        @Override
-        public ImpersonationContextFactory getFactory()
-        {
-            return RoleImpersonationContextFactory.this;
         }
 
         // TODO: More expensive than it needs to be... should actually hold onto a Set<Roles> and use custom serialization (using unique names)

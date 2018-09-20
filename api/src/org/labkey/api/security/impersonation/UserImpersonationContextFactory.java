@@ -15,6 +15,8 @@
  */
 package org.labkey.api.security.impersonation;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
@@ -35,6 +37,7 @@ import org.labkey.api.view.ViewContext;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -50,6 +53,22 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
     private final int _adminUserId;
     private final int _impersonatedUserId;
     private final ActionURL _returnURL;
+
+    @JsonCreator
+    protected UserImpersonationContextFactory(
+            @JsonProperty("_projectId") GUID projectId,
+            @JsonProperty("_adminUserId") int adminUserId,
+            @JsonProperty("_impersonatedUserId") int impersonatedUserId,
+            @JsonProperty("_returnURL") ActionURL returnURL,
+            @JsonProperty("_adminSessionAttributes") Map<String, Object> adminSessionAttributes
+    )
+    {
+        super(adminSessionAttributes);
+        _projectId = projectId;
+        _adminUserId = adminUserId;
+        _impersonatedUserId = impersonatedUserId;
+        _returnURL = returnURL;
+    }
 
     public UserImpersonationContextFactory(@Nullable Container project, User adminUser, User impersonatedUser, ActionURL returnURL)
     {
@@ -71,7 +90,7 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
     {
         Container project = (null != _projectId ? ContainerManager.getForId(_projectId) : null);
 
-        return new UserImpersonationContext(project, getAdminUser(), UserManager.getUser(_impersonatedUserId), _returnURL);
+        return new UserImpersonationContext(project, getAdminUser(), UserManager.getUser(_impersonatedUserId), _returnURL, this);
     }
 
 
@@ -156,11 +175,21 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
         return validUsers;
     }
 
-    private class UserImpersonationContext extends AbstractImpersonationContext
+    private static class UserImpersonationContext extends AbstractImpersonationContext
     {
-        private UserImpersonationContext(@Nullable Container project, User adminUser, User impersonatedUser, ActionURL returnURL)
+        @JsonCreator
+        protected UserImpersonationContext(
+                @JsonProperty("_project") @Nullable Container project,
+                @JsonProperty("_adminUser") User adminUser,
+                @JsonProperty("_returnURL") ActionURL returnURL,
+                @JsonProperty("_factory") ImpersonationContextFactory factory)
         {
-            super(adminUser, project, returnURL);
+            super(adminUser, project, returnURL, factory);
+        }
+
+        private UserImpersonationContext(@Nullable Container project, User adminUser, User impersonatedUser, ActionURL returnURL, ImpersonationContextFactory factory)
+        {
+            super(adminUser, project, returnURL, factory);
             verifyPermissions(project, impersonatedUser, adminUser);
         }
 
@@ -199,12 +228,6 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
                 suffix += "/impersonationProject=" + getImpersonationProject().getId();
 
             return suffix;
-        }
-
-        @Override
-        public ImpersonationContextFactory getFactory()
-        {
-            return UserImpersonationContextFactory.this;
         }
 
         @Override

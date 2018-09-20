@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Activity;
 import org.labkey.api.data.Container;
@@ -42,7 +43,7 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
     private final Set<String> _dataTypes;
     private final User _user;
     private final Container _c;
-    private final LoggerGetter _logger;
+    private transient LoggerGetter _loggerGetter;      // Don't serialize; owner of Context must set after construction
     private final @Nullable VirtualFile _root;
     private final Map<Class<? extends ImportContext>, ImportContext> _contextMap;
     private boolean _skipQueryValidation;
@@ -57,23 +58,22 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
 
     @JsonCreator
     protected AbstractImportContext(@JsonProperty("_dataTypes") Set<String> dataTypes, @JsonProperty("_user") User user,
-                                    @JsonProperty("_c") Container c, @JsonProperty("_logger") LoggerGetter logger, @JsonProperty("_root") VirtualFile root,
+                                    @JsonProperty("_c") Container c, @JsonProperty("_root") VirtualFile root,
                                     @JsonProperty("_contextMap") Map<Class<? extends ImportContext>, ImportContext> contextMap)
     {
         _dataTypes = dataTypes;
         _user = user;
         _c = c;
-        _logger = logger;
         _root = root;
         _contextMap = contextMap;
     }
 
-    protected AbstractImportContext(User user, Container c, XmlDocument document, Set<String> dataTypes, LoggerGetter logger, @Nullable VirtualFile root)
+    protected AbstractImportContext(User user, Container c, XmlDocument document, Set<String> dataTypes, LoggerGetter loggerGetter, @Nullable VirtualFile root)
     {
         _user = user;
         _c = c;
         _dataTypes = dataTypes;
-        _logger = logger;
+        _loggerGetter = loggerGetter;
         _xmlDocument = document;
         _root = root;
         _contextMap = new HashMap<>();
@@ -117,13 +117,20 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
     @Override
     public Logger getLogger()
     {
-        return _logger.getLogger();
+        if (null == _loggerGetter)
+            throw new IllegalStateException("Expected non-null LoggerGetter");
+        return _loggerGetter.getLogger();
     }
 
     @Override
     public LoggerGetter getLoggerGetter()
     {
-        return _logger;
+        return _loggerGetter;
+    }
+
+    public void setLoggerGetter(@NotNull LoggerGetter loggerGetter)
+    {
+        _loggerGetter = loggerGetter;
     }
 
     public VirtualFile getRoot()

@@ -15,6 +15,8 @@
  */
 package org.labkey.api.security.impersonation;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
@@ -36,6 +38,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -53,6 +56,22 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
     private final ActionURL _returnURL;
     private final int _adminUserId;
 
+    @JsonCreator
+    protected GroupImpersonationContextFactory(
+            @JsonProperty("_projectId") GUID projectId,
+            @JsonProperty("_adminUserId") int adminUserId,
+            @JsonProperty("_groupId") int groupId,
+            @JsonProperty("_returnURL") ActionURL returnURL,
+            @JsonProperty("_adminSessionAttributes") Map<String, Object> adminSessionAttributes
+    )
+    {
+        super(adminSessionAttributes);
+        _projectId = projectId;
+        _groupId = groupId;
+        _adminUserId = adminUserId;
+        _returnURL = returnURL;
+    }
+
     public GroupImpersonationContextFactory(@Nullable Container project, User adminUser, Group group, ActionURL returnURL)
     {
         _projectId = null != project ? project.getEntityId() : null;
@@ -67,7 +86,7 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
         Container project = (null != _projectId ? ContainerManager.getForId(_projectId) : null);
         Group group = SecurityManager.getGroup(_groupId);
 
-        return new GroupImpersonationContext(project, getAdminUser(), group, _returnURL);
+        return new GroupImpersonationContext(project, getAdminUser(), group, _returnURL, this);
     }
 
 
@@ -160,16 +179,31 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
         return validGroups;
     }
 
-    private class GroupImpersonationContext extends AbstractImpersonationContext
+    private static class GroupImpersonationContext extends AbstractImpersonationContext
     {
         private final Group _group;
         private final int[] _groups;
 
-        private GroupImpersonationContext(@Nullable Container project, User user, Group group, ActionURL returnURL)
+        @JsonCreator
+        protected GroupImpersonationContext(
+                @JsonProperty("_project") @Nullable Container project,
+                @JsonProperty("_adminUser") User adminUser,
+                @JsonProperty("_group") Group group,
+                @JsonProperty("_groups") int[] groups,
+                @JsonProperty("_returnURL") ActionURL returnURL,
+                @JsonProperty("_factory") ImpersonationContextFactory factory)
+
+        {
+            super(adminUser, project, returnURL, factory);
+            _group = group;
+            _groups = groups;
+        }
+
+        private GroupImpersonationContext(@Nullable Container project, User user, Group group, ActionURL returnURL, ImpersonationContextFactory factory)
         {
             // project is used to verify authorization, but isn't needed while impersonating... the group itself will
             // limit the admin user appropriately
-            super(user, null, returnURL);
+            super(user, null, returnURL, factory);
 
             if (!canImpersonateGroup(project, user, group))
                 throw new UnauthorizedImpersonationException("You are not allowed to impersonate this group", getFactory());
@@ -201,12 +235,6 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
         {
             // NavTree for user impersonating a group will be different for each group
             return "/impersonationGroup=" + _group.getUserId();
-        }
-
-        @Override
-        public ImpersonationContextFactory getFactory()
-        {
-            return GroupImpersonationContextFactory.this;
         }
 
         @Override

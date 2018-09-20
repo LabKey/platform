@@ -37,6 +37,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryKey;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
@@ -1873,18 +1876,15 @@ abstract public class PipelineJob extends Job implements Serializable
             .enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
 
         SimpleModule module = new SimpleModule();
-//        module.addDeserializer(URI.class, new ToStringSerialization.JacksonDeserializer<URI>());
-//        module.addDeserializer(GUID.class, new ToStringSerialization.JacksonDeserializer<GUID>());
-//        module.addSerializer(new PairSerializer<>());
         module.addSerializer(new SqlTimeSerialization.SqlTimeSerializer());
         module.addDeserializer(Time.class, new SqlTimeSerialization.SqlTimeDeserializer());
         module.addDeserializer(AtomicLong.class, new AtomicLongDeserializer());
         module.addSerializer(NullSafeBindException.class, new NullSafeBindExceptionSerializer());
+        module.addSerializer(QueryKey.class, new QueryKeySerialization.Serializer());
+        module.addDeserializer(SchemaKey.class, new QueryKeySerialization.SchemaKeyDeserializer());
+        module.addDeserializer(FieldKey.class, new QueryKeySerialization.FieldKeyDeserializer());
 
         mapper.registerModule(module);
-
-//        mapper.addMixIn(BindException.class, JacksonMixins.BindException.class);
-//        mapper.addMixIn(JacksonMixins.BeanPropertyBindingResult.class, JacksonMixins.BeanPropertyBindingResult.class);
         return mapper;
     }
 

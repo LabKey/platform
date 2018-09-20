@@ -31,7 +31,7 @@ import java.util.Objects;
  * Base class of {@link FieldKey} and {@link SchemaKey}.
  * The only difference between the two is the default divider.
  */
-/*package*/ abstract class QueryKey<T extends QueryKey<T>> implements Comparable<T>, Serializable
+/*package*/ abstract public class QueryKey<T extends QueryKey<T>> implements Comparable<T>, Serializable
 {
     // Abstracts the constructor of QueryKey subclasses so we can reuse the static factory
     // methods in QueryKey instead of duplicating them in both FieldKey and SchemaKey.
@@ -151,7 +151,7 @@ import java.util.Objects;
 
     protected abstract String getDivider();
 
-    protected QueryKey getParent()
+    public QueryKey getParent()
     {
         return _parent;
     }

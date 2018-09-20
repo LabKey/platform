@@ -33,7 +33,7 @@ public class RecordedActionSet
 {
     private final Set<RecordedAction> _actions;
     @JsonSerialize(keyUsing = StringKeySerialization.Serializer.class)
-    @JsonDeserialize(keyUsing = StringKeySerialization.Deserializer.class)
+    @JsonDeserialize(keyUsing = StringKeySerialization.URIDeserializer.class)
     private final Map<URI, String> _otherInputs;
 
     @JsonCreator

@@ -15,6 +15,8 @@
  */
 package org.labkey.api.security.impersonation;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.LoginUrls;
@@ -37,12 +39,16 @@ public abstract class AbstractImpersonationContext implements ImpersonationConte
     private final User _adminUser;
     private final @Nullable Container _project;
     private final ActionURL _returnURL;
+    private final ImpersonationContextFactory _factory;
 
-    protected AbstractImpersonationContext(User adminUser, @Nullable Container project, ActionURL returnURL)
+    @JsonCreator
+    protected AbstractImpersonationContext(@JsonProperty("_adminUser") User adminUser, @JsonProperty("_project") @Nullable Container project,
+                                           @JsonProperty("_returnURL") ActionURL returnURL, @JsonProperty("_factory") ImpersonationContextFactory factory)
     {
         _adminUser = adminUser;
         _project = project;
         _returnURL = returnURL;
+        _factory = factory;
     }
 
     @Override
@@ -74,6 +80,12 @@ public abstract class AbstractImpersonationContext implements ImpersonationConte
     {
         NavTree stop = new NavTree("Stop Impersonating", PageFlowUtil.urlProvider(LoginUrls.class).getStopImpersonatingURL(c, user.getImpersonationContext().getReturnURL()));
         menu.addChild(stop);
+    }
+
+    @Override
+    public ImpersonationContextFactory getFactory()
+    {
+        return _factory;
     }
 
     /** @return Returns a set of roles with the SiteAdminRole filtered out

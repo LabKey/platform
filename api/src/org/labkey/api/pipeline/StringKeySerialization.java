@@ -1,14 +1,13 @@
 package org.labkey.api.pipeline;
 
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.KeyDeserializer;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdKeySerializer;
 
 import java.io.IOException;
+import java.net.URI;
 
 // For any class that can serialize via toString() and deserialize with a T(String) constructor
 public class StringKeySerialization
@@ -24,22 +23,12 @@ public class StringKeySerialization
         }
     }
 
-    public static class Deserializer<T> extends KeyDeserializer
+    public static class URIDeserializer extends KeyDeserializer
     {
         @Override
-        public T deserializeKey(String key, DeserializationContext ctxt) throws IOException
+        public URI deserializeKey(String key, DeserializationContext ctxt) throws IOException
         {
-            ObjectMapper mapper = new ObjectMapper();
-            try
-            {
-                TypeReference<T> typeRef = new TypeReference<T>() {};
-                T result = mapper.convertValue(key, typeRef);
-                return result;
-            }
-            catch (Exception e)
-            {
-                throw new IOException(e);
-            }
+            return URI.create(key);
         }
     }
 }

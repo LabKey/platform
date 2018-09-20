@@ -15,9 +15,7 @@
  */
 package org.labkey.api.admin;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import org.apache.log4j.Logger;
-import org.labkey.api.admin.LoggerGetter;
 import org.labkey.api.pipeline.PipelineJob;
 
 import java.io.Serializable;
@@ -27,9 +25,8 @@ import java.io.Serializable;
  * User: jeckels
  * Date: 10/30/12
  */
-public class PipelineJobLoggerGetter implements LoggerGetter, Serializable
+public class PipelineJobLoggerGetter implements LoggerGetter       // Should not be serialized to avoid circular reference
 {
-    @JsonManagedReference
     private final PipelineJob _job;
 
     public PipelineJobLoggerGetter(PipelineJob job)

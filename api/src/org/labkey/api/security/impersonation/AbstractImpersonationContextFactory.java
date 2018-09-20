@@ -15,6 +15,9 @@
  */
 package org.labkey.api.security.impersonation;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import javax.servlet.http.HttpSession;
 import java.util.Collection;
 import java.util.Collections;
@@ -46,7 +49,18 @@ public class AbstractImpersonationContextFactory
     }
 
     /** Don't remove/rename without updating PipelineJobMarshaller.getXStream() */
-    private final Map<String, Object> _adminSessionAttributes = new HashMap<>();
+    private final Map<String, Object> _adminSessionAttributes;
+
+    @JsonCreator
+    protected AbstractImpersonationContextFactory(@JsonProperty("_adminSessionAttributes") Map<String, Object> adminSessionAttributes)
+    {
+        _adminSessionAttributes = adminSessionAttributes;
+    }
+
+    protected AbstractImpersonationContextFactory()
+    {
+        _adminSessionAttributes = new HashMap<>();
+    }
 
     // Stash all attributes in the session
     protected void stashAllSessionAttributes(HttpSession adminSession)
