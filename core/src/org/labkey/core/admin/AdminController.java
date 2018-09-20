@@ -3765,6 +3765,8 @@ public class AdminController extends SpringActionController
             }
             else
             {
+                LOG.info("Starting database check"); // Debugging test timeout
+                LOG.info("Checking container column references"); // Debugging test timeout
                 contentBuilder.append("\n<br/><br/>Checking Container Column References...");
                 String strTemp = DbSchema.checkAllContainerCols(getUser(), false);
                 if (strTemp.length() > 0)
@@ -3777,6 +3779,7 @@ public class AdminController extends SpringActionController
                     contentBuilder.append("\" >here</a> to attempt recovery .");
                 }
 
+                LOG.info("Checking PropertyDescriptor and DomainDescriptor consistency"); // Debugging test timeout
                 contentBuilder.append("\n<br/><br/>Checking PropertyDescriptor and DomainDescriptor consistency...");
                 strTemp = OntologyManager.doProjectColumnCheck(false);
                 if (strTemp.length() > 0)
@@ -3789,6 +3792,7 @@ public class AdminController extends SpringActionController
                     contentBuilder.append("\" >here</a> to attempt recovery .");
                 }
 
+                LOG.info("Checking Schema consistency with tableXML"); // Debugging test timeout
                 contentBuilder.append("\n<br/><br/>Checking Schema consistency with tableXML...");
                 Set<DbSchema> schemas = DbSchema.getAllSchemasToTest();
 
@@ -3797,6 +3801,7 @@ public class AdminController extends SpringActionController
                     String sOut = TableXmlUtils.compareXmlToMetaData(schema, false, false, true).getResultsString();
                     if (null!=sOut)
                     {
+                        LOG.info("Inconsistency in Schema " + schema.getDisplayName()); // Debugging test timeout
                         contentBuilder.append("<br/>&nbsp;&nbsp;&nbsp;&nbsp;ERROR: Inconsistency in Schema ");
                         contentBuilder.append(schema.getDisplayName());
                         contentBuilder.append("<br/>");
@@ -3804,6 +3809,7 @@ public class AdminController extends SpringActionController
                     }
                 }
 
+                LOG.info("Checking consistency of provisioned storage"); // Debugging test timeout                
                 contentBuilder.append("\n<br/><br/>Checking Consistency of Provisioned Storage...\n");
                 StorageProvisioner.ProvisioningReport pr = StorageProvisioner.getProvisioningReport();
                 contentBuilder.append(String.format("%d domains use Storage Provisioner", pr.getProvisionedDomains().size()));
@@ -3819,6 +3825,7 @@ public class AdminController extends SpringActionController
                     contentBuilder.append("<div class=\"warning\">").append(error).append("</div>");
                 }
 
+                LOG.info("Database check complete"); // Debugging test timeout
                 contentBuilder.append("\n<br/><br/>Database Consistency checker complete");
             }
 
