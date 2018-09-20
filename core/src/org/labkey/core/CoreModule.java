@@ -102,11 +102,13 @@ import org.labkey.api.security.DummyAntiVirusService;
 import org.labkey.api.security.Encryption;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
+import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.NestedGroupsTest;
 import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPointcutService;
 import org.labkey.api.security.SecurityPointcutServiceImpl;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
@@ -726,18 +728,23 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         Role readerRole = RoleManager.getRole(ReaderRole.class);
         Role devRole = RoleManager.getRole(PlatformDeveloperRole.class);
 
-        ContainerManager.bootstrapContainer("/", siteAdminRole, noPermsRole, noPermsRole, devRole);
+        ContainerManager.bootstrapContainer("/", noPermsRole, noPermsRole, devRole);
+        Container rootContainer = ContainerManager.getRoot();
+
+        MutableSecurityPolicy policy = new MutableSecurityPolicy(rootContainer, rootContainer.getPolicy());
+        Group devs = SecurityManager.getGroup(Group.groupDevelopers);
+        policy.addRoleAssignment(devs, PlatformDeveloperRole.class);
+        SecurityPolicyManager.savePolicy(policy, false);
 
         // Users & guests can read from /home
-        ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, siteAdminRole, readerRole, readerRole, devRole);
+        ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, readerRole, readerRole, null);
 
         // Only users can read from /Shared
-        ContainerManager.bootstrapContainer(ContainerManager.SHARED_CONTAINER_PATH, siteAdminRole, readerRole, noPermsRole, devRole);
+        ContainerManager.bootstrapContainer(ContainerManager.SHARED_CONTAINER_PATH, readerRole, null, null);
 
         try
         {
             // Need to insert standard MV indicators for the root -- okay to call getRoot() since we just created it.
-            Container rootContainer = ContainerManager.getRoot();
             String rootContainerId = rootContainer.getId();
             TableInfo mvTable = CoreSchema.getInstance().getTableInfoMvIndicators();
 

@@ -51,7 +51,7 @@
     String numberFormatFn = numberFormat != null ? ExtUtil.toExtNumberFormatFn(numberFormat) : null;
 
     boolean canShare = ctx.hasPermission(ShareReportPermission.class);
-    boolean isDeveloper = user.isDeveloper();
+    boolean isDeveloper = user.isBrowserDev();
     boolean allowEditMode = !user.isGuest() && form.allowToggleMode();
     boolean canEdit = false;
     ActionURL editUrl = null;

@@ -53,8 +53,7 @@ Ext4.define('Security.window.UserInfoPopup', {
             if (this.user.UserId == Security.util.SecurityCache.groupUsers || this.user.UserId == Security.util.SecurityCache.groupGuests)
                 this.canEdit = false;
 
-            if (!LABKEY.user.isSystemAdmin && (this.user.UserId == Security.util.SecurityCache.groupAdministrators
-                    || this.user.UserId == Security.util.SecurityCache.groupDevelopers))
+            if (!LABKEY.user.isSystemAdmin && this.user.UserId == Security.util.SecurityCache.groupAdministrators)
                 this.canEdit = false;
 
             if (this.canEdit)
@@ -67,15 +66,12 @@ Ext4.define('Security.window.UserInfoPopup', {
                     style: 'float: right'
                 });
             }
-            if (this.user.UserId != Security.util.SecurityCache.groupDevelopers)
-            {
-                hdrHtml += LABKEY.Utils.textLink({
-                    text : 'permissions',
-                    href : LABKEY.ActionURL.buildURL('security', 'groupPermission', container, {id:this.user.UserId}),
-                    style: 'float: right',
-                    target : '_blank'
-                });
-            }
+            hdrHtml += LABKEY.Utils.textLink({
+                text : 'permissions',
+                href : LABKEY.ActionURL.buildURL('security', 'groupPermission', container, {id:this.user.UserId}),
+                style: 'float: right',
+                target : '_blank'
+            });
         }
         else
         {

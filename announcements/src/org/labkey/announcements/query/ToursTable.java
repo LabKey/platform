@@ -26,6 +26,7 @@ import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
@@ -154,7 +155,7 @@ public class ToursTable extends FilteredTable<AnnouncementSchema>
         if (perm.equals(ReadPermission.class))
             permission = getContainer().hasPermission(user, perm);
         else
-            permission = getContainer().hasPermission(user, PlatformDeveloperPermission.class);
+            permission = ContainerManager.getRoot().hasPermission(user, PlatformDeveloperPermission.class);
 
         return permission;
     }

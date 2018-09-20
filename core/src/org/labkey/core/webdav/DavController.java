@@ -65,8 +65,10 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.BrowserDeveloperPermission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.TrustedPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.test.TestWhen;
@@ -3156,7 +3158,8 @@ public class DavController extends SpringActionController
                 File file = resource.getFile();
                 if (range != null)
                 {
-                    if (resource.getContentType().startsWith("text/html") && !getContainer().hasPermission(getUser(), PlatformDeveloperPermission.class))
+                    boolean isBrowserDev = getUser().isTrustedBrowserDev();
+                    if (resource.getContentType().startsWith("text/html") && !isBrowserDev)
                         throw new DavException(WebdavStatus.SC_FORBIDDEN, "Partial writing of html files is not allowed");
                     if (null != AntiVirusService.get())
                         throw new DavException(WebdavStatus.SC_FORBIDDEN, "Partial writing not supported with virus scanner enabled");
@@ -3178,7 +3181,8 @@ public class DavController extends SpringActionController
                 }
                 else
                 {
-                    if (resource.getContentType().startsWith("text/html") && !getContainer().hasPermission(getUser(), PlatformDeveloperPermission.class))
+                    boolean hasDeveloperPermission = getUser().isTrustedBrowserDev();
+                    if (resource.getContentType().startsWith("text/html") && hasDeveloperPermission)
                     {
                         _ByteArrayOutputStream bos = new _ByteArrayOutputStream(4*1025);
                         FileUtil.copyData(getFileStream(resource.getName()).openInputStream(), bos);
@@ -3780,7 +3784,7 @@ public class DavController extends SpringActionController
     boolean isSafeCopy(WebdavResource src, WebdavResource dest)
     {
         // Don't allow creating text/html via rename (circumventing script checking)
-        if (src.isFile() && !getContainer().hasPermission(getUser(), PlatformDeveloperPermission.class))
+        if (src.isFile() && !getContainer().hasPermission(getUser(), BrowserDeveloperPermission.class))
         {
             String contentTypeSrc = StringUtils.defaultString(src.getContentType(),"");
             String contentTypeDest = StringUtils.defaultString(dest.getContentType(),"");

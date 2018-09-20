@@ -2296,18 +2296,10 @@ public class WikiController extends SpringActionController
                 String body = form.getBody();
                 ArrayList<String> tidyErrors = new ArrayList<>();
 
-                Set<Role> contextualRoles = new HashSet<>();
+                boolean isBrowserDev = user.isTrustedBrowserDev();
+                PageFlowUtil.validateHtml(body, tidyErrors, isBrowserDev);
 
-                if (container.hasPermission(user, PlatformDeveloperPermission.class))
-                    contextualRoles.add(RoleManager.getRole(PlatformDeveloperRole.class));
-
-                SecurityPolicy policy = SecurityPolicyManager.getPolicy(getContainer());
-                Set perms = new HashSet<Class<? extends Permission>>();
-                perms.add(AnalystPermission.class);
-                perms.add(TrustedPermission.class);
-                PageFlowUtil.validateHtml(body, tidyErrors, policy.hasPermissions(user, perms , contextualRoles));
-
-                if (!container.hasPermission(user, PlatformDeveloperPermission.class))
+                if (!isBrowserDev);
                 {
                     this.sanitizedHtml = PageFlowUtil.sanitizeHtml(body, tidyErrors);
                 }

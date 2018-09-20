@@ -199,4 +199,26 @@ public class CoreUpgradeCode implements UpgradeCode
             }
         }
     }
+
+
+    /**
+     * Invoked from 18.26-18.27 to explicitly assign PlatformDeveloperRole to the site.Developer group
+     */
+    @SuppressWarnings({"UnusedDeclaration"})
+    public void migrateDeveloperRole(final ModuleContext context)
+    {
+        try
+        {
+            Container root = ContainerManager.getRoot();
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(root, ContainerManager.getRoot().getPolicy());
+            Group devs = SecurityManager.getGroup(Group.groupDevelopers);
+            if (null != devs)
+                policy.addRoleAssignment(devs, PlatformDeveloperRole.class);
+            SecurityPolicyManager.savePolicy(policy, false);
+        }
+        catch (ContainerManager.RootContainerException x)
+        {
+            /* pass */
+        }
+    }
 }

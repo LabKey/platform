@@ -4758,7 +4758,7 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(CustomizeParticipantViewForm form, boolean reshow, BindException errors)
         {
             // We know that the user is at least a folder admin - they must also be either a developer
-            if (!(getContainer().hasPermission(getUser(), PlatformDeveloperPermission.class)))
+            if (!getUser().isPlatformDeveloper())
                 throw new UnauthorizedException();
             Study study = getStudyRedirectIfNull();
             CustomParticipantView view = StudyManager.getInstance().getCustomParticipantView(study);

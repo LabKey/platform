@@ -181,8 +181,6 @@ public class SecurityController extends SpringActionController
                     policy.addRoleAssignment(group, ReaderRole.class);
                 else if (s.equals(GroupSecurityType.PER_DATASET.getParamName()))
                     policy.addRoleAssignment(group, RestrictedReaderRole.class);
-                else
-                    policy.addRoleAssignment(group, NoPermissionsRole.class);
             });
             return policy;
         }

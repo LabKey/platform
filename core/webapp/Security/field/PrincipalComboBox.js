@@ -51,14 +51,13 @@ Ext4.define('Security.field.PrincipalComboBox', {
 
     constructor : function(config)
     {
-        var a = Ext4.isArray(config.excludedPrincipals) ? config.excludedPrincipals : [], i;
-        a.push(Security.util.SecurityCache.groupDevelopers);
+        var a = Ext4.isArray(config.excludedPrincipals) ? config.excludedPrincipals : [];
         a.push(Security.util.SecurityCache.groupAdministrators);
 
         delete config.excludedPrincipals;
         this.excludedPrincipals = {};
 
-        for (i=0 ; i<a.length ; i++) {
+        for (var i=0 ; i<a.length ; i++) {
             this.excludedPrincipals[a[i]] = true;
         }
 

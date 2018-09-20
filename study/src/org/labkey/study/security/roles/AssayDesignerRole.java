@@ -38,6 +38,6 @@ public class AssayDesignerRole extends AbstractRole
                 DesignListPermission.class
         );
 
-        addExcludedPrincipal(SecurityManager.getGroup(Group.groupGuests));
+        excludeGuests();
     }
 }

@@ -2430,6 +2430,7 @@ public class AdminController extends SpringActionController
     {
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
+            getPageConfig().setNoIndex();
             File tomcatHome = new File(System.getProperty("catalina.home"));
             File logFile = new File(tomcatHome, "logs/labkey.log");
             PageFlowUtil.streamLogFile(response, 0, logFile);
@@ -7152,7 +7153,7 @@ public class AdminController extends SpringActionController
         public void checkPermissions()
         {
             super.checkPermissions();
-            if (!getContainer().hasPermission(getUser(), PlatformDeveloperPermission.class))
+            if (!getUser().isPlatformDeveloper())
                 throw new UnauthorizedException();
         }
 
@@ -7198,7 +7199,7 @@ public class AdminController extends SpringActionController
         public void checkPermissions()
         {
             super.checkPermissions();
-            if (!getContainer().hasPermission(getUser(), PlatformDeveloperPermission.class))
+            if (!getUser().isPlatformDeveloper())
                 throw new UnauthorizedException();
         }
 
@@ -7256,7 +7257,7 @@ public class AdminController extends SpringActionController
         public void checkPermissions()
         {
             super.checkPermissions();
-            if (!getContainer().hasPermission(getUser(), PlatformDeveloperPermission.class))
+            if (!getUser().isPlatformDeveloper())
                 throw new UnauthorizedException();
         }
 
