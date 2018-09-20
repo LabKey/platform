@@ -1322,15 +1322,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         this.beforeRenderPlotComplete();
 
-        // default width based on the view panel width
-        if (!Ext4.isDefined(chartConfig.width) || chartConfig.width == null) {
-            chartConfig.width = LABKEY.vis.GenericChartHelper.getChartTypeBasedWidth(chartType, chartConfig.measures, this.getMeasureStore(), this.getViewPanel().getWidth());
-        }
-
-        // default height based on the view panel height
-        if (!Ext4.isDefined(chartConfig.height) || chartConfig.height == null) {
-            chartConfig.height =  this.getPerChartHeight(chartConfig);
-        }
+        chartConfig.width = this.getPerChartWidth(chartType, chartConfig);
+        chartConfig.height =  this.getPerChartHeight(chartConfig);
 
         newChartDiv = this.getNewChartDisplayDiv();
         this.getViewPanel().add(newChartDiv);
@@ -1347,15 +1340,31 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             }
         }, this);
 
-        this.afterRenderPlotComplete(newChartDiv, chartConfig);
+        this.afterRenderPlotComplete(newChartDiv, chartType, chartConfig);
+    },
+
+    getPerChartWidth : function(chartType, chartConfig) {
+        if (Ext4.isDefined(chartConfig.width) && chartConfig.width != null) {
+            return chartConfig.width;
+        }
+        else {
+            // default width based on the view panel width
+            return LABKEY.vis.GenericChartHelper.getChartTypeBasedWidth(chartType, chartConfig.measures, this.getMeasureStore(), this.getViewPanel().getWidth())
+        }
     },
 
     getPerChartHeight : function(chartConfig) {
-        var height = this.getViewPanel().getHeight() - 25;
-        if (chartConfig.geomOptions.chartLayout === 'per_measure') {
-            height = height / 1.25;
+        if (Ext4.isDefined(chartConfig.height) && chartConfig.height != null) {
+            return chartConfig.height;
         }
-        return height;
+        else {
+            // default height based on the view panel height
+            var height = this.getViewPanel().getHeight() - 25;
+            if (chartConfig.geomOptions.chartLayout === 'per_measure') {
+                height = height / 1.25;
+            }
+            return height;
+        }
     },
 
     getNewChartDisplayDiv : function()
@@ -1373,14 +1382,14 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             this.addWarningMsg(this.warningText, true);
     },
 
-    afterRenderPlotComplete : function(chartDiv, chartConfig)
+    afterRenderPlotComplete : function(chartDiv, chartType, chartConfig)
     {
         this.getTopButtonBar().enable();
         this.getChartTypeBtn().enable();
         this.getChartLayoutBtn().enable();
         this.getSaveBtn().enable();
         this.getSaveAsBtn().enable();
-        this.attachExportIcons(chartDiv, chartConfig);
+        this.attachExportIcons(chartDiv, chartType, chartConfig);
         this.getEl().unmask();
 
         if (this.editMode && this.supportedBrowser)
@@ -1837,17 +1846,17 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             this.warningText = this.warningText + '&nbsp;&nbsp;' + Ext4.util.Format.htmlEncode(warning);
     },
 
-    attachExportIcons : function(chartDiv, chartConfig)
+    attachExportIcons : function(chartDiv, chartType, chartConfig)
     {
         if (this.supportedBrowser)
         {
             var index = 0;
             Ext4.each(chartDiv.getEl().select('svg').elements, function(svgEl) {
-                chartDiv.add(this.createExportIcon(chartConfig, 'fa-file-pdf-o', 'Export to PDF', index, 0, function(){
+                chartDiv.add(this.createExportIcon(chartType, chartConfig, 'fa-file-pdf-o', 'Export to PDF', index, 0, function(){
                     this.exportChartToImage(svgEl, LABKEY.vis.SVGConverter.FORMAT_PDF);
                 }));
 
-                chartDiv.add(this.createExportIcon(chartConfig, 'fa-file-image-o', 'Export to PNG', index, 1, function(){
+                chartDiv.add(this.createExportIcon(chartType, chartConfig, 'fa-file-image-o', 'Export to PNG', index, 1, function(){
                     this.exportChartToImage(svgEl, LABKEY.vis.SVGConverter.FORMAT_PNG);
                 }));
 
@@ -1856,16 +1865,19 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
         if (this.isDeveloper)
         {
-            chartDiv.add(this.createExportIcon(chartConfig, 'fa-file-code-o', 'Export as Script', 0, this.supportedBrowser ? 2 : 0, function(){
+            chartDiv.add(this.createExportIcon(chartType, chartConfig, 'fa-file-code-o', 'Export as Script', 0, this.supportedBrowser ? 2 : 0, function(){
                 this.exportChartToScript();
             }));
         }
     },
 
-    createExportIcon : function(chartConfig, iconCls, tooltip, indexFromTop, indexFromLeft, callbackFn)
+    createExportIcon : function(chartType, chartConfig, iconCls, tooltip, chartIndex, iconIndexFromLeft, callbackFn)
     {
-        var topPx = indexFromTop * this.getPerChartHeight(chartConfig),
-            leftPx = (indexFromLeft*30) + 20;
+        var chartWidth = this.getPerChartWidth(chartType, chartConfig),
+            viewPortWidth = this.getViewPanel().getWidth(),
+            chartsPerRow = chartWidth > viewPortWidth ? 1 : Math.floor(viewPortWidth / chartWidth),
+            topPx = Math.floor(chartIndex / chartsPerRow) * this.getPerChartHeight(chartConfig),
+            leftPx = ((chartIndex % chartsPerRow) * chartWidth) + (iconIndexFromLeft * 30) + 20;
 
         return Ext4.create('Ext.Component', {
             cls: 'export-icon',

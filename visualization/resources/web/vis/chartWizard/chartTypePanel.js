@@ -1109,16 +1109,14 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
                                 label += '<div class="field-selection-subtext">Query: ' + Ext4.String.htmlEncode(values.queryLabel) + '</div>';
                             }
 
-                            // also allow Y Axis Side selection for the measures
-                            if (chartTypeName === 'time_chart' || chartTypeName === 'line_plot' || chartTypeName === 'scatter_plot')
-                            {
+                            // allow Y Axis Side selection for the measures
+                            if (chartTypeName === 'time_chart' || chartTypeName === 'line_plot' || chartTypeName === 'scatter_plot') {
                                 var leftSide = '<i class="fa fa-arrow-circle-left ' + (values.yAxis !== 'left' ? 'unselected' : '') + '"></i>',
                                     rightSide = '<i class="fa fa-arrow-circle-right ' + (values.yAxis !== 'right' ? 'unselected' : '') + '"></i>';
                                 label += '<div class="field-selection-subtext">Y Axis Side: ' + leftSide + ' ' + rightSide + '</div>';
                             }
-
-                            if (chartTypeName === 'bar_chart' && fieldName === 'y')
-                            {
+                            // allow aggregate method (SUM, MEAN, etc.) selection for bar chart y-measure
+                            else if (chartTypeName === 'bar_chart' && fieldName === 'y') {
                                 label += '<div class="field-selection-subtext always-show"><span class="aggregate-method"></span></div>';
                             }
 
