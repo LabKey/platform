@@ -106,6 +106,10 @@ import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
+import org.labkey.api.security.impersonation.ImpersonationContext;
+import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
+import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -116,6 +120,7 @@ import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.security.roles.SharedViewEditorRole;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
@@ -152,6 +157,7 @@ import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.security.SecurityController;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.folder.xml.FolderDocument;
+import org.labkey.security.xml.GroupEnumType;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
@@ -9009,98 +9015,139 @@ public class AdminController extends SpringActionController
 
             // @RequiresPermission(ReadPermission.class)
             assertForReadPermission(user,
-                controller.new GetModulesAction(),
-                controller.new ClearDeletedTabFoldersAction(),
-                controller.new SetAdminModeAction()
+                    controller.new GetModulesAction(),
+                    controller.new ClearDeletedTabFoldersAction(),
+                    controller.new SetAdminModeAction()
             );
 
             // @RequiresPermission(AdminPermission.class)
             assertForAdminPermission(user,
-                controller.new ResetLogoAction(),
-                controller.new ResetPropertiesAction(),
-                controller.new ResetFaviconAction(),
-                controller.new DeleteCustomStylesheetAction(),
-                controller.new SiteValidationAction(),
-                controller.new ResetQueryStatisticsAction(),
-                controller.new FolderAliasesAction(),
-                controller.new CustomizeEmailAction(),
-                controller.new DeleteCustomEmailAction(),
-                controller.new RenameFolderAction(),
-                controller.new ShowMoveFolderTreeAction(),
-                controller.new MoveFolderAction(),
-                controller.new ConfirmProjectMoveAction(),
-                controller.new CreateFolderAction(),
-                controller.new SetFolderPermissionsAction(),
-                controller.new SetInitialFolderSettingsAction(),
-                controller.new DeleteFolderAction(),
-                controller.new ReorderFoldersAction(),
-                controller.new ReorderFoldersApiAction(),
-                controller.new RevertFolderAction(),
-                controller.new CustomizeMenuAction(),
-                controller.new AddTabAction(),
-                controller.new ShowTabAction(),
-                controller.new MoveTabAction(),
-                controller.new RenameTabAction()
+                    controller.new ResetLogoAction(),
+                    controller.new ResetPropertiesAction(),
+                    controller.new ResetFaviconAction(),
+                    controller.new DeleteCustomStylesheetAction(),
+                    controller.new SiteValidationAction(),
+                    controller.new ResetQueryStatisticsAction(),
+                    controller.new FolderAliasesAction(),
+                    controller.new CustomizeEmailAction(),
+                    controller.new DeleteCustomEmailAction(),
+                    controller.new RenameFolderAction(),
+                    controller.new ShowMoveFolderTreeAction(),
+                    controller.new MoveFolderAction(),
+                    controller.new ConfirmProjectMoveAction(),
+                    controller.new CreateFolderAction(),
+                    controller.new SetFolderPermissionsAction(),
+                    controller.new SetInitialFolderSettingsAction(),
+                    controller.new DeleteFolderAction(),
+                    controller.new ReorderFoldersAction(),
+                    controller.new ReorderFoldersApiAction(),
+                    controller.new RevertFolderAction(),
+                    controller.new CustomizeMenuAction(),
+                    controller.new AddTabAction(),
+                    controller.new ShowTabAction(),
+                    controller.new MoveTabAction(),
+                    controller.new RenameTabAction()
             );
 
             //TODO @RequiresPermission(AdminReadPermission.class)
             //controller.new TestMothershipReportAction()
 
             // @RequiresPermission(AdminOperationsPermission.class)
-            assertForAdminOperationsPermission(ContainerManager.getRoot(),user,
-                controller.new EmailTestAction(),
-                controller.new ShowNetworkDriveTestAction(),
-                controller.new DbCheckerAction(),
-                controller.new DoCheckAction(),
-                controller.new GetSchemaXmlDocAction(),
-                controller.new RecreateViewsAction(),
-                controller.new ValidateDomainsAction(),
-                controller.new DeleteModuleAction(),
-                controller.new ExperimentalFeatureAction()
+            assertForAdminOperationsPermission(ContainerManager.getRoot(), user,
+                    controller.new EmailTestAction(),
+                    controller.new ShowNetworkDriveTestAction(),
+                    controller.new DbCheckerAction(),
+                    controller.new DoCheckAction(),
+                    controller.new GetSchemaXmlDocAction(),
+                    controller.new RecreateViewsAction(),
+                    controller.new ValidateDomainsAction(),
+                    controller.new DeleteModuleAction(),
+                    controller.new ExperimentalFeatureAction()
             );
 
             // @AdminConsoleAction
             assertForAdminPermission(ContainerManager.getRoot(), user,
-                controller.new ShowAdminAction(),
-                controller.new ShowThreadsAction(),
-                controller.new DumpHeapAction(),
-                controller.new ResetErrorMarkAction(),
-                controller.new ShowErrorsSinceMarkAction(),
-                controller.new ShowAllErrorsAction(),
-                controller.new ShowPrimaryLogAction(),
-                controller.new ActionsAction(),
-                controller.new ExportActionsAction(),
-                controller.new QueriesAction(),
-                controller.new QueryStackTracesAction(),
-                controller.new ExecutionPlanAction(),
-                controller.new ExportQueriesAction(),
-                controller.new MemTrackerAction(),
-                controller.new MemoryChartAction(),
-                controller.new FolderTypesAction(),
-                controller.new ShortURLAdminAction(),
-                controller.new CustomizeSiteAction(),
-                controller.new CachesAction(),
-                controller.new EnvironmentVariablesAction(),
-                controller.new SystemPropertiesAction(),
-                controller.new ConfigureSystemMaintenanceAction(),
-                controller.new ModulesAction()
+                    controller.new ShowAdminAction(),
+                    controller.new ShowThreadsAction(),
+                    controller.new DumpHeapAction(),
+                    controller.new ResetErrorMarkAction(),
+                    controller.new ShowErrorsSinceMarkAction(),
+                    controller.new ShowAllErrorsAction(),
+                    controller.new ShowPrimaryLogAction(),
+                    controller.new ActionsAction(),
+                    controller.new ExportActionsAction(),
+                    controller.new QueriesAction(),
+                    controller.new QueryStackTracesAction(),
+                    controller.new ExecutionPlanAction(),
+                    controller.new ExportQueriesAction(),
+                    controller.new MemTrackerAction(),
+                    controller.new MemoryChartAction(),
+                    controller.new FolderTypesAction(),
+                    controller.new ShortURLAdminAction(),
+                    controller.new CustomizeSiteAction(),
+                    controller.new CachesAction(),
+                    controller.new EnvironmentVariablesAction(),
+                    controller.new SystemPropertiesAction(),
+                    controller.new ConfigureSystemMaintenanceAction(),
+                    controller.new ModulesAction()
             );
 
             // @AdminConsoleAction
             // @RequiresPermission(AdminOperationsPermission.class)
             assertForAdminOperationsPermission(ContainerManager.getRoot(), user,
-                controller.new ExperimentalFeaturesAction()
+                    controller.new ExperimentalFeaturesAction()
             );
 
             // @RequiresSiteAdmin
             assertForRequiresSiteAdmin(user,
-                controller.new ShowModuleErrors(),
-                controller.new GetPendingRequestCountAction(),
-                controller.new SystemMaintenanceAction(),
-                controller.new ModuleStatusAction(),
-                controller.new NewInstallSiteSettingsAction(),
-                controller.new InstallCompleteAction()
+                    controller.new ShowModuleErrors(),
+                    controller.new GetPendingRequestCountAction(),
+                    controller.new SystemMaintenanceAction(),
+                    controller.new ModuleStatusAction(),
+                    controller.new NewInstallSiteSettingsAction(),
+                    controller.new InstallCompleteAction()
             );
+        }
+    }
+
+    public static class SerializationTest extends PipelineJob.TestSerialization
+    {
+        public static class TestJob
+        {
+            public ImpersonationContext _impersonationContext;
+            public ImpersonationContext _impersonationContext1;
+            public ImpersonationContext _impersonationContext2;
+        }
+
+        @Test
+        public void testSerialization()
+        {
+            TestJob job = new TestJob();
+            TestContext ctx = TestContext.get();
+            ViewContext viewContext = new ViewContext();
+            viewContext.setContainer(ContainerManager.getSharedContainer());
+            viewContext.setUser(ctx.getUser());
+            RoleImpersonationContextFactory factory = new RoleImpersonationContextFactory(
+                    viewContext.getContainer(), viewContext.getUser(),
+                    Collections.singleton(RoleManager.getRole(SharedViewEditorRole.class)), Collections.emptySet(), null);
+            job._impersonationContext = factory.getImpersonationContext();
+
+            try
+            {
+                UserImpersonationContextFactory factory1 = new UserImpersonationContextFactory(viewContext.getContainer(), viewContext.getUser(),
+                        UserManager.getGuestUser(), null);
+                job._impersonationContext1 = factory1.getImpersonationContext();
+            }
+            catch (Exception e)
+            {
+                LOG.error("Invalid user email for impersonating.");
+            }
+
+            GroupImpersonationContextFactory factory2 = new GroupImpersonationContextFactory(viewContext.getContainer(), viewContext.getUser(),
+                    GroupManager.getGroup(ContainerManager.getRoot(), "Users", GroupEnumType.SITE), null);
+            job._impersonationContext2 = factory2.getImpersonationContext();
+            testSerialize(job, LOG);
+
         }
     }
 }

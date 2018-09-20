@@ -15,18 +15,25 @@
  */
 package org.labkey.pipeline.api;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.XppDriver;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.junit.Test;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.pipeline.NoSuchJobException;
+import org.labkey.api.pipeline.ObjectKeySerialization;
 import org.labkey.api.pipeline.PairSerializer;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineStatusFile;
+import org.labkey.api.pipeline.StringKeySerialization;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.impersonation.AbstractImpersonationContextFactory;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
@@ -37,9 +44,13 @@ import org.labkey.pipeline.xstream.URIXStreamConverter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
+import java.net.URI;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -135,7 +146,7 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
         try
         {
             String serialized = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(job);
-            if (AppProps.getInstance().isDevMode())
+            if (true) // AppProps.getInstance().isDevMode())
             {
                 try
                 {
@@ -183,6 +194,7 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
 
         public static class Inner
         {
+            private Inner _inner;
             private String _address;
             private int _zip;
 
@@ -229,21 +241,24 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
 
         public static class TestJob
         {
+            public FieldKey _fieldKey;
+            public SchemaKey _schemaKey;
+            private Inner _inner;
             private String _name;
             private Timestamp _timestamp;
             private Time _time;
             public GUID _guid;
-/*            private int _migrateFilesOption;
+            public Object _uri;
+            private int _migrateFilesOption;
             @JsonSerialize(keyUsing = StringKeySerialization.Serializer.class)
-            @JsonDeserialize(keyUsing = StringKeySerialization.Deserializer.class)
+            @JsonDeserialize(keyUsing = StringKeySerialization.URIDeserializer.class)
             private Map<URI, Object> _map;
 
             @JsonSerialize(keyUsing = ObjectKeySerialization.Serializer.class)
             @JsonDeserialize(keyUsing = ObjectKeySerialization.Deserializer.class)
             private Map<PropertyDescriptor, Object> _propMap;
-            private Inner _inner;
             private List<Inner> _list;
-            private Object _obj;            */
+            private Object _obj;
             @JsonSerialize(using = PairSerializer.class)
             private Pair<Inner, Inner> _innerPair;
 
@@ -253,9 +268,12 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
             }
             public TestJob(String name, int option)
             {
+                _fieldKey = FieldKey.fromParts("list", "vehicles", "refy");
+                _schemaKey = SchemaKey.fromParts("mySchema", "subSchema");
                 _name = name;
- /*               _migrateFilesOption = option;
+                _migrateFilesOption = option;
                 _map = new HashMap<>();
+                _uri = URI.create("https://labkey.com");
                 _map.put(URI.create("http://google.com"), "fooey");
                 _map.put(URI.create("file:///Users/daveb"), 324);
                 _map.put(URI.create("http://ftp.census.gov"), new Inner("329 Wiltshire Blvd", 90210));
@@ -267,7 +285,7 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
 
                 _propMap = new HashMap<>();
                 _propMap.put(new PropertyDescriptor(null, PropertyType.BIGINT, "foobar", ContainerManager.getRoot()), "foo");
-                _propMap.put(new PropertyDescriptor(null, PropertyType.STRING, "stringy", ContainerManager.getRoot()), "str"); */
+                _propMap.put(new PropertyDescriptor(null, PropertyType.STRING, "stringy", ContainerManager.getRoot()), "str"); 
 //                _innerPair = new Pair<>(new Inner("31 Thunder Ave", 64102), new Inner("34 Boston St", 71101));
                 _timestamp = new Timestamp(1400938833L);
                 _time = new Time(1400938843L);

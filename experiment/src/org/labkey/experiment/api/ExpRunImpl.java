@@ -94,6 +94,10 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         }
         return ret;
     }
+
+    // For serialization
+    protected ExpRunImpl() {}
+
     public ExpRunImpl(ExperimentRun run)
     {
         super(run);

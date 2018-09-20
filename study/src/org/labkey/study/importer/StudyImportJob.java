@@ -15,17 +15,14 @@
  */
 package org.labkey.study.importer;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.apache.log4j.Logger;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.admin.PipelineJobLoggerGetter;
 import org.labkey.api.data.Container;
-import org.labkey.api.pipeline.NullSafeBindExceptionSerializer;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
@@ -53,7 +50,6 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport, Stud
 {
     private static final transient Logger LOG = Logger.getLogger(StudyImportJob.class);
 
-    @JsonBackReference
     private final StudyImportContext _ctx;
     private final VirtualFile _root;
     private final BindException _errors;          // TODO: do we need to save error messages
@@ -71,6 +67,7 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport, Stud
         _errors = errors;
         _reload = reload;
         _originalFilename = originalFilename;
+        _ctx.setLoggerGetter(new PipelineJobLoggerGetter(this));
     }
 
     // Handles all four study import tasks: initial task, dataset import, specimen import, and final task

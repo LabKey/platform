@@ -33,6 +33,9 @@ public class ExpDataRunInputImpl extends ExpRunInputImpl<DataInput> implements E
         return ret;
     }
 
+    // For serialization
+    protected ExpDataRunInputImpl() {}
+
     public ExpDataRunInputImpl(DataInput input)
     {
         super(input);

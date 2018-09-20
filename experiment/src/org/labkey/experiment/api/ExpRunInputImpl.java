@@ -34,6 +34,9 @@ public abstract class ExpRunInputImpl<InputType extends AbstractRunInput> extend
 {
     protected InputType _input;
 
+    // For serialization
+    protected ExpRunInputImpl() {}
+
     public ExpRunInputImpl(InputType input)
     {
         _input = input;

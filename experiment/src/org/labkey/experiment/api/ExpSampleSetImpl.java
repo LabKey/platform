@@ -62,6 +62,9 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     private Domain _domain;
     private NameGenerator _nameGen;
 
+    // For serialization
+    protected ExpSampleSetImpl() {}
+
     public ExpSampleSetImpl(MaterialSource ms)
     {
         super(ms);

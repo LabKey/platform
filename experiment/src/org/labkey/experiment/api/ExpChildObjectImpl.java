@@ -32,6 +32,10 @@ public class ExpChildObjectImpl extends ExpObjectImpl
     ExpObject _parent;
     PropertyDescriptor _pd;
     String _objectURI;
+
+    // For serialization
+    protected ExpChildObjectImpl() {}
+
     public ExpChildObjectImpl(ExpObject owner, ExpObject parent, PropertyDescriptor pd, String objectURI)
     {
         _owner = owner;

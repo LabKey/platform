@@ -33,6 +33,9 @@ public class ExpMaterialRunInputImpl extends ExpRunInputImpl<MaterialInput> impl
         return ret;
     }
 
+    // For serialization
+    protected ExpMaterialRunInputImpl() {}
+
     public ExpMaterialRunInputImpl(MaterialInput input)
     {
         super(input);

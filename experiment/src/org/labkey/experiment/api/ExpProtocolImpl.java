@@ -46,6 +46,9 @@ import java.util.TreeSet;
 
 public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> implements ExpProtocol
 {
+    // For serialization
+    protected ExpProtocolImpl() {}
+
     public ExpProtocolImpl(Protocol protocol)
     {
         super(protocol);

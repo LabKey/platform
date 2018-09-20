@@ -40,6 +40,9 @@ import java.util.Set;
 
 public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> implements ExpExperiment
 {
+    // For serialization
+    protected ExpExperimentImpl() {}
+
     public ExpExperimentImpl(Experiment experiment)
     {
         super(experiment);

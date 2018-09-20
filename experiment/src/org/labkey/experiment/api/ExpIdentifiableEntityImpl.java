@@ -26,6 +26,9 @@ import java.util.Date;
  */
 public abstract class ExpIdentifiableEntityImpl<Type extends IdentifiableEntity> extends ExpIdentifiableBaseImpl<Type>
 {
+    // For serialization
+    protected ExpIdentifiableEntityImpl() {}
+
     public ExpIdentifiableEntityImpl(Type object)
     {
         super(object);

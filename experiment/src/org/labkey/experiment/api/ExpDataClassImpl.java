@@ -56,6 +56,9 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
 
     private Domain _domain;
 
+    // For serialization
+    protected ExpDataClassImpl() {}
+
     public ExpDataClassImpl(DataClass dataClass)
     {
         super(dataClass);

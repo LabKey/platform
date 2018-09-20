@@ -1128,7 +1128,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 ModuleHtmlView.TestCase.class,
                 Portal.TestCase.class,
                 MultiValuedMapCollectors.TestCase.class,
-                PostgreSql92Dialect.TestCase.class
+                PostgreSql92Dialect.TestCase.class,
+                AdminController.SerializationTest.class
         ));
 
         testClasses.addAll(SqlDialectManager.getAllJUnitTests());
