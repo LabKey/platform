@@ -350,11 +350,6 @@ public class ClientDependency
             boolean hasCssToCompile = false;
             if (libDoc != null && libDoc.getLibraries() != null)
             {
-                LibraryType l = libDoc.getLibraries().getLibrary();
-
-                if(l.isSetCompileInProductionMode())
-                    _compileInProductionMode = l.getCompileInProductionMode();
-
                 //dependencies first
                 DependenciesType dependencies = libDoc.getLibraries().getDependencies();
                 if (dependencies != null)
@@ -370,7 +365,7 @@ public class ClientDependency
                 }
 
                 //module contexts
-                if (libDoc.getLibraries() != null && libDoc.getLibraries().isSetRequiredModuleContext())
+                if (libDoc.getLibraries().isSetRequiredModuleContext())
                 {
                     for (RequiredModuleType mt : libDoc.getLibraries().getRequiredModuleContext().getModuleArray())
                     {
@@ -382,23 +377,32 @@ public class ClientDependency
                     }
                 }
 
-                for (DependencyType s : l.getScriptArray())
+                LibraryType library = libDoc.getLibraries().getLibrary();
+
+                // <library> is an optional parameter
+                if (library != null)
                 {
-                    ModeTypeEnum.Enum mode = s.isSetMode() ? s.getMode() :
-                        _compileInProductionMode ? ModeTypeEnum.DEV : ModeTypeEnum.BOTH;
-                    ClientDependency cr = fromPath(s.getPath(), mode);
+                    if (library.isSetCompileInProductionMode())
+                        _compileInProductionMode = library.getCompileInProductionMode();
 
-                    if (!TYPE.lib.equals(cr.getPrimaryType()))
-                        _children.add(cr);
-                    else
-                        _log.warn("Libraries cannot include other libraries: " + _filePath);
-
-                    if (_compileInProductionMode && mode != ModeTypeEnum.PRODUCTION)
+                    for (DependencyType s : library.getScriptArray())
                     {
-                        if(TYPE.js.equals(cr.getPrimaryType()))
-                            hasJsToCompile = true;
-                        if(TYPE.css.equals(cr.getPrimaryType()))
-                            hasCssToCompile = true;
+                        ModeTypeEnum.Enum mode = s.isSetMode() ? s.getMode() :
+                                _compileInProductionMode ? ModeTypeEnum.DEV : ModeTypeEnum.BOTH;
+                        ClientDependency cr = fromPath(s.getPath(), mode);
+
+                        if (!TYPE.lib.equals(cr.getPrimaryType()))
+                            _children.add(cr);
+                        else
+                            _log.warn("Libraries cannot include other libraries: " + _filePath);
+
+                        if (_compileInProductionMode && mode != ModeTypeEnum.PRODUCTION)
+                        {
+                            if (TYPE.js.equals(cr.getPrimaryType()))
+                                hasJsToCompile = true;
+                            if (TYPE.css.equals(cr.getPrimaryType()))
+                                hasCssToCompile = true;
+                        }
                     }
                 }
 
