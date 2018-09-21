@@ -78,7 +78,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -586,7 +585,7 @@ public class SecurityApiActions
                     SecurityPolicy policy = SecurityPolicyManager.getPolicy(resource);
                     permissions = policy.getPermissions(user);
                 }
-                
+
                 for (Class<? extends Permission> permission : permissions)
                 {
                     permNames.add(RoleManager.getPermission(permission).getUniqueName());
@@ -1001,7 +1000,10 @@ public class SecurityApiActions
             updateRoleAssignment(policy, principal, role);
 
             SavePolicyForm policyForm = new SavePolicyForm();
-            policyForm.bindProperties(policy.toMap());
+            Map<String, Object> policyMap = policy.toMap();
+            if (form.getConfirm() != null)
+                policyMap.put("confirm", form.getConfirm());
+            policyForm.bindProperties(policyMap);
             SavePolicyAction savePolicyAction = new SavePolicyAction();
             savePolicyAction.setViewContext(getViewContext());
             return savePolicyAction.execute(policyForm, errors);
@@ -1081,6 +1083,7 @@ public class SecurityApiActions
         private Integer principalId;
         private String email;
         private String roleClassName;
+        private Boolean confirm;
 
         public Integer getPrincipalId()
         {
@@ -1110,6 +1113,16 @@ public class SecurityApiActions
         public void setRoleClassName(String roleClassName)
         {
             this.roleClassName = roleClassName;
+        }
+
+        public Boolean getConfirm()
+        {
+            return confirm;
+        }
+
+        public void setConfirm(Boolean confirm)
+        {
+            this.confirm = confirm;
         }
     }
 
@@ -1805,7 +1818,7 @@ public class SecurityApiActions
         {
             return super.handleRequest();
         }
-        
+
 
         public ApiResponse execute(RenameForm form, BindException errors)
         {
@@ -1834,7 +1847,7 @@ public class SecurityApiActions
 
             // get the udpated group information with the new name
             group = getGroup(form);
-            
+
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("success", true);
             resp.put("renamed", group.getUserId());
@@ -1842,7 +1855,7 @@ public class SecurityApiActions
             resp.put("newName", group.getName());
             return resp;
         }
-        
+
 
         public void writeToAuditLog(Group group, String oldName)
         {
