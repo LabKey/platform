@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.junit.Test;
 import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiAction;
@@ -131,6 +132,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.SortHelpers;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.GWTView;
@@ -1547,7 +1549,7 @@ public class ReportsController extends SpringActionController
             if (null == form.getReportId())
             {
                 report = form.getReport(getViewContext());
-                job = new RReportJob(ReportsPipelineProvider.NAME, info, form, root);
+                job = new RReportJob(ReportsPipelineProvider.NAME, info, report, root);
             }
             else
             {
@@ -4024,6 +4026,30 @@ public class ReportsController extends SpringActionController
         public ViewContext getViewContext()
         {
             return _context;
+        }
+    }
+
+    public static class SerializationTest extends PipelineJob.TestSerialization
+    {
+
+        @Test
+        public void testSerialization()
+        {
+            TestContext ctx = TestContext.get();
+            ViewContext viewContext = new ViewContext();
+            Container c = ContainerManager.getSharedContainer();
+            viewContext.setContainer(c);
+            viewContext.setUser(ctx.getUser());
+            ViewBackgroundInfo info = new ViewBackgroundInfo(c, viewContext.getUser(), viewContext.getActionURL());
+            PipeRoot root = PipelineService.get().findPipelineRoot(c);
+
+            RReport report = new RReport();
+            report.getDescriptor().setProperty(ScriptReportDescriptor.Prop.knitrFormat, "r");
+
+            RReportJob job = new RReportJob(ReportsPipelineProvider.NAME, info, report, root);
+
+            testSerialize(job, _log);
+
         }
     }
 }

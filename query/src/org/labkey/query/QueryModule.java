@@ -350,7 +350,8 @@ public class QueryModule extends DefaultModule
                 FilterClauseBuilder.TestCase.class,
                 MemberSet.TestCase.class,
                 MetadataElementBase.TestCase.class,
-                AttachmentReport.TestCase.class
+                AttachmentReport.TestCase.class,
+                ReportsController.SerializationTest.class
         ));
     }
 

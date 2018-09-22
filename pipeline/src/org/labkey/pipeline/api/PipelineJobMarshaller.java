@@ -43,8 +43,10 @@ import org.labkey.pipeline.xstream.URIXStreamConverter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Path;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -241,6 +243,9 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
 
         public static class TestJob
         {
+            public Path _path;
+            public Path _nonAbsolutePath;
+            public Path _s3Path;
             public FieldKey _fieldKey;
             public SchemaKey _schemaKey;
             private Inner _inner;
@@ -268,6 +273,8 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
             }
             public TestJob(String name, int option)
             {
+                _path = new File("/Users/johnbrown/glory").toPath();
+                _nonAbsolutePath = new File("glory/hallelujah").toPath();
                 _fieldKey = FieldKey.fromParts("list", "vehicles", "refy");
                 _schemaKey = SchemaKey.fromParts("mySchema", "subSchema");
                 _name = name;
