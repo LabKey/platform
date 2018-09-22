@@ -1883,6 +1883,8 @@ abstract public class PipelineJob extends Job implements Serializable
         module.addSerializer(QueryKey.class, new QueryKeySerialization.Serializer());
         module.addDeserializer(SchemaKey.class, new QueryKeySerialization.SchemaKeyDeserializer());
         module.addDeserializer(FieldKey.class, new QueryKeySerialization.FieldKeyDeserializer());
+        module.addSerializer(Path.class, new PathSerialization.Serializer());
+        module.addDeserializer(Path.class, new PathSerialization.Deserializer());
 
         mapper.registerModule(module);
         return mapper;

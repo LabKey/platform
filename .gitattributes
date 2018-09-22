@@ -950,6 +950,7 @@ api/src/org/labkey/api/pipeline/NullSafeBindExceptionSerializer.java -text
 api/src/org/labkey/api/pipeline/ObjectKeySerialization.java -text
 api/src/org/labkey/api/pipeline/PairSerializer.java -text
 api/src/org/labkey/api/pipeline/ParamParser.java -text
+api/src/org/labkey/api/pipeline/PathSerialization.java -text
 api/src/org/labkey/api/pipeline/PipeRoot.java -text
 api/src/org/labkey/api/pipeline/PipelineAction.java -text
 api/src/org/labkey/api/pipeline/PipelineActionConfig.java -text

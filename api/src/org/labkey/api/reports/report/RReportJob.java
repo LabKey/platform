@@ -60,7 +60,10 @@ public class RReportJob extends PipelineJob implements Serializable
     public static final String LOG_FILE_PREFIX = "report";
 
     private ReportIdentifier _reportId;
-    private RReportBean _form;
+    private Report _report;
+
+    // For serialization
+    protected RReportJob() {}
 
     public RReportJob(String provider, ViewBackgroundInfo info, ReportIdentifier reportId, PipeRoot root)
     {
@@ -69,10 +72,10 @@ public class RReportJob extends PipelineJob implements Serializable
         init(this.getContainerId());
     }
 
-    public RReportJob(String provider, ViewBackgroundInfo info, RReportBean form, PipeRoot root)
+    public RReportJob(String provider, ViewBackgroundInfo info, Report report, PipeRoot root)
     {
         super(provider, info, root);
-        _form = form;
+        _report = report;
         init(this.getContainerId());
     }
 
@@ -85,6 +88,12 @@ public class RReportJob extends PipelineJob implements Serializable
             File logFile = new File(report.getReportDir(executingContainerId), LOG_FILE_NAME);
             setLogFile(logFile);
         }
+    }
+
+    @Override
+    public boolean hasJacksonSerialization()
+    {
+        return true;
     }
 
     @Override
@@ -112,7 +121,8 @@ public class RReportJob extends PipelineJob implements Serializable
 
     public String getDescription()
     {
-        String description = getReport().getDescriptor().getProperty(ReportDescriptor.Prop.reportName);
+        RReport report = getReport();
+        String description = null != report ? report.getDescriptor().getProperty(ReportDescriptor.Prop.reportName) : "";
 
         if (StringUtils.isEmpty(description))
             description = "Unknown R Report";
@@ -122,22 +132,11 @@ public class RReportJob extends PipelineJob implements Serializable
 
     protected RReport getReport()
     {
-        try
-        {
-            Report report = null;
-            if (_reportId != null)
-                report = _reportId.getReport(getInfo());
-            else if (_form != null)
-                report = _form.getReport(getInfo());
-            if (report instanceof RReport)
-                return (RReport)report;
+        Report report = (_reportId != null) ? _reportId.getReport(getInfo()) : _report;
+        if (report instanceof RReport)
+            return (RReport)report;
 
-            throw new RuntimeException("The report is not a valid instance of an RReport");
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException("Exception retrieving report", e);
-        }
+        throw new RuntimeException("The report is not a valid instance of an RReport");
     }
 
     public void run()
@@ -145,7 +144,7 @@ public class RReportJob extends PipelineJob implements Serializable
         _jobIdentifier.set(getJobGUID());
         setStatus(PROCESSING_STATUS, "Job started at: " + DateUtil.nowISO());
         RReport report = getReport();
-        info("Running R report job '" + report.getDescriptor().getReportName() + "'");
+        info("Running R report job '" + (null != report ? report.getDescriptor().getReportName() : "<unknown>") + "'");
 
         if (HttpView.hasCurrentView())
         {
