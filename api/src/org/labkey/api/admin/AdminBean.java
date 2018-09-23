@@ -47,6 +47,7 @@ public class AdminBean
     public final String osName = System.getProperty("os.name");
     public final String mode = AppProps.getInstance().isDevMode() ? "Development" : "Production";
     public final String serverGuid = AppProps.getInstance().getServerGUID();
+    public final String serverSessionGuid = AppProps.getInstance().getServerSessionGUID();
     public final String servletContainer = ModuleLoader.getServletContext().getServerInfo();
     public final DbScope scope = CoreSchema.getInstance().getSchema().getScope();
     public final List<Pair<String, Long>> active = UserManager.getRecentUsers(System.currentTimeMillis() - DateUtils.MILLIS_PER_HOUR);
