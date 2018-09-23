@@ -1881,7 +1881,8 @@ public class QueryServiceImpl implements QueryService
      * Finds metadata overrides for the given schema and table and returns them in application order.
      * For now, a maximum of two metadata xml overrides will be returned:
      *
-     * 1) The first metadata "<code>queries/&lt;schemaName&gt;/&lt;tableName&gt;.qview.xml</code>" file found from the set of active (or all) modules.
+     * 1) The first metadata "<code>queries/&lt;schemaName&gt;/&lt;tableName&gt;.qview.xml</code>" file found from the
+     * set of active (or all) modules, based on reverse dependency order.
      * 2) The first metadata xml found in the database searching up the container hierarchy plus shared.
      */
     // BUGBUG: Should we look in the session queries for metadata overrides?
@@ -1979,7 +1980,7 @@ public class QueryServiceImpl implements QueryService
         }
 
         // Look for file-based definitions in modules
-        Collection<Module> modules = allModules ? ModuleLoader.getInstance().getModules() : schema.getContainer().getActiveModules(schema.getUser());
+        Collection<Module> modules = allModules ? ModuleLoader.getInstance().orderModules(ModuleLoader.getInstance().getModules()) : schema.getContainer().getActiveModules(schema.getUser());
 
         for (Module module : modules)
         {
