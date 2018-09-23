@@ -315,7 +315,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
         boolean hasWork = false;
         try
         {
-            LOG.debug("Running" + this.getClass().getSimpleName() + " " + this.toString());
+            LOG.debug("Running " + this.getClass().getSimpleName() + " " + this.toString());
 
             Container c = context.getContainer();
             if (null == c)
