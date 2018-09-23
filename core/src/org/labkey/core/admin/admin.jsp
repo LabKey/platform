@@ -118,6 +118,7 @@
                 <tr class="<%=getShadeRowClass(row++)%>"><td>OS</td><td><%=h(bean.osName)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Working Dir</td><td><%=h(bean.workingDir)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Server GUID</td><td><%=h(bean.serverGuid)%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Server Session GUID</td><td><%=h(bean.serverSessionGuid)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Server Time</td><td><%=formatDateTime(new Date())%></td></tr>
             </table>
         </labkey:panel>
