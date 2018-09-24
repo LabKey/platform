@@ -66,25 +66,7 @@ import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.XarSource;
-import org.labkey.api.exp.api.DataType;
-import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.exp.api.ExpDataClass;
-import org.labkey.api.exp.api.ExpExperiment;
-import org.labkey.api.exp.api.ExpLineage;
-import org.labkey.api.exp.api.ExpLineageOptions;
-import org.labkey.api.exp.api.ExpMaterial;
-import org.labkey.api.exp.api.ExpMaterialRunInput;
-import org.labkey.api.exp.api.ExpObject;
-import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpProtocolApplication;
-import org.labkey.api.exp.api.ExpRunItem;
-import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExpRunAttachmentParent;
-import org.labkey.api.exp.api.ExpSampleSet;
-import org.labkey.api.exp.api.ExperimentListener;
-import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.ProtocolImplementation;
-import org.labkey.api.exp.api.SimpleRunRecord;
+import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
@@ -191,6 +173,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -240,6 +223,7 @@ public class ExperimentServiceImpl implements ExperimentService
     private Set<ExperimentDataHandler> _dataHandlers = new HashSet<>();
     protected Map<String, DataType> _dataTypes = new HashMap<>();
     protected Map<String, ProtocolImplementation> _protocolImplementations = new HashMap<>();
+    protected Map<String, ExpProtocolInputCriteria.Factory> _protocolInputCriteriaFactories = new HashMap<>();
 
     private static final List<ExperimentListener> _listeners = new CopyOnWriteArrayList<>();
 
@@ -1003,6 +987,99 @@ public class ExperimentServiceImpl implements ExperimentService
         return new ExpProtocolImpl(protocol);
     }
 
+    @Override
+    public ExpDataProtocolInputImpl createDataProtocolInput(
+            @NotNull String name, @NotNull ExpProtocol protocol, boolean input,
+            @Nullable ExpDataClass dataClass,
+            @Nullable ExpProtocolInputCriteria criteria,
+            int minOccurs, @Nullable Integer maxOccurs)
+    {
+        Objects.requireNonNull(protocol, "Protocol required");
+        Container c = Objects.requireNonNull(protocol.getContainer(), "protocol Container required");
+
+        ExpDataProtocolInputImpl impl = createDataProtocolInput(c, name, protocol.getRowId(), input, dataClass, criteria, minOccurs, maxOccurs);
+        impl.setProtocol(protocol);
+        return impl;
+    }
+
+    // Used when constructing a Protocol from XarReader where the protocol id is not set known
+    public ExpDataProtocolInputImpl createDataProtocolInput(
+            @NotNull Container c,
+            @NotNull String name, int protocolId, boolean input,
+            @Nullable ExpDataClass dataClass,
+            @Nullable ExpProtocolInputCriteria criteria,
+            int minOccurs, @Nullable Integer maxOccurs)
+    {
+        DataProtocolInput obj = new DataProtocolInput();
+        populateProtocolInput(obj, c, name, protocolId, input, criteria, minOccurs, maxOccurs);
+        if (dataClass != null)
+            obj.setDataClassId(dataClass.getRowId());
+
+        return new ExpDataProtocolInputImpl(obj);
+    }
+
+    @Override
+    public ExpMaterialProtocolInputImpl createMaterialProtocolInput(
+            @NotNull String name, @NotNull ExpProtocol protocol, boolean input,
+            @Nullable ExpSampleSet sampleSet,
+            @Nullable ExpProtocolInputCriteria criteria,
+            int minOccurs, @Nullable Integer maxOccurs)
+    {
+        Objects.requireNonNull(protocol, "Protocol required");
+        Container c = Objects.requireNonNull(protocol.getContainer(), "protocol Container required");
+
+        ExpMaterialProtocolInputImpl impl = createMaterialProtocolInput(c, name, protocol.getRowId(), input, sampleSet, criteria, minOccurs, maxOccurs);
+        impl.setProtocol(protocol);
+        return impl;
+    }
+
+    // Used when constructing a Protocol from XarReader where the protocol id is not set known
+    public ExpMaterialProtocolInputImpl createMaterialProtocolInput(
+            @NotNull Container c,
+            @NotNull String name, int protocolId, boolean input,
+            @Nullable ExpSampleSet sampleSet,
+            @Nullable ExpProtocolInputCriteria criteria,
+            int minOccurs, @Nullable Integer maxOccurs)
+    {
+        MaterialProtocolInput obj = new MaterialProtocolInput();
+        populateProtocolInput(obj, c, name, protocolId, input, criteria, minOccurs, maxOccurs);
+        if (sampleSet != null)
+            obj.setMaterialSourceId(sampleSet.getRowId());
+
+        return new ExpMaterialProtocolInputImpl(obj);
+    }
+
+    private void populateProtocolInput(
+            @NotNull AbstractProtocolInput obj,
+            @NotNull Container c,
+            @NotNull String name, int protocolId, boolean input,
+            @Nullable ExpProtocolInputCriteria criteria,
+            int minOccurs, @Nullable Integer maxOccurs)
+    {
+        Objects.requireNonNull(name, "Name required");
+
+
+        String objectType = obj.getObjectType();
+        if (!objectType.equals(ExpData.DEFAULT_CPAS_TYPE) && !objectType.equals(ExpMaterial.DEFAULT_CPAS_TYPE))
+            throw new IllegalArgumentException("Only 'Data' or 'Material' input types are currently supported");
+
+        // CONSIDER: What sort of validation do we want to do on the protocol inputs?
+        // CONSIDER: e.e. assert that if the protocol is of type=ExperimentRunOutput that this isn't an output
+
+        obj.setName(name);
+        obj.setObjectType(objectType);
+        obj.setLSID(ExperimentService.get().generateGuidLSID(c, ExpProtocolInput.class));
+        obj.setProtocolId(protocolId);
+        obj.setInput(input);
+        if (criteria != null)
+        {
+            obj.setCriteriaName(criteria.getTypeName());
+            obj.setCriteriaConfig(criteria.serializeConfig());
+        }
+        obj.setMinOccurs(minOccurs);
+        obj.setMaxOccurs(maxOccurs);
+    }
+
     public ExpRunTable createRunTable(String name, UserSchema schema)
     {
         return new ExpRunTableImpl(name, schema);
@@ -1021,6 +1098,11 @@ public class ExperimentServiceImpl implements ExperimentService
     public ExpDataInputTable createDataInputTable(String name, ExpSchema expSchema)
     {
         return new ExpDataInputTableImpl(name, expSchema);
+    }
+
+    public ExpDataProtocolInputTableImpl createDataProtocolInputTable(String name, ExpSchema expSchema)
+    {
+        return new ExpDataProtocolInputTableImpl(name, expSchema);
     }
 
     public ExpSampleSetTable createSampleSetTable(String name, UserSchema schema)
@@ -1060,6 +1142,11 @@ public class ExperimentServiceImpl implements ExperimentService
         return new ExpMaterialInputTableImpl(name, schema);
     }
 
+    public ExpMaterialProtocolInputTableImpl createMaterialProtocolInputTable(String name, ExpSchema expSchema)
+    {
+        return new ExpMaterialProtocolInputTableImpl(name, expSchema);
+    }
+
     public ExpProtocolApplicationTable createProtocolApplicationTable(String name, UserSchema schema)
     {
         return new ExpProtocolApplicationTableImpl(name, schema);
@@ -1094,6 +1181,8 @@ public class ExperimentServiceImpl implements ExperimentService
             return ExpDataClassImpl.NAMESPACE_PREFIX;
         if (clazz == ExpProtocolApplication.class)
             return "ProtocolApplication";
+        if (clazz == ExpProtocolInput.class)
+            return AbstractProtocolInput.NAMESPACE;
         throw new IllegalArgumentException("Invalid class " + clazz.getName());
     }
 
@@ -1369,7 +1458,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public ExpData getExpData(ExpDataClass dataClass, String name)
+    public ExpDataImpl getExpData(ExpDataClass dataClass, String name)
     {
         Domain d = dataClass.getDomain();
         if (d == null)
@@ -1664,6 +1753,60 @@ public class ExperimentServiceImpl implements ExperimentService
 
     @Override
     @Nullable
+    public ExpDataProtocolInputImpl getDataProtocolInput(int rowId)
+    {
+        TableInfo inputTable = ExperimentServiceImpl.get().getTinfoProtocolInput();
+
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(FieldKey.fromParts("objectType"), ExpData.DEFAULT_CPAS_TYPE);
+        filter.addCondition(FieldKey.fromParts("rowId"), rowId);
+        DataProtocolInput mpi = new TableSelector(inputTable, TableSelector.ALL_COLUMNS, filter, null).getObject(DataProtocolInput.class);
+        if (mpi == null)
+            return null;
+
+        return new ExpDataProtocolInputImpl(mpi);
+    }
+
+    @Override
+    @Nullable
+    public ExpDataProtocolInputImpl getDataProtocolInput(Lsid lsid)
+    {
+        String namespace = lsid.getNamespace();
+        if (!DataProtocolInput.NAMESPACE.equals(namespace))
+            return null;
+
+        TableInfo inputTable = ExperimentServiceImpl.get().getTinfoProtocolInput();
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(FieldKey.fromParts("objectType"), ExpData.DEFAULT_CPAS_TYPE);
+        filter.addCondition(FieldKey.fromParts("lsid"), lsid);
+        DataProtocolInput mpi = new TableSelector(inputTable, TableSelector.ALL_COLUMNS, filter, null).getObject(DataProtocolInput.class);
+        if (mpi == null)
+            return null;
+
+        return new ExpDataProtocolInputImpl(mpi);
+    }
+
+    @Nullable
+    public List<? extends ExpDataProtocolInput> getDataProtocolInputs(int protocolId, boolean input, @Nullable String name, @Nullable Integer dataClassId)
+    {
+        TableInfo inputTable = ExperimentServiceImpl.get().getTinfoProtocolInput();
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(FieldKey.fromParts("objectType"), ExpData.DEFAULT_CPAS_TYPE);
+        filter.addCondition(FieldKey.fromParts("protocolId"), protocolId);
+        filter.addCondition(FieldKey.fromParts("input"), input);
+        if (name != null)
+            filter.addCondition(FieldKey.fromParts("name"), name);
+        if (dataClassId != null)
+            filter.addCondition(FieldKey.fromParts("dataClassId"), dataClassId);
+        List<DataProtocolInput> dpi = new TableSelector(inputTable, TableSelector.ALL_COLUMNS, filter, null).getArrayList(DataProtocolInput.class);
+        if (dpi.isEmpty())
+            return Collections.emptyList();
+
+        return dpi.stream().map(ExpDataProtocolInputImpl::new).collect(toList());
+    }
+
+    @Override
+    @Nullable
     public ExpMaterialRunInputImpl getMaterialInput(Lsid lsid)
     {
         String namespace = lsid.getNamespace();
@@ -1697,6 +1840,112 @@ public class ExperimentServiceImpl implements ExperimentService
 
         return new ExpMaterialRunInputImpl(mi);
     }
+
+    private ExpProtocolInputImpl protocolInputObjectType(Map<String, Object> row)
+    {
+        String objectType = (String)row.get("ObjectType");
+        if (ExpData.DEFAULT_CPAS_TYPE.equals(objectType))
+        {
+            DataProtocolInput obj = ObjectFactory.Registry.getFactory(DataProtocolInput.class).fromMap(row);
+            return new ExpDataProtocolInputImpl(obj);
+        }
+        else if (ExpMaterial.DEFAULT_CPAS_TYPE.equals(objectType))
+        {
+            MaterialProtocolInput obj = ObjectFactory.Registry.getFactory(MaterialProtocolInput.class).fromMap(row);
+            return new ExpMaterialProtocolInputImpl(obj);
+        }
+        else
+            throw new IllegalStateException("objectType not supported: " + objectType);
+    }
+
+    public List<? extends ExpProtocolInputImpl> getProtocolInputs(int protocolId)
+    {
+        TableInfo inputTable = ExperimentServiceImpl.get().getTinfoProtocolInput();
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(FieldKey.fromParts("protocolId"), protocolId);
+        Collection<Map<String, Object>> rows = new TableSelector(inputTable, TableSelector.ALL_COLUMNS, filter, new Sort("rowId")).getMapCollection();
+        return rows.stream().map(this::protocolInputObjectType).collect(toList());
+    }
+
+
+    public ExpProtocolInputImpl getProtocolInput(int rowId)
+    {
+        TableInfo inputTable = ExperimentServiceImpl.get().getTinfoProtocolInput();
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(FieldKey.fromParts("rowId"), rowId);
+        Map<String, Object> row = new TableSelector(inputTable, TableSelector.ALL_COLUMNS, filter, null).getMap();
+        return protocolInputObjectType(row);
+    }
+
+    @Override
+    @Nullable
+    public ExpProtocolInputImpl getProtocolInput(Lsid lsid)
+    {
+        String namespace = lsid.getNamespace();
+        if (!AbstractProtocolInput.NAMESPACE.equals(namespace))
+            return null;
+
+        TableInfo inputTable = ExperimentServiceImpl.get().getTinfoProtocolInput();
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(FieldKey.fromParts("lsid"), lsid);
+        Map<String, Object> row = new TableSelector(inputTable, TableSelector.ALL_COLUMNS, filter, null).getMap();
+        return protocolInputObjectType(row);
+    }
+
+    @Override
+    @Nullable
+    public ExpMaterialProtocolInputImpl getMaterialProtocolInput(int rowId)
+    {
+        TableInfo inputTable = ExperimentServiceImpl.get().getTinfoProtocolInput();
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(FieldKey.fromParts("objectType"), ExpMaterial.DEFAULT_CPAS_TYPE);
+        filter.addCondition(FieldKey.fromParts("rowId"), rowId);
+        MaterialProtocolInput mpi = new TableSelector(inputTable, TableSelector.ALL_COLUMNS, filter, null).getObject(MaterialProtocolInput.class);
+        if (mpi == null)
+            return null;
+
+        return new ExpMaterialProtocolInputImpl(mpi);
+    }
+
+    @Override
+    @Nullable
+    public ExpMaterialProtocolInputImpl getMaterialProtocolInput(Lsid lsid)
+    {
+        String namespace = lsid.getNamespace();
+        if (!AbstractProtocolInput.NAMESPACE.equals(namespace))
+            return null;
+
+        TableInfo inputTable = ExperimentServiceImpl.get().getTinfoProtocolInput();
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(FieldKey.fromParts("objectType"), ExpMaterial.DEFAULT_CPAS_TYPE);
+        filter.addCondition(FieldKey.fromParts("lsid"), lsid);
+        MaterialProtocolInput mpi = new TableSelector(inputTable, TableSelector.ALL_COLUMNS, filter, null).getObject(MaterialProtocolInput.class);
+        if (mpi == null)
+            return null;
+
+        return new ExpMaterialProtocolInputImpl(mpi);
+    }
+
+    @Override
+    @Nullable
+    public List<? extends ExpMaterialProtocolInput> getMaterialProtocolInputs(int protocolId, boolean input, @Nullable String name, @Nullable Integer materialSourceId)
+    {
+        TableInfo inputTable = ExperimentServiceImpl.get().getTinfoProtocolInput();
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(FieldKey.fromParts("objectType"), ExpMaterial.DEFAULT_CPAS_TYPE);
+        filter.addCondition(FieldKey.fromParts("protocolId"), protocolId);
+        filter.addCondition(FieldKey.fromParts("input"), input);
+        if (name != null)
+            filter.addCondition(FieldKey.fromParts("name"), name);
+        if (materialSourceId != null)
+            filter.addCondition(FieldKey.fromParts("materialSourceId"), materialSourceId);
+        List<MaterialProtocolInput> mpi = new TableSelector(inputTable, TableSelector.ALL_COLUMNS, filter, null).getArrayList(MaterialProtocolInput.class);
+        if (mpi.isEmpty())
+            return Collections.emptyList();
+
+        return mpi.stream().map(ExpMaterialProtocolInputImpl::new).collect(toList());
+    }
+
 
     @Override
     public Pair<Set<ExpData>, Set<ExpMaterial>> getParents(ExpRunItem start)
@@ -2876,6 +3125,11 @@ public class ExperimentServiceImpl implements ExperimentService
         return getExpSchema().getTable("DataInput");
     }
 
+    public TableInfo getTinfoProtocolInput()
+    {
+        return getExpSchema().getTable("ProtocolInput");
+    }
+
     public TableInfo getTinfoProtocolApplication()
     {
         return getExpSchema().getTable("ProtocolApplication");
@@ -3482,6 +3736,8 @@ public class ExperimentServiceImpl implements ExperimentService
 
             executor.execute("DELETE FROM exp.ProtocolParameter WHERE ProtocolId IN (" + protocolIds + ")");
 
+            deleteProtocolInputs(c, protocolIds);
+
             for (Protocol protocol : protocols)
             {
                 if (!protocol.getContainer().equals(c))
@@ -3517,6 +3773,12 @@ public class ExperimentServiceImpl implements ExperimentService
 
             transaction.commit();
         }
+    }
+
+    private void deleteProtocolInputs(Container c, String protocolIdsInClause)
+    {
+        OntologyManager.deleteOntologyObjects(getSchema(), new SQLFragment("SELECT LSID FROM exp.ProtocolInput WHERE ProtocolId IN (" + protocolIdsInClause + ")"), c, false);
+        new SqlExecutor(getSchema()).execute("DELETE FROM exp.ProtocolInput WHERE ProtocolId IN (" + protocolIdsInClause + ")");
     }
 
     public void deleteMaterialByRowIds(User user, Container container, Collection<Integer> selectedMaterialIds)
@@ -4811,6 +5073,18 @@ public class ExperimentServiceImpl implements ExperimentService
             if (saveProperties)
                 savePropertyCollection(protocol.retrieveObjectProperties(), protocol.getLSID(), protocol.getContainer(), !newProtocol);
 
+
+            Collection<? extends ExpProtocolInputImpl> protocolInputs = protocol.retrieveProtocolInputs();
+            if (!newProtocol)
+                deleteProtocolInputs(protocol.getContainer(), String.valueOf(protocol.getRowId()));
+            for (ExpProtocolInputImpl input : protocolInputs)
+            {
+                AbstractProtocolInput obj = (AbstractProtocolInput)input.getDataObject();
+                obj.setProtocolId(result.getRowId());
+                input.setProtocol(null);
+                input.save(user);
+            }
+
             AssayService assayService = AssayService.get();
             if (assayService != null)
             {
@@ -4868,7 +5142,8 @@ public class ExperimentServiceImpl implements ExperimentService
                 prop.setObjectId(0);
             }
         }
-        try {
+        try
+        {
             OntologyManager.insertProperties(container, ownerLSID, props);
             for (ObjectProperty prop : props)
             {
@@ -5666,6 +5941,21 @@ public class ExperimentServiceImpl implements ExperimentService
         return _protocolImplementations.get(name);
     }
 
+    public void registerProtocolInputCriteria(ExpProtocolInputCriteria.Factory factory)
+    {
+        _protocolInputCriteriaFactories.put(factory.getName(), factory);
+    }
+
+    @NotNull
+    public ExpProtocolInputCriteria createProtocolInputCriteria(@NotNull String criteriaName, @Nullable String config)
+    {
+        ExpProtocolInputCriteria.Factory factory = _protocolInputCriteriaFactories.get(criteriaName);
+        if (factory == null)
+            throw new IllegalArgumentException("No protocol input criteria registered for '" + criteriaName + "'");
+
+        return factory.create(config);
+    }
+
     public ExpProtocolApplicationImpl getExpProtocolApplication(int rowId)
     {
         ProtocolApplication app = new TableSelector(getTinfoProtocolApplication()).getObject(rowId, ProtocolApplication.class);
@@ -6113,7 +6403,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
         if (protocol.getApplicationType() == null)
         {
-            throw new ExperimentException("Protocol \"" + protocol.getLSID() + "\" needs to declare it's applicationType before being inserted");
+            throw new ExperimentException("Protocol '" + protocol.getLSID() + "' needs to declare it's applicationType before being inserted");
         }
 
         if (baseProtocol.getOutputDataType() == null)
@@ -6125,7 +6415,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
         if (!baseParams.containsKey(XarConstants.APPLICATION_LSID_TEMPLATE_URI))
         {
-            throw new ExperimentException(XarConstants.APPLICATION_LSID_TEMPLATE_URI + " needs to be declared before inserting protocol");
+            throw new ExperimentException("Protocol '" + protocol.getName() + "' needs to declare " + XarConstants.APPLICATION_LSID_TEMPLATE_URI + " before inserting protocol");
         }
 
         if (!baseParams.containsKey(XarConstants.APPLICATION_NAME_TEMPLATE_URI))
@@ -6138,7 +6428,7 @@ public class ExperimentServiceImpl implements ExperimentService
             baseProtocol.storeProtocolParameters(baseParams.values());
         }
 
-        return saveProtocol(user, baseProtocol, false /* saveProperties */);
+        return saveProtocol(user, baseProtocol, false);
     }
 
     /**

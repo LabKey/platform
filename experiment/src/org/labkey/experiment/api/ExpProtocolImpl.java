@@ -27,8 +27,11 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.ProtocolParameter;
+import org.labkey.api.exp.api.ExpDataProtocolInput;
+import org.labkey.api.exp.api.ExpMaterialProtocolInput;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolAction;
+import org.labkey.api.exp.api.ExpProtocolInput;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ProtocolImplementation;
 import org.labkey.api.exp.property.ExperimentProperty;
@@ -43,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> implements ExpProtocol
 {
@@ -125,7 +129,7 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
         _object.setMaxInputDataPerInstance(i);
     }
 
-    public List<? extends ExpProtocolAction> getSteps()
+    public List<ExpProtocolActionImpl> getSteps()
     {
         return ExpProtocolActionImpl.fromProtocolActions(ExperimentServiceImpl.get().getProtocolActions(getRowId()));
     }
@@ -241,6 +245,52 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
             result.add(new ExpProtocolImpl(protocol));
         }
         return result;
+    }
+
+    public List<? extends ExpMaterialProtocolInput> getMaterialProtocolInputs()
+    {
+        List<? extends ExpProtocolInput> allInputs = _object.retrieveProtocolInputs();
+        return allInputs.stream()
+                .filter(ExpProtocolInput::isInput)
+                .filter(i -> ExpMaterialProtocolInput.class.isAssignableFrom(i.getClass()))
+                .map(i -> (ExpMaterialProtocolInput)i)
+                .collect(Collectors.toList());
+    }
+
+    public List<? extends ExpDataProtocolInput> getDataProtocolInputs()
+    {
+        List<? extends ExpProtocolInput> allInputs = _object.retrieveProtocolInputs();
+        return allInputs.stream()
+                .filter(ExpProtocolInput::isInput)
+                .filter(i -> ExpDataProtocolInput.class.isAssignableFrom(i.getClass()))
+                .map(i -> (ExpDataProtocolInput)i)
+                .collect(Collectors.toList());
+    }
+
+    public List<? extends ExpMaterialProtocolInput> getMaterialProtocolOutputs()
+    {
+        List<? extends ExpProtocolInput> allInputs = _object.retrieveProtocolInputs();
+        return allInputs.stream()
+                .filter(i -> !i.isInput())
+                .filter(i -> ExpMaterialProtocolInput.class.isAssignableFrom(i.getClass()))
+                .map(i -> (ExpMaterialProtocolInput)i)
+                .collect(Collectors.toList());
+    }
+
+    public List<? extends ExpDataProtocolInput> getDataProtocolOutputs()
+    {
+        List<? extends ExpProtocolInput> allInputs = _object.retrieveProtocolInputs();
+        return allInputs.stream()
+                .filter(i -> !i.isInput())
+                .filter(i -> ExpDataProtocolInput.class.isAssignableFrom(i.getClass()))
+                .map(i -> (ExpDataProtocolInput)i)
+                .collect(Collectors.toList());
+    }
+
+    public void setProtocolInputs(Collection<? extends ExpProtocolInput> protocolInputs)
+    {
+        ensureUnlocked();
+        _object.storeProtocolInputs(protocolInputs);
     }
 
     public Integer getMaxInputDataPerInstance()

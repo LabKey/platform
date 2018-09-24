@@ -69,7 +69,9 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainTemplate;
 import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.exp.query.ExpDataProtocolInputTable;
 import org.labkey.api.exp.query.ExpInputTable;
+import org.labkey.api.exp.query.ExpMaterialProtocolInputTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LsidUtils;
@@ -158,6 +160,7 @@ import org.labkey.experiment.api.ExpDataImpl;
 import org.labkey.experiment.api.ExpExperimentImpl;
 import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpProtocolApplicationImpl;
+import org.labkey.experiment.api.ExpProtocolImpl;
 import org.labkey.experiment.api.ExpRunImpl;
 import org.labkey.experiment.api.ExpSampleSetImpl;
 import org.labkey.experiment.api.Experiment;
@@ -2398,11 +2401,11 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ProtocolDetailsAction extends SimpleViewAction<ExpObjectForm>
     {
-        private ExpProtocol _protocol;
+        private ExpProtocolImpl _protocol;
 
         public ModelAndView getView(ExpObjectForm form, BindException errors)
         {
-            _protocol = ExperimentService.get().getExpProtocol(form.getRowId());
+            _protocol = ExperimentServiceImpl.get().getExpProtocol(form.getRowId());
             if (_protocol == null)
             {
                 _protocol = ExperimentServiceImpl.get().getExpProtocol(form.getLSID());
@@ -2419,7 +2422,16 @@ public class ExperimentController extends SpringActionController
 
             CustomPropertiesView cpv = new CustomPropertiesView(_protocol.getLSID(), getContainer());
             ProtocolParametersView parametersView = new ProtocolParametersView(_protocol);
-            ProtocolListView listView = new ProtocolListView(_protocol, getContainer());
+
+            VBox protocolDetails = new VBox();
+            protocolDetails.setFrame(WebPartView.FrameType.PORTAL);
+            protocolDetails.setTitle("Protocol Details");
+            protocolDetails.addView(new ProtocolInputOutputsView(_protocol, errors));
+
+            JspView<ExpProtocolImpl> stepsView = new JspView<>("/org/labkey/experiment/ProtocolSteps.jsp", _protocol);
+            stepsView.setTitle("Protocol Steps");
+            stepsView.setFrame(WebPartView.FrameType.TITLE);
+            protocolDetails.addView(stepsView);
 
             ExpSchema schema = new ExpSchema(getUser(), getContainer());
             ExperimentRunListView runView = new ExperimentRunListView(schema, ExperimentRunListView.getRunListQuerySettings(schema, getViewContext(), ExpSchema.TableType.Runs.name(), true), ExperimentRunType.ALL_RUNS_TYPE)
@@ -2434,7 +2446,7 @@ public class ExperimentController extends SpringActionController
 
             runView.setTitle("Runs Using This Protocol");
 
-            return new VBox(new StandardAndCustomPropertiesView(detailsView, cpv), parametersView, listView, runView);
+            return new VBox(new StandardAndCustomPropertiesView(detailsView, cpv), parametersView, protocolDetails, runView);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -2442,6 +2454,78 @@ public class ExperimentController extends SpringActionController
             return appendRootNavTrail(root).addChild("Protocols", ExperimentUrlsImpl.get().getProtocolGridURL(getContainer())).addChild("Protocol: " + _protocol.getName());
         }
     }
+
+    public class ProtocolInputOutputsView extends VBox
+    {
+        ProtocolInputOutputsView(ExpProtocol protocol, Errors errors)
+        {
+            HBox inputsView = new HBox();
+            addView(inputsView);
+
+            HBox outputsView = new HBox();
+            addView(outputsView);
+
+            UserSchema expSchema = QueryService.get().getUserSchema(getUser(), getContainer(), ExpSchema.SCHEMA_NAME);
+
+            class ProtocolInputGrid extends QueryView
+            {
+                public ProtocolInputGrid(String title, QuerySettings settings, @Nullable Errors errors)
+                {
+                    super(expSchema, settings, errors);
+
+                    setFrame(FrameType.TITLE);
+                    setTitle(title);
+                    setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
+                    setShowBorders(true);
+                    setShadeAlternatingRows(true);
+                    setShowExportButtons(false);
+                    setShowPagination(false);
+                    disableContainerFilterSelection();
+                }
+            }
+
+            // INPUTS
+
+            QuerySettings materialInputsSettings = expSchema.getSettings("mpi", ExpSchema.TableType.MaterialProtocolInputs.toString());
+            materialInputsSettings.getBaseFilter().addCondition(FieldKey.fromParts(ExpMaterialProtocolInputTable.Column.Protocol.toString()), protocol.getRowId());
+            materialInputsSettings.setFieldKeys(Arrays.asList(
+                    FieldKey.fromParts(ExpMaterialProtocolInputTable.Column.Name.toString()),
+                    FieldKey.fromParts(ExpMaterialProtocolInputTable.Column.SampleSet.toString())
+            ));
+            QueryView materialInputsView = new ProtocolInputGrid("Material Inputs", materialInputsSettings, errors);
+            inputsView.addView(materialInputsView);
+
+            QuerySettings dataInputsSettings = expSchema.getSettings("dpi", ExpSchema.TableType.DataProtocolInputs.toString());
+            dataInputsSettings.getBaseFilter().addCondition(FieldKey.fromParts(ExpDataProtocolInputTable.Column.Protocol.toString()), protocol.getRowId());
+            dataInputsSettings.setFieldKeys(Arrays.asList(
+                    FieldKey.fromParts(ExpDataProtocolInputTable.Column.Name.toString()),
+                    FieldKey.fromParts(ExpDataProtocolInputTable.Column.DataClass.toString())
+            ));
+            QueryView dataInputsView = new ProtocolInputGrid("Data Inputs", dataInputsSettings, errors);
+            inputsView.addView(dataInputsView);
+
+            // OUTPUTS
+
+            QuerySettings materialOutputsSettings = expSchema.getSettings("mpo", ExpSchema.TableType.MaterialProtocolInputs.toString());
+            materialOutputsSettings.getBaseFilter().addCondition(FieldKey.fromParts(ExpMaterialProtocolInputTable.Column.Protocol.toString()), protocol.getRowId());
+            materialOutputsSettings.setFieldKeys(Arrays.asList(
+                    FieldKey.fromParts(ExpMaterialProtocolInputTable.Column.Name.toString()),
+                    FieldKey.fromParts(ExpMaterialProtocolInputTable.Column.SampleSet.toString())
+            ));
+            QueryView materialOutputsView = new ProtocolInputGrid("Material Outputs", materialOutputsSettings, errors);
+            outputsView.addView(materialOutputsView);
+
+            QuerySettings dataOutputsSettings = expSchema.getSettings("dpo", ExpSchema.TableType.DataProtocolInputs.toString());
+            dataOutputsSettings.getBaseFilter().addCondition(FieldKey.fromParts(ExpDataProtocolInputTable.Column.Protocol.toString()), protocol.getRowId());
+            dataOutputsSettings.setFieldKeys(Arrays.asList(
+                    FieldKey.fromParts(ExpDataProtocolInputTable.Column.Name.toString()),
+                    FieldKey.fromParts(ExpDataProtocolInputTable.Column.DataClass.toString())
+            ));
+            QueryView dataOutputsView = new ProtocolInputGrid("Data Outputs", dataOutputsSettings, errors);
+            outputsView.addView(dataOutputsView);
+        }
+    }
+
 
     @RequiresPermission(ReadPermission.class)
     public class ProtocolPredecessorsAction extends SimpleViewAction
@@ -2487,17 +2571,23 @@ public class ExperimentController extends SpringActionController
             CustomPropertiesView cpv = new CustomPropertiesView(childProtocol.getLSID(), getContainer());
 
             ProtocolParametersView parametersView = new ProtocolParametersView(childProtocol);
-            ProtocolSuccessorPredecessorView predecessorView = new ProtocolSuccessorPredecessorView(parentProtocolLSID, actionSequence, getContainer(), "PredecessorChildLSID", "PredecessorSequence", "ActionSequence", "Protocol Predecessors");
-            ProtocolSuccessorPredecessorView successorView = new ProtocolSuccessorPredecessorView(parentProtocolLSID, actionSequence, getContainer(), "ChildProtocolLSID", "ActionSequence", "PredecessorSequence", "Protocol Successors");
-            return new VBox(new StandardAndCustomPropertiesView(detailsView, cpv), parametersView, predecessorView, successorView);
+
+            VBox protocolDetails = new VBox();
+            protocolDetails.setFrame(WebPartView.FrameType.PORTAL);
+            protocolDetails.setTitle("Protocol Details");
+            protocolDetails.addView(new ProtocolInputOutputsView(childProtocol, errors));
+            protocolDetails.addView(new ProtocolSuccessorPredecessorView(parentProtocolLSID, actionSequence, getContainer(), "PredecessorChildLSID", "PredecessorSequence", "ActionSequence", "Protocol Predecessors"));
+            protocolDetails.addView(new ProtocolSuccessorPredecessorView(parentProtocolLSID, actionSequence, getContainer(), "ChildProtocolLSID", "ActionSequence", "PredecessorSequence", "Protocol Successors"));
+
+            return new VBox(new StandardAndCustomPropertiesView(detailsView, cpv), parametersView, protocolDetails);
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
             return appendRootNavTrail(root).
                     addChild("Protocols", ExperimentUrlsImpl.get().getProtocolGridURL(getContainer())).
-                    addChild("Parent Protocol", ExperimentUrlsImpl.get().getProtocolDetailsURL(_parentProtocol)).
-                    addChild("Protocol: " + _actionStep.getName());
+                    addChild("Parent Protocol '" + _parentProtocol.getName() + "'", ExperimentUrlsImpl.get().getProtocolDetailsURL(_parentProtocol)).
+                    addChild("Protocol Step: " + _actionStep.getName());
         }
     }
 
@@ -2756,7 +2846,7 @@ public class ExperimentController extends SpringActionController
         public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors)
         {
             List<? extends ExpRun> runs = ExperimentService.get().getExpRunsForProtocolIds(false, deleteForm.getIds(false));
-            List<ExpProtocol> protocols = getProtocols(deleteForm);
+            List<ExpProtocol> protocols = getProtocols(deleteForm, false);
             String noun = "Assay Design";
             List<Pair<SecurableResource, ActionURL>> deleteableDatasets = new ArrayList<>();
             List<Pair<SecurableResource, ActionURL>> noPermissionDatasets = new ArrayList<>();
@@ -2786,10 +2876,10 @@ public class ExperimentController extends SpringActionController
             return new ConfirmDeleteView(noun, ProtocolDetailsAction.class, protocols, deleteForm, runs, "Dataset", deleteableDatasets, noPermissionDatasets);
         }
 
-        private List<ExpProtocol> getProtocols(DeleteForm deleteForm)
+        private List<ExpProtocol> getProtocols(DeleteForm deleteForm, boolean clearSelection)
         {
             List<ExpProtocol> protocols = new ArrayList<>();
-            for (int protocolId : deleteForm.getIds(false))
+            for (int protocolId : deleteForm.getIds(clearSelection))
             {
                 ExpProtocol protocol = ExperimentService.get().getExpProtocol(protocolId);
                 if (protocol != null)
@@ -2802,7 +2892,7 @@ public class ExperimentController extends SpringActionController
 
         protected void deleteObjects(DeleteForm deleteForm)
         {
-            for (ExpProtocol protocol : getProtocols(deleteForm))
+            for (ExpProtocol protocol : getProtocols(deleteForm, true))
             {
                 protocol.delete(getUser());
             }

@@ -16,20 +16,16 @@
 
 package org.labkey.experiment.api;
 
-import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolAction;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 public class ExpProtocolActionImpl implements ExpProtocolAction
 {
@@ -48,14 +44,14 @@ public class ExpProtocolActionImpl implements ExpProtocolAction
         _action = action;
     }
 
-    public ExpProtocol getParentProtocol()
+    public ExpProtocolImpl getParentProtocol()
     {
-        return ExperimentService.get().getExpProtocol(_action.getParentProtocolId());
+        return ExperimentServiceImpl.get().getExpProtocol(_action.getParentProtocolId());
     }
 
-    public ExpProtocol getChildProtocol()
+    public ExpProtocolImpl getChildProtocol()
     {
-        return ExperimentService.get().getExpProtocol(_action.getChildProtocolId());
+        return ExperimentServiceImpl.get().getExpProtocol(_action.getChildProtocolId());
     }
 
     public int getRowId()
@@ -70,32 +66,35 @@ public class ExpProtocolActionImpl implements ExpProtocolAction
 
     public List<ExpProtocolActionImpl> getPredecessors()
     {
-        final List<ExpProtocolActionImpl> ret = new ArrayList<>();
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("ActionId"), getRowId());
-
-        new TableSelector(ExperimentServiceImpl.get().getTinfoProtocolActionPredecessor(), new CsvSet("PredecessorId,ActionId"), filter, null).forEach(rs -> ret.add(fromRowId(rs.getInt("PredecessorId"))));
-
-        return ret;
+        TableInfo table = ExperimentServiceImpl.get().getTinfoProtocolActionPredecessor();
+        return new TableSelector(table, table.getColumns("PredecessorId"), filter, null).stream(Integer.class).map(ExpProtocolActionImpl::fromRowId).collect(Collectors.toList());
     }
 
     public List<ExpProtocolActionImpl> getSuccessors()
     {
-        final List<ExpProtocolActionImpl> ret = new ArrayList<>();
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("PredecessorId"), getRowId());
-
-        new TableSelector(ExperimentServiceImpl.get().getTinfoProtocolActionPredecessor(), new CsvSet("ActionId,PredecessorId"), filter, null).forEach(rs -> ret.add(fromRowId(rs.getInt("ActionId"))));
-
-        return ret;
+        TableInfo table = ExperimentServiceImpl.get().getTinfoProtocolActionPredecessor();
+        return new TableSelector(table, table.getColumns("ActionId"), filter, null).stream(Integer.class).map(ExpProtocolActionImpl::fromRowId).collect(Collectors.toList());
     }
 
     public void addSuccessor(User user, ExpProtocolAction successor)
     {
-        Map<String, Integer> map = new HashMap<>();
-        map.put("PredecessorId", getRowId());
-        map.put("ActionId", successor.getRowId());
-        Table.insert(user, ExperimentServiceImpl.get().getTinfoProtocolActionPredecessor(), map);
+        ExperimentServiceImpl.get().insertProtocolPredecessor(user, successor.getRowId(), getRowId());
+    }
+
+    public boolean equals(Object obj)
+    {
+        if (obj == null || obj.getClass() != getClass())
+            return false;
+        return ((ExpProtocolAction) obj).getRowId() == getRowId();
+    }
+
+    public int hashCode()
+    {
+        return getRowId() ^ getClass().hashCode();
     }
 
     public static List<ExpProtocolActionImpl> fromProtocolActions(List<ProtocolAction> actions)

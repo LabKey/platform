@@ -120,9 +120,9 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     }
 
     @Override
-    public ExpData getData(Container c, String name)
+    public ExpDataImpl getData(Container c, String name)
     {
-        return ExperimentService.get().getExpData(this, /*c, */ name);
+        return ExperimentServiceImpl.get().getExpData(this, /*c, */ name);
     }
 
     @Override

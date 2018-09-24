@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.api;
 
+import org.labkey.api.exp.api.ExpMaterialProtocolInput;
 import org.labkey.api.exp.api.ExpMaterialRunInput;
 
 import java.util.ArrayList;
@@ -45,4 +46,15 @@ public class ExpMaterialRunInputImpl extends ExpRunInputImpl<MaterialInput> impl
     {
         return ExperimentServiceImpl.get().getExpMaterial(_input.getMaterialId());
     }
+
+    @Override
+    public ExpMaterialProtocolInput getProtocolInput()
+    {
+        Integer protocolInputId = _input.getProtocolInputId();
+        if (protocolInputId == null)
+            return null;
+
+        return ExperimentServiceImpl.get().getMaterialProtocolInput(protocolInputId);
+    }
+
 }

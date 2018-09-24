@@ -20,6 +20,7 @@ import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.ProtocolParameter;
+import org.labkey.api.exp.api.ExpProtocolInput;
 
 import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
@@ -29,6 +30,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Bean class for the exp.protocol table.
@@ -57,6 +59,7 @@ public class Protocol extends IdentifiableEntity
     private String _contactId;
     private Map<String, ProtocolParameter> _protocolParameters;
     private Map<String, ObjectProperty> _objectProperties;
+    private List<? extends ExpProtocolInputImpl> _protocolInputs;
 
     public Protocol()
     {
@@ -362,8 +365,7 @@ public class Protocol extends IdentifiableEntity
         }
         else
         {
-            Map<String, ObjectProperty> newParams = new HashMap<>();
-            newParams.putAll(props);
+            Map<String, ObjectProperty> newParams = new HashMap<>(props);
             _objectProperties = Collections.unmodifiableMap(newParams);
         }
     }
@@ -386,4 +388,27 @@ public class Protocol extends IdentifiableEntity
         }
         return _protocolParameters;
     }
+
+    public void storeProtocolInputs(Collection<? extends ExpProtocolInput> protocolInputs)
+    {
+        if (protocolInputs == null)
+        {
+            _protocolInputs = null;
+        }
+        else
+        {
+            List<ExpProtocolInputImpl> inputs = protocolInputs.stream().filter(i -> i instanceof ExpProtocolInputImpl).map(i -> (ExpProtocolInputImpl) i).collect(Collectors.toList());
+            _protocolInputs = Collections.unmodifiableList(inputs);
+        }
+    }
+
+    public List<? extends ExpProtocolInputImpl> retrieveProtocolInputs()
+    {
+        if (_protocolInputs == null)
+        {
+            _protocolInputs = Collections.unmodifiableList(ExperimentServiceImpl.get().getProtocolInputs(getRowId()));
+        }
+        return _protocolInputs;
+    }
+
 }

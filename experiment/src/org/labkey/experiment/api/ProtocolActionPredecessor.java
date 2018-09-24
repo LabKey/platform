@@ -19,6 +19,8 @@ package org.labkey.experiment.api;
 /**
  * User: jeckels
  * Date: Nov 22, 2005
+ *
+ * Bean for exp.ProtocolActionPredecessorLSIDView
  */
 public class ProtocolActionPredecessor
 {

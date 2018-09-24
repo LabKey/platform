@@ -32,6 +32,7 @@ public abstract class AbstractRunInput extends IdentifiableBase
 
     private int _targetApplicationId;
     protected String _role;
+    protected Integer _protocolInputId;
 
     protected AbstractRunInput(String defaultRole)
     {
@@ -69,6 +70,16 @@ public abstract class AbstractRunInput extends IdentifiableBase
         _role = role;
     }
 
+    public Integer getProtocolInputId()
+    {
+        return _protocolInputId;
+    }
+
+    public void setProtocolInputId(Integer protocolInputId)
+    {
+        _protocolInputId = protocolInputId;
+    }
+
     protected abstract int getInputKey();
 
 
@@ -97,7 +108,8 @@ public abstract class AbstractRunInput extends IdentifiableBase
 
         return getInputKey() == input.getInputKey() &&
             Objects.equals(_role, input._role) &&
-            _targetApplicationId == input._targetApplicationId;
+            _targetApplicationId == input._targetApplicationId &&
+            Objects.equals(_protocolInputId, input._protocolInputId);
     }
 
     @Override
@@ -106,6 +118,7 @@ public abstract class AbstractRunInput extends IdentifiableBase
         int result = getInputKey();
         result = 31 * result + _targetApplicationId;
         result = 31 * result + (_role == null ? 0 : _role.hashCode());
+        result = 31 * result + (_protocolInputId == null ? 0 : _protocolInputId.hashCode());
         return result;
     }
 }

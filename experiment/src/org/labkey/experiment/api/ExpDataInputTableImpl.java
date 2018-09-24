@@ -73,6 +73,14 @@ public class ExpDataInputTableImpl extends ExpInputTableImpl<ExpDataInputTable.C
                 return col;
             }
 
+            case ProtocolInput:
+            {
+                ColumnInfo col = wrapColumn(alias, _rootTable.getColumn("ProtocolInputId"));
+                col.setFk(getExpSchema().getDataProtocolInputForeignKey());
+                col.setHidden(true);
+                return col;
+            }
+
             default:
                 throw new IllegalArgumentException("Unsupported column: " + column);
         }
@@ -91,6 +99,7 @@ public class ExpDataInputTableImpl extends ExpInputTableImpl<ExpDataInputTable.C
         addColumn(Column.TargetProtocolApplication);
         addColumn(Column.Role);
         addColumn(Column.LSID);
+        addColumn(Column.ProtocolInput);
 
         List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromParts(Column.Data));

@@ -444,7 +444,7 @@ public class ExperimentRunGraph
                 String label = runDataInputs.remove(data);
                 dg.connectDataToProtocolApp(data.getRowId(), rowIdPA, label);
             }
-
+            // CONSIDER: Add hidden connector between previous action sequence if it has no inputs
 
             for (int i = 0; i < outputMaterials.size(); i++)
             {

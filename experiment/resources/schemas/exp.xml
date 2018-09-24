@@ -76,6 +76,9 @@
       <column columnName="Role">
           <description>The purpose of the usage of the data object</description>
       </column>
+      <column columnName="ProtocolInputId">
+        <description>Optional reference to the corresponding ProtocolInput.</description>
+      </column>
     </columns>
     <description>Contains one row per data input in a protocol application for a run in this folder.</description>
   </table>
@@ -310,6 +313,9 @@
       <column columnName="Role">
         <description>The purpose of the usage of the material</description>
       </column>
+      <column columnName="ProtocolInputId">
+        <description>Optional reference to the corresponding ProtocolInput.</description>
+      </column>
     </columns>
     <description>Contains one row per material input in a protocol application for a run in this folder.</description>
   </table>
@@ -530,6 +536,47 @@
       </column>
     </columns>
     <description>Contains a row per experiment protocol, a series of steps that may be performed when doing an experiment run.</description>
+  </table>
+  <table tableName="ProtocolInput" tableDbType="TABLE">
+    <description>Contains a row per protocol input, an expected input or output of a protocol</description>
+    <columns>
+      <column columnName="RowId">
+          <description>Unique id for this protocol input</description>
+      </column>
+      <column columnName="Name">
+          <description>Name of this protocol input</description>
+      </column>
+      <column columnName="LSID">
+          <description>Life sciences identifier for this protocol</description>
+      </column>
+      <column columnName="ProtocolId">
+          <description>The protocol associated with this protocol input</description>
+      </column>
+      <column columnName="Input">
+          <description>True when used as an input into the associated protocol; false when used as an output of the associated protocol</description>
+      </column>
+      <column columnName="ObjectType">
+          <description>The type of object this protocol input represents.  One of 'Data' or 'Material'</description>
+      </column>
+      <column columnName="DataClassId">
+          <description>When the object type is 'Data', may optionally contain a reference to the DataClass in which the Data must belong</description>
+      </column>
+      <column columnName="MaterialSourceId">
+          <description>When the object type is 'Material', may optionally contain a reference to the SampleSet in which the Material must belong</description>
+      </column>
+      <column columnName="CriteriaName">
+          <description>The criteria type name</description>
+      </column>
+      <column columnName="CriteriaConfig">
+          <description>A JSON encoded criteria configuration</description>
+      </column>
+      <column columnName="MinOccurs">
+          <description>The minimum number of Data or Material instances that are required</description>
+      </column>
+      <column columnName="MaxOccurs">
+          <description>The maximum number of Data or Material instances that are allowed</description>
+      </column>
+    </columns>
   </table>
   <table tableName="ProtocolAction" tableDbType="TABLE">
     <columns>

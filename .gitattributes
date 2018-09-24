@@ -868,6 +868,7 @@ experiment/resources/schemas/dbscripts/postgresql/exp-18.11-18.12.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-18.11-18.20.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-18.12-18.13.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-18.13-18.14.sql -text
+experiment/resources/schemas/dbscripts/postgresql/exp-18.20-18.21.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-create.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-drop.sql -text
 experiment/resources/schemas/dbscripts/postgresql/obsolete/deleteOrphans.sql -text
@@ -925,6 +926,7 @@ experiment/resources/schemas/dbscripts/sqlserver/exp-18.10-18.20.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-18.11-18.20.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-18.12-18.13.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-18.13-18.14.sql -text
+experiment/resources/schemas/dbscripts/sqlserver/exp-18.20-18.21.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-create.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-drop.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/obsolete/deleteOrphans.sql -text
@@ -1012,6 +1014,7 @@ experiment/src/org/labkey/experiment/ProtocolApplicationDisplayColumn.java -text
 experiment/src/org/labkey/experiment/ProtocolApplications.jsp -text
 experiment/src/org/labkey/experiment/ProtocolDetails.jsp -text
 experiment/src/org/labkey/experiment/ProtocolDisplayColumn.java -text
+experiment/src/org/labkey/experiment/ProtocolSteps.jsp -text
 experiment/src/org/labkey/experiment/ProtocolWebPart.java -text
 experiment/src/org/labkey/experiment/RunGroupWebPart.java -text
 experiment/src/org/labkey/experiment/RunTypeWebPart.java -text
@@ -1026,6 +1029,7 @@ experiment/src/org/labkey/experiment/XarExportType.java -text
 experiment/src/org/labkey/experiment/XarExporter.java -text
 experiment/src/org/labkey/experiment/XarReader.java -text
 experiment/src/org/labkey/experiment/addXarFile.jsp -text
+experiment/src/org/labkey/experiment/api/AbstractProtocolInput.java -text
 experiment/src/org/labkey/experiment/api/AbstractRunInput.java -text
 experiment/src/org/labkey/experiment/api/AbstractRunItemImpl.java -text
 experiment/src/org/labkey/experiment/api/Data.java -text
@@ -1034,6 +1038,7 @@ experiment/src/org/labkey/experiment/api/DataClass.java -text
 experiment/src/org/labkey/experiment/api/DataClassDomainKind.java -text
 experiment/src/org/labkey/experiment/api/DataInput.java -text
 experiment/src/org/labkey/experiment/api/DataLinkColumn.java -text
+experiment/src/org/labkey/experiment/api/DataProtocolInput.java -text
 experiment/src/org/labkey/experiment/api/ExpChildObjectImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpDataClassAttachmentParent.java -text
 experiment/src/org/labkey/experiment/api/ExpDataClassDataTableImpl.java -text
@@ -1044,6 +1049,8 @@ experiment/src/org/labkey/experiment/api/ExpDataClassType.java -text
 experiment/src/org/labkey/experiment/api/ExpDataFileColumn.java -text
 experiment/src/org/labkey/experiment/api/ExpDataImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpDataInputTableImpl.java -text
+experiment/src/org/labkey/experiment/api/ExpDataProtocolInputImpl.java -text
+experiment/src/org/labkey/experiment/api/ExpDataProtocolInputTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpDataRunInputImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpDataTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpExperimentImpl.java -text
@@ -1054,6 +1061,8 @@ experiment/src/org/labkey/experiment/api/ExpIdentifiableEntityImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpInputTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpMaterialImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpMaterialInputTableImpl.java -text
+experiment/src/org/labkey/experiment/api/ExpMaterialProtocolInputImpl.java -text
+experiment/src/org/labkey/experiment/api/ExpMaterialProtocolInputTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpMaterialRunInputImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpMaterialTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpObjectImpl.java -text
@@ -1061,6 +1070,8 @@ experiment/src/org/labkey/experiment/api/ExpProtocolActionImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpProtocolApplicationImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpProtocolApplicationTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpProtocolImpl.java -text
+experiment/src/org/labkey/experiment/api/ExpProtocolInputImpl.java -text
+experiment/src/org/labkey/experiment/api/ExpProtocolInputTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpProtocolTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpQCFlagTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpRunGroupMapTableImpl.java -text
@@ -1087,6 +1098,7 @@ experiment/src/org/labkey/experiment/api/LineageTableInfo.java -text
 experiment/src/org/labkey/experiment/api/LogDataType.java -text
 experiment/src/org/labkey/experiment/api/Material.java -text
 experiment/src/org/labkey/experiment/api/MaterialInput.java -text
+experiment/src/org/labkey/experiment/api/MaterialProtocolInput.java -text
 experiment/src/org/labkey/experiment/api/MaterialSource.java -text
 experiment/src/org/labkey/experiment/api/Protocol.java -text
 experiment/src/org/labkey/experiment/api/ProtocolAction.java -text

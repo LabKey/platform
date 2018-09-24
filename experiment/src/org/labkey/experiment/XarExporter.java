@@ -37,11 +37,18 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.ProtocolApplicationParameter;
 import org.labkey.api.exp.ProtocolParameter;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataClass;
+import org.labkey.api.exp.api.ExpDataProtocolInput;
+import org.labkey.api.exp.api.ExpDataRunInput;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpMaterialProtocolInput;
+import org.labkey.api.exp.api.ExpMaterialRunInput;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolAction;
 import org.labkey.api.exp.api.ExpProtocolApplication;
+import org.labkey.api.exp.api.ExpProtocolInput;
+import org.labkey.api.exp.api.ExpProtocolInputCriteria;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
@@ -82,6 +89,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -255,7 +263,7 @@ public class XarExporter
                 _inputDataLSIDs.add(data.getLSID());
 
                 DataBaseType xData = inputDefs.addNewData();
-                populateData(xData, data, entry.getValue(), run);
+                populateData(xData, data, entry.getValue(), run, null);
             }
         }
 
@@ -271,7 +279,7 @@ public class XarExporter
                 _inputMaterialLSIDs.add(material.getLSID());
 
                 MaterialBaseType xMaterial = inputDefs.addNewMaterial();
-                populateMaterial(xMaterial, new ExpMaterialImpl(material));
+                populateMaterial(xMaterial, new ExpMaterialImpl(material), null);
             }
         }
 
@@ -356,6 +364,16 @@ public class XarExporter
                 if (dataInput.getDataId() == data.getRowId())
                 {
                     roleName = dataInput.getRole();
+
+                    if (dataInput.getProtocolInputId() != null)
+                    {
+                        ExpProtocolInput protocolInput = ExperimentServiceImpl.get().getProtocolInput(dataInput.getProtocolInputId());
+                        if (protocolInput != null)
+                        {
+                            Lsid lsid = Lsid.parse(protocolInput.getLSID());
+                            dataLSID.setProtocolInput(lsid.getObjectId());
+                        }
+                    }
                     break;
                 }
             }
@@ -394,6 +412,16 @@ public class XarExporter
                     {
                         materialLSID.setRoleName(materialInput.getRole());
                     }
+
+                    if (materialInput.getProtocolInputId() != null)
+                    {
+                        ExpProtocolInput protocolInput = ExperimentServiceImpl.get().getProtocolInput(materialInput.getProtocolInputId());
+                        if (protocolInput != null)
+                        {
+                            Lsid lsid = Lsid.parse(protocolInput.getLSID());
+                            materialLSID.setProtocolInput(lsid.getObjectId());
+                        }
+                    }
                     break;
                 }
             }
@@ -402,25 +430,30 @@ public class XarExporter
         xApplication.setName(application.getName());
 
         ProtocolApplicationBaseType.OutputDataObjects outputDataObjects = xApplication.addNewOutputDataObjects();
-        List<? extends ExpData> outputData = application.getOutputDatas();
-        if (!outputData.isEmpty())
+        List<? extends ExpDataRunInput> dataOutputs = application.getDataOutputs();
+        if (!dataOutputs.isEmpty())
         {
-            for (ExpData data : outputData)
+            for (ExpDataRunInput dataOutput : dataOutputs)
             {
+                ExpData data = dataOutput.getData();
+                ExpDataProtocolInput protocolInput = dataOutput.getProtocolInput();
+
                 // Issue 31727: When data is imported via the API, no file is created for the data.  We want to
                 // include a file path in the export, though.  We use the name of the data object as the file name.
                 if (data.getDataFileUrl() == null && data.isFinalRunOutput())
                     data.setDataFileURI(run.getFilePathRootPath().resolve(data.getName()).toUri());
                 DataBaseType xData = outputDataObjects.addNewData();
-                populateData(xData, data, null, run);
+                populateData(xData, data, null, run, protocolInput);
             }
         }
 
         ProtocolApplicationBaseType.OutputMaterials outputMaterialObjects = xApplication.addNewOutputMaterials();
-        for (ExpMaterial material : application.getOutputMaterials())
+        for (ExpMaterialRunInput materialOutput : application.getMaterialOutputs())
         {
+            ExpMaterial material = materialOutput.getMaterial();
+            ExpMaterialProtocolInput protocolInput = materialOutput.getProtocolInput();
             MaterialBaseType xMaterial = outputMaterialObjects.addNewMaterial();
-            populateMaterial(xMaterial, material);
+            populateMaterial(xMaterial, material, protocolInput);
         }
 
         PropertyCollectionType appProperties = getProperties(application.getLSID(), run.getContainer());
@@ -469,13 +502,20 @@ public class XarExporter
         }
     }
 
-    private void populateMaterial(MaterialBaseType xMaterial, ExpMaterial material) throws ExperimentException
+    private void populateMaterial(MaterialBaseType xMaterial, ExpMaterial material, @Nullable ExpMaterialProtocolInput protocolInput) throws ExperimentException
     {
         logProgress("Adding material " + material.getLSID());
         addSampleSet(material.getCpasType());
         xMaterial.setAbout(_relativizedLSIDs.relativize(material.getLSID()));
         xMaterial.setCpasType(material.getCpasType() == null ? ExpMaterial.DEFAULT_CPAS_TYPE : _relativizedLSIDs.relativize(material.getCpasType()));
         xMaterial.setName(material.getName());
+
+        if (protocolInput != null)
+        {
+            Lsid lsid = Lsid.parse(protocolInput.getLSID());
+            xMaterial.setProtocolOutput(lsid.getObjectId());
+        }
+
         PropertyCollectionType materialProperties = getProperties(material.getLSID(), material.getContainer());
         if (materialProperties != null)
         {
@@ -719,12 +759,18 @@ public class XarExporter
         return properties;
     }
 
-    private void populateData(DataBaseType xData, ExpData data, @Nullable String role, ExpRun run) throws ExperimentException
+    private void populateData(DataBaseType xData, ExpData data, @Nullable String role, ExpRun run, @Nullable ExpDataProtocolInput protocolInput) throws ExperimentException
     {
         logProgress("Adding data " + data.getLSID());
         xData.setName(data.getName());
         xData.setAbout(_relativizedLSIDs.relativize(data));
         xData.setCpasType(data.getCpasType() == null ? ExpData.DEFAULT_CPAS_TYPE : _relativizedLSIDs.relativize(data.getCpasType()));
+
+        if (protocolInput != null)
+        {
+            Lsid lsid = Lsid.parse(protocolInput.getLSID());
+            xData.setProtocolOutput(lsid.getObjectId());
+        }
 
         Path path = data.getFilePath();
         if (path != null)
@@ -800,6 +846,55 @@ public class XarExporter
 
         xProtocol.setOutputDataType(protocol.getOutputDataType());
         xProtocol.setOutputMaterialType(protocol.getOutputMaterialType());
+
+        ProtocolType.Inputs xInputs = null;
+        Collection<? extends ExpMaterialProtocolInput> materialProtocolInputs = protocol.getMaterialProtocolInputs();
+        if (!materialProtocolInputs.isEmpty())
+        {
+            xInputs = xProtocol.addNewInputs();
+            for (ExpMaterialProtocolInput pi : materialProtocolInputs)
+            {
+                MaterialProtocolInputType xMpi = xInputs.addNewMaterialInput();
+                addMaterialProtocolInput(xMpi, pi);
+            }
+        }
+
+        Collection<? extends ExpDataProtocolInput> dataProtocolInputs = protocol.getDataProtocolInputs();
+        if (!dataProtocolInputs.isEmpty())
+        {
+            if (xInputs == null)
+                xInputs = xProtocol.addNewInputs();
+            for (ExpDataProtocolInput pi : dataProtocolInputs)
+            {
+                DataProtocolInputType xDpi = xInputs.addNewDataInput();
+                addDataProtocolInput(xDpi, pi);
+            }
+        }
+
+        ProtocolType.Outputs xOutputs = null;
+        Collection<? extends ExpMaterialProtocolInput> materialProtocolOutputs = protocol.getMaterialProtocolOutputs();
+        if (!materialProtocolOutputs.isEmpty())
+        {
+            xOutputs = xProtocol.addNewOutputs();
+            for (ExpMaterialProtocolInput pi : materialProtocolOutputs)
+            {
+                MaterialProtocolInputType xMpo = xOutputs.addNewMaterialOutput();
+                addMaterialProtocolInput(xMpo, pi);
+            }
+        }
+
+        Collection<? extends ExpDataProtocolInput> dataProtocolOutputs = protocol.getDataProtocolOutputs();
+        if (!dataProtocolOutputs.isEmpty())
+        {
+            if (xOutputs == null)
+                xOutputs = xProtocol.addNewOutputs();
+            for (ExpDataProtocolInput pi : dataProtocolOutputs)
+            {
+                DataProtocolInputType xDpo = xOutputs.addNewDataOutput();
+                addDataProtocolInput(xDpo, pi);
+            }
+        }
+
         if (protocol.getProtocolDescription() != null)
         {
             xProtocol.setProtocolDescription(protocol.getProtocolDescription());
@@ -840,6 +935,70 @@ public class XarExporter
                     addProtocolAction(action, actionSet);
                 }
             }
+        }
+    }
+
+    private void addDataProtocolInput(DataProtocolInputType xDpi, ExpDataProtocolInput pi) throws ExperimentException
+    {
+        xDpi.setName(pi.getName());
+        Lsid lsid = Lsid.parse(pi.getLSID());
+        xDpi.setGuid(lsid.getObjectId());
+
+        ExpDataClass dc = pi.getType();
+        if (dc != null)
+            xDpi.setDataClass(dc.getName());
+
+        ExpProtocolInputCriteria criteria = pi.getCriteria();
+        if (criteria != null)
+        {
+            ProtocolInputCriteria xCriteria = xDpi.addNewCriteria();
+            xCriteria.setType(criteria.getTypeName());
+            xCriteria.setStringValue(criteria.serializeConfig());
+        }
+
+        // min occurs defaults to 1
+        if (pi.getMinOccurs() != 1)
+            xDpi.setMinOccurs(pi.getMinOccurs());
+
+        if (pi.getMaxOccurs() != null)
+            xDpi.setMaxOccurs(pi.getMaxOccurs());
+
+        PropertyCollectionType properties = getProperties(pi.getLSID(), pi.getContainer());
+        if (properties != null)
+        {
+            xDpi.setProperties(properties);
+        }
+    }
+
+    private void addMaterialProtocolInput(MaterialProtocolInputType xMpi, ExpMaterialProtocolInput pi) throws ExperimentException
+    {
+        xMpi.setName(pi.getName());
+        Lsid lsid = Lsid.parse(pi.getLSID());
+        xMpi.setGuid(lsid.getObjectId());
+
+        ExpSampleSet ss = pi.getType();
+        if (ss != null)
+            xMpi.setSampleSet(ss.getName());
+
+        ExpProtocolInputCriteria criteria = pi.getCriteria();
+        if (criteria != null)
+        {
+            ProtocolInputCriteria xCriteria = xMpi.addNewCriteria();
+            xCriteria.setType(criteria.getTypeName());
+            xCriteria.setStringValue(criteria.serializeConfig());
+        }
+
+        // min occurs defaults to 1
+        if (pi.getMinOccurs() != 1)
+            xMpi.setMinOccurs(pi.getMinOccurs());
+
+        if (pi.getMaxOccurs() != null)
+            xMpi.setMaxOccurs(pi.getMaxOccurs());
+
+        PropertyCollectionType properties = getProperties(pi.getLSID(), pi.getContainer());
+        if (properties != null)
+        {
+            xMpi.setProperties(properties);
         }
     }
 

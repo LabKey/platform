@@ -35,6 +35,8 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Objects" %>
+<%@ page import="org.labkey.api.exp.api.ExpMaterialProtocolInput" %>
+<%@ page import="org.labkey.api.exp.api.ExpDataProtocolInput" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ExpRun> me = (JspView<ExpRun>) HttpView.currentView();
@@ -97,10 +99,12 @@
                 <table class="labkey-protocol-applications labkey-data-region-legacy labkey-show-borders" width="100%">
                     <% for (ExpMaterialRunInput materialRunInput : materialRunInputs) { %>
                     <% ExpMaterial material = materialRunInput.getMaterial(); %>
+                    <% ExpMaterialProtocolInput protocolInput = materialRunInput.getProtocolInput(); %>
                     <tr class="labkey-row">
                         <td width="100px"><a href="<%=new ActionURL(ExperimentController.ShowMaterialAction.class, c).addParameter("rowId", material.getRowId())%>"><%= h(material.getName()) %></a></td>
                         <td width="40px"><%= h(materialRunInput.getRole()) %></td>
                         <td width="200px"><%= h(materialRunInput.getLSID()) %></td>
+                        <td width="200px"><%= h(protocolInput != null ? protocolInput.getName() : null)%></td>
                         <td>
                             <% Map<String, Object> map = ((ExpMaterialRunInputImpl)materialRunInput).getProperties(); %>
                             <% if (!map.isEmpty()) out.write(h(new JSONObject(map).toString(2))); %>
@@ -110,6 +114,7 @@
 
                     <% for (ExpDataRunInput dataRunInput : dataRunInputs) { %>
                     <% ExpData data = dataRunInput.getData(); %>
+                    <% ExpDataProtocolInput protocolInput = dataRunInput.getProtocolInput(); %>
                     <tr class="labkey-row">
                         <td width="100px">
                             <a href="<%=new ActionURL(ExperimentController.ShowDataAction.class, c).addParameter("rowId", data.getRowId())%>"><%= h(data.getName()) %></a>
@@ -119,6 +124,7 @@
                         </td>
                         <td width="40px"><%= h(dataRunInput.getRole()) %></td>
                         <td width="200px"><%= h(dataRunInput.getLSID()) %></td>
+                        <td width="200px"><%= h(protocolInput != null ? protocolInput.getName() : null)%></td>
                         <td>
                             <% Map<String, Object> map = ((ExpDataRunInputImpl)dataRunInput).getProperties(); %>
                             <% if (!map.isEmpty()) out.write(h(new JSONObject(map).toString(2))); %>
@@ -133,10 +139,12 @@
                 <table class="labkey-protocol-applications labkey-data-region-legacy labkey-show-borders" width="100%">
                     <% for (ExpMaterialRunInput materialRunInput : materialRunOutputs) { %>
                     <% ExpMaterial material = materialRunInput.getMaterial(); %>
+                    <% ExpMaterialProtocolInput protocolInput = materialRunInput.getProtocolInput(); %>
                     <tr class="labkey-row">
                         <td width="100px"><a href="<%=new ActionURL(ExperimentController.ShowMaterialAction.class, c).addParameter("rowId", material.getRowId())%>"><%= h(material.getName()) %></a></td>
                         <td width="40px"><%= h(materialRunInput.getRole()) %></td>
                         <td width="200px"><%= h(materialRunInput.getLSID()) %></td>
+                        <td width="200px"><%= h(protocolInput != null ? protocolInput.getName() : null)%></td>
                         <td>
                             <% Map<String, Object> map = ((ExpMaterialRunInputImpl)materialRunInput).getProperties(); %>
                             <% if (!map.isEmpty()) out.write(h(new JSONObject(map).toString(2))); %>
@@ -146,6 +154,7 @@
 
                     <% for (ExpDataRunInput dataRunInput : dataRunOutputs) { %>
                     <% ExpData data = dataRunInput.getData(); %>
+                    <% ExpDataProtocolInput protocolInput = dataRunInput.getProtocolInput(); %>
                     <tr class="labkey-row">
                         <td width="100px">
                             <a href="<%=new ActionURL(ExperimentController.ShowDataAction.class, c).addParameter("rowId", data.getRowId())%>"><%= h(data.getName()) %></a>
@@ -155,6 +164,7 @@
                         </td>
                         <td width="40px"><%= h(dataRunInput.getRole()) %></td>
                         <td width="200px"><%= h(dataRunInput.getLSID()) %></td>
+                        <td width="200px"><%= h(protocolInput != null ? protocolInput.getName() : null)%></td>
                         <td>
                             <% Map<String, Object> map = ((ExpDataRunInputImpl)dataRunInput).getProperties(); %>
                             <% if (!map.isEmpty()) out.write(h(new JSONObject(map).toString(2))); %>

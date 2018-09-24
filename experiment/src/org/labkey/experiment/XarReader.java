@@ -48,10 +48,16 @@ import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataClass;
+import org.labkey.api.exp.api.ExpDataProtocolInput;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpMaterialProtocolInput;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpProtocolInput;
+import org.labkey.api.exp.api.ExpProtocolInputCriteria;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -1516,7 +1522,7 @@ public class XarReader extends AbstractXarImporter
         }
     }
 
-    private void loadProtocol(ProtocolBaseType p) throws ExperimentException
+    private void loadProtocol(ProtocolBaseType p) throws ExperimentException, SQLException
     {
         String protocolLSID = LsidUtils.resolveLsidFromTemplate(p.getAbout(), getRootContext(), "Protocol");
         ExpProtocolImpl existingProtocol = ExperimentServiceImpl.get().getExpProtocol(protocolLSID);
@@ -1672,7 +1678,7 @@ public class XarReader extends AbstractXarImporter
         return s == null ? null : s.trim();
     }
 
-    private Protocol readProtocol(ProtocolBaseType p) throws XarFormatException
+    private Protocol readProtocol(ProtocolBaseType p) throws XarFormatException, SQLException
     {
         Protocol protocol = new Protocol();
         protocol.setLSID(LsidUtils.resolveLsidFromTemplate(p.getAbout(), getRootContext(), "Protocol"));
@@ -1709,6 +1715,21 @@ public class XarReader extends AbstractXarImporter
         protocol.setOutputMaterialType(materialType == null ? "Material" : materialType);
         String dataType = trimString(p.getOutputDataType());
         protocol.setOutputDataType(dataType == null ? "Data" : dataType);
+
+        List<ExpProtocolInput> protocolInputs = new ArrayList<>(10);
+        if (p.isSetInputs())
+        {
+            ProtocolBaseType.Inputs inputs = p.getInputs();
+            protocolInputs.addAll(loadMaterialProtocolInputs(inputs.getMaterialInputArray(), true));
+            protocolInputs.addAll(loadDataProtocolInputs(inputs.getDataInputArray(), true));
+        }
+        if (p.isSetOutputs())
+        {
+            ProtocolBaseType.Outputs outputs = p.getOutputs();
+            protocolInputs.addAll(loadMaterialProtocolInputs(outputs.getMaterialOutputArray(), false));
+            protocolInputs.addAll(loadDataProtocolInputs(outputs.getDataOutputArray(), false));
+        }
+        protocol.storeProtocolInputs(protocolInputs);
 
         protocol.setInstrument(trimString(p.getInstrument()));
         protocol.setSoftware(trimString(p.getSoftware()));
@@ -1747,6 +1768,106 @@ public class XarReader extends AbstractXarImporter
         protocol.storeObjectProperties(properties);
 
         return protocol;
+    }
+
+    private List<ExpProtocolInput> loadMaterialProtocolInputs(MaterialProtocolInputType[] inputs, boolean input) throws SQLException, XarFormatException
+    {
+        if (inputs == null || inputs.length == 0)
+            return Collections.emptyList();
+
+        List<ExpProtocolInput> protocolInputs = new ArrayList<>(inputs.length);
+        for (MaterialProtocolInputType pi : inputs)
+        {
+            ExpMaterialProtocolInput protocolInput = loadMaterialProtocolInput(pi, input);
+            protocolInputs.add(protocolInput);
+        }
+
+        return protocolInputs;
+    }
+
+    private List<ExpProtocolInput> loadDataProtocolInputs(DataProtocolInputType[] inputs, boolean input) throws XarFormatException, SQLException
+    {
+        if (inputs == null || inputs.length == 0)
+            return Collections.emptyList();
+
+        List<ExpProtocolInput> protocolInputs = new ArrayList<>(inputs.length);
+        for (DataProtocolInputType pi : inputs)
+        {
+            ExpDataProtocolInput protocolInput = loadDataProtocolInput(pi, input);
+            protocolInputs.add(protocolInput);
+        }
+
+        return protocolInputs;
+    }
+
+    private ExpDataProtocolInput loadDataProtocolInput(DataProtocolInputType pi, boolean input) throws SQLException, XarFormatException
+    {
+        String name = pi.getName();
+        String dataClassName = pi.getDataClass();
+        ExpDataClass dc = null;
+        if (dataClassName != null)
+        {
+            dc = ExperimentService.get().getDataClass(getContainer(), getUser(), dataClassName);
+            if (dc == null)
+                logErrorAndThrow("DataClass '" + dataClassName + "' not found for protocol input '" + name + "'");
+        }
+
+        ExpProtocolInputCriteria criteria = null;
+        if (pi.isSetCriteria())
+        {
+            String criteriaType = pi.getCriteria().getType();
+            String criteriaConfig = pi.getCriteria().getStringValue();
+            criteria = ExperimentServiceImpl.get().createProtocolInputCriteria(criteriaType, criteriaConfig);
+        }
+
+        int minOccurs = 1;
+        if (pi.isSetMinOccurs())
+            minOccurs = pi.getMinOccurs();
+
+        Integer maxOccurs = null;
+        if (pi.isSetMinOccurs())
+            maxOccurs = pi.getMaxOccurs();
+
+        ExpDataProtocolInput protocolInput = ExperimentServiceImpl.get().createDataProtocolInput(getContainer(), name, 0, input, dc, criteria, minOccurs, maxOccurs);
+
+        loadPropertyCollection(pi.getProperties(), protocolInput.getLSID(), protocolInput.getLSID(), null);
+
+        return protocolInput;
+    }
+
+    private ExpMaterialProtocolInput loadMaterialProtocolInput(MaterialProtocolInputType pi, boolean input) throws SQLException, XarFormatException
+    {
+        String name = pi.getName();
+        String sampleSetName = pi.getSampleSet();
+        ExpSampleSet sampleSet = null;
+        if (sampleSetName != null)
+        {
+            sampleSet = ExperimentService.get().getSampleSet(getContainer(), getUser(), sampleSetName);
+            if (sampleSet == null)
+                logErrorAndThrow("SampleSet '" + sampleSetName + "' not found for protocol input '" + name + "'");
+        }
+
+        ExpProtocolInputCriteria criteria = null;
+        if (pi.isSetCriteria())
+        {
+            String criteriaType = pi.getCriteria().getType();
+            String criteriaConfig = pi.getCriteria().getStringValue();
+            criteria = ExperimentServiceImpl.get().createProtocolInputCriteria(criteriaType, criteriaConfig);
+        }
+
+        int minOccurs = 1;
+        if (pi.isSetMinOccurs())
+            minOccurs = pi.getMinOccurs();
+
+        Integer maxOccurs = null;
+        if (pi.isSetMinOccurs())
+            maxOccurs = pi.getMaxOccurs();
+
+        ExpMaterialProtocolInput protocolInput = ExperimentServiceImpl.get().createMaterialProtocolInput(getContainer(), name, 0, input, sampleSet, criteria, minOccurs, maxOccurs);
+
+        loadPropertyCollection(pi.getProperties(), protocolInput.getLSID(), protocolInput.getLSID(), null);
+
+        return protocolInput;
     }
 
     private Map<String, Object> getSimplePropertiesMap(PropertyCollectionType xbProps) throws XarFormatException

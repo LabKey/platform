@@ -69,6 +69,7 @@ public class ProtocolSuccessorPredecessorView extends GridView
         getDataRegion().setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
 
         setTitle(title);
+        setFrame(FrameType.TITLE);
     }
 
     private static class ProtocolNameDisplayColumn extends AbstractProtocolDisplayColumn

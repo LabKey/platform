@@ -26,7 +26,9 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataProtocolInput;
 import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpMaterialProtocolInput;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
@@ -339,10 +341,23 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
     @NotNull
     public ExpDataRunInputImpl addDataInput(User user, ExpData data, String roleName)
     {
+        return addDataInput(user, data, roleName, null);
+    }
+
+    @Override
+    @NotNull
+    public ExpDataRunInputImpl addDataInput(User user, ExpData data, String roleName, @Nullable ExpDataProtocolInput protocolInput)
+    {
         DataInput obj = new DataInput();
         obj.setDataId(data.getRowId());
         obj.setTargetApplicationId(getRowId());
         obj.setRole(roleName);
+        if (protocolInput != null)
+        {
+            if (!getProtocol().equals(protocolInput.getProtocol()))
+                throw new IllegalArgumentException("protocol input must be associated with the same protocol as this protocol application");
+            obj.setProtocolInputId(protocolInput.getRowId());
+        }
 
         obj = Table.insert(user, ExperimentServiceImpl.get().getTinfoDataInput(), obj);
         ExperimentServiceImpl.get().uncacheLineageGraph();
@@ -353,10 +368,24 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
     @NotNull
     public ExpMaterialRunInputImpl addMaterialInput(User user, ExpMaterial material, @Nullable String roleName)
     {
+        return addMaterialInput(user, material, roleName, null);
+    }
+
+    @Override
+    @NotNull
+    public ExpMaterialRunInputImpl addMaterialInput(User user, ExpMaterial material, @Nullable String roleName, @Nullable ExpMaterialProtocolInput protocolInput)
+    {
         MaterialInput obj = new MaterialInput();
         obj.setMaterialId(material.getRowId());
         obj.setTargetApplicationId(getRowId());
         obj.setRole(roleName);
+        if (protocolInput != null)
+        {
+            if (!getProtocol().equals(protocolInput.getProtocol()))
+                throw new IllegalArgumentException("protocol input must be associated with the same protocol as this protocol application");
+            obj.setProtocolInputId(protocolInput.getRowId());
+        }
+
         obj = Table.insert(user, ExperimentServiceImpl.get().getTinfoMaterialInput(), obj);
         ExperimentServiceImpl.get().uncacheLineageGraph();
         return new ExpMaterialRunInputImpl(obj);

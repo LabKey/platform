@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.api;
 
+import org.labkey.api.exp.api.ExpDataProtocolInput;
 import org.labkey.api.exp.api.ExpDataRunInput;
 
 import java.util.ArrayList;
@@ -41,8 +42,20 @@ public class ExpDataRunInputImpl extends ExpRunInputImpl<DataInput> implements E
         super(input);
     }
 
+    @Override
     public ExpDataImpl getData()
     {
         return ExperimentServiceImpl.get().getExpData(_input.getDataId());
     }
+
+    @Override
+    public ExpDataProtocolInput getProtocolInput()
+    {
+        Integer protocolInputId = _input.getProtocolInputId();
+        if (protocolInputId == null)
+            return null;
+
+        return ExperimentServiceImpl.get().getDataProtocolInput(protocolInputId);
+    }
+
 }

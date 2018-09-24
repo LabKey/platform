@@ -37,6 +37,7 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.FilterProtocolInputCriteria;
 import org.labkey.api.exp.property.DomainAuditProvider;
 import org.labkey.api.exp.property.DomainPropertyAuditProvider;
 import org.labkey.api.exp.property.ExperimentProperty;
@@ -126,7 +127,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
     public double getVersion()
     {
-        return 18.20;
+        return 18.21;
     }
 
     @Nullable
@@ -160,6 +161,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         PropertyService.get().registerValidatorKind(new LengthValidator());
 
         ExperimentService.get().registerExperimentDataHandler(new DefaultExperimentDataHandler());
+        ExperimentService.get().registerProtocolInputCriteria(new FilterProtocolInputCriteria.Factory());
 
         AdminConsole.addExperimentalFeatureFlag(ExperimentServiceImpl.EXPERIMENTAL_LEGACY_LINEAGE, "Legacy lineage query",
                 "This feature will restore the legacy lineage queries used on the Material and Data details pages", false);
