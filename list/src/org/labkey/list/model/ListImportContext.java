@@ -1,6 +1,8 @@
 package org.labkey.list.model;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.pipeline.PairSerializer;
 import org.labkey.api.util.Pair;
 
 import java.util.Map;
@@ -8,6 +10,7 @@ import java.util.Map;
 public class ListImportContext
 {
     // example: "testData.xlsx" -> {"name", "testList"}
+    @JsonSerialize(contentUsing = PairSerializer.class)
     private Map<String, Pair<String, String>> _inputDataMap;
 
     //generally, _useMerge == false means we truncate and replace the data
@@ -15,6 +18,9 @@ public class ListImportContext
 
     private boolean _triggeredReload = false;
 
+    //For serialization
+    protected ListImportContext() {}
+    
     public ListImportContext(@Nullable Map<String, Pair<String, String>> inputDataMap, boolean useMerge, boolean isTriggeredReload)
     {
         if (inputDataMap != null && !inputDataMap.isEmpty())
