@@ -54,6 +54,7 @@ public interface ExpProtocolApplication extends ExpObject
      * @return the newly inserted DataInput edge
      */
     @NotNull ExpDataRunInput addDataInput(User user, ExpData input, String inputRole);
+    @NotNull ExpDataRunInput addDataInput(User user, ExpData input, String inputRole, @Nullable ExpDataProtocolInput protocolInput);
     void removeDataInput(User user, ExpData data);
 
     /**
@@ -62,6 +63,7 @@ public interface ExpProtocolApplication extends ExpObject
      * @return the newly inserted MaterialInput edge
      */
     @NotNull ExpMaterialRunInput addMaterialInput(User user, ExpMaterial material, @Nullable String inputRole);
+    @NotNull ExpMaterialRunInput addMaterialInput(User user, ExpMaterial material, @Nullable String inputRole, @Nullable ExpMaterialProtocolInput protocolInput);
     void removeMaterialInput(User user, ExpMaterial material);
 
     ExpRun getRun();

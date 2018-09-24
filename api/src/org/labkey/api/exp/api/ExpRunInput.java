@@ -15,13 +15,22 @@
  */
 package org.labkey.api.exp.api;
 
+import org.jetbrains.annotations.Nullable;
+
 /**
- * Base interface for the different types of objects that can be the input to an {@link ExpRun}.
+ * Base interface for the different types of objects that can be the input to or the output of an {@link ExpRun}.
  * User: jeckels
  * Date: Oct 31, 2008
  */
 public interface ExpRunInput extends ExpObject
 {
     ExpProtocolApplication getTargetApplication();
+
     String getRole();
+
+    /**
+     * Get the {@link ExpProtocolInput} from the original {@link ExpProtocol} the that this
+     * input or output is associated with.
+     */
+    @Nullable ExpProtocolInput getProtocolInput();
 }

@@ -235,7 +235,7 @@ public abstract class AbstractParameter extends BoundMap
 
     protected Object handleOtherValueTypesGetter(SimpleTypeNames.Enum type)
     {
-        throw new IllegalArgumentException("Unknown property type " + type);
+        throw new IllegalArgumentException("Unknown property type '" + type + "' for property: " + getName());
     }
 
     private String trimString(String s)

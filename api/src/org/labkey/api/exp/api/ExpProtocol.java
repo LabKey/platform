@@ -93,34 +93,44 @@ public interface ExpProtocol extends ExpObject
         ExperimentRunOutput,
     }
 
-    List<? extends ExpProtocolAction> getSteps();
-    ApplicationType getApplicationType();
-    ProtocolImplementation getImplementation();
-    String getDescription();
-    Integer getMaxInputDataPerInstance();
-    Integer getMaxInputMaterialPerInstance();
-    String getProtocolDescription();
-    void setProtocolDescription(String description);
-    void setMaxInputMaterialPerInstance(Integer maxMaterials);
-    void setMaxInputDataPerInstance(Integer i);
-    Integer getOutputMaterialPerInstance();
-    Integer getOutputDataPerInstance();
-    String getOutputMaterialType();
-    String getOutputDataType();
-
     /**
      * Adds a step and persists it to the database
      */
     ExpProtocolAction addStep(User user, ExpProtocol childProtocol, int actionSequence);
+    List<? extends ExpProtocolAction> getSteps();
+
+    ApplicationType getApplicationType();
+    void setApplicationType(ApplicationType type);
+
+    ProtocolImplementation getImplementation();
+
+    String getDescription();
+    void setDescription(String description);
+    String getProtocolDescription();
+    void setProtocolDescription(String description);
+
+    List<? extends ExpMaterialProtocolInput> getMaterialProtocolInputs();
+    List<? extends ExpDataProtocolInput> getDataProtocolInputs();
+    List<? extends ExpMaterialProtocolInput> getMaterialProtocolOutputs();
+    List<? extends ExpDataProtocolInput> getDataProtocolOutputs();
+
+    void setProtocolInputs(Collection<? extends ExpProtocolInput> protocolInputs);
+
+    Integer getMaxInputDataPerInstance();
+    Integer getMaxInputMaterialPerInstance();
+    void setMaxInputMaterialPerInstance(Integer maxMaterials);
+    void setMaxInputDataPerInstance(Integer i);
+
+    Integer getOutputMaterialPerInstance();
+    Integer getOutputDataPerInstance();
+    String getOutputMaterialType();
+    String getOutputDataType();
 
     List<? extends ExpProtocol> getParentProtocols();
     
     List<? extends ExpRun> getExpRuns();
 
     Set<Container> getExpRunContainers();
-
-    void setApplicationType(ApplicationType type);
-    void setDescription(String description);
 
     /** Override to signal that we never throw BatchValidationExceptions */
     @Override

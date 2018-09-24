@@ -16,6 +16,8 @@
 
 package org.labkey.api.exp.api;
 
+import org.jetbrains.annotations.Nullable;
+
 /** Maps an {@link ExpData} to be the input into an {@link ExpRun}. */
 public interface ExpDataRunInput extends ExpRunInput
 {
@@ -23,4 +25,10 @@ public interface ExpDataRunInput extends ExpRunInput
     String IMPORTED_DATA_ROLE = "ImportedData";
 
     ExpData getData();
+
+    /**
+     * Get the {@link ExpDataProtocolInput} from original {@link ExpProtocol} the that this
+     * input or output is associated with.
+     */
+    @Nullable ExpDataProtocolInput getProtocolInput();
 }

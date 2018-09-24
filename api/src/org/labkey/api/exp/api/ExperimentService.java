@@ -42,9 +42,11 @@ import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.exp.query.ExpDataClassTable;
 import org.labkey.api.exp.query.ExpDataInputTable;
+import org.labkey.api.exp.query.ExpDataProtocolInputTable;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpExperimentTable;
 import org.labkey.api.exp.query.ExpMaterialInputTable;
+import org.labkey.api.exp.query.ExpMaterialProtocolInputTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpProtocolApplicationTable;
 import org.labkey.api.exp.query.ExpProtocolTable;
@@ -312,6 +314,26 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     ExpProtocol createExpProtocol(Container container, ExpProtocol.ApplicationType type, String name, String lsid);
 
+    ExpDataProtocolInput createDataProtocolInput(
+            @NotNull String name, @NotNull ExpProtocol protocol, boolean input,
+            @Nullable ExpDataClass dataClass, @Nullable ExpProtocolInputCriteria criteria,
+            int minOccurs, @Nullable Integer maxOccurs);
+
+    ExpMaterialProtocolInput createMaterialProtocolInput(
+            @NotNull String name, @NotNull ExpProtocol protocol, boolean input,
+            @Nullable ExpSampleSet sampleSet, @Nullable ExpProtocolInputCriteria criteria,
+            int minOccurs, @Nullable Integer maxOccurs);
+
+    @Nullable ExpProtocolInput getProtocolInput(Lsid lsid);
+
+    @Nullable ExpDataProtocolInput getDataProtocolInput(int rowId);
+    @Nullable ExpDataProtocolInput getDataProtocolInput(Lsid lsid);
+    List<? extends ExpDataProtocolInput> getDataProtocolInputs(int protocolId, boolean input, @Nullable String name, @Nullable Integer materialSourceId);
+
+    @Nullable ExpMaterialProtocolInput getMaterialProtocolInput(int rowId);
+    @Nullable ExpMaterialProtocolInput getMaterialProtocolInput(Lsid lsid);
+    List<? extends ExpMaterialProtocolInput> getMaterialProtocolInputs(int protocolId, boolean input, @Nullable String name, @Nullable Integer materialSourceId);
+
     /**
      * @param type may be null. If non-null, only return roles that are used for that type of application (input, output, or intermediate)
      */
@@ -371,6 +393,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     ExpDataInputTable createDataInputTable(String name, ExpSchema expSchema);
 
+    ExpDataProtocolInputTable createDataProtocolInputTable(String name, ExpSchema schema);
+
     ExpSampleSetTable createSampleSetTable(String name, UserSchema schema);
 
     ExpDataClassTable createDataClassTable(String name, UserSchema schema);
@@ -384,6 +408,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
     ExpMaterialTable createMaterialTable(String name, UserSchema schema);
 
     ExpMaterialInputTable createMaterialInputTable(String name, ExpSchema expSchema);
+
+    ExpMaterialProtocolInputTable createMaterialProtocolInputTable(String name, ExpSchema schema);
 
     ExpProtocolApplicationTable createProtocolApplicationTable(String name, UserSchema schema);
 
@@ -442,6 +468,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
     TableInfo getTinfoMaterialInput();
 
     TableInfo getTinfoDataInput();
+
+    TableInfo getTinfoProtocolInput();
 
     TableInfo getTinfoPropertyDescriptor();
 
@@ -573,6 +601,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
     void registerDataType(DataType type);
 
     void registerProtocolImplementation(ProtocolImplementation impl);
+
+    void registerProtocolInputCriteria(ExpProtocolInputCriteria.Factory factory);
 
     ProtocolImplementation getProtocolImplementation(String name);
 

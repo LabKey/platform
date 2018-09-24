@@ -193,6 +193,21 @@ public enum LsidType
                 {
                     return null;
                 }
+            },
+
+    ProtocolInput
+            {
+                @Override
+                public Identifiable getObject(Lsid lsid)
+                {
+                    return ExperimentService.get().getProtocolInput(lsid);
+                }
+
+                @Override
+                public @Nullable ActionURL getDisplayURL(Lsid lsid)
+                {
+                    return null;
+                }
             };
 
     public abstract Identifiable getObject(Lsid lsid);

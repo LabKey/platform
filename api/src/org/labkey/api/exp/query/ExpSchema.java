@@ -93,6 +93,14 @@ public class ExpSchema extends AbstractExpSchema
                 return expSchema.setupTable(ret);
             }
         },
+        DataProtocolInputs
+        {
+            public TableInfo createTable(ExpSchema expSchema, String queryName)
+            {
+                ExpDataProtocolInputTable ret = ExperimentService.get().createDataProtocolInputTable(DataProtocolInputs.toString(), expSchema);
+                return expSchema.setupTable(ret);
+            }
+        },
         Materials
         {
             public TableInfo createTable(ExpSchema expSchema, String queryName)
@@ -108,6 +116,14 @@ public class ExpSchema extends AbstractExpSchema
             public TableInfo createTable(ExpSchema expSchema, String queryName)
             {
                 ExpMaterialInputTable ret = ExperimentService.get().createMaterialInputTable(MaterialInputs.toString(), expSchema);
+                return expSchema.setupTable(ret);
+            }
+        },
+        MaterialProtocolInputs
+        {
+            public TableInfo createTable(ExpSchema expSchema, String queryName)
+            {
+                ExpMaterialProtocolInputTable ret = ExperimentService.get().createMaterialProtocolInputTable(MaterialProtocolInputs.toString(), expSchema);
                 return expSchema.setupTable(ret);
             }
         },
@@ -347,6 +363,28 @@ public class ExpSchema extends AbstractExpSchema
                 ExpProtocolTable protocolTable = (ExpProtocolTable)TableType.Protocols.createTable(ExpSchema.this, TableType.Protocols.toString());
                 protocolTable.setContainerFilter(ContainerFilter.EVERYTHING);
                 return protocolTable;
+            }
+        };
+    }
+
+    public ForeignKey getMaterialProtocolInputForeignKey()
+    {
+        return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.MaterialProtocolInputs.name(), "RowId", null)
+        {
+            public TableInfo getLookupTableInfo()
+            {
+                return getTable(TableType.MaterialProtocolInputs);
+            }
+        };
+    }
+
+    public ForeignKey getDataProtocolInputForeignKey()
+    {
+        return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.DataProtocolInputs.name(), "RowId", null)
+        {
+            public TableInfo getLookupTableInfo()
+            {
+                return getTable(TableType.DataProtocolInputs);
             }
         };
     }

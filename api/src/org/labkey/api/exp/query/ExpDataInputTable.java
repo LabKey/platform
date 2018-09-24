@@ -26,6 +26,7 @@ public interface ExpDataInputTable extends ExpInputTable<ExpDataInputTable.Colum
         Data,
         TargetProtocolApplication,
         Role,
-        LSID
+        LSID,
+        ProtocolInput
     }
 }

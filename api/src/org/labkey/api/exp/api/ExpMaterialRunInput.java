@@ -16,10 +16,18 @@
 
 package org.labkey.api.exp.api;
 
+import org.jetbrains.annotations.Nullable;
+
 /** Maps an {@link ExpMaterial} to be the input into an {@link ExpRun}. */
 public interface ExpMaterialRunInput extends ExpRunInput
 {
     public static final String DEFAULT_ROLE = "Material";
 
     ExpMaterial getMaterial();
+
+    /**
+     * Get the {@link ExpMaterialProtocolInput} from original {@link ExpProtocol} the that this
+     * input or output is associated with.
+     */
+    @Nullable ExpMaterialProtocolInput getProtocolInput();
 }
