@@ -2244,8 +2244,22 @@ Ext4.define('File.panel.Browser', {
                     if (btn) {
                         if (emptySelection && !action.supportsEmptySelect())
                             disable = true;
-                        else
+                        else {
                             disable = selections.length == 0 || (!action.supportsMultiSelect() && selections.length > 1);
+
+                            // Disable the button if none of the files for this action are selected.
+                            if(!disable && !action.supportsEmptySelect()) {
+                                files = action.getFiles();
+                                var match = false;
+                                for (var f=0; f < files.length; f++) {
+                                    if (files[f] in selectionMap) {
+                                        match = true;
+                                        break;
+                                    }
+                                }
+                                disable = !match;
+                            }
+                        }
                         btn.setDisabled(disable);
                     }
 
