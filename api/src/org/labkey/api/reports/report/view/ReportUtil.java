@@ -453,9 +453,9 @@ public class ReportUtil
         // if you are a platform developer you can create a script report
         if (u.hasRootPermission(PlatformDeveloperPermission.class))
             return true;
-        else if (u.hasRootPermission(AnalystPermission.class))
+        else if (u.isTrustedAnalyst())
         {
-            // analysts can only create reports on sandboxed engine instances
+            // trusted analysts can only create reports on sandboxed engine instances
             LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
             ScriptEngine engine = svc.getEngineByExtension(context.getContainer(), extension);
             if (engine instanceof ExternalScriptEngine)

@@ -53,8 +53,8 @@ public class AjaxScriptReportView extends JspView<ScriptReportBean>
 
         public boolean showSourceAndHelp(ViewContext context)
         {
-            //TODO: this should check engine.isSandboxed
-            return _allowSourceAndHelp && context.getUser().hasRootPermission(AnalystPermission.class);
+            //TODO: should this check engine.isSandboxed?
+            return _allowSourceAndHelp && context.getUser().isAnalyst();
         }
 
         public String getUniqueID()
