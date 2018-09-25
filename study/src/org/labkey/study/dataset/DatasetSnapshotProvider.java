@@ -727,7 +727,8 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
     public void resumeUpdates(User user, Container sourceContainer)
     {
-        DeferredUpdateHandler handler = new DeferredUpdateHandler(user, sourceContainer);
+        DeferredUpdateHandler handler = new DeferredUpdateHandler(user, sourceContainer, _deferredSourceTypes);
+        _deferredSourceTypes.clear();
         handler.start();
     }
 
@@ -799,17 +800,19 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
     {
         private User _user;
         private Container _sourceContainer;
+        private List<SnapshotDependency.SourceDataType> _sourceDataTypes = new ArrayList<>();
 
-        public DeferredUpdateHandler(User user, Container sourceContainer)
+        public DeferredUpdateHandler(User user, Container sourceContainer, List<SnapshotDependency.SourceDataType> sourceDataTypes)
         {
             _user = user;
             _sourceContainer = sourceContainer;
+            _sourceDataTypes.addAll(sourceDataTypes);
         }
 
         @Override
         public void run()
         {
-            for (SnapshotDependency.SourceDataType sourceData : _deferredSourceTypes)
+            for (SnapshotDependency.SourceDataType sourceData : _sourceDataTypes)
             {
                 Map<Container, List<QuerySnapshotDefinition>> deferredStudies = _coalesceMap.get(sourceData.getContainer());
                 for (QuerySnapshotDefinition snapshotDef : getDependencies(sourceData))
@@ -818,7 +821,6 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                     deferredQuerySnapshots.add(snapshotDef);
                 }
             }
-            _deferredSourceTypes.clear();
 
             if (!_coalesceMap.containsKey(_sourceContainer))
                 throw new IllegalStateException("Not coalescing for container " + _sourceContainer.getPath());
