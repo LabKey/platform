@@ -533,7 +533,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                     if (null == table)
                         return null;
 
-                    log.debug("Caching table");
+                    log.debug("Caching table " + schema.getName() + "." + table.getName());
                     _cache.put(key, table);
                 }
                 else
