@@ -53,6 +53,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.writer.PrintWriters;
+import org.quartz.CronExpression;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -1885,6 +1886,8 @@ abstract public class PipelineJob extends Job implements Serializable
         module.addDeserializer(FieldKey.class, new QueryKeySerialization.FieldKeyDeserializer());
         module.addSerializer(Path.class, new PathSerialization.Serializer());
         module.addDeserializer(Path.class, new PathSerialization.Deserializer());
+        module.addSerializer(CronExpression.class, new CronExpressionSerialization.Serializer());
+        module.addDeserializer(CronExpression.class, new CronExpressionSerialization.Deserializer());
 
         mapper.registerModule(module);
         return mapper;

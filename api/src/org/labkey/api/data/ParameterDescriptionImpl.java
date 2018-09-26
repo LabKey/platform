@@ -15,6 +15,8 @@
  */
 package org.labkey.api.data;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -30,7 +32,8 @@ public class ParameterDescriptionImpl implements ParameterDescription, Serializa
     protected final String _uri;
     protected final JdbcType _type;
 
-    public ParameterDescriptionImpl(@NotNull String name, @NotNull JdbcType type, @Nullable String uri)
+    @JsonCreator
+    public ParameterDescriptionImpl(@NotNull @JsonProperty("_name") String name, @NotNull @JsonProperty("_type") JdbcType type, @JsonProperty("_uri") @Nullable String uri)
     {
         _name = name;
         _type = type;

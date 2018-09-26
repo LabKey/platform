@@ -16,6 +16,7 @@
 package org.labkey.api.dataiterator;
 
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import org.labkey.api.query.SchemaKey;
 
 import java.util.Collections;
@@ -72,6 +73,7 @@ public class CopyConfig
 
     protected final Set<String> _alternateKeys = new HashSet<>();
 
+    @JsonCreator
     public CopyConfig()
     {
     }
@@ -172,7 +174,7 @@ public class CopyConfig
 
     public void setSourceColumns(List<String> sourceColumns)
     {
-        _sourceColumns = sourceColumns;
+        _sourceColumns = Collections.unmodifiableList(sourceColumns);
     }
 
     public Integer getSourceTimeout()
