@@ -256,4 +256,10 @@ public class ChartQueryReport extends ChartReport implements Report.ImageMapGene
             return itemName;
         }
     }
+
+    @Override
+    public boolean isSandboxed()
+    {
+        return true;
+    }
 }

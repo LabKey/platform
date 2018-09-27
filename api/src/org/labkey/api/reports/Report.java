@@ -256,4 +256,9 @@ public interface Report extends AttachmentParent, ThumbnailProvider
         showSection,
         reportName,
     }
+
+    /* For reports that contain user written code, this indicates whether the runtime environment is sandboxed
+     * e.g. This report can run code that runs outside labkey's security context
+     */
+    boolean isSandboxed();
 }

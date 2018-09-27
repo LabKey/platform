@@ -43,7 +43,7 @@ import java.util.regex.Pattern;
 * Date: Dec 2, 2008
 * Time: 4:33:23 PM
 */
-public class ExternalScriptEngine extends AbstractScriptEngine
+public class ExternalScriptEngine extends AbstractScriptEngine implements LabKeyScriptEngine
 {
     /**
      * external script engines rely on the file system to exchange data between the server and script process,
@@ -522,5 +522,11 @@ public class ExternalScriptEngine extends AbstractScriptEngine
     public ExternalScriptEngineDefinition getEngineDefinition()
     {
         return _def;
+    }
+
+    @Override
+    public boolean isSandboxed()
+    {
+        return false;
     }
 }

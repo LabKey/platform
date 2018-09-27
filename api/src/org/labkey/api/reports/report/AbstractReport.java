@@ -631,4 +631,10 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
         }
         return false;
     }
+
+    @Override
+    public boolean isSandboxed()
+    {
+        return false;
+    }
 }

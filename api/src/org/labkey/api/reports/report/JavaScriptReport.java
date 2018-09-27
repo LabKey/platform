@@ -156,4 +156,10 @@ public class JavaScriptReport extends ScriptReport
             return _dependencies;
         }
     }
+
+    @Override
+    public boolean isSandboxed()
+    {
+        return true;
+    }
 }

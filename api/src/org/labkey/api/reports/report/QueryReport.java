@@ -202,4 +202,10 @@ public class QueryReport extends AbstractReport
     {
         return PageFlowUtil.urlProvider(ReportUrls.class).urlQueryReport(context.getContainer(), this);
     }
+
+    @Override
+    public boolean isSandboxed()
+    {
+        return true;
+    }
 }

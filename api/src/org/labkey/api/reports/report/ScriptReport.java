@@ -36,7 +36,6 @@ import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AnalystPermission;
 import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.TabStripView;
@@ -134,19 +133,19 @@ public abstract class ScriptReport extends AbstractReport
     @Override
     public HttpView getRunReportView(ViewContext context) throws Exception
     {
-        String tabId = (String)context.get("tabId");
+        String tabId = (String) context.get("tabId");
 
         if (null == tabId)
             tabId = context.getActionURL().getParameter("tabId");
 
-        String webpartString = (String)context.get(Report.renderParam.reportWebPart.name());
+        String webpartString = (String) context.get(Report.renderParam.reportWebPart.name());
         boolean webpart = (null != webpartString && BooleanFormat.getInstance().parseObject(webpartString));
 
         // Module-based reports are always read-only, but we still allow viewing the report source in the source tab.
         // if tab == "Source" then use update mode, which lets developers edit the source
         // otherwise, if we're a webpart then use view mode
         // otherwise, use viewAndUpdate, which means show the view tab first, but let developers edit the source
-        Mode  mode = (TAB_SOURCE.equals(tabId) ? Mode.update : (webpart ? Mode.view : Mode.viewAndUpdate));
+        Mode mode = (TAB_SOURCE.equals(tabId) ? Mode.update : (webpart ? Mode.view : Mode.viewAndUpdate));
 
         return new AjaxRunScriptReportView(this, mode);
     }
@@ -161,25 +160,19 @@ public abstract class ScriptReport extends AbstractReport
         }
 
         super.canEdit(user, container, errors);
+        if (!errors.isEmpty())
+            return false;
 
-        if (errors.isEmpty())
+        if (!user.isTrustedAnalyst())
         {
-            if (user.hasRootPermission(PlatformDeveloperPermission.class))
-            {
-                if (isPrivate() || getDescriptor().hasCustomAccess())
-                {
-                    if (!container.hasPermission(user, InsertPermission.class))
-                        errors.add(new SimpleValidationError("You must be in the Author role to update a private or custom script report."));
-                }
-            }
-            else if (user.hasRootPermission(AnalystPermission.class))
-            {
-                if (!isOwner(user))
-                    errors.add(new SimpleValidationError("Analysts can only edit their own reports."));
-            }
-            else
-                errors.add(new SimpleValidationError("You must be either a PlatformDeveloper or an Analyst to update a script report."));
+            errors.add(new SimpleValidationError("You must be either a PlatformDeveloper or TrustedAnalyst to update a script report."));
         }
+        else if (isPrivate() || getDescriptor().hasCustomAccess())
+        {
+            if (!container.hasPermission(user, InsertPermission.class))
+                errors.add(new SimpleValidationError("You must be in the Author role to update a private or custom script report."));
+        }
+
         return errors.isEmpty();
     }
 

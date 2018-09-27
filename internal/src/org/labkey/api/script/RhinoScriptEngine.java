@@ -28,6 +28,7 @@ import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
 import com.sun.phobos.script.util.*;
 import com.sun.phobos.script.util.ExtendedScriptException;
 import org.apache.log4j.Logger;
+import org.labkey.api.reports.LabKeyScriptEngine;
 import org.labkey.api.util.ExceptionUtil;
 import org.mozilla.javascript.*;
 
@@ -55,8 +56,7 @@ import java.util.Map;
  *
  */
 // kevink: Essentially the same as the original, with changes marked with kevink
-public class RhinoScriptEngine extends AbstractScriptEngine
-        implements Invocable, Compilable
+public class RhinoScriptEngine extends AbstractScriptEngine implements LabKeyScriptEngine, Invocable, Compilable
 {
     private final Logger _log = Logger.getLogger(RhinoScriptEngine.class);
 
@@ -546,5 +546,11 @@ public class RhinoScriptEngine extends AbstractScriptEngine
         engine.eval(r, context);
         // added this statement to save some typing to most script authors
         context.getWriter().flush();
+    }
+
+    @Override
+    public boolean isSandboxed()
+    {
+        return false;
     }
 }

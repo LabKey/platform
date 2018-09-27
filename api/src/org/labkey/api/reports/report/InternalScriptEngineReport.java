@@ -157,4 +157,10 @@ public class InternalScriptEngineReport extends ScriptEngineReport
         deleteReportDir(context);
         super.beforeDelete(context);
     }
+
+    @Override
+    public boolean isSandboxed()
+    {
+        return false;
+    }
 }

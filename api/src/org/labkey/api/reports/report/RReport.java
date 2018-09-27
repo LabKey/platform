@@ -28,8 +28,10 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
+import org.labkey.api.reports.LabKeyScriptEngine;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.reports.RScriptEngine;
 import org.labkey.api.reports.Report;
@@ -850,8 +852,26 @@ public class RReport extends ExternalScriptEngineReport
         // to create a module R report and handle the permission checking directly.
         if (getDescriptorType().equals(ModuleRReportDescriptor.TYPE))
             return false;
-        
-        return super.canEdit(user, container, errors);
+
+        if (!super.canEdit(user, container, errors))
+            return false;
+
+        if (user.isPlatformDeveloper())
+            return true;
+        if (!user.isTrustedAnalyst())
+        {
+            errors.add(new SimpleValidationError("You must be either a PlatformDeveloper or TrustedAnalyst to update an R report."));
+        }
+        else
+        {
+            ScriptEngine engine = getScriptEngine(container);
+            boolean sandboxed;
+            sandboxed = ((LabKeyScriptEngine)engine).isSandboxed();
+            if (!sandboxed)
+                errors.add(new SimpleValidationError("You may not edit reports in non-sandboxed execution environment."));
+        }
+
+        return errors.isEmpty();
     }
 
     @Nullable

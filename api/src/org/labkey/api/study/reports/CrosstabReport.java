@@ -186,4 +186,10 @@ public class CrosstabReport extends AbstractReport implements Report.ResultSetGe
         }
         return null;
     }
+
+    @Override
+    public boolean isSandboxed()
+    {
+        return true;
+    }
 }

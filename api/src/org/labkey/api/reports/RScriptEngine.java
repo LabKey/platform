@@ -274,4 +274,10 @@ public class RScriptEngine extends ExternalScriptEngine
 
         return sb.toString();
     }
+
+    @Override
+    public boolean isSandboxed()
+    {
+        return _def.isSandboxed();
+    }
 }

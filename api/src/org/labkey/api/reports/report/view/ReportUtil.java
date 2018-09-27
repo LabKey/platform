@@ -39,7 +39,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
-import org.labkey.api.reports.ExternalScriptEngine;
+import org.labkey.api.reports.LabKeyScriptEngine;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
@@ -62,7 +62,6 @@ import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.permissions.AnalystPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -453,18 +452,16 @@ public class ReportUtil
         // if you are a platform developer you can create a script report
         if (u.hasRootPermission(PlatformDeveloperPermission.class))
             return true;
-        else if (u.isTrustedAnalyst())
+
+        if (u.isTrustedAnalyst())
         {
             // trusted analysts can only create reports on sandboxed engine instances
+            // TODO can this differ from the engine returned by the instantiated report?
             LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
             ScriptEngine engine = svc.getEngineByExtension(context.getContainer(), extension);
-            if (engine instanceof ExternalScriptEngine)
-            {
-                return ((ExternalScriptEngine)engine).getEngineDefinition().isSandboxed();
-            }
-            else
-                return true;    // most likely internal rhino engine
+            return engine instanceof LabKeyScriptEngine && ((LabKeyScriptEngine)engine).isSandboxed();
         }
+
         return false;
     }
 

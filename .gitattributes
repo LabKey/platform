@@ -1207,6 +1207,7 @@ api/src/org/labkey/api/reader/jxl/JxlWorkbook.java -text
 api/src/org/labkey/api/reports/ExternalScriptEngine.java -text
 api/src/org/labkey/api/reports/ExternalScriptEngineDefinition.java -text
 api/src/org/labkey/api/reports/ExternalScriptEngineFactory.java -text
+api/src/org/labkey/api/reports/LabKeyScriptEngine.java -text
 api/src/org/labkey/api/reports/LabkeyScriptEngineManager.java -text
 api/src/org/labkey/api/reports/RConnectionHolder.java -text
 api/src/org/labkey/api/reports/RDockerScriptEngine.java -text
