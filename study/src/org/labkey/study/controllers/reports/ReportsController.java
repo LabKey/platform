@@ -82,6 +82,7 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewForm;
@@ -219,29 +220,41 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
+    // Need insert and developer permissions, #35215. Keep these checks in sync with the "external report" permissions checks in StudyReportUIProvider.getDesignerInfo()
+    @RequiresPermission(InsertPermission.class)
     public class ExternalReportAction extends FormViewAction<ExternalReportForm>
     {
-        public ModelAndView getView(ExternalReportForm form, boolean reshow, BindException errors)
+        @Override
+        public void checkPermissions() throws UnauthorizedException
         {
-            ExternalReport extReport = form.getBean();
+            super.checkPermissions();
+
+            // TODO: In 18.3, switch isDeveloper() check to hasPermission(PlatformDeveloperPermission.class)
+            if (!getUser().isDeveloper())
+                throw new UnauthorizedException();
+        }
+
+        private ExternalReportForm _postedForm = new ExternalReportForm();
+
+        public ModelAndView getView(ExternalReportForm doNotUse, boolean reshow, BindException errors)
+        {
+            ExternalReport extReport = _postedForm.getBean();
             JspView<ExternalReportBean> designer = new JspView<>("/org/labkey/study/view/externalReportDesigner.jsp", new ExternalReportBean(getViewContext(), extReport, "Dataset"));
             HttpView resultView = extReport.renderReport(getViewContext());
 
             VBox v = new VBox(designer, resultView);
-
-            if (getViewContext().hasPermission(AdminPermission.class))
-                v.addView(new SaveReportWidget(extReport));
+            v.addView(new SaveReportWidget(extReport));
 
             return v;
         }
 
-        public void validateCommand(ExternalReportForm target, Errors errors)
+        public void validateCommand(ExternalReportForm form, Errors errors)
         {
         }
 
-        public boolean handlePost(ExternalReportForm externalReportForm, BindException errors)
+        public boolean handlePost(ExternalReportForm form, BindException errors)
         {
+            _postedForm = form;
             return true;
         }
 

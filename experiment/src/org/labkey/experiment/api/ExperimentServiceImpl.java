@@ -47,25 +47,7 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.defaults.DefaultValueService;
-import org.labkey.api.exp.AbstractParameter;
-import org.labkey.api.exp.DomainNotFoundException;
-import org.labkey.api.exp.ExperimentDataHandler;
-import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.ExperimentRunListView;
-import org.labkey.api.exp.ExperimentRunType;
-import org.labkey.api.exp.ExperimentRunTypeSource;
-import org.labkey.api.exp.Identifiable;
-import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.LsidManager;
-import org.labkey.api.exp.LsidType;
-import org.labkey.api.exp.ObjectProperty;
-import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.ProtocolApplicationParameter;
-import org.labkey.api.exp.ProtocolParameter;
-import org.labkey.api.exp.TemplateInfo;
-import org.labkey.api.exp.XarContext;
-import org.labkey.api.exp.XarFormatException;
-import org.labkey.api.exp.XarSource;
+import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
@@ -2721,7 +2703,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     // insert objects for any LSIDs not yet in exp.object
-    private void ensureEdgeObjects(Map<String, Map<String, Object>> allNodesByLsid)
+    private void ensureNodeObjects(Map<String, Map<String, Object>> allNodesByLsid, @NotNull Map<String, Integer> cpasTypeToObjectId)
     {
         // Issue 33932: partition into groups of 1000 to avoid SQLServer parameter limit
         Set<String> allLsids = allNodesByLsid.keySet();
@@ -2739,42 +2721,56 @@ public class ExperimentServiceImpl implements ExperimentService
             sql.append("WHERE NOT EXISTS (SELECT 1 FROM ").append(getTinfoObject(), "o").append(" WHERE o.objectUri = lsid)");
 
             SqlSelector ss = new SqlSelector(getExpSchema(), sql);
-            ss.getCollection(String.class).forEach(missingObjectLsid -> {
-                Map<String, Object> missingObjectRow = allNodesByLsid.get(missingObjectLsid);
-                Container container = ContainerManager.getForId((String)missingObjectRow.get("container"));
-                if (container == null)
-                    throw new IllegalArgumentException();
-                String cpasType = (String)missingObjectRow.get("cpasType");
-                ensureEdgeObject(container, missingObjectLsid, cpasType);
-            });
+            Collection<String> missingObjectLsids = ss.getCollection(String.class);
+            if (!missingObjectLsids.isEmpty())
+            {
+                LOG.debug("  creating exp.object for " + missingObjectLsids.size() + " nodes");
+                missingObjectLsids.forEach(missingObjectLsid -> {
+                    Map<String, Object> missingObjectRow = allNodesByLsid.get(missingObjectLsid);
+                    Container container = ContainerManager.getForId((String) missingObjectRow.get("container"));
+                    if (container == null)
+                        throw new IllegalArgumentException();
+                    String cpasType = (String) missingObjectRow.get("cpasType");
+                    ensureNodeObject(container, missingObjectLsid, cpasType, cpasTypeToObjectId);
+                });
+            }
         });
     }
 
-    private int ensureEdgeObject(@NotNull Container container, @NotNull String lsid, @Nullable String cpasType)
+    private int ensureNodeObject(@NotNull Container container, @NotNull String lsid, @Nullable String cpasType, @NotNull Map<String, Integer> cpasTypeToObjectId)
     {
         assert getExpSchema().getScope().isTransactionActive();
 
-        // To set the ownerObjectId, find the owner object if present
-        Integer ownerObjectId = null;
-        if (cpasType != null && !cpasType.equals(ExpMaterial.DEFAULT_CPAS_TYPE) && !cpasType.equals("Sample") && !cpasType.equals(StudyService.SPECIMEN_NAMESPACE_PREFIX))
-        {
-            org.labkey.api.exp.OntologyObject oo = OntologyManager.getOntologyObject(null, cpasType);
+        Integer ownerObjectId = ensureOwnerObject(cpasType, cpasTypeToObjectId);
+        return OntologyManager.ensureObject(container, lsid, ownerObjectId);
+    }
+
+    private Integer ensureOwnerObject(@Nullable String cpasType, @NotNull Map<String, Integer> cpasTypeToObjectId)
+    {
+        // NOTE: for current edge objects (Samples and Data), only Samples use ownerObjectId.  Maybe ExpData that belong to a DataClass should too?
+        if (cpasType == null || cpasType.equals(ExpMaterial.DEFAULT_CPAS_TYPE) || cpasType.equals("Sample") || cpasType.equals(StudyService.SPECIMEN_NAMESPACE_PREFIX))
+            return null;
+
+        return cpasTypeToObjectId.computeIfAbsent(cpasType, (cpasType1) -> {
+
+            // NOTE: We can't use OntologyManager.ensureObject() here (which caches) because we don't know what container the SampleSet is defined in
+            OntologyObject oo = OntologyManager.getOntologyObject(null, cpasType);
             if (oo == null)
             {
-                // NOTE: for current edge objects (Samples and Data), only Samples use ownerObjectId.  Maybe ExpData that belong to a DataClass should too?
+                // NOTE: We must get the SampleSet definition so that the exp.object is ensured in the correct container
                 ExpSampleSet ss = getSampleSet(cpasType);
                 if (ss != null)
                 {
-                    LOG.debug("creating exp.object.objectId for owner cpasType '" + cpasType + "' needed by child object '" + lsid + "'");
-                    ownerObjectId = OntologyManager.ensureObject(ss.getContainer(), cpasType, (Integer) null);
+                    LOG.debug("  creating exp.object.objectId for owner cpasType '" + cpasType + "' needed by child objects");
+                    return OntologyManager.ensureObject(ss.getContainer(), cpasType, (Integer) null);
                 }
             }
             else
             {
-                ownerObjectId = oo.getObjectId();
+                return oo.getObjectId();
             }
-        }
-        return OntologyManager.ensureObject(container, lsid, ownerObjectId);
+            return null;
+        });
     }
 
     private void insertEdge(String fromLsid, String toLsid, int runId)
@@ -2825,10 +2821,10 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public void syncRunEdges(int runId, String runLsid, Container runContainer)
     {
-        syncRunEdges(runId, runLsid, runContainer, true);
+        syncRunEdges(runId, runLsid, runContainer, true, null);
     }
 
-    private void syncRunEdges(int runId, String runLsid, Container runContainer, boolean deleteFirst)
+    private void syncRunEdges(int runId, String runLsid, Container runContainer, boolean deleteFirst, @Nullable Map<String, Integer> cpasTypeToObjectId)
     {
         CPUTimer timer = new CPUTimer("sync edges");
         timer.start();
@@ -2877,15 +2873,16 @@ public class ExperimentServiceImpl implements ExperimentService
 
             if (edgeCount > 0)
             {
-                // ensure objects first
-                ensureEdgeObject(runContainer, runLsid, null);
+                // ensure the run has an exp.object
+                OntologyManager.ensureObject(runContainer, runLsid, (Integer)null);
 
                 Map<String, Map<String, Object>> allNodesByLsid = new HashMap<>();
                 fromDataLsids.forEach(row -> allNodesByLsid.put((String) row.get("lsid"), row));
                 fromMaterialLsids.forEach(row -> allNodesByLsid.put((String) row.get("lsid"), row));
                 toDataLsids.forEach(row -> allNodesByLsid.put((String) row.get("lsid"), row));
                 toMaterialLsids.forEach(row -> allNodesByLsid.put((String) row.get("lsid"), row));
-                ensureEdgeObjects(allNodesByLsid);
+
+                ensureNodeObjects(allNodesByLsid, cpasTypeToObjectId != null ? cpasTypeToObjectId : new HashMap<>());
 
                 List<List<Object>> params = new ArrayList<>(edgeCount);
 
@@ -2947,6 +2944,9 @@ public class ExperimentServiceImpl implements ExperimentService
                 Table.delete(getTinfoEdge());
             }
 
+            // Local cache of SampleSet LSID to objectId. The SampleSet objectId will be used as the node's ownerObjectId.
+            Map<String, Integer> cpasTypeToObjectId = new HashMap<>();
+
             Collection<Map<String, Object>> runs = new TableSelector(getTinfoExperimentRun(),
                     getTinfoExperimentRun().getColumns("rowId", "lsid", "container"), null, new Sort("rowId")).getMapCollection();
             try (Timing t = MiniProfiler.step("create edges"))
@@ -2958,7 +2958,7 @@ public class ExperimentServiceImpl implements ExperimentService
                     String runLsid = (String)run.get("lsid");
                     String containerId = (String)run.get("container");
                     Container runContainer = ContainerManager.getForId(containerId);
-                    syncRunEdges(runId, runLsid, runContainer, false);
+                    syncRunEdges(runId, runLsid, runContainer, false, cpasTypeToObjectId);
                 }
             }
 
@@ -5568,9 +5568,10 @@ public class ExperimentServiceImpl implements ExperimentService
 
             uncacheLineageGraph();
 
+            Map<String, Integer> cpasTypeToObjectId = new HashMap<>();
             for (Map.Entry<String, Integer> run : runLsidToRowId.entrySet())
             {
-                syncRunEdges(run.getValue(), run.getKey(), _container, false);
+                syncRunEdges(run.getValue(), run.getKey(), _container, false, cpasTypeToObjectId);
             }
         }
 

@@ -26,8 +26,8 @@ import org.labkey.api.reports.report.view.ChartDesignerBean;
 import org.labkey.api.reports.report.view.DefaultReportUIProvider;
 import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.reports.report.view.ReportUtil;
-import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.reports.CrosstabReport;
@@ -185,8 +185,9 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
                         _getIconPath(StudyRReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(StudyRReport.TYPE)));
             }
 
-            // external report
-            if (context.getContainer().hasPermission(context.getUser(), AdminOperationsPermission.class))
+            // external report - keep in sync with ExternalReportAction permissions checks
+            // TODO: In 18.3, switch isDeveloper() check to hasPermission(PlatformDeveloperPermission.class)
+            if (context.getContainer().hasPermission(context.getUser(), InsertPermission.class) && context.getUser().isDeveloper())
             {
                 ActionURL buttonURL = context.getActionURL().clone();
                 buttonURL.setAction(ReportsController.ExternalReportAction.class);
