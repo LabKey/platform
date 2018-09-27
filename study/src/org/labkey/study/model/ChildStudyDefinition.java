@@ -259,7 +259,7 @@ public class ChildStudyDefinition
         _specimenRefresh = specimenRefresh;
     }
 
-    // Callers can post either a specimen request id OR an array of SpecimenIds; either will cause us to resovle
+    // Callers can post either a specimen request id OR an array of SpecimenIds; either will cause us to resolve
     // to a Specimen[] which is set back on the form and used to drive the child study creation process.
 
     public Integer getRequestId()
