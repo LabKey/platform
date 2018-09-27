@@ -22,7 +22,6 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.ThumbnailUtil;
-import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NotFoundException;
@@ -102,5 +101,11 @@ public class GenericChartReportImpl extends GenericChartReport implements SvgThu
         }
 
         return false;
+    }
+
+    @Override
+    public boolean isSandboxed()
+    {
+        return true;
     }
 }

@@ -490,4 +490,10 @@ public class AssayProgressReport extends AbstractReport
             return result;
         }
     }
+
+    @Override
+    public boolean isSandboxed()
+    {
+        return true;
+    }
 }

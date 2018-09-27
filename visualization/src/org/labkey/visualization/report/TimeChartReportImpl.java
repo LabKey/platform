@@ -98,4 +98,10 @@ public class TimeChartReportImpl extends TimeChartReport implements SvgThumbnail
         // Content modified if change to the JSON config property
         return hasDescriptorPropertyChanged(ReportDescriptor.Prop.json.name());
     }
+
+    @Override
+    public boolean isSandboxed()
+    {
+        return true;
+    }
 }

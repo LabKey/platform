@@ -52,7 +52,6 @@ import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.DatasetDefinition;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -370,5 +369,11 @@ public class ChartReportView extends AbstractReportView
                 }
             };
         }
+    }
+
+    @Override
+    public boolean isSandboxed()
+    {
+        return true;
     }
 }

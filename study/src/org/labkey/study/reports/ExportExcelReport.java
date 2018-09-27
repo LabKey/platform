@@ -225,4 +225,10 @@ public class ExportExcelReport extends RedirectReport
 
         writer.renderNewSheet();
     }
+
+    @Override
+    public boolean isSandboxed()
+    {
+        return true;
+    }
 }

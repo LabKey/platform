@@ -96,4 +96,11 @@ public class StudyCrosstabReport extends CrosstabReport
         }
         return super.getRunReportURL(context);
     }
+
+
+    @Override
+    public boolean isSandboxed()
+    {
+        return true;
+    }
 }

@@ -89,4 +89,10 @@ public class LinkReport extends BaseRedirectReport
         // Content modified if change to the link URL string property
         return hasDescriptorPropertyChanged(REDIRECT_URL);
     }
+
+    @Override
+    public boolean isSandboxed()
+    {
+        return true;
+    }
 }

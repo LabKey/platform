@@ -533,4 +533,10 @@ public class AttachmentReport extends BaseRedirectReport
             }
         }
     }
+
+    @Override
+    public boolean isSandboxed()
+    {
+        return true;
+    }
 }

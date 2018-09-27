@@ -475,5 +475,11 @@ public class ExternalReport extends AbstractReport
             out.write("\">");
         }
     }
+
+    @Override
+    public boolean isSandboxed()
+    {
+        return false;
+    }
 }
 

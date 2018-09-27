@@ -232,4 +232,10 @@ public class ParticipantReport extends AbstractReport
                 || (newGroupsConfig != null && (!newGroupsConfig.equals(origGroupsConfig)))
                 || (newGroupsConfig == null && origGroupsConfig != null);
     }
+
+    @Override
+    public boolean isSandboxed()
+    {
+        return true;
+    }
 }

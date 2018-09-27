@@ -178,12 +178,15 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
             return isFactoryEnabled(engine.getFactory()) ? engine : null;
         }
 
+        if (!AppProps.getInstance().isExperimentalFeatureEnabled(RStudioService.R_DOCKER_SANDBOX))
+            requestDocker = false;
+
         ExternalScriptEngineDefinition def = getEngine(container, extension, requestRemote, requestDocker);
         if (def != null)
         {
             if (def.getType().equals(ExternalScriptEngineDefinition.Type.R))
             {
-                if (AppProps.getInstance().isExperimentalFeatureEnabled(RStudioService.R_DOCKER_SANDBOX) && def.isDocker())
+                if (def.isDocker())
                     return new RDockerScriptEngineFactory(def).getScriptEngine();
                 else if (def.isRemote())
                     return new RserveScriptEngineFactory(def).getScriptEngine();

@@ -19,20 +19,15 @@ package org.labkey.study.reports;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.query.CustomView;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.DbReportIdentifier;
 import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.QueryReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
-import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.ReportQueryView;
-import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -42,13 +37,9 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.query.DatasetQueryView;
 import org.springframework.mock.web.MockHttpServletRequest;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
-import java.sql.SQLException;
-import java.util.List;
 
 /**
  * User: brittp
@@ -144,5 +135,11 @@ public class StudyQueryReport extends QueryReport
         }
 
         return PageFlowUtil.urlProvider(ReportUrls.class).urlQueryReport(context.getContainer(), this);
+    }
+
+    @Override
+    public boolean isSandboxed()
+    {
+        return true;
     }
 }
