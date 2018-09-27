@@ -16,6 +16,8 @@
 
 package org.labkey.study.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.labkey.api.data.Container;
 import org.labkey.api.study.StudyCachable;
 import org.labkey.api.util.MemTracker;
@@ -27,10 +29,18 @@ import org.labkey.api.util.MemTracker;
  */
 public abstract class AbstractStudyCachable<T> implements StudyCachable<T>, Cloneable
 {
-    private boolean _mutable = true;
+    private boolean _mutable;
+
+    @JsonCreator
+    protected AbstractStudyCachable(@JsonProperty("_mutable") boolean mutable)
+    {
+        super();
+        _mutable = mutable;
+    }
 
     public AbstractStudyCachable()
     {
+        _mutable = true;
         MemTracker.getInstance().put(this);
     }
 

@@ -18,12 +18,12 @@ package org.labkey.study.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.study.StudyService;
 
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -36,16 +36,17 @@ public class Vial extends AbstractStudyCachable<Vial>
     private final Map<String, Object> _rowMap;
     private final Container _container;
 
-    @Deprecated // TODO: Delete? Is this ever used by reflection?
-    public Vial()
+    public Vial(Container container, Map<String, Object> rowMap)
     {
-        _container = null;
-        _rowMap = new HashMap<>();
+        super();
+        _container = container;
+        _rowMap = new CaseInsensitiveHashMap<>(rowMap);
     }
 
     @JsonCreator
-    public Vial(@JsonProperty("_container") Container container, @JsonProperty("_rowMap") Map<String, Object> rowMap)
+    public Vial(@JsonProperty("_container") Container container, @JsonProperty("_rowMap") Map<String, Object> rowMap, @JsonProperty("_mutable") boolean mutable)
     {
+        super(mutable);
         _container = container;
         _rowMap = rowMap;
     }

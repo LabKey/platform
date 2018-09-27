@@ -15,6 +15,8 @@
  */
 package org.labkey.pipeline.api;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.thoughtworks.xstream.XStream;
@@ -22,6 +24,10 @@ import com.thoughtworks.xstream.io.xml.XppDriver;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.junit.Test;
+import org.labkey.api.collections.ArrayListMap;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.RowMap;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -97,6 +103,7 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
 
     public String toXML(PipelineJob job)
     {
+        LOG.warn("Serializing XML: " + job.getDescription());
         return getXStream().toXML(job);
     }
 
@@ -152,6 +159,8 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
             {
                 try
                 {
+//                    LOG.info("Serialized job '" + job.getClass().getName() + "'");
+//                    LOG.info(serialized);
                     Object unserialized = fromJSONTest(serialized, job.getClass());
                     if (job instanceof PipelineJob)
                     {
@@ -193,6 +202,29 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
 
     public static class TestCase extends PipelineJob.TestSerialization
     {
+
+        public static class Vial
+        {
+            private final Map<String, Object> _rowMap;
+            private final Container _container;
+
+            @JsonCreator
+            public Vial(@JsonProperty("_container") Container container, @JsonProperty("_rowMap") Map<String, Object> rowMap)
+            {
+                _container = container;
+                _rowMap = new CaseInsensitiveHashMap<>(rowMap);
+            }
+
+            public Object get(String key)
+            {
+                return _rowMap.get(key);
+            }
+
+            public Map getRowMap()
+            {
+                return _rowMap;
+            }
+        }
 
         public static class Inner
         {
@@ -243,6 +275,7 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
 
         public static class TestJob
         {
+            public Vial _vial;
             public Path _path;
             public Path _nonAbsolutePath;
             public Path _s3Path;
@@ -273,6 +306,13 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
             }
             public TestJob(String name, int option)
             {
+                Map<String, Integer> wrapMap = new CaseInsensitiveHashMap<>();
+                ArrayListMap.FindMap<String> findMap = new ArrayListMap.FindMap<>(wrapMap);
+                HashMap<String, Object> mapOfVial = new HashMap<>(findMap);
+                mapOfVial.put("globaluniqueId", "ABB");
+                mapOfVial.put("rowid", 32);
+                _vial = new Vial(ContainerManager.getSharedContainer(), mapOfVial);
+
                 _path = new File("/Users/johnbrown/glory").toPath();
                 _nonAbsolutePath = new File("glory/hallelujah").toPath();
                 _fieldKey = FieldKey.fromParts("list", "vehicles", "refy");
