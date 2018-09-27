@@ -65,6 +65,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.Serializable;
+import java.net.URI;
 import java.nio.file.Path;
 import java.sql.Time;
 import java.util.ArrayList;
@@ -1888,6 +1889,8 @@ abstract public class PipelineJob extends Job implements Serializable
         module.addDeserializer(Path.class, new PathSerialization.Deserializer());
         module.addSerializer(CronExpression.class, new CronExpressionSerialization.Serializer());
         module.addDeserializer(CronExpression.class, new CronExpressionSerialization.Deserializer());
+        module.addSerializer(URI.class, new URISerialization.Serializer());
+        module.addDeserializer(URI.class, new URISerialization.Deserializer());
 
         mapper.registerModule(module);
         return mapper;
