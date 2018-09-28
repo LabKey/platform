@@ -16,11 +16,12 @@ package org.labkey.api.study.assay;
  * limitations under the License.
  */
 
-import org.junit.Assert;
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
 import org.jmock.lib.legacy.ClassImposteriser;
+import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.SimpleFilter;
@@ -33,7 +34,6 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
-import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -154,11 +154,18 @@ public class ReplacedRunFilter
 
             if (url.getParameterMap().containsKey(paramName))
             {
-                Boolean b1 = (Boolean)ConvertUtils.convert(paramValue, Boolean.class);
-                Boolean b2 = (Boolean)ConvertUtils.convert(url.getParameter(paramName), Boolean.class);
-                if (Objects.equals(b1, b2))
+                try
                 {
-                    return new ReplacedRunFilter(type);
+                    Boolean b1 = (Boolean) ConvertUtils.convert(paramValue, Boolean.class);
+                    Boolean b2 = (Boolean) ConvertUtils.convert(url.getParameter(paramName), Boolean.class);
+                    if (Objects.equals(b1, b2))
+                    {
+                        return new ReplacedRunFilter(type);
+                    }
+                }
+                catch (ConversionException ignored)
+                {
+                    // Got bad input from the client, just go with the default filter
                 }
             }
         }
