@@ -619,7 +619,10 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
     private void _sourceDataChanged(SnapshotDependency.SourceDataType type)
     {
         if (_coalesceMap.containsKey(type.getContainer()))
+        {
+            LOG.debug("deferred source data changed " + type.getType());
             deferReload(type);
+        }
         else
             QUEUE.add(type);
     }
@@ -645,7 +648,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
     private void deferReload(SnapshotDependency.SourceDataType sourceData)
     {
-        _deferredSourceTypes.add(sourceData);
+        _coalesceMap.get(sourceData.getContainer()).add(sourceData);
     }
 
     private static List<QuerySnapshotDefinition> getDependencies(SnapshotDependency.SourceDataType sourceData)
@@ -715,20 +718,18 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
     // Unfortunately complex generics here.  In English, the container key of the outer map is the source
     // container where the dataset change events are generated.  The value is a map from the study that
     // contains the snapshot datasets to a list of snapshots that need to be refreshed.
-    private static final List<SnapshotDependency.SourceDataType> _deferredSourceTypes = new ArrayList<>();
-    private static final Map<Container, Map<Container, List<QuerySnapshotDefinition>>> _coalesceMap = new HashMap<>();
+    private static final Map<Container, List<SnapshotDependency.SourceDataType>> _coalesceMap = new HashMap<>();
 
     public void pauseUpdates(Container sourceContainer)
     {
         if (_coalesceMap.containsKey(sourceContainer))
             throw new IllegalStateException("Already coalescing for container " + sourceContainer.getPath());
-        _coalesceMap.put(sourceContainer, new HashMap<>());
+        _coalesceMap.put(sourceContainer, new ArrayList<>());
     }
 
     public void resumeUpdates(User user, Container sourceContainer)
     {
-        DeferredUpdateHandler handler = new DeferredUpdateHandler(user, sourceContainer, _deferredSourceTypes);
-        _deferredSourceTypes.clear();
+        DeferredUpdateHandler handler = new DeferredUpdateHandler(user, _coalesceMap.remove(sourceContainer));
         handler.start();
     }
 
@@ -799,36 +800,31 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
     private static class DeferredUpdateHandler extends Thread
     {
         private User _user;
-        private Container _sourceContainer;
         private List<SnapshotDependency.SourceDataType> _sourceDataTypes = new ArrayList<>();
 
-        public DeferredUpdateHandler(User user, Container sourceContainer, List<SnapshotDependency.SourceDataType> sourceDataTypes)
+        public DeferredUpdateHandler(User user, List<SnapshotDependency.SourceDataType> sourceDataTypes)
         {
             _user = user;
-            _sourceContainer = sourceContainer;
             _sourceDataTypes.addAll(sourceDataTypes);
         }
 
         @Override
         public void run()
         {
+            LOG.debug("processing deferred dependencies");
+            Map<Container, List<QuerySnapshotDefinition>> snapshotMap = new HashMap<>();
             for (SnapshotDependency.SourceDataType sourceData : _sourceDataTypes)
             {
-                Map<Container, List<QuerySnapshotDefinition>> deferredStudies = _coalesceMap.get(sourceData.getContainer());
                 for (QuerySnapshotDefinition snapshotDef : getDependencies(sourceData))
                 {
-                    List<QuerySnapshotDefinition> deferredQuerySnapshots = deferredStudies.computeIfAbsent(snapshotDef.getContainer(), k -> new LinkedList<>());
+                    List<QuerySnapshotDefinition> deferredQuerySnapshots = snapshotMap.computeIfAbsent(snapshotDef.getContainer(), k -> new LinkedList<>());
                     deferredQuerySnapshots.add(snapshotDef);
                 }
             }
 
-            if (!_coalesceMap.containsKey(_sourceContainer))
-                throw new IllegalStateException("Not coalescing for container " + _sourceContainer.getPath());
-
-            Map<Container, List<QuerySnapshotDefinition>> snapshotDefSet = _coalesceMap.remove(_sourceContainer);
-
+            LOG.debug("processing deferred snapshot updates");
             // update each study container than contains relevant snapshots
-            for (Map.Entry<Container, List<QuerySnapshotDefinition>> snapshotEntry : snapshotDefSet.entrySet())
+            for (Map.Entry<Container, List<QuerySnapshotDefinition>> snapshotEntry : snapshotMap.entrySet())
             {
                 Container snapshotContainer = snapshotEntry.getKey();
                 StudyImpl study = StudyManager.getInstance().getStudy(snapshotContainer);
