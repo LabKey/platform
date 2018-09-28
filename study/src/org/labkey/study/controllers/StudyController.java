@@ -148,7 +148,6 @@ import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.ClientDependency;
-import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.CohortFilter;
@@ -3785,21 +3784,30 @@ public class StudyController extends BaseStudyController
         public ActionURL getRedirectURL(Object o)
         {
             ViewContext context = getViewContext();
-            int datasetId = null == context.get(DatasetDefinition.DATASETKEY) ? 0 : Integer.parseInt((String) context.get(DatasetDefinition.DATASETKEY));
+            Object unparsedDatasetId = context.get(DatasetDefinition.DATASETKEY);
 
-            ActionURL url = context.cloneActionURL();
-            url.setAction(DatasetReportAction.class);
-
-            String defaultView = getDefaultView(context, datasetId);
-            if (!StringUtils.isEmpty(defaultView))
+            try
             {
-                ReportIdentifier reportId = ReportService.get().getReportIdentifier(defaultView);
-                if (reportId != null)
-                    url.addParameter(DATASET_REPORT_ID_PARAMETER_NAME, defaultView);
-                else
-                    url.addParameter(DATASET_VIEW_NAME_PARAMETER_NAME, defaultView);
+                int datasetId = null == unparsedDatasetId ? 0 : Integer.parseInt(unparsedDatasetId.toString());
+
+                ActionURL url = context.cloneActionURL();
+                url.setAction(DatasetReportAction.class);
+
+                String defaultView = getDefaultView(context, datasetId);
+                if (!StringUtils.isEmpty(defaultView))
+                {
+                    ReportIdentifier reportId = ReportService.get().getReportIdentifier(defaultView);
+                    if (reportId != null)
+                        url.addParameter(DATASET_REPORT_ID_PARAMETER_NAME, defaultView);
+                    else
+                        url.addParameter(DATASET_VIEW_NAME_PARAMETER_NAME, defaultView);
+                }
+                return url;
             }
-            return url;
+            catch (NumberFormatException e)
+            {
+                throw new NotFoundException("No such dataset with ID: " + unparsedDatasetId);
+            }
         }
     }
 
