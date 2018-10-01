@@ -2914,6 +2914,7 @@ study/test/sampledata/study/commondata/VAC-1.tsv -text
 study/test/src/org/labkey/test/pages/AssayQueryConfig.java -text
 study/test/src/org/labkey/test/pages/DesignerController/DesignerTester.java -text
 study/test/src/org/labkey/test/pages/ProgressReportConfigPage.java -text
+study/test/src/org/labkey/test/tests/experiment/ExperimentAPITest.java -text
 study/test/src/org/labkey/test/tests/search/DataClassSearchTest.java -text
 study/test/src/org/labkey/test/tests/search/SearchSyntaxTest.java -text
 study/test/src/org/labkey/test/tests/search/SearchTest.java -text
