@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.json.simple.JSONObject;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.remoteapi.CommandException;
@@ -32,8 +33,6 @@ import static org.junit.Assert.assertEquals;
 @Category({DailyC.class})
 public class ExperimentAPITest extends BaseWebDriverTest
 {
-    private static final String SAMPLE_SET_NAME = "My Set";
-
     @Override
     protected void doCleanup(boolean afterTest) throws TestTimeoutException
     {
@@ -51,15 +50,6 @@ public class ExperimentAPITest extends BaseWebDriverTest
     private void doSetup()
     {
         _containerHelper.createProject(getProjectName(), "Collaboration");
-        goToModule("Experiment");
-        clickButton("Import Sample Set");
-        setFormElement(Locator.id("name"), SAMPLE_SET_NAME);
-        checkRadioButton(Locator.radioButtonByNameAndValue("uploadType", "file"));
-        setFormElement(Locator.tagWithName("input", "file"), TestFileUtils.getSampleData("sampleSet.xlsx").getAbsolutePath());
-        waitForFormElementToEqual(Locator.id("idCol1"), "0"); // "KeyCol"
-        waitForElement(Locator.css("select#parentCol > option").withText("Parent"));
-        Locator.id("parentCol").findElement(getDriver()).sendKeys("Parent"); // combo-box helper doesn't work
-        clickButton("Submit");
     }
 
     @Before
@@ -69,35 +59,87 @@ public class ExperimentAPITest extends BaseWebDriverTest
     }
 
     @Test
+    public void testSaveBatchSampleSetMaterials() throws Exception
+    {
+        final String sampleSetName = "My Set";
+
+        createSampleSet(sampleSetName);
+
+        Batch batch = new Batch();
+        batch.setName("testSaveBatchSampleSetMaterials Batch");
+
+        JSONObject sampleSet = new JSONObject();
+        sampleSet.put("name", sampleSetName);
+
+        JSONObject sampleSetMaterial1 = new JSONObject();
+        sampleSetMaterial1.put("name", "testSaveBatchSampleSetMaterials-ss-1");
+        sampleSetMaterial1.put("sampleSet", sampleSet);
+
+        JSONObject sampleSetMaterial2 = new JSONObject();
+        sampleSetMaterial2.put("name", "testSaveBatchSampleSetMaterials-ss-2");
+        sampleSetMaterial2.put("sampleSet", sampleSet);
+
+        Run run1 = new Run();
+        run1.setName("testSaveBatchMaterials Run 1");
+        run1.setMaterialOutputs(Arrays.asList(new Material(sampleSetMaterial1)));
+
+        Run run2 = new Run();
+        run2.setName("testSaveBatchMaterials Run 2");
+        run2.setMaterialInputs(Arrays.asList(new Material(sampleSetMaterial1)));
+        run2.setMaterialOutputs(Arrays.asList(new Material(sampleSetMaterial2)));
+
+        batch.getRuns().add(run1);
+        batch.getRuns().add(run2);
+
+        SaveAssayBatchCommand cmd = new SaveAssayBatchCommand(SaveAssayBatchCommand.SAMPLE_DERIVATION_PROTOCOL, batch);
+        cmd.setTimeout(10000);
+        Connection connection = createDefaultConnection(false);
+        SaveAssayBatchResponse response = cmd.execute(connection, getProjectName());
+        int batchId = response.getBatch().getId();
+
+        Batch responseBatch = getBatch(connection, batchId);
+        assertEquals("Runs in batch: " + responseBatch.toJSONObject().toJSONString(),
+                2, responseBatch.getRuns().size());
+        assertEquals("Materials in run: " + responseBatch.toJSONObject().toJSONString(),
+                3, responseBatch.getRuns().stream().mapToInt(run -> run.getMaterialInputs().size() + run.getMaterialOutputs().size()).sum());
+        assertEquals("Matching experiment materials should have the same id: " + responseBatch.toJSONObject().toJSONString(),
+                responseBatch.getRuns().get(0).getMaterialOutputs().get(0).getId(), responseBatch.getRuns().get(1).getMaterialInputs().get(0).getId());
+    }
+
+    private void createSampleSet(String sampleSetName)
+    {
+        log("Create sample set");
+        goToModule("Experiment");
+        clickButton("Import Sample Set");
+        setFormElement(Locator.id("name"), sampleSetName);
+        checkRadioButton(Locator.radioButtonByNameAndValue("uploadType", "file"));
+        setFormElement(Locator.tagWithName("input", "file"), TestFileUtils.getSampleData("sampleSet.xlsx").getAbsolutePath());
+        waitForFormElementToEqual(Locator.id("idCol1"), "0"); // "KeyCol"
+        waitForElement(Locator.css("select#parentCol > option").withText("Parent"));
+        Locator.id("parentCol").findElement(getDriver()).sendKeys("Parent"); // combo-box helper doesn't work
+        clickButton("Submit");
+    }
+
+    @Test @Ignore(/*TODO*/"35654: Can't reference experiment materials by name if they aren't associated with a sampleset")
     public void testSaveBatchMaterials() throws Exception
     {
         Batch batch = new Batch();
         batch.setName("testSaveBatchMaterials Batch");
 
-        JSONObject sampleSet = new JSONObject();
-        sampleSet.put("name", SAMPLE_SET_NAME);
+        JSONObject material1 = new JSONObject();
+        material1.put("name", "testSaveBatchMaterials-1");
 
-        JSONObject sampleSetMaterial1 = new JSONObject();
-        sampleSetMaterial1.put("name", "testSaveBatchMaterials-ss-1");
-        sampleSetMaterial1.put("sampleSet", sampleSet);
-
-        JSONObject sampleSetMaterial2 = new JSONObject();
-        sampleSetMaterial2.put("name", "testSaveBatchMaterials-ss-2");
-        sampleSetMaterial2.put("sampleSet", sampleSet);
-
-        // TODO 35654: Can't reference experiment materials by name if they aren't associated with a sampleset
-        // TODO: Add material both runs below
-        JSONObject material3 = new JSONObject();
-        material3.put("name", "testSaveBatchMaterials-x");
+        JSONObject material2 = new JSONObject();
+        material2.put("name", "testSaveBatchMaterials-2");
 
         Run run1 = new Run();
         run1.setName("testSaveBatchMaterials Run 1");
-        run1.setMaterialOutputs(Arrays.asList(new Material(sampleSetMaterial1)/*, new Material(material3)*/));
+        run1.setMaterialOutputs(Arrays.asList(new Material(material1)));
 
         Run run2 = new Run();
         run2.setName("testSaveBatchMaterials Run 2");
-        run2.setMaterialInputs(Arrays.asList(new Material(sampleSetMaterial1)/*, new Material(material3)*/));
-        run2.setMaterialOutputs(Arrays.asList(new Material(sampleSetMaterial2)));
+        run2.setMaterialInputs(Arrays.asList(new Material(material1)));
+        run2.setMaterialOutputs(Arrays.asList(new Material(material2)));
 
         batch.getRuns().add(run1);
         batch.getRuns().add(run2);
