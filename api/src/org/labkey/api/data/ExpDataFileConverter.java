@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.pipeline.PipeRoot;
@@ -151,6 +152,23 @@ public class ExpDataFileConverter implements Converter
                 data.save(user);
             }
             return data;
+        }
+        // try to resolve by data class properties
+        else if (dataObject.has(ExperimentJSONConverter.DATA_CLASS) && dataObject.has(ExperimentJSONConverter.NAME))
+        {
+            JSONObject dataClass = (JSONObject)dataObject.get(ExperimentJSONConverter.DATA_CLASS);
+            ExpDataClass expDataClass = null;
+            if (dataClass.has(ExperimentJSONConverter.ID))
+                expDataClass = ExperimentService.get().getDataClass(container, dataClass.getInt(ExperimentJSONConverter.ID));
+            if (dataClass.has(ExperimentJSONConverter.NAME))
+                expDataClass = ExperimentService.get().getDataClass(container, dataClass.getString(ExperimentJSONConverter.NAME));
+
+            if (expDataClass != null)
+            {
+                return expDataClass.getData(container, dataObject.getString(ExperimentJSONConverter.NAME));
+            }
+            else
+                throw new IllegalArgumentException("Could not resolve a dataclass from the specified parameters");
         }
         else
             throw new IllegalArgumentException("Data must have an id, LSID, pipelinePath, dataFileURL, or absolutePath property. " + dataObject);
