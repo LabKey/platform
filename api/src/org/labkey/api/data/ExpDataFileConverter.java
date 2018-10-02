@@ -165,10 +165,11 @@ public class ExpDataFileConverter implements Converter
 
             if (expDataClass != null)
             {
-                return expDataClass.getData(container, dataObject.getString(ExperimentJSONConverter.NAME));
+                ExpData data = expDataClass.getData(container, dataObject.getString(ExperimentJSONConverter.NAME));
+                if (data != null)
+                    return data;
             }
-            else
-                throw new IllegalArgumentException("Could not resolve a dataclass from the specified parameters");
+            throw new IllegalArgumentException("Could not resolve a dataclass data object from the specified parameters");
         }
         else
             throw new IllegalArgumentException("Data must have an id, LSID, pipelinePath, dataFileURL, or absolutePath property. " + dataObject);
