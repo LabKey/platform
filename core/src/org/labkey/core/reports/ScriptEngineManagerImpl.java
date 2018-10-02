@@ -44,6 +44,7 @@ import org.labkey.api.reports.RDockerScriptEngineFactory;
 import org.labkey.api.reports.RScriptEngineFactory;
 import org.labkey.api.reports.RserveScriptEngineFactory;
 import org.labkey.api.rstudio.RStudioService;
+import org.labkey.api.script.RhinoScriptEngine;
 import org.labkey.api.script.ScriptService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -175,7 +176,22 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
 
         if (engine != null)
         {
-            return isFactoryEnabled(engine.getFactory()) ? engine : null;
+            // a bit of a hack here, rhino script engines are incorrectly associated with javascript reports even though
+            // they are just rendered to the browser, need to return an instance where sandboxed is set to true to allow
+            // trusted analysts the ability to create js reports
+            if (engine instanceof RhinoScriptEngine && isFactoryEnabled(engine.getFactory()))
+            {
+                return new RhinoScriptEngine()
+                {
+                    @Override
+                    public boolean isSandboxed()
+                    {
+                        return true;
+                    }
+                };
+            }
+            else
+                return isFactoryEnabled(engine.getFactory()) ? engine : null;
         }
 
         if (!AppProps.getInstance().isExperimentalFeatureEnabled(RStudioService.R_DOCKER_SANDBOX))

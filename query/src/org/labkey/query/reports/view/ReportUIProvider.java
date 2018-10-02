@@ -158,9 +158,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
             }
         }
 
-        boolean canCreateScript = ReportUtil.canCreateScript(context, "r");
-
-        if (canCreateScript && RReport.isEnabled())
+        if (ReportUtil.canCreateScript(context, "r") && RReport.isEnabled())
         {
             RReportBean rBean = new RReportBean(settings);
             rBean.setReportType(RReport.TYPE);
@@ -175,23 +173,26 @@ public class ReportUIProvider extends DefaultReportUIProvider
         for (ScriptEngineFactory factory : manager.getEngineFactories())
         {
             // don't add an entry for R, since we have a specific report type above.
-            if (canCreateScript && manager.isFactoryEnabled(factory) && !factory.getLanguageName().equalsIgnoreCase("R"))
+            if (!factory.getLanguageName().equalsIgnoreCase("R"))
             {
-                ScriptReportBean bean = new ScriptReportBean(settings);
-                bean.setRedirectUrl(returnUrl.getLocalURIString());
-                bean.setScriptExtension(factory.getExtensions().get(0));
+                if (!factory.getExtensions().isEmpty() && ReportUtil.canCreateScript(context, factory.getExtensions().get(0)) && manager.isFactoryEnabled(factory))
+                {
+                    ScriptReportBean bean = new ScriptReportBean(settings);
+                    bean.setRedirectUrl(returnUrl.getLocalURIString());
+                    bean.setScriptExtension(factory.getExtensions().get(0));
 
-                if (factory instanceof ExternalScriptEngineFactory)
-                {
-                    bean.setReportType(ExternalScriptEngineReport.TYPE);
-                    designers.add(new DesignerInfoImpl(ExternalScriptEngineReport.TYPE, factory.getLanguageName() + " Report", null,
-                            ReportUtil.getScriptReportDesignerURL(context, bean), _getIconPath(ExternalScriptEngineReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(ExternalScriptEngineReport.TYPE)));
-                }
-                else
-                {
-                    bean.setReportType(InternalScriptEngineReport.TYPE);
-                    designers.add(new DesignerInfoImpl(InternalScriptEngineReport.TYPE, factory.getLanguageName() + " Report", null,
-                            ReportUtil.getScriptReportDesignerURL(context, bean), _getIconPath(InternalScriptEngineReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(InternalScriptEngineReport.TYPE)));
+                    if (factory instanceof ExternalScriptEngineFactory)
+                    {
+                        bean.setReportType(ExternalScriptEngineReport.TYPE);
+                        designers.add(new DesignerInfoImpl(ExternalScriptEngineReport.TYPE, factory.getLanguageName() + " Report", null,
+                                ReportUtil.getScriptReportDesignerURL(context, bean), _getIconPath(ExternalScriptEngineReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(ExternalScriptEngineReport.TYPE)));
+                    }
+                    else
+                    {
+                        bean.setReportType(InternalScriptEngineReport.TYPE);
+                        designers.add(new DesignerInfoImpl(InternalScriptEngineReport.TYPE, factory.getLanguageName() + " Report", null,
+                                ReportUtil.getScriptReportDesignerURL(context, bean), _getIconPath(InternalScriptEngineReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(InternalScriptEngineReport.TYPE)));
+                    }
                 }
             }
         }
@@ -205,7 +206,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
                         provider.getCreateWizardURL(settings, context), _getIconPath(QuerySnapshotService.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(QuerySnapshotService.TYPE)));
         }
 
-        if (canCreateScript)
+        if (ReportUtil.canCreateScript(context, "js"))
         {
             ScriptReportBean bean = new ScriptReportBean(settings);
             bean.setRedirectUrl(returnUrl.getLocalURIString());
