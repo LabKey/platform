@@ -263,7 +263,7 @@ public class XarExporter
                 _inputDataLSIDs.add(data.getLSID());
 
                 DataBaseType xData = inputDefs.addNewData();
-                populateData(xData, data, entry.getValue(), run, null);
+                populateData(xData, data, entry.getValue(), run);
             }
         }
 
@@ -279,7 +279,7 @@ public class XarExporter
                 _inputMaterialLSIDs.add(material.getLSID());
 
                 MaterialBaseType xMaterial = inputDefs.addNewMaterial();
-                populateMaterial(xMaterial, new ExpMaterialImpl(material), null);
+                populateMaterial(xMaterial, new ExpMaterialImpl(material));
             }
         }
 
@@ -430,30 +430,25 @@ public class XarExporter
         xApplication.setName(application.getName());
 
         ProtocolApplicationBaseType.OutputDataObjects outputDataObjects = xApplication.addNewOutputDataObjects();
-        List<? extends ExpDataRunInput> dataOutputs = application.getDataOutputs();
-        if (!dataOutputs.isEmpty())
+        List<? extends ExpData> outputData = application.getOutputDatas();
+        if (!outputData.isEmpty())
         {
-            for (ExpDataRunInput dataOutput : dataOutputs)
+            for (ExpData data : outputData)
             {
-                ExpData data = dataOutput.getData();
-                ExpDataProtocolInput protocolInput = dataOutput.getProtocolInput();
-
                 // Issue 31727: When data is imported via the API, no file is created for the data.  We want to
                 // include a file path in the export, though.  We use the name of the data object as the file name.
                 if (data.getDataFileUrl() == null && data.isFinalRunOutput())
                     data.setDataFileURI(run.getFilePathRootPath().resolve(data.getName()).toUri());
                 DataBaseType xData = outputDataObjects.addNewData();
-                populateData(xData, data, null, run, protocolInput);
+                populateData(xData, data, null, run);
             }
         }
 
         ProtocolApplicationBaseType.OutputMaterials outputMaterialObjects = xApplication.addNewOutputMaterials();
-        for (ExpMaterialRunInput materialOutput : application.getMaterialOutputs())
+        for (ExpMaterial material : application.getOutputMaterials())
         {
-            ExpMaterial material = materialOutput.getMaterial();
-            ExpMaterialProtocolInput protocolInput = materialOutput.getProtocolInput();
             MaterialBaseType xMaterial = outputMaterialObjects.addNewMaterial();
-            populateMaterial(xMaterial, material, protocolInput);
+            populateMaterial(xMaterial, material);
         }
 
         PropertyCollectionType appProperties = getProperties(application.getLSID(), run.getContainer());
@@ -502,19 +497,13 @@ public class XarExporter
         }
     }
 
-    private void populateMaterial(MaterialBaseType xMaterial, ExpMaterial material, @Nullable ExpMaterialProtocolInput protocolInput) throws ExperimentException
+    private void populateMaterial(MaterialBaseType xMaterial, ExpMaterial material) throws ExperimentException
     {
         logProgress("Adding material " + material.getLSID());
         addSampleSet(material.getCpasType());
         xMaterial.setAbout(_relativizedLSIDs.relativize(material.getLSID()));
         xMaterial.setCpasType(material.getCpasType() == null ? ExpMaterial.DEFAULT_CPAS_TYPE : _relativizedLSIDs.relativize(material.getCpasType()));
         xMaterial.setName(material.getName());
-
-        if (protocolInput != null)
-        {
-            Lsid lsid = Lsid.parse(protocolInput.getLSID());
-            xMaterial.setProtocolOutput(lsid.getObjectId());
-        }
 
         PropertyCollectionType materialProperties = getProperties(material.getLSID(), material.getContainer());
         if (materialProperties != null)
@@ -759,18 +748,12 @@ public class XarExporter
         return properties;
     }
 
-    private void populateData(DataBaseType xData, ExpData data, @Nullable String role, ExpRun run, @Nullable ExpDataProtocolInput protocolInput) throws ExperimentException
+    private void populateData(DataBaseType xData, ExpData data, @Nullable String role, ExpRun run) throws ExperimentException
     {
         logProgress("Adding data " + data.getLSID());
         xData.setName(data.getName());
         xData.setAbout(_relativizedLSIDs.relativize(data));
         xData.setCpasType(data.getCpasType() == null ? ExpData.DEFAULT_CPAS_TYPE : _relativizedLSIDs.relativize(data.getCpasType()));
-
-        if (protocolInput != null)
-        {
-            Lsid lsid = Lsid.parse(protocolInput.getLSID());
-            xData.setProtocolOutput(lsid.getObjectId());
-        }
 
         Path path = data.getFilePath();
         if (path != null)
