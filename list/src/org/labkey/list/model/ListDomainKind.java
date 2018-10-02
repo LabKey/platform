@@ -15,6 +15,7 @@
  */
 package org.labkey.list.model;
 
+import org.apache.commons.lang3.EnumUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchemaType;
@@ -55,6 +56,7 @@ import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 import org.labkey.data.xml.domainTemplate.ListOptionsType;
 import org.labkey.data.xml.domainTemplate.ListTemplateType;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -194,7 +196,9 @@ public abstract class ListDomainKind extends AbstractDomainKind
 
     abstract PropertyStorageSpec getKeyProperty(ListDefinition list);
 
-    abstract KeyType getKeyType();
+    abstract KeyType getDefaultKeyType();
+
+    abstract Collection<KeyType> getSupportedKeyTypes();
 
     @Override
     public Set<String> getReservedPropertyNames(Domain domain)
@@ -328,7 +332,21 @@ public abstract class ListDomainKind extends AbstractDomainKind
         if (keyName == null)
             throw new IllegalArgumentException("List keyName must not be null");
 
-        ListDefinition list = ListService.get().createList(container, name, getKeyType(), templateInfo);
+        KeyType keyType = getDefaultKeyType();
+
+        if (arguments.containsKey("keyType"))
+        {
+            String rawKeyType = (String)arguments.get("keyType");
+            if (EnumUtils.isValidEnum(KeyType.class, rawKeyType))
+                keyType = KeyType.valueOf(rawKeyType);
+            else
+                throw new IllegalArgumentException("List keyType provided does not exist.");
+        }
+
+        if (!getSupportedKeyTypes().contains(keyType))
+            throw new IllegalArgumentException("List keyType provided is not supported for list domain kind (" + getKindName() + ").");
+
+        ListDefinition list = ListService.get().createList(container, name, keyType, templateInfo);
         list.setKeyName(keyName);
         list.setDescription(domain.getDescription());
 
@@ -426,7 +444,7 @@ public abstract class ListDomainKind extends AbstractDomainKind
 
         PropertyType type = PropertyType.getFromURI(prop.getConceptURI(), prop.getRangeURI());
 
-        return type.equals(getKeyType().getPropertyType());
+        return type.equals(getDefaultKeyType().getPropertyType());
     }
 
 }

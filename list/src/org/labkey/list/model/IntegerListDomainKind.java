@@ -19,6 +19,10 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.list.ListDefinition;
 
+import java.util.List;
+import java.util.Arrays;
+import java.util.Collection;
+
 /**
  * User: Nick
  * Date: 5/9/13
@@ -27,6 +31,11 @@ import org.labkey.api.exp.list.ListDefinition;
 public class IntegerListDomainKind extends ListDomainKind
 {
     protected static final String NAMESPACE_PREFIX = "IntList";
+
+    protected static final List<ListDefinition.KeyType> supportedTypes = Arrays.asList(
+            ListDefinition.KeyType.AutoIncrementInteger,
+            ListDefinition.KeyType.Integer
+    );
 
     @Override
     public String getKindName()
@@ -50,8 +59,14 @@ public class IntegerListDomainKind extends ListDomainKind
     }
 
     @Override
-    public ListDefinition.KeyType getKeyType()
+    protected ListDefinition.KeyType getDefaultKeyType()
     {
         return ListDefinition.KeyType.AutoIncrementInteger;
+    }
+
+    @Override
+    protected Collection<ListDefinition.KeyType> getSupportedKeyTypes()
+    {
+        return supportedTypes;
     }
 }

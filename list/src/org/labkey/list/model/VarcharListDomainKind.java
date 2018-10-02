@@ -19,6 +19,9 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.list.ListDefinition;
 
+import java.util.Collection;
+import java.util.Collections;
+
 /**
  * User: Nick
  * Date: 5/9/13
@@ -28,12 +31,13 @@ public class VarcharListDomainKind extends ListDomainKind
 {
     protected static final String NAMESPACE_PREFIX = "VarList";
 
+    private static final Collection<ListDefinition.KeyType> supportedTypes = Collections.singletonList(ListDefinition.KeyType.Varchar);
+
     @Override
     public String getKindName()
     {
         return NAMESPACE_PREFIX;
     }
-
 
     @Override
     PropertyStorageSpec getKeyProperty(ListDefinition list)
@@ -44,8 +48,14 @@ public class VarcharListDomainKind extends ListDomainKind
     }
 
     @Override
-    public ListDefinition.KeyType getKeyType()
+    protected ListDefinition.KeyType getDefaultKeyType()
     {
         return ListDefinition.KeyType.Varchar;
+    }
+
+    @Override
+    protected Collection<ListDefinition.KeyType> getSupportedKeyTypes()
+    {
+        return supportedTypes;
     }
 }
