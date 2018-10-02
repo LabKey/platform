@@ -229,8 +229,7 @@ public class ReportsController extends BaseStudyController
         {
             super.checkPermissions();
 
-            // TODO: In 18.3, switch isDeveloper() check to hasPermission(PlatformDeveloperPermission.class)
-            if (!getUser().isDeveloper())
+            if (!getUser().isPlatformDeveloper())
                 throw new UnauthorizedException();
         }
 

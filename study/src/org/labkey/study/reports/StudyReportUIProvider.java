@@ -186,8 +186,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
             }
 
             // external report - keep in sync with ExternalReportAction permissions checks
-            // TODO: In 18.3, switch isDeveloper() check to hasPermission(PlatformDeveloperPermission.class)
-            if (context.getContainer().hasPermission(context.getUser(), InsertPermission.class) && context.getUser().isDeveloper())
+            if (context.getContainer().hasPermission(context.getUser(), InsertPermission.class) && context.getUser().isPlatformDeveloper())
             {
                 ActionURL buttonURL = context.getActionURL().clone();
                 buttonURL.setAction(ReportsController.ExternalReportAction.class);

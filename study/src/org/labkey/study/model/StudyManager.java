@@ -4661,7 +4661,7 @@ public class StudyManager
             // Need to reindex participants whose aliases have changed
             f.append(" OR ParticipantId IN (\nSELECT ParticipantId FROM\n")
                 .append(aliasTable.getFromSQL("aliases"))
-                .append("WHERE Modified > p.LastIndexed)");
+                .append("WHERE aliases.Modified > p.LastIndexed)");
         }
 
         final ActionURL executeURL = new ActionURL(StudyController.ParticipantAction.class, c);
