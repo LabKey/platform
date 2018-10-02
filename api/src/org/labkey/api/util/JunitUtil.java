@@ -283,7 +283,7 @@ public class JunitUtil
 
         File file = new File(sampleDataDir, relativePath);
 
-        Assume.assumeTrue("No sample data directory was found at '" + sampleDataDir.getAbsolutePath() + "'. Skipping test.", sampleDataDir.exists());
+        Assume.assumeTrue((null == sampleDataDir ? "Sample data directory is null." : "No sample data directory was found at '" + sampleDataDir.getAbsolutePath() + "'.") + " Skipping test.", null != sampleDataDir && sampleDataDir.exists());
 
         return file.exists() ? file : null;
     }
