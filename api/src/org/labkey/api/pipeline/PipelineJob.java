@@ -1951,7 +1951,7 @@ abstract public class PipelineJob extends Job implements Serializable
             errors.add("_jobGUID");
         //if (job1._localDirectory != job2._localDirectory)
         //    errors.add("_localDirectory");
-        if (!job1._logFile.equals(job2._logFile))
+        if (null != job1._logFile && null != job2._logFile && !job1._logFile.equals(job2._logFile))
             errors.add("_logFile");
         if (!PropertyUtil.nullSafeEquals(job1._logFilePathName, job2._logFilePathName))
             errors.add("_logFilePathName");
