@@ -2986,8 +2986,10 @@ if (!LABKEY.DataRegions) {
     };
 
     var _viewContainsColumn = function(view, colFieldKey) {
-        var keys = $.map(view.columns, function(c){ return c.fieldKey; }),
-            exists = keys.indexOf(colFieldKey) > -1;
+        var keys = $.map(view.columns, function(c) {
+            return c.fieldKey.toLowerCase();
+        });
+        var exists = colFieldKey && keys.indexOf(colFieldKey.toLowerCase()) > -1;
 
         if (!exists) {
             console.warn('Unable to find column in view: ' + colFieldKey);
