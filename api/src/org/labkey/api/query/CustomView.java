@@ -49,7 +49,7 @@ public interface CustomView extends CustomViewInfo
 
     void save(User user, HttpServletRequest request) throws QueryException;
     void delete(User user, HttpServletRequest request) throws QueryException;
-    /** @return true if serialized sucessfully. */
+    /** @return true if serialized successfully. */
     boolean serialize(VirtualFile dir) throws IOException;
 
     Collection<String> getDependents(User user);

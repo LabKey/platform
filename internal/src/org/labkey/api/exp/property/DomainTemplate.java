@@ -149,7 +149,7 @@ public class DomainTemplate
 
         List<GWTIndex> indices = getDomainTemplateUniqueIndices(templateName, template, properties);
         Set<String> mandatoryFieldNames = getDomainTemplateMandatoryFields(templateName, template, properties);
-        Map<String, Object> options = getDomainTemplateOptions(templateName, template, null, properties);
+        Map<String, Object> options = getDomainTemplateOptions(templateName, template, properties);
 
         GWTDomain<GWTPropertyDescriptor> domain = new GWTDomain<>();
         domain.setName(templateName);
@@ -167,17 +167,19 @@ public class DomainTemplate
         );
     }
 
+    @Nullable
     private static String getDomainKind(String templateName, DomainTemplateType template, List<GWTPropertyDescriptor> properties)
     {
-
         List<DomainKind> domainKinds = PropertyService.get().getDomainKinds();
+
         for (DomainKind domainKind : domainKinds)
         {
-            if(domainKind.matchesTemplateXML(templateName, template, properties))
+            if (domainKind.matchesTemplateXML(templateName, template, properties))
             {
                 return domainKind.getKindName();
             }
         }
+
         return null;
     }
 
@@ -260,7 +262,7 @@ public class DomainTemplate
         return Collections.unmodifiableSet(set);
     }
 
-    private static Map<String, Object> getDomainTemplateOptions(String templateName, DomainTemplateType template, Container container, List<GWTPropertyDescriptor> properties)
+    private static Map<String, Object> getDomainTemplateOptions(String templateName, DomainTemplateType template, List<GWTPropertyDescriptor> properties)
     {
         Map<String, Object> optionsMap = new HashMap<>();
 
@@ -269,6 +271,10 @@ public class DomainTemplate
             ListOptionsType options = ((ListTemplateType)template).getOptions();
             String keyName = options.getKeyCol();
             optionsMap.put("keyName", keyName);
+
+            // The keyType value will be validated against the set of allowable types in ListDomainKind.createDomain()
+            if (options.isSetKeyType())
+                optionsMap.put("keyType", options.getKeyType());
         }
         else if (template instanceof DataClassTemplateType)
         {
@@ -456,7 +462,6 @@ public class DomainTemplate
             errors.addRowError(new ValidationException(e.getMessage()));
             return 0;
         }
-
 
         DataIteratorContext context = new DataIteratorContext(errors);
         context.setInsertOption(QueryUpdateService.InsertOption.IMPORT);

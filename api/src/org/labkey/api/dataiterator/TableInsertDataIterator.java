@@ -285,7 +285,24 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         TableInfo t = ((UpdateableTableInfo)_table).getSchemaTableInfo();
         if (_context.supportsAutoIncrementKey() && null != _scope && null != _conn && t.getSelectName() != null)
         {
+            // Find a serial/identity column
+            ColumnInfo autoIncCol = null;
+            for (ColumnInfo col : t.getColumns())
+            {
+                if (col.isAutoIncrement())
+                {
+                    autoIncCol = col;
+                    break;
+                }
+            }
+
+            // 35579: Do not set auto-increment bounds if a auto-increment column is not found
+            if (autoIncCol == null)
+                return;
+
+            // We're assuming the "selectName" column is in fact the serial/identity "autoIncCol"
             final String selectName = t.getSelectName();
+
             if (_scope.getSqlDialect().isSqlServer())
             {
                 SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(selectName).append(" ").append(bound.toString());
@@ -293,19 +310,8 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
             }
             else if (_scope.getSqlDialect().isPostgreSQL() && bound == INSERT.OFF)
             {
-                // Find the 'serial' column
-                ColumnInfo autoIncCol = null;
-                for (ColumnInfo col : t.getColumns())
-                {
-                    if (col.isAutoIncrement())
-                    {
-                        autoIncCol = col;
-                        break;
-                    }
-                }
-
                 // Update the sequence for the serial column with the max+1 and handle empty tables
-                if (autoIncCol != null && autoIncCol.getSelectName() != null)
+                if (autoIncCol.getSelectName() != null)
                 {
                     String colSelectName = autoIncCol.getSelectName();
                     SQLFragment resetSeq = new SQLFragment();
