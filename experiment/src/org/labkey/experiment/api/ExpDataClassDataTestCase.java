@@ -640,27 +640,56 @@ public class ExpDataClassDataTestCase
 
         // Issue 27729: sequence not updated to max after bulk import with importIdentity turned on
         // verify that we can insert a new priority
-        List<Map<String, Object>> rows = new ArrayList<>();
-        Map<String, Object> row = new CaseInsensitiveHashMap<>();
-        row.put("title", "p5");
-        rows.add(row);
-
-        List<Map<String, Object>> ret;
-        try (DbScope.Transaction tx = priorityTable.getSchema().getScope().beginTransaction())
         {
-            BatchValidationException errors = new BatchValidationException();
-            ret = priorityTable.getUpdateService().insertRows(user, sub, rows, errors, null, null);
-            if (errors.hasErrors())
-                throw errors;
-            tx.commit();
+            List<Map<String, Object>> rows = new ArrayList<>();
+            Map<String, Object> row = new CaseInsensitiveHashMap<>();
+            row.put("title", "p5");
+            rows.add(row);
+
+            List<Map<String, Object>> ret;
+            try (DbScope.Transaction tx = priorityTable.getSchema().getScope().beginTransaction())
+            {
+                BatchValidationException errors = new BatchValidationException();
+                ret = priorityTable.getUpdateService().insertRows(user, sub, rows, errors, null, null);
+                if (errors.hasErrors())
+                    throw errors;
+                tx.commit();
+            }
+
+            assertEquals(1, ret.size());
+            assertEquals(5, ((Integer) ret.get(0).get("pri")).longValue());
+            assertEquals("p5", ret.get(0).get("title"));
         }
 
-        assertEquals(1, ret.size());
-        assertEquals(5, ((Integer)ret.get(0).get("pri")).longValue());
-        assertEquals("p5", ret.get(0).get("title"));
+        // Issue 35579: Cannot create non-auto-increment Integer PK list via Domain.create
+        ListDefinition milestoneListDef = ListService.get().getList(sub, "Milestone");
+        Assert.assertEquals(ListDefinition.KeyType.Integer, milestoneListDef.getKeyType());
 
+        // verify that we can insert a new milestone
+        {
+            TableInfo milestoneTable = listSchema.getTable("Milestone");
+            List<Map<String, Object>> rows = new ArrayList<>();
+            Map<String, Object> row = new CaseInsensitiveHashMap<>();
+            row.put("m", "3");
+            row.put("title", "Milestone 3");
+            rows.add(row);
 
-        // verify the "TodoList" DataCLass was created and data was imported
+            List<Map<String, Object>> ret;
+            try (DbScope.Transaction tx = milestoneTable.getSchema().getScope().beginTransaction())
+            {
+                BatchValidationException errors = new BatchValidationException();
+                ret = milestoneTable.getUpdateService().insertRows(user, sub, rows, errors, null, null);
+                if (errors.hasErrors())
+                    throw errors;
+                tx.commit();
+            }
+
+            Assert.assertEquals(1, ret.size());
+            Assert.assertEquals(3, ((Integer)ret.get(0).get("m")).longValue());
+            Assert.assertEquals("Milestone 3", ret.get(0).get("title"));
+        }
+
+        // verify the "TodoList" DataClass was created and data was imported
         UserSchema expSchema = QueryService.get().getUserSchema(user, sub, expDataSchemaKey);
         TableInfo table = expSchema.getTable("TodoList");
         Assert.assertNotNull("data class not in query schema", table);
@@ -675,7 +704,6 @@ public class ExpDataClassDataTestCase
 
         Collection<String> aliases = data.getAliases();
         Assert.assertTrue("Expected aliases to contain 'xsd' and 'domain templates', got: " + aliases, aliases.containsAll(Arrays.asList("xsd", "domain templates")));
-
     }
 
 
@@ -758,7 +786,6 @@ public class ExpDataClassDataTestCase
             dbTable = dbSchema.getTable(storageTableName);
             Assert.assertNull(dbTable);
         }
-
     }
 
     // Issue 26129: sqlserver maximum size of index keys must be < 900 bytes
@@ -853,5 +880,4 @@ public class ExpDataClassDataTestCase
             Assert.assertTrue("Expected a constraint violation", RuntimeSQLException.isConstraintException((SQLException)t));
         }
     }
-
 }
