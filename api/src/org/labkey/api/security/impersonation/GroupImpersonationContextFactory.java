@@ -61,11 +61,10 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
             @JsonProperty("_projectId") GUID projectId,
             @JsonProperty("_adminUserId") int adminUserId,
             @JsonProperty("_groupId") int groupId,
-            @JsonProperty("_returnURL") ActionURL returnURL,
-            @JsonProperty("_adminSessionAttributes") Map<String, Object> adminSessionAttributes
+            @JsonProperty("_returnURL") ActionURL returnURL
     )
     {
-        super(adminSessionAttributes);
+        super();
         _projectId = projectId;
         _groupId = groupId;
         _adminUserId = adminUserId;

@@ -63,11 +63,10 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
             @JsonProperty("_roleNames") Set<String> roleNames,
             @JsonProperty("_previousRoleNames") Set<String> previousRoleNames,
             @JsonProperty("_returnURL") ActionURL returnURL,
-            @JsonProperty("_cacheKey") String cacheKey,
-            @JsonProperty("_adminSessionAttributes") Map<String, Object> adminSessionAttributes
+            @JsonProperty("_cacheKey") String cacheKey
     )
     {
-        super(adminSessionAttributes);
+        super();
         _projectId = projectId;
         _adminUserId = adminUserId;
         _roleNames = roleNames;

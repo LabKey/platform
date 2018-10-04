@@ -1891,6 +1891,8 @@ abstract public class PipelineJob extends Job implements Serializable
         module.addDeserializer(CronExpression.class, new CronExpressionSerialization.Deserializer());
         module.addSerializer(URI.class, new URISerialization.Serializer());
         module.addDeserializer(URI.class, new URISerialization.Deserializer());
+        module.addSerializer(File.class, new FileSerialization.Serializer());
+        module.addDeserializer(File.class, new FileSerialization.Deserializer());
 
         mapper.registerModule(module);
         return mapper;
@@ -1951,7 +1953,7 @@ abstract public class PipelineJob extends Job implements Serializable
             errors.add("_jobGUID");
         //if (job1._localDirectory != job2._localDirectory)
         //    errors.add("_localDirectory");
-        if (null != job1._logFile && null != job2._logFile && !job1._logFile.equals(job2._logFile))
+        if (!PropertyUtil.nullSafeEquals(job1._logFile, job2._logFile))
             errors.add("_logFile");
         if (!PropertyUtil.nullSafeEquals(job1._logFilePathName, job2._logFilePathName))
             errors.add("_logFilePathName");

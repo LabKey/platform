@@ -59,11 +59,10 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
             @JsonProperty("_projectId") GUID projectId,
             @JsonProperty("_adminUserId") int adminUserId,
             @JsonProperty("_impersonatedUserId") int impersonatedUserId,
-            @JsonProperty("_returnURL") ActionURL returnURL,
-            @JsonProperty("_adminSessionAttributes") Map<String, Object> adminSessionAttributes
+            @JsonProperty("_returnURL") ActionURL returnURL
     )
     {
-        super(adminSessionAttributes);
+        super();
         _projectId = projectId;
         _adminUserId = adminUserId;
         _impersonatedUserId = impersonatedUserId;

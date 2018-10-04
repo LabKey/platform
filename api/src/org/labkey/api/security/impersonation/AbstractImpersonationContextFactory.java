@@ -49,14 +49,9 @@ public class AbstractImpersonationContextFactory
     }
 
     /** Don't remove/rename without updating PipelineJobMarshaller.getXStream() */
-    private final Map<String, Object> _adminSessionAttributes;
+    private transient final Map<String, Object> _adminSessionAttributes;
 
     @JsonCreator
-    protected AbstractImpersonationContextFactory(@JsonProperty("_adminSessionAttributes") Map<String, Object> adminSessionAttributes)
-    {
-        _adminSessionAttributes = adminSessionAttributes;
-    }
-
     protected AbstractImpersonationContextFactory()
     {
         _adminSessionAttributes = new HashMap<>();
