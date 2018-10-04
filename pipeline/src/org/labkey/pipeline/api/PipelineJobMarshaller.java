@@ -275,6 +275,8 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
 
         public static class TestJob
         {
+            public File _file;
+            public File _file1;
             public Vial _vial;
             public Path _path;
             public Path _nonAbsolutePath;
@@ -306,6 +308,8 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
             }
             public TestJob(String name, int option)
             {
+                _file = new File(URI.create("file:///Users/daveb"));
+                _file1 = new File("/Users/daveb");
                 Map<String, Integer> wrapMap = new CaseInsensitiveHashMap<>();
                 ArrayListMap.FindMap<String> findMap = new ArrayListMap.FindMap<>(wrapMap);
                 HashMap<String, Object> mapOfVial = new HashMap<>(findMap);
