@@ -476,6 +476,7 @@ public class QueryPivot extends QueryRelation
             if (_aggregates.containsKey(_s.getFieldKey().getName()))
             {
                 to.setHidden(true);
+                to.setIsUnselectable(true);
             }
         }
     }
