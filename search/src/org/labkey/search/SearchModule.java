@@ -136,7 +136,7 @@ public class SearchModule extends DefaultModule
             // Update the version number below to force a clear and rebuild of the index. This is used when we change our indexing content or methodology.
             final boolean clearIndex = (!moduleContext.isNewInstall() && moduleContext.getOriginalVersion() < 17.21);
 
-            // don't start the crawler or clear the index until all the modules are done starting up
+            // don't upgrade or clear the index until all the modules are done starting up
             ContextListener.addStartupListener(new StartupListener()
             {
                 @Override
