@@ -1076,6 +1076,64 @@ var renderStats = function(){
     statsDiv.appendChild(p);
 };
 
+var javaReleasesPathLayer = new LABKEY.vis.Layer({
+    geom: new LABKEY.vis.Geom.Path({size: 20, opacity: 1}),
+    name: '',
+    aes: {
+        y: function(row){return row.release.value}
+    }
+});
+
+var MILLIS_PER_DAY = 1000*60*60*24;
+var START_DATE = new Date("2002-02-01")/MILLIS_PER_DAY;
+
+var javaReleasesPlotConfig = {
+    rendererType: 'd3',
+    renderTo: 'javaReleases',
+    labels: {
+        x: {value: "Year"},
+        y: {value: "Java Version"},
+        main: {value: "Java Release and Support Cadence: Java 4 through 13"}
+    },
+    width: 1000,
+    height: 500,
+    clipRect: true,
+    data: javaReleasesRows,
+    aes: {
+        x: function(row){return row.Days.value + START_DATE},
+        color: function(row){return row.version.value},
+        pathColor: function(rows){return rows[0].version.value},
+        group: function(row){return row.version.value}
+    },
+    scales: {
+        x: {
+            scaleType: 'continuous',
+            trans: 'linear',
+            tickValues: function () {
+                var dates = [];
+
+                // Tick marks at Jan 1 of every other year
+                for (var i = 2003; i <= 2019; i += 2)
+                    dates.push(new Date(i, 0, 1).getTime()/MILLIS_PER_DAY + 1);
+
+                return dates;
+            }(),
+            tickFormat: function(v){
+                var d = new Date(MILLIS_PER_DAY*v);
+                return d.getFullYear();
+            }
+        },
+        y: {
+            scaleType: 'continuous',
+            trans: 'linear',
+            domain: [13,4]
+        }
+    }
+};
+
+var javaReleasesPlot = new LABKEY.vis.Plot(javaReleasesPlotConfig);
+javaReleasesPlot.addLayer(javaReleasesPathLayer);
+
 var start = new Date().getTime();
 labResultsPlot.render();
 coffeePlot.render();
@@ -1096,5 +1154,7 @@ leveyJenningsPlot.render();
 CUSUMPlot.render();
 survivalCurvePlot.render();
 timelinePlot.render();
+javaReleasesPlot.render();
+
 console.log(new Date().getTime() - start);
 renderStats();
