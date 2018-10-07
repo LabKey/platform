@@ -290,36 +290,35 @@ var timelineData = [
     }
 ];
 
-// "General Availability" to "End of Public Support" for all Java releases from 4 to 13.
-// Day 0 is 2002-02-01 (approximate date of Java 4 release).
+// "General Availability" and "End of Public Support" dates for all Java releases from 4 to 13.
 var javaReleasesRows = [
-    {"Days":{"value":0},"version":{"value":"Java 4"},"release":{"value":4}},
-    {"Days":{"value":2434},"version":{"value":"Java 4"},"release":{"value":4}},
+    {"Date":{"value":new Date("2002-02-01")},"version":{"value":"Java 4"},"release":{"value":4}},
+    {"Date":{"value":new Date("2008-10-01")},"version":{"value":"Java 4"},"release":{"value":4}},
 
-    {"Days":{"value":943},"version":{"value":"Java 5"},"release":{"value":5}},
-    {"Days":{"value":2830},"version":{"value":"Java 5"},"release":{"value":5}},
+    {"Date":{"value":new Date("2004-09-01")},"version":{"value":"Java 5"},"release":{"value":5}},
+    {"Date":{"value":new Date("2009-11-01")},"version":{"value":"Java 5"},"release":{"value":5}},
 
-    {"Days":{"value":1764},"version":{"value":"Java 6"},"release":{"value":6}},
-    {"Days":{"value":4077},"version":{"value":"Java 6"},"release":{"value":6}},
+    {"Date":{"value":new Date("2006-12-01")},"version":{"value":"Java 6"},"release":{"value":6}},
+    {"Date":{"value":new Date("2013-04-01")},"version":{"value":"Java 6"},"release":{"value":6}},
 
-    {"Days":{"value":3437},"version":{"value":"Java 7"},"release":{"value":7}},
-    {"Days":{"value":4807},"version":{"value":"Java 7"},"release":{"value":7}},
+    {"Date":{"value":new Date("2011-07-01")},"version":{"value":"Java 7"},"release":{"value":7}},
+    {"Date":{"value":new Date("2015-04-01")},"version":{"value":"Java 7"},"release":{"value":7}},
 
-    {"Days":{"value":4411},"version":{"value":"Java 8"},"release":{"value":8}},
-    {"Days":{"value":6178},"version":{"value":"Java 8"},"release":{"value":8}},
+    {"Date":{"value":new Date("2014-03-01")},"version":{"value":"Java 8"},"release":{"value":8}},
+    {"Date":{"value":new Date("2019-01-01")},"version":{"value":"Java 8"},"release":{"value":8}},
 
-    {"Days":{"value":5691},"version":{"value":"Java 9"},"release":{"value":9}},
-    {"Days":{"value":5872},"version":{"value":"Java 9"},"release":{"value":9}},
+    {"Date":{"value":new Date("2017-09-01")},"version":{"value":"Java 9"},"release":{"value":9}},
+    {"Date":{"value":new Date("2018-03-01")},"version":{"value":"Java 9"},"release":{"value":9}},
 
-    {"Days":{"value":5872},"version":{"value":"Java 10"},"release":{"value":10}},
-    {"Days":{"value":6056},"version":{"value":"Java 10"},"release":{"value":10}},
+    {"Date":{"value":new Date("2018-03-01")},"version":{"value":"Java 10"},"release":{"value":10}},
+    {"Date":{"value":new Date("2018-09-01")},"version":{"value":"Java 10"},"release":{"value":10}},
 
-    {"Days":{"value":6056},"version":{"value":"Java 11"},"release":{"value":11}},
-    {"Days":{"value":6237},"version":{"value":"Java 11"},"release":{"value":11}},
+    {"Date":{"value":new Date("2018-09-01")},"version":{"value":"Java 11"},"release":{"value":11}},
+    {"Date":{"value":new Date("2019-03-01")},"version":{"value":"Java 11"},"release":{"value":11}},
 
-    {"Days":{"value":6237},"version":{"value":"Java 12"},"release":{"value":12}},
-    {"Days":{"value":6421},"version":{"value":"Java 12"},"release":{"value":12}},
+    {"Date":{"value":new Date("2019-03-01")},"version":{"value":"Java 12"},"release":{"value":12}},
+    {"Date":{"value":new Date("2019-09-01")},"version":{"value":"Java 12"},"release":{"value":12}},
 
-    {"Days":{"value":6421},"version":{"value":"Java 13"},"release":{"value":13}},
-    {"Days":{"value":6603},"version":{"value":"Java 13"},"release":{"value":13}}
+    {"Date":{"value":new Date("2019-09-01")},"version":{"value":"Java 13"},"release":{"value":13}},
+    {"Date":{"value":new Date("2020-03-01")},"version":{"value":"Java 13"},"release":{"value":13}}
 ];

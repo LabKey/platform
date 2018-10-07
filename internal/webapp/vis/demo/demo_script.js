@@ -1084,9 +1084,6 @@ var javaReleasesPathLayer = new LABKEY.vis.Layer({
     }
 });
 
-var MILLIS_PER_DAY = 1000*60*60*24;
-var START_DATE = new Date("2002-02-01")/MILLIS_PER_DAY;
-
 var javaReleasesPlotConfig = {
     rendererType: 'd3',
     renderTo: 'javaReleases',
@@ -1100,7 +1097,7 @@ var javaReleasesPlotConfig = {
     clipRect: true,
     data: javaReleasesRows,
     aes: {
-        x: function(row){return row.Days.value + START_DATE},
+        x: function(row){return row.Date.value},
         color: function(row){return row.version.value},
         pathColor: function(rows){return rows[0].version.value},
         group: function(row){return row.version.value}
@@ -1114,12 +1111,11 @@ var javaReleasesPlotConfig = {
 
                 // Tick marks at Jan 1 of every other year
                 for (var i = 2003; i <= 2019; i += 2)
-                    dates.push(new Date(i, 0, 1).getTime()/MILLIS_PER_DAY + 1);
+                    dates.push(new Date(i, 0, 1));
 
                 return dates;
             }(),
-            tickFormat: function(v){
-                var d = new Date(MILLIS_PER_DAY*v);
+            tickFormat: function(d){
                 return d.getFullYear();
             }
         },
