@@ -1080,7 +1080,7 @@ var javaReleasesPathLayer = new LABKEY.vis.Layer({
     geom: new LABKEY.vis.Geom.Path({size: 20, opacity: 1}),
     name: '',
     aes: {
-        y: function(row){return row.release.value}
+        y: function(row){return row.release}
     }
 });
 
@@ -1097,10 +1097,10 @@ var javaReleasesPlotConfig = {
     clipRect: true,
     data: javaReleasesRows,
     aes: {
-        x: function(row){return row.Date.value},
-        color: function(row){return row.version.value},
-        pathColor: function(rows){return rows[0].version.value},
-        group: function(row){return row.version.value}
+        x: function(row){return row.Date},
+        color: function(row){return row.release},
+        pathColor: function(rows){return "Java " + rows[0].release},
+        group: function(row){return row.release}
     },
     scales: {
         x: {
