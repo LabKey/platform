@@ -39,12 +39,12 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.TrustedPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
-import org.labkey.api.security.roles.AnalystRole;
 import org.labkey.api.security.roles.AuthorRole;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.ReaderRole;
-import org.labkey.api.security.roles.TrustedAnalystRole;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
@@ -524,11 +524,15 @@ public class GroupManager
             assertFalse(policy.hasPermission(user, TrustedPermission.class));
             assertFalse(policy.hasPermission(user, AnalystPermission.class));
 
-            policy.addRoleAssignment(user, TrustedAnalystRole.class);
-            assertFalse(policy.hasPermission(user, PlatformDeveloperPermission.class));
-            assertTrue(policy.hasPermission(user, TrustedPermission.class));
-            assertTrue(policy.hasPermission(user, AnalystPermission.class));
-            policy.clearAssignedRoles(user);
+            Role r = RoleManager.getRole("org.labkey.api.security.roles.TrustedAnalystRole");
+            if (null != r)
+            {
+                policy.addRoleAssignment(user, r);
+                assertFalse(policy.hasPermission(user, PlatformDeveloperPermission.class));
+                assertTrue(policy.hasPermission(user, TrustedPermission.class));
+                assertTrue(policy.hasPermission(user, AnalystPermission.class));
+                policy.clearAssignedRoles(user);
+            }
         }
 
         @Test
