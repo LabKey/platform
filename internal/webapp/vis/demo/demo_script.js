@@ -1076,15 +1076,7 @@ var renderStats = function(){
     statsDiv.appendChild(p);
 };
 
-var javaReleasesPathLayer = new LABKEY.vis.Layer({
-    geom: new LABKEY.vis.Geom.Path({size: 20, opacity: 1}),
-    name: '',
-    aes: {
-        y: function(row){return row.release}
-    }
-});
-
-var javaReleasesPlotConfig = {
+var javaReleasesPlot = new LABKEY.vis.Plot({
     rendererType: 'd3',
     renderTo: 'javaReleases',
     labels: {
@@ -1096,11 +1088,17 @@ var javaReleasesPlotConfig = {
     height: 500,
     clipRect: true,
     data: javaReleasesRows,
+    layers: [
+        new LABKEY.vis.Layer({
+            geom: new LABKEY.vis.Geom.Path({size: 20, opacity: 1})
+        })
+    ],
     aes: {
-        x: function(row){return row.Date},
-        color: function(row){return row.release},
-        pathColor: function(rows){return "Java " + rows[0].release},
-        group: function(row){return row.release}
+        x: 'Date',
+        y: 'release',
+        color: 'release',
+        group: 'release',
+        pathColor: function(rows){return "Java " + rows[0].release}
     },
     scales: {
         x: {
@@ -1125,10 +1123,7 @@ var javaReleasesPlotConfig = {
             domain: [13,4]
         }
     }
-};
-
-var javaReleasesPlot = new LABKEY.vis.Plot(javaReleasesPlotConfig);
-javaReleasesPlot.addLayer(javaReleasesPathLayer);
+});
 
 var start = new Date().getTime();
 labResultsPlot.render();
