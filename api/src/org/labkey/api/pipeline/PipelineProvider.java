@@ -16,18 +16,25 @@
 
 package org.labkey.api.pipeline;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.module.Module;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.*;
-import org.labkey.api.module.Module;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
 import org.springframework.web.servlet.mvc.Controller;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.IOException;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * A source of things that can be done to files in the pipeline directory. Standard use cases include doing analysis
@@ -249,6 +256,7 @@ abstract public class PipelineProvider
     /**
      * @return Web part shown on the setup page.
      */
+    @Nullable
     public HttpView getSetupWebPart(Container container)
     {
         // No setup.
