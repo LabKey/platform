@@ -1,4 +1,5 @@
 {table}
+Filename|Component|Version|Source|License|LabKey Dev|Purpose
 commons-codec-1.10.jar|Commons Codec|1.10|{link:Apache|http://jakarta.apache.org/commons/codec/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Provides implementations of common encoders and decoders such as Base64, Hex, Phonetic and URLs
 commons-logging-1.2.jar|Commons Logging|1.2|{link:Apache|http://jakarta.apache.org/commons/logging/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Bridge API to different logging implementations
 httpclient-4.5.3.jar|Apache HTTP Client|4.5.3|{link:Apache|http://hc.apache.org/httpcomponents-client-ga}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|HTTP client for requests of remote servers
