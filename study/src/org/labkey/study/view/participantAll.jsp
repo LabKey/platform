@@ -34,12 +34,10 @@
 <%@ page import="org.labkey.api.reports.Report" %>
 <%@ page import="org.labkey.api.reports.ReportService" %>
 <%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
-<%@ page import="org.labkey.api.reports.report.view.ChartDesignerBean" %>
 <%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.study.Dataset" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
@@ -52,7 +50,8 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.api.visualization.GenericChartReport" %>
+<%@ page import="org.labkey.api.visualization.TimeChartReport" %>
 <%@ page import="org.labkey.study.StudySchema" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ExpandStateNotifyAction" %>
@@ -63,7 +62,6 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="org.labkey.study.query.StudyQuerySchema" %>
-<%@ page import="org.labkey.study.reports.StudyChartQueryReport" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Date" %>
@@ -76,13 +74,8 @@
 <%@ page import="java.util.TreeMap" %>
 <%@ page import="java.util.TreeSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<%!
-    @Override
-    public void addClientDependencies(ClientDependencies dependencies)
-    {
-        dependencies.add("Ext4");
-    }
-%>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+
 <%
     ViewContext context = getViewContext();
     StudyQuerySchema querySchema = (StudyQuerySchema) QueryService.get().getUserSchema(getUser(), getContainer(), "study");
@@ -94,20 +87,6 @@
     String currentUrl = bean.getRedirectUrl();
     if (currentUrl == null)
         currentUrl = getActionURL().getLocalURIString();
-
-    ActionURL oldChartDesignerURL = null;
-
-    if (AppProps.getInstance().isExperimentalFeatureEnabled(ReportService.EXPERIMENTAL_DEPRECATED_CHART_VIEW))
-    {
-        ChartDesignerBean chartBean = new ChartDesignerBean();
-        chartBean.setReportType(StudyChartQueryReport.TYPE);
-        chartBean.setSchemaName(querySchema.getSchemaName());
-        oldChartDesignerURL = ReportUtil.getChartDesignerURL(context, chartBean);
-        oldChartDesignerURL.setAction(ReportsController.DesignChartAction.class);
-        oldChartDesignerURL.addParameter("returnUrl", currentUrl);
-        oldChartDesignerURL.addParameter("isParticipantChart", "true");
-        oldChartDesignerURL.addParameter("participantId", bean.getParticipantId());
-    }
 
     StudyManager manager = StudyManager.getInstance();
     StudyImpl study = manager.getStudy(getContainer());
@@ -174,11 +153,8 @@
             countKeysForSequence.put(sequenceNum, rowCount);
     });
 
-    // Now we have a list of datasets with 1 or more rows and
-    // a visitMap to help with layout
-    //
+    // Now we have a list of datasets with 1 or more rows and a visitMap to help with layout
     // get the data
-
 
     List<VisitImpl> allVisits = manager.getVisits(study, Visit.Order.DISPLAY);
     ArrayList<VisitImpl> visits = new ArrayList<>(visitSequenceMap.size());
@@ -212,22 +188,126 @@
 <%
     }
 %>
+
+<style type="text/css">
+    .labkey-participant-view-header {
+        white-space: nowrap;
+        padding: 2px;
+    }
+
+    .labkey-participant-view-row td {
+        padding: 2px;
+        border: solid lightgray 1px;
+        border-top-width: 0;
+    }
+
+    .labkey-ptid-chart {
+        padding-top: 10px;
+        width: 1200px;
+    }
+
+    .labkey-ptid-remove, .labkey-ptid-add {
+        cursor: pointer;
+    }
+</style>
+
 <script type="text/javascript">
+(function($) {
     var tableReady = false;
-    Ext4.onReady(function ()
+    LABKEY.Utils.onReady(function ()
     {
         tableReady = true;
+        showChartsForExpandedSection();
     });
 
-    var toggleIfReady = function (link, notify)
-    {
-        if (tableReady)
+    LABKEY.ParticipantViewUnhideSelect = function (button) {
+        var el = getCallingElement(button);
+        if (el) {
+            el.show();
+            $(button).hide();
+        }
+    };
+
+    LABKEY.ParticipantViewShowSelectedChart = function(button) {
+        var el = getCallingElement(button);
+        if (el && el.val()) {
+            updateReportParticipantViewProperty(el.val(), true);
+        }
+    };
+
+    LABKEY.ParticipantViewRemoveChart = function (reportId) {
+        if (reportId) {
+            updateReportParticipantViewProperty(reportId, false);
+        }
+    };
+
+    LABKEY.ParticipantViewToggleIfReady = function(link, notify, datasetId) {
+        if (tableReady) {
             LABKEY.Utils.toggleLink(link, notify);
+            showChartsForExpandedSection(datasetId);
+        }
+
         return false;
     };
-</script>
-<table class="labkey-data-region">
 
+    function showChartsForExpandedSection(datasetId) {
+        // get all of the to-be-rendered chart divs (on original page load it is all, after that it is for a given dataset)
+        var chartDivSelection = datasetId != undefined ? $('.labkey-ptid-chart-dataset' + datasetId) : $('.labkey-ptid-chart');
+
+        // make the call to render the chart for that div if it is visible and has not already been rendered
+        chartDivSelection.each(function(index, div) {
+            var divId = div.getAttribute('id');
+            var reportId = div.getAttribute('report-id');
+            if (divId && reportId) {
+                var divEl = $('#' + divId);
+                if (divEl && divEl.is(':visible') && divEl.find('svg').length === 0) {
+                    renderChartWebpart(divId, reportId);
+                }
+            }
+        });
+    }
+
+    function updateReportParticipantViewProperty(reportId, value) {
+        LABKEY.Ajax.request({
+            method: 'POST',
+            url: LABKEY.ActionURL.buildURL('reports', 'updateReportParticipantViewProperty.api'),
+            jsonData: {showInParticipantView: value ? 'true' : 'false', reportId: reportId},
+            success: function (response) {
+                // reshow the page
+                window.location.reload(true);
+            },
+            // Show generic error message
+            failure: LABKEY.Utils.getCallbackWrapper(null, null, true)
+        });
+    }
+
+    function getCallingElement(button) {
+        var datasetId = button.getAttribute("dataset-id");
+        if (datasetId) {
+            return $("#addChartSelect-" + datasetId);
+        }
+
+        return null;
+    }
+
+    function renderChartWebpart(divId, reportId) {
+        var config = {reportId: reportId};
+
+        // add config param to allow the saved char to apply the ptid filter
+        var ptidColName = LABKEY.getModuleContext('study') ? LABKEY.getModuleContext('study').subject.columnName : 'ParticipantId';
+        config['ParticipantView.' + ptidColName + '~eq'] = '<%=bean.getParticipantId()%>';
+
+        new LABKEY.WebPart({
+            partName: 'Report',
+            renderTo: divId,
+            frame: 'none',
+            partConfig: config
+        }).render();
+    }
+})(jQuery);
+</script>
+
+<table class="labkey-data-region">
 <tr class="labkey-alternate-row">
     <td class="labkey-participant-view-header"><img alt="" width=180 height=1 src="<%=getWebappURL("_.gif")%>"></td>
     <td class="labkey-participant-view-header"><img alt="" width=20 height=1 src="<%=getWebappURL("_.gif")%>"></td>
@@ -337,7 +417,7 @@
     <th nowrap align="left" class="labkey-expandable-row-header">
         <a title="Click to expand/collapse"
             href="<%=new ActionURL(ExpandStateNotifyAction.class, study.getContainer()).addParameter("datasetId", Integer.toString(datasetId)).addParameter("id", Integer.toString(bean.getDatasetId()))%>"
-            onclick="return toggleIfReady(this, true);">
+            onclick="return LABKEY.ParticipantViewToggleIfReady(this, true, <%=datasetId%>);">
             <img src="<%=getWebappURL("_images/" + (expanded ? "minus.gif" : "plus.gif"))%>" alt="Click to expand/collapse">
             <%=h(dataset.getDisplayString())%>
         </a><%
@@ -373,39 +453,8 @@
 </tr>
 <%
 
-    for (Report report : ReportService.get().getReports(user, study.getContainer(), Integer.toString(datasetId)))
-    {
-        if (updateAccess)
-        {
-%>
-<tr style="<%=text(expanded ? "" : "display:none")%>">
-    <td>
-        <a href="<%=new ActionURL(ReportsController.DeleteReportAction.class, study.getContainer()).addParameter(ReportDescriptor.Prop.redirectUrl.name(), currentUrl).addParameter(ReportDescriptor.Prop.reportId.name(), report.getDescriptor().getReportId().toString())%>">[remove]</a>
-    </td>
-</tr>
-<%
-    }
-%>
-<tr style="<%=text(expanded ? "" : "display:none")%>">
-    <td colspan="<%=totalSeqKeyCount%>"><img
-            src="<%=h(ReportUtil.getPlotChartURL(context, report).addParameter("participantId", bean.getParticipantId()).toString())%>">
-    </td>
-</tr>
-<%
-    }
-
-    if (updateAccess && null != oldChartDesignerURL)
-    {
-%>
-<tr style="<%=text(expanded ? "" : "display:none")%>">
-    <td colspan="<%=totalSeqKeyCount+1%>"
-        class="labkey-alternate-row"><%=textLink("add chart", oldChartDesignerURL.replaceParameter("queryName", dataset.getName()).replaceParameter("datasetId", String.valueOf(datasetId)))%>
-    </td>
-</tr>
-<%
-    }
     int row = 0;
-    _HtmlString className = getShadeRowClass(row);
+    _HtmlString className;
 
     // display details link(s) only if we have a source lsid in at least one of the rows
     boolean hasSourceLsid = false;
@@ -413,10 +462,11 @@
     if (StudyManager.getInstance().showQCStates(getContainer()))
     {
         row++;
+        className = getShadeRowClass(row);
 %>
-<tr style="<%=text(expanded ? "" : "display:none")%>">
-    <td class="<%=className%>" align="left" nowrap>QC State</td>
-    <td class="<%=className%>">&nbsp;</td>
+<tr class="<%=className%> labkey-participant-view-row" style="<%=text(expanded ? "" : "display:none")%>">
+    <td align="left" nowrap>QC State</td>
+    <td>&nbsp;</td>
     <%
         for (VisitImpl visit : visits)
         {
@@ -432,7 +482,7 @@
                         QCState state = getQCState(study, id);
                         boolean hasDescription = state != null && state.getDescription() != null && state.getDescription().length() > 0;
     %>
-    <td class="<%=className%>">
+    <td>
         <%= h(state == null ? "Unspecified" : state.getLabel())%><%= hasDescription ? helpPopup("QC State: " + state.getLabel(), state.getDescription()) : new _HtmlString("") %>
     </td>
     <%
@@ -444,7 +494,7 @@
         if (countTD < maxTD)
         {
     %>
-    <td class="<%=className%>" colspan="<%=maxTD-countTD%>">&nbsp;</td>
+    <td colspan="<%=maxTD-countTD%>">&nbsp;</td>
     <%
                 }
             }
@@ -455,19 +505,20 @@
     }
 
     // sort the properties so they appear in the same order as the grid view
-//            PropertyDescriptor[] pds = sortProperties(StudyController.getParticipantPropsFromCache(context, typeURI), dataset, context);
+    // PropertyDescriptor[] pds = sortProperties(StudyController.getParticipantPropsFromCache(context, typeURI), dataset, context);
     List<ColumnInfo> displayColumns = sortColumns(allColumns.values(), dataset, context);
 
     for (ColumnInfo col : displayColumns)
     {
-        if (col == null) continue;
+        if (col == null)
+            continue;
+        
         row++;
         className = getShadeRowClass(row);
         String labelName = StringUtils.defaultString(col.getLabel(), col.getName());
 %>
-<tr class="<%=className%>" style="<%=text(expanded ? "" : "display:none")%>">
-    <td align="left" nowrap><%=h(labelName)%>
-    </td>
+<tr class="<%=className%> labkey-participant-view-row" style="<%=text(expanded ? "" : "display:none")%>">
+    <td align="left" nowrap><%=h(labelName)%></td>
     <td>&nbsp;</td>
     <%
         for (VisitImpl visit : visits)
@@ -552,6 +603,98 @@
         }
     %></tr>
 <%
+        }
+
+        // Display of legacy chart views that have previously been saved to this ptid view
+        for (Report report : ReportService.get().getReports(user, study.getContainer(), Integer.toString(datasetId)))
+        {
+%>
+            <tr style="<%=text(expanded ? "" : "display:none")%>">
+                <td colspan="<%=totalSeqKeyCount%>">
+                    <img src="<%=h(ReportUtil.getPlotChartURL(context, report).addParameter("participantId", bean.getParticipantId()).toString())%>">
+<%
+                        if (updateAccess)
+                        {
+%>
+                            <br/>
+                            <a class="labkey-text-link" href="<%=new ActionURL(ReportsController.DeleteReportAction.class, study.getContainer()).addParameter(ReportDescriptor.Prop.redirectUrl.name(), currentUrl).addParameter(ReportDescriptor.Prop.reportId.name(), report.getDescriptor().getReportId().toString())%>">Remove Chart</a>
+<%
+                      }
+                %>
+                </td>
+            </tr>
+<%
+        }
+
+        String datasetName = dataset.getName();
+        String reportKey = ReportUtil.getReportKey("study",datasetName);
+        Collection<Report> datasetReports = ReportService.get().getReports(getUser(), getContainer(),reportKey);
+
+        Map<String, String> reportIdWithNames = new HashMap<>(); // reports available to be added to the display
+        Map<String, String> reportsToRender = new HashMap<>(); // reports already selected to be rendered in the page
+        for (Report report : datasetReports)
+        {
+            ReportDescriptor reportDescriptor = report.getDescriptor();
+
+            // for now we only want to include generic charts and time charts
+            if (!(report instanceof GenericChartReport || report instanceof TimeChartReport))
+                continue;
+
+            // only include shared reports for a given dataset
+            if (!reportDescriptor.isShared())
+                continue;
+
+            String reportId = reportDescriptor.getProperty("reportId");
+            String name = reportDescriptor.getProperty("reportName");
+            boolean showInParticipantView = "true".equalsIgnoreCase(reportDescriptor.getProperty("showInParticipantView"));
+            if (showInParticipantView)
+                reportsToRender.put(reportId, name);
+            else
+                reportIdWithNames.put(reportId, name);
+        }
+%>
+        <tr style="<%=text(expanded ? "" : "display:none")%>">
+            <td colspan="<%=totalSeqKeyCount+1%>">
+<%
+                    for (String reportId: reportsToRender.keySet())
+                    {
+                        String divId1 = "labkey-ptid-chart-" + getRequestScopedUID();
+%>
+                        <div id="<%=h(divId1)%>" class="labkey-ptid-chart labkey-ptid-chart-dataset<%=datasetId%>" report-id="<%=h(reportId)%>">
+                            <i class="fa fa-spinner fa-pulse"></i> loading...
+                        </div>
+<%
+                        if (updateAccess)
+                        {
+%>
+                            <a class="labkey-text-link labkey-ptid-remove" onclick="LABKEY.ParticipantViewRemoveChart('<%=h(reportId)%>')">Remove Chart</a>
+<%
+                        }
+                    }
+%>
+            </td>
+        </tr>
+<%
+
+        // This add chart text link will show a dropdown of saved charts for this dataset. User will be able to select
+        // saved chart and click on submit to render the chart inline into the participant view.
+        if (updateAccess && reportIdWithNames.size() > 0)
+        {
+%>
+            <tr style="<%=text(expanded ? "" : "display:none")%>">
+                <td colspan="<%=totalSeqKeyCount+1%>">
+                    <a class="labkey-text-link labkey-ptid-add" onclick="LABKEY.ParticipantViewUnhideSelect(this)" dataset-id="<%=h(datasetId)%>">Add Chart</a>
+
+                    <select id="addChartSelect-<%=h(datasetId)%>" style="display: none" onchange="document.getElementById('addButton-<%=h(datasetId)%>').style.display = 'inline-block';">
+                        <option>Select a chart...</option>
+                        <% for (Map.Entry<String, String> reportEntry : reportIdWithNames.entrySet()) { %>
+                        <option value="<%=h(reportEntry.getKey())%>"><%=h(reportEntry.getValue())%></option>
+                        <% } %>
+                    </select>
+                    <button id="addButton-<%=h(datasetId)%>" onclick="LABKEY.ParticipantViewShowSelectedChart(this)" dataset-id="<%=h(datasetId)%>" style="display: none">Submit</button>
+                </td>
+            </tr>
+    <%
         }
     }
 %>

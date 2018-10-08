@@ -227,6 +227,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         hrefTarget: '_blank',
                         href: LABKEY.Utils.getHelpTopicHref('boxplot')
                     },{
+                        text: 'Line Plots',
+                        iconCls: 'fa fa-line-chart',
+                        hrefTarget: '_blank',
+                        href: LABKEY.Utils.getHelpTopicHref('lineplot')
+                    },{
                         text: 'Pie Charts',
                         iconCls: 'fa fa-pie-chart',
                         hrefTarget: '_blank',
@@ -349,6 +354,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         {
             this.topButtonBar = Ext4.create('Ext.toolbar.Toolbar', {
                 dock: 'top',
+                hidden: this.hasParticipantViewFilter(),
                 items: this.initTbarItems()
             });
         }
@@ -780,6 +786,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             filters = LABKEY.Filter.getFiltersFromUrl(filterUrl, this.dataRegionName);
         }
 
+        if (this.hasParticipantViewFilter()) {
+            filters = filters.concat(this.getParticipantViewFilter());
+        }
+
         if (serialize)
         {
             var newFilters = [];
@@ -795,6 +805,16 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         config['filterArray'] = filters;
 
         return config;
+    },
+
+    hasParticipantViewFilter : function() {
+        return this.getParticipantViewFilter() != null;
+    },
+
+    getParticipantViewFilter : function() {
+        // check for explicit ParticipantView filter parameter (see usage in participantAll.jsp)
+        var filters = LABKEY.Filter.getFiltersFromUrl(this.baseUrl, 'ParticipantView');
+        return filters && filters.length > 0 ? filters[0] : null;
     },
 
     getQueryConfigColumns : function()
@@ -1863,7 +1883,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 index++;
             }, this);
         }
-        if (this.isDeveloper)
+        if (this.isDeveloper && !this.hasParticipantViewFilter())
         {
             chartDiv.add(this.createExportIcon(chartType, chartConfig, 'fa-file-code-o', 'Export as Script', 0, this.supportedBrowser ? 2 : 0, function(){
                 this.exportChartToScript();

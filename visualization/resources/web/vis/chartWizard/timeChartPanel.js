@@ -57,29 +57,39 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         this.loaderFn = this.renderLineChart;  // default is to show the chart
         this.loaderName = 'renderLineChart';
 
-        this.viewGridBtn = Ext4.create('Ext.button.Button', {text: "View Data", handler: function(){
-            // hide/show the appropriate buttons in the top toolbar
-            this.toggleButtonsForGrid(false);
-            this.viewDataGrid();
-        }, scope: this, disabled: true});
-
-        this.viewChartBtn = Ext4.create('Ext.button.Button', {text: "View Chart(s)", handler: function(){
-            // hide/show the appropriate buttons in the top toolbar
-            this.toggleButtonsForGrid(true);
-
-            // issue 21418: support for parameterized queries
-            if (Ext4.isObject(this.parameters) && Object.keys(this.parameters).length > 0)
-            {
-                this.loaderFn = this.renderLineChart;
-                this.loaderName = 'renderLineChart';
-                this.getChartData();
+        this.viewGridBtn = Ext4.create('Ext.button.Button', {
+            text: "View Data",
+            disabled: true,
+            scope: this,
+            handler: function(){
+                // hide/show the appropriate buttons in the top toolbar
+                this.toggleButtonsForGrid(false);
+                this.viewDataGrid();
             }
-            else
-            {
-                this.renderLineChart();
-            }
+        });
 
-        }, scope: this, hidden: true});
+        this.viewChartBtn = Ext4.create('Ext.button.Button', {
+            text: "View Chart(s)",
+            hidden: true,
+            scope: this,
+            handler: function(){
+                // hide/show the appropriate buttons in the top toolbar
+                this.toggleButtonsForGrid(true);
+
+                // issue 21418: support for parameterized queries
+                if (Ext4.isObject(this.parameters) && Object.keys(this.parameters).length > 0)
+                {
+                    this.loaderFn = this.renderLineChart;
+                    this.loaderName = 'renderLineChart';
+                    this.getChartData();
+                }
+                else
+                {
+                    this.renderLineChart();
+                }
+
+            }
+        });
 
         this.refreshChart = new Ext4.util.DelayedTask(function(){
             this.getChartData();
@@ -148,6 +158,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 xtype: 'toolbar',
                 dock: 'top',
                 style: 'border-color: #b4b4b4;',
+                hidden: this.hasParticipantViewFilter(),
                 items: toolbarButtons
             }],
             items: []
@@ -186,6 +197,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             this.filtersPanel = Ext4.create('LABKEY.vis.ChartFilterPanel', {
                 region: 'west',
                 border: true,
+                hidden: this.hasParticipantViewFilter(),
                 subject: this.chartInfo.subject,
                 subjectSelection: this.chartInfo.chartSubjectSelection,
                 listeners: {
@@ -808,6 +820,16 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             return undefined;
     },
 
+    hasParticipantViewFilter : function() {
+        return this.getParticipantViewFilter() != null;
+    },
+
+    getParticipantViewFilter : function() {
+        // check for explicit ParticipantView filter parameter (see usage in participantAll.jsp)
+        var filters = LABKEY.Filter.getFiltersFromUrl(this.baseUrl, 'ParticipantView');
+        return filters && filters.length > 0 ? filters[0] : null;
+    },
+
     loadFiltersPanelValues : function()
     {
         if (!this.chartFilterPanelLoadComplete)
@@ -1364,7 +1386,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 this.exportChartToImage(newChartDiv, LABKEY.vis.SVGConverter.FORMAT_PNG);
             }));
         }
-        if (this.isDeveloper)
+        if (this.isDeveloper && !this.hasParticipantViewFilter())
         {
             newChartDiv.add(this.createExportIcon('fa-file-code-o', 'Export as Script', this.supportedBrowser ? 2 : 0, function(){
                 this.exportChartToScript();
@@ -1541,9 +1563,14 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         config.filterUrl = this.chartInfo.filterUrl;
         config.filterQuery = this.chartInfo.filterQuery;
 
-        // get the subject info based on the selected chart layout
         var hasGroupsSelected = config.chartSubjectSelection == 'groups';
-        config.subject = this.getFiltersPanel().getSubject(hasGroupsSelected, config.displayIndividual);
+        if (!hasGroupsSelected && this.hasParticipantViewFilter()) {
+            config.subject = {values: this.getParticipantViewFilter().getURLParameterValue()}
+        }
+        else {
+            // get the subject info based on the selected chart layout
+            config.subject = this.getFiltersPanel().getSubject(hasGroupsSelected, config.displayIndividual);
+        }
 
         // get the measure and dimension information for the y-axis (can be > 1 measure)
         Ext4.each(this.chartTypeMeasures, function(measure)

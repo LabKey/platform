@@ -4029,6 +4029,62 @@ public class ReportsController extends SpringActionController
         }
     }
 
+    @RequiresPermission(AdminPermission.class)
+    public class UpdateReportParticipantViewPropertyAction extends MutatingApiAction<ParticipantViewReportForm>
+    {
+        private Report _report;
+
+        @Override
+        public void validateForm(ParticipantViewReportForm form, Errors errors)
+        {
+            if (form.getReportId() == null)
+            {
+                errors.reject(ERROR_MSG, "Missing reportId parameter.");
+            }
+            else
+            {
+                _report = form.getReportId().getReport(getViewContext());
+                if (_report == null)
+                {
+                    errors.reject(ERROR_MSG, "Report not found for reportId: " + form.getReportId());
+                }
+                else if (form.isShowInParticipantView() && !_report.getDescriptor().isShared())
+                {
+                    errors.reject(ERROR_MSG, "Unable to include a private report in the participant view.");
+                }
+            }
+        }
+
+        @Override
+        public Object execute(ParticipantViewReportForm form, BindException errors) throws Exception
+        {
+            ReportDescriptor reportDescriptor = _report.getDescriptor();
+            reportDescriptor.setProperty(ReportDescriptor.Prop.showInParticipantView, form.isShowInParticipantView());
+            ReportService.get().saveReport(getViewContext(), reportDescriptor.getReportKey(), _report);
+
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("success", true);
+            response.put("reportId", form.getReportId());
+            return response;
+        }
+    }
+
+    public static class ParticipantViewReportForm extends ReportForm
+    {
+        private boolean _showInParticipantView;
+
+        public boolean isShowInParticipantView()
+        {
+            return _showInParticipantView;
+        }
+
+        public void setShowInParticipantView(boolean showInParticipantView)
+        {
+            _showInParticipantView = showInParticipantView;
+        }
+    }
+
+
     public static class SerializationTest extends PipelineJob.TestSerialization
     {
 
