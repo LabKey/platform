@@ -36,6 +36,10 @@ public class FormatItem<DomainType extends GWTDomain<FieldType>, FieldType exten
     // Should match DateUtil.getSimpleDateFormatDocumentationURL()
     private static final String SIMPLE_DATE_FORMAT_DOCUMENTATION_LINK = "http://docs.oracle.com/javase/8/docs/api/java/text/SimpleDateFormat.html";
 
+    private static final String FORMAT_HELP_BOOLEAN = "Booleans can be formatted by specifying the text to show when the value is" +
+            "true followed by a semicolon and the text for when the value is false, optionally followed by a semicolon and the " +
+            "text to show for null values. Example: 'Yes;No;Blank'";
+
     private static final String FORMAT_HELP_NUMBER = "The format string for numbers " +
     "must be compatible with the format that the java class <a href=\"" + DECIMAL_FORMAT_DOCUMENTATION_LINK + "\" target=\"blank\"><code>DecimalFormat</code></a> accepts.<br/>" +
             "<table class=\"labkey-data-region-legacy labkey-show-borders\"><colgroup><col><col><col><col></colgroup>" +
@@ -121,10 +125,15 @@ public class FormatItem<DomainType extends GWTDomain<FieldType>, FieldType exten
     private boolean canFormat(String rangeURI)
     {
         PropertyType target = PropertyType.fromName(rangeURI);
-        // for now, we only support format strings for datetime and numeric types
+        // for now, we only support format strings for datetime and numeric types, plus booleans
         return PropertyType.xsdDateTime == target ||
+                PropertyType.xsdDate == target ||
+                PropertyType.xsdTime == target ||
                 PropertyType.xsdDouble == target ||
-                PropertyType.xsdInt == target;
+                PropertyType.xsdDecimal == target ||
+                PropertyType.xsdLong == target ||
+                PropertyType.xsdInt == target ||
+                PropertyType.xsdBoolean == target;
     }
 
     public void showPropertyDescriptor(DomainType domain, FieldType field)
@@ -137,12 +146,27 @@ public class FormatItem<DomainType extends GWTDomain<FieldType>, FieldType exten
         if (_canFormat)
         {
             PropertyType type = PropertyType.fromName(field.getRangeURI());
-            _formatHelpPopup.setBody(type == PropertyType.xsdDateTime ? FORMAT_HELP_DATE : FORMAT_HELP_NUMBER);
+            String help;
+            switch (type)
+            {
+                case xsdDateTime:
+                case xsdDate:
+                case xsdTime:
+                    help = FORMAT_HELP_DATE;
+                    break;
+                case xsdBoolean:
+                    help = FORMAT_HELP_BOOLEAN;
+                    break;
+                default:
+                    help = FORMAT_HELP_NUMBER;
+                    break;
+            }
+            _formatHelpPopup.setBody(help);
         }
         else
         {
             _formatTextBox.setText("<no format set>");
-            _formatHelpPopup.setBody("Format can only be set for Integer, Number, and Date types.");
+            _formatHelpPopup.setBody("Format can only be set for Integer, Number, Boolean, and Date types.");
         }
         enabledChanged();
     }

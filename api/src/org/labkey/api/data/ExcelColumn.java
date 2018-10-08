@@ -395,10 +395,16 @@ public class ExcelColumn extends RenderColumn
                     }
                     break;
 
+                case TYPE_BOOLEAN:
+                    String s = _dc.getFormattedValue(ctx);
+                    cell.setCellValue(s);
+                    if (_style != null)
+                        cell.setCellStyle(_style);
+                    break;
                 case(TYPE_STRING):
                 default:
                     // 9729 : CRs are doubled in list data exported to Excel, normalize newlines as '\n'
-                    String s = o.toString().replaceAll("\r\n", "\n");
+                    s = o.toString().replaceAll("\r\n", "\n");
 
                     // Check if the string is too long
                     if (s.length() > 32767)
