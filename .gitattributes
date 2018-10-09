@@ -2165,6 +2165,7 @@ study/resources/web/progress-report.lib.xml -text
 study/resources/web/progress-report/config.css -text
 study/resources/web/progress-report/config.js -text
 study/resources/web/progress-report/progressReport.js -text
+study/resources/web/study/assayPublish.js -text
 study/schemas/assayProvider.xsd -text
 study/schemas/specimens.xsd -text
 study/schemas/studyPipelineTasks.xsd -text
