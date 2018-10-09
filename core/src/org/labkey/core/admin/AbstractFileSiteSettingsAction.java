@@ -93,7 +93,12 @@ public abstract class AbstractFileSiteSettingsAction<FormType extends FileSettin
             }
         }
         else
-            errors.reject(SpringActionController.ERROR_MSG, "The site file root cannot be blank.");
+        {
+            // this may have been set by startup properties
+            boolean isFileSystemRootSet = null != AppProps.getInstance().getFileSystemRoot() && AppProps.getInstance().getFileSystemRoot().isDirectory();
+            if (!isFileSystemRootSet)
+                errors.reject(SpringActionController.ERROR_MSG, "The site file root cannot be blank.");
+        }
 
         String userRoot = StringUtils.trimToNull(form.getUserRootPath());
 
@@ -143,7 +148,8 @@ public abstract class AbstractFileSiteSettingsAction<FormType extends FileSettin
     public boolean handlePost(FormType form, BindException errors) throws Exception
     {
         File prev = _svc.getSiteDefaultRoot();
-        _svc.setSiteDefaultRoot(FileUtil.getAbsoluteCaseSensitiveFile(new File(form.getRootPath())), getUser());
+        if (null != form.getRootPath())
+            _svc.setSiteDefaultRoot(FileUtil.getAbsoluteCaseSensitiveFile(new File(form.getRootPath())), getUser());
         _svc.setWebfilesEnabled(form.isWebfilesEnabled(), getUser());
 
         if(AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_USER_FOLDERS))

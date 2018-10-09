@@ -19,15 +19,24 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController.NewInstallSiteSettingsForm" %>
+<%@ page import="org.labkey.api.settings.ConfigProperty" %>
+<%@ page import="java.util.Collection" %>
+<%@ page import="org.labkey.api.module.ModuleLoader" %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     NewInstallSiteSettingsForm bean = ((JspView<NewInstallSiteSettingsForm>) HttpView.currentView()).getModelBean();
+
+    Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_SITE_ROOT_SETTINGS);
+    boolean isStartupPropSet = startupProps.stream().anyMatch( prop -> prop.getName().equals("siteRootFile") && !StringUtils.isBlank(prop.getValue()) );
+    boolean isAppFileSystemSet = null != AppProps.getInstance().getFileSystemRoot() && AppProps.getInstance().getFileSystemRoot().isDirectory();
 %>
 
 <labkey:errors/>
 
 <labkey:form method="POST" id="newInstallSettingsForm">
+<% if (!(isAppFileSystemSet && isStartupPropSet)) { %>
     <h3 style="margin-bottom: 2px;"><label for="rootPath">Files Location</label></h3>
     <div style="margin-bottom: 10px;">
         This is where LabKey Server stores and looks for data files. The server will
@@ -36,7 +45,7 @@
         <br/>
         <input autofocus="autofocus" type="text" id="rootPath" name="rootPath" style="width: 100%; max-width: 40em;" value="<%=h(bean.getRootPath())%>">
     </div>
-
+<%}%>
     <h3 style="margin-bottom: 2px;"><label for="siteName">Site Name</label></h3>
     <div style="margin-bottom: 10px;">
         This is displayed in the header of each page and in emails sent by the server.
