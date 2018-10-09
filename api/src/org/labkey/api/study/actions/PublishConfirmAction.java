@@ -18,6 +18,7 @@ package org.labkey.api.study.actions;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Container;
@@ -47,6 +48,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.template.ClientDependency;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -73,6 +75,22 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
 
     public static class PublishConfirmForm extends ProtocolIdForm implements DataRegionSelection.DataSelectionKeyForm
     {
+        private String[] splitStringArrayParam(String[] arr)
+        {
+            if (arr.length == 1 && arr[0].contains("\t"))
+                return StringUtils.split(arr[0],'\t');
+            return arr;
+        }
+        private Integer[] splitIntegerArrayParam(String[] arr)
+        {
+            if (arr.length == 1 && arr[0].contains("\t"))
+                arr = StringUtils.split(arr[0],'\t');
+            Integer[] ints = new Integer[arr.length];
+            for (int i=0 ; i<arr.length ; i++)
+                ints[i] = Integer.parseInt(arr[i]);
+            return ints;
+        }
+
         private String[] _targetStudy;
         private String[] _participantId;
         private String[] _visitId;
@@ -101,7 +119,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
 
         public void setTargetStudy(String[] targetStudy)
         {
-            _targetStudy = targetStudy;
+            _targetStudy = splitStringArrayParam(targetStudy);
         }
 
         public String[] getParticipantId()
@@ -111,7 +129,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
 
         public void setParticipantId(String[] participantId)
         {
-            _participantId = participantId;
+            _participantId = splitStringArrayParam(participantId);
         }
 
         public String[] getVisitId()
@@ -121,7 +139,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
 
         public void setVisitId(String[] visitId)
         {
-            _visitId = visitId;
+            _visitId = splitStringArrayParam(visitId);
         }
         
         public boolean isAttemptPublish()
@@ -145,9 +163,9 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
             return _objectId;
         }
 
-        public void setObjectId(Integer[] objectId)
+        public void setObjectId(String[] objectId)
         {
-            _objectId = objectId;
+            _objectId = splitIntegerArrayParam(objectId);
         }
 
         public void setAttemptPublish(boolean attemptPublish)
@@ -193,6 +211,8 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
 
     public ModelAndView getView(PublishConfirmForm publishConfirmForm, BindException errors)
     {
+        getPageConfig().addClientDependency(ClientDependency.fromPath("study/assayPublish.js"));
+
         ViewContext context = getViewContext();
         _protocol = publishConfirmForm.getProtocol();
         AssayProvider provider = publishConfirmForm.getProvider();
@@ -261,14 +281,14 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         {
             returnURL = getSummaryLink(_protocol).addParameter("clearDataRegionSelectionKey", publishConfirmForm.getDataRegionSelectionKey());
         }
-        String script = "window.onbeforeunload = null;"; // Need to prevent a warning if the user clicks on these buttons
+        String script = "LABKEY.setSubmit(true);"; // Need to prevent a warning if the user clicks on these buttons
 
         ActionURL publishURL = getPublishHandlerURL(_protocol);
 
         publishURL.replaceParameter("defaultValueSource", PublishResultsQueryView.DefaultValueSource.UserSpecified.toString());
         publishURL.replaceParameter("validate", "false");
         ActionButton publishButton = new ActionButton(publishURL, "Copy to Study");
-        publishButton.setScript(script, true);
+        publishButton.setScript("return assayPublish_onCopyToStudy(this)", true);
         buttons.add(publishButton);
 
         publishURL.replaceParameter("validate", "true");

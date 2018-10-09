@@ -42,11 +42,8 @@
 <labkey:errors/>
 
 <script type="text/javascript">
-    function isTrue()
-    {
-        return true;
-    }
-    window.onbeforeunload = LABKEY.beforeunload(isTrue);
+    window.onbeforeunload = LABKEY.beforeunload();
+    LABKEY.setDirty(true);
 </script>
 <% if (bean.isMismatched()) { %>
 <p>
