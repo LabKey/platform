@@ -81,6 +81,11 @@ public interface ExternalScriptEngineDefinition
     void setDocker(boolean docker);
     boolean isDocker();
 
+    void setDockerImageRowId(Integer rowId);
+    Integer getDockerImageRowId();
+    String getDockerImageConfig();
+    void setDockerImageConfig(String dockerImageConfig);
+
     void setPandocEnabled(boolean pandocEnabled);
     boolean isPandocEnabled();
 

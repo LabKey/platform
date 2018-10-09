@@ -71,6 +71,87 @@ public interface DockerService
         }
     }
 
+    default DockerImage getDockerImage(Integer rowId)
+    {
+        return null;
+    }
+
+    default List<? extends DockerImage> getDockerImagesByType(String type)
+    {
+        return null;
+    }
+
+    //used for migrating RStudio config, consider deprecate and remove after 20.3
+    default int saveDockerImage(User user, Map<String, String> config, String imageName, String Type, String imageDescription, boolean useAltKey, Integer rowId)
+    {
+        return -1;
+    }
+
+    default int saveDockerImage(User user, String configuration, String imageName, String type, String imageDescription, Integer rowId)
+    {
+        return -1;
+    }
+
+    enum DockerConfigKey
+    {
+        imageName("IMAGE_NAME"),
+        port("PORT", true),
+        mount("MOUNT"),
+
+        dockerContainerUser("DOCKER_CONTAINER_USER"),
+
+        libraryMount("LIBRARY_MOUNT"), //optional for docker R
+        hostReadOnlyMount("HOST_READ_ONLY_MOUNT"),
+        containerReadOnlyMount("CONTAINER_READ_ONLY_MOUNT"),
+        appArmorProfile("APPARMOR_PROFILE"),
+        labKeyHostIP("LABKEY_HOST_IP");
+
+        private String _altName;
+        private boolean _isInt = false;
+
+        DockerConfigKey(String altName)
+        {
+            _altName = altName;
+        }
+
+        DockerConfigKey(String altName, boolean isInt)
+        {
+            this(altName);
+            _isInt = isInt;
+        }
+
+        public String getAltName()
+        {
+            return _altName;
+        }
+
+        public boolean isInt()
+        {
+            return _isInt;
+        }
+    }
+
+    interface DockerImage
+    {
+        Integer getRowId();
+        String getName();
+        String getType();
+        String getDescription();
+        String getConfiguration();
+
+        String getImageName();
+        Integer getPort();
+        String getMount();
+        String getDockerContainerUser();
+        String getLibraryMount();
+        String getHostReadOnlyMount();
+        String getContainerReadOnlyMount();
+        String getAppArmorProfile();
+        String getLabKeyHostIP();
+
+        DockerImage fromJSON(String config);
+    }
+
     class ImageConfig
     {
         public final String imageName;
@@ -181,7 +262,6 @@ public interface DockerService
         public final boolean mountVolumes;
         public final boolean reuseExisting;
         public final Map<InputStream, String> streamsForContainer = new LinkedHashMap<>(); // <Stream, Target location>
-        public final List<String> extraSessionContext = new ArrayList<>(); //TODO remove after merge viewer branch
 
         public ContainerUsage(String workingDirectory, boolean exposePorts, boolean mountVolumes, boolean reuseExisting)
         {
