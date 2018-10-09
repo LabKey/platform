@@ -188,10 +188,14 @@ LABKEY.Query = new function(impl, $) {
         loadingSelect(select);
 
         var queryKey = schemaName + '|' + queryName;
-        if (QUERY_COLUMNS_CACHE[queryKey]) {
+        if (LABKEY.Utils.isArray(QUERY_COLUMNS_CACHE[queryKey])) {
             populateColumnsWithFilterFn(select, QUERY_COLUMNS_CACHE[queryKey], filterFn, initValue);
         }
+        else if (QUERY_COLUMNS_CACHE[queryKey] === 'loading') {
+            setTimeout(loadQueryColumns, 500, select, schemaName, queryName, filterFn, initValue);
+        }
         else {
+            QUERY_COLUMNS_CACHE[queryKey] = 'loading';
             LABKEY.Query.getQueryDetails({
                 schemaName: schemaName,
                 queryName: queryName,
