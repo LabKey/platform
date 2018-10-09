@@ -756,7 +756,7 @@ Ext4.define('File.panel.Browser', {
     /**
      * Configure all actions according the current pipeline configuration.
      */
-    configureActions : function(onComplete) {
+    configureActions : function(onComplete, keepGridSelection) {
         if (this.useServerActions) {
             // Whenever actions need to be configured the cache needs to be cleared
             File.panel.Browser._clearPipelineConfiguration(this.containerPath);
@@ -768,7 +768,7 @@ Ext4.define('File.panel.Browser', {
                         tbarActions: json.config.tbarActions,
                         actions: json.config.actions
                     });
-                    this.updateActions(onComplete);
+                    this.updateActions(onComplete, keepGridSelection);
                 }
                 else if (Ext4.isFunction(onComplete)) {
                     onComplete.call(this);
@@ -1767,7 +1767,7 @@ Ext4.define('File.panel.Browser', {
      * updateActions will request the set of actions available from both the server and the pipeline
      * Note: You should probably consider calling configureActions instead
      */
-    updateActions : function(onComplete) {
+    updateActions : function(onComplete, keepGridSelection) {
         if (this.isPipelineRoot && this.useServerActions) {
             var actionsReady = false,
                 pipelineReady = false,
@@ -1776,7 +1776,7 @@ Ext4.define('File.panel.Browser', {
 
             var check = function() {
                 if (actionsReady && pipelineReady) {
-                    me.updatePipelineActions(actions, onComplete);
+                    me.updatePipelineActions(actions, onComplete, keepGridSelection);
                 }
             };
 
@@ -1824,7 +1824,7 @@ Ext4.define('File.panel.Browser', {
         }
     },
 
-    updatePipelineActions : function(actions, onComplete) {
+    updatePipelineActions : function(actions, onComplete, keepGridSelection) {
 
         this.pipelineActions = []; // reset pipeline actions
         this.actionMap = {};
@@ -1883,7 +1883,8 @@ Ext4.define('File.panel.Browser', {
             }
         }
 
-        this.clearGridSelection();
+        if (!keepGridSelection)
+            this.clearGridSelection();
 
         if (Ext4.isFunction(onComplete)) {
             onComplete.call(this);
@@ -3225,7 +3226,7 @@ Ext4.define('File.panel.Browser', {
             // TODO: This should respect the visibility/availability as specified by the pipeline configuration
             var actions = this.getActions().map,
                     items;
-            this.configureActions();
+            this.configureActions(null, true);
 
             if (this.isWebDav) {
                 items = [
