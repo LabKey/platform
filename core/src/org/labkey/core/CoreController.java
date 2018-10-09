@@ -2151,6 +2151,8 @@ public class CoreController extends SpringActionController
                     record.put("outputFileName", def.getOutputFileName());
                     record.put("pandocEnabled", String.valueOf(def.isPandocEnabled()));
                     record.put("docker", String.valueOf(def.isDocker()));
+                    record.put("dockerImageRowId", def.getDockerImageRowId());
+                    record.put("dockerImageConfig", def.getDockerImageConfig());
                     record.put("default", String.valueOf(def.isDefault()));
                     record.put("sandboxed", String.valueOf(def.isSandboxed()));
 
@@ -2229,6 +2231,8 @@ public class CoreController extends SpringActionController
         public ApiResponse execute(ExternalScriptEngineDefinitionImpl def, BindException errors)
         {
             LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+            if (def.isDocker())
+                def.saveDockerImageConfig(getUser());
             svc.saveDefinition(getUser(), def);
 
             // update default R engine

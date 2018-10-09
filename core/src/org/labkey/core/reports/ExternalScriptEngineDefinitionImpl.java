@@ -5,12 +5,16 @@ import org.json.JSONObject;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.data.Entity;
+import org.labkey.api.docker.DockerService;
 import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
+import org.labkey.api.security.User;
 import org.springframework.beans.MutablePropertyValues;
 
 import java.util.Map;
+
+import static org.labkey.api.reports.RScriptEngine.DOCKER_R_IMAGE_TYPE;
 
 public class ExternalScriptEngineDefinitionImpl extends Entity implements ExternalScriptEngineDefinition, CustomApiForm
 {
@@ -39,6 +43,8 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
     private boolean _default;
     private boolean _sandboxed;
     private PathMapper _pathMapper;
+    private Integer _dockerImageRowId;
+    private String _dockerImageConfig;
 
     public Integer getRowId()
     {
@@ -102,6 +108,7 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
         addIfNotNull(json, "pathMap", _pathMap);
         addIfNotNull(json, "default", isDefault());
         addIfNotNull(json, "sandboxed", isSandboxed());
+        addIfNotNull(json, "dockerImageRowId", getDockerImageRowId());
 
         _configuration = json.toString();
     }
@@ -145,6 +152,21 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
             setDefault(json.getBoolean("default"));
         if (json.has("sandboxed"))
             setSandboxed(json.getBoolean("sandboxed"));
+        if (json.has("dockerImageRowId"))
+        {
+            int imageRowId = json.getInt("dockerImageRowId");
+            if (imageRowId > 0)
+            {
+                setDockerImageRowId(imageRowId);
+                DockerService service = DockerService.get();
+                if (service != null && service.isDockerEnabled())
+                {
+                    DockerService.DockerImage image = DockerService.get().getDockerImage(imageRowId);
+                    if (image != null)
+                        setDockerImageConfig(image.getConfiguration());
+                }
+            }
+        }
 
         _configuration = configuration;
     }
@@ -415,5 +437,44 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
         JSONObject jsonPathMap = (JSONObject)props.get("pathMap");
         if (jsonPathMap != null)
             _pathMap = jsonPathMap.toString();
+    }
+
+    public Integer getDockerImageRowId()
+    {
+        return _dockerImageRowId;
+    }
+
+    public void setDockerImageRowId(Integer dockerImageRowId)
+    {
+        _dockerImageRowId = dockerImageRowId;
+    }
+
+    public String getDockerImageConfig()
+    {
+        return _dockerImageConfig;
+    }
+
+
+    public void setDockerImageConfig(String dockerImageConfig)
+    {
+        _dockerImageConfig = dockerImageConfig;
+    }
+
+    public void saveDockerImageConfig(User user)
+    {
+        DockerService service = DockerService.get();
+        if (service != null && service.isDockerEnabled())
+        {
+            DockerService.DockerImage image = service.getDockerImage(_dockerImageRowId);
+            if (image != null)
+            {
+                setDockerImageRowId(service.saveDockerImage(user, _dockerImageConfig, image.getImageName(), image.getType(), image.getDescription(), image.getRowId()));
+            }
+            else
+            {
+                setDockerImageRowId(service.saveDockerImage(user, _dockerImageConfig, "Docker R - " + getName(), DOCKER_R_IMAGE_TYPE, "", null));
+            }
+        }
+
     }
 }

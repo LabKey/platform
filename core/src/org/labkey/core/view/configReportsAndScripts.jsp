@@ -28,6 +28,7 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.reports.ExternalScriptEngineDefinition" %>
+<%@ page import="org.labkey.api.docker.DockerService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -42,11 +43,14 @@
     boolean isRDockerAvailable = false;
     if (AppProps.getInstance().isExperimentalFeatureEnabled(RStudioService.R_DOCKER_SANDBOX))
     {
-        RStudioService rs = RStudioService.get();
-        if (null != rs)
-            isRDockerAvailable = rs.isConfigured();
+        DockerService ds = DockerService.get();
+        if (null != ds)
+            isRDockerAvailable = ds.isDockerEnabled();
     }
     boolean hasAdminOpsPerms = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
+
+    boolean allowSessionKeys = AppProps.getInstance().isAllowSessionKeys();
+    boolean baseServerUrlSet = !AppProps.getInstance().getBaseServerUrl().contains("localhost");
 %>
 <style type="text/css">
 
@@ -68,6 +72,15 @@
     var REMOTE_R_ENGINE_NAME = 'Remote R Scripting Engine';
     var R_DOCKER_ENGINE_NAME = 'R Docker Scripting Engine';
     var defaultR, defaultSandboxedR, countR = 0, countSandboxedR = 0;
+
+    var DockerImageFields = {
+        imageName: {label: 'Docker Image Name', defaultVal: 'labkey/rdocker', description: "Enter the Docker image name to use for R. Default is &apos;labkey/rdocker&apos;, which includes Rlabkey."},
+        mount: {label: 'Mount Volume', defaultVal: '/home/docker', description: "Enter the volume (image directory) inside the Docker container to mount as the docker R user&apos;s home directory. Default is &apos;/home/rdocker&apos;."},
+        hostReadOnlyMount: {label: 'Mount: host directory', description: "Additional mount: host directory (read-only). Optional read-only mount point"},
+        containerReadOnlyMount: {label: 'mount: container directory', description: "Additional mount: container directory (read-only). Optional read-only mount point"},
+        appArmorProfile: {label: 'AppArmor Profile', description: ''},
+        labKeyHostIP: {label: 'LabKey server IP address', description: 'Local IP address for LabKey Server'}
+    };
 
     function renderNameColumn(value, p, record)
     {
@@ -96,6 +109,61 @@
         if (record.extensions === R_EXTENSIONS)
         {
             var items = [], isCurrentDefault = record.default && record.rowId;
+
+            if (record.docker) {
+                items = items.concat([{
+                    name: 'pandocEnabled',
+                    xtype: 'hidden',
+                    value: true
+                },{
+                    name: 'docker',
+                    xtype: 'hidden',
+                    value: record.docker
+                },{
+                    name: 'dockerImageRowId',
+                    xtype: 'hidden',
+                    value: record.dockerImageRowId
+                }]);
+
+                var dockerConditionHtmlTpl = '<table>' +
+                        '<tr>' +
+                        '<td width="105"><label>' + '?LABEL?' + ':</label>' +
+                        '</td>' +
+                        '<td>' + '?CONTENT?' + '</td>' +
+                        '</tr>' +
+                        '</table>';
+
+                var configuredHtml = '<span style="color:green;" class="fa fa-check-circle"></span>';
+                var notConfiguredHtml = '<span style="color:red;" class="fa fa-times-circle"></span>\<a href="admin-customizeSite.view">site settings</a>';
+
+                items = items.concat([{
+                    xtype: 'box',
+                    html: dockerConditionHtmlTpl.replace('?LABEL?', 'Base server URL (not localhost)').replace('?CONTENT?', <%=baseServerUrlSet%> ? configuredHtml : notConfiguredHtml)
+                },{
+                    xtype: 'box',
+                    html: dockerConditionHtmlTpl.replace('?LABEL?', 'Allow API Session Keys').replace('?CONTENT?', <%=allowSessionKeys%> ? configuredHtml : notConfiguredHtml)
+                },{
+                    xtype: 'box',
+                    html: dockerConditionHtmlTpl.replace('?LABEL?', 'Docker').replace('?CONTENT?', '<a href="docker-configure.view">docker</a>')
+                }]);
+
+                var dockerConfig = record.dockerImageConfig ? JSON.parse(record.dockerImageConfig) : {};
+                var imageFields = [];
+                Ext4.iterate(DockerImageFields, function(key, val) {
+                    var config = {
+                        fieldLabel: val.label,
+                        id: 'dockerimage-' + key,
+                        name: 'dockerimage-' + key,
+                        value: record.dockerImageConfig ? dockerConfig[key] : val.defaultVal
+                    };
+                    if (val.description) {
+                        config.labelAttrTpl = " data-qtitle='" + val.label + "' data-qtip='" + val.description + "'";
+                    }
+                    imageFields.push(config);
+                });
+                items = items.concat(imageFields);
+            }
+
             items.push({
                 fieldLabel: 'Site Default',
                 name: 'default',
@@ -114,18 +182,8 @@
                 xtype: 'checkbox',
                 checked: record.sandboxed
             });
-            if (record.docker) {
-                items = items.concat([{
-                    name: 'pandocEnabled',
-                    xtype: 'hidden',
-                    value: true
-                },{
-                    name: 'docker',
-                    xtype: 'hidden',
-                    value: record.docker
-                }]);
-            }
-            else {
+
+            if (!record.docker) {
                 items = items.concat(getNonSandboxRSpecificFields(record.pandocEnabled));
             }
 
@@ -722,6 +780,7 @@
                 text: 'Submit',
                 id: 'btn_submit',
                 hidden: <%=!hasAdminOpsPerms%>,
+                disabled: record.docker && <%=(!(allowSessionKeys && baseServerUrlSet))%>,
                 handler: function(){submitForm(win, formPanel, grid);}
             },{
                 text: <%=q(!hasAdminOpsPerms ? "Close" : "Cancel")%>,
@@ -796,6 +855,17 @@
             }
         }
 
+        if (values.docker) {
+            var imageConfig = {};
+            Ext4.iterate(DockerImageFields, function(key, val) {
+                var field = panel.items.get('dockerimage-' + key);
+                if (field) {
+                    imageConfig[key] = field.getValue();
+                }
+            });
+            values['dockerImageConfig'] = JSON.stringify(imageConfig);
+        }
+
         Ext4.Ajax.request({
             url: LABKEY.ActionURL.buildURL("core", "scriptEnginesSave"),
             method: 'POST',
@@ -856,6 +926,8 @@
                 {name:'external', type:'boolean'},
                 {name:'remote', type:'boolean'},
                 {name:'docker', type:'boolean'},
+                {name:'dockerImageRowId'},
+                {name:'dockerImageConfig'},
                 {name:'outputFileName'},
                 {name:'pandocEnabled', type:'boolean'}
             ]
