@@ -155,7 +155,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
 
         public void setDate(String[] date)
         {
-            _date = date;
+            _date = splitStringArrayParam(date);
         }
 
         public Integer[] getObjectId()
