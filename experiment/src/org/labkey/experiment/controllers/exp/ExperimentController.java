@@ -1845,6 +1845,12 @@ public class ExperimentController extends SpringActionController
                 throw new NotFoundException("Data file " + _data.getDataFileUrl() + " does not exist on disk");
             }
 
+            PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
+            if (root != null && !root.isUnderRoot(_data.getFilePath()))
+            {
+                throw new UnauthorizedException("Data file is not under the pipeline root for this folder");
+            }
+
             //Issues 25667 and 31152
             if (form.isInline())
             {
