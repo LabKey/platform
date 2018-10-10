@@ -133,7 +133,7 @@ public class ExpDataFileConverter implements Converter
         else if (dataObject.has(ExperimentJSONConverter.ABSOLUTE_PATH) && dataObject.get(ExperimentJSONConverter.ABSOLUTE_PATH) != null)
         {
             String absolutePath = dataObject.getString(ExperimentJSONConverter.ABSOLUTE_PATH);
-            File f = new File(absolutePath);
+            File f = FileUtil.getAbsoluteCaseSensitiveFile(new File(absolutePath));
             if (container != null && pipelineRoot != null && !pipelineRoot.isUnderRoot(f))
             {
                 throw new IllegalArgumentException("File with path " + absolutePath + " is not under the pipeline root for this folder");
@@ -143,7 +143,6 @@ public class ExpDataFileConverter implements Converter
 
             if (null == data && container != null)
             {
-                f = FileUtil.getAbsoluteCaseSensitiveFile(f);
                 String name = dataObject.optString(ExperimentJSONConverter.NAME, f.getName());
                 DataType type = getDataType(f, knownTypes);
                 String lsid = expSvc.generateLSID(container, type, name);

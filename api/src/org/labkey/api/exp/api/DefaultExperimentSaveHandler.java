@@ -260,7 +260,8 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
 
             if (runJsonObject.has(AssayJSONConverter.DATA_ROWS) ||
                     runJsonObject.has(ExperimentJSONConverter.DATA_INPUTS) ||
-                    runJsonObject.has(ExperimentJSONConverter.MATERIAL_INPUTS))
+                    runJsonObject.has(ExperimentJSONConverter.MATERIAL_INPUTS) ||
+                    runJsonObject.has(ExperimentJSONConverter.DATA_OUTPUTS))
             {
                 JSONArray dataRows = serializeRunData(context, run, runJsonObject, protocol, batch);
                 JSONArray dataInputs = serializeDataInputs(context, run, runJsonObject, protocol, batch);
