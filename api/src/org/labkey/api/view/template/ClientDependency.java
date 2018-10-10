@@ -216,7 +216,8 @@ public class ClientDependency
         }
 
         ClientDependency cd = new ClientDependency(m);
-        CacheManager.getSharedCache().put(key, cd);
+        if (!AppProps.getInstance().isDevMode())
+            CacheManager.getSharedCache().put(key, cd);
         return cd;
     }
 
@@ -294,7 +295,8 @@ public class ClientDependency
         }
 
         ClientDependency cr = new ClientDependency(filePath, mode);
-        CacheManager.getSharedCache().put(key, cr);
+        if (!AppProps.getInstance().isDevMode())
+            CacheManager.getSharedCache().put(key, cr);
         return cr;
     }
 
