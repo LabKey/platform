@@ -15,6 +15,7 @@
  */
 package org.labkey.api.reports;
 
+import org.labkey.api.docker.DockerService;
 import org.labkey.api.rstudio.RStudioService;
 import org.labkey.api.settings.AppProps;
 
@@ -22,16 +23,24 @@ import javax.script.ScriptEngine;
 
 public class RDockerScriptEngineFactory extends ExternalScriptEngineFactory
 {
+    private final DockerService.DockerImage _dockerImage;
     public RDockerScriptEngineFactory(ExternalScriptEngineDefinition def)
     {
         super(def);
+        DockerService ds = DockerService.get();
+        DockerService.DockerImage image = null;
+        if (ds != null && ds.isDockerEnabled())
+            image = ds.getDockerImage(def.getDockerImageRowId());
+        this._dockerImage = image;
     }
 
     public synchronized ScriptEngine getScriptEngine()
     {
-        RStudioService rs = RStudioService.get();
-        if (null != rs && rs.isConfigured() && AppProps.getInstance().isExperimentalFeatureEnabled(RStudioService.R_DOCKER_SANDBOX))
-            return new RDockerScriptEngine(_def, rs, rs.getMount() + "/R_Sandbox");
+        DockerService ds = DockerService.get();
+        if (null != ds && ds.isDockerEnabled()
+                && AppProps.getInstance().isExperimentalFeatureEnabled(RStudioService.R_DOCKER_SANDBOX)
+                && this._dockerImage != null)
+            return new RDockerScriptEngine(_def, ds, this._dockerImage);
         else return null;
     }
 }

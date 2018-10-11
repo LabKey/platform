@@ -19,12 +19,12 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.docker.DockerService;
 import org.labkey.api.miniprofiler.CustomTiming;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.report.RReport;
-import org.labkey.api.rstudio.RStudioService;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileUtil;
 
@@ -41,28 +41,31 @@ import java.util.Map;
 public class RDockerScriptEngine extends RScriptEngine
 {
     private static final Logger LOG = Logger.getLogger(RDockerScriptEngine.class);
-    private static RStudioService _rs;
+    private static DockerService _ds;
     private static String _remoteWorkingDir;
+    private static DockerService.DockerImage _dockerImage;
 
     /**
      * This constructor provides an instance which can be used to prepare, but not run, script files.
      * It provides a minimal EngingeDefinition and no RStudioService instance.
      * @param remoteWorkingDir The remote directory to map
      */
+    @Deprecated     // TODO delete after branch merge
     public RDockerScriptEngine(String remoteWorkingDir)
     {
-        this(mockEngineDefinition(), null, remoteWorkingDir);
+        this(mockEngineDefinition(), null, null);
     }
 
     /**
      * If an RStudioService is instance is passed to this constructor, it provides an instance which can both
      * prepare and run script files.
      */
-    public RDockerScriptEngine(@NotNull ExternalScriptEngineDefinition def, @Nullable RStudioService rs, @NotNull String remoteWorkingDir)
+    public RDockerScriptEngine(@NotNull ExternalScriptEngineDefinition def, @Nullable DockerService ds, DockerService.DockerImage dockerImage) //TODO update @NotNull after merge
     {
         super(def);
-        _rs = rs;
-        _remoteWorkingDir = remoteWorkingDir;
+        _ds = ds;
+        _dockerImage = dockerImage;
+        _remoteWorkingDir = dockerImage == null ? "" : dockerImage.getMount() + "/R_Sandbox";
 
         def.setPathMapper(new PathMapperImpl(){
 
@@ -107,12 +110,12 @@ public class RDockerScriptEngine extends RScriptEngine
     @Override
     protected Object eval(File scriptFile, ScriptContext context) throws ScriptException
     {
-        if (null != _rs)
+        if (null != _ds)
         {
             StringBuffer output = new StringBuffer();
             try (CustomTiming t = MiniProfiler.custom("docker", "execute r in docker container"))
             {
-                _rs.executeR(scriptFile, getRWorkingDir(context), _remoteWorkingDir, InputFiles());
+                _ds.executeR(_dockerImage, scriptFile, getRWorkingDir(context), _remoteWorkingDir, InputFiles());
                 appendConsoleOutput(context, output);
                 return output.toString();
             }

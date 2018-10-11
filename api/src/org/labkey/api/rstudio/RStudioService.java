@@ -55,12 +55,12 @@ public interface RStudioService
         return false;
     }
 
-    default String getMount()
+    default String getMount() //TODO remove after merge
     {
         throw new UnsupportedOperationException(NO_RSTUDIO);
     }
 
-    default void executeR(File scriptFile, String localWorkingDir, String remoteWorkingDir, FileFilter inputFiles) throws IOException
+    default void executeR(File scriptFile, String localWorkingDir, String remoteWorkingDir, FileFilter inputFiles) throws IOException //TODO remove after merge
     {
         throw new UnsupportedOperationException(NO_RSTUDIO);
     }
@@ -76,15 +76,9 @@ public interface RStudioService
     }
 
     // the no-explanation version, just return null if user is not eligible
-    default ActionURL getRStudioLink(User user) //TODO remove after merge
-    {
-        return null;
-    }
-
-    // the no-explanation version, just return null if user is not eligible
     default ActionURL getRStudioLink(User user, Container container)
     {
-        return getRStudioLink(user); //TODO change after merge
+        return null;
     }
 
     default HttpView getExportToRStudioView(QueryView.TextExportOptionsBean textBean)

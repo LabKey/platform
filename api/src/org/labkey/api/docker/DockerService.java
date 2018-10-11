@@ -26,9 +26,9 @@ import org.labkey.api.util.Result;
 import org.labkey.api.view.UnauthorizedException;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -48,6 +48,7 @@ import java.util.Set;
 public interface DockerService
 {
     String VOLUME_PREFIX = "lk_volume_";
+    String NO_DOCKER = "Docker module is not present.";
 
     static DockerService get()
     {
@@ -81,7 +82,6 @@ public interface DockerService
         return null;
     }
 
-    //used for migrating RStudio config, consider deprecate and remove after 20.3
     default int saveDockerImage(User user, Map<String, String> config, String imageName, String Type, String imageDescription, boolean useAltKey, Integer rowId)
     {
         return -1;
@@ -234,6 +234,11 @@ public interface DockerService
 
     ImageConfigBuilder getImageConfigBuilder(String imageName);
 
+    default ImageConfigBuilder getImageConfigBuilder(DockerImage dockerImage)
+    {
+        return null;
+    }
+
     interface ImageConfigBuilder
     {
         ImageConfigBuilder inspectImage();
@@ -261,20 +266,27 @@ public interface DockerService
         public final boolean exposePorts;
         public final boolean mountVolumes;
         public final boolean reuseExisting;
+        public final boolean useTTY; //Run container in foreground. Allocate a pseudo-tty and keep STDIN open
         public final Map<InputStream, String> streamsForContainer = new LinkedHashMap<>(); // <Stream, Target location>
 
-        public ContainerUsage(String workingDirectory, boolean exposePorts, boolean mountVolumes, boolean reuseExisting)
+        public ContainerUsage(String workingDirectory, boolean exposePorts, boolean mountVolumes, boolean reuseExisting, boolean useTTY)
         {
             this.workingDirectory = workingDirectory;
             this.exposePorts = exposePorts;
             this.mountVolumes = mountVolumes;
             this.reuseExisting = reuseExisting;
+            this.useTTY = useTTY;
+        }
+
+        public ContainerUsage(String workingDirectory, boolean exposePorts, boolean mountVolumes, boolean reuseExisting)
+        {
+            this(workingDirectory, exposePorts, mountVolumes, reuseExisting, false);
         }
 
         // with streamsForContainer field added, ContainerUsage is no longer immutable so need a new instance each time instead of using class variable
         public static ContainerUsage getDefaultUsage()
         {
-            return new ContainerUsage(null, true, true, true);
+            return new ContainerUsage(null, true, true, true, false);
         }
     }
     
@@ -433,6 +445,11 @@ public interface DockerService
     boolean isDockerEnabled();
 
     boolean isUseDockerVolumes();
+
+    default void executeR(DockerImage dockerImage, File scriptFile, String localWorkingDir, String remoteWorkingDir, FileFilter inputScripts) throws IOException
+    {
+        throw new UnsupportedOperationException(NO_DOCKER);
+    }
 
     static String mnemonic_from_email(String email)
     {
