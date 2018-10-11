@@ -28,6 +28,7 @@ import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.categories.FileBrowser;
 import org.labkey.test.components.PropertiesEditor;
+import org.labkey.test.components.SubfoldersWebPart;
 import org.labkey.test.pages.EditDatasetDefinitionPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.params.FieldDefinition;
@@ -36,6 +37,7 @@ import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.ListHelper;
 import org.labkey.test.util.StudyHelper;
+import org.openqa.selenium.By;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -318,6 +320,34 @@ public class StudySimpleExportTest extends StudyBaseTest
         assertTextPresentInThisOrder("Loading folder properties (folder type, settings and active modules)", " queries imported", "Skipping query validation.");
         getDriver().close();
         switchToMainWindow();
+    }
+
+    @Test
+    public void verifyChartViewForParticipant()
+    {
+        log("Chart view Migration Test - Start");
+        String subfolder = "Chart View Migration";
+        goToProjectHome();
+
+        log("Creating the subfolder");
+        _containerHelper.createSubfolder(getProjectName(), getProjectName(), subfolder, "Collaboration", null, true);
+        importFolderFromZip(TestFileUtils.getSampleData("studies/LabkeyDemoStudyWithCharts.folder.zip"), false, 1);
+        navigateToFolder(getProjectName(), subfolder);
+
+        log("Checking the charts for a participant");
+        clickTab("Participants");
+        clickAndWait(Locator.linkWithText("249318596"));
+        click(Locator.linkContainingText("Physical Exam"));
+
+        log("Adding the chart to the dataset");
+        click(Locator.linkContainingText("Add Chart"));
+        selectOptionByTextContaining(Locator.tagWithId("select", "addChartSelect-5004").findElement(getDriver()), "Example Box Plot");
+        clickButton("Submit");
+
+        log("Asserting if map is present");
+        waitForText("Example Box Plot");
+        assertTextPresent("Systolic Blood Pressure xxx/", "Diastolic Blood Pressure /xxx");
+
     }
 
     @Test
