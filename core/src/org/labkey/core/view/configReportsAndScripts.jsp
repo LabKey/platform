@@ -74,8 +74,9 @@
     var defaultR, defaultSandboxedR, countR = 0, countSandboxedR = 0;
 
     var DockerImageFields = {
-        imageName: {label: 'Docker Image Name', defaultVal: 'labkey/rdocker', description: "Enter the Docker image name to use for R. Default is &apos;labkey/rdocker&apos;, which includes Rlabkey."},
+        imageName: {label: 'Docker Image Name', defaultVal: 'labkey/rsandbox', description: "Enter the Docker image name to use for R. Default is &apos;labkey/rsandbox&apos;, which includes Rlabkey."},
         mount: {label: 'Mount Volume', defaultVal: '/home/docker', description: "Enter the volume (image directory) inside the Docker container to mount as the docker R user&apos;s home directory. Default is &apos;/home/rdocker&apos;."},
+        dockerContainerUser: {label: 'Container User', defaultVal: 'docker', hidden: true, description: "The linux user to use for running R report in docker container. Hardcode to docker for now."},
         hostReadOnlyMount: {label: 'Mount: host directory', description: "Additional mount: host directory (read-only). Optional read-only mount point"},
         containerReadOnlyMount: {label: 'mount: container directory', description: "Additional mount: container directory (read-only). Optional read-only mount point"},
         appArmorProfile: {label: 'AppArmor Profile', description: ''},
@@ -156,6 +157,8 @@
                         name: 'dockerimage-' + key,
                         value: record.dockerImageConfig ? dockerConfig[key] : val.defaultVal
                     };
+                    if (val.hidden)
+                        config.hidden = true;
                     if (val.description) {
                         config.labelAttrTpl = " data-qtitle='" + val.label + "' data-qtip='" + val.description + "'";
                     }
