@@ -16,7 +16,26 @@
 package org.labkey.core.query;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.*;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ContainerTable;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.LookupColumn;
+import org.labkey.api.data.MultiValuedForeignKey;
+import org.labkey.api.data.MultiValuedLookupColumn;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -28,8 +47,11 @@ import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MemberType;
@@ -78,6 +100,7 @@ public class CoreQuerySchema extends UserSchema
     public static final String API_KEYS_TABLE_NAME = "APIKeys";
     public static final String USERS_MSG_SETTINGS_TABLE_NAME = "UsersMsgPrefs";
     public static final String SCHEMA_DESCR = "Contains data about the system users and groups.";
+    public static final String VIEW_CATEGORY_TABLE_NAME = "ViewCategory";
 
     public CoreQuerySchema(User user, Container c)
     {
@@ -104,7 +127,7 @@ public class CoreQuerySchema extends UserSchema
     {
         Set<String> names = PageFlowUtil.set(
             USERS_TABLE_NAME, SITE_USERS_TABLE_NAME, PRINCIPALS_TABLE_NAME, MODULES_TABLE_NAME, MEMBERS_TABLE_NAME,
-            GROUPS_TABLE_NAME, USERS_AND_GROUPS_TABLE_NAME, CONTAINERS_TABLE_NAME, WORKBOOKS_TABLE_NAME, QCSTATE_TABLE_NAME);
+            GROUPS_TABLE_NAME, USERS_AND_GROUPS_TABLE_NAME, CONTAINERS_TABLE_NAME, WORKBOOKS_TABLE_NAME, QCSTATE_TABLE_NAME, VIEW_CATEGORY_TABLE_NAME);
 
         if (getUser().hasRootPermission(UserManagementPermission.class))
             names.add(API_KEYS_TABLE_NAME);
@@ -142,6 +165,8 @@ public class CoreQuerySchema extends UserSchema
             return getQCStateTable();
         if (API_KEYS_TABLE_NAME.equalsIgnoreCase(name) && getUser().hasRootPermission(UserManagementPermission.class))
             return new ApiKeysTableInfo(this);
+        if (VIEW_CATEGORY_TABLE_NAME.equalsIgnoreCase(name))
+            return new ViewCategoryTable(ViewCategoryManager.getInstance().getTableInfoCategories(), this);
         return null;
     }
 
@@ -689,5 +714,31 @@ public class CoreQuerySchema extends UserSchema
             }
         }
         return false;
+    }
+
+    static class ViewCategoryTable extends FilteredTable<CoreQuerySchema>
+    {
+        public ViewCategoryTable(@NotNull TableInfo table, @NotNull CoreQuerySchema userSchema)
+        {
+            super(table, userSchema);
+
+            setDescription("Contains one row for each view category.");
+            wrapAllColumns(true);
+
+            getColumn(FieldKey.fromParts("RowId")).setHidden(true);
+            ContainerForeignKey.initColumn(getColumn(FieldKey.fromParts("Container")), userSchema);
+            UserIdForeignKey.initColumn(getColumn(FieldKey.fromParts("CreatedBy")));
+            UserIdForeignKey.initColumn(getColumn(FieldKey.fromParts("ModifiedBy")));
+
+            ColumnInfo parentCol = getColumn(FieldKey.fromParts("Parent"));
+            parentCol.setFk(new LookupForeignKey("RowId", "Label"){
+
+                @Override
+                public @Nullable TableInfo getLookupTableInfo()
+                {
+                    return ViewCategoryManager.getInstance().getTableInfoCategories();
+                }
+            });
+        }
     }
 }

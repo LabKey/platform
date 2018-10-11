@@ -36,6 +36,8 @@ import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.reports.model.ViewCategory;
+import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.Dataset;
@@ -307,6 +309,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
         String name = domain.getName();
         Integer datasetId = arguments.containsKey("datasetId") ? (Integer)arguments.get("datasetId") : null;
         Integer categoryId = arguments.containsKey("categoryId") ? (Integer)arguments.get("categoryId") : null;
+        String categoryName = arguments.containsKey("categoryName") ? (String)arguments.get("categoryName") : null;
         boolean demographics = arguments.containsKey("demographics") ? (Boolean)arguments.get("demographics") : false;
         String keyPropertyName = arguments.containsKey("keyPropertyName") ? (String)arguments.get("keyPropertyName") : null;
         boolean useTimeKeyField = arguments.containsKey("useTimeKeyField") ? (Boolean)arguments.get("useTimeKeyField") : false;
@@ -319,12 +322,24 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
         if (study == null)
             throw new IllegalArgumentException("A study does not exist for this folder");
 
+        if (categoryId != null && categoryName != null)
+            throw new IllegalArgumentException("Category ID and category name cannot both be specified");
+
         // make sure the domain matches the timepoint type
         TimepointType timepointType = study.getTimepointType();
         if (timepointType.isVisitBased() && getKindName().equals(DateDatasetDomainKind.KIND_NAME))
             throw new IllegalArgumentException("Visit based studies require a visit based dataset domain. Please specify a kind name of : " + VisitDatasetDomainKind.KIND_NAME);
         else if (!timepointType.isVisitBased() && getKindName().equals(VisitDatasetDomainKind.KIND_NAME))
             throw new IllegalArgumentException("Date based studies require a date based dataset domain. Please specify a kind name of : " + DateDatasetDomainKind.KIND_NAME);
+
+        if (categoryName != null)
+        {
+            ViewCategory category = ViewCategoryManager.getInstance().getCategory(container, categoryName);
+            if (category != null)
+                categoryId = category.getRowId();
+            else
+                throw new IllegalArgumentException("Unable to find a category named : " + categoryName + " in this folder.");
+        }
 
         try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
         {
