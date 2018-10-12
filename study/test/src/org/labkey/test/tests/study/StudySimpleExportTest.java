@@ -65,6 +65,7 @@ public class StudySimpleExportTest extends StudyBaseTest
     public static final String NOTIFICATION_EMAIL = "specimen-test@simpleexport.test";
     private final String FOLDER_SCOPE = "folder";
     private final String PROJECT_SCOPE = "project";
+    private static final String LINE_PLOT_MV_1 = "1211221231291331351427678808284868890ExampleBoxPlotSystolicBloodPressurexxx/DiastolicBloodPressure/xxx";
 
     @Override
     protected BrowserType bestBrowser()
@@ -347,6 +348,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         log("Asserting if map is present");
         waitForText("Example Box Plot");
         assertTextPresent("Systolic Blood Pressure xxx/", "Diastolic Blood Pressure /xxx");
+        assertSVG(LINE_PLOT_MV_1);
 
     }
 
