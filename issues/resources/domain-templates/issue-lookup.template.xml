@@ -7,7 +7,8 @@
         <table tableName="priority" tableDbType="NOT_IN_DB">
             <dat:columns>
                 <dat:column columnName="value">
-                    <dat:datatype>int</dat:datatype>
+                    <dat:rangeURI>int</dat:rangeURI>
+                    <dat:nullable>false</dat:nullable>
                 </dat:column>
             </dat:columns>
         </table>
@@ -16,6 +17,7 @@
         </initialData>
         <options>
             <keyCol>value</keyCol>
+            <keyType>Integer</keyType>
         </options>
     </template>
     <template xsi:type="ListTemplateType">
