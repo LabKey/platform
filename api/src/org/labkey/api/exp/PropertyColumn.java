@@ -83,7 +83,7 @@ public class PropertyColumn extends LookupColumn
         Object value = map.get(dp);
 
         if (null != value)
-            to.setDefaultValue(value.toString());
+            to.setDefaultValue(value);
     }
 
     public static void copyAttributes(User user, ColumnInfo to, PropertyDescriptor pd, Container container, FieldKey lsidColumnFieldKey)

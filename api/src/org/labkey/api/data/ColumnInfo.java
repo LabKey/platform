@@ -131,7 +131,7 @@ public class ColumnInfo extends ColumnRenderProperties
     private JdbcType _jdbcType = null;
     private String _textAlign = null;
     private ForeignKey _fk = null;
-    private String _defaultValue = null;
+    private Object _defaultValue = null;
     private String _jdbcDefaultValue = null;  // TODO: Merge with defaultValue, see #17646
     private boolean _isAutoIncrement = false;
     private boolean _isKeyField = false;
@@ -589,12 +589,12 @@ public class ColumnInfo extends ColumnRenderProperties
         _jdbcDefaultValue = jdbcDefaultValue;
     }
 
-    public String getDefaultValue()
+    public Object getDefaultValue()
     {
         return _defaultValue;
     }
 
-    public void setDefaultValue(String defaultValue)
+    public void setDefaultValue(Object defaultValue)
     {
         checkLocked();
         _defaultValue = defaultValue;
@@ -948,7 +948,7 @@ public class ColumnInfo extends ColumnRenderProperties
             if (_scale != 0)
                 xmlCol.setScale(_scale);
             if (null != _defaultValue)
-                xmlCol.setDefaultValue(_defaultValue);
+                xmlCol.setDefaultValue(_defaultValue.toString());
             if (!StringUtils.isBlank(getDisplayWidth()))
                 xmlCol.setDisplayWidth(getDisplayWidth());
             if (null != _format)

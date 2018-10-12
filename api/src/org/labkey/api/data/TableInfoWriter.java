@@ -202,7 +202,7 @@ public class TableInfoWriter
 
             if (defaultValueType != DefaultValueType.LAST_ENTERED && null != column.getDefaultValue())
             {
-                columnXml.setDefaultValue(column.getDefaultValue());
+                columnXml.setDefaultValue(column.getDefaultValue().toString());
             }
         }
 
