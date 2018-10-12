@@ -4576,6 +4576,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
             SqlExecutor executor = new SqlExecutor(getExpSchema());
             executor.execute("UPDATE " + getTinfoDataClass() + " SET materialSourceId = NULL WHERE materialSourceId = ?", source.getRowId());
+            executor.execute("UPDATE " + getTinfoProtocolInput() + " SET materialSourceId = NULL WHERE materialSourceId = ?", source.getRowId());
             executor.execute("DELETE FROM " + getTinfoActiveMaterialSource() + " WHERE MaterialSourceLSID = ?", source.getLSID());
             executor.execute("DELETE FROM " + getTinfoMaterialSource() + " WHERE RowId = ?", rowId);
 
@@ -4645,6 +4646,7 @@ public class ExperimentServiceImpl implements ExperimentService
             deleteDomainObjects(dcContainer, dataClass.getLSID());
 
             SqlExecutor executor = new SqlExecutor(getExpSchema());
+            executor.execute("UPDATE " + getTinfoProtocolInput() + " SET dataClassId = NULL WHERE dataClassId = ?", rowId);
             executor.execute("DELETE FROM " + getTinfoDataClass() + " WHERE RowId = ?", rowId);
 
             transaction.commit();
@@ -6575,6 +6577,9 @@ public class ExperimentServiceImpl implements ExperimentService
                 matchingSamples.add(expMaterial);
             }
         }
+
+        // CONSIDER: include samples not in any SampleSet
+
         return potentialParents;
     }
 
