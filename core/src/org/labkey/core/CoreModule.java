@@ -59,6 +59,7 @@ import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.TestDomainKind;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.iterator.MarkableIterator;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.module.DefaultModule;
@@ -982,6 +983,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         if (AppProps.getInstance().isDevMode())
             PremiumService.get().registerAntiVirusProvider(new DummyAntiVirusService.Provider());
+
+        FileContentService fileContentService = FileContentService.get();
+        if (fileContentService != null)
+            fileContentService.addFileListener(WebFilesResolverImpl.get());
+
     }
 
     @Override

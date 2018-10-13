@@ -100,6 +100,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.webdav.DavException;
 import org.labkey.api.webdav.DirectRequest;
+import org.labkey.api.webdav.WebFilesResolverImpl;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavResource;
@@ -2981,6 +2982,10 @@ public class DavController extends SpringActionController
                 resource.notify(getViewContext(), "folder created");
                 // Removing any lock-null resource which would be present
                 lockNullResources.remove(path);
+
+                Container srcContainer = resource.getContainerId() == null ? null : ContainerManager.getForId(resource.getContainerId());
+                clearWebfilesFileCache(srcContainer);
+
                 return WebdavStatus.SC_CREATED;
             }
 
@@ -3306,7 +3311,6 @@ public class DavController extends SpringActionController
             {
                 fireFileDeletedEvent(resource);
             }
-            return WebdavStatus.SC_NO_CONTENT;
         }
         else
         {
@@ -3323,8 +3327,12 @@ public class DavController extends SpringActionController
                 resource.notify(getViewContext(), "deleted");
             if (!errorList.isEmpty())
                 return sendReport(errorList);
-            return WebdavStatus.SC_NO_CONTENT;
         }
+
+        Container srcContainer = resource.getContainerId() == null ? null : ContainerManager.getForId(resource.getContainerId());
+        clearWebfilesFileCache(srcContainer);
+
+        return WebdavStatus.SC_NO_CONTENT;
     }
 
     // The following fire*Event() methods should be replaced with a full subscribe-notify implementation, but for now
@@ -3334,7 +3342,17 @@ public class DavController extends SpringActionController
         long start = System.currentTimeMillis();
         resource.notify(getViewContext(), "replaced");
         updateIndexAndDataObject(resource);
+
+        Container srcContainer = resource.getContainerId() == null ? null : ContainerManager.getForId(resource.getContainerId());
+        clearWebfilesFileCache(srcContainer);
+
         _log.debug("fireFileReplaceEvent: " + DateUtil.formatDuration(System.currentTimeMillis() - start));
+    }
+
+    private void clearWebfilesFileCache(Container srcContainer)
+    {
+        if (srcContainer != null)
+            WebFilesResolverImpl.get().invalidateCache(srcContainer.getParsedPath(), true);
     }
 
     private void fireFileCreatedEvent(WebdavResource resource)
