@@ -16,12 +16,17 @@
 package org.labkey.api.webdav;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentDirectory;
+import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.files.FileListener;
 import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
@@ -34,9 +39,11 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +51,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class WebFilesResolverImpl extends AbstractWebdavResolver
+public class WebFilesResolverImpl extends AbstractWebdavResolver implements FileListener
 {
     final private static Path PATH = Path.parse("/_webfiles/");
     static WebFilesResolverImpl _instance = new WebFilesResolverImpl(PATH);
@@ -54,10 +61,10 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver
     private WebFilesResolverImpl(Path path)
     {
         _rootPath = path;
-        // skip folder caching since changes under @files aren't attached to container listener
+        ContainerManager.addContainerListener(new WebfilesContainerListener());
     }
 
-    public static WebdavResolver get()
+    public static WebFilesResolverImpl get()
     {
         return _instance;
     }
@@ -95,6 +102,79 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver
     {
         return "webfiles";
     }
+
+    private class WebfilesContainerListener extends AbstractWebdavListener
+    {
+        @Override
+        protected void clearFolderCache()
+        {
+            _webfilesCache.clear();
+        }
+
+        @Override
+        protected void invalidate(Path containerPath, boolean recursive)
+        {
+            invalidateCache(containerPath, recursive);
+        }
+    }
+
+    public void invalidateCache(Path containerPath, boolean recursive)
+    {
+        if (!AppProps.getInstance().isWebfilesRootEnabled())
+            return;
+
+        final Path path = getRootPath().append(containerPath);
+        _webfilesCache.remove(path);
+        if (recursive)
+            _webfilesCache.removeUsingFilter(test -> test.startsWith(path));
+        if (containerPath.size() == 0)
+        {
+            synchronized (WebFilesResolverImpl.this)
+            {
+                _root = null;
+            }
+        }
+    }
+
+    @Override
+    public String getSourceName()
+    {
+        return "WebfilesFileListener";
+    }
+
+    @Override
+    public void fileCreated(@NotNull File created, @Nullable User user, @Nullable Container container)
+    {
+        if (container != null)
+        {
+            invalidateCache(container.getParsedPath(), true);
+        }
+    }
+
+    @Override
+    public void fileMoved(@NotNull File src, @NotNull File dest, @Nullable User user, @Nullable Container container)
+    {
+        if (AppProps.getInstance().isWebfilesRootEnabled() && container != null)
+        {
+            invalidateCache(container.getParsedPath(), true);
+        }
+    }
+
+    @Override
+    public Collection<File> listFiles(@Nullable Container container)
+    {
+        return null;
+    }
+
+    @Override
+    public SQLFragment listFilesQuery()
+    {
+        return null;
+    }
+
+    // Cache with short-lived entries to make webfiles perform reasonably.  WebFilesResolverImpl is a singleton, so we
+    // end up with just one of these.
+    private Cache<Path, WebdavResource> _webfilesCache = CacheManager.getCache(CacheManager.UNLIMITED, 5 * CacheManager.MINUTE, "WebFiles");
 
     @Override
     public boolean isEnabled()
@@ -250,12 +330,20 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver
             if (name == null && c != null)
                 name = c.getName();
 
+            WebdavResource resource = null;
+            Path path = null;
             if (name != null)
             {
+                path = getPath().append(name);
+                // check in webfolder cache
+                resource = _webfilesCache.get(getPath().append(name));
+                if (null != resource)
+                    return resource;
+
                 // if child container
                 if (c != null)
                 {
-                    return new WebFilesFolderResource(_resolver, c);
+                    resource = new WebFilesFolderResource(_resolver, c);
                 }
                 else // if directory under @files
                 {
@@ -269,24 +357,22 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver
                             boolean isCloudRoot = null != fileContentService && fileContentService.isCloudRoot(parentContainer);
                             try (Stream<java.nio.file.Path> list = Files.list(fileRootFile))
                             {
-                                for (java.nio.file.Path path : list.collect(Collectors.toList()))
+                                for (java.nio.file.Path p : list.collect(Collectors.toList()))
                                 {
-                                    String pathFileName = FileUtil.getFileName(path);
-                                    if ((Files.isDirectory(path) && StringUtils.equals(rawFolderName, pathFileName)) ||
-                                        (!Files.isDirectory(path) && StringUtils.equals(name, pathFileName)))
+                                    String pathFileName = FileUtil.getFileName(p);
+                                    if ((Files.isDirectory(p) && StringUtils.equals(rawFolderName, pathFileName)) ||
+                                        (!Files.isDirectory(p) && StringUtils.equals(name, pathFileName)))
                                     {
-                                        if (!FileUtil.hasCloudScheme(path))
+                                        if (!FileUtil.hasCloudScheme(p))
                                         {
-                                            return new FileSystemResource(this, name, path.toFile(), parentContainer.getPolicy());
+                                            return new FileSystemResource(this, name, p.toFile(), parentContainer.getPolicy());
                                         }
                                         else if (isCloudRoot)
                                         {
                                             CloudStoreService cloudStoreService = CloudStoreService.get();
                                             if (null != cloudStoreService)
                                             {
-                                                WebdavResource resource = cloudStoreService.getWebFilesResource(this, parentContainer, (null != rawFolderName ? rawFolderName : name), name);
-                                                if (null != resource)
-                                                    return resource;
+                                                resource = cloudStoreService.getWebFilesResource(this, parentContainer, (null != rawFolderName ? rawFolderName : name), name);
                                             }
                                             break;
                                         }
@@ -321,13 +407,17 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver
                         CloudStoreService cloudStoreService = CloudStoreService.get();
                         if (null != cloudStoreService)
                         {
-                            WebdavResource resource = cloudStoreService.getWebFilesResource(this, parentContainer, child, child);
-                            if (null != resource)
-                                return resource;
+                            resource = cloudStoreService.getWebFilesResource(this, parentContainer, child, child);
                         }
                     }
                     // TODO: handle hasCloudScheme(path) && !isCloudRoot
                 }
+            }
+
+            if (resource != null)
+            {
+                _webfilesCache.put(path, resource);
+                return resource;
             }
 
             return new UnboundResource(this.getPath().append(child));
