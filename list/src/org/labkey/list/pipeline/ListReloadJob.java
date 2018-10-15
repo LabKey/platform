@@ -39,12 +39,6 @@ public class ListReloadJob extends PipelineJob
     }
 
     @Override
-    public boolean hasJacksonSerialization()
-    {
-        return true;
-    }
-
-    @Override
     public String getDescription()
     {
         return "Reloading list";

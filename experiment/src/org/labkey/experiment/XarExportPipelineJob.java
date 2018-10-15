@@ -29,7 +29,6 @@ import org.labkey.experiment.xar.XarExportSelection;
 import java.io.FileOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.sql.SQLException;
 
 /**
  * Runs in the background and creates a XAR export to the server's file system.
@@ -74,12 +73,6 @@ public class XarExportPipelineJob extends PipelineJob
 
         header("Experiment export to " + _exportFile.getName());
         setStatus(TaskStatus.waiting);
-    }
-
-    @Override
-    public boolean hasJacksonSerialization()
-    {
-        return true;
     }
 
     public ActionURL getStatusHref()

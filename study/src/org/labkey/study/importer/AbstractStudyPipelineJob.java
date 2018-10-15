@@ -16,7 +16,6 @@
 package org.labkey.study.importer;
 
 import org.apache.xmlbeans.XmlObject;
-import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderWriterImpl;
 import org.labkey.api.admin.PipelineJobLoggerGetter;
@@ -36,7 +35,6 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.pipeline.StudyImportSpecimenTask;
 import org.labkey.study.xml.StudyDocument;
-import org.springframework.validation.BindException;
 
 import java.io.File;
 
@@ -63,12 +61,6 @@ public abstract class AbstractStudyPipelineJob extends PipelineJob
 
         File tempLogFile = new File(root.getLogDirectory(), FileUtil.makeFileNameWithTimestamp(getLogName(), "log"));
         setLogFile(tempLogFile);
-    }
-
-    @Override
-    public boolean hasJacksonSerialization()
-    {
-        return true;
     }
 
     public Container getDstContainer()

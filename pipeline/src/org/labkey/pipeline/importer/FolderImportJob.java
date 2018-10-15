@@ -75,12 +75,6 @@ public class FolderImportJob extends PipelineJob implements FolderJobSupport
         LOG.info("Pipeline job initialized for importing folder properties to folder " + c.getPath());
     }
 
-    @Override
-    public boolean hasJacksonSerialization()
-    {
-        return true;
-    }
-
     public FolderImportContext getImportContext()
     {
         return _ctx;

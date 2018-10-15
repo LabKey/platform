@@ -27,7 +27,6 @@ import org.labkey.study.controllers.BaseStudyController;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.sql.SQLException;
 
 /**
  * User: brittp
@@ -45,12 +44,6 @@ public abstract class StudyBatch extends PipelineJob implements Serializable
     {
         super("Study", info, root);
         _definitionFile = definitionFile;
-    }
-
-    @Override
-    public boolean hasJacksonSerialization()
-    {
-        return true;
     }
 
     public ActionURL getStatusHref()

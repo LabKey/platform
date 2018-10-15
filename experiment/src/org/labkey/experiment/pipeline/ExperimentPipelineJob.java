@@ -73,12 +73,6 @@ public class ExperimentPipelineJob extends PipelineJob
         header("XAR Import from " + xarSource.toString());
     }
 
-    @Override
-    public boolean hasJacksonSerialization()
-    {
-        return true;
-    }
-
     protected XarSource createXarSource(File file)
     {
         String name = file.getName().toLowerCase();

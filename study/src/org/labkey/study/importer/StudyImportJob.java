@@ -95,12 +95,6 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport, Stud
             _ctx.getLogger().info(message);
     }
 
-    @Override
-    public boolean hasJacksonSerialization()
-    {
-        return true;
-    }
-
     public StudyImpl getStudy()
     {
         return getStudy(false);

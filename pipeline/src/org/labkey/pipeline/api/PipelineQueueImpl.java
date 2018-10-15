@@ -18,8 +18,6 @@ package org.labkey.pipeline.api;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.admin.notification.Notification;
-import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -28,7 +26,6 @@ import org.labkey.api.pipeline.PipelineJobData;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.JobRunner;
@@ -36,7 +33,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 
 import java.io.File;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -283,12 +279,6 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
         {
             super(null, new ViewBackgroundInfo(c, null, null), PipelineService.get().findPipelineRoot(c));
             _counter = counter;
-        }
-
-        @Override
-        public boolean hasJacksonSerialization()
-        {
-            return true;
         }
 
         public void run()

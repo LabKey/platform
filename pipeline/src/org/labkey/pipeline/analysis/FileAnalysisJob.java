@@ -73,12 +73,6 @@ public class FileAnalysisJob extends AbstractFileAnalysisJob
     }
 
     @Override
-    public boolean hasJacksonSerialization()
-    {
-        return true;
-    }
-
-    @Override
     public String getDescription()
     {
         String description = getParameters().get("pipelineDescription");
