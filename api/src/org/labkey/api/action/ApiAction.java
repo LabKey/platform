@@ -110,9 +110,19 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
     }
 
 
+    protected boolean isGet()
+    {
+        return "GET".equals(getViewContext().getRequest().getMethod());
+    }
+
     protected boolean isPost()
     {
         return "POST".equals(getViewContext().getRequest().getMethod());
+    }
+
+    protected boolean isPut()
+    {
+        return "PUT".equals(getViewContext().getRequest().getMethod());
     }
 
     protected boolean isDelete()
