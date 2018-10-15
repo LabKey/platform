@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 @Category({DailyC.class})
 public class ExperimentAPITest extends BaseWebDriverTest
@@ -202,6 +203,35 @@ public class ExperimentAPITest extends BaseWebDriverTest
                 3, responseBatch.getRuns().stream().mapToInt(run -> run.getDataInputs().size() + run.getDataOutputs().size()).sum());
         assertEquals("Matching experiment datas should have the same id: " + responseBatch.toJSONObject().toJSONString(),
                 responseBatch.getRuns().get(0).getDataOutputs().get(0).getId(), responseBatch.getRuns().get(1).getDataInputs().get(0).getId());
+    }
+
+    @Test
+    public void testRunDataBadAbsolutePath() throws Exception
+    {
+        Batch batch = new Batch();
+        batch.setName("testRunDataBadAbsolutePath Batch");
+
+        JSONObject d1 = new JSONObject();
+        d1.put("absolutePath", new File(TestFileUtils.getDefaultFileRoot(getProjectName()), "../../../../labkey.xml").getAbsolutePath());
+
+        Run run1 = new Run();
+        run1.setName("testRunDataBadAbsolutePath Run 1");
+        run1.setDataOutputs(Arrays.asList(new Data(d1)));
+
+        batch.getRuns().add(run1);
+
+        SaveAssayBatchCommand cmd = new SaveAssayBatchCommand(SaveAssayBatchCommand.SAMPLE_DERIVATION_PROTOCOL, batch);
+        cmd.setTimeout(10000);
+        try
+        {
+            SaveAssayBatchResponse response = cmd.execute(createDefaultConnection(false), getProjectName());
+            fail("Referencing file outside of pipeline root should not be permitted. Response: " + response.getText());
+        }
+        catch (CommandException expected)
+        {
+            if (!expected.getMessage().contains("not under the pipeline root for this folder"))
+                throw expected;
+        }
     }
 
     @NotNull
