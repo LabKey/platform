@@ -147,15 +147,15 @@
                     </ul>
                 </li>
                 <% } if (context.isShowFolders()) { %>
-                <li class="dropdown" data-webpart="FolderNav" data-name="FolderNav">
+                <li class="dropdown dropdown-folder-nav" data-webpart="FolderNav" data-name="FolderNav">
                     <a data-target="#" class="dropdown-toggle" data-toggle="dropdown">
-                        <i class="fa fa-folder-open"></i>&nbsp;<%=h(model.getProjectTitle())%>
+                        <%=h(model.getProjectTitle().equals("") ? "Site Navigation" : model.getProjectTitle())%><i style="margin-left: 5px" class="fa fa-chevron-down"></i>
                     </a>
                     <ul class="dropdown-menu"></ul>
                 </li>
                 <% } for (Pair<String, Portal.WebPart> pair : menus) { %>
                 <li class="dropdown" data-webpart="<%=text(getSafeName(pair.second))%>" data-name="<%=text(pair.second.getName())%>">
-                    <a data-target="#" class="dropdown-toggle" data-toggle="dropdown"><%=h(pair.first)%></a>
+                    <a data-target="#" class="dropdown-toggle" data-toggle="dropdown"><%=h(pair.first)%><i style="margin-left: 5px" class="fa fa-chevron-down"></i></a>
                     <ul class="dropdown-menu lk-custom-dropdown-menu"></ul>
                 </li>
                 <% } %>

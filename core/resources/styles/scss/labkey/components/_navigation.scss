@@ -50,6 +50,9 @@
           text-decoration: none;
         }
       }
+      &.dropdown-folder-nav {
+        background-color: $lk-nav-dropdown-color;
+      }
     }
   }
 
