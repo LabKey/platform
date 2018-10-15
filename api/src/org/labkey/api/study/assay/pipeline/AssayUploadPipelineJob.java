@@ -32,7 +32,6 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
 
 import java.io.File;
-import java.io.IOException;
 
 /**
  * Pipeline job for completing the final steps of the assay upload wizard in the background.
@@ -70,12 +69,6 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
         _context = context;
         _batchId = batch.getRowId();
         _primaryFile = primaryFile;
-    }
-
-    @Override
-    public boolean hasJacksonSerialization()
-    {
-        return true;
     }
 
     /** Finds a file name that hasn't been used yet, appending ".2", ".3", etc as needed */

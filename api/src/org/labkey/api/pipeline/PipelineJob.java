@@ -111,7 +111,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public boolean hasJacksonSerialization()
     {
-        return false;
+        return true;
     }
 
     public static boolean isSerializedJson(String serialized)

@@ -26,7 +26,6 @@ import org.labkey.api.pipeline.PipelineQueue;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
-import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
@@ -88,12 +87,6 @@ public class RReportJob extends PipelineJob implements Serializable
             File logFile = new File(report.getReportDir(executingContainerId), LOG_FILE_NAME);
             setLogFile(logFile);
         }
-    }
-
-    @Override
-    public boolean hasJacksonSerialization()
-    {
-        return true;
     }
 
     @Override
