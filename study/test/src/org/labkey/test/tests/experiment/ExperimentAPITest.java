@@ -230,7 +230,7 @@ public class ExperimentAPITest extends BaseWebDriverTest
         catch (CommandException expected)
         {
             if (!expected.getMessage().contains("not under the pipeline root for this folder"))
-                throw expected;
+                throw new RuntimeException("saving batch data with bad absolute path did not produce the expected exception.", expected);
         }
     }
 
