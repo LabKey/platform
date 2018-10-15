@@ -75,6 +75,7 @@ import org.labkey.api.exp.query.ExpMaterialProtocolInputTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LsidUtils;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineRootContainerTree;
@@ -1848,7 +1849,14 @@ public class ExperimentController extends SpringActionController
             PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
             if (root != null && !root.isUnderRoot(_data.getFilePath()))
             {
-                throw new UnauthorizedException("Data file is not under the pipeline root for this folder");
+                // Issue 35649: ImmPort module "publish" creates exp.data object in this container for paths that originate in a different container
+                FileContentService fileSvc = FileContentService.get();
+                if (fileSvc == null)
+                    throw new UnauthorizedException("Data file is not under the pipeline root for this folder");
+
+                List<Container> containers = fileSvc.getContainersForFilePath(_data.getFilePath());
+                if (containers.isEmpty() || containers.stream().noneMatch(c -> c.hasPermission(getUser(), ReadPermission.class)))
+                    throw new UnauthorizedException("Data file is not under the pipeline root for this folder");
             }
 
             //Issues 25667 and 31152

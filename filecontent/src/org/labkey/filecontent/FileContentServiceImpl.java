@@ -136,6 +136,51 @@ public class FileContentServiceImpl implements FileContentService
     }
 
     @Override
+    public List<Container> getContainersForFilePath(java.nio.file.Path path)
+    {
+        // Ignore cloud files for now
+        if (FileUtil.hasCloudScheme(path))
+            return Collections.emptyList();
+
+        // If the path is under the default root, do optimistic simple match for containers under the default root
+        File defaultRoot = getSiteDefaultRoot();
+        java.nio.file.Path defaultRootPath = defaultRoot.toPath();
+        if (path.startsWith(defaultRootPath))
+        {
+            java.nio.file.Path rel = defaultRootPath.relativize(path);
+            if (rel.getNameCount() > 0)
+            {
+                Container root = ContainerManager.getRoot();
+                Container next = root;
+                while (rel.getNameCount() > 0)
+                {
+                    // check if there exists a child container that matches the next path segment
+                    java.nio.file.Path top = rel.subpath(0, 1);
+                    assert top != null;
+                    Container child = root.getChild(top.getFileName().toString());
+                    if (child == null)
+                        break;
+
+                    next = child;
+                    rel = rel.subpath(1, rel.getNameCount() - 1);
+                }
+
+                if (next != null && !next.equals(root))
+                {
+                    // verify our naive file path is correct for the container -- it may have a file root other than the default
+                    java.nio.file.Path fileRoot = getFileRootPath(next);
+                    if (fileRoot != null && path.startsWith(fileRoot))
+                        return Collections.singletonList(next);
+                }
+            }
+        }
+
+        // TODO: Create cache of file root and pipeline root paths -> list of containers
+
+        return null;
+    }
+
+    @Override
     public @Nullable File getFileRoot(@NotNull Container c, @NotNull ContentType type)
     {
         switch (type)

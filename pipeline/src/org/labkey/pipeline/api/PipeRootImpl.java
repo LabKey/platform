@@ -251,6 +251,9 @@ public class PipeRootImpl implements PipeRoot
     {
         if (isCloudRoot())
             return null;
+
+        // remove "." and ".."
+        file = FileUtil.resolveFile(file);
         
         for (File root : getRootPaths())
         {
@@ -283,6 +286,9 @@ public class PipeRootImpl implements PipeRoot
     private Path findRootPath(Path file)
     {
         Path root = getRootNioPath();
+
+        // remove "." and ".."
+        file = file.normalize();
 
         // First, see if the file is under the root as it is:
         if (URIUtil.isDescendant(root.toUri(), file.toUri()))
