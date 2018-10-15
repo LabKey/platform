@@ -32,6 +32,7 @@ import org.labkey.api.webdav.WebdavResource;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -56,6 +57,11 @@ public interface FileContentService
     {
         ServiceRegistry.get().registerService(FileContentService.class, impl);
     }
+
+    /**
+     * Returns a list of Container in which the path resides.
+     */
+    List<Container> getContainersForFilePath(java.nio.file.Path path);
 
     /**
      * Returns the file root of the specified container. If not explicitly defined,
