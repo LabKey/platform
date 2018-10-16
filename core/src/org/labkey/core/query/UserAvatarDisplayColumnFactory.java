@@ -78,13 +78,13 @@ public class UserAvatarDisplayColumnFactory implements DisplayColumnFactory
             }
 
             @Override
-            protected void renderIconAndFilename(RenderContext ctx, Writer out, String filename, @Nullable String fileIconUrl, boolean link, boolean thumbnail) throws IOException
+            protected void renderIconAndFilename(RenderContext ctx, Writer out, String filename, @Nullable String fileIconUrl, @Nullable String popupIconUrl,  boolean link, boolean thumbnail) throws IOException
             {
                 renderDetailsCellContents(ctx, out);
             }
 
             @Override
-            protected String getFileName(Object value)
+            protected String getFileName(RenderContext ctx, Object value)
             {
                 User user = getUserFromValue(value);
                 return user != null && user.getAvatarUrl() != null ? "avatar" : null;
