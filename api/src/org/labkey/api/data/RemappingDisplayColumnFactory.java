@@ -25,7 +25,7 @@ import java.util.Map;
  * Date: 9/11/12
  * Time: 10:21 PM
  *
- * Should probably be included on DisplayColumnFactory.  However ther are a lot of implementations to update.
+ * Should probably be included on DisplayColumnFactory.  However there are a lot of implementations to update.
  * ColumnInfo calls checkLocked(), but be careful about modifying shared instances.
  */
 public interface RemappingDisplayColumnFactory extends DisplayColumnFactory

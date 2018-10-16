@@ -36,6 +36,8 @@ import java.io.Writer;
 public abstract class AbstractFileDisplayColumn extends DataColumn
 {
     MimeMap _map;
+    protected String _thumbnailWidth;
+    protected String _popupWidth;
 
     public AbstractFileDisplayColumn(ColumnInfo col)
     {
@@ -54,16 +56,16 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
     }
 
     /** @return the short name of the file (not including full path) */
-    protected abstract String getFileName(Object value);
+    protected abstract String getFileName(RenderContext ctx, Object value);
 
     protected abstract InputStream getFileContents(RenderContext ctx, Object value) throws FileNotFoundException;
     
     protected void renderIconAndFilename(RenderContext ctx, Writer out, String filename, boolean link, boolean thumbnail) throws IOException
     {
-       renderIconAndFilename(ctx, out, filename, null, link, thumbnail);
+       renderIconAndFilename(ctx, out, filename, null, null, link, thumbnail);
     }
     
-    protected void renderIconAndFilename(RenderContext ctx, Writer out, String filename, @Nullable String fileIconUrl, boolean link, boolean thumbnail) throws IOException
+    protected void renderIconAndFilename(RenderContext ctx, Writer out, String filename, @Nullable String fileIconUrl, @Nullable String popupIconUrl, boolean link, boolean thumbnail) throws IOException
     {
         if (null != filename)
         {
@@ -81,40 +83,45 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
                 }
             }
 
-            String displayName = getFileName(filename);
+            String displayName = getFileName(ctx, filename);
             boolean isImage = filename.toLowerCase().endsWith(".png")
                     || filename.toLowerCase().endsWith(".jpeg")
                     || filename.toLowerCase().endsWith(".jpg")
                     || filename.toLowerCase().endsWith(".gif");
 
-            if (url != null && thumbnail && isImage)
+            if ((url != null || fileIconUrl != null) && thumbnail && isImage)
             {
+                String popupUrl = popupIconUrl != null ? ensureAbsoluteUrl(ctx, popupIconUrl) : (url != null ? PageFlowUtil.filter(url) : ensureAbsoluteUrl(ctx, fileIconUrl));
                 StringBuilder popupHtml = new StringBuilder();
-                popupHtml.append("<img style=\"max-width:300px; height:auto;\" src=\"");
-                popupHtml.append(PageFlowUtil.filter(url));
-                popupHtml.append("\" />");
+                popupHtml.append("<img style=\"").
+                        append(_popupWidth != null ? "width:" + _popupWidth : "max-width:300px").append("; height:auto;\" src=\"").
+                        append(popupUrl).
+                        append("\" />");
 
+                String thumbnailUrl = fileIconUrl != null ? ensureAbsoluteUrl(ctx, fileIconUrl) : PageFlowUtil.filter(url);
                 StringBuilder thumbnailHtml = new StringBuilder();
-                thumbnailHtml.append("<img style=\"display:block; height:auto; width:100%; max-width: 32px; vertical-align:middle\"");
-                thumbnailHtml.append(" src=\"").append(PageFlowUtil.filter(url)).append("\"");
-                thumbnailHtml.append(" title=\"").append(PageFlowUtil.filter(displayName)).append("\"");
-                thumbnailHtml.append("\" />");
+                thumbnailHtml.append("<img style=\"display:block; height:auto;").
+                        append(_thumbnailWidth != null ? "width:" + _thumbnailWidth : "max-width:32px").append("; vertical-align:middle\"").
+                        append(" src=\"").append(thumbnailUrl).append("\"").
+                        append(" title=\"").append(PageFlowUtil.filter(displayName)).append("\"").
+                        append("\" />");
 
-                out.write(PageFlowUtil.helpPopup(displayName, popupHtml.toString(), true, thumbnailHtml.toString(), 310, "window.location = '" + url + "'"));
+                out.write(PageFlowUtil.helpPopup(displayName, popupHtml.toString(), true, thumbnailHtml.toString(), 310, url == null ? null : "window.location = '" + url + "'"));
             }
             else
             {
                 StringBuilder icon = new StringBuilder();
-                icon.append("<img src=\"").append(ctx.getRequest().getContextPath());
-                icon.append((null != fileIconUrl) ? fileIconUrl : Attachment.getFileIcon(filename));
-                icon.append("\" alt=\"icon\"");
-                icon.append("/>&nbsp;").append(PageFlowUtil.filter(displayName));
+                icon.append("<img src=\"").append(ctx.getRequest().getContextPath()).
+                        append((null != fileIconUrl) ? fileIconUrl : Attachment.getFileIcon(filename)).
+                        append("\" alt=\"icon\"").
+                        append("/>&nbsp;").append(PageFlowUtil.filter(displayName));
 
                 if (url != null && thumbnail && _map.isInlineImageFor(new File(filename)) ) {
                     StringBuilder thumbnailHtml = new StringBuilder();
-                    thumbnailHtml.append("<img style=\"max-width:300px; height:auto;\" src=\"");
-                    thumbnailHtml.append(PageFlowUtil.filter(url));
-                    thumbnailHtml.append("\" />");
+                    thumbnailHtml.append("<img style=\"max-width:").
+                            append(_popupWidth).append("; height:auto;\" src=\"").
+                            append(PageFlowUtil.filter(url)).
+                            append("\" />");
 
                     out.write(PageFlowUtil.helpPopup(displayName, thumbnailHtml.toString(), true, icon.toString(), 310, url == null ? null : "window.location = '" + url + "'"));
                 }
@@ -133,9 +140,22 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
         }
     }
 
+    private String ensureAbsoluteUrl(RenderContext ctx, String url)
+    {
+        String lcUrl = url.toLowerCase();
+        if (!lcUrl.startsWith("http:") || !lcUrl.startsWith("https:"))
+        {
+            if (url.startsWith("/"))
+                return ctx.getRequest().getContextPath() + url;
+            else
+                return ctx.getRequest().getContextPath() + "/" + url;
+        }
+        return url;
+    }
+
     public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
     {
-        String filename = getFileName(value);
+        String filename = getFileName(ctx, value);
         String formFieldName = ctx.getForm().getFormFieldName(getBoundColumn());
 
         Input.InputBuilder input = new Input.InputBuilder()

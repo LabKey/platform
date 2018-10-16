@@ -48,7 +48,7 @@ public class AttachmentDisplayColumn extends AbstractFileDisplayColumn
     }
 
     @Override
-    protected String getFileName(Object value)
+    protected String getFileName(RenderContext ctx, Object value)
     {
         if (value instanceof File)
             return ((File) value).getName();
