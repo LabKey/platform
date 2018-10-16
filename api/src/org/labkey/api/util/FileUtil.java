@@ -967,38 +967,12 @@ quickScan:
     }
 
     /**
-     * Strips out ".." and "." from the path
+     * Strips out ".." and "." from the path.
+     * NOTE: This is purely syntactic - it doesn't check the path is real or resolve symlinks.
      */
     public static File resolveFile(File file)
     {
-        File parent = file.getParentFile();
-        if (parent == null)
-        {
-            return file;
-        }
-        if (".".equals(file.getName()))
-        {
-            return resolveFile(parent);
-        }
-        int dotDotCount = 0;
-        while ("..".equals(file.getName()) || dotDotCount > 0)
-        {
-            if ("..".equals(file.getName()))
-            {
-                dotDotCount++;
-            }
-            else if (!".".equals(file.getName()))
-            {
-                dotDotCount--;
-            }
-            if (parent.getParentFile() == null)
-            {
-                return parent;
-            }
-            file = file.getParentFile();
-            parent = file.getParentFile();
-        }
-        return new File(resolveFile(parent), file.getName());
+        return file.toPath().normalize().toFile();
     }
 
 
