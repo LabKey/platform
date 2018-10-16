@@ -49,7 +49,6 @@
     }
     boolean hasAdminOpsPerms = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
 
-    boolean allowSessionKeys = AppProps.getInstance().isAllowSessionKeys();
     boolean baseServerUrlSet = !AppProps.getInstance().getBaseServerUrl().contains("localhost");
 %>
 <style type="text/css">
@@ -76,11 +75,11 @@
     var DockerImageFields = {
         imageName: {label: 'Docker Image Name', defaultVal: 'labkey/rsandbox', description: "Enter the Docker image name to use for R. Default is &apos;labkey/rsandbox&apos;, which includes Rlabkey."},
         mount: {label: 'Mount Volume', defaultVal: '/home/docker', description: "Enter the volume (image directory) inside the Docker container to mount as the docker R user&apos;s home directory. Default is &apos;/home/rdocker&apos;."},
-        dockerContainerUser: {label: 'Container User', defaultVal: 'docker', hidden: true, description: "The linux user to use for running R report in docker container. Hardcode to docker for now."},
         hostReadOnlyMount: {label: 'Mount: host directory', description: "Additional mount: host directory (read-only). Optional read-only mount point"},
         containerReadOnlyMount: {label: 'mount: container directory', description: "Additional mount: container directory (read-only). Optional read-only mount point"},
         appArmorProfile: {label: 'AppArmor Profile', description: ''},
-        labKeyHostIP: {label: 'LabKey server IP address', description: 'Local IP address for LabKey Server'}
+        extraENVs: {label: 'Extra Variables', description: 'Additional environment variables to be passed in when running a container. Usage example: &apos;USERID=1000,USER=rstudio&apos;, which will be converted to &apos;-e USERID=1000 -e USER=rstudio&apos; for docker run command. ' +
+                    'A special variable &apos;DETACH=TRUE&apos; will force container to run in detached mode, with &apos;--detach&apos;'}
     };
 
     function renderNameColumn(value, p, record)
@@ -142,9 +141,6 @@
                     html: dockerConditionHtmlTpl.replace('?LABEL?', 'Base server URL (not localhost)').replace('?CONTENT?', <%=baseServerUrlSet%> ? configuredHtml : notConfiguredHtml)
                 },{
                     xtype: 'box',
-                    html: dockerConditionHtmlTpl.replace('?LABEL?', 'Allow API Session Keys').replace('?CONTENT?', <%=allowSessionKeys%> ? configuredHtml : notConfiguredHtml)
-                },{
-                    xtype: 'box',
                     html: dockerConditionHtmlTpl.replace('?LABEL?', 'Docker').replace('?CONTENT?', '<a href="docker-configure.view">docker</a>')
                 }]);
 
@@ -155,6 +151,7 @@
                         fieldLabel: val.label,
                         id: 'dockerimage-' + key,
                         name: 'dockerimage-' + key,
+                        width: 400,
                         value: record.dockerImageConfig ? dockerConfig[key] : val.defaultVal
                     };
                     if (val.hidden)
@@ -783,7 +780,7 @@
                 text: 'Submit',
                 id: 'btn_submit',
                 hidden: <%=!hasAdminOpsPerms%>,
-                disabled: record.docker && <%=(!(allowSessionKeys && baseServerUrlSet))%>,
+                disabled: record.docker && <%=(!baseServerUrlSet)%>,
                 handler: function(){submitForm(win, formPanel, grid);}
             },{
                 text: <%=q(!hasAdminOpsPerms ? "Close" : "Cancel")%>,
