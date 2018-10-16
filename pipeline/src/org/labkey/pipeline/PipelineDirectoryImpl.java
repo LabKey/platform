@@ -207,6 +207,8 @@ public class PipelineDirectoryImpl implements PipelineDirectory
 
     public static class FileCached extends File
     {
+        private static final FileCached NULL = new FileCached(new File("~~~null~~~"));
+
         private Boolean _dir;
         private FileCached _parent;
         private FileCached[] _children;
@@ -234,9 +236,10 @@ public class PipelineDirectoryImpl implements PipelineDirectory
         {
             if (_parent == null)
             {
-                _parent = new FileCached(super.getParentFile());
+                File parentFile = super.getParentFile();
+                _parent = parentFile == null ? NULL : new FileCached(parentFile);
             }
-            return _parent;
+            return _parent == NULL ? null : _parent;
         }
 
         public File[] listFiles()
