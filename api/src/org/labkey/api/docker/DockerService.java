@@ -148,6 +148,7 @@ public interface DockerService
         String getContainerReadOnlyMount();
         String getAppArmorProfile();
         String getLabKeyHostIP();
+        String getExtraENVs();
 
         DockerImage fromJSON(String config);
     }
