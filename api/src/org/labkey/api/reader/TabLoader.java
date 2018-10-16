@@ -147,6 +147,7 @@ public class TabLoader extends DataLoader
         public DataLoader createLoader(File file, boolean hasColumnHeaders, Container mvIndicatorContainer)
         {
             TabLoader loader = new TabLoader(file, hasColumnHeaders, mvIndicatorContainer);
+            loader.setUnescapeBackslashes(false);
             loader.setDelimiters(fieldTerminator, lineTerminator);
             loader.setParseQuotes(false);
             return loader;
@@ -156,6 +157,7 @@ public class TabLoader extends DataLoader
         public DataLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
         {
             TabLoader loader = new TabLoader(Readers.getBOMDetectingReader(is), hasColumnHeaders, mvIndicatorContainer);
+            loader.setUnescapeBackslashes(false);
             loader.setDelimiters(fieldTerminator,lineTerminator);
             loader.setParseQuotes(false);
             return loader;
