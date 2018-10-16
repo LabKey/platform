@@ -18,6 +18,7 @@ package org.labkey.api.pipeline.file;
 import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.ParamParser;
 import org.labkey.api.pipeline.PipeRoot;
@@ -109,7 +110,7 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
         catch (Exception e)
         {
             // This shouldn't happen; bad input xml would have been detected upstream of here.
-            throw new RuntimeException("Invalid xml format", e);
+            throw new ApiUsageException("Invalid xml format", e);
         }
     }
 
