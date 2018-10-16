@@ -307,19 +307,6 @@ LABKEY.Filter = new function()
         return result;
     }
 
-    function getFilter(columnName, value, filterType)
-    {
-        var column = filterType.isTableWise() ? "*" : columnName;
-
-        return {
-            getColumnName: function() {return column;},
-            getValue: function() {return value},
-            getFilterType: function() {return filterType},
-            getURLParameterName : function(dataRegionName) { return (dataRegionName || "query") + "." + column + "~" + filterType.getURLSuffix();},
-            getURLParameterValue : function() { return filterType.isDataValueRequired() ? value : "" }
-        };
-    }
-
     var ret = /** @scope LABKEY.Filter */{
 
         // WARNING: Keep in sync and in order with all other client apis and docs
@@ -509,9 +496,7 @@ LABKEY.Filter = new function()
 
         create : function(columnName, value, filterType)
         {
-            if (!filterType)
-                filterType = this.Types.EQUAL;
-            return getFilter(columnName, value, filterType);
+            return new LABKEY.Query.Filter(columnName, value, filterType);
         },
 
         /**

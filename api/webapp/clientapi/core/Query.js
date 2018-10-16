@@ -1471,6 +1471,11 @@ LABKEY.Query.Filter = function (columnName, value, filterType)
         filterType = LABKEY.Filter.Types.EQUAL;
     }
 
+    if (filterType.isTableWise())
+    {
+        columnName = '*';
+    }
+
     /**
      * @private
      */
