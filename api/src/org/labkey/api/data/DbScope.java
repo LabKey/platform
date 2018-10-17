@@ -1747,27 +1747,33 @@ public class DbScope
             }
 
             _closesToIgnore++;
-            if (isOutermostTransaction())
+            try
             {
-                try
+                if (isOutermostTransaction())
                 {
-                    try (Connection conn = getConnection())
+                    try
                     {
-                        CommitTaskOption.PRECOMMIT.run(this);
-                        conn.commit();
-                        conn.setAutoCommit(true);
+                        try (Connection conn = getConnection())
+                        {
+                            CommitTaskOption.PRECOMMIT.run(this);
+                            conn.commit();
+                            conn.setAutoCommit(true);
+                        }
+
+                        popCurrentTransaction();
+
+                        CommitTaskOption.POSTCOMMIT.run(this);
                     }
-
-                    popCurrentTransaction();
-
-                    CommitTaskOption.POSTCOMMIT.run(this);
-                }
-                catch (SQLException e)
-                {
-                    throw new RuntimeSQLException(e);
+                    catch (SQLException e)
+                    {
+                        throw new RuntimeSQLException(e);
+                    }
                 }
             }
-            decrement();
+            finally // do transaction/lock bookkeeping no matter what else has happened.
+            {
+                decrement();
+            }
         }
 
         @Override
