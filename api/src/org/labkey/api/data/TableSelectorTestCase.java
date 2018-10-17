@@ -79,7 +79,7 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
         {
             String message = e.getMessage();
             // Verify that the exception message does not contain SQL (we don't want to display SQL to users...
-            assertTrue("Exception message " + message + " seems to contain SQL", message.contains("SQL []") && !message.contains("SELECT"));
+            assertTrue("Exception message " + message + " seems to contain SQL",  !message.contains("SELECT"));
             // ...and that the exception is decorated, so the SQL does end up in mothership
             String decoration = ExceptionUtil.getExceptionDecoration(e, ExceptionUtil.ExceptionInfo.DialectSQL);
             assertNotNull("Exception was not decorated", decoration);
