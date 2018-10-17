@@ -101,6 +101,17 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
             _pkFieldKey = pkFieldKey;
         }
 
+//        public Factory(MultiValuedMap<String, String> properties)
+//        {
+//            _pd = null;
+//            _detailsUrl = null;
+//            _container = c;
+//            _schemaKey = schemaKey;
+//            _queryName = queryName;
+//            _pkFieldKey = pkFieldKey;
+//            _objectURIFieldKey = null;
+//        }
+
         @Override
         public void remapFieldKeys(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
         {
