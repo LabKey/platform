@@ -1698,7 +1698,8 @@ public class DbScope
         {
             if (_closesToIgnore == 0)
             {
-                boolean locksEmpty = decrement();
+                boolean locksEmpty = isOutermostTransaction();
+                decrement();
                 if (!locksEmpty)
                 {
                     _conn.markAsSuspiciouslyClosed();
@@ -1746,7 +1747,7 @@ public class DbScope
             }
 
             _closesToIgnore++;
-            if (decrement())
+            if (isOutermostTransaction())
             {
                 try
                 {
@@ -1766,6 +1767,7 @@ public class DbScope
                     throw new RuntimeSQLException(e);
                 }
             }
+            decrement();
         }
 
         @Override
@@ -1797,21 +1799,24 @@ public class DbScope
             _caches.clear();
         }
 
-        /** @return whether we've reached zero and should therefore commit if that's the request, or false if we should defer to a future call*/
-        public boolean decrement()
+        private boolean isOutermostTransaction()
         {
             if (_locks.isEmpty())
             {
                 throw createIllegalStateException("No transactions remain, can't decrement!", DbScope.this, _conn);
             }
-            List<Lock> locks= _locks.remove(_locks.size() - 1);
+            return _locks.size() == 1;
+        }
+
+        /** Remove current transaction nesting and unlock any locks */
+        private void decrement()
+        {
+            List<Lock> locks = _locks.remove(_locks.size() - 1);
             for (Lock lock : locks)
             {
                 // Release all the locks
                 lock.unlock();
             }
-
-            return _locks.isEmpty();
         }
 
         private void closeConnection()

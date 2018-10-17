@@ -210,42 +210,50 @@ public abstract class AbstractPropertyStore implements PropertyStore
             String category = (String)params[2];
 
             validateStore();
-            ColumnInfo setColumn = _prop.getTableInfoProperties().getColumn("Set");
-            String setSelectName = setColumn.getSelectName();   // Keyword in some dialects
-
-            SQLFragment sql = new SQLFragment("SELECT " + setSelectName + ", Encryption FROM " + _prop.getTableInfoPropertySets() +
-                    " WHERE UserId = ? AND ObjectId = ? AND Category = ?", user, container, category);
-
-            Map<String, Object> map = new SqlSelector(_prop.getSchema(), sql).getMap();
-            if (map == null)
-            {
-                return null;
-            }
-            PropertyEncryption propertyEncryption;
-
-            String encryptionName = (String) map.get("Encryption");
-            propertyEncryption = PropertyEncryption.getBySerializedName(encryptionName);
-
-            if (null == propertyEncryption)
-                throw new IllegalStateException("Unknown encryption name: " + encryptionName);
-
-            // map should always contain the set number
-            int set = (Integer)map.get("Set");
-
-            PropertyMap m = new PropertyMap(set, user, container.getId(), category, propertyEncryption, AbstractPropertyStore.this);
-
-            validatePropertyMap(m);
-
-            // Map-filling query needed only for existing property set
-            Filter filter = new SimpleFilter(setColumn.getFieldKey(), set);
-            TableInfo tinfo = _prop.getTableInfoProperties();
-            TableSelector selector = new TableSelector(tinfo, tinfo.getColumns("Name", "Value"), filter, null);
-            fillValueMap(selector, m);
+            PropertyMap m = getPropertyMapFromDatabase(user, container, category);
+            if (m == null) return null;
             m.afterPropertiesSet(); // clear modified flag
 
             m.lock();
             return m;
         }
+    }
+
+    @Nullable
+    public PropertyManager.PropertyMap getPropertyMapFromDatabase(User user, Container container, String category)
+    {
+        ColumnInfo setColumn = _prop.getTableInfoProperties().getColumn("Set");
+        String setSelectName = setColumn.getSelectName();   // Keyword in some dialects
+
+        SQLFragment sql = new SQLFragment("SELECT " + setSelectName + ", Encryption FROM " + _prop.getTableInfoPropertySets() +
+                " WHERE UserId = ? AND ObjectId = ? AND Category = ?", user, container, category);
+
+        Map<String, Object> map = new SqlSelector(_prop.getSchema(), sql).getMap();
+        if (map == null)
+        {
+            return null;
+        }
+        PropertyEncryption propertyEncryption;
+
+        String encryptionName = (String) map.get("Encryption");
+        propertyEncryption = PropertyEncryption.getBySerializedName(encryptionName);
+
+        if (null == propertyEncryption)
+            throw new IllegalStateException("Unknown encryption name: " + encryptionName);
+
+        // map should always contain the set number
+        int set = (Integer)map.get("Set");
+
+        PropertyMap m = new PropertyMap(set, user, container.getId(), category, propertyEncryption, AbstractPropertyStore.this);
+
+        validatePropertyMap(m);
+
+        // Map-filling query needed only for existing property set
+        Filter filter = new SimpleFilter(setColumn.getFieldKey(), set);
+        TableInfo tinfo = _prop.getTableInfoProperties();
+        TableSelector selector = new TableSelector(tinfo, tinfo.getColumns("Name", "Value"), filter, null);
+        fillValueMap(selector, m);
+        return m;
     }
 
     @Override

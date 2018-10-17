@@ -467,28 +467,30 @@ public class PropertyManager
             {
                 _log.debug(String.format("<PropertyMap.save() [%d, %s, %s, %d, map.hashCode: %d, lock: %s]>", _user.getUserId(), _objectId, _category, _set, hashCode(), lock.toString()));
 
-                if (_set == -1)
+                Container container = ContainerManager.getForId(_objectId);
+                if (container == null)
                 {
-                    Container container = ContainerManager.getForId(_objectId);
-                    if (container == null)
-                    {
-                        throw new IllegalStateException("No container found with EntityId: " + _objectId);
-                    }
-                    PropertyMap existingMap = _store.getWritableProperties(_user, container, _category, false);
-                    if (existingMap == null)
-                    {
-                        Map<String, Object> insertMap = new HashMap<>();
-                        insertMap.put("UserId", _user);
-                        insertMap.put("ObjectId", _objectId);
-                        insertMap.put("Category", _category);
-                        insertMap.put("Encryption", _propertyEncryption.getSerializedName());
-                        insertMap = Table.insert(_user, SCHEMA.getTableInfoPropertySets(), insertMap);
-                        _set = (Integer) insertMap.get("Set");
-                    }
-                    else
-                    {
-                        _set = existingMap.getSet();
-                    }
+                    throw new IllegalStateException("No container found with EntityId: " + _objectId);
+                }
+                // Check for existing map directly from the database, as the cache may be stale.
+                PropertyMap existingMap = _store.getPropertyMapFromDatabase(_user, container, _category);
+
+                if (existingMap == null)
+                {
+                    Map<String, Object> insertMap = new HashMap<>();
+                    insertMap.put("UserId", _user);
+                    insertMap.put("ObjectId", _objectId);
+                    insertMap.put("Category", _category);
+                    insertMap.put("Encryption", _propertyEncryption.getSerializedName());
+                    insertMap = Table.insert(_user, SCHEMA.getTableInfoPropertySets(), insertMap);
+                    _set = (Integer) insertMap.get("Set");
+                }
+                else
+                {
+                    // Inside the scope of this ReentrantLock, an existing database value for "set" is the canonical value.
+                    // This is true even if we'd thought it was new, or had a value for "set" coming in; another thread may have
+                    // changed this state prior to this thread's call to save().
+                    _set = existingMap.getSet();
                 }
 
                 // delete removed properties
@@ -522,13 +524,17 @@ public class PropertyManager
         {
             // Lock on code that changes the underlying database storage, to avoid constraint violations if we have multiple
             // threads manipulating at the same time
-            try (Transaction transaction = SCHEMA.getSchema().getScope().ensureTransaction(DbScope.FINAL_COMMIT_UNLOCK_TRANSACTION_KIND, PROPERTY_MAP_LOCK_MANAGER.getLock(this)))
+            final ReentrantLock lock = PROPERTY_MAP_LOCK_MANAGER.getLock(this);
+            try (Transaction transaction = SCHEMA.getSchema().getScope().ensureTransaction(DbScope.FINAL_COMMIT_UNLOCK_TRANSACTION_KIND, lock))
             {
+                _log.debug(String.format("<PropertyMap.delete() [%d, %s, %s, %d, map.hashCode: %d, lock: %s]>", _user.getUserId(), _objectId, _category, _set, hashCode(), lock.toString()));
+
                 deleteSetDirectly(_user, _objectId, _category, _store);
 
-                _store.clearCache(this);
-
+                // Make sure that we clear the previously cached version of the map
+                transaction.addCommitTask(() -> _store.clearCache(PropertyMap.this), DbScope.CommitTaskOption.IMMEDIATE, DbScope.CommitTaskOption.POSTCOMMIT);
                 transaction.commit();
+                _log.debug(String.format("</PropertyMap.delete() [%d, %s, %s, %d, map.hashCode: %d, lock: %s]>", _user.getUserId(), _objectId, _category, _set, hashCode(), lock.toString()));
             }
         }
 
@@ -813,28 +819,13 @@ public class PropertyManager
             final Container c = JunitUtil.getTestContainer();
             final String category = "TestPropertySetName";
             final PropertyStore store = PropertyManager.getNormalStore();
-            final DbScope scope = PropertySchema.getInstance().getSchema().getScope();
-
-            // Set to false to repro #35178. TODO: Remove this once PropertyManager.save() synchronization is fixed.
-            final boolean testTransacted = true;
 
             JunitUtil.createRaces(new Runnable()
             {
                 @Override
                 public void run()
                 {
-                    if (testTransacted)
-                    {
-                        try (Transaction transaction = scope.ensureTransaction())
-                        {
-                            testProps();
-                            transaction.commit();
-                        }
-                    }
-                    else
-                    {
-                        testProps();
-                    }
+                    testProps();
                 }
 
                 private void testProps()
