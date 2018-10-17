@@ -16,7 +16,6 @@
 
 package org.labkey.api.study.assay;
 
-import org.apache.commons.collections4.MultiValuedMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.CoreUrls;
@@ -38,8 +37,6 @@ import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.StringExpression;
-import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.URIUtil;
 
 import java.io.File;
@@ -49,7 +46,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
 import java.net.URI;
-import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
@@ -69,14 +65,6 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
         private String _queryName;
         private FieldKey _pkFieldKey;
         private FieldKey _objectURIFieldKey;
-        private MultiValuedMap _properties;             // metadata XML column properties
-
-        // factory for metadata XML loading
-        public Factory(MultiValuedMap properties)
-        {
-            if (properties != null)
-                _properties = properties;
-        }
 
         public Factory(PropertyDescriptor pd, Container c, @NotNull SchemaKey schemaKey, @NotNull String queryName, @NotNull FieldKey pkFieldKey)
         {
@@ -119,24 +107,13 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
                 return new FileLinkDisplayColumn(col, _pd, _container, _schemaKey, _queryName, _pkFieldKey);
             else if (_container != null)
                 return new FileLinkDisplayColumn(col, _pd, _container, _objectURIFieldKey);
-            else if (_properties != null)
-                return new FileLinkDisplayColumn(col, _properties);
             else
                 throw new IllegalArgumentException("Cannot create a renderer from the specified configuration properties");
         }
     }
 
-    // XML defined properties
-    private static final String THUMBNAIL_MIME_TYPE = "thumbnailMimeType";
-    private static final String THUMBNAIL_IMAGE_URL = "thumbnailImageUrl";
-    private static final String THUMBNAIL_IMAGE_WIDTH = "thumbnailImageWidth";
-    private static final String POPUP_IMAGE_URL = "popupImageUrl";
-    private static final String POPUP_IMAGE_WIDTH = "popupImageWidth";
-
     private Container _container;
-    private MultiValuedMap<String, String> _properties;
     private FieldKey _pkFieldKey;
-
     private FieldKey _objectURIFieldKey;
 
     /** Use schemaName/queryName and pk FieldKey value to resolve File in CoreController.DownloadFileLinkAction. */
@@ -187,22 +164,6 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
         setURLExpression(detailsURL);
     }
 
-    public FileLinkDisplayColumn(ColumnInfo col, MultiValuedMap properties)
-    {
-        super(col);
-        _properties = properties;
-        if (_properties != null)
-        {
-            String value = _properties.get(THUMBNAIL_IMAGE_WIDTH).stream().findFirst().orElse(null);
-            if (value != null)
-                _thumbnailWidth = value;
-
-            value = _properties.get(POPUP_IMAGE_WIDTH).stream().findFirst().orElse(null);
-            if (value != null)
-                _popupWidth = value;
-        }
-    }
-
     protected Object getInputValue(RenderContext ctx)
     {
         ColumnInfo col = getColumnInfo();
@@ -240,10 +201,10 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
         {
             File f = FileUtil.getAbsoluteCaseSensitiveFile(new File(value.toString()));
             NetworkDrive.ensureDrive(f.getPath());
-            result = relativize(f, FileContentService.get().getFileRoot(getContainer(ctx), FileContentService.ContentType.files));
+            result = relativize(f, FileContentService.get().getFileRoot(_container, FileContentService.ContentType.files));
             if (result == null)
             {
-                result = relativize(f, FileContentService.get().getFileRoot(getContainer(ctx), FileContentService.ContentType.pipeline));
+                result = relativize(f, FileContentService.get().getFileRoot(_container, FileContentService.ContentType.pipeline));
             }
             if (result == null)
             {
@@ -299,11 +260,9 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
 
             if (!f.exists())
             {
-                String fullPath = PipelineService.get().findPipelineRoot(getContainer(ctx)).getRootPath().getAbsolutePath() + File.separator + AssayFileWriter.DIR_NAME + File.separator + value.toString();
+                String fullPath = PipelineService.get().findPipelineRoot(_container).getRootPath().getAbsolutePath() + File.separator + AssayFileWriter.DIR_NAME + File.separator + value.toString();
                 f = new File(fullPath);
             }
-
-            String imageUrl = getCustomUrl(ctx, THUMBNAIL_IMAGE_URL);
 
             // It's probably a file, so check that first
             if (f.isFile())
@@ -313,11 +272,6 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
             else if (f.isDirectory())
             {
                 super.renderIconAndFilename(ctx, out, filename, Attachment.getFileIcon(".folder"), null, link, false);
-            }
-            else if (imageUrl != null)
-            {
-                // custom image URLs through the column metadata
-                super.renderIconAndFilename(ctx, out, filename, imageUrl, getCustomUrl(ctx, POPUP_IMAGE_URL), link, thumbnail);
             }
             else
             {
@@ -335,31 +289,5 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
     public Object getDisplayValue(RenderContext ctx)
     {
         return getFileName(ctx, super.getDisplayValue(ctx));
-    }
-
-    private Container getContainer(RenderContext ctx)
-    {
-        if (_container == null)
-        {
-            if (getColumnInfo().getParentTable().getUserSchema() != null)
-                _container = getColumnInfo().getParentTable().getUserSchema().getContainer();
-            else
-                _container = ctx.getContainer();
-        }
-        return _container;
-    }
-
-    private String getCustomUrl(RenderContext ctx, String propName)
-    {
-        if (_properties != null)
-        {
-            String value = _properties.get(propName).stream().findFirst().orElse(null);
-            if (value != null)
-            {
-                StringExpression url = StringExpressionFactory.createURL(value);
-                return url.eval(ctx);
-            }
-        }
-        return null;
     }
 }
