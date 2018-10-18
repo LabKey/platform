@@ -1669,12 +1669,160 @@ boxPlot.render();
             groupedTrendlineData = [], groupedTrendlineSeriesData = {},
             hasYRightMetric = config.properties.valueRight || config.properties.positiveValueRight || config.properties.valueRightMR;
 
+        var convertToPercentDeviation = function(value, mean) {
+            return Math.round(((value / mean) * 100) * 100) / 100;
+        };
+
+        var convertToStandardDeviation = function(value, mean, stddev) {
+            return Math.round(((value - mean) / stddev) * 100) / 100;
+        };
+
+        // Handles Y Axis domain when performing percent or standard deviation conversions
+        var convertYAxisDomain = function(value, stddev, mean) {
+            var maxValue, minValue;
+            if (!config.properties.combined && config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings) {
+                maxValue = mean + (3 * stddev);
+                minValue = mean - (3 * stddev);
+
+                if (value > maxValue)
+                    maxValue = value;
+
+                if (value < minValue)
+                    minValue = value;
+
+                if (config.properties.yAxisDomain[0] > maxValue) {
+                    config.properties.yAxisDomain[0] = maxValue;
+                }
+
+                if (config.properties.yAxisDomain[1] < maxValue) {
+                    config.properties.yAxisDomain[1] = maxValue;
+                }
+
+                if (config.properties.yAxisDomain[0] > minValue) {
+                    config.properties.yAxisDomain[0] = minValue;
+                }
+
+                if (config.properties.yAxisDomain[1] < minValue) {
+                    config.properties.yAxisDomain[1] = minValue;
+                }
+            }
+            else if (!config.properties.combined && config.qcPlotType === LABKEY.vis.TrendingLinePlotType.MovingRange
+                    && config.properties.valueConversion === 'percentDeviation') {
+                maxValue = mean * LABKEY.vis.Stat.MOVING_RANGE_UPPER_LIMIT_WEIGHT;
+                minValue = mean;
+
+                if (value > maxValue)
+                    maxValue = value;
+
+                if (value < minValue)
+                    minValue = value;
+
+                if (config.properties.yAxisDomain[0] > maxValue) {
+                    config.properties.yAxisDomain[0] = maxValue;
+                }
+
+                if (config.properties.yAxisDomain[1] < maxValue) {
+                    config.properties.yAxisDomain[1] = maxValue;
+                }
+
+                if (config.properties.yAxisDomain[0] > minValue) {
+                    config.properties.yAxisDomain[0] = minValue;
+                }
+
+                if (config.properties.yAxisDomain[1] < minValue) {
+                    config.properties.yAxisDomain[1] = minValue;
+                }
+            }
+            else {
+                if (config.properties.yAxisDomain[0] > value) {
+                    config.properties.yAxisDomain[0] = value;
+                }
+
+                if (config.properties.yAxisDomain[1] < value) {
+                    config.properties.yAxisDomain[1] = value;
+                }
+            }
+        };
+
+        var rangeConverted = false;
+
+        var meanProp, sdProp, valProp;
+        if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.MovingRange) {
+            meanProp = "meanMR";
+            sdProp = "stddevMR";
+            valProp = "MR";
+        }
+        else {
+            meanProp = "mean";
+            sdProp = "stdDev";
+            valProp = "value";
+        }
+
         for (var i = 0; i < config.data.length; i++)
         {
             var row = config.data[i];
 
+            // Handle percent deviation and standard deviation conversions
+            if (config.properties.valueConversion
+                    && (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.MovingRange || config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings)) {
+
+                // If mean or std dev not in row, use default values
+                if (row[valProp] !== undefined && (config.properties.valueConversion === 'percentDeviation' || config.properties.valueConversion === 'standardDeviation'))
+                {
+                    if (row[meanProp] === undefined) {
+                        if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.MovingRange) {
+                            row[meanProp] = config.properties.defaultGuideSets[row[config.properties.groupBy]].MR.Mean;
+                        }
+                        else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings) {
+                            row[meanProp] = config.properties.defaultGuideSets[row[config.properties.groupBy]].LJ.Mean;
+                        }
+                    }
+
+                    if (row[sdProp] === undefined) {
+                        row[sdProp] = config.properties.defaultStdDev;
+                        if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.MovingRange) {
+                            row[sdProp] = config.properties.defaultGuideSets[row[config.properties.groupBy]].MR.StdDev;
+                        }
+                        else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings) {
+                            row[sdProp] = config.properties.defaultGuideSets[row[config.properties.groupBy]].LJ.StdDev;
+                        }
+                    }
+                }
+
+                // Handle percent deviation value and y axis conversion
+                if (row[valProp] !== undefined && config.properties.valueConversion === 'percentDeviation') {
+
+                    row[valProp] = convertToPercentDeviation(row[valProp], row[meanProp]);
+                    row[sdProp] = convertToPercentDeviation(row[sdProp], row[meanProp]);
+
+                    row[meanProp] = 100;
+                    if (!rangeConverted) {
+                        config.properties.yAxisDomain[0] = row[meanProp];
+                        config.properties.yAxisDomain[1] = row[meanProp];
+                        rangeConverted = true;
+                    }
+
+                    convertYAxisDomain(row[valProp], row[sdProp], row[meanProp]);
+                }
+
+                // Handle standard deviation conversion and Y axis
+                else if (row[valProp] !== undefined && config.properties.valueConversion === 'standardDeviation') {
+
+                    row[valProp] = convertToStandardDeviation(row[valProp], row[meanProp], row[sdProp]);
+
+                    row[meanProp] = 0;
+                    if (!rangeConverted) {
+                        config.properties.yAxisDomain[0] = row[meanProp];
+                        config.properties.yAxisDomain[1] = row[meanProp];
+                        rangeConverted = true;
+                    }
+
+                    convertYAxisDomain(row[valProp], row[sdProp], row[meanProp]);
+                }
+            }
+
             // track the distinct values in the color variable so that we know if we need the legend or not
-            if (config.properties.color && distinctColorValues.indexOf(row[config.properties.color]) == -1) {
+            if (config.properties.color && distinctColorValues.indexOf(row[config.properties.color]) === -1) {
                 distinctColorValues.push(row[config.properties.color]);
             }
 
@@ -1760,7 +1908,7 @@ boxPlot.render();
             tickLabelMap[index] = row[config.properties.xTickLabel];
             row.seqValue = index;
 
-            if (config.qcPlotType == LABKEY.vis.TrendingLinePlotType.LeveyJennings)
+            if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings)
             {
                 if (config.properties.mean && config.properties.stdDev && !meanStdDevData[index])
                 {
@@ -1787,6 +1935,12 @@ boxPlot.render();
         }
 
         config.tickOverlapRotation = 35;
+
+        // CUSUM plots can only be linear scale
+        var yAxisScaleOverride;
+        if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.CUSUM) {
+            yAxisScaleOverride = 'linear';
+        }
 
         config.scales = {
             color: {
@@ -1816,7 +1970,7 @@ boxPlot.render();
             yLeft: {
                 scaleType: 'continuous',
                 domain: config.properties.yAxisDomain,
-                trans: config.properties.yAxisScale || 'linear',
+                trans: yAxisScaleOverride || config.properties.yAxisScale || 'linear',
                 tickFormat: function(val) {
                     return LABKEY.vis.isValid(val) && (val > 100000 || val < -100000) ? val.toExponential() : val;
                 }
@@ -1828,7 +1982,7 @@ boxPlot.render();
             config.scales.yRight = {
                 scaleType: 'continuous',
                 domain: config.properties.yAxisDomain,
-                trans: config.properties.yAxisScale || 'linear',
+                trans: yAxisScaleOverride || config.properties.yAxisScale || 'linear',
                 tickFormat: function(val) {
                     return LABKEY.vis.isValid(val) && (val > 100000 || val < -100000) ? val.toExponential() : val;
                 }
@@ -1847,7 +2001,7 @@ boxPlot.render();
                 }
             }
 
-            if (config.qcPlotType == LABKEY.vis.TrendingLinePlotType.CUSUM)
+            if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.CUSUM)
             {
                 config.scales.color = {
                     scale: function(group) {
@@ -1936,7 +2090,7 @@ boxPlot.render();
                 });
                 config.layers = [stdDev3Layer, stdDev2Layer, stdDev1Layer, meanLayer];
             }
-            else if (config.qcPlotType == LABKEY.vis.TrendingLinePlotType.CUSUM) {
+            else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.CUSUM) {
                 var range = new LABKEY.vis.Layer({
                     geom: new LABKEY.vis.Geom.ControlRange({size: 1, color: 'red', dashed: true, altColor: 'darkgrey', width: barWidth}),
                     data: config.data,
@@ -1948,17 +2102,22 @@ boxPlot.render();
                 });
                 config.layers = [range];
             }
-            else if (config.qcPlotType == LABKEY.vis.TrendingLinePlotType.MovingRange) {
-                var range = new LABKEY.vis.Layer({
-                    geom: new LABKEY.vis.Geom.ControlRange({size: 1, color: 'red', dashed: true, altColor: 'darkgrey', width: barWidth}),
-                    data: config.data,
-                    aes: {
-                        upper: function(row){return row[config.properties.meanMR] * LABKEY.vis.Stat.MOVING_RANGE_UPPER_LIMIT_WEIGHT;},
-                        lower: function(){return LABKEY.vis.Stat.MOVING_RANGE_LOWER_LIMIT;},
-                        yLeft: config.properties.mean
-                    }
-                });
-                config.layers = [range];
+            else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.MovingRange) {
+                if (config.properties.valueConversion === "standardDeviation") {
+                    config.layers = [];
+                }
+                else {
+                    var range = new LABKEY.vis.Layer({
+                        geom: new LABKEY.vis.Geom.ControlRange({size: 1, color: 'red', dashed: true, altColor: 'darkgrey', width: barWidth}),
+                        data: config.data,
+                        aes: {
+                            upper: function(row){return row[config.properties.meanMR] * LABKEY.vis.Stat.MOVING_RANGE_UPPER_LIMIT_WEIGHT;},
+                            lower: function(){return LABKEY.vis.Stat.MOVING_RANGE_LOWER_LIMIT;},
+                            yLeft: config.properties.mean
+                        }
+                    });
+                    config.layers = [range];
+                }
             }
         }
 
