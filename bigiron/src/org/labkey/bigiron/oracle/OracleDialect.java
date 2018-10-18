@@ -18,21 +18,31 @@ package org.labkey.bigiron.oracle;
 
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ConnectionPool;
 import org.labkey.api.data.ConnectionWrapper;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ResultSetWrapper;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.dialect.BaseJdbcMetaDataLocator;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
+import org.labkey.api.data.dialect.ConnectionHandler;
 import org.labkey.api.data.dialect.JdbcHelper;
+import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.PkMetaDataReader;
 import org.labkey.api.data.dialect.SimpleSqlDialect;
 import org.labkey.api.data.dialect.StandardJdbcHelper;
+import org.labkey.api.data.dialect.StandardTableResolver;
 import org.labkey.api.data.dialect.StatementWrapper;
+import org.labkey.api.data.dialect.TableResolver;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -40,6 +50,7 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
@@ -49,6 +60,50 @@ import java.util.Set;
  */
 abstract class OracleDialect extends SimpleSqlDialect
 {
+    // To work around #33481, for each Oracle scope, create a special connection pool that invalidates connections before they hit the max usage limit
+    private static final Map<DbScope, ConnectionPool> META_DATA_CONNECTION_POOLS = new ConcurrentHashMap<>();
+    private static final TableResolver TABLE_RESOLVER = new StandardTableResolver() {
+        @Override
+        public JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope, @Nullable String schemaName, @Nullable String tableName) throws SQLException
+        {
+            return new BaseJdbcMetaDataLocator(scope, schemaName, tableName, new ConnectionHandler()
+            {
+                @Override
+                public Connection getConnection()
+                {
+                    ConnectionPool pool = META_DATA_CONNECTION_POOLS.computeIfAbsent(scope, OracleMetaDataConnectionPool::new);
+                    try
+                    {
+                        return pool.getConnection();
+                    }
+                    catch (SQLException e)
+                    {
+                        throw new RuntimeSQLException(e);
+                    }
+                }
+
+                @Override
+                public void releaseConnection(Connection conn)
+                {
+                    try
+                    {
+                        conn.close();
+                    }
+                    catch (SQLException e)
+                    {
+                        throw new RuntimeSQLException(e);
+                    }
+                }
+            });
+        }
+    };
+
+    @Override
+    protected TableResolver getTableResolver()
+    {
+        return TABLE_RESOLVER;
+    }
+
     @Override
     public String getProductName()
     {

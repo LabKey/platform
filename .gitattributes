@@ -153,6 +153,7 @@ bigiron/src/org/labkey/bigiron/oracle/Oracle11gR2Dialect.java -text
 bigiron/src/org/labkey/bigiron/oracle/Oracle12cDialect.java -text
 bigiron/src/org/labkey/bigiron/oracle/OracleDialect.java -text
 bigiron/src/org/labkey/bigiron/oracle/OracleDialectFactory.java -text
+bigiron/src/org/labkey/bigiron/oracle/OracleMetaDataConnectionPool.java -text
 bigiron/src/org/labkey/bigiron/sas/Sas91Dialect.java -text
 bigiron/src/org/labkey/bigiron/sas/Sas92Dialect.java -text
 bigiron/src/org/labkey/bigiron/sas/Sas93Dialect.java -text
