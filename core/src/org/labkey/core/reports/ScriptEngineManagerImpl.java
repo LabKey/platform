@@ -291,7 +291,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
             if (def != null)
                 return def;
 
-            return definitions.get(0);
+            return chooseOneEngineDef(definitions);
         }
         return null;
     }
