@@ -32,5 +32,5 @@ public interface ExpProtocolAction
     List<? extends ExpProtocolAction> getSuccessors();
     int getActionSequence();
 
-    void addSuccessor(User user, ExpProtocolAction successor) throws Exception;
+    void addSuccessor(User user, ExpProtocolAction successor);
 }
