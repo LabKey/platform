@@ -726,8 +726,7 @@
             itemName,
             itemLanguageName
         ];
-        if (!record.docker)
-            panelItems.push(itemLanguageVersion);
+        panelItems.push(itemLanguageVersion);
 
         panelItems.push(itemExtensions);
 

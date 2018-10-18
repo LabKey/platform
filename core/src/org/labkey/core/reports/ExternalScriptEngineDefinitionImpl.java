@@ -12,6 +12,7 @@ import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.security.User;
 import org.springframework.beans.MutablePropertyValues;
 
+import java.io.IOException;
 import java.util.Map;
 
 import static org.labkey.api.reports.RScriptEngine.DOCKER_R_IMAGE_TYPE;
@@ -113,7 +114,7 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
         _configuration = json.toString();
     }
 
-    public void setConfiguration(String configuration)
+    public void setConfiguration(String configuration) throws IOException
     {
         // parse the JSON object
         JSONObject json = new JSONObject(configuration);
@@ -460,7 +461,7 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
         _dockerImageConfig = dockerImageConfig;
     }
 
-    public void saveDockerImageConfig(User user)
+    public void saveDockerImageConfig(User user) throws IOException
     {
         DockerService service = DockerService.get();
         if (service != null && service.isDockerEnabled())

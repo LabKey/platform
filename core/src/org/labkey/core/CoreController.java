@@ -2228,7 +2228,7 @@ public class CoreController extends SpringActionController
             }
         }
 
-        public ApiResponse execute(ExternalScriptEngineDefinitionImpl def, BindException errors)
+        public ApiResponse execute(ExternalScriptEngineDefinitionImpl def, BindException errors) throws Exception
         {
             LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
             if (def.isDocker())
