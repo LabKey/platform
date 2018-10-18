@@ -82,12 +82,12 @@ public interface DockerService
         return null;
     }
 
-    default int saveDockerImage(User user, Map<String, String> config, String imageName, String Type, String imageDescription, boolean useAltKey, Integer rowId)
+    default int saveDockerImage(User user, Map<String, String> config, String imageName, String Type, String imageDescription, boolean useAltKey, Integer rowId) throws IOException
     {
         return -1;
     }
 
-    default int saveDockerImage(User user, String configuration, String imageName, String type, String imageDescription, Integer rowId)
+    default int saveDockerImage(User user, String configuration, String imageName, String type, String imageDescription, Integer rowId) throws IOException
     {
         return -1;
     }
@@ -137,7 +137,7 @@ public interface DockerService
         String getName();
         String getType();
         String getDescription();
-        String getConfiguration();
+        String getConfiguration() throws IOException;
 
         String getImageName();
         Integer getPort();
@@ -149,8 +149,6 @@ public interface DockerService
         String getAppArmorProfile();
         String getLabKeyHostIP();
         String getExtraENVs();
-
-        DockerImage fromJSON(String config);
     }
 
     class ImageConfig
