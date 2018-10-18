@@ -20,6 +20,8 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.BaseViewAction;
+import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -49,6 +51,9 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependency;
+import org.springframework.beans.MutablePropertyValues;
+import org.springframework.beans.PropertyValue;
+import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -61,6 +66,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: brittp
@@ -73,29 +79,37 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
     private ExpProtocol _protocol;
     @Nullable private String _targetStudyName;
 
-    public static class PublishConfirmForm extends ProtocolIdForm implements DataRegionSelection.DataSelectionKeyForm
+    public static class PublishConfirmForm extends ProtocolIdForm implements DataRegionSelection.DataSelectionKeyForm, HasBindParameters
     {
-        private String[] splitStringArrayParam(String[] arr)
+        private void convertStringArrayParam(PropertyValue pv)
         {
-            if (arr.length == 1 && arr[0].contains("\t"))
-                return StringUtils.split(arr[0],'\t');
-            return arr;
+            if (null != pv && pv.getValue() instanceof String)
+            {
+                String str = (String)pv.getValue();
+                if (str.contains("\t"))
+                    pv.setConvertedValue(StringUtils.splitPreserveAllTokens(str,'\t'));
+            }
         }
-        private Integer[] splitIntegerArrayParam(String[] arr)
+
+        @Override
+        public BindException bindParameters(PropertyValues pvs)
         {
-            if (arr.length == 1 && arr[0].contains("\t"))
-                arr = StringUtils.split(arr[0],'\t');
-            Integer[] ints = new Integer[arr.length];
-            for (int i=0 ; i<arr.length ; i++)
-                ints[i] = Integer.parseInt(arr[i]);
-            return ints;
+            // springBindParameters() almost works as-is, except for trimming leading/trailing '\t' chars
+            // consider hooking spring's built-in converter for String[]? maybe use json encoding see ConvertType.parseParams()
+            convertStringArrayParam(pvs.getPropertyValue("targetStudy"));
+            convertStringArrayParam(pvs.getPropertyValue("participantId"));
+            convertStringArrayParam(pvs.getPropertyValue("visitId"));
+            convertStringArrayParam(pvs.getPropertyValue("date"));
+            convertStringArrayParam(pvs.getPropertyValue("objectId"));
+            return BaseViewAction.springBindParameters(this, "form", pvs);
         }
 
         private String[] _targetStudy;
         private String[] _participantId;
         private String[] _visitId;
         private String[] _date;
-        private Integer[] _objectId;
+        private String[] _objectIdStrings;
+        private List<Integer> _objectId;
         private boolean _attemptPublish;
         private boolean _validate;
         private String _dataRegionSelectionKey;
@@ -119,7 +133,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
 
         public void setTargetStudy(String[] targetStudy)
         {
-            _targetStudy = splitStringArrayParam(targetStudy);
+            _targetStudy = targetStudy;
         }
 
         public String[] getParticipantId()
@@ -129,7 +143,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
 
         public void setParticipantId(String[] participantId)
         {
-            _participantId = splitStringArrayParam(participantId);
+            _participantId = participantId;
         }
 
         public String[] getVisitId()
@@ -139,7 +153,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
 
         public void setVisitId(String[] visitId)
         {
-            _visitId = splitStringArrayParam(visitId);
+            _visitId = visitId;
         }
         
         public boolean isAttemptPublish()
@@ -155,17 +169,24 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
 
         public void setDate(String[] date)
         {
-            _date = splitStringArrayParam(date);
+            _date = date;
         }
 
-        public Integer[] getObjectId()
+        public List<Integer> getObjectIdValues()
         {
             return _objectId;
         }
 
+        public String[] getObjectId()
+        {
+            return _objectIdStrings;
+        }
+
         public void setObjectId(String[] objectId)
         {
-            _objectId = splitIntegerArrayParam(objectId);
+            _objectIdStrings = objectId;
+            if (null != objectId)
+                _objectId = Arrays.stream(objectId).map(Integer::parseInt).collect(Collectors.toList());
         }
 
         public void setAttemptPublish(boolean attemptPublish)
@@ -217,12 +238,9 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         _protocol = publishConfirmForm.getProtocol();
         AssayProvider provider = publishConfirmForm.getProvider();
         Set<Integer> selectedObjects = new HashSet<>(getCheckboxIds());
-        Integer[] allObjectsArray = publishConfirmForm.getObjectId();
+        List<Integer> allObjects = publishConfirmForm.getObjectIdValues();
 
-        List<Integer> allObjects;
-        if (allObjectsArray != null) // On first post, this is empty, so use the current selection
-            allObjects = Arrays.asList(allObjectsArray);
-        else
+        if (allObjects == null) // On first post, this is empty, so use the current selection
             allObjects = new ArrayList<>(selectedObjects);
 
         // Check if a single target study was posted for the entire run (the common case)
@@ -281,7 +299,6 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         {
             returnURL = getSummaryLink(_protocol).addParameter("clearDataRegionSelectionKey", publishConfirmForm.getDataRegionSelectionKey());
         }
-        String script = "LABKEY.setSubmit(true);"; // Need to prevent a warning if the user clicks on these buttons
 
         ActionURL publishURL = getPublishHandlerURL(_protocol);
 
@@ -293,7 +310,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
 
         publishURL.replaceParameter("validate", "true");
         ActionButton validateButton = new ActionButton(publishURL, "Re-Validate");
-        validateButton.setScript(script, true);
+        validateButton.setScript("return assayPublish_onCopyToStudy(this)", true);
         buttons.add(validateButton);
 
         if (mismatched)
@@ -309,7 +326,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         }
 
         ActionButton cancelButton = new ActionButton("Cancel", returnURL);
-        cancelButton.setScript(script, true);
+        cancelButton.setScript("LABKEY.setSubmit(true);", true);
         buttons.add(cancelButton);
 
 

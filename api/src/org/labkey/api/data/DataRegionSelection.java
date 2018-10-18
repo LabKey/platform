@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -152,6 +153,8 @@ public class DataRegionSelection
     public static @NotNull Set<String> getSelected(ViewContext context, @Nullable String key, boolean mergeSession, boolean clearSession)
     {
         String[] values = context.getRequest().getParameterValues(DataRegion.SELECT_CHECKBOX_NAME);
+        if (null != values && values.length == 1 && values[0].contains("\t"))
+            values = StringUtils.split(values[0],'\t');
         List<String> parameterSelected = values == null ? new ArrayList<>() : Arrays.asList(values);
         Set<String> result = new LinkedHashSet<>(parameterSelected);
 
