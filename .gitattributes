@@ -400,6 +400,7 @@ api/src/org/labkey/api/data/ColumnLogging.java -text
 api/src/org/labkey/api/data/ColumnRenderProperties.java -text
 api/src/org/labkey/api/data/CompareType.java -text
 api/src/org/labkey/api/data/ConditionalFormat.java -text
+api/src/org/labkey/api/data/ConnectionPool.java -text
 api/src/org/labkey/api/data/ConnectionWrapper.java -text
 api/src/org/labkey/api/data/Constraint.java -text
 api/src/org/labkey/api/data/ContainerDisplayColumn.java -text
@@ -597,7 +598,9 @@ api/src/org/labkey/api/data/WrappedColumn.java -text
 api/src/org/labkey/api/data/bigiron/AbstractClrInstallationManager.java -text
 api/src/org/labkey/api/data/bigiron/ClrAssemblyManager.java -text
 api/src/org/labkey/api/data/dialect/AbstractDialectRetrievalTestCase.java -text
+api/src/org/labkey/api/data/dialect/BaseJdbcMetaDataLocator.java -text
 api/src/org/labkey/api/data/dialect/ColumnMetaDataReader.java -text
+api/src/org/labkey/api/data/dialect/ConnectionHandler.java -text
 api/src/org/labkey/api/data/dialect/DatabaseMaintenanceTask.java -text
 api/src/org/labkey/api/data/dialect/DatabaseNotSupportedException.java -text
 api/src/org/labkey/api/data/dialect/DialectStringHandler.java -text

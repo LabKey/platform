@@ -16,11 +16,10 @@
 package org.labkey.api.data.dialect;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.ColumnInfo.ImportedKey;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbScope.Transaction;
 
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 
 /**
@@ -30,86 +29,30 @@ import java.sql.SQLException;
  */
 
 // This works for all cases except MySQL and SQL Server synonyms
-public class StandardJdbcMetaDataLocator implements JdbcMetaDataLocator
+public class StandardJdbcMetaDataLocator extends BaseJdbcMetaDataLocator
 {
-    private final DbScope _scope;
-    private final DbScope.Transaction _transaction;
-    private final DatabaseMetaData _dbmd;
-
-    private final String _schemaName;
-    private final String _tableNamePattern;
-
-    public StandardJdbcMetaDataLocator(DbScope scope, String schemaName, @Nullable String tableNamePattern, DbScope.Transaction transaction) throws SQLException
+    // Use a transaction to share the connection... revisit once we share connections by default
+    public StandardJdbcMetaDataLocator(DbScope scope, String schemaName, @Nullable String tableNamePattern, Transaction transaction) throws SQLException
     {
-        _scope = scope;
-        _transaction = transaction;
-        _dbmd = _transaction.getConnection().getMetaData();
-        _schemaName = schemaName;
-        _tableNamePattern = tableNamePattern;
+        super(scope, schemaName, tableNamePattern, new ConnectionHandler()
+        {
+            @Override
+            public Connection getConnection()
+            {
+                return transaction.getConnection();
+            }
+
+            @Override
+            public void releaseConnection(Connection conn)
+            {
+                transaction.commit();
+                transaction.close();
+            }
+        });
     }
 
     public StandardJdbcMetaDataLocator(DbScope scope, String schemaName, @Nullable String tableNamePattern) throws SQLException
     {
         this(scope, schemaName, tableNamePattern, scope.ensureTransaction());
-    }
-
-    @Override
-    public DbScope getScope()
-    {
-        return _scope;
-    }
-
-    public Connection getConnection()
-    {
-        return _transaction.getConnection();
-    }
-
-    @Override
-    public void close()
-    {
-        _transaction.commit();
-        _transaction.close();
-    }
-
-    @Override
-    public DatabaseMetaData getDatabaseMetaData()
-    {
-        return _dbmd;
-    }
-
-    @Override
-    public String getCatalogName()
-    {
-        return _scope.getDatabaseName();
-    }
-
-    @Override
-    public String getSchemaName()
-    {
-        return _schemaName;
-    }
-
-    @Override
-    public String getTableName()
-    {
-        return _tableNamePattern;
-    }
-
-    @Override
-    public String[] getTableTypes()
-    {
-        return _scope.getSqlDialect().getTableTypes();
-    }
-
-    @Override
-    public ImportedKey getImportedKey(String fkName, String pkSchemaName, String pkTableName, String pkColumnName, String colName)
-    {
-        return new ImportedKey(fkName, pkSchemaName, pkTableName, pkColumnName, colName);
-    }
-
-    @Override
-    public boolean supportsSchemas()
-    {
-        return true;
     }
 }
