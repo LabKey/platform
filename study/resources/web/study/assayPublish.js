@@ -17,8 +17,6 @@ function assayPublish_onCopyToStudy(el, fieldNames)
     for ( var i = 0; i < formEl.elements.length; i++ )
     {
         var e = formEl.elements[i];
-        if (!e.name || e.name.charAt(0) === '.')
-            continue;
         if (e.checked || (e.type !== "radio" && e.type !== "checkbox"))
         {
             var array = formData[e.name];
