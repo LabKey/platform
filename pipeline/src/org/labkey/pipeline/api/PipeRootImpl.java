@@ -42,11 +42,9 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -319,13 +317,10 @@ public class PipeRootImpl implements PipeRoot
         if (path.startsWith("./"))
             path = path.substring(2);
 
-        File f = new File(path);
-        boolean isAbsolute = f.isAbsolute();
-
         // Check if the file already exists on disk
         for (File root : getRootPaths())
         {
-            File file = isAbsolute ? f : new File(root, path);
+            File file = new File(root, path);
             // Check that it's under the root to protect against ../../ type paths
             if (file.exists() && isUnderRoot(file))
             {
@@ -335,7 +330,7 @@ public class PipeRootImpl implements PipeRoot
 
         // Return the path to the default location
         File root = getRootPath();
-        File file = FileUtil.getAbsoluteCaseSensitiveFile(isAbsolute ? f : new File(root, path));
+        File file = FileUtil.getAbsoluteCaseSensitiveFile(new File(root, path));
         // Check that it's under the root to protect against ../../ type paths
         if (!isUnderRoot(file))
         {
