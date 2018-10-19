@@ -62,10 +62,12 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.roles.FolderAdminRole;
+import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
@@ -87,6 +89,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
@@ -755,6 +758,26 @@ public class SecurityApiActions
             if (policy == null)
                 throw new IllegalArgumentException("Unable to load policy from map.");
 
+            if (container.isRoot() && !user.isInSiteAdminGroup())
+            {
+                // CONSIDER move check for unauthorized changes to a new SecurityPolicy save() method
+                SortedSet<RoleAssignment> savedAssignments   = oldPolicy.getAssignments();
+                SortedSet<RoleAssignment> updatedAssignments = policy.getAssignments();
+                Set<Role> changedRoles = new HashSet<>();
+                for (RoleAssignment r : savedAssignments)
+                    if (!updatedAssignments.contains(r))
+                        changedRoles.add(r.getRole());
+                for (RoleAssignment r : updatedAssignments)
+                    if (!savedAssignments.contains(r))
+                        changedRoles.add(r.getRole());
+
+                // AppAdmin cannot change assignments to SiteAdminRole or PlatformDeveloperRole
+                if (changedRoles.contains(RoleManager.getRole(SiteAdminRole.class)))
+                    errors.reject(ERROR_MSG, "You do not have permission to modify the Site Admin role");
+                if (changedRoles.contains(RoleManager.getRole(PlatformDeveloperRole.class)))
+                    errors.reject(ERROR_MSG, "You do not have permission to modify the Platform Developer role");
+            }
+
             //if root container permissions update, check for app admin removal
             if (container.isRoot() && resource.getResourceName().equals("") && user.isApplicationAdmin()
                     && !user.hasApplicationAdminForPolicy(policy) && !form.isConfirm())
@@ -767,17 +790,20 @@ public class SecurityApiActions
                 return new ApiSimpleResponse(props);
             }
 
-            try
+            if (!errors.hasErrors())
             {
-                //save it
-                SecurityPolicyManager.savePolicy(policy);
+                try
+                {
+                    //save it
+                    SecurityPolicyManager.savePolicy(policy);
 
-                //audit log
-                writeToAuditLog(resource, oldPolicy, policy);
-            }
-            catch(OptimisticConflictException e)
-            {
-                errors.reject(null, e.getMessage());
+                    //audit log
+                    writeToAuditLog(resource, oldPolicy, policy);
+                }
+                catch (OptimisticConflictException e)
+                {
+                    errors.reject(null, e.getMessage());
+                }
             }
 
             return new ApiSimpleResponse("success", !errors.hasErrors());
