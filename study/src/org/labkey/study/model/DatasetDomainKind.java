@@ -340,6 +340,12 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
             else
                 throw new IllegalArgumentException("Unable to find a category named : " + categoryName + " in this folder.");
         }
+        else if (categoryId != null)
+        {
+            // validate the category ID
+            if (ViewCategoryManager.getInstance().getCategory(container, categoryId) == null)
+                throw new IllegalArgumentException("Unable to find a category with the ID : " + categoryId + " in this folder.");
+        }
 
         try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
         {
