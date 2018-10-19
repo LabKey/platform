@@ -15,6 +15,7 @@
  */
 package org.labkey.api.reports.model;
 
+import jdk.internal.jline.internal.Nullable;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -79,11 +80,13 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
         return ViewCategoryCache.get().getTopLevelCategories(c.getId());
     }
 
+    @Nullable
     public ViewCategory getCategory(Container c, int rowId)
     {
         return getCategory(c.getId(), rowId);
     }
 
+    @Nullable
     public ViewCategory getCategory(String containerId, int rowId)
     {
         return ViewCategoryCache.get().getViewCategory(containerId, rowId);
@@ -97,6 +100,7 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
      *              a parent named 'reports'. Current hierarchy depth is limited to one level deep.
      * @return The ViewCategory or null
      */
+    @Nullable
     public ViewCategory getCategory(Container c, String... parts)
     {
         return ViewCategoryCache.get().getViewCategory(c.getId(), parts);
