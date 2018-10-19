@@ -69,12 +69,10 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
     {
         if (null != filename)
         {
-            String url = null;
+            String url = renderURL(ctx);
 
             if (link)
             {
-                url = renderURL(ctx);
-
                 if (null != url)
                 {
                     out.write("<a title=\"Download attached file\" href=\"");
@@ -91,18 +89,21 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
 
             if ((url != null || fileIconUrl != null) && thumbnail && isImage)
             {
-                String popupUrl = popupIconUrl != null ? ensureAbsoluteUrl(ctx, popupIconUrl) : (url != null ? PageFlowUtil.filter(url) : ensureAbsoluteUrl(ctx, fileIconUrl));
+                String popupUrl = popupIconUrl != null ? ensureAbsoluteUrl(ctx, popupIconUrl) : (url != null ? ensureAbsoluteUrl(ctx, url) : null);
                 StringBuilder popupHtml = new StringBuilder();
-                popupHtml.append("<img style=\"").
-                        append(_popupWidth != null ? "width:" + _popupWidth : "max-width:300px").append("; height:auto;\" src=\"").
-                        append(popupUrl).
-                        append("\" />");
+                if (popupUrl != null)
+                {
+                    popupHtml.append("<img style=\"").
+                            append(_popupWidth != null ? "width:" + _popupWidth : "max-width:300px").append("; height:auto;\" src=\"").
+                            append(PageFlowUtil.filter(popupUrl)).
+                            append("\" />");
+                }
 
-                String thumbnailUrl = fileIconUrl != null ? ensureAbsoluteUrl(ctx, fileIconUrl) : PageFlowUtil.filter(url);
+                String thumbnailUrl = fileIconUrl != null ? ensureAbsoluteUrl(ctx, fileIconUrl) : ensureAbsoluteUrl(ctx, url);
                 StringBuilder thumbnailHtml = new StringBuilder();
                 thumbnailHtml.append("<img style=\"display:block; height:auto;").
                         append(_thumbnailWidth != null ? "width:" + _thumbnailWidth : "max-width:32px").append("; vertical-align:middle\"").
-                        append(" src=\"").append(thumbnailUrl).append("\"").
+                        append(" src=\"").append(PageFlowUtil.filter(thumbnailUrl)).append("\"").
                         append(" title=\"").append(PageFlowUtil.filter(displayName)).append("\"").
                         append("\" />");
 
@@ -153,27 +154,37 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
         return url;
     }
 
+    protected boolean hasFileInputHtml()
+    {
+        return true;
+    }
+
     public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
     {
-        String filename = getFileName(ctx, value);
-        String formFieldName = ctx.getForm().getFormFieldName(getBoundColumn());
-
-        Input.InputBuilder input = new Input.InputBuilder()
-                .type("file")
-                .name(getInputPrefix() + formFieldName)
-                .disabled(isDisabledInput(ctx))
-                .needsWrapping(false);
-
-        if (null != filename)
+        if (hasFileInputHtml())
         {
-            // Existing value, so tell the user the file name, allow the file to be removed, and a new file uploaded
-            renderThumbnailAndRemoveLink(out, ctx, filename, input.build().toString());
+            String filename = getFileName(ctx, value);
+            String formFieldName = ctx.getForm().getFormFieldName(getBoundColumn());
+
+            Input.InputBuilder input = new Input.InputBuilder()
+                    .type("file")
+                    .name(getInputPrefix() + formFieldName)
+                    .disabled(isDisabledInput(ctx))
+                    .needsWrapping(false);
+
+            if (null != filename)
+            {
+                // Existing value, so tell the user the file name, allow the file to be removed, and a new file uploaded
+                renderThumbnailAndRemoveLink(out, ctx, filename, input.build().toString());
+            }
+            else
+            {
+                // No existing value, so render just the regular <input type=file> element
+                out.write(input.build().toString());
+            }
         }
         else
-        {
-            // No existing value, so render just the regular <input type=file> element
-            out.write(input.build().toString());
-        }
+            super.renderInputHtml(ctx, out, value);
     }
 
     /**

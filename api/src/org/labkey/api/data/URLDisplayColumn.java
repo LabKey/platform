@@ -38,7 +38,6 @@ public class URLDisplayColumn extends AbstractFileDisplayColumn
     private static final String POPUP_IMAGE_URL = "popupImageUrl";
     private static final String POPUP_IMAGE_WIDTH = "popupImageWidth";
 
-    private Container _container;
     private MultiValuedMap<String, String> _properties;
 
     public URLDisplayColumn(ColumnInfo col, MultiValuedMap properties)
@@ -73,29 +72,19 @@ public class URLDisplayColumn extends AbstractFileDisplayColumn
     protected void renderIconAndFilename(RenderContext ctx, Writer out, String filename, boolean link, boolean thumbnail) throws IOException
     {
         Object value = getValue(ctx);
+        String url = renderURL(ctx);
         String imageUrl = getCustomUrl(ctx, THUMBNAIL_IMAGE_URL);
+        String popupImageUrl = getCustomUrl(ctx, POPUP_IMAGE_URL);
 
-        if (value != null && imageUrl != null)
+        if (value != null && (url != null || imageUrl != null || popupImageUrl != null))
         {
             // custom image URLs through the column metadata
-            super.renderIconAndFilename(ctx, out, filename, imageUrl, getCustomUrl(ctx, POPUP_IMAGE_URL), link, thumbnail);
+            super.renderIconAndFilename(ctx, out, filename, imageUrl, popupImageUrl, false, thumbnail);
         }
         else
         {
             super.renderIconAndFilename(ctx, out, filename, link, thumbnail);
         }
-    }
-
-    private Container getContainer(RenderContext ctx)
-    {
-        if (_container == null)
-        {
-            if (getColumnInfo().getParentTable().getUserSchema() != null)
-                _container = getColumnInfo().getParentTable().getUserSchema().getContainer();
-            else
-                _container = ctx.getContainer();
-        }
-        return _container;
     }
 
     private String getCustomUrl(RenderContext ctx, String propName)
@@ -105,10 +94,16 @@ public class URLDisplayColumn extends AbstractFileDisplayColumn
             String value = _properties.get(propName).stream().findFirst().orElse(null);
             if (value != null)
             {
-                StringExpression url = StringExpressionFactory.createURL(value);
+                StringExpression url = StringExpressionFactory.createURL(value, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.NullResult);
                 return url.eval(ctx);
             }
         }
         return null;
+    }
+
+    @Override
+    protected boolean hasFileInputHtml()
+    {
+        return false;
     }
 }

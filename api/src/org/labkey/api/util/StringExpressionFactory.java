@@ -139,7 +139,7 @@ public class StringExpressionFactory
 
         StringExpression expr;
 
-        String key = "url:" + (nullValueBehavior == null ? "" : nullValueBehavior.name()) + ":" + str;
+        String key = "url:" + (nullValueBehavior == null ? "" : nullValueBehavior.name()) + ":" + str + ":" + (nullValueBehavior != null ? nullValueBehavior : "");
         expr = templatesUrl.get(key);
         if (null != expr)
             return expr.copy();
@@ -169,7 +169,7 @@ public class StringExpressionFactory
                 //
             }
             if (null == expr)
-                expr = new URLStringExpression(str);
+                expr = new URLStringExpression(str, nullValueBehavior);
         }
 
         templatesUrl.put(key, expr);
