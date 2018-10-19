@@ -317,7 +317,25 @@ public class AssayController extends SpringActionController
             domains.put(domain.getKey().getName(), serializeDomain(domain.getKey(), table, user));
         }
         assayProperties.put("domains", domains);
+        assayProperties.put("links", serializeAssayLinks(protocol, provider, c, user));
         return assayProperties;
+    }
+
+    private static Map<String, Object> serializeAssayLinks(ExpProtocol protocol, AssayProvider provider, Container c, User user)
+    {
+        Map<String, Object> links = new HashMap<>();
+        AssayUrls urlProvider = PageFlowUtil.urlProvider(AssayUrls.class);
+
+        links.put("batches", urlProvider.getAssayBatchesURL(c, protocol, null));
+        links.put("begin", urlProvider.getProtocolURL(c, protocol, AssayBeginAction.class));
+        links.put("designCopy", urlProvider.getDesignerURL(c, protocol, true, null));
+        links.put("designDelete", urlProvider.getDeleteDesignURL(protocol));
+        links.put("designEdit", urlProvider.getDesignerURL(c, protocol, false, null));
+        links.put("import", provider.getImportURL(c, protocol));
+        links.put("results", urlProvider.getAssayResultsURL(c, protocol));
+        links.put("runs", urlProvider.getAssayRunsURL(c, protocol, null));
+
+        return links;
     }
 
     private static List<Map<String, Object>> serializeDomain(Domain domain, TableInfo tableInfo, User user)
