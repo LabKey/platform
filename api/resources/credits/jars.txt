@@ -62,7 +62,7 @@ spring-web-4.3.20.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.spr
 spring-webmvc-4.3.20.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Basis of web framework
 sqlite-jdbc-3.7.2.jar|SQLite JDBC Driver|3.7.2|{link:bitbucket.org|https://bitbucket.org/xerial/sqlite-jdbc/wiki/Home}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|vsharma|SQLite JDBC Driver
 thumbnailator-0.4.8.jar|Thumbnailator|0.4.8|{link:thumbnailator|https://github.com/coobird/thumbnailator}|{link:MIT|http://www.opensource.org/licenses/mit-license.html}|kevink|Thumbnail generator
-tika-core-1.19.jar|Tika|1.19|{link:Apache|http://lucene.apache.org/tika/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Just detection of file content types and extraction of text (no parsers)
+tika-core-1.19.1.jar|Tika|1.19.1|{link:Apache|http://lucene.apache.org/tika/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Just detection of file content types and extraction of text (no parsers)
 validation-api-1.1.0.Final.jar|Bean Validation API (JSR 303)|1.1.0|{link:JCP|http://jcp.org/en/jsr/detail?id=303}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Validation of objects, requirement of GWT
 xmlbeans-3.0.1.jar|XMLBeans|3.0.1|{link:Apache|http://xmlbeans.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|kevink|Reading/writing XML
 xercesImpl-2.11.0.jar|Xerces|2.11.0|{link:Apache|http://xerces.apache.org/xerces2-j/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|kevink|dependents: flow module, batik library
