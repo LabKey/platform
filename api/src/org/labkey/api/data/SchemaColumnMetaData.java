@@ -209,7 +209,7 @@ public class SchemaColumnMetaData
                     else
                     {
                         // Logging to help track down #33924
-                        ExceptionUtil.logExceptionToMothership(null, new IllegalStateException("Can't resolve column name \"" + colName + "\" in schema \"" + schemaName + "\" in a " + scope.getDatabaseProductName() + " database. Valid names in _colMap: " + _colMap.keySet().toString()));
+                        ExceptionUtil.logExceptionToMothership(null, new IllegalStateException("Can't resolve PK column name \"" + colName + "\" in table \"" + ti.getSelectName() + "\" in schema \"" + schemaName + "\" in a " + scope.getDatabaseProductName() + " database. Valid names in _colMap: " + _colMap.keySet().toString()));
                     }
                 }
             }
