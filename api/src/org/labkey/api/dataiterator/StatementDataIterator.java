@@ -271,8 +271,8 @@ public class StatementDataIterator extends AbstractDataIterator
                     debug("</join() on _asyncThread>");
                 }
                 checkBackgroundException();
-                debug("</next>");
             }
+            debug("</next>");
         }
         return ret;
     }
