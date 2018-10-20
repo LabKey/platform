@@ -15,6 +15,7 @@
  */
 package org.labkey.api.reader.jxl;
 
+import jxl.format.Alignment;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -23,6 +24,9 @@ import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.VerticalAlignment;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * User: klum
@@ -105,12 +109,31 @@ public class JxlCellStyle implements CellStyle
         return _format != null && _format.isLocked();
     }
 
-    @Override
-    public short getAlignment()
+    private static final Map<Alignment, HorizontalAlignment> HORIZONTAL_ALIGNMENT_MAP = new HashMap<>();
+
+    static
     {
-        if (_format != null)
-            return (short)_format.getAlignment().getValue();
-        return 0;
+        HORIZONTAL_ALIGNMENT_MAP.put(Alignment.GENERAL, HorizontalAlignment.GENERAL);
+        HORIZONTAL_ALIGNMENT_MAP.put(Alignment.LEFT, HorizontalAlignment.LEFT);
+        HORIZONTAL_ALIGNMENT_MAP.put(Alignment.CENTRE, HorizontalAlignment.CENTER);
+        HORIZONTAL_ALIGNMENT_MAP.put(Alignment.RIGHT, HorizontalAlignment.RIGHT);
+        HORIZONTAL_ALIGNMENT_MAP.put(Alignment.FILL, HorizontalAlignment.FILL);
+        HORIZONTAL_ALIGNMENT_MAP.put(Alignment.JUSTIFY, HorizontalAlignment.JUSTIFY);
+
+        // Note: No JXL options for CENTER_SELECTION or DISTRIBUTED
+    }
+
+    @Override
+    public HorizontalAlignment getAlignment()
+    {
+        Alignment jxlAlignment = (_format != null ? _format.getAlignment() : Alignment.GENERAL);
+        return HORIZONTAL_ALIGNMENT_MAP.get(jxlAlignment);
+    }
+
+    @Override
+    public HorizontalAlignment getAlignmentEnum()
+    {
+        return getAlignment();
     }
 
     @Override
@@ -125,12 +148,29 @@ public class JxlCellStyle implements CellStyle
         return _format != null && _format.getWrap();
     }
 
-    @Override
-    public short getVerticalAlignment()
+    private static final Map<jxl.format.VerticalAlignment, VerticalAlignment> VERTICAL_ALIGNMENT_MAP = new HashMap<>();
+
+    static
     {
-        if (_format != null)
-            return (short)_format.getVerticalAlignment().getValue();
-        return 0;
+        VERTICAL_ALIGNMENT_MAP.put(jxl.format.VerticalAlignment.TOP, VerticalAlignment.TOP);
+        VERTICAL_ALIGNMENT_MAP.put(jxl.format.VerticalAlignment.CENTRE, VerticalAlignment.CENTER);
+        VERTICAL_ALIGNMENT_MAP.put(jxl.format.VerticalAlignment.BOTTOM, VerticalAlignment.BOTTOM);
+        VERTICAL_ALIGNMENT_MAP.put(jxl.format.VerticalAlignment.JUSTIFY, VerticalAlignment.JUSTIFY);
+
+        // Note: No JXL option for DISTRIBUTED
+    }
+
+    @Override
+    public VerticalAlignment getVerticalAlignment()
+    {
+        jxl.format.VerticalAlignment jxlVerticalAlignment = (_format != null ? _format.getVerticalAlignment() : jxl.format.VerticalAlignment.TOP);
+        return VERTICAL_ALIGNMENT_MAP.get(jxlVerticalAlignment);
+    }
+
+    @Override
+    public VerticalAlignment getVerticalAlignmentEnum()
+    {
+        return getVerticalAlignment();
     }
 
     @Override
@@ -160,25 +200,49 @@ public class JxlCellStyle implements CellStyle
     }
 
     @Override
-    public short getBorderLeft()
+    public BorderStyle getBorderLeft()
     {
         throw new UnsupportedOperationException("method not yet supported");
     }
 
     @Override
-    public short getBorderRight()
+    public BorderStyle getBorderLeftEnum()
     {
         throw new UnsupportedOperationException("method not yet supported");
     }
 
     @Override
-    public short getBorderTop()
+    public BorderStyle getBorderRight()
     {
         throw new UnsupportedOperationException("method not yet supported");
     }
 
     @Override
-    public short getBorderBottom()
+    public BorderStyle getBorderRightEnum()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public BorderStyle getBorderTop()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public BorderStyle getBorderTopEnum()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public BorderStyle getBorderBottom()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public BorderStyle getBorderBottomEnum()
     {
         throw new UnsupportedOperationException("method not yet supported");
     }
@@ -240,11 +304,16 @@ public class JxlCellStyle implements CellStyle
     }
 
     @Override
-    public short getFillPattern()
+    public FillPatternType getFillPattern()
     {
-        if (_format != null)
-            return (short)_format.getPattern().getValue();
-        return 0;
+        int ordinal = (_format != null ? _format.getPattern().getValue() : 0);
+        return FillPatternType.forInt(ordinal);
+    }
+
+    @Override
+    public FillPatternType getFillPatternEnum()
+    {
+        return getFillPattern();
     }
 
     @Override
@@ -296,19 +365,7 @@ public class JxlCellStyle implements CellStyle
     }
 
     @Override
-    public HorizontalAlignment getAlignmentEnum()
-    {
-        throw new UnsupportedOperationException("method not yet supported");
-    }
-
-    @Override
     public void setVerticalAlignment(VerticalAlignment verticalAlignment)
-    {
-        throw new UnsupportedOperationException("method not yet supported");
-    }
-
-    @Override
-    public VerticalAlignment getVerticalAlignmentEnum()
     {
         throw new UnsupportedOperationException("method not yet supported");
     }
@@ -320,19 +377,7 @@ public class JxlCellStyle implements CellStyle
     }
 
     @Override
-    public BorderStyle getBorderLeftEnum()
-    {
-        throw new UnsupportedOperationException("method not yet supported");
-    }
-
-    @Override
     public void setBorderRight(BorderStyle borderStyle)
-    {
-        throw new UnsupportedOperationException("method not yet supported");
-    }
-
-    @Override
-    public BorderStyle getBorderRightEnum()
     {
         throw new UnsupportedOperationException("method not yet supported");
     }
@@ -344,31 +389,13 @@ public class JxlCellStyle implements CellStyle
     }
 
     @Override
-    public BorderStyle getBorderTopEnum()
-    {
-        throw new UnsupportedOperationException("method not yet supported");
-    }
-
-    @Override
     public void setBorderBottom(BorderStyle borderStyle)
     {
         throw new UnsupportedOperationException("method not yet supported");
     }
 
     @Override
-    public BorderStyle getBorderBottomEnum()
-    {
-        throw new UnsupportedOperationException("method not yet supported");
-    }
-
-    @Override
     public void setFillPattern(FillPatternType fillPatternType)
-    {
-        throw new UnsupportedOperationException("method not yet supported");
-    }
-
-    @Override
-    public FillPatternType getFillPatternEnum()
     {
         throw new UnsupportedOperationException("method not yet supported");
     }
@@ -393,6 +420,12 @@ public class JxlCellStyle implements CellStyle
 
     @Override
     public boolean getQuotePrefixed()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public int getFontIndexAsInt()
     {
         throw new UnsupportedOperationException("method not yet supported");
     }

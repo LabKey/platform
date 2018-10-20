@@ -48,12 +48,6 @@ public class JxlRow implements Row
     }
 
     @Override
-    public Cell createCell(int column, int type)
-    {
-        throw new UnsupportedOperationException("method not yet supported");
-    }
-
-    @Override
     public void removeCell(Cell cell)
     {
         throw new UnsupportedOperationException("method not yet supported");
@@ -184,6 +178,18 @@ public class JxlRow implements Row
 
     @Override
     public int getOutlineLevel()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void shiftCellsRight(int firstShiftColumnIndex, int lastShiftColumnIndex, int step)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void shiftCellsLeft(int firstShiftColumnIndex, int lastShiftColumnIndex, int step)
     {
         throw new UnsupportedOperationException("method not yet supported");
     }

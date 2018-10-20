@@ -15,7 +15,6 @@
  */
 package org.labkey.api.reader.jxl;
 
-import org.apache.poi.hssf.util.PaneInformation;
 import org.apache.poi.ss.usermodel.AutoFilter;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellRange;
@@ -34,6 +33,7 @@ import org.apache.poi.ss.usermodel.SheetConditionalFormatting;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellAddress;
 import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.ss.util.PaneInformation;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -764,6 +764,12 @@ public class JxlSheet implements Sheet
 
     @Override
     public void setActiveCell(CellAddress cellAddress)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void shiftColumns(int startColumn, int endColumn, int n)
     {
         throw new UnsupportedOperationException("method not yet supported");
     }

@@ -700,7 +700,7 @@ public class ExcelFactory
 
             attemptImportExpectError(new File(dataloading, "doesntexist.xls"), FileNotFoundException.class);
             attemptImportExpectError(new File(dataloading, ""), FileNotFoundException.class);
-            attemptImportExpectError(new File(dataloading, "notreallyexcel.xls"), InvalidFormatException.class);
+            attemptImportExpectError(new File(dataloading, "notreallyexcel.xls"), IOException.class);
         }
 
         private void attemptImportExpectError(File excelFile, Class exceptionClass)

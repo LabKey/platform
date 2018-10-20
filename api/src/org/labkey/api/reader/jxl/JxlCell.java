@@ -87,13 +87,13 @@ public class JxlCell implements Cell
     }
 
     @Override
-    public void setCellType(int cellType)
+    public org.apache.poi.ss.usermodel.CellType getCellTypeEnum()
     {
-        throw new UnsupportedOperationException("method not yet supported");
+        return getCellType();
     }
 
     @Override
-    public org.apache.poi.ss.usermodel.CellType getCellTypeEnum()
+    public org.apache.poi.ss.usermodel.CellType getCellType()
     {
         CellType type = _cell.getType();
 
@@ -115,29 +115,13 @@ public class JxlCell implements Cell
     }
 
     @Override
-    public int getCellType()
+    public org.apache.poi.ss.usermodel.CellType getCachedFormulaResultTypeEnum()
     {
-        CellType type = _cell.getType();
-
-        if (type.equals(CellType.EMPTY))
-            return Cell.CELL_TYPE_BLANK;
-        else if (type.equals(CellType.BOOLEAN))
-            return Cell.CELL_TYPE_BOOLEAN;
-        else if (type.equals(CellType.ERROR))
-            return Cell.CELL_TYPE_ERROR;
-        else if (type.equals(CellType.BOOLEAN_FORMULA) || type.equals(CellType.DATE_FORMULA) ||
-                type.equals(CellType.NUMBER_FORMULA) || type.equals(CellType.STRING_FORMULA))
-            return Cell.CELL_TYPE_FORMULA;
-        else if (type.equals(CellType.NUMBER) || type.equals(CellType.DATE))
-            return Cell.CELL_TYPE_NUMERIC;
-        else if (type.equals(CellType.LABEL))
-            return Cell.CELL_TYPE_STRING;
-
-        return Cell.CELL_TYPE_STRING;
+        return getCachedFormulaResultType();
     }
 
     @Override
-    public org.apache.poi.ss.usermodel.CellType getCachedFormulaResultTypeEnum()
+    public org.apache.poi.ss.usermodel.CellType getCachedFormulaResultType()
     {
         CellType type = _cell.getType();
         if (type.equals(CellType.BOOLEAN_FORMULA))
@@ -146,20 +130,6 @@ public class JxlCell implements Cell
             return org.apache.poi.ss.usermodel.CellType.NUMERIC;
         else if (type.equals(CellType.STRING_FORMULA))
             return org.apache.poi.ss.usermodel.CellType.STRING;
-
-        throw new IllegalStateException("Only formula cells have cached results");
-    }
-
-    @Override
-    public int getCachedFormulaResultType()
-    {
-        CellType type = _cell.getType();
-        if (type.equals(CellType.BOOLEAN_FORMULA))
-            return Cell.CELL_TYPE_BOOLEAN;
-        else if (type.equals(CellType.DATE_FORMULA) || type.equals(CellType.NUMBER_FORMULA))
-            return Cell.CELL_TYPE_NUMERIC;
-        else if (type.equals(CellType.STRING_FORMULA))
-            return Cell.CELL_TYPE_STRING;
 
         throw new IllegalStateException("Only formula cells have cached results");
     }

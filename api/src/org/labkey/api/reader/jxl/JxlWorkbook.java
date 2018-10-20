@@ -365,12 +365,6 @@ public class JxlWorkbook implements Workbook
     }
 
     @Override
-    public void setSheetHidden(int sheetIx, int hidden)
-    {
-        throw new UnsupportedOperationException("method not yet supported");
-    }
-
-    @Override
     public void addToolPack(UDFFinder udfFinder)
     {
         throw new UnsupportedOperationException("method not yet supported");
@@ -468,6 +462,18 @@ public class JxlWorkbook implements Workbook
 
     @Override
     public int addOlePackage(byte[] oleData, String label, String fileName, String command)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public int getNumberOfFontsAsInt()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public Font getFontAt(int idx)
     {
         throw new UnsupportedOperationException("method not yet supported");
     }
