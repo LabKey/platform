@@ -50,16 +50,16 @@ quartz-2.1.7.jar|quartz|2.1.7|{link:quartz|http://quartz-scheduler.org/}|{link:A
 rengine-0.6-8.jar|Rengine|0.6-8|{link:Rserve|http://www.rforge.net/Rserve}|{link:LGPL|http://www.gnu.org/licenses/lgpl.html}|cnathe|R client classes
 rome-1.7.1.jar|ROME|1.7.1|{link:ROME|https://github.com/rometools/rome}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|nicka|Support for RSS and Atom aggregation
 rserve-0.6-8.jar|Rserve|0.6-8|{link:Rserve|http://www.rforge.net/Rserve}|{link:LGPL|http://www.gnu.org/licenses/lgpl.html}|cnathe|Library to connect to an R Server
-spring-aop-4.1.5.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|spring-webmvc.jar dependency
-spring-beans-4.1.5.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|spring-webmvc.jar dependency
-spring-context-4.1.5.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|spring-webmvc.jar dependency
-spring-core-4.1.5.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|spring-webmvc.jar dependency
-spring-expression-4.1.5.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|spring-webmvc.jar dependency
-spring-jdbc-4.1.5.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|SQL exceptions and errors
-spring-test-4.1.5.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Object instantiation framework
-spring-tx-4.1.5.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|DAO and transactions
-spring-web-4.1.5.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|spring-webmvc.jar dependency
-spring-webmvc-4.1.5.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Basis of web framework
+spring-aop-4.3.20.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|spring-webmvc.jar dependency
+spring-beans-4.3.20.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|spring-webmvc.jar dependency
+spring-context-4.3.20.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|spring-webmvc.jar dependency
+spring-core-4.3.20.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|spring-webmvc.jar dependency
+spring-expression-4.3.20.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|spring-webmvc.jar dependency
+spring-jdbc-4.3.20.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|SQL exceptions and errors
+spring-test-4.3.20.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Object instantiation framework
+spring-tx-4.3.20.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|DAO and transactions
+spring-web-4.3.20.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|spring-webmvc.jar dependency
+spring-webmvc-4.3.20.RELEASE.jar|Spring Framework|4.0.6|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Basis of web framework
 sqlite-jdbc-3.7.2.jar|SQLite JDBC Driver|3.7.2|{link:bitbucket.org|https://bitbucket.org/xerial/sqlite-jdbc/wiki/Home}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|vsharma|SQLite JDBC Driver
 thumbnailator-0.4.8.jar|Thumbnailator|0.4.8|{link:thumbnailator|https://github.com/coobird/thumbnailator}|{link:MIT|http://www.opensource.org/licenses/mit-license.html}|kevink|Thumbnail generator
 tika-core-1.17.jar|Tika|1.17|{link:Apache|http://lucene.apache.org/tika/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Just detection of file content types and extraction of text (no parsers)
