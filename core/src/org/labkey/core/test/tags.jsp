@@ -15,12 +15,11 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ taglib prefix="s" uri="http://www.springframework.org/tags" %>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
-<form:form commandName="form" enctype="multipart/form-data">
+<form:form modelAttribute="form" enctype="multipart/form-data">
     <form:errors path="*" cssClass="error"></form:errors>
     <table>
         <tr><td colspan="2"><form:errors path="a" cssClass="error"/></td></tr>
