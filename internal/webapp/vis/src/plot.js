@@ -1567,6 +1567,12 @@ boxPlot.render();
  *                          Used by LeveyJennings.
  * @param {String} [config.properties.stdDev] The data property name for the standard deviation of the expected range.
  *                          Used by LeveyJennings only.
+ * @param {String} [config.properties.valueConversion] The data property name for the conversion of the plot to either percent
+ *                          of the mean ('percentDeviation') or standard deviations ('standardDeviation').
+ *                          Used by LeveyJennings and Moving Range only.
+ * @param {String} [config.properties.defaultGuideSets] The data property name for default std dev and mean needed for percentDeviation
+ *                          or standardDeviation conversion.
+ *                          Used by LeveyJennings and Moving Range only.
  * @param {String} [config.properties.valueMR] The data property name for the moving range value to be plotted on the left y-axis.
  *                          Used by MovingRange.
  * @param {String} [config.properties.valueRightMR] The data property name for the moving range to be plotted on the right y-axis.
@@ -1678,7 +1684,7 @@ boxPlot.render();
         };
 
         // Handles Y Axis domain when performing percent or standard deviation conversions
-        var convertYAxisDomain = function(value, stddev, mean) {
+        var convertYAxisDomain = function (value, stddev, mean) {
             var maxValue, minValue;
             if (!config.properties.combined && config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings) {
                 maxValue = mean + (3 * stddev);
@@ -1758,17 +1764,15 @@ boxPlot.render();
             valProp = "value";
         }
 
-        for (var i = 0; i < config.data.length; i++)
-        {
-            var row = config.data[i];
+        for (var j = 0; j < config.data.length; j++) {
+            var row = config.data[j];
 
             // Handle percent deviation and standard deviation conversions
             if (config.properties.valueConversion
                     && (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.MovingRange || config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings)) {
 
                 // If mean or std dev not in row, use default values
-                if (row[valProp] !== undefined && (config.properties.valueConversion === 'percentDeviation' || config.properties.valueConversion === 'standardDeviation'))
-                {
+                if (row[valProp] !== undefined && (config.properties.valueConversion === 'percentDeviation' || config.properties.valueConversion === 'standardDeviation')) {
                     if (row[meanProp] === undefined) {
                         if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.MovingRange) {
                             row[meanProp] = config.properties.defaultGuideSets[row[config.properties.groupBy]].MR.Mean;
@@ -1792,10 +1796,15 @@ boxPlot.render();
                 // Handle percent deviation value and y axis conversion
                 if (row[valProp] !== undefined && config.properties.valueConversion === 'percentDeviation') {
 
+                    // Needed for point hover
+                    row.conversion = 'percentDeviation';
+                    row.rawValue = row[valProp];
+
+                    // Convert values
                     row[valProp] = convertToPercentDeviation(row[valProp], row[meanProp]);
                     row[sdProp] = convertToPercentDeviation(row[sdProp], row[meanProp]);
-
                     row[meanProp] = 100;
+
                     if (!rangeConverted) {
                         config.properties.yAxisDomain[0] = row[meanProp];
                         config.properties.yAxisDomain[1] = row[meanProp];
@@ -1808,9 +1817,14 @@ boxPlot.render();
                 // Handle standard deviation conversion and Y axis
                 else if (row[valProp] !== undefined && config.properties.valueConversion === 'standardDeviation') {
 
-                    row[valProp] = convertToStandardDeviation(row[valProp], row[meanProp], row[sdProp]);
+                    // Needed for point hover
+                    row.conversion = 'standardDeviation';
+                    row.rawValue = row[valProp];
 
+                    // Convert values
+                    row[valProp] = convertToStandardDeviation(row[valProp], row[meanProp], row[sdProp]);
                     row[meanProp] = 0;
+
                     if (!rangeConverted) {
                         config.properties.yAxisDomain[0] = row[meanProp];
                         config.properties.yAxisDomain[1] = row[meanProp];
@@ -2320,6 +2334,15 @@ boxPlot.render();
         },
         negativeCUSUM: function(){
             return "M-9,-0.5L6,-0.5 6,0.5 -9,0.5Z";
+        },
+        stdDevLJ: function(){
+            return "M-9,-0.5L-7,-0.5 M-6,-0.5L-4,-0.5 M-3,-0.5L-1,-0.5 M0,-0.5L2,-0.5 M3,-0.5L5,-0.5";
+        },
+        limitMR: function(){
+            return "M-9,-0.5L-7,-0.5 M-6,-0.5L-4,-0.5 M-3,-0.5L-1,-0.5 M0,-0.5L2,-0.5 M3,-0.5L5,-0.5";
+        },
+        limitCUSUM: function(){
+            return "M-9,-0.5L-7,-0.5 M-6,-0.5L-4,-0.5 M-3,-0.5L-1,-0.5 M0,-0.5L2,-0.5 M3,-0.5L5,-0.5";
         }
     };
 
