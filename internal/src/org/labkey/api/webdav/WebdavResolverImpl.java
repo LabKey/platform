@@ -131,7 +131,7 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
 
     // Cache with short-lived entries to make webdav perform reasonably.  WebdavResolverImpl is a singleton, so we
     // end up with just one of these.
-    private Cache<Path, WebdavResource> _folderCache = CacheManager.getCache(CacheManager.UNLIMITED, 5 * CacheManager.MINUTE, "WebDAV folders");
+    private Cache<Path, WebdavResource> _folderCache = CacheManager.getCache(CacheManager.UNLIMITED, 30 * CacheManager.MINUTE, "WebDAV folders");
 
     public class WebFolderResource extends AbstractWebFolderResource
     {
@@ -160,7 +160,7 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
             {
                 Path path = getPath().append(name);
                 // check in webfolder cache
-                WebdavResource resource = _folderCache.get(path);
+                WebdavResource resource = _folderCache.get(path);       // TODO: (dave 10/5/18): should hand in code below as a loader to be thread safe
                 if (null != resource)
                     return resource;
 

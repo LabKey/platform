@@ -462,27 +462,6 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return result;
     }
 
-    @NotNull
-    protected List<ExpData> getExpDatasHelper(java.nio.file.Path path, Container container)
-    {
-        List<ExpData> list = new LinkedList<>();
-
-        FlowService fs = FlowService.get();
-        if (null != fs)
-        {
-            List<ExpData> f = fs.getExpDataByURL(FileUtil.pathToString(path), container);
-            list.addAll(f);
-        }
-        ExperimentService es = ExperimentService.get();
-        if (null != es)
-        {
-            ExpData d = es.getExpDataByURL(path, null);
-            if (null != d)
-                list.add(d);
-        }
-        return list;
-    }
-
     public static String c(String path, String... names)
     {
         StringBuilder s = new StringBuilder();
@@ -656,10 +635,35 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         if (null == _data)
         {
             java.nio.file.Path file = getNioPath();
-            if (null != file)
-                _data = getExpDatasHelper(file, getContainer());
-            else
-                _data = Collections.emptyList();
+            return getExpDatasHelper(file, getContainer());
+        }
+        return _data;
+    }
+
+    @NotNull
+    protected List<ExpData> getExpDatasHelper(@Nullable java.nio.file.Path path, Container container)
+    {
+        if (null == _data)
+        {
+            List<ExpData> list = new LinkedList<>();
+
+            if (null != path)
+            {
+                FlowService fs = FlowService.get();
+                if (null != fs)
+                {
+                    List<ExpData> f = fs.getExpDataByURL(FileUtil.pathToString(path), container);
+                    list.addAll(f);
+                }
+                ExperimentService es = ExperimentService.get();
+                if (null != es)
+                {
+                    ExpData d = es.getExpDataByURL(path, null);
+                    if (null != d)
+                        list.add(d);
+                }
+            }
+            _data = list;
         }
         return _data;
     }

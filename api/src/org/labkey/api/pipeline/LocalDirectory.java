@@ -2,6 +2,7 @@ package org.labkey.api.pipeline;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -31,7 +32,7 @@ public class LocalDirectory implements Serializable
     private final String _baseLogFileName;
     private final String _moduleName;
 
-    public static LocalDirectory create (@NotNull PipeRoot root, @NotNull String moduleName)
+    public static LocalDirectory create(@NotNull PipeRoot root, @NotNull String moduleName)
     {
         return create(root, moduleName, "dummyLogFile", root.isCloudRoot() ? "dummy" : root.getRootPath().getPath());
     }
@@ -134,7 +135,7 @@ public class LocalDirectory implements Serializable
         }
     }
 
-    public File copyToLocalDirectory(String url, org.apache.log4j.Logger log)
+    public File copyToLocalDirectory(String url, Logger log)
     {
         if (_isTemporary && null != _pipeRoot)
         {
@@ -168,7 +169,35 @@ public class LocalDirectory implements Serializable
             Files.createDirectory(_localDirectoryFile.toPath());     // TODO Should we set file permissions?
     }
 
-    private File ensureContainerDir(Container container) throws IOException
+    // If LocalDirectory isTemporary, copies the file to the temp directory for this container.
+    // That temp directory will live as long as the the LabKey container lives, or until the system temp is cleared
+    @Nullable
+    public static File copyToContainerDirectory(@NotNull Container container, @NotNull Path remotePath, @NotNull Logger log)
+    {
+        // File elsewhere (on S3); make a copy a return File object for copy
+
+        String fileName = FileUtil.getFileName(remotePath);
+        String tempFileName = FileUtil.makeFileNameWithTimestamp(FileUtil.getBaseName(fileName), FileUtil.getExtension(fileName));
+        try
+        {
+            File containerDir = ensureContainerDir(container);
+            File tempFile = new File(containerDir, tempFileName);
+            if (!Files.exists(tempFile.toPath()))
+            {
+                log.info("Copying file to container's temp directory: "+ FileUtil.pathToString(remotePath));
+                Files.copy(remotePath, tempFile.toPath(), StandardCopyOption.COPY_ATTRIBUTES);
+                log.info("Copied " + Files.size(tempFile.toPath()) + " bytes.");
+            }
+            return tempFile;
+        }
+        catch (IOException e)
+        {
+            log.error("IO Error: ", e);
+            return null;
+        }
+    }
+
+    private static File ensureContainerDir(Container container) throws IOException
     {
         File moduleDir = getModuleLocalTempDirectory();
         if (!Files.exists(moduleDir.toPath()))
@@ -229,7 +258,7 @@ public class LocalDirectory implements Serializable
         File tempDir = FileUtil.getTempDirectory();   // tomcat/temp or similar
         return new File(tempDir, FileUtil.makeLegalName(PipelineService.MODULE_NAME + "_temp"));
     }
-    
+
     public static File getContainerLocalTempDirectory(Container container)
     {
         return new File(getModuleLocalTempDirectory(), FileUtil.makeLegalName(container.getName() + "_" + container.getId()));
