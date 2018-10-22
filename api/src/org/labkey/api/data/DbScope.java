@@ -135,6 +135,13 @@ public class DbScope
     private final LabKeyDataSourceProperties _labkeyProps;
     private final DataSourceProperties _dsProps;
 
+    /**
+     * Only useful for integration testing purposes to simulate a problem setting autoCommit on a connection and ensuring we
+     * unwind properly. Added since we entered an infinite loop trying to unwind a partially setup
+     * transaction previously.
+     */
+    private final static ReentrantLock AUTO_COMMIT_FAILURE_SIMULATOR = new ReentrantLock();
+
     private SqlDialect _dialect;
 
     public interface TransactionKind
@@ -536,15 +543,20 @@ public class DbScope
         ConnectionWrapper conn = null;
         TransactionImpl result = null;
 
+        boolean connectionSetupSuccessful = false;
+
         // try/finally ensures that closeConnection() works even if setAutoCommit() throws 
         try
         {
             conn = getPooledConnection(null);
-            // we expect connections coming from the cache to be at a low transaction isolation level
-            // if not then we probably didn't reset after a previous commit/abort
-            //assert Connection.TRANSACTION_READ_COMMITTED >= conn.getTransactionIsolation();
-            //conn.setTransactionIsolation(isolationLevel);
+
+            if (locks.length > 0 && locks[0] == AUTO_COMMIT_FAILURE_SIMULATOR)
+            {
+                throw new SQLException("For testing purposes - simulated autocommit setting failure");
+            }
+
             conn.setAutoCommit(false);
+            connectionSetupSuccessful = true;
         }
         catch (SQLException e)
         {
@@ -554,30 +566,39 @@ public class DbScope
         {
             if (null != conn)
             {
-                // Acquire the requested locks BEFORE entering the synchronized block for mapping the transaction
-                // to the current thread
-                List<Lock> serverLocks = Arrays.stream(locks)
-                        .filter((l) -> l instanceof ServerLock)
-                        .collect(Collectors.toList());
-                List<Lock> memoryLocks;
-                if (serverLocks.isEmpty())
-                    memoryLocks = Arrays.asList(locks);
-                else
-                    memoryLocks = Arrays.stream(locks)
-                        .filter((l) -> !(l instanceof ServerLock))
-                        .collect(Collectors.toList());
-
-                result = new TransactionImpl(conn, transactionKind, memoryLocks);
-                int stackDepth;
-                synchronized (_transaction)
+                if (connectionSetupSuccessful)
                 {
-                    List<TransactionImpl> transactions = _transaction.computeIfAbsent(getEffectiveThread(), k -> new ArrayList<>());
-                    transactions.add(result);
-                    stackDepth = transactions.size();
+                    // Acquire the requested locks BEFORE entering the synchronized block for mapping the transaction
+                    // to the current thread
+                    List<Lock> serverLocks = Arrays.stream(locks)
+                            .filter((l) -> l instanceof ServerLock)
+                            .collect(Collectors.toList());
+                    List<Lock> memoryLocks;
+                    if (serverLocks.isEmpty())
+                        memoryLocks = Arrays.asList(locks);
+                    else
+                        memoryLocks = Arrays.stream(locks)
+                                .filter((l) -> !(l instanceof ServerLock))
+                                .collect(Collectors.toList());
+
+                    result = new TransactionImpl(conn, transactionKind, memoryLocks);
+                    int stackDepth;
+                    synchronized (_transaction)
+                    {
+                        List<TransactionImpl> transactions = _transaction.computeIfAbsent(getEffectiveThread(), k -> new ArrayList<>());
+                        transactions.add(result);
+                        stackDepth = transactions.size();
+                    }
+                    serverLocks.forEach(Lock::lock);
+                    if (stackDepth > 2)
+                        LOG.info("Transaction stack for thread '" + getEffectiveThread().getName() + "' is " + stackDepth);
                 }
-                serverLocks.forEach(Lock::lock);
-                if (stackDepth > 2)
-                    LOG.info("Transaction stack for thread '" + getEffectiveThread().getName() + "' is " + stackDepth);
+                else
+                {
+                    // Problem trying to set autocommit which resulted in a SQLException.
+                    // Close the connection and bail out
+                    try { conn.close(); } catch (SQLException ignored) {}
+                }
             }
         }
 
@@ -1279,16 +1300,24 @@ public class DbScope
         for (DbScope scope : scopes)
         {
             TransactionImpl t = scope.getCurrentTransactionImpl();
+            int count = 0;
             while (t != null)
             {
+                if (count++ > 100)
+                {
+                    // Avoid getting into an infinite loop if someone's messed up the transaction stack
+                    LOG.error("Aborting trying to close connections after processing " + count + " transaction objects");
+                    break;
+                }
                 try
                 {
-                    LOG.warn("Forcing close of transaction started at ", t._creation);
-                    t.closeConnection();
+                    LOG.warn("Forcing close of still-pending transaction object. Current stack is ", new Throwable());
+                    LOG.warn("Forcing close of still-pending transaction object started at ", t._creation);
+                    t.close();
                 }
                 catch (Exception x)
                 {
-                    LOG.error("Failure forcing connection close on " + scope, x);
+                    LOG.error("Failed to force the still-pending transaction object closed on DB scope " + scope, x);
                 }
                 // We may have nested concurrent transactions for a given scope, so be sure we close them all
                 t = scope.getCurrentTransactionImpl();
@@ -1825,6 +1854,7 @@ public class DbScope
             }
         }
 
+        /** Closes the underlying DB connection but doesn't pop the stack on tracked transaction */
         private void closeConnection()
         {
             _aborted = true;
@@ -1832,7 +1862,6 @@ public class DbScope
 
             try
             {
-//                conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
                 conn.close();
             }
             catch (SQLException e)
@@ -1840,7 +1869,6 @@ public class DbScope
                 LOG.error("Failed to close connection", e);
             }
 
-            closeCaches();
             clearCommitTasks();
         }
 
@@ -2118,6 +2146,7 @@ public class DbScope
                 t.commit();
                 assertFalse(getLabKeyScope().isTransactionActive());
                 t.close();
+                //noinspection RedundantExplicitClose
                 t.close();
             }
         }
@@ -2142,6 +2171,31 @@ public class DbScope
             }
             assertEquals("Lock should be released", 0, lock.getHoldCount());
             assertEquals("Lock should be released", 0, lock2.getHoldCount());
+        }
+
+        @Test
+        public void testCloseAllConnections()
+        {
+            Transaction t = getLabKeyScope().ensureTransaction();
+            // Intentionally don't call t.close(), make sure it unwinds correctly
+            assertTrue(getLabKeyScope().isTransactionActive());
+            closeAllConnectionsForCurrentThread();
+            assertFalse(getLabKeyScope().isTransactionActive());
+        }
+
+        @Test
+        public void testAutoCommitFailure()
+        {
+            try (Transaction t = getLabKeyScope().ensureTransaction(AUTO_COMMIT_FAILURE_SIMULATOR))
+            {
+                fail("Shouldn't have gotten here, expected RuntimeSQLException");
+            }
+            catch (RuntimeSQLException e)
+            {
+                assertTrue("Bad message: " + e.getMessage(), e.getMessage().contains("simulated"));
+            }
+            assertFalse(getLabKeyScope().isTransactionActive());
+            DbScope.closeAllConnectionsForCurrentThread();
         }
 
         @Test
