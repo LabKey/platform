@@ -143,19 +143,8 @@ public class CoreUpgradeCode implements UpgradeCode
     {
         if (!context.isNewInstall())
         {
-            // Add PlatformDeveloperRole to "/", Home, Shared and Home/support, if they exist
+            // Add PlatformDeveloperRole to Developer group in "/"
             addDevRoleAssignment(ContainerManager.getRoot());
-            Container shared = ContainerManager.getForPath(ContainerManager.SHARED_CONTAINER_PATH);
-            if (null != shared)
-                addDevRoleAssignment(shared);
-            Container home = ContainerManager.getForPath(ContainerManager.HOME_PROJECT_PATH);
-            if (null != home)
-            {
-                addDevRoleAssignment(home);
-                Container support = ContainerManager.getForPath(Container.DEFAULT_SUPPORT_PROJECT_PATH);
-                if (null != support)
-                    addDevRoleAssignment(support);
-            }
         }
     }
 
@@ -163,7 +152,7 @@ public class CoreUpgradeCode implements UpgradeCode
     {
         MutableSecurityPolicy policy = new MutableSecurityPolicy(SecurityPolicyManager.getPolicy(container));
         policy.addRoleAssignment(SecurityManager.getGroup(Group.groupDevelopers), PlatformDeveloperRole.class);
-        SecurityPolicyManager.savePolicy(policy);
+        SecurityPolicyManager.savePolicy(policy, false);
     }
 
     /**
