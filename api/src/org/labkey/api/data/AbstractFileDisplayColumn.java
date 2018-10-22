@@ -143,13 +143,16 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
 
     private String ensureAbsoluteUrl(RenderContext ctx, String url)
     {
-        String lcUrl = url.toLowerCase();
-        if (!lcUrl.startsWith("http:") || !lcUrl.startsWith("https:"))
+        if (!url.startsWith(ctx.getRequest().getContextPath()))
         {
-            if (url.startsWith("/"))
-                return ctx.getRequest().getContextPath() + url;
-            else
-                return ctx.getRequest().getContextPath() + "/" + url;
+            String lcUrl = url.toLowerCase();
+            if (!lcUrl.startsWith("http:") || !lcUrl.startsWith("https:"))
+            {
+                if (url.startsWith("/"))
+                    return ctx.getRequest().getContextPath() + url;
+                else
+                    return ctx.getRequest().getContextPath() + "/" + url;
+            }
         }
         return url;
     }
