@@ -146,7 +146,7 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
         if (!url.startsWith(ctx.getRequest().getContextPath()))
         {
             String lcUrl = url.toLowerCase();
-            if (!lcUrl.startsWith("http:") || !lcUrl.startsWith("https:"))
+            if (!lcUrl.startsWith("http:") && !lcUrl.startsWith("https:"))
             {
                 if (url.startsWith("/"))
                     return ctx.getRequest().getContextPath() + url;
