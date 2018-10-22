@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://labkey.org/study/xml" targetNamespace="http://labkey.org/study/xml" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xs:annotation>
+		<xs:documentation xml:lang="en">Describes a study's cohort assignments. A cohort.xml file is exported when you manually
+            assign participants to cohorts.
+        </xs:documentation>
+	</xs:annotation>
+	<xs:element name="cohorts">
+		<xs:complexType>
+			<xs:sequence minOccurs="0" maxOccurs="unbounded">
+				<xs:element name="cohort">
+					<xs:complexType>
+						<xs:sequence>
+                            <xs:element name="description" type="xs:string" minOccurs="0" maxOccurs="1">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        A short description for the cohort.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+							<xs:element name="id" type="xs:string" minOccurs="0" maxOccurs="unbounded">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Each id identifies a participant who is a member of the cohort.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+						</xs:sequence>
+						<xs:attribute name="label" type="xs:string">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The label is used to name the cohort in the UI.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="enrolled" type="xs:boolean" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Determines whether this cohort is enrolled in the study.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="subjectCount" type="xs:int">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The expected or target number of subjects for a given cohorts in the study.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>

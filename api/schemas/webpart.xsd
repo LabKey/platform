@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:wp="http://labkey.org/data/xml/webpart" targetNamespace="http://labkey.org/data/xml/webpart"
+        elementFormDefault="qualified" attributeFormDefault="unqualified">
+    <xsd:annotation>
+        <xsd:documentation xml:lang="en">File-based WebPart Definition</xsd:documentation>
+    </xsd:annotation>
+
+    <xsd:element name="webpart" type="wp:webpartType"/>
+
+    <xsd:complexType name="webpartType">
+        <xsd:sequence>
+            <xsd:element name="view" type="wp:viewType"/>
+            <xsd:element name="locations" type="wp:locationsListType" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="customizeHandler" type="xsd:string" minOccurs="0" maxOccurs="1">
+                <xsd:annotation>
+                    <xsd:documentation>This JS string will be called when the customize button is clicked.  The following variables will be in scope: webPartRowId (the rowId used to uniquely idenitfy this webaprt), and webPartProperties, an map with the properties of this webpart.</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+        <xsd:attribute name="title" type="xsd:string"/>
+        <xsd:attribute name="available" type="wp:availableEnum"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="viewType">
+        <xsd:attribute name="name" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>The name of a file-based view to use for the content of the web part</xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="frame" type="wp:frameType"/>
+    </xsd:complexType>
+
+    <xsd:simpleType name="frameType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="portal"/>
+            <xsd:enumeration value="title"/>
+            <xsd:enumeration value="dialog"/>
+            <xsd:enumeration value="div"/>
+            <xsd:enumeration value="left_navigation"/>
+            <xsd:enumeration value="none"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="availableEnum">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="always">
+                <xsd:annotation>
+                    <xsd:documentation>Always advertise the web as available, regardless of which modules are enabled in the current container</xsd:documentation>
+                </xsd:annotation>
+            </xsd:enumeration>
+            <xsd:enumeration value="whenActive">
+                <xsd:annotation>
+                    <xsd:documentation>Advertise the web as available when its owning module is enabled in the current container</xsd:documentation>
+                </xsd:annotation>
+            </xsd:enumeration>
+            <xsd:enumeration value="never">
+                <xsd:annotation>
+                    <xsd:documentation>Never advertise the web as available for usage in portal pages</xsd:documentation>
+                </xsd:annotation>
+            </xsd:enumeration>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name="locationsListType">
+        <xsd:sequence>
+            <xsd:element name="location" type="wp:locationType" minOccurs="1" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="locationType">
+        <xsd:attribute name="name" type="wp:locationEnum"/>
+    </xsd:complexType>
+
+    <xsd:simpleType name="locationEnum">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="body"/>
+            <xsd:enumeration value="right"/>
+            <xsd:enumeration value="menu"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+</xsd:schema>

@@ -1,0 +1,529 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+		   xmlns:exp="http://cpas.fhcrc.org/exp/xml"
+		   xmlns="http://www.w3.org/2001/XMLSchema"
+		   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+		   xmlns:dat="http://labkey.org/data/xml"
+		   targetNamespace="http://cpas.fhcrc.org/exp/xml"
+		   elementFormDefault="qualified" attributeFormDefault="unqualified" version="10.3"
+>
+
+	<xs:import namespace="http://labkey.org/data/xml" schemaLocation="tableInfo.xsd"/>
+	<xs:import namespace="http://www.w3.org/1999/02/22-rdf-syntax-ns#" schemaLocation="rdfTypes.xsd"/>
+	<xs:complexType name="ExperimentArchiveType">
+		<xs:sequence>
+			<xs:element name="Experiment" type="exp:ExperimentType" minOccurs="0" maxOccurs="unbounded" />
+            <xs:element name="DomainDefinitions" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="Domain" type="exp:DomainDescriptorType" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="SampleSets" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="SampleSet" type="exp:SampleSetType" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="ProtocolDefinitions" minOccurs="0">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="Protocol" type="exp:ProtocolBaseType" minOccurs="0" maxOccurs="unbounded"/>
+					</xs:sequence>
+					<xs:attribute ref="rdf:parseType" fixed="Collection"/>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="ProtocolActionDefinitions" minOccurs="0">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="ProtocolActionSet" type="exp:ProtocolActionSetType" minOccurs="0" maxOccurs="unbounded"/>
+					</xs:sequence>
+					<xs:attribute ref="rdf:parseType" fixed="Collection"/>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="StartingInputDefinitions" minOccurs="0">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="Material" type="exp:MaterialBaseType" minOccurs="0" maxOccurs="unbounded"/>
+						<xs:element name="Data" type="exp:DataBaseType" minOccurs="0" maxOccurs="unbounded"/>
+					</xs:sequence>
+					<xs:attribute ref="rdf:parseType" fixed="Collection"/>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="ExperimentRuns" minOccurs="0">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="ExperimentRun" type="exp:ExperimentRunType" minOccurs="0" maxOccurs="unbounded"/>
+					</xs:sequence>
+					<xs:attribute ref="rdf:parseType" fixed="Collection"/>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="ExperimentType">
+		<xs:sequence>
+			<xs:element name="Name" type="string"/>
+			<xs:element name="Hypothesis" type="string" minOccurs="0"/>
+			<xs:element name="ExperimentDescriptionURL" type="string" minOccurs="0"/>
+			<xs:element name="Comments" type="string" minOccurs="0"/>
+			<xs:element name="Contact" type="exp:ContactType" minOccurs="0"/>
+			<xs:element name="Properties" type="exp:PropertyCollectionType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute ref="rdf:about" use="required"/>
+		<xs:attribute type="string" name="BatchProtocolLSID" use="optional"/>
+	</xs:complexType>
+	<xs:complexType name="ContactType">
+		<xs:sequence>
+			<xs:element name="ContactId" type="string" minOccurs="0"/>
+			<xs:element name="Email" type="string" minOccurs="0"/>
+			<xs:element name="FirstName" type="string" minOccurs="0"/>
+			<xs:element name="LastName" type="string" minOccurs="0"/>
+			<xs:element name="Properties" type="exp:PropertyCollectionType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="ExperimentRunType">
+		<xs:sequence>
+			<xs:element name="Name" type="string" />
+			<xs:element name="ProtocolLSID" type="string"/>
+			<xs:element name="Comments" type="string" minOccurs="0"/>
+            <xs:element name="ExperimentLSID" type="string" minOccurs="0" maxOccurs="1" />
+			<xs:element name="Properties" type="exp:PropertyCollectionType" minOccurs="0"/>
+			<xs:element name="ExperimentLog" minOccurs="0">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="ExperimentLogEntry" type="exp:ExperimentLogEntryType" minOccurs="0" maxOccurs="unbounded"/>
+					</xs:sequence>
+					<xs:attribute ref="rdf:parseType" fixed="Collection"/>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="ProtocolApplications" minOccurs="0">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="ProtocolApplication" type="exp:ProtocolApplicationBaseType" minOccurs="0" maxOccurs="unbounded"/>
+					</xs:sequence>
+					<xs:attribute ref="rdf:parseType" fixed="Collection"/>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute ref="rdf:about" use="required"/>
+		<xs:attribute name="CreateNewIfDuplicate" type="boolean" use="optional"/>
+		<xs:attribute name="GenerateDataFromStepRecord" type="boolean" use="optional"/>
+	</xs:complexType>
+	<xs:complexType name="ExperimentLogEntryType">
+		<xs:sequence>
+			<xs:element name="CommonParametersApplied" type="exp:SimpleValueCollectionType" minOccurs="0"/>
+			<xs:element name="ApplicationInstanceCollection" minOccurs="0">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="InstanceDetails" type="exp:InstanceDetailsType" minOccurs="0" maxOccurs="unbounded"/>
+					</xs:sequence>
+					<xs:attribute ref="rdf:parseType" fixed="Collection"/>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="ActionSequenceRef" type="xs:int"/>
+		<xs:attribute name="StepCompleted" type="xs:date" use="optional"/>
+	</xs:complexType>
+	<xs:complexType name="InstanceDetailsType">
+		<xs:sequence>
+			<xs:element name="InstanceInputs" type="exp:InputOutputRefsType" minOccurs="0"/>
+			<xs:element name="InstanceParametersApplied" type="exp:SimpleValueCollectionType" minOccurs="0"/>
+			<xs:element name="Comments" type="string" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="DataBaseType">
+		<xs:sequence>
+			<xs:element name="Name" type="string" />
+			<xs:element name="CpasType" type="exp:CpasTypeNameType" minOccurs="0"/>
+            <!-- Deprecated, no longer used but kept to allow importing of old .xar files -->
+			<xs:element name="SourceProtocolLSID" type="string" minOccurs="0"/>
+			<xs:element name="DataFileUrl" type="string" minOccurs="0"/>
+			<xs:element name="Properties" type="exp:PropertyCollectionType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute ref="rdf:about" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="DataType">
+		<xs:complexContent>
+			<xs:extension base="exp:DataBaseType">
+				<xs:sequence>
+					<xs:group ref="exp:ExtensionsGroup"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="InputOutputRefsType">
+		<xs:sequence>
+			<xs:element name="MaterialLSID" minOccurs="0" maxOccurs="unbounded">
+				<xs:complexType>
+					<xs:simpleContent>
+						<xs:extension base="string">
+							<xs:attribute name="CpasType" type="exp:CpasTypeNameType" use="optional"/>
+							<xs:attribute name="RoleName" type="xs:string" />
+							<xs:attribute name="ProtocolInput" type="xs:string" />
+                            <xs:anyAttribute namespace="##other"/>
+						</xs:extension>
+					</xs:simpleContent>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="DataLSID" minOccurs="0" maxOccurs="unbounded">
+				<xs:complexType>
+					<xs:simpleContent>
+						<xs:extension base="string">
+							<xs:attribute name="CpasType" type="exp:CpasTypeNameType" use="optional"/>
+							<xs:attribute name="DataFileUrl" type="string" use="optional"/>
+                            <xs:attribute name="RoleName" type="xs:string" />
+							<xs:attribute name="ProtocolInput" type="xs:string" />
+                            <xs:anyAttribute namespace="##other"/>
+						</xs:extension>
+					</xs:simpleContent>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute ref="rdf:parseType" fixed="Collection"/>
+	</xs:complexType>
+	<xs:complexType name="MaterialBaseType">
+		<xs:sequence>
+			<xs:element name="Name" type="string" />
+			<xs:element name="CpasType" type="exp:CpasTypeNameType" minOccurs="0"/>
+            <!-- Deprecated, no longer used but kept to allow importing of old .xar files -->
+			<xs:element name="SourceProtocolLSID" type="string" minOccurs="0"/>
+			<xs:element name="Properties" type="exp:PropertyCollectionType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute ref="rdf:about" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="MaterialType">
+		<xs:complexContent>
+			<xs:extension base="exp:MaterialBaseType">
+				<xs:sequence>
+					<xs:group ref="exp:ExtensionsGroup"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="ProtocolApplicationBaseType">
+		<xs:sequence>
+			<xs:element name="Name" type="string"/>
+			<xs:element name="CpasType" type="exp:CpasTypeNameType"/>
+			<xs:element name="ProtocolLSID" type="string"/>
+			<xs:element name="ActionSequence" type="int"/>
+			<xs:element name="ActivityDate" type="date" minOccurs="0" nillable="true"/>
+			<xs:element name="Comments" type="string" minOccurs="0"/>
+            <xs:element name="StartTime" type="date" minOccurs="0" nillable="true"/>
+            <xs:element name="EndTime" type="date" minOccurs="0" nillable="true"/>
+            <xs:element name="RecordCount" type="int" minOccurs="0" nillable="true"/>
+			<xs:element name="InputRefs" type="exp:InputOutputRefsType" minOccurs="0" />
+			<xs:element name="ProtocolApplicationParameters" type="exp:SimpleValueCollectionType" minOccurs="0"/>
+			<xs:element name="OutputMaterials">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="Material" type="exp:MaterialBaseType" minOccurs="0" maxOccurs="unbounded"/>
+					</xs:sequence>
+					<xs:attribute ref="rdf:parseType" fixed="Collection"/>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="OutputDataObjects">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="Data" type="exp:DataBaseType" minOccurs="0" maxOccurs="unbounded"/>
+					</xs:sequence>
+					<xs:attribute ref="rdf:parseType" fixed="Collection"/>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="Properties" type="exp:PropertyCollectionType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute ref="rdf:about" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="ProtocolApplicationType">
+		<xs:complexContent>
+			<xs:extension base="exp:ProtocolApplicationBaseType">
+				<xs:sequence>
+					<xs:group ref="exp:ExtensionsGroup"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="SimpleValueType">
+		<xs:simpleContent>
+			<xs:extension base="xs:string">
+				<xs:attribute name="Name" type="xs:string"/>
+				<xs:attribute name="OntologyEntryURI" type="xs:string"/>
+				<xs:attribute name="ValueType" type="exp:SimpleTypeNames" default="String"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:simpleType name="SimpleTypeNames">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Boolean"/>
+			<xs:enumeration value="String"/>
+			<xs:enumeration value="PropertyURI"/>
+			<xs:enumeration value="Integer"/>
+			<xs:enumeration value="FileLink"/>
+			<xs:enumeration value="DateTime"/>
+			<xs:enumeration value="Double"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="PropertyObjectDeclarationType">
+		<xs:simpleContent>
+			<xs:restriction base="exp:SimpleValueType">
+				<xs:attribute name="ValueType" type="exp:SimpleTypeNames" fixed="PropertyURI"/>
+			</xs:restriction>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="PropertyObjectType">
+		<xs:sequence>
+			<xs:element name="PropertyObjectDeclaration" type="exp:PropertyObjectDeclarationType"/>
+			<xs:element name="ChildProperties" type="exp:PropertyCollectionType"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="SimpleValueCollectionType">
+		<xs:sequence>
+			<xs:element name="SimpleVal" type="exp:SimpleValueType" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attribute ref="rdf:parseType" fixed="Collection"/>
+	</xs:complexType>
+	<xs:complexType name="PropertyCollectionType">
+		<xs:complexContent>
+			<xs:extension base="exp:SimpleValueCollectionType">
+				<xs:sequence>
+					<xs:element name="PropertyObject" type="exp:PropertyObjectType" minOccurs="0" maxOccurs="unbounded"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="ProtocolActionType">
+		<xs:sequence>
+			<xs:element name="PredecessorAction" maxOccurs="unbounded" minOccurs="0">
+				<xs:complexType>
+					<xs:attribute name="ActionSequenceRef" type="xs:int" use="required"/>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="ChildProtocolLSID" type="xs:string" use="required"/>
+		<xs:attribute name="ActionSequence" type="xs:int" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="ProtocolActionSetType">
+		<xs:sequence>
+			<xs:element name="ProtocolAction" type="exp:ProtocolActionType" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attribute name="ParentProtocolLSID" type="string" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="ProtocolBaseType">
+		<xs:sequence>
+			<xs:element name="Name" type="string"/>
+			<xs:element name="ProtocolDescription" type="string" minOccurs="0"/>
+			<xs:element name="ApplicationType" type="exp:CpasTypeNameType" default="ProtocolApplication" minOccurs="0"/>
+			<xs:element name="MaxInputMaterialPerInstance" type="xs:int" nillable="true" minOccurs="0"/>
+			<xs:element name="MaxInputDataPerInstance" type="xs:int" nillable="true" minOccurs="0"/>
+			<xs:element name="OutputMaterialPerInstance" type="xs:int" nillable="true" minOccurs="0"/>
+			<xs:element name="OutputDataPerInstance" type="xs:int" nillable="true" minOccurs="0"/>
+			<xs:element name="OutputMaterialType" type="exp:CpasTypeNameType" default="Material" minOccurs="0"/>
+			<xs:element name="OutputDataType" type="exp:CpasTypeNameType" default="Data" minOccurs="0"/>
+			<xs:element name="Inputs" minOccurs="0" maxOccurs="1">
+				<xs:complexType>
+					<xs:choice>
+						<xs:element name="MaterialInput" type="exp:MaterialProtocolInputType" minOccurs="1" maxOccurs="unbounded"/>
+						<xs:element name="DataInput" type="exp:DataProtocolInputType" minOccurs="1" maxOccurs="unbounded"/>
+					</xs:choice>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="Outputs" minOccurs="0" maxOccurs="1">
+				<xs:complexType>
+					<xs:choice>
+						<xs:element name="MaterialOutput" type="exp:MaterialProtocolInputType" minOccurs="1" maxOccurs="unbounded"/>
+						<xs:element name="DataOutput" type="exp:DataProtocolInputType" minOccurs="1" maxOccurs="unbounded"/>
+					</xs:choice>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="Instrument" type="string" minOccurs="0"/>
+			<xs:element name="Software" type="string" minOccurs="0"/>
+			<xs:element name="Contact" type="exp:ContactType" minOccurs="0"/>
+			<xs:element name="ParameterDeclarations" type="exp:SimpleValueCollectionType" minOccurs="0"/>
+			<xs:element name="Properties" type="exp:PropertyCollectionType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute ref="rdf:about" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="ProtocolType">
+		<xs:complexContent>
+			<xs:extension base="exp:ProtocolBaseType">
+				<xs:sequence>
+					<xs:group ref="exp:ExtensionsGroup"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:complexType name="ProtocolInputCriteria">
+        <xs:simpleContent>
+			<xs:extension base="xs:string">
+				<xs:attribute name="type" type="xs:string"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+
+	<xs:complexType name="ProtocolInputType">
+		<xs:sequence>
+			<xs:element name="Criteria" type="exp:ProtocolInputCriteria" minOccurs="0" maxOccurs="1" nillable="true"/>
+			<xs:element name="Properties" type="exp:PropertyCollectionType" minOccurs="0" maxOccurs="1"/>
+		</xs:sequence>
+		<xs:attribute name="name" type="xs:string"/>
+		<xs:attribute name="guid" type="xs:string"/>
+		<xs:attribute name="minOccurs" type="xs:int" />
+		<xs:attribute name="maxOccurs" type="xs:int" />
+	</xs:complexType>
+
+	<xs:complexType name="MaterialProtocolInputType">
+		<xs:complexContent>
+			<xs:extension base="exp:ProtocolInputType">
+				<xs:attribute name="sampleSet" type="xs:string" />
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+    <xs:complexType name="DataProtocolInputType">
+		<xs:complexContent>
+			<xs:extension base="exp:ProtocolInputType">
+				<xs:attribute name="dataClass" type="xs:string" />
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:simpleType name="SubstitutionTemplateType">
+		<xs:restriction base="xs:string">
+			<!-- goal is to make this a regular expression with some pre-defined substitution matches, is there a regex for a regex ?
+			<pattern value="[\w.(\(InputName\))(\(InputLSID\))(\(InputInstanceNum\))(\(OutputType\))(\(OutputInstanceNum\))(\(ExperimentRunName\))(\(ExperimentRunLSID\))(\(ExperimentRunUniqueInt\))(\(ExperimentRunLSIDBase\))(\(ExperimentLSIDBase\))" />
+		  -->
+		</xs:restriction>
+	</xs:simpleType>
+    <xs:simpleType name="CpasTypeNameType">
+        <xs:restriction base="xs:string"/>
+    </xs:simpleType>
+	<xs:group name="ExtensionsGroup">
+		<xs:sequence>
+			<xs:any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:group>
+
+    <xs:complexType name="SampleSetType">
+        <xs:sequence>
+            <xs:element name="Name" type="string" minOccurs="1"/>
+            <xs:element name="MaterialLSIDPrefix" type="string" minOccurs="1"/>
+            <xs:element name="Description" type="string" minOccurs="0" />
+			<xs:element name="KeyField" type="string" minOccurs="0" maxOccurs="3" />
+			<xs:element name="ParentField" type="string" minOccurs="0" maxOccurs="1" />
+            <xs:element name="NameExpression" type="string" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute ref="rdf:about" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="DomainDescriptorType">
+        <xs:sequence>
+            <xs:element name="Name" type="string" minOccurs="0"/>
+            <xs:element name="DomainURI" type="string" minOccurs="0"/>
+            <xs:element name="Description" type="string" minOccurs="0"/>
+            <xs:element name="PropertyDescriptor" type="exp:PropertyDescriptorType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:simpleType name="DefaultType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="EditableDefault"/>
+            <xs:enumeration value="FixedValue"/>
+            <xs:enumeration value="LastEntered"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:complexType name="PropertyDescriptorType">
+        <xs:sequence>
+            <xs:element name="PropertyURI" type="string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>If not present, equivalent to enclosing Domain's DomainURI + "#" + Name</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="OntologyURI" type="string" minOccurs="0" maxOccurs="1" />
+            <xs:element name="Name" type="string" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="Description" type="string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="Required" type="boolean" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="Hidden" type="boolean" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="ShownInInsertView" type="boolean" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="ShownInUpdateView" type="boolean" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="ShownInDetailsView" type="boolean" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="RangeURI" type="string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="ConceptURI" type="string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="Label" type="string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="SearchTerms" type="string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="SemanticType" type="string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="Format" type="string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="URL" type="string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="FK" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>A structure that describes a foreign key relationship between a column in the current table and a target column in another table. </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:all>
+                        <xs:element name="FolderPath" type="xs:string" minOccurs="0">
+                            <xs:annotation>
+                                <xs:documentation>Absolute path to the folder containing the target table of the relationship.  Example: /Home/support/lists.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element name="Query" type="xs:string">
+                            <xs:annotation>
+                                <xs:documentation>The name of the target table of the relationship, the "one" side of the many-to-one relationship.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element name="Schema" type="xs:string" minOccurs="0">
+                            <xs:annotation>
+                                <xs:documentation>The name of the schema in which the foreign key target is defined.  If empty, the target ("one" side) table is assumed to exist in the same schema as the "many" side table.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:all>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="ImportAliases" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>A collection of aliases by which this column may be named when importing from external files.</xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:sequence minOccurs="0" maxOccurs="unbounded">
+                        <xs:element name="ImportAlias" type="xs:string"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="MvEnabled" type="boolean" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="DefaultType" type="exp:DefaultType" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="DefaultValue" type="string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="PropertyValidator" type="exp:PropertyValidatorType" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="ConditionalFormats" type="dat:ConditionalFormatsType" minOccurs="0" />
+			<xs:element name="Measure" type="boolean" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="Dimension" type="boolean" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="RecommendedVariable" type="boolean" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="Scale" type="xs:int" minOccurs="0" maxOccurs="1">
+				<xs:annotation>
+					<xs:documentation>
+						The defined maximum or fixed length of the data values in this column.
+						Supported for SQL metadata (inferred from database if not specified).
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="PropertyValidatorType">
+        <xs:sequence>
+            <xs:element name="Name" type="string" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="Description" type="string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="TypeURI" type="string" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="Expression" type="string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="ErrorMessage" type="string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="Property" type="exp:PropertyValidatorPropertyType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="PropertyValidatorPropertyType">
+        <xs:sequence>
+            <xs:element name="Name" type="string" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="Value" type="string" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:element name="ExperimentArchive" type="exp:ExperimentArchiveType"/>
+</xs:schema>

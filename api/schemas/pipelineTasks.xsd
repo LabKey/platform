@@ -1,0 +1,337 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="http://labkey.org/pipeline/xml"
+           xmlns:p="http://labkey.org/pipeline/xml"
+           targetNamespace="http://labkey.org/pipeline/xml"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified">
+
+    <xs:annotation>
+        <xs:documentation>Task Factory and Task Pipeline definitions</xs:documentation>
+    </xs:annotation>
+
+    <xs:element name="task" type="TaskType">
+        <xs:unique name="namedTask_uniqueInputOutputName">
+            <xs:selector xpath="./p:inputs/*|./p:outputs/*"/>
+            <xs:field xpath="@name"/>
+        </xs:unique>
+    </xs:element>
+
+    <xs:element name="pipeline" type="TaskPipelineType"/>
+
+    <xs:group name="InfoGroup">
+        <xs:sequence>
+            <xs:element name="description" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>Short, one line description.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="help" type="xs:string" minOccurs="0"/>
+        </xs:sequence>
+    </xs:group>
+
+    <xs:attributeGroup name="NameVersionAttrGroup">
+        <xs:attribute name="name" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>Task name for this task or task pipeline.
+                    The name must be unique within the module defining the task.
+                    Tasks defined in a .task.xml are required to have a name.
+                    The name attribute on a locally defined task in a task pipeline's &lt;tasks&gt; element are ignored.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="version" type="xs:double">
+            <xs:annotation>
+                <xs:documentation>Version number of this task or task pipeline.
+                    Tasks defined in a .task.xml are required to have a version number.
+                    The version attribute on a locally defined task in a task pipeline's &lt;tasks&gt; element are ignored.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:attributeGroup>
+
+    <xs:complexType name="TaskPipelineType">
+        <xs:sequence>
+            <xs:group ref="InfoGroup"/>
+            <xs:element name="author" type="xs:string" minOccurs="0"/>
+            <xs:element name="analyzeURL" type="xs:string" minOccurs="0"/>
+            <xs:element name="defaultDisplay" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="xs:token">
+                        <xs:enumeration value="enabled"/>
+                        <xs:enumeration value="disabled"/>
+                        <xs:enumeration value="toolbar"/>
+                        <xs:enumeration value="admin"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <!--<xs:element name="initialInputs"/>-->
+            <xs:element name="tasks" type="TasksType"/>
+        </xs:sequence>
+        <xs:attributeGroup ref="NameVersionAttrGroup"/>
+        <xs:attribute name="splittable" type="xs:boolean" use="optional">
+            <xs:annotation>
+                <xs:documentation>Allow the job to be split if there are multiple file inputs.
+                    When multiple file inputs are submitted to a pipeline, the splittable attribute
+                    controls how many jobs will be added to the queue.  When true, a new job for
+                    each input will be created.  When false, a single job is created for entire set
+                    of input files. Defaults to false.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <!--
+    TODO: This isn't quite right.  We may want to allow defining tasks locally, but more
+    important is referencing an existing task and setting parameter values.
+    Also, we may need a way to glue separate task inputs and outputs together.
+
+    <tasks>
+        <task id="1" ref="copy-task">
+        </task>
+        <task id="2" ref="process-task">
+            <inputmap>
+                <map task=1 output=foo.txt input=myinput.txt/>
+            </inputmap>
+        </task>
+    </tasks>
+    -->
+    <xs:complexType name="TasksType">
+        <xs:choice minOccurs="1" maxOccurs="unbounded">
+            <xs:element name="taskref" type="TaskRefType"/>
+            <xs:element name="task" type="TaskType">
+                <xs:unique name="localTask_uniqueInputOutputName">
+                    <xs:selector xpath="inputs|outputs"/>
+                    <xs:field xpath="@name"/>
+                </xs:unique>
+            </xs:element>
+        </xs:choice>
+    </xs:complexType>
+
+    <xs:complexType name="TaskType" abstract="true">
+        <xs:sequence>
+            <xs:group ref="InfoGroup"/>
+            <xs:element name="author" type="xs:string" minOccurs="0"/>
+            <xs:element name="location" type="xs:string" minOccurs="0"/>
+            <xs:element name="inputs" type="InputsType" minOccurs="0"/>
+            <xs:element name="outputs" type="OutputsType" minOccurs="0"/>
+        </xs:sequence>
+        <xs:attributeGroup ref="NameVersionAttrGroup"/>
+    </xs:complexType>
+
+    <xs:complexType name="TaskRefType">
+        <xs:sequence>
+            <xs:element name="settings" type="SettingsType" minOccurs="0"/>
+        </xs:sequence>
+        <xs:attribute name="ref" type="xs:string" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="SettingsType">
+        <xs:sequence>
+            <xs:any processContents="skip" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="InputsType">
+        <xs:sequence>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <!-- CONSIDER: reference specific file types like fasta or a tsv with specific shape (columns, etc) -->
+                <xs:element name="file" type="FileInputType"/>
+                <xs:element name="property" type="PropertyInputType"/>
+                <xs:element name="text" type="TextInputType"/>
+                <xs:element name="integer" type="IntInputType"/>
+                <xs:element name="double" type="DoubleInputType"/>
+                <xs:element name="boolean" type="BooleanInputType"/>
+                <!--
+                <xs:element name="select" type="SelectInputType"/>
+                <xs:element name="assay" type="AssayInputType"/>
+                <xs:element name="query" type="QueryInputType"/>
+                <xs:element name="user" type="UserInputType"/>
+                <xs:element name="email" type="EmailInputType"/>
+                TODO: named group of inputs for html fieldset
+                <xs:element name="group" type="GroupInputType"/>
+                TODO: repeated inputs (or group) for multi-value/array entries
+                TODO: conditional inputs based on values of other inputs
+                -->
+            </xs:choice>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="InputOutputType" abstract="true">
+        <xs:sequence>
+            <xs:group ref="InfoGroup"/>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" use="required"/>
+        <xs:attribute name="required" type="xs:boolean"/>
+    </xs:complexType>
+
+    <xs:simpleType name="strings">
+        <xs:list itemType="xs:string"/>
+    </xs:simpleType>
+
+    <xs:attributeGroup name="FileTypeAttrGroup">
+        <xs:attribute name="suffixes" type="strings"/>
+        <xs:attribute name="directory" type="xs:boolean"/>
+        <xs:attribute name="contentType" type="xs:string"/>
+        <xs:attribute name="splitFiles" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation>
+                    Set whether files generated from this path represent
+                    the set of split files (all input files), or just the current file
+                    being processed.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="copyInput" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation>
+                    Specify whether the input file specified must be copied to the work directory.
+                    This is useful in cases where the program run cannot handle path names, but
+                    requires the file to be in the current directory.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="useProtocolNameAsBaseName" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation>
+                    This is an experimental flag and may change or be removed without warning in the future.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="useFileTypeBaseName" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation>
+                    If true, the base names for the input files will be determined per file type instead of just
+                    using the base name of the first input file type in the set.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:attributeGroup>
+
+    <xs:complexType name="FileInputOutputType" abstract="true">
+        <xs:complexContent>
+            <xs:extension base="InputOutputType">
+                <!-- TODO: the ExpData lsid ?? -->
+                <!--<xs:element name="dataType" type="xs:string" minOccurs="0"/>-->
+                <xs:attributeGroup ref="FileTypeAttrGroup"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:attributeGroup name="InputAttrGroup">
+        <xs:attribute name="label" type="xs:string"/>
+        <xs:attribute name="switch" type="xs:string"/>
+    </xs:attributeGroup>
+
+    <xs:complexType name="FileInputType">
+        <xs:complexContent>
+            <xs:extension base="FileInputOutputType">
+                <xs:attributeGroup ref="InputAttrGroup"/>
+                <xs:attribute name="ref" type="xs:IDREF"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="FileOutputType">
+        <xs:complexContent>
+            <xs:extension base="FileInputOutputType">
+                <xs:attribute name="ref" type="xs:IDREF"/>
+                <xs:attribute name="forceToAnalysisDir" type="xs:boolean">
+                    <xs:annotation>
+                        <xs:documentation>Deprecated.  Use outputLocation="analysis" instead.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="outputLocation" use="optional" type="OutputLocationType">
+                    <xs:annotation><xs:documentation>
+                        The location to place this output file after the task is successfully completed.
+                        Either the outputLocation attribute or the outputDir attribute may be set, but not both.
+                    </xs:documentation></xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="outputDir" use="optional" type="xs:string">
+                    <xs:annotation><xs:documentation>
+                        The output dir is a directory path relative to the analysis directory,
+                        or, if the path starts with "/", relative to the pipeline root.
+                        Either the outputLocation attribute or the outputDir attribute may be set, but not both.
+                    </xs:documentation></xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:simpleType name="OutputLocationType">
+        <xs:restriction base="xs:token">
+            <xs:enumeration value="default">
+                <xs:annotation><xs:documentation>The default output location as retured by {@link FileAnalysisJobSupport#findOutputFile(String)}.</xs:documentation></xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="analysis">
+                <xs:annotation><xs:documentation>The current job's analysis directory where the final analysis usually ends up.</xs:documentation></xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="data">
+                <xs:annotation><xs:documentation>The current job's data directory where the original input files reside.</xs:documentation></xs:annotation>
+            </xs:enumeration>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="SimpleInputType" abstract="true">
+        <xs:complexContent>
+            <xs:extension base="InputOutputType">
+                <xs:attributeGroup ref="InputAttrGroup"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="PropertyInputType">
+        <xs:complexContent>
+            <xs:extension base="SimpleInputType">
+                <xs:attribute name="uri" type="xs:string" use="required"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="TextInputType">
+        <xs:complexContent>
+            <xs:extension base="SimpleInputType">
+                <xs:attribute name="default" type="xs:string"/>
+                <xs:attribute name="minLength" type="xs:int"/>
+                <xs:attribute name="maxLength" type="xs:int"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="IntInputType">
+        <xs:complexContent>
+            <xs:extension base="SimpleInputType">
+                <xs:attribute name="default" type="xs:int"/>
+                <xs:attribute name="min" type="xs:int"/>
+                <xs:attribute name="max" type="xs:int"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="DoubleInputType">
+        <xs:complexContent>
+            <xs:extension base="SimpleInputType">
+                <xs:attribute name="default" type="xs:double"/>
+                <xs:attribute name="min" type="xs:double"/>
+                <xs:attribute name="max" type="xs:double"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="BooleanInputType">
+        <xs:complexContent>
+            <xs:extension base="SimpleInputType">
+                <xs:attribute name="default" type="xs:boolean"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="OutputsType">
+        <xs:sequence>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element name="file" type="FileOutputType"/>
+            </xs:choice>
+        </xs:sequence>
+    </xs:complexType>
+</xs:schema>
+

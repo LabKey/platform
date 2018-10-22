@@ -1,0 +1,187 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://labkey.org/study/xml" targetNamespace="http://labkey.org/study/xml" elementFormDefault="qualified" attributeFormDefault="unqualified">
+<xs:element name="studyDesign" type="StudyDesign"></xs:element>
+    <xs:complexType name="StudyDesign">
+        <xs:sequence>
+            <xs:element name="description" type="xs:string" minOccurs="0"/>
+            <xs:element name="immunogens" >
+            <xs:complexType>
+                <xs:sequence >
+                    <xs:element name="immunogen" type="Immunogen" minOccurs="0" maxOccurs="unbounded"/>
+                </xs:sequence>
+            </xs:complexType>
+        </xs:element>
+        <xs:element name="adjuvants">
+            <xs:complexType>
+                <xs:sequence >
+                    <xs:element name="adjuvant" type="Adjuvant" minOccurs="0" maxOccurs="unbounded"></xs:element>
+                </xs:sequence>
+            </xs:complexType>
+        </xs:element>
+            <xs:element name="sampleTypes" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="sampleType" type="SampleType" minOccurs="0" maxOccurs="unbounded" />
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="assayDefinitions" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence >
+                        <xs:element name="assayDefinition" type="AssayDefinition" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="cohorts">
+                <xs:complexType>
+                    <xs:sequence minOccurs="0" maxOccurs="unbounded">
+                        <xs:element name="cohort" type="Cohort">
+
+                        </xs:element>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="immunizationSchedule" type="ImmunizationSchedule"></xs:element>
+            <xs:element name="assaySchedule" type="AssaySchedule"></xs:element>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string"/>
+        <xs:attribute name="grantName"  type="xs:string"/>
+        <xs:attribute name="investigator"  type="xs:string"/>
+        <xs:attribute name="animalSpecies"  type="xs:string"/>
+        <xs:attribute name="xmlVersion" type="xs:double" default="0.1"/>
+    </xs:complexType>
+    <xs:complexType name="Immunogen">
+        <xs:sequence>
+        <xs:element name="antigens">
+            <xs:complexType>
+            <xs:sequence minOccurs="0" maxOccurs="unbounded">
+                <xs:element name="antigen" type="Antigen"/>
+            </xs:sequence>
+            </xs:complexType>
+        </xs:element>
+        </xs:sequence>
+        <xs:attribute name="name"  type="xs:string"/>
+        <xs:attribute name="dose"  type="xs:string"/>
+        <xs:attribute name="type"  type="xs:string"/>
+        <xs:attribute name="admin"  type="xs:string"/>
+    </xs:complexType>
+    <xs:complexType name="Adjuvant">
+        <xs:attribute name="name"  type="xs:string"/>
+        <xs:attribute name="gene"  type="xs:string"/>
+        <xs:attribute name="admin"  type="xs:string"/>
+        <xs:attribute name="dose"  type="xs:string"/>
+    </xs:complexType>
+    <xs:complexType name="Antigen">
+        <xs:sequence>
+            <xs:element type="xs:string" name="sequence" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute name="name"  type="xs:string"/>
+        <xs:attribute name="gene"  type="xs:string"/>
+        <xs:attribute name="subtype" use="optional" type="xs:string"/>
+        <xs:attribute name="genBankId" use="optional" type="xs:string"/>
+    </xs:complexType>
+    <xs:complexType name="Cohort">
+        <xs:attribute name="name"  type="xs:string"/>
+        <xs:attribute name="count" type="xs:int"/>
+    </xs:complexType>
+    <xs:complexType name="Lab">
+        <xs:attribute name="name" type="xs:string"/>
+    </xs:complexType>
+    <xs:complexType name="AssayDefinition">
+        <xs:sequence>
+        <xs:element name="Labs">
+                <xs:complexType>
+                <xs:sequence >
+                    <xs:element name="lab" type="Lab" minOccurs="0" maxOccurs="unbounded">
+                    </xs:element>
+                </xs:sequence>
+                </xs:complexType>
+        </xs:element>
+        <xs:element name="sampleMeasure" type="SampleMeasure"/>
+    </xs:sequence>
+        <xs:attribute name="name"  type="xs:string"/>
+        <xs:attribute name="defaultLab"  type="xs:string"/>
+    </xs:complexType>
+    <xs:complexType name="SampleType">
+        <xs:attribute name="name" type="xs:string"/>
+        <xs:attribute name="primaryType" type="xs:string"/>
+        <xs:attribute name="code" type="xs:string"/>
+    </xs:complexType>
+    <xs:complexType name="SampleMeasure">
+        <xs:attribute name="amount" type="xs:double"/>
+        <!-- Todo: restrict types -->
+        <xs:attribute name="unit" type="xs:string" />
+        <xs:attribute name="type" type="xs:string"/>
+    </xs:complexType>
+    <xs:complexType name="ImmunizationSchedule">
+        <xs:sequence >
+            <xs:element name="description" type="xs:string" minOccurs="0"/>
+            <xs:element name="timepoints" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="timepoint" type="Timepoint" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="immunizationEvent" type="ImmunizationEvent" minOccurs="0" maxOccurs="unbounded">
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="ImmunizationEvent">
+        <xs:sequence>
+            <xs:element name="timepoint" type="Timepoint"/>
+            <xs:element name="immunization" type="Immunization"/>
+        </xs:sequence>
+        <xs:attribute name="groupName"  type="xs:string"/>
+    </xs:complexType>
+    <xs:complexType name="Timepoint">
+        <xs:attribute name="days" type="xs:int"/>
+        <xs:attribute name="displayUnit"  type="xs:string"/>
+        <xs:attribute name="name"  use="optional"  type="xs:string"/>
+    </xs:complexType>
+    <xs:complexType name="Immunization">
+        <xs:sequence>
+        <xs:element minOccurs="0" maxOccurs="unbounded" name="immunogenRef" type="ImmunogenRef"/>
+        <xs:element minOccurs="0" maxOccurs="unbounded" name="adjuvantRef" type="AdjuvantRef"/>
+    </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="ImmunogenRef">
+        <xs:attribute name="name"  type="xs:string"/>
+    </xs:complexType>
+    <xs:complexType name="AdjuvantRef">
+        <xs:attribute name="name"  type="xs:string"/>
+    </xs:complexType>
+    <xs:complexType name="AssaySchedule">
+        <xs:sequence>
+            <xs:element name="description" type="xs:string" minOccurs="0" />
+            <xs:element name="assays" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="assayRef" type="AssayRef" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="timepoints" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="timepoint" type="Timepoint" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element minOccurs="0" maxOccurs="unbounded" name="assayEvent" type="AssayEvent"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="AssayEvent">
+        <xs:sequence>
+            <xs:element name="timepoint" type="Timepoint" />
+            <xs:element name="sampleMeasure" type="SampleMeasure"/>
+        </xs:sequence>
+        <xs:attribute name="assayName"  type="xs:string"/>
+    </xs:complexType>
+    <xs:complexType name="AssayRef">
+        <xs:sequence>
+            <xs:element name="note" minOccurs="0" maxOccurs="1" type="xs:string"/>
+        </xs:sequence>
+        <xs:attribute name="assayName" type="xs:string"/>
+        <xs:attribute name="lab" type="xs:string"/>
+    </xs:complexType>
+</xs:schema>

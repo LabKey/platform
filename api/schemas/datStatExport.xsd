@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            xmlns:rc="http://labkey.org/study/xml/datStatExport"
+            targetNamespace="http://labkey.org/study/xml/datStatExport"
+            elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <xsd:annotation>
+        <xsd:documentation xml:lang="en">DATStat Export Configuration</xsd:documentation>
+    </xsd:annotation>
+
+    <xsd:element name="datStatConfig">
+        <xsd:complexType>
+            <xsd:all>
+                <xsd:element name="timepointType" type="xsd:string" minOccurs="0" maxOccurs="1"/>
+                <xsd:element name="studyLabel" type="xsd:string" minOccurs="0" maxOccurs="1"/>
+                <xsd:element name="projects">
+                    <xsd:complexType>
+                        <xsd:sequence minOccurs="1" maxOccurs="unbounded">
+                            <xsd:element name="project">
+                                <xsd:complexType>
+                                    <xsd:all>
+                                        <xsd:element name="projectName" type="xsd:string"/>
+                                        <xsd:element name="defaultDate" type="xsd:date" minOccurs="0"/>
+                                        <xsd:element name="alternateDate" type="xsd:date" minOccurs="0"/>
+                                        <xsd:element name="forms" minOccurs="0" maxOccurs="1">
+                                            <xsd:complexType>
+                                                <xsd:sequence minOccurs="0" maxOccurs="unbounded">
+                                                    <xsd:element name="form">
+                                                        <xsd:complexType>
+                                                            <xsd:all>
+                                                                <xsd:element name="formName" type="xsd:string"/>
+                                                                <xsd:element name="dateField" type="xsd:string" minOccurs="0"/>
+                                                                <xsd:element name="useDefaultDate" type="xsd:boolean" default="false"/>
+                                                                <xsd:element name="useAlternateDate" type="xsd:boolean" default="false"/>
+                                                                <xsd:element name="ptidField" type="xsd:string" minOccurs="0"/>
+                                                                <xsd:element name="demographic" type="xsd:boolean" default="false"/>
+                                                                <xsd:element name="transform" type="xsd:boolean" default="false"/>
+                                                                <xsd:element name="keyField" type="xsd:string" minOccurs="0"/>
+                                                                <xsd:element name="exportAsList" type="xsd:boolean" default="false"/>
+                                                            </xsd:all>
+                                                        </xsd:complexType>
+                                                    </xsd:element>
+                                                </xsd:sequence>
+                                            </xsd:complexType>
+                                        </xsd:element>
+                                    </xsd:all>
+                                </xsd:complexType>
+                            </xsd:element>
+                        </xsd:sequence>
+                    </xsd:complexType>
+                </xsd:element>
+            </xsd:all>
+        </xsd:complexType>
+    </xsd:element>
+</xsd:schema>

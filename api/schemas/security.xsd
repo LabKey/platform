@@ -1,0 +1,76 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="http://labkey.org/security/xml"
+           targetNamespace="http://labkey.org/security/xml"
+           attributeFormDefault="unqualified"
+           elementFormDefault="qualified">
+
+   <xs:complexType name="groupsType">
+	   <xs:annotation>
+		   <xs:documentation xml:lang="en">
+               List of group definitions. The contained groups are defined and any nested groups
+               are only referenced.
+         </xs:documentation>
+	   </xs:annotation>
+      <xs:sequence>
+         <xs:element name="group" type="groupType" minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <xs:complexType name="groupRefsType">
+	   <xs:annotation>
+		   <xs:documentation xml:lang="en">
+               List of group references definition. 
+         </xs:documentation>
+	   </xs:annotation>
+      <xs:sequence>
+         <xs:element name="group" type="groupRefType" minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+   </xs:complexType>
+
+    <xs:complexType name="groupType">
+        <xs:annotation>
+            <xs:documentation>
+                Group definition.
+                Groups may contain other groups or users.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="groups" type="groupRefsType" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="users" type="userRefsType" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string"/>
+        <xs:attribute name="type" type="groupEnumType"/>
+    </xs:complexType>
+
+    <xs:complexType name="groupRefType">
+        <xs:annotation>
+            <xs:documentation>A group reference.</xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="name" type="xs:string"/>
+        <xs:attribute name="type" type="groupEnumType"/>
+    </xs:complexType>
+
+    <xs:complexType name="userRefType">
+        <xs:annotation>
+            <xs:documentation>A user reference.</xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="name" type="xs:string"/>
+    </xs:complexType>
+
+    <xs:complexType name="userRefsType">
+        <xs:annotation>
+            <xs:documentation>List of user references.</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="user" type="userRefType" minOccurs="0" maxOccurs="unbounded" />
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:simpleType name="groupEnumType">
+        <xs:restriction base="xs:token">
+            <xs:enumeration value="site"/>
+            <xs:enumeration value="project"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+</xs:schema>

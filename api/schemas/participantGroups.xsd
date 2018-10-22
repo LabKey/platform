@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            xmlns:pg="http://labkey.org/study/xml/participantGroups"
+            targetNamespace="http://labkey.org/study/xml/participantGroups"
+            elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <xsd:annotation>
+        <xsd:documentation xml:lang="en">Participant Groups</xsd:documentation>
+    </xsd:annotation>
+
+    <xsd:element name="participantGroups" type="pg:participantGroupsType"/>
+
+    <xsd:complexType name="participantGroupsType">
+        <xsd:sequence minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="participantCategory" type="pg:categoryType"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="categoryType">
+        <xsd:sequence minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="group" type="pg:groupType" minOccurs="1"/>
+        </xsd:sequence>
+        <xsd:attribute name="label" type="xsd:string"/>
+        <xsd:attribute name="type" type="xsd:string"/>
+        <xsd:attribute name="shared" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="ownerId" type="xsd:integer"/>
+        <xsd:attribute name="autoUpdate" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="queryName" type="xsd:string"/>
+        <xsd:attribute name="schemaName" type="xsd:string"/>
+        <xsd:attribute name="viewName" type="xsd:string"/>
+        <xsd:attribute name="groupProperty" type="xsd:string"/>
+        <xsd:attribute name="datasetId" type="xsd:int"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="groupType">
+        <xsd:sequence>
+            <xsd:element name="participantId" type="xsd:string" maxOccurs="unbounded"/>
+        </xsd:sequence>
+        <xsd:attribute name="label" type="xsd:string"/>
+        <xsd:attribute name="categoryLabel" type="xsd:string"/>
+    </xsd:complexType>
+</xsd:schema>

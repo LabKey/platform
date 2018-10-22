@@ -1,0 +1,50 @@
+import org.labkey.gradle.util.BuildUtils
+
+// This must come before applying the xmlBeans plugin because we rely on libDir in configuration
+project.ext {
+   libDir = staging.libDir
+}
+
+apply plugin: 'maven'
+apply plugin: 'maven-publish'
+apply plugin: 'org.labkey.xmlBeans'
+
+defaultTasks 'schemaJar'
+
+xmlBeans {
+    schemasDir = "."
+}
+
+tasks.clean.dependsOn("cleanSchemasCompile")
+tasks.clean.doLast {
+    project.delete project.buildDir
+}
+
+publishing {
+   publications {
+      libs(MavenPublication) {
+         artifact tasks.schemasJar
+      }
+   }
+}
+
+if (BuildUtils.shouldPublish(project))
+{
+    artifactoryPublish {
+        dependsOn tasks.schemasJar
+        publications('libs')
+    }
+}
+
+// TODO would be better to get the directory from a configuration, but the server project
+// may not have been configured yet so the serverDeploy configuration will not be available
+task('deployModule', group: "Deploy", description: "Deploy the schemas jar file to the labkeyWebapp/WEB-INF/lib directory") 
+{
+   doLast ({
+        copy {
+            from project.tasks.schemasJar
+            into "${project.rootProject.buildDir}/deploy/labkeyWebapp/WEB-INF/lib"
+        }
+    })
+}
+

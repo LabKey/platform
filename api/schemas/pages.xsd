@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            xmlns="http://labkey.org/folder/xml"
+            targetNamespace="http://labkey.org/folder/xml"
+            elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <xsd:annotation>
+        <xsd:documentation xml:lang="en">Describes the webpart properties and layout for a folder export archive.</xsd:documentation>
+    </xsd:annotation>
+
+    <xsd:element name="pages">
+        <xsd:complexType>
+            <xsd:sequence minOccurs="1" maxOccurs="unbounded">
+                <xsd:element name="page">
+                    <xsd:complexType>
+                        <xsd:sequence minOccurs="0" maxOccurs="unbounded">
+                            <xsd:element name="webpart">
+                                <xsd:complexType>
+                                    <xsd:all>
+                                        <xsd:element name="name" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+                                        <xsd:element name="index" type="xsd:int" minOccurs="1" maxOccurs="1"/>
+                                        <xsd:element name="location" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+                                        <xsd:element name="permanent" type="xsd:boolean" minOccurs="1" maxOccurs="1"/>
+                                        <xsd:element name="permission" type="xsd:string" minOccurs="0" maxOccurs="1" />
+                                        <xsd:element name="permissionContainerPath" type="xsd:string" minOccurs="0" maxOccurs="1" />
+                                        <xsd:element name="properties" minOccurs="0" maxOccurs="1">
+					                        <xsd:complexType>
+						                        <xsd:sequence minOccurs="0" maxOccurs="unbounded">
+							                        <xsd:element name="property">
+								                        <xsd:complexType>
+									                        <xsd:attribute name="key" type="xsd:string" use="required" />
+                                                            <xsd:attribute name="value" type="xsd:string" use="required" />
+                                                        </xsd:complexType>
+                                                    </xsd:element>
+                                                </xsd:sequence>
+                                            </xsd:complexType>
+                                        </xsd:element>
+                                    </xsd:all>
+                                </xsd:complexType>
+                            </xsd:element>
+                        </xsd:sequence>
+                        <xsd:attribute name="name" type="xsd:string"/>
+                        <xsd:attribute name="index" type="xsd:int"/>
+                        <xsd:attribute name="hidden" type="xsd:boolean"/>
+                        <xsd:attribute name="propertyString" type="xsd:string"/>
+                        <xsd:attribute name="caption" type="xsd:string"/>
+                    </xsd:complexType>
+                </xsd:element>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+</xsd:schema>

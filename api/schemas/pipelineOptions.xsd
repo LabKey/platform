@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:dat="http://labkey.org/data/xml" targetNamespace="http://labkey.org/data/xml" elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <xs:annotation>
+        <xs:documentation xml:lang="en">Pipeline Options</xs:documentation>
+    </xs:annotation>
+
+    <xs:element name="PipelineOptions">
+        <xs:complexType>
+            <xs:all>
+                <xs:element name="importEnabled" type="xs:boolean" minOccurs="0" default="true"/>
+                <xs:element name="actionConfig" type="dat:ActionOptions" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="inheritedTbarConfig" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
+                <xs:element name="tbarConfig" type="dat:TbarBtnOptions" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="filePropertiesConfig" type="xs:string" minOccurs="0" maxOccurs="1" default="useDefault"/>
+                <xs:element name="gridConfig" type="xs:string" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="expandFileUpload" type="xs:boolean" minOccurs="0" default="false"/>
+                <xs:element name="showFolderTree" type="xs:boolean" minOccurs="0"/>
+            </xs:all>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:complexType name="ActionOptions">
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="displayOption">
+                <xs:complexType>
+                    <xs:all>
+                        <xs:element name="links" type="dat:ActionLink" minOccurs="0" maxOccurs="1"/>
+                    </xs:all>
+                    <xs:attribute name="label" type="xs:string"/>
+                    <xs:attribute name="id" type="xs:string"/>
+                    <xs:attribute name="state" type="xs:string"/>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="ActionLink">
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="displayOption">
+                <xs:complexType>
+                    <xs:attribute name="label" type="xs:string"/>
+                    <xs:attribute name="id" type="xs:string"/>
+                    <xs:attribute name="state" type="xs:string"/>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="TbarBtnOptions">
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="tbarBtnOption">
+                <xs:complexType>
+                    <xs:attribute name="id" type="xs:string"/>
+                    <xs:attribute name="position" type="xs:int"/>
+                    <xs:attribute name="hideText" type="xs:boolean"/>
+                    <xs:attribute name="hideIcon" type="xs:boolean"/>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+</xs:schema>

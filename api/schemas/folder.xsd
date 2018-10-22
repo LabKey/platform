@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="http://labkey.org/folder/xml"
+           targetNamespace="http://labkey.org/folder/xml"
+           xmlns:study="http://labkey.org/study/xml"
+           xmlns:sec="http://labkey.org/security/xml"
+           xmlns:ra="http://labkey.org/security/xml/roleAssignment"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified">
+    <xs:import namespace="http://labkey.org/study/xml" schemaLocation="study.xsd"/>
+    <xs:import namespace="http://labkey.org/security/xml" schemaLocation="security.xsd"/>
+    <xs:import namespace="http://labkey.org/security/xml/roleAssignment" schemaLocation="roleAssignments.xsd"/>
+	<xs:annotation>
+		<xs:documentation xml:lang="en">
+            Describes a folder. This is the top-level file in a folder archive.  It defines the top-level folder
+            settings and points to the other files in the archive.
+        </xs:documentation>
+	</xs:annotation>
+	<xs:element name="folder">
+		<xs:complexType>
+			<xs:all>
+                <xs:element name="folderType" minOccurs="0" maxOccurs="1" type="folderType">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The folder type to be used for this container along with which modules should be activated.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="searchable" minOccurs="0" maxOccurs="1" type="xs:boolean">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The full-text search settings for whether or not to include this folder's content in multi-folder search results. 
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="pages" minOccurs="0">
+                    <xs:complexType>
+                        <xs:attribute name="file" type="xs:string">
+                            <xs:annotation>
+                                <xs:documentation xml:lang="en">
+                                    Indicates the "file" (string) that lists the folder pages webpart properties and layout.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="notifications" minOccurs="0" type="notificationsType"/>
+                <xs:element name="groups" minOccurs="0" maxOccurs="1" type="sec:groupsType"/>
+                <xs:element name="roleAssignments" minOccurs="0" maxOccurs="1" type="ra:roleAssignmentsType"/>
+                <xs:element name="reports" minOccurs="0" type="exportDirType" />
+                <xs:element name="queries" minOccurs="0" type="exportDirType" />
+                <xs:element name="views" minOccurs="0" type="exportDirType" />
+                <xs:element name="lists" minOccurs="0" type="exportDirType" />
+                <xs:element name="missingValueIndicators" type="study:missingValueIndicatorsType" minOccurs="0" />
+                <xs:element name="wikis" minOccurs="0" type="exportDirType"/>
+                <xs:element name="externalSchemas" minOccurs="0" type="exportDirType"/>
+                <xs:element name="study" minOccurs="0" type="exportDirType"/>
+                <xs:element name="subfolders" minOccurs="0" type="exportDirType"/>
+                <xs:element name="moduleProperties" minOccurs="0" type="modulePropertiesType"/>
+                <xs:element name="xar" minOccurs="0" type="exportDirType" />
+            </xs:all>
+            <xs:attribute name="archiveVersion" type="xs:double">
+                <xs:annotation>
+                    <xs:documentation>
+                        The version number of the LabKey Server that produced this archive.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="label" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        The label used for naming the folder.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="type" type="xs:string"/>
+            <xs:attribute name="title" type="xs:string"/>
+            <xs:attribute name="description" type="xs:string"/>
+            <xs:attribute name="restrictedColumnsEnabled" type="xs:boolean"/>
+            <xs:attribute name="defaultDateTimeFormat" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation xmlns="http://www.w3.org/1999/xhtml">
+                        Indicates the default date-time format. See
+                        <a href="https://www.labkey.org/Documentation/wiki-page.view?name=dateFormats" target="_top">Date and Number Formats</a>.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="defaultDateFormat" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation xmlns="http://www.w3.org/1999/xhtml">
+                        Indicates the default date format. See
+                        <a href="https://www.labkey.org/Documentation/wiki-page.view?name=dateFormats" target="_top">Date and Number Formats</a>.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="defaultNumberFormat" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation xmlns="http://www.w3.org/1999/xhtml">
+                        Indicates the default number format. See
+                        <a href="https://www.labkey.org/Documentation/wiki-page.view?name=dateFormats" target="_top">Date and Number Formats</a>.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+    <xs:complexType name="exportDirType">
+        <xs:attribute name="dir" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                      Names the directory that contains exported resource.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="folderType">
+        <xs:all>
+            <xs:element name="defaultModule" minOccurs="0" maxOccurs="1" type="xs:string"/>
+            <xs:element name="modules" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="moduleName" minOccurs="1" maxOccurs="unbounded" type="xs:string"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="name" type="xs:string"/>
+    </xs:complexType>
+
+    <xs:element name="subfolders" type="subfoldersType"/>
+
+    <xs:complexType name="subfoldersType">
+        <xs:sequence>
+            <xs:element name="subfolder" type="subfolderType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="subfolderType">
+        <xs:attribute name="name" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>The subfolder's name</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+
+    </xs:complexType>
+
+    <xs:complexType name="notificationsType">
+        <xs:all>
+            <xs:element name="messagesDefault" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:attribute name="id" type="xs:int">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The email option id for the folder default setting for message board notifications.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="label" type="xs:string">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The email option label for the folder default setting for message board notifications.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="filesDefault" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:attribute name="id" type="xs:int">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The email option id for the folder default setting for file content event notifications.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="label" type="xs:string">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The email option label for the folder default setting for file content event notifications.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                </xs:complexType>
+            </xs:element>
+        </xs:all>
+    </xs:complexType>
+
+    <xs:complexType name="modulePropertiesType">
+        <xs:sequence>
+            <xs:element name="moduleProperty" type="modulePropertyType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="modulePropertyType">
+        <xs:attribute name="moduleName" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>The name of the module</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="propertyName" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>The name of the property</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="value" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>Container-specific value of the property</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+</xs:schema>
