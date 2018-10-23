@@ -71,6 +71,7 @@ public class ModuleProperty
     public enum InputType
     {
         text,
+        textArea,
         select {
             @Override
             boolean hasOptions() {return true;}
