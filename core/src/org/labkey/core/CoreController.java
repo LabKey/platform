@@ -1577,6 +1577,8 @@ public class CoreController extends SpringActionController
                         throw new IllegalArgumentException("Invalid module property: " + name);
 
                     Container ct = ContainerManager.getForId(row.getString("container"));
+                    if (ct == null && (Boolean.TRUE == row.getBoolean("currentContainer")))
+                        ct = getContainer();
                     if (ct == null)
                         throw new IllegalArgumentException("Invalid container: " + row.getString("container"));
 

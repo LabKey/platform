@@ -176,6 +176,9 @@ Ext4.define('LABKEY.ext.ModulePropertiesAdminPanel', {
             var validateValue = false;
             if (v.canEdit) {
                 switch (pd.inputType) {
+                    case 'textArea':
+                        propertyItem.xtype = 'textarea';
+                        break;
                     case 'checkbox':
                         propertyItem.xtype = 'checkbox';
                         propertyItem.checked = v.value === "true";
