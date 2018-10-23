@@ -214,7 +214,7 @@ public class QueryModule extends DefaultModule
 
         AdminConsole.addExperimentalFeatureFlag(ReportService.EXPERIMENTAL_DEPRECATED_CHART_VIEW, "Show deprecated Create Chart View menu item",
                 "This feature will unhide the \"Create Chart View (deprecated)\" menu item on grids. This charting feature has " +
-                        "been superceded by \"Create Chart,\" which provides a wizard for creating modern, JavaScript-based charts. We strongly " +
+                        "been superseded by \"Create Chart,\" which provides a wizard for creating modern, JavaScript-based charts. We strongly " +
                         "recommend creating new charts using the newer wizard; the older chart designer will soon be removed and older charts " +
                         "migrated to the new approach, if possible.",
                 false);

@@ -957,7 +957,7 @@ public class SqlScriptController extends SpringActionController
             html.append("  </table>\n");
 
             html.append("  <table>\n");
-            html.append("    <tr><th align=\"left\">Orphaned Script</th><th align=\"left\">Superceded By</th></tr>\n");
+            html.append("    <tr><th align=\"left\">Orphaned Script</th><th align=\"left\">Superseded By</th></tr>\n");
 
             for (SqlScript orphanedScript : orphanedScripts)
             {
