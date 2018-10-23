@@ -70,3 +70,8 @@ ul.sso-list > li {
     float: left;
     padding-right: 10px;
 }
+
+.labkey-button {
+    width: 75px;
+    margin-right: 25px;
+}

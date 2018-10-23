@@ -2077,7 +2077,7 @@ public class LoginController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return null;
+            return root.addChild("Reset Password");
         }
     }
 

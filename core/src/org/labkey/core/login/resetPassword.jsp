@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.login.LoginController" %>
+<%@ page import="java.util.Collections" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     LoginController.LoginForm form = ((JspView<LoginController.LoginForm>)HttpView.currentView()).getModelBean();
@@ -33,9 +34,21 @@
         %><%=text(errors)%><%
     }
 %>
-<p>To reset your password, type in your email address and click the Submit button.</p>
+<style>
+    .reset-form-item {
+        margin-top: 15px;
+    }
+    .labkey-button {
+        width: 75px;
+    }
+</style>
+<p>To reset your password, type in your email address and click the Reset button.</p>
 <labkey:form method="POST" action="<%=h(buildURL(LoginController.ResetPasswordAction.class))%>" layout="horizontal">
-    <labkey:input id="EmailInput" type="text" name="email" value="<%=h(form.getEmail())%>"/>
-    <%= button("Submit").submit(true).attributes("name=\"reset\"")%>
-    <%= button("Cancel").href(urlProvider(LoginUrls.class).getLoginURL(doneURL)) %>
+    <div class="reset-form-item">
+        <labkey:input id="EmailInput" type="text" name="email" value="<%=h(form.getEmail())%>"/>
+    </div>
+    <div class="reset-form-item">
+        <%= button("Reset").submit(true).attributes(Collections.singletonMap("name", "reset"))%>
+        <%= button("Cancel").href(urlProvider(LoginUrls.class).getLoginURL(doneURL)) %>
+    </div>
 </labkey:form>

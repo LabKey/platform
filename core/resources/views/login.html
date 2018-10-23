@@ -3,12 +3,10 @@
     <div class="labkey-error" id="errors"></div>
     <div class="auth-form-body">
         <label for="email">Email</label>
-            <input id="email" name="email" type="text" class="input-block" tabindex="1" autocomplete="off">
-            <label for="password">
-                Password <a href="login-resetPassword.view?">(forgot password)</a>
-            </label>
-            <input id="password" name="password" type="password" class="input-block" tabindex="2" autocomplete="off">
-            <input tabindex="3" type="checkbox" name="remember" id="remember"  checked> Remember my email address
+        <input id="email" name="email" type="text" class="input-block" tabindex="1" autocomplete="off">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" class="input-block" tabindex="2" autocomplete="off">
+        <input tabindex="3" type="checkbox" name="remember" id="remember"  checked> Remember my email address
         <div class="termsOfUseSection" hidden>
             <div class="auth-header auth-item">Terms of Use</div>
             <div class="toucontent auth-item termsOfUseContent"></div>
@@ -22,16 +20,19 @@
             <input type="submit" tabindex="-1" class="loginSubmitButton"/>
             <a tabindex="5" class="labkey-button primary signin-btn"><span>Sign In</span></a>
             <span class="registrationSection" hidden>
-                <span class="register-text">or</span>
-                <a class="labkey-text-link" href="login-register.view?">Register for a new account</a>
+                <a class="labkey-button" href="login-register.view?">Register</a>
             </span>
         </div>
+        <div class="auth-item">
+            <a href="login-resetPassword.view?">Forgot your password?</a>
+        </div>
+
         <input type="hidden" name="returnUrl">
         <input type="hidden" id="urlhash" name="urlhash">
         <input type="hidden" name='X-LABKEY-CSRF'>
     </div>
 </form>
 <div class="otherLoginMechanismsSection" hidden>
-    <div class="auth-header">Or Sign In using:</div>
+    <div class="auth-header">Or Sign In using</div>
     <div class="otherLoginMechanismsContent"></div>
 </div>
