@@ -2674,6 +2674,21 @@ public class AdminController extends SpringActionController
             }
 
             List<TrackingCache> caches = CacheManager.getKnownCaches();
+
+            if (form.getDebugName() != null)
+            {
+                for (TrackingCache cache : caches)
+                {
+                    if (form.getDebugName().equals(cache.getDebugName()))
+                    {
+                        LOG.info("Purging cache: " + cache.getDebugName());
+                        cache.clear();
+                    }
+                }
+                ActionURL redirect = getViewContext().cloneActionURL().deleteParameter("debugName");
+                throw new RedirectException(redirect);
+            }
+
             List<CacheStats> cacheStats = new ArrayList<>();
             List<CacheStats> transactionStats = new ArrayList<>();
 
@@ -2717,6 +2732,7 @@ public class AdminController extends SpringActionController
             html.append("<td class=\"labkey-column-header\">Removes</td>");
             html.append("<td class=\"labkey-column-header\">Clears</td>");
             html.append("<td class=\"labkey-column-header\">Miss Percentage</td></tr>");
+            html.append("<td class=\"labkey-column-header\">Clear</td>");
 
             long size = 0;
             long gets = 0;
@@ -2746,6 +2762,9 @@ public class AdminController extends SpringActionController
 
                 appendLongs(html, limit, maxSize, stat.getSize(), stat.getGets(), stat.getMisses(), stat.getPuts(), stat.getExpirations(), stat.getRemoves(), stat.getClears());
                 appendDoubles(html, stat.getMissRatio());
+
+
+                html.append("<td>").append(PageFlowUtil.textLink("Clear", getCacheURL(stat.getDescription()))).append("</td>\n");
 
                 if (null != limit && maxSize >= limit)
                     html.append("<td><font class=\"labkey-error\">This cache has been limited</font></td>");
@@ -3049,6 +3068,15 @@ public class AdminController extends SpringActionController
         return url;
     }
 
+    public static ActionURL getCacheURL(String debugName)
+    {
+        ActionURL url = new ActionURL(CachesAction.class, ContainerManager.getRoot());
+
+        url.addParameter(MemForm.Params.debugName, debugName);
+
+        return url;
+    }
+
     private static volatile String lastCacheMemUsed = null;
 
     @AdminConsoleAction
@@ -3125,10 +3153,11 @@ public class AdminController extends SpringActionController
 
     public static class MemForm
     {
-        private enum Params {clearCaches, gc}
+        private enum Params {clearCaches, debugName, gc}
 
         private boolean _clearCaches = false;
         private boolean _gc = false;
+        private String _debugName;
 
         public boolean isClearCaches()
         {
@@ -3148,6 +3177,16 @@ public class AdminController extends SpringActionController
         public void setGc(boolean gc)
         {
             _gc = gc;
+        }
+
+        public String getDebugName()
+        {
+            return _debugName;
+        }
+
+        public void setDebugName(String debugName)
+        {
+            _debugName = debugName;
         }
     }
 
