@@ -108,7 +108,7 @@
                         <i class="fa fa-folder-o"></i>
                         <%-- Note: pageConfig.getAppBar() returns a URL pointing to the current non-workbook container (i.e. parent if current container is a workbook) --%>
                         <a class="lk-body-title-folder" href="<%= h(pageConfig.getAppBar().getHref()) %>"><%= h(getContainer().getTitleFor(ContainerType.TitleContext.parentInNav)) %></a>
-                        <% if (!getContainer().isInFolderNav()) { %>
+                        <% if (!getContainer().isInFolderNav() && !getContainer().isContainerTab()) { %>
                          / <a class="lk-body-title-folder" href="<%= h(getContainer().getStartURL(getUser()))%>"><%= h(getContainer().getTitleFor(ContainerType.TitleContext.childInNav)) %></a>
                         <% } %>
                     </span>
