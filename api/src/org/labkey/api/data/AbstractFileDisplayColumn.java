@@ -107,7 +107,7 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
                         append(" title=\"").append(PageFlowUtil.filter(displayName)).append("\"").
                         append("\" />");
 
-                out.write(PageFlowUtil.helpPopup(displayName, popupHtml.toString(), true, thumbnailHtml.toString(), 310, url == null ? null : "window.location = '" + url + "'"));
+                out.write(PageFlowUtil.helpPopup(displayName, popupHtml.toString(), true, thumbnailHtml.toString(), 310, (url == null || !link) ? null : "window.location = '" + url + "'"));
             }
             else
             {
