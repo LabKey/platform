@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
@@ -189,6 +190,12 @@ public class LocalDirectory implements Serializable
                 log.info("Copied " + Files.size(tempFile.toPath()) + " bytes.");
             }
             return tempFile;
+        }
+        catch (NoSuchFileException e)
+        {
+            // Avoid a separate round-trip just to determine if file is available, as it adds ~1 overhead per call
+            log.info("Could not find remote file: " + FileUtil.pathToString(remotePath) + ", unable to copy locally");
+            return null;
         }
         catch (IOException e)
         {
