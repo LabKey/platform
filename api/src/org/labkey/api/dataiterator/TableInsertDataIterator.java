@@ -36,8 +36,10 @@ import org.labkey.api.query.QueryUpdateService.InsertOption;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class TableInsertDataIterator extends StatementDataIterator implements DataIteratorBuilder
 {
@@ -87,6 +89,27 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         {
             dontUpdate.addAll(context.getDontUpdateColumnNames());
         }
+
+        if (context.getInsertOption() == InsertOption.MERGE)
+        {
+            // If the target has additional columns that aren't present in the source, don't overwrite (update) existing values...
+            Set<String> targetOnlyColumnNames = table.getColumns()
+                    .stream()
+                    .map(ColumnInfo::getName)
+                    .collect(Collectors.toCollection(CaseInsensitiveHashSet::new));
+            for (int i = 1; i <= di.getColumnCount(); i++) // Note DataIterator column index is 1-based
+            {
+                targetOnlyColumnNames.remove(di.getColumnInfo(i).getName());
+            }
+            // ... except for the Modified and ModifiedBy columns, which should still be updated.
+            targetOnlyColumnNames.removeAll(Arrays.stream(SimpleTranslator.SpecialColumn.values())
+                    .filter(val -> val.when != SimpleTranslator.When.insert)
+                    .map(Enum::name)
+                    .collect(Collectors.toSet()));
+
+            dontUpdate.addAll(targetOnlyColumnNames);
+        }
+
         if (null == keyColumns)
         {
             keyColumns = context.getAlternateKeys();
