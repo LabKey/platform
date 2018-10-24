@@ -33,6 +33,7 @@ import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.category.DefaultCategoryDataset;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.labkey.api.Constants;
@@ -102,6 +103,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
+import org.labkey.api.reports.ExternalScriptEngineFactory;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.*;
@@ -111,6 +113,7 @@ import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
+import org.labkey.api.security.permissions.AbstractSitePermission;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.AdminReadPermission;
@@ -154,6 +157,7 @@ import org.labkey.core.admin.miniprofiler.MiniProfilerController;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.portal.ProjectController;
 import org.labkey.core.query.CoreQuerySchema;
+import org.labkey.core.reports.ScriptEngineManagerImpl;
 import org.labkey.core.security.SecurityController;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.folder.xml.FolderDocument;
@@ -166,6 +170,7 @@ import org.springframework.web.servlet.mvc.Controller;
 
 import javax.mail.MessagingException;
 import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.beans.Introspector;
@@ -207,6 +212,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -9042,6 +9048,64 @@ public class AdminController extends SpringActionController
 
     }
 
+    /** This is a very crude API right now, mostly using default serialization of pre-existing objects
+     * NOTE: callers should expect that the return shape of this method may and will change in non-backward-compatible ways
+     */
+    @Marshal(Marshaller.Jackson)
+    @RequiresNoPermission
+    public class ConfigurationSummaryAction extends ApiAction<Object>
+    {
+        @Override
+        public Object execute(Object o, BindException errors)
+        {
+            if (!getContainer().isRoot())
+                throw new NotFoundException();
+
+            // requires site-admin, unless there are not users
+            if (!UserManager.hasNoUsers() && !getContainer().hasPermission(getUser(), AdminOperationsPermission.class))
+                throw new UnauthorizedException();
+
+            Map<String,Object> json;
+            json = getConfigurationJson();
+            return json;
+        }
+    }
+
+
+    /* returns a jackson serializable object that reports superset of information returned in admin console */
+    Map<String,Object> getConfigurationJson()
+    {
+        JSONObject res = new JSONObject();
+
+        AdminBean admin = new AdminBean(getUser());
+        res.put("server", admin);
+
+        final Map<String,Map<String,Object>> sets = new TreeMap<>();
+        new SqlSelector(CoreSchema.getInstance().getScope(),
+                "SELECT category, name, value FROM prop.propertysets PS inner join prop.properties P on PS.\"set\" = P.\"set\"\n" +
+                "WHERE objectid = 'b4a1ed67-a8c5-1036-b972-11ad73d07947' AND category IN ('SiteConfig') AND encryption='None'").forEachMap(m ->
+                {
+                    String category = (String)m.get("category");
+                    String name = (String)m.get("name");
+                    Object value = m.get("value");
+                    if (!sets.containsKey(category))
+                        sets.put(category, new TreeMap<String,Object>());
+                    sets.get(category).put(name,value);
+                }
+        );
+        res.put("siteSettings", sets);
+
+        HealthCheck.Result result = HealthCheckRegistry.get().checkHealth(Arrays.asList("all"));
+        res.put("health", result);
+
+        LabkeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+        res.put("scriptEngines", mgr.getEngineDefinitions());
+
+        return res;
+    }
+
+
+
     public static class TestCase extends AbstractActionPermissionTest
     {
         @Test
@@ -9186,7 +9250,6 @@ public class AdminController extends SpringActionController
                     GroupManager.getGroup(ContainerManager.getRoot(), "Users", GroupEnumType.SITE), null);
             job._impersonationContext2 = factory2.getImpersonationContext();
             testSerialize(job, LOG);
-
         }
     }
 }
