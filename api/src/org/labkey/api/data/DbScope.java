@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
@@ -387,6 +388,7 @@ public class DbScope
         return _displayName;
     }
 
+    @JsonIgnore
     public DataSource getDataSource()
     {
         return _dataSource;
@@ -427,6 +429,7 @@ public class DbScope
         return _labkeyProps;
     }
 
+    @JsonIgnore // this contains password, don't show
     public DataSourceProperties getDataSourceProperties()
     {
         return _dsProps;
@@ -626,6 +629,7 @@ public class DbScope
     }
 
 
+    @JsonIgnore
     public @Nullable Transaction getCurrentTransaction()
     {
         return getCurrentTransactionImpl();
@@ -640,6 +644,7 @@ public class DbScope
         }
     }
 
+    @JsonIgnore
     public Connection getConnection() throws SQLException
     {
         return getConnection(null);
@@ -657,12 +662,14 @@ public class DbScope
 
 
     /** Get a fresh connection directly from the pool... not part of the current transaction, etc. */
+    @JsonIgnore
     public Connection getPooledConnection() throws SQLException
     {
         return getPooledConnection(null);
     }
 
 
+    @JsonIgnore
     public Connection getUnpooledConnection() throws SQLException
     {
         try
@@ -762,7 +769,8 @@ public class DbScope
         return delegate;
     }
 
-    
+
+    @JsonIgnore
     public Class getDelegateClass()
     {
         try (Connection conn = _dataSource.getConnection())
@@ -878,6 +886,7 @@ public class DbScope
         }
     }
 
+    @JsonIgnore
     public SqlDialect getSqlDialect()
     {
         return _dialect;
@@ -939,6 +948,7 @@ public class DbScope
     }
 
 
+    @JsonIgnore
     public @NotNull DbSchema getSchema(String schemaName, DbSchemaType type)
     {
         return _schemaCache.get(schemaName, type);
@@ -946,6 +956,7 @@ public class DbScope
 
 
     // Get the special "labkey" schema created in each module data source
+    @JsonIgnore
     public @NotNull DbSchema getLabKeySchema()
     {
         return getSchema("labkey", DbSchemaType.Module);
@@ -1250,6 +1261,7 @@ public class DbScope
     }
 
 
+    @JsonIgnore
     public static @Nullable Throwable getDataSourceFailure(String dsName)
     {
         return _dataSourceFailures.get(dsName);

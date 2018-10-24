@@ -15,6 +15,7 @@
  */
 package org.labkey.api.module;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlOptions;
@@ -505,6 +506,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
      */
     @Override
     @NotNull
+    @JsonIgnore
     public Set<DbSchema> getSchemasToTest()
     {
         Set<String> schemaNames = new LinkedHashSet<>(getSchemaNames());
@@ -1462,6 +1464,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
 
+    @JsonIgnore
     public ApplicationContext getApplicationContext()
     {
         return _applicationContext;

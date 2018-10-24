@@ -16,6 +16,7 @@
 
 package org.labkey.api.module;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -179,6 +180,7 @@ public interface Module extends Comparable<Module>
      *
      * @return Collection of WebPartFactory (empty collection if none)
      */
+    @JsonIgnore
     @NotNull Collection<WebPartFactory> getWebPartFactories();
 
     /**
@@ -194,8 +196,10 @@ public interface Module extends Comparable<Module>
      *
      * @return A map of pageflow name to controller class
      */
+    @JsonIgnore
     Map<String, Class<? extends Controller>> getControllerNameToClass();
 
+    @JsonIgnore
     Map<Class<? extends Controller>, String> getControllerClassToName();
 
     /**
@@ -220,6 +224,7 @@ public interface Module extends Comparable<Module>
      * @return the integration tests that this module provides
      */
     @NotNull
+    @JsonIgnore
     Set<Class> getIntegrationTests();
 
     /**
@@ -228,6 +233,7 @@ public interface Module extends Comparable<Module>
      * @return the unit tests that this module provides
      */
     @NotNull
+    @JsonIgnore
     Set<Class> getUnitTests();
 
     /**
@@ -238,6 +244,7 @@ public interface Module extends Comparable<Module>
      * @return the schemas associated with this module that should be tested
      */
     @NotNull
+    @JsonIgnore
     Set<DbSchema> getSchemasToTest();
 
     /**
@@ -258,6 +265,7 @@ public interface Module extends Comparable<Module>
 
     @NotNull Set<SupportedDatabase> getSupportedDatabasesSet();
 
+    @JsonIgnore
     Resolver getModuleResolver();
     Resource getModuleResource(String path);
     Resource getModuleResource(Path path);
@@ -269,6 +277,7 @@ public interface Module extends Comparable<Module>
     String getVcsUrl();
     Map<String, String> getProperties();
     Set<String> getModuleDependenciesAsSet();
+    @JsonIgnore
     Set<Module> getResolvedModuleDependencies();
     boolean shouldConsolidateScripts();
     boolean shouldManageVersion();
@@ -336,6 +345,7 @@ public interface Module extends Comparable<Module>
     void addDeferredUpgradeRunnable(String description, Runnable runnable);
     void runDeferredUpgradeRunnables();
 
+    @JsonIgnore
     Map<String, ModuleProperty> getModuleProperties();
 
     /**
@@ -349,6 +359,7 @@ public interface Module extends Comparable<Module>
 
     @NotNull LinkedHashSet<ClientDependency> getClientDependencies(Container c);
 
+    @JsonIgnore
     @Nullable UpgradeCode getUpgradeCode();
 
     @Nullable
@@ -360,6 +371,7 @@ public interface Module extends Comparable<Module>
      * Enables modules to publish schema information for Olap queries.
      */
     @Nullable
+    @JsonIgnore
     OlapSchemaInfo getOlapSchemaInfo();
 
     DbSchema createModuleDbSchema(DbScope scope, String metaDataName, Map<String, SchemaTableInfoFactory> tableInfoFactoryMap);
