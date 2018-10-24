@@ -55,6 +55,7 @@
     <xsd:simpleType name="inputTypeType">
         <xsd:restriction base="xsd:string">
             <xsd:enumeration value="text"/>
+            <xsd:enumeration value="textArea"/>
             <xsd:enumeration value="select"/>
             <xsd:enumeration value="combo"/>
             <xsd:enumeration value="checkbox"/>
