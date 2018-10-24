@@ -1,6 +1,8 @@
 package org.labkey.api.data;
 
 import org.apache.commons.collections4.MultiValuedMap;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 
@@ -105,5 +107,71 @@ public class URLDisplayColumn extends AbstractFileDisplayColumn
     protected boolean hasFileInputHtml()
     {
         return false;
+    }
+
+    @Override
+    protected FileImageRenderHelper createRenderHelper(RenderContext ctx, String url, String filename, String displayName, @Nullable String fileIconUrl, @Nullable String popupIconUrl, boolean isThumbnail, boolean isImage)
+    {
+        return new URLImageRenderHelper(ctx, url, filename, displayName, fileIconUrl, popupIconUrl, isThumbnail, isImage);
+    }
+
+    private class URLImageRenderHelper extends FileImageRenderHelper
+    {
+        public URLImageRenderHelper(RenderContext ctx, String url, String filename, String displayName, String fileIconUrl, String popupIconUrl, boolean isThumbnail, boolean isImage)
+        {
+            super(ctx, url, filename, displayName, fileIconUrl, popupIconUrl, isThumbnail, isImage);
+        }
+
+        @Override
+        public String createThumbnailImage()
+        {
+            if (_url != null || _fileIconUrl != null)
+            {
+                StringBuilder sb = new StringBuilder();
+
+                String thumbnailUrl = _fileIconUrl != null ? ensureAbsoluteUrl(_ctx, _fileIconUrl) : ensureAbsoluteUrl(_ctx, _url);
+                sb.append("<img style=\"display:block; height:auto;").
+                        append(_thumbnailWidth != null ? "width:" + _thumbnailWidth : "max-width:32px").append("; vertical-align:middle\"").
+                        append(" src=\"").append(PageFlowUtil.filter(thumbnailUrl)).append("\"").
+                        append(" title=\"").append(PageFlowUtil.filter(_displayName)).append("\"").
+                        append("\" />");
+
+                return sb.toString();
+            }
+            else
+            {
+                return super.createThumbnailImage();
+            }
+        }
+
+        @Override
+        public String createPopupImage()
+        {
+            if (_url != null || _fileIconUrl != null)
+            {
+                StringBuilder sb = new StringBuilder();
+
+                String popupUrl = _popupIconUrl != null ? ensureAbsoluteUrl(_ctx, _popupIconUrl) : (_url != null ? ensureAbsoluteUrl(_ctx, _url) : null);
+                if (popupUrl != null)
+                {
+                    sb.append("<img style=\"").
+                            append(_popupWidth != null ? "width:" + _popupWidth : "max-width:300px").append("; height:auto;\" src=\"").
+                            append(PageFlowUtil.filter(popupUrl)).
+                            append("\" />");
+                }
+                return sb.toString();
+            }
+            else
+            {
+                return super.createPopupImage();
+            }
+        }
+
+        @Override
+        public String createClickScript()
+        {
+            String url = _fileIconUrl != null ? ensureAbsoluteUrl(_ctx, _fileIconUrl) : ensureAbsoluteUrl(_ctx, _url);
+            return url == null ? null : "window.location = '" + url + "'";
+        }
     }
 }
