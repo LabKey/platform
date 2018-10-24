@@ -565,6 +565,9 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
 
                 cat = mgr.saveCategory(c, user, cat);
 
+                // verify the new category can be retrieved via the api
+                assertNotNull(mgr.getCategory(c, cat.getRowId()));
+
                 // test serialization encoding and decoding
                 String encoded = mgr.encode(cat);
                 String parts[] = mgr.decode(encoded);
@@ -583,6 +586,9 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
                     subcat.setContainerId(c.getId());
 
                     subcat = mgr.saveCategory(c, user, subcat);
+
+                    // verify the new category can be retrieved via the api
+                    assertNotNull(mgr.getCategory(c, subcat.getRowId()));
 
                     // test serialization encoding and decoding
                     encoded = mgr.encode(subcat);
