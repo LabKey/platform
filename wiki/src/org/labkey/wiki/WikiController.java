@@ -2299,7 +2299,7 @@ public class WikiController extends SpringActionController
                 boolean isBrowserDev = user.isTrustedBrowserDev();
                 PageFlowUtil.validateHtml(body, tidyErrors, isBrowserDev);
 
-                if (!isBrowserDev);
+                if (!isBrowserDev)
                 {
                     this.sanitizedHtml = PageFlowUtil.sanitizeHtml(body, tidyErrors);
                 }
