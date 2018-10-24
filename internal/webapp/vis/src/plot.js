@@ -1772,22 +1772,27 @@ boxPlot.render();
                     && (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.MovingRange || config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings)) {
 
                 // If mean or std dev not in row, use default values
-                if (row[valProp] !== undefined && (config.properties.valueConversion === 'percentDeviation' || config.properties.valueConversion === 'standardDeviation')) {
+                if (row[valProp] !== undefined && config.properties.defaultGuideSets
+                        && (config.properties.valueConversion === 'percentDeviation' || config.properties.valueConversion === 'standardDeviation')) {
                     if (row[meanProp] === undefined) {
-                        if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.MovingRange) {
+                        if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.MovingRange
+                                && config.properties.defaultGuideSets[row[config.properties.groupBy]]) {
                             row[meanProp] = config.properties.defaultGuideSets[row[config.properties.groupBy]].MR.Mean;
                         }
-                        else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings) {
+                        else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings
+                                && config.properties.defaultGuideSets[row[config.properties.groupBy]]) {
                             row[meanProp] = config.properties.defaultGuideSets[row[config.properties.groupBy]].LJ.Mean;
                         }
                     }
 
                     if (row[sdProp] === undefined) {
                         row[sdProp] = config.properties.defaultStdDev;
-                        if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.MovingRange) {
+                        if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.MovingRange
+                                && config.properties.defaultGuideSets[row[config.properties.groupBy]]) {
                             row[sdProp] = config.properties.defaultGuideSets[row[config.properties.groupBy]].MR.StdDev;
                         }
-                        else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings) {
+                        else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings
+                                && config.properties.defaultGuideSets[row[config.properties.groupBy]]) {
                             row[sdProp] = config.properties.defaultGuideSets[row[config.properties.groupBy]].LJ.StdDev;
                         }
                     }
