@@ -319,6 +319,8 @@
 
                 var customConfigObj = JSON.parse(row.CustomConfiguration);
                 processCustomConfigJson(customConfigObj);
+
+                LABKEY.Utils.signalWebDriverTest("triggerConfigLoaded");
             }
 
             function onFailure(data) {
