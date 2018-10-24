@@ -86,9 +86,12 @@ public class SampleSetUpdateService extends AbstractQueryUpdateService
 
     private Integer getMaterialRowId(Map<String, Object> row)
     {
-        Object o = row.get(ExpMaterialTable.Column.RowId.name());
-        if (o != null)
-            return (Integer)(_converter.convert(Integer.class, o));
+        if (row != null)
+        {
+            Object o = row.get(ExpMaterialTable.Column.RowId.name());
+            if (o != null)
+                return (Integer) (_converter.convert(Integer.class, o));
+        }
 
         return null;
     }
