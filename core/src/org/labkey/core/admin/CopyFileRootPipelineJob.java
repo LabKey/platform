@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -51,7 +52,7 @@ public class CopyFileRootPipelineJob extends PipelineJob
         _migrateFilesOption = migrateFilesOption;
     }
 
-    public CopyFileRootPipelineJob(Container container, User user, List<Pair<Container, String>> sourceInfos, PipeRoot pipeRoot, MigrateFilesOption migrateFilesOption)
+    public CopyFileRootPipelineJob(Container container, User user, @NotNull List<Pair<Container, String>> sourceInfos, PipeRoot pipeRoot, MigrateFilesOption migrateFilesOption)
     {
         super(null, new ViewBackgroundInfo(container, user, null), pipeRoot);
         _sourceInfos = sourceInfos;
@@ -371,8 +372,8 @@ public class CopyFileRootPipelineJob extends PipelineJob
             CopyFileRootPipelineJob copyJob2 = (CopyFileRootPipelineJob)job2;
             if (!this._migrateFilesOption.equals(copyJob2._migrateFilesOption))
                 errors.add("_migrateFilesOption");
-//            if (!this._sourceInfos.equals(copyJob2._sourceInfos))
-//                errors.add("_sourceInfos");
+            if (this._sourceInfos.size() != copyJob2._sourceInfos.size())
+                errors.add("_sourceInfos size");
         }
         else
         {

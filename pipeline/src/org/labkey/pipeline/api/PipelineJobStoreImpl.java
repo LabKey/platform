@@ -52,9 +52,9 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
     }
 
     @Override
-    public Object fromJSONTest(String json, Class<?> cls)
+    public Object deserializeFromJSON(String json, Class<?> cls)
     {
-        Object obj = super.fromJSONTest(json, cls);
+        Object obj = super.deserializeFromJSON(json, cls);
         if (obj instanceof PipelineJob)
         {
             PipelineJob job = (PipelineJob)obj;
@@ -134,7 +134,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
 
     public void storeJob(PipelineJob job) throws NoSuchJobException
     {
-        PipelineStatusManager.storeJob(job.getJobGUID(), PipelineJob.serializeJob(job));
+        PipelineStatusManager.storeJob(job.getJobGUID(), PipelineJob.serializeJob(job, true));
     }
 
     // Synchronize all spliting and joining to avoid SQL deadlocks.  Splitting

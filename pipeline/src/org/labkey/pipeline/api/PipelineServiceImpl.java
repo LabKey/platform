@@ -390,7 +390,7 @@ public class PipelineServiceImpl implements PipelineService
     public void queueJob(PipelineJob job) throws PipelineValidationException
     {
         // Test serialization by serializing and deserializating every job
-        PipelineJob deserializedJob = PipelineJob.deserializeJob(PipelineJob.serializeJob(job));
+        PipelineJob deserializedJob = PipelineJob.deserializeJob(PipelineJob.serializeJob(job, false));
         getPipelineQueue().addJob(deserializedJob);
     }
 

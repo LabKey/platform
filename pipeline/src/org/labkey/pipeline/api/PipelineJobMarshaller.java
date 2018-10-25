@@ -26,7 +26,6 @@ import org.apache.log4j.Logger;
 import org.junit.Test;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.RowMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -148,20 +147,23 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
         throw new UnsupportedOperationException("Method supported only on web server");
     }
 
-    public String toJSONTest(Object job)
+    public String serializeToJSON(Object job)
+    {
+        return serializeToJSON(job, true);
+    }
+
+    public String serializeToJSON(Object job, boolean ensureDeserialize)
     {
         ObjectMapper mapper = PipelineJob.createObjectMapper();
 
         try
         {
             String serialized = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(job);
-            if (true) // AppProps.getInstance().isDevMode())
+            if (ensureDeserialize)          // Some callers round trip, so we don't need to here
             {
                 try
                 {
-//                    LOG.info("Serialized job '" + job.getClass().getName() + "'");
-//                    LOG.info(serialized);
-                    Object unserialized = fromJSONTest(serialized, job.getClass());
+                    Object unserialized = deserializeFromJSON(serialized, job.getClass());
                     if (job instanceof PipelineJob)
                     {
                         List<String> errors = ((PipelineJob)job).compareJobs((PipelineJob)unserialized);
@@ -183,7 +185,7 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
 
     }
 
-    public Object fromJSONTest(String xml, Class<?> cls)
+    public Object deserializeFromJSON(String xml, Class<?> cls)
     {
 
         ObjectMapper mapper = PipelineJob.createObjectMapper();
@@ -378,18 +380,6 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
             {
                 _time = time;
             }
-/*            public int getMigrateFilesOption()
-            {
-                return _migrateFilesOption;
-            }
-            public Map<URI, Object> getMap()
-            {
-                return _map;
-            }
-            public Inner getInner()
-            {
-                return _inner;
-            }      */
         }
 
         @Test
@@ -399,20 +389,8 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
             {
                 Object job = new TestJob("Johnny", 5);
                 testSerialize(job, LOG);
-
-/*                TestJob3 job3 = new TestJob3();
-                List<List<Object>> objs = new ArrayList<>();
-                List<Object> os = new ArrayList<>();
-                os.add("ToMe"); os.add(32); os.add(4.5);
-                objs.add(os);
-                List<Object> os1 = new ArrayList<>();
-                os1.add("FooBar"); os.add(99);
-                objs.add(os1);
-                job3.setObjs(objs);
-                testSerialize(job3, LOG);           */
-
             }
-            catch (Exception e) // ClassNotFoundException e)
+            catch (Exception e)
             {
                 LOG.error("Class not found", e);
             }

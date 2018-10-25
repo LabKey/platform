@@ -5288,7 +5288,7 @@ public class AdminController extends SpringActionController
             addCopySourceInfo(service, childContainer, sourceInfo, false);
     }
 
-    private static void initiateCopyFilesPipelineJobs(ViewContext ctx, List<Pair<Container, String>> sourceInfos, PipeRoot pipeRoot,
+    private static void initiateCopyFilesPipelineJobs(ViewContext ctx, @NotNull List<Pair<Container, String>> sourceInfos, PipeRoot pipeRoot,
                                                       ProjectSettingsForm.MigrateFilesOption migrateFilesOption) throws PipelineValidationException
     {
         CopyFileRootPipelineJob job = new CopyFileRootPipelineJob(ctx.getContainer(), ctx.getUser(), sourceInfos, pipeRoot, migrateFilesOption);
