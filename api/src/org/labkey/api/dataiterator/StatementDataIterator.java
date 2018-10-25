@@ -40,7 +40,6 @@ import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.GUID;
 
@@ -248,31 +247,38 @@ public class StatementDataIterator extends AbstractDataIterator
     @Override
     public boolean next() throws BatchValidationException
     {
-        debug("<next>");
         boolean ret = false;
         try
         {
+            if (_firstNext)
+            {
+                _firstNext = false;
+                onFirst();
+                assert _elapsed.start();
+            }
+
+            log("<next>"); // Note: First opportunity for this logging, since onFirst() initializes the logger
             ret = _next();
         }
         finally
         {
             if (!ret)
             {
-                debug("<close() on _queue>");
+                log("<close() on _queue>");
                 _queue.close();
-                debug("</close() on _queue>");
+                log("</close() on _queue>");
                 if (null != _asyncThread)
                 {
-                    debug("<join() on _asyncThread>");
+                    log("<join() on _asyncThread>");
                     try {_asyncThread.join();} catch (InterruptedException x) {
-                        debug("join() was interrupted!", x);
+                        log("join() was interrupted!", x);
                     }
                     _asyncThread = null;
-                    debug("</join() on _asyncThread>");
+                    log("</join() on _asyncThread>");
                 }
                 checkBackgroundException();
             }
-            debug("</next>");
+            log("</next>");
         }
         return ret;
     }
@@ -280,20 +286,13 @@ public class StatementDataIterator extends AbstractDataIterator
 
     private boolean _next() throws BatchValidationException
     {
-        if (_firstNext)
-        {
-            _firstNext = false;
-            onFirst();
-            assert _elapsed.start();
-        }
-
         try
         {
             boolean hasNextRow = _data.next();
 
             if (hasNextRow)
             {
-                debug("<clear and set parameters on " + _currentStmt + ">");
+                log("<clear and set parameters on " + _currentStmt + ">");
                 _currentStmt.clearParameters();
                 for (Triple binding : _currentBinding)
                 {
@@ -311,7 +310,7 @@ public class StatementDataIterator extends AbstractDataIterator
                         binding.to.setValue(value);
                     }
                 }
-                debug("</clear and set parameters on " + _currentStmt + ">");
+                log("</clear and set parameters on " + _currentStmt + ">");
 
                 checkShouldCancel();
 
@@ -376,9 +375,9 @@ public class StatementDataIterator extends AbstractDataIterator
         if (_batchSize == 1)
         {
             /* use .execute() for handling keys */
-            debug("<execute() on " + _currentStmt + ">");
+            log("<execute() on " + _currentStmt + ">");
             _currentStmt.execute();
-            debug("</execute() on " + _currentStmt + ">");
+            log("</execute() on " + _currentStmt + ">");
         }
         else if (_useAsynchronousExecute && _stmts.length > 1 && _txSize==-1)
         {
@@ -386,9 +385,9 @@ public class StatementDataIterator extends AbstractDataIterator
             {
                 try
                 {
-                    debug("<swap() - old: " + _currentStmt + ">");
+                    log("<swap() - old: " + _currentStmt + ">");
                     _currentStmt = _queue.swapFullForEmpty(_currentStmt);
-                    debug("</swap() - new: " + _currentStmt + ">");
+                    log("</swap() - new: " + _currentStmt + ">");
                     break;
                 }
                 catch (InterruptedException x)
@@ -399,9 +398,9 @@ public class StatementDataIterator extends AbstractDataIterator
         }
         else
         {
-            debug("<executeBatch() on " + _currentStmt + ">");
+            log("<executeBatch() on " + _currentStmt + ">");
             _currentStmt.executeBatch();
-            debug("</executeBatch() on " + _currentStmt + ">");
+            log("</executeBatch() on " + _currentStmt + ">");
         }
 
         _currentBatchSize = 0;
@@ -410,16 +409,16 @@ public class StatementDataIterator extends AbstractDataIterator
         assert _execute.stop();
     }
 
-    private void debug(String message)
+    private void log(String message)
     {
         if (null != _log)
-            _log.debug(message);
+            _log.trace(message);
     }
 
-    private void debug(String message, Exception e)
+    private void log(String message, Exception e)
     {
         if (null != _log)
-            _log.debug(message, e);
+            _log.trace(message, e);
     }
 
     private void checkBackgroundException() throws BatchValidationException
@@ -450,48 +449,48 @@ public class StatementDataIterator extends AbstractDataIterator
     {
         try
         {
-            debug("<close()>");
-            debug("<close() on _data>");
+            log("<close()>");
+            log("<close() on _data>");
             _data.close();
-            debug("</close() on _data>");
-            debug("<close() on _queue>");
+            log("</close() on _data>");
+            log("<close() on _queue>");
             _queue.close();
-            debug("</close() on _queue>");
+            log("</close() on _queue>");
             if (_asyncThread != null)
             {
-                debug("<join() on _asyncThread>");
+                log("<join() on _asyncThread>");
                 try
                 {
                     _asyncThread.join();
                 }
                 catch (InterruptedException x)
                 {
-                    debug("join() was interrupted!", x);
+                    log("join() was interrupted!", x);
                 }
                 _asyncThread = null;
-                debug("</join() on _asyncThread>");
+                log("</join() on _asyncThread>");
             }
             for (ParameterMap stmt : _stmts)
             {
                 if (stmt != null)
                 {
-                    debug("<close() on " + stmt + ">");
+                    log("<close() on " + stmt + ">");
                     stmt.close();
-                    debug("</close() on " + stmt + ">");
+                    log("</close() on " + stmt + ">");
                 }
             }
             _stmts = new ParameterMap[0];
         }
         finally
         {
-            debug("</close()>");
+            log("</close()>");
         }
     }
 
 
     class _Runnable implements Runnable
     {
-        ParameterMap _firstEmpty;
+        private final ParameterMap _firstEmpty;
 
         _Runnable(@NotNull ParameterMap empty)
         {
@@ -507,7 +506,7 @@ public class StatementDataIterator extends AbstractDataIterator
             }
             catch (Exception x)
             {
-                debug("executeStatementsInBackground() threw", x);
+                log("executeStatementsInBackground() threw", x);
                 _backgroundException.set(x);
                 _foregroundThread.interrupt();
             }
@@ -521,9 +520,9 @@ public class StatementDataIterator extends AbstractDataIterator
             {
                 try
                 {
-                    debug("<executeBatch() on " + m + ">");
+                    log("<executeBatch() on " + m + ">");
                     m.executeBatch();
-                    debug("</executeBatch() on " + m + ">");
+                    log("</executeBatch() on " + m + ">");
                 }
                 catch (SQLException x)
                 {
@@ -552,11 +551,11 @@ public class StatementDataIterator extends AbstractDataIterator
 
     public static class TestCase extends Assert
     {
-        DataIterator getSource(final int rowlimit)
+        private DataIterator getSource(final int rowlimit)
         {
             return new DataIterator()
             {
-                int row=0;
+                private int row=0;
 
                 @Override
                 public String getDebugName()
@@ -683,9 +682,9 @@ public class StatementDataIterator extends AbstractDataIterator
 
         static class NoopParameterMap extends ParameterMap
         {
-            AtomicInteger errorWhen;
+            private final AtomicInteger errorWhen;
 
-            NoopParameterMap(AtomicInteger errorWhen) throws SQLException
+            NoopParameterMap(AtomicInteger errorWhen)
             {
                 super();
                 this.errorWhen = errorWhen;
@@ -711,7 +710,7 @@ public class StatementDataIterator extends AbstractDataIterator
             }
 
             @Override
-            public void addBatch() throws SQLException
+            public void addBatch()
             {
             }
 
@@ -721,7 +720,7 @@ public class StatementDataIterator extends AbstractDataIterator
             }
 
             @Override
-            public void put(String name, Object value) throws ValidationException
+            public void put(String name, Object value)
             {
             }
 
@@ -732,42 +731,36 @@ public class StatementDataIterator extends AbstractDataIterator
         }
 
         @Test
-        public void testException() throws Exception
+        public void testException()
         {
             _testException(1);
             _testException(2);
             _testException(3);
         }
 
-        public void _testException(int when) throws Exception
+        public void _testException(int when)
         {
-            try
-            {
-                AtomicInteger intWhen = new AtomicInteger(when);
-                ParameterMap pm1 = new NoopParameterMap(intWhen);
-                ParameterMap pm2 = new NoopParameterMap(intWhen);
+            AtomicInteger intWhen = new AtomicInteger(when);
+            ParameterMap pm1 = new NoopParameterMap(intWhen);
+            ParameterMap pm2 = new NoopParameterMap(intWhen);
 
-                DataIteratorContext context = new DataIteratorContext();
-                DataIterator source = getSource(100);
-                StatementDataIterator sdi = new StatementDataIterator(source, context, pm1, pm2)
+            DataIteratorContext context = new DataIteratorContext();
+            DataIterator source = getSource(100);
+            StatementDataIterator sdi = new StatementDataIterator(source, context, pm1, pm2)
+            {
+                @Override
+                void init()
                 {
-                    @Override
-                    void init()
-                    {
-                        super.init();
-                        _batchSize = 10;
-                    }
-                };
-                sdi._useAsynchronousExecute = true;
+                    super.init();
+                    _batchSize = 10;
+                }
+            };
+            sdi._useAsynchronousExecute = true;
 
-                new Pump(sdi,context).run();
-                assertTrue(pm1.isClosed());
-                assertTrue(pm2.isClosed());
-                assertEquals(1, context.getErrors().getRowErrors().size());
-            }
-            finally
-            {
-            }
+            new Pump(sdi,context).run();
+            assertTrue(pm1.isClosed());
+            assertTrue(pm2.isClosed());
+            assertEquals(1, context.getErrors().getRowErrors().size());
         }
     }
 }
