@@ -43,6 +43,7 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
     private final Set<String> _dataTypes;
     private final User _user;
     private final Container _c;
+                                                       // TODO; consider ManagedReference for _loggerGetter
     private transient LoggerGetter _loggerGetter;      // Don't serialize; owner of Context must set after construction
     private final @Nullable VirtualFile _root;
     private final Map<Class<? extends ImportContext>, ImportContext> _contextMap;

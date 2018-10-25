@@ -20,11 +20,6 @@ public class SerializeDumper
 {
     private static final Logger _log = Logger.getLogger(SerializeDumper.class);
 
-    static
-    {
-        _log.setLevel(Level.DEBUG);
-    }
-    
     private static final Map<String, Class<?>> _seenClasses = new HashMap<>();
     private static final Queue<Class<?>> _queueClasses = new ArrayDeque<>();
 

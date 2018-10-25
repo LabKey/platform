@@ -57,7 +57,11 @@ public class PathSerialization
         {
             String str = parser.getValueAsString();
             if (FileUtil.hasCloudScheme(str))
-                return null; // TODO
+            {
+                // TODO: problem is that we need a container to map a URL string to an S3 path, because we have a prefix derived form the container (#35865)
+                // TODO: one possibility is to tease out what config/container matches the bucket/prefix we find, but there could be more than 1 match
+                return null;
+            }
             else
                 return new File(str).toPath();
         }

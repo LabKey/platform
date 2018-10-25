@@ -43,7 +43,6 @@ public class RecordedActionSet
         _otherInputs = new LinkedHashMap<>();
     }
 
-    // No-args constructor to support de-serialization in Java 7
     public RecordedActionSet()
     {
         this(Collections.emptyList());

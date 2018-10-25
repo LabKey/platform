@@ -477,18 +477,18 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public static PipelineJob readFromFile(File file) throws IOException, PipelineJobException
     {
-        StringBuilder xml = new StringBuilder();
+        StringBuilder serializedJob = new StringBuilder();
         try (InputStream fIn = new FileInputStream(file))
         {
             BufferedReader reader = Readers.getReader(fIn);
             String line;
             while ((line = reader.readLine()) != null)
             {
-                xml.append(line);
+                serializedJob.append(line);
             }
         }
 
-        PipelineJob job = PipelineJob.deserializeJob(xml.toString());
+        PipelineJob job = PipelineJob.deserializeJob(serializedJob.toString());
         if (null == job)
         {
             throw new PipelineJobException("Unable to deserialize job");
@@ -502,12 +502,12 @@ abstract public class PipelineJob extends Job implements Serializable
         File newFile = new File(file.getPath() + ".new");
         File origFile = new File(file.getPath() + ".orig");
 
-        String xml = PipelineJob.serializeJob(this);
+        String serializedJob = PipelineJob.serializeJob(this, true);
 
         try (FileOutputStream fOut = new FileOutputStream(newFile))
         {
             PrintWriter writer = PrintWriters.getPrintWriter(fOut);
-            writer.write(xml);
+            writer.write(serializedJob);
             writer.flush();
         }
 
@@ -668,7 +668,7 @@ abstract public class PipelineJob extends Job implements Serializable
         if (taskPipeline != null)
         {
             // Save the current job state marshalled to XML, in case of error.
-            String xml = PipelineJob.serializeJob(this);
+            String serializedJob = PipelineJob.serializeJob(this, true);
 
             // Note runStateMachine returns false, if the job cannot be run locally.
             // The job may still need to be put on a JMS queue for remote processing.
@@ -682,7 +682,7 @@ abstract public class PipelineJob extends Job implements Serializable
             {
                 try
                 {
-                    PipelineJob originalJob = PipelineJob.deserializeJob(xml);
+                    PipelineJob originalJob = PipelineJob.deserializeJob(serializedJob);
                     if (null != originalJob)
                         originalJob.store();
                     else
@@ -1827,8 +1827,13 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public static String serializeJob(PipelineJob job)
     {
+        return serializeJob(job, true);
+    }
+
+    public static String serializeJob(PipelineJob job, boolean ensureDeserialize)
+    {
         return job.hasJacksonSerialization() ?
-                PipelineJobService.get().getJobStore().toJSONTest(job) :
+                PipelineJobService.get().getJobStore().serializeToJSON(job, ensureDeserialize) :
                 PipelineJobService.get().getJobStore().toXML(job);
     }
 
@@ -1853,7 +1858,7 @@ abstract public class PipelineJob extends Job implements Serializable
             try
             {
                 String className = PipelineJob.getClassNameFromJson(serialized);
-                Object job = PipelineJobService.get().getJobStore().fromJSONTest(serialized, Class.forName(className));
+                Object job = PipelineJobService.get().getJobStore().deserializeFromJSON(serialized, Class.forName(className));
                 if (job instanceof PipelineJob)
                     return (PipelineJob) job;
 
@@ -1907,10 +1912,10 @@ abstract public class PipelineJob extends Job implements Serializable
             {
                 if (null != log)
                     log.info("Hi Logger is here!");
-                String json = jobStore.toJSONTest(job);
+                String json = jobStore.serializeToJSON(job);
                 if (null != log)
                     log.info(json);
-                Object job2 = jobStore.fromJSONTest(json, job.getClass());
+                Object job2 = jobStore.deserializeFromJSON(json, job.getClass());
                 if (null != log)
                     log.info(job2.toString());
 
@@ -1945,14 +1950,10 @@ abstract public class PipelineJob extends Job implements Serializable
             errors.add("_activeTaskStatus");
         if (job1._errors != job2._errors)
             errors.add("_errors");
-        //if (job1._info != job2._info)
-        //    errors.add("_info");
         if (job1._interrupted != job2._interrupted)
             errors.add("_interrupted");
         if (!PropertyUtil.nullSafeEquals(job1._jobGUID, job2._jobGUID))
             errors.add("_jobGUID");
-        //if (job1._localDirectory != job2._localDirectory)
-        //    errors.add("_localDirectory");
         if (!PropertyUtil.nullSafeEquals(job1._logFile, job2._logFile))
         {
             if (null == job1._logFile || null == job2._logFile)
@@ -1964,14 +1965,8 @@ abstract public class PipelineJob extends Job implements Serializable
             errors.add("_logFilePathName");
         if (!PropertyUtil.nullSafeEquals(job1._parentGUID, job2._parentGUID))
             errors.add("_parentGUID");
-        //if (!job1._pipeRoot.equals(job2._pipeRoot))
-        //    errors.add("_pipeRoot");
         if (!PropertyUtil.nullSafeEquals(job1._provider, job2._provider))
             errors.add("_provider");
-        //if (!job1._queue.equals(job2._queue))
-        //    errors.add("_queue");
-//        if (job1._settingStatus != job2._settingStatus)            // transient
-//            errors.add("_settingStatus");
         if (job1._submitted != job2._submitted)
             errors.add("_submitted");
 
