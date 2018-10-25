@@ -579,6 +579,18 @@ Ext4.define('LABKEY.ext4.SurveyDesignPanel', {
         });
 
         items.push({
+            title : 'Date & Time Picker',
+            html  : '<code style="white-space:pre-wrap;">{<br/>' +
+                    '    "extConfig": {<br/>' +
+                    '        "width": 800,<br/>' +
+                    '        "xtype": "datetimefield",<br/>' +
+                    '        "name": "dtfield",<br/>' +
+                    '        "fieldLabel": "DateTime Field"<br/>' +
+                    '    }<br/>' +
+                    '}</code>'
+        });
+
+        items.push({
             title : '<span style="font-style: italic;">Display Field (ExtJS)</span>',
             html  : '<code style="white-space:pre-wrap;">{<br/>' +
                     '    "extConfig": {<br/>' +
