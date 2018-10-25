@@ -904,7 +904,7 @@ public class StudyManager
             }
 
             // track added and removed properties against the shared dataset in the definition container
-            Map<String,String> add = new HashMap<>();
+            Map<String, String> add = new HashMap<>();
             List<String> remove = new LinkedList<>();
             if (datasetDefinition.isShowByDefault() != original.isShowByDefault())
                 add.put("showByDefault", String.valueOf(datasetDefinition.isShowByDefault()));
@@ -943,14 +943,9 @@ public class StudyManager
                     map.save();
             }
 
-            transaction.addCommitTask(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    // And post-commit to make sure that no other threads have reloaded the cache in the meantime
-                    uncache(datasetDefinition);
-                }
+            transaction.addCommitTask(() -> {
+                // And post-commit to make sure that no other threads have reloaded the cache in the meantime
+                uncache(datasetDefinition);
             }, CommitTaskOption.POSTCOMMIT, CommitTaskOption.IMMEDIATE);
             transaction.commit();
         }
@@ -1012,14 +1007,9 @@ public class StudyManager
             String category = "dataset-overrides:" + datasetDefinition.getDatasetId();
             PropertyManager.getNormalStore().deletePropertySet(c, category);
 
-            transaction.addCommitTask(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    // And post-commit to make sure that no other threads have reloaded the cache in the meantime
-                    uncache(datasetDefinition);
-                }
+            transaction.addCommitTask(() -> {
+                // And post-commit to make sure that no other threads have reloaded the cache in the meantime
+                uncache(datasetDefinition);
             }, CommitTaskOption.POSTCOMMIT, CommitTaskOption.IMMEDIATE);
             transaction.commit();
         }
@@ -4033,7 +4023,7 @@ public class StudyManager
         for (SchemaReader.DatasetImportInfo datasetImportInfo : reader.getDatasetInfo().values())
         {
             DatasetDefinitionEntry datasetDefinitionEntry = datasetDefEntryMap.get(datasetImportInfo.name);
-            if(datasetDefinitionEntry.datasetDefinition.isShared())
+            if (datasetDefinitionEntry.datasetDefinition.isShared())
             {
                 continue;
             }
@@ -4048,7 +4038,7 @@ public class StudyManager
         for (SchemaReader.DatasetImportInfo datasetImportInfo : reader.getDatasetInfo().values())
         {
             DatasetDefinitionEntry datasetDefinitionEntry = datasetDefEntryMap.get(datasetImportInfo.name);
-            if(datasetDefinitionEntry.datasetDefinition.isShared())
+            if (datasetDefinitionEntry.datasetDefinition.isShared())
             {
                 continue;
             }
@@ -4514,7 +4504,7 @@ public class StudyManager
 
     private void unindexDataset(DatasetDefinition ds)
     {
-        String docid = "dataset:" + new Path(ds.getContainer().getId(),String.valueOf(ds.getDatasetId())).toString();
+        String docid = "dataset:" + new Path(ds.getContainer().getId(), String.valueOf(ds.getDatasetId())).toString();
         SearchService ss = SearchService.get();
         if (null != ss)
             ss.deleteResource(docid);
@@ -4721,7 +4711,7 @@ public class StudyManager
     // CONSIDER: add some facility like this to SearchService??
     // NOTE: this needs to be reviewed if we use modifiedSince
 
-    final static WeakHashMap<Container,Runnable> _lastEnumerate = new WeakHashMap<>();
+    final static WeakHashMap<Container, Runnable> _lastEnumerate = new WeakHashMap<>();
 
     public static void _enumerateDocuments(IndexTask t, final Container c)
     {
@@ -5001,14 +4991,17 @@ public class StudyManager
      */
 
 
+    // To see detailed logging from StatementDataIterator, configure org.labkey.study.model.StudyManager$DatasetImportTestCase to level TRACE
+    private static final Logger TEST_LOGGER = Logger.getLogger(DatasetImportTestCase.class);
+
     @TestWhen(TestWhen.When.BVT)
     public static class DatasetImportTestCase extends Assert
     {
-        TestContext _context = null;
-        StudyManager _manager = StudyManager.getInstance();
+        private final StudyManager _manager = StudyManager.getInstance();
 
-        StudyImpl _studyDateBased = null;
-        StudyImpl _studyVisitBased = null;
+        private TestContext _context = null;
+        private StudyImpl _studyDateBased = null;
+        private StudyImpl _studyVisitBased = null;
 
 //        @BeforeClass
         public void createStudy()
@@ -5053,41 +5046,40 @@ public class StudyManager
         }
 
 
-        int counterDatasetId = 100;
-        int counterRow = 0;
+        private int counterDatasetId = 100;
+        private int counterRow = 0;
+
         protected enum DatasetType
-       {
-           NORMAL
-           {
-               public void configureDataset(DatasetDefinition dd)
+        {
+            NORMAL
+            {
+                public void configureDataset(DatasetDefinition dd)
                {
                    dd.setKeyPropertyName("Measure");
                }
-           },
-           DEMOGRAPHIC
-           {
-               public void configureDataset(DatasetDefinition dd)
+            },
+            DEMOGRAPHIC
+            {
+                public void configureDataset(DatasetDefinition dd)
                {
                    dd.setDemographicData(true);
                }
-           },
-           OPTIONAL_GUID
-           {
-               public void configureDataset(DatasetDefinition dd)
-               {
-                   dd.setKeyPropertyName("GUID");
-                   dd.setKeyManagementType(Dataset.KeyManagementType.GUID);
-               }
-           };
+            },
+            OPTIONAL_GUID
+            {
+                public void configureDataset(DatasetDefinition dd)
+                {
+                    dd.setKeyPropertyName("GUID");
+                    dd.setKeyManagementType(Dataset.KeyManagementType.GUID);
+                }
+            };
 
-           public abstract void configureDataset(DatasetDefinition dd);
-       }
-
-
+            public abstract void configureDataset(DatasetDefinition dd);
+        }
 
         Dataset createDataset(Study study, String name, boolean demographic) throws Exception
         {
-            if(demographic)
+            if (demographic)
                 return createDataset(study, name, DatasetType.DEMOGRAPHIC);
             else
                 return createDataset(study, name, DatasetType.NORMAL);
@@ -5127,7 +5119,7 @@ public class StudyManager
             measure.setRangeURI(PropertyType.STRING.getTypeUri());
             measure.setRequired(true);
 
-            if(type==DatasetType.OPTIONAL_GUID)
+            if (type==DatasetType.OPTIONAL_GUID)
             {
                 DomainProperty guid = domain.addProperty();
                 guid.setName("GUID");
@@ -5190,7 +5182,7 @@ public class StudyManager
             {
                 createStudy();
                 _testImportDatasetData(_studyDateBased);
-                _testDatsetUpdateService(_studyDateBased);
+                _testDatasetUpdateService(_studyDateBased);
                 _testDaysSinceStartCalculation(_studyDateBased);
                 _testImportDemographicDatasetData(_studyDateBased);
                 _testImportDemographicDatasetData(_studyVisitBased);
@@ -5200,7 +5192,7 @@ public class StudyManager
                 testDatasetSubcategory();
 
 // TODO
-//                _testDatsetUpdateService(_studyVisitBased);
+//                _testDatasetUpdateService(_studyVisitBased);
             }
             catch (BatchValidationException x)
             {
@@ -5222,7 +5214,7 @@ public class StudyManager
         }
 
 
-        private void _testDatsetUpdateService(StudyImpl study) throws Throwable
+        private void _testDatasetUpdateService(StudyImpl study) throws Throwable
         {
             StudyQuerySchema ss = StudyQuerySchema.createSchema(study, _context.getUser(), false);
             Dataset def = createDataset(study, "A", false);
@@ -5389,7 +5381,7 @@ public class StudyManager
 
             String guid = "GUUUUID";
             Map map = PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1.0, "SequenceNum", sequenceNum++, "GUID", guid);
-            importRowVerifyGuid(def, map, tt);
+            importRowVerifyGuid(def, map, tt, TEST_LOGGER);
 
             // duplicate row
             // Issue 12985
@@ -5400,18 +5392,16 @@ public class StudyManager
 //                assertTrue(-1 != errors.get(0).indexOf("duplicate key value violates unique constraint"));
 
             //same participant, guid, different sequenceNum
-            Logger testLogger = Logger.getLogger(this.getClass());
-            testLogger.setLevel(Level.DEBUG);
-            importRowVerifyGuid(def, PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1.0, "SequenceNum", sequenceNum++, "GUID", guid), tt, testLogger);
+            importRowVerifyGuid(def, PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1.0, "SequenceNum", sequenceNum++, "GUID", guid), tt, TEST_LOGGER);
 
             //  same GUID,sequenceNum, different different participant
-            importRowVerifyGuid(def, PageFlowUtil.map("SubjectId", "B2", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 2.0, "SequenceNum", sequenceNum, "GUID", guid), tt);
+            importRowVerifyGuid(def, PageFlowUtil.map("SubjectId", "B2", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 2.0, "SequenceNum", sequenceNum, "GUID", guid), tt, TEST_LOGGER);
 
             //same subject, sequenceNum, GUID not provided
-            importRowVerifyGuid(def, PageFlowUtil.map("SubjectId", "B2", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 2.0, "SequenceNum", sequenceNum), tt);
+            importRowVerifyGuid(def, PageFlowUtil.map("SubjectId", "B2", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 2.0, "SequenceNum", sequenceNum), tt, TEST_LOGGER);
 
             //repeat:  should still work
-            importRowVerifyGuid(def, PageFlowUtil.map("SubjectId", "B2", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 2.0, "SequenceNum", sequenceNum), tt);
+            importRowVerifyGuid(def, PageFlowUtil.map("SubjectId", "B2", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 2.0, "SequenceNum", sequenceNum), tt, TEST_LOGGER);
         }
 
         private void _testImportDatasetData(Study study) throws Throwable
@@ -5463,7 +5453,7 @@ public class StudyManager
             importRow(def, PageFlowUtil.map("SubjectId", null, "Date", Jan1, "Measure", "Test"+(++counterRow), "Value", 1.0, "SequenceNum", sequenceNum++), "required", "SubjectID");
 
             // missing date
-            if(study==_studyDateBased) //irrelevant for sequential visits
+            if (study==_studyDateBased) //irrelevant for sequential visits
                 importRow(def, PageFlowUtil.map("SubjectId", "A1", "Date", null, "Measure", "Test"+(++counterRow), "Value", 1.0, "SequenceNum", sequenceNum++), "required", "date");
 
             // missing required property field
@@ -5502,7 +5492,7 @@ public class StudyManager
             importRow(def, PageFlowUtil.map("SubjectId", "A1", "Date", Jan1, "Measure", "Test"+(counterRow), "Value", 1, "Number", 99, "SequenceNum", sequenceNum++));
         }
 
-        private void importRowVerifyKey(Dataset def, Map map, TableInfo tt, String key, @Nullable Logger logger, String... expectedErrors)  throws Exception
+        private void importRowVerifyKey(Dataset def, Map map, TableInfo tt, String key, @NotNull Logger logger, String... expectedErrors)  throws Exception
         {
             importRow(def, map, logger, expectedErrors);
             String expectedKey = (String) map.get(key);
@@ -5514,14 +5504,9 @@ public class StudyManager
             }
         }
 
-        private void importRowVerifyGuid(Dataset def, Map map, TableInfo tt, String... expectedErrors)  throws Exception
+        private void importRowVerifyGuid(Dataset def, Map map, TableInfo tt, @NotNull Logger logger, String... expectedErrors)  throws Exception
         {
-            importRowVerifyGuid(def, map, tt, null, expectedErrors);
-        }
-
-        private void importRowVerifyGuid(Dataset def, Map map, TableInfo tt, @Nullable Logger logger, String... expectedErrors)  throws Exception
-        {
-            if(map.containsKey("GUID"))
+            if (map.containsKey("GUID"))
                 importRowVerifyKey(def, map, tt, "GUID", logger, expectedErrors);
             else
             {
@@ -5546,14 +5531,14 @@ public class StudyManager
             BatchValidationException errors = new BatchValidationException();
 
             DataLoader dl = new MapLoader(rows);
-            Map<String,String> columnMap = new CaseInsensitiveHashMap<>();
+            Map<String, String> columnMap = new CaseInsensitiveHashMap<>();
 
             StudyManager.getInstance().importDatasetData(
                     _context.getUser(),
                     (DatasetDefinition) def, dl, columnMap,
                     errors, DatasetDefinition.CheckForDuplicates.sourceAndDestination, null, QueryUpdateService.InsertOption.IMPORT, null, logger, false);
 
-            if(expectedErrors == null)
+            if (expectedErrors == null)
             {
                 if (errors.hasErrors())
                     throw errors;
