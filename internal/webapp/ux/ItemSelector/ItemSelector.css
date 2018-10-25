@@ -1,0 +1,28 @@
+/* Styles used by Ext.ux.form.ItemSelector */
+
+.x4-form-multiselect-body .x4-boundlist .x4-mask {
+    background: none;
+}
+
+.x4-form-itemselector-body .x4-form-item {
+    margin: 0;
+}
+
+.x4-form-itemselector-top {
+    background-image: url(../../gxt/images/gxt/icons/top2.gif);
+}
+.x4-form-itemselector-up {
+    background-image: url(../../gxt/images/gxt/icons/up2.gif);
+}
+.x4-form-itemselector-add {
+    background-image: url(../../gxt/images/gxt/icons/right2.gif);
+}
+.x4-form-itemselector-remove {
+    background-image: url(../../gxt/images/gxt/icons/left2.gif);
+}
+.x4-form-itemselector-down {
+    background-image: url(../../gxt/images/gxt/icons/down2.gif);
+}
+.x4-form-itemselector-bottom {
+    background-image: url(../../gxt/images/gxt/icons/bottom2.gif);
+}
