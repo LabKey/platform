@@ -551,14 +551,14 @@ LABKEY.Query.Visualization.Measure.prototype.getDescription = function() {
 /**
  * Returns the set of available {@link LABKEY.Query.Visualization.Dimension} objects for this measure.
  * @param config An object which contains the following configuration properties.
- * @param config.includeDemographics {Boolean} Applies only to measures from study datsets.
+ * @param config.includeDemographics {Boolean} Applies only to measures from study datasets.
  * Indicates whether dimensions from demographic datasets should be included
- * in the returned set.  If false, only dimensions from the measure's query will be returned.
+ * in the returned set. If false, only dimensions from the measure's query will be returned.
  * @param {Function} config.success Function called when execution succeeds. Will be called with one argument:
  <ul>
  <li><b>values</b>: an array of unique dimension values</li>
  </ul>
- * @param {Function} [config.failure] Function called when execution fails.  Called with the following parameters:
+ * @param {Function} [config.failure] Function called when execution fails. Called with the following parameters:
  * <ul>
  * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
  * <li><b>response:</b> The XMLHttpResponse object</li>
@@ -599,7 +599,7 @@ LABKEY.Visualization.Measure = LABKEY.Query.Visualization.Measure;
 
 /**
  * @namespace Visualization Dimensions are data elements (columns) on which {@link LABKEY.Query.Visualization.Measure} objects
- *  can be pivoted or transformed.  For example, the 'Analyte Name' dimension may be used to pivit a single 'Result' measure
+ * can be pivoted or transformed. For example, the 'Analyte Name' dimension may be used to pivit a single 'Result' measure
  * into one series per Analyte.
  */
 LABKEY.Query.Visualization.Dimension = function(config) {
@@ -660,7 +660,7 @@ LABKEY.Query.Visualization.Dimension.getDescription = function() {
  <ul>
  <li><b>values</b>: an array of unique dimension values</li>
  </ul>
- * @param {Function} [config.failure] Function called when execution fails.  Called with the following parameters:
+ * @param {Function} [config.failure] Function called when execution fails. Called with the following parameters:
  * <ul>
  * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
  * <li><b>response:</b> The XMLHttpResponse object</li>
@@ -715,7 +715,7 @@ LABKEY.Query.Visualization.Filter = new function()
     /** @scope LABKEY.Query.Visualization.Filter */
     return {
         /**
-         * @namespace Visualization Possible query types for measure filters.  See {@link LABKEY.Query.Visualization.Filter}.
+         * @namespace Visualization Possible query types for measure filters. See {@link LABKEY.Query.Visualization.Filter}.
         */
         QueryType : {
             /** Return only queries that are built-in to the server */
@@ -731,11 +731,11 @@ LABKEY.Query.Visualization.Filter = new function()
         /**
          * Creates a new filter object for use in {@link LABKEY.Query.Visualization.getMeasures}.
          * @param config An object which contains the following configuration properties.
-         * @param {String} config.schemaName Required.  Only measures from the specified schema will be returned.
+         * @param {String} config.schemaName Required. Only measures from the specified schema will be returned.
          * @param {String} [config.queryName] If specified, only measures from the specified query will be returned.
          * @param {Object} [config.queryType] If specified, only measures from the specified query types will be returned
-         * Valid values for queryType are:  {@link LABKEY.Query.Visualization.Filter.QueryType}.ALL, {@link LABKEY.Query.Visualization.Filter.QueryType}.BUILT_IN,
-         * and {@link LABKEY.Query.Visualization.Filter.QueryType}.CUSTOM.  By default, all queries will be returned.
+         * Valid values for queryType are: {@link LABKEY.Query.Visualization.Filter.QueryType}.ALL, {@link LABKEY.Query.Visualization.Filter.QueryType}.BUILT_IN,
+         * and {@link LABKEY.Query.Visualization.Filter.QueryType}.CUSTOM. By default, all queries will be returned.
          */
         create : function(config)
         {
@@ -753,7 +753,7 @@ LABKEY.Query.Visualization.Filter = new function()
 LABKEY.Visualization.Filter = LABKEY.Query.Visualization.Filter;
 
 /**
- * @namespace Visualization Possible aggregates when pivoting a resultset by a dimension.  See  {@link LABKEY.Query.Visualization.getData}.
+ * @namespace Visualization Possible aggregates when pivoting a resultset by a dimension. See {@link LABKEY.Query.Visualization.getData}.
  */
 LABKEY.Query.Visualization.Aggregate = {
     /** Calculates a sum/total. */
@@ -774,7 +774,7 @@ LABKEY.Query.Visualization.Aggregate = {
 LABKEY.Visualization.Aggregate = LABKEY.Query.Visualization.Aggregate;
 
 /**
- * @namespace Visualization Possible intervals for aligning series in time plots.  See  {@link LABKEY.Query.Visualization.getData}.
+ * @namespace Visualization Possible intervals for aligning series in time plots. See {@link LABKEY.Query.Visualization.getData}.
  */
 LABKEY.Query.Visualization.Interval = {
     /** Align by the number of days since the zero date. */
