@@ -130,7 +130,6 @@ api/gwtsrc/org/labkey/api/gwt/client/util/StringUtils.java -text
 api/module.properties -text
 api/resources/credits/jars.txt -text
 api/schemas/apiTest.xsd -text
-api/schemas/build.gradle -text
 api/schemas/clientLibrary.xsd -text
 api/schemas/cohorts.xsd -text
 api/schemas/datStatExport.xsd -text
