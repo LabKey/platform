@@ -42,8 +42,8 @@ public class RDockerScriptEngine extends RScriptEngine
 {
     private static final Logger LOG = Logger.getLogger(RDockerScriptEngine.class);
     private static DockerService _ds;
-    private static String _remoteWorkingDir;
-    private static DockerService.DockerImage _dockerImage;
+    private String _remoteWorkingDir;
+    private DockerService.DockerImage _dockerImage;
 
     /**
      * This constructor provides an instance which can be used to prepare, but not run, script files.

@@ -146,6 +146,8 @@ public interface DockerService
         String getLibraryMount();
         String getHostReadOnlyMount();
         String getContainerReadOnlyMount();
+        String getHostReadWriteMount();
+        String getContainerReadWriteMount();
         String getAppArmorProfile();
         String getLabKeyHostIP();
         String getExtraENVs();
@@ -162,6 +164,7 @@ public interface DockerService
         public final Map<String,String> environment;
         public final Map<String,String> hosts;
         public final Map<String,String> readOnlyVolumes; // image->host
+        public final Map<String,String> writableVolumes;
 
         public ImageConfig(String name, int port, String mount)
         {
@@ -169,10 +172,19 @@ public interface DockerService
         }
 
         public ImageConfig(String name, int port, String mount,
+                           Map<String,String> env,
+                           Map<String,String> hosts,
+                           @Nullable String commandUser, @Nullable String appArmor,
+                           Map<String,String> roVolumes)
+        {
+            this(name, port, mount, env, hosts, commandUser, appArmor, roVolumes, Collections.emptyMap());
+        }
+
+        public ImageConfig(String name, int port, String mount,
                    Map<String,String> env,
                    Map<String,String> hosts,
                    @Nullable String commandUser, @Nullable String appArmor,
-                   Map<String,String> roVolumes)
+                   Map<String,String> roVolumes, Map<String,String> rwVolumes)
         {
             this.imageName = name;
             this.httpPort = port;
@@ -182,6 +194,7 @@ public interface DockerService
             this.hosts = Collections.unmodifiableMap(new HashMap<>(hosts));
             this.appArmorProfile = appArmor;
             this.readOnlyVolumes = Collections.unmodifiableMap(new HashMap<>(roVolumes));
+            this.writableVolumes = Collections.unmodifiableMap(new HashMap<>(rwVolumes));
         }
 
         @Override
@@ -255,6 +268,11 @@ public interface DockerService
         ImageConfigBuilder addHost(String host, String ip);
 
         ImageConfigBuilder addReadOnlyVolume(String imagePath, String hostPath);
+
+        default ImageConfigBuilder addWritableVolume(String imagePath, String hostPath)
+        {
+            return null;
+        }
 
         ImageConfig build();
     }
