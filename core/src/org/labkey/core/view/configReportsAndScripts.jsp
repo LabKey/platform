@@ -74,9 +74,11 @@
 
     var DockerImageFields = {
         imageName: {label: 'Docker Image Name', defaultVal: 'labkey/rsandbox', description: "Enter the Docker image name to use for R. Default is &apos;labkey/rsandbox&apos;, which includes Rlabkey."},
-        mount: {label: 'Mount Volume', defaultVal: '/home/docker', description: "Enter the volume (image directory) inside the Docker container to mount as the docker R user&apos;s home directory. Default is &apos;/home/rdocker&apos;."},
-        hostReadOnlyMount: {label: 'Mount: host directory', description: "Additional mount: host directory (read-only). Optional read-only mount point"},
-        containerReadOnlyMount: {label: 'mount: container directory', description: "Additional mount: container directory (read-only). Optional read-only mount point"},
+        mount: {label: 'Home Directory', defaultVal: '/home/docker', description: "Enter the volume (image directory) inside the Docker container to mount as the docker R user&apos;s home directory. Default is &apos;/home/rdocker&apos;."},
+        hostReadOnlyMount: {label: 'Mount (ro): host directory', description: "Additional mount: host directory (read-only). Optional read-only mount point"},
+        containerReadOnlyMount: {label: 'Mount (ro): container directory', description: "Additional mount: container directory (read-only). Optional read-only mount point"},
+        hostReadWriteMount: {label: 'Mount (rw): host directory', description: "Additional mount: host directory (read and write). Optional read/write mount point"},
+        containerReadWriteMount: {label: 'Mount (rw): container directory', description: "Additional mount: container directory (read and write). Optional read/write mount point"},
         appArmorProfile: {label: 'AppArmor Profile', description: ''},
         extraENVs: {label: 'Extra Variables', description: 'Additional environment variables to be passed in when running a container. Usage example: &apos;USERID=1000,USER=rstudio&apos;, which will be converted to &apos;-e USERID=1000 -e USER=rstudio&apos; for docker run command. ' +
                     'A special variable &apos;DETACH=TRUE&apos; will force container to run in detached mode, with &apos;--detach&apos;'}
@@ -151,7 +153,8 @@
                         fieldLabel: val.label,
                         id: 'dockerimage-' + key,
                         name: 'dockerimage-' + key,
-                        width: 400,
+                        labelWidth: 200,
+                        width: 500,
                         value: record.dockerImageConfig ? dockerConfig[key] : val.defaultVal
                     };
                     if (val.hidden)
