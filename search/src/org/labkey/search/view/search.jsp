@@ -487,7 +487,7 @@
                     {
                         String summary = StringUtils.trimToNull(hit.summary);
                         if (null != summary)
-                %><%=h(summary, false)%><%
+                            %><%=h(summary, false).replace("\r\n", "\n").replace("\n", "<br>")%><%
                     }
                 %>
                 </div>
