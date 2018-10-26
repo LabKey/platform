@@ -261,6 +261,7 @@ Ext4.define('Security.panel.PolicyEditor', {
         var me = this;
         for (r=0; r < this.roles.length; r++){
             role = this.roles[r];
+            var isDeveloper = -1!==role.uniqueName.indexOf("Developer") || -1!==role.uniqueName.indexOf("Analyst")
             roleRows.push({
                 layout: 'hbox',
                 itemId: role.uniqueName.replace(/\./g, '_'),
@@ -272,7 +273,9 @@ Ext4.define('Security.panel.PolicyEditor', {
                 border : false,
                 defaults: {border: false},
                 items: [{
-                    html: '<div><h3 class="rn">' + role.displayName + '</h3><div class="rd">' + role.description + '</div></div>',
+                    html: '<div><h3 class="rn">' + role.displayName + '</h3><div class="rd">' + role.description +
+                        (isDeveloper?'<br><a target="_blank" href="https://www.labkey.org/devPermInfo.url">read about developer permissions</a>':'') +
+                        '</div></div>',
                     bodyStyle : 'background-color: transparent;',
                     cls: 'rn',
                     width: 300
