@@ -142,6 +142,8 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     private String _licenseUrl = null;
     private String _vcsRevision = null;
     private String _vcsUrl = null;
+    private String _vcsBranch = "Unknown";
+    private String _vcsTag = "Unknown";
     private String _buildUser = null;
     private String _buildTime = null;
     private String _buildOS = null;
@@ -809,6 +811,32 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         _vcsUrl = svnUrl;
     }
 
+    @Nullable
+    @Override
+    public String getVcsBranch()
+    {
+        return _vcsBranch;
+    }
+
+    @SuppressWarnings({"UnusedDeclaration"})
+    public void setVcsBranch(String vcsBranch)
+    {
+        _vcsBranch = vcsBranch;
+    }
+
+    @Nullable
+    @Override
+    public String getVcsTag()
+    {
+        return _vcsTag;
+    }
+
+    @SuppressWarnings({"UnusedDeclaration"})
+    public void setVcsTag(String vcsTag)
+    {
+        _vcsTag = vcsTag;
+    }
+
     /** @deprecated Use getVcsRevision() instead. */
     @Deprecated
     public final String getSvnRevision()
@@ -984,6 +1012,8 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         props.put("Extracted Path", getExplodedPath().getAbsolutePath());
         props.put("VCS URL", getVcsUrl());
         props.put("VCS Revision", getVcsRevision());
+        props.put("VCS Branch", getVcsBranch());
+        props.put("VCS Tag", getVcsTag());
         props.put("Build OS", getBuildOS());
 
         props.put("Build Time", getBuildTime());

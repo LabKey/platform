@@ -323,6 +323,18 @@ public class MockModule implements Module
     }
 
     @Override
+    public String getVcsBranch()
+    {
+        return null;
+    }
+
+    @Override
+    public String getVcsTag()
+    {
+        return null;
+    }
+
+    @Override
     public boolean shouldConsolidateScripts()
     {
         return false;
