@@ -124,7 +124,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
             }
             else
             {
-                lsid = _sampleSet.getMaterialLSIDPrefix() + name;
+                lsid = _sampleSet.generateSampleLSID().setObjectId(name).build().toString();
             }
 
             if (_lsids.containsValue(lsid) || ExperimentService.get().getExpMaterial(lsid) != null)
