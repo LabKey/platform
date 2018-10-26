@@ -79,7 +79,7 @@ public class ListModule extends SpringModule
     // Note: ExperimentModule handles the list schema
     public double getVersion()
     {
-        return 18.20;
+        return 18.30;
     }
 
     // Note: ExperimentModule handles the list schema
