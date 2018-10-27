@@ -74,6 +74,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Vector;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -1936,6 +1937,23 @@ abstract public class PipelineJob extends Job implements Serializable
             }
         }
 
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        // Fix issue 35876: Second run of a split XTandem pipeline job not completing - don't rely on the job being
+        // represented in memory as a single object
+        if (this == o) return true;
+        if (!(o instanceof PipelineJob)) return false;
+        PipelineJob that = (PipelineJob) o;
+        return Objects.equals(_jobGUID, that._jobGUID);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(_jobGUID);
     }
 
     public List<String> compareJobs(PipelineJob job2)
