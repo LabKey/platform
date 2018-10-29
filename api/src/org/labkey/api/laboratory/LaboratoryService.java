@@ -113,6 +113,8 @@ abstract public class LaboratoryService
 
     abstract public TableCustomizer getLaboratoryTableCustomizer();
 
+    abstract public TableCustomizer getAssayTableCustomizer();
+
     abstract public void registerAssayResultsIndex(String providerName, List<String> columnsToIndex);
 
     abstract public void registerTableIndex(String schemaName, String queryName, List<String> columnsToIndex);
