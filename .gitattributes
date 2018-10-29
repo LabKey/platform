@@ -390,8 +390,6 @@ core/resources/views/login.html -text
 core/resources/views/login.view.xml -text
 core/resources/views/register.html -text
 core/resources/views/register.view.xml -text
-core/resources/views/testCustomLogin.html -text
-core/resources/views/testCustomLogin.view.xml -text
 core/script-fragments/Ext.footer.js -text
 core/script-fragments/Ext.header.js -text
 core/script-fragments/Ext.middle.js -text

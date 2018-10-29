@@ -24,6 +24,10 @@
             LABKEY.Utils.deleteCookie('email', true);
             LABKEY.Utils.deleteCookie('email', false);
         }
+
+        //the intent of this is to allow custom login pages to supply an element where id=returnUrl, which will always redirect the user after login
+        var returnUrlElement = document.getElementById('returnUrl');
+
         LABKEY.Ajax.request({
             url: LABKEY.ActionURL.buildURL('login', 'loginApi.api', this.containerPath),
             method: 'POST',
@@ -33,7 +37,7 @@
                 password: document.getElementById('password').value,
                 approvedTermsOfUse: document.getElementById('approvedTermsOfUse').checked,
                 termsOfUseType: document.getElementById('termsOfUseType').value,
-                returnUrl: LABKEY.ActionURL.getParameter("returnUrl"),
+                returnUrl: returnUrlElement && returnUrlElement.value ? returnUrlElement.value : LABKEY.ActionURL.getParameter("returnUrl"),
                 skipProfile: LABKEY.ActionURL.getParameter("skipProfile") || 0,
                 urlHash: document.getElementById('urlhash')
             },
