@@ -1990,12 +1990,7 @@ public class PageFlowUtil
         boolean modified = false;
         try
         {
-            // wrap content with a temp root node to avoid illegal xml parsing error
-            String rootTag = "tag" + GUID.makeGUID();
-            String startRootTag = "<" + rootTag + ">";
-            String endRootTag = "</" + rootTag + ">";
-            String wrappedHtml = startRootTag + html + endRootTag;
-            Document document = loadXMLFromString(wrappedHtml);
+            Document document = TidyUtil.convertHtmlToDocument(html, false, errors);
             NodeList hrefs = document.getElementsByTagName("a");
             for(int hrefIndex = 0; hrefIndex < hrefs.getLength(); hrefIndex++)
             {
@@ -2014,11 +2009,12 @@ public class PageFlowUtil
             if (!modified)
                 return html;
             String xhtml = documentToString(document);
-            if (xhtml != null)
+            if (xhtml != null && !html.contains("<body>")) // tidy adds <html><body> wrapping
             {
-                if (xhtml.startsWith(XML_ENCODING_DECLARATION))
-                    xhtml = xhtml.substring(XML_ENCODING_DECLARATION.length());
-                xhtml = xhtml.replace(startRootTag, "").replace(endRootTag, "");
+                int beginOpenBodyIndex = xhtml.indexOf("<body");
+                int beginCloseBodyIndex = xhtml.lastIndexOf("</body>");
+                int endOpenBodyIndex = xhtml.indexOf('>', beginOpenBodyIndex);
+                xhtml = xhtml.substring(endOpenBodyIndex + 1, beginCloseBodyIndex).trim();
             }
 
             return xhtml;
@@ -2045,14 +2041,6 @@ public class PageFlowUtil
             tEx.printStackTrace();
         }
         return null;
-    }
-
-    private static Document loadXMLFromString(String xml) throws Exception
-    {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder builder = factory.newDocumentBuilder();
-        InputSource is = new InputSource(new StringReader(xml));
-        return builder.parse(is);
     }
 
     private static final int SERVER_HASH = 0x7fffffff & AppProps.getInstance().getServerSessionGUID().hashCode();
