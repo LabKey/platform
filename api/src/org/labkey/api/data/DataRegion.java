@@ -178,6 +178,7 @@ public class DataRegion extends DisplayElement
     }
     private List<GroupTable> _groupTables = new ArrayList<>();
 
+    /** HTML message to show the user attached to the region. Caller is responsible for HTML encoding as needed */
     protected class Message
     {
         private String _area;
@@ -1269,7 +1270,7 @@ public class DataRegion extends DisplayElement
             captions.append(".");
             content.append(captions.toString());
 
-            msg = new Message(content.toString(), MessageType.WARNING, MessagePart.header);
+            msg = new Message(PageFlowUtil.filter(content.toString()), MessageType.WARNING, MessagePart.header);
         }
 
         return msg;
@@ -2619,7 +2620,7 @@ public class DataRegion extends DisplayElement
                     msg.append(" because they do not exist.");
                 }
 
-                addMessage(new Message(msg.toString(), MessageType.WARNING, "filter"));
+                addMessage(new Message(PageFlowUtil.filter(msg.toString()), MessageType.WARNING, "filter"));
             }
 
             SimpleFilter filter = getValidFilter(ctx);
