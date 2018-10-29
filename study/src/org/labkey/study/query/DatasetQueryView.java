@@ -88,7 +88,6 @@ import org.springframework.validation.BindException;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -679,7 +678,7 @@ public class DatasetQueryView extends StudyQueryView
             {
                 if (msg.length() > 0)
                     msg.append("&nbsp;&nbsp;");
-                msg.append("<span class=\"labkey-strong\">Selected " + dqs.getStudy().getSubjectNounPlural() + ":</span>&nbsp;");
+                msg.append("<span class=\"labkey-strong\">Selected " + PageFlowUtil.filter(dqs.getStudy().getSubjectNounPlural()) + ":</span>&nbsp;");
                 msg.append(sessionGroup.getParticipantIds().length);
             }
 
