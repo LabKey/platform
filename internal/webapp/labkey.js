@@ -878,7 +878,7 @@ if (typeof LABKEY == "undefined")
 
             /**
              * This can be added to any LABKEY page in order to load ExtJS 3.  This is the preferred method to declare Ext3 usage
-             * from wiki pages.  For HTML or JSP pages defined in a module, see our <a href="https://www.labkey.org/Documentation/wiki-page.view?name=ext4Development">documentation</a> on declaration of client dependencies.
+             * from wiki pages.  For HTML or JSP pages defined in a module, see our <a href="https://www.labkey.org/Documentation/wiki-page.view?name=scriptdepend">documentation</a> on declaration of client dependencies.
              * @function
              * @param {boolean} [immediate=true] - True to load the script immediately; false will defer script loading until the page has been downloaded.
              * @param {requireCallback} [callback] - Callback for when all dependencies are loaded.
@@ -928,7 +928,7 @@ if (typeof LABKEY == "undefined")
 
             /**
              * This can be added to any LABKEY page in order to load ExtJS 4.  This is the preferred method to declare Ext4 usage
-             * from wiki pages.  For HTML or JSP pages defined in a module, see our <a href="https://www.labkey.org/Documentation/wiki-page.view?name=ext4Development">documentation</a> on declaration of client dependencies.
+             * from wiki pages.  For HTML or JSP pages defined in a module, see our <a href="https://www.labkey.org/Documentation/wiki-page.view?name=scriptdepend">documentation</a> on declaration of client dependencies.
              * @function
              * @param {boolean} [immediate=true] - True to load the script immediately; false will defer script loading until the page has been downloaded.
              * @param {requireCallback} [callback] - Callback for when all dependencies are loaded.
