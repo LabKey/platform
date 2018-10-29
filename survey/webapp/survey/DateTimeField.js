@@ -71,7 +71,8 @@ Ext4.define('Ext.ux.form.field.DateTime', {
 
         me.items = me.items || [];
         me.dateField = Ext4.create('Ext.form.field.Date', Ext4.apply({
-            format:me.dateFormat,
+            format  : me.dateFormat,
+            name    : this.name + '-date',
             bubbleEvents: ['change', 'dirtychange'],
             flex:1,
             isFormField:false, //exclude from field query's
@@ -126,7 +127,8 @@ Ext4.define('Ext.ux.form.field.DateTime', {
         });
 
         me.timeField = Ext4.create('Ext.form.field.Time', Ext4.apply({
-            format:me.timeFormat,
+            format  : me.timeFormat,
+            name    : this.name + '-time',
             bubbleEvents: ['change', 'dirtychange'],
             flex:1,
             isFormField:false, //exclude from field query's
