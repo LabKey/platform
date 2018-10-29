@@ -1005,10 +1005,10 @@ LABKEY.Utils = new function()
  * @function
  * @static
  * @name modal
- * @param title Title of the modal dialog
+ * @param title Title of the modal dialog.
  * @param msg Message to be included in the dialog body. Can be null if the function generates its own content.
  * @param fn {function} This will be called with the provided argument list {args} after the modal is shown. You can generate content in
- * modal via the following empty div included: <div id="modal-fn-body"></div>
+ * the modal via the following empty div: &lt;div id="modal-fn-body">&lt;/div>
  * @param args {array} Array of arguments to be applied to the function when it is called.
  *
  * @example &lt;script type="text/javascript"&gt;
