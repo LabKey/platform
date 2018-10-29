@@ -1592,7 +1592,7 @@ public class CoreController extends SpringActionController
             }
             catch (IllegalArgumentException e)
             {
-                errors.reject(e.getMessage());
+                errors.reject(ERROR_MSG, e.getMessage());
             }
 
             JSONObject ret = new JSONObject();
