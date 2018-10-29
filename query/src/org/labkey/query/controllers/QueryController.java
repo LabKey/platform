@@ -1264,6 +1264,7 @@ public class QueryController extends SpringActionController
             _form = form;
 
             QueryView queryView = QueryView.create(form, errors);
+            String userSchemaName = queryView.getSchema().getName();
             TableInfo ti = queryView.getTable();
 
             DbSchema schema = ti.getSchema();
@@ -1289,7 +1290,7 @@ public class QueryController extends SpringActionController
             }
 
             ActionURL url = new ActionURL(RawSchemaMetaDataAction.class, getContainer());
-            url.addParameter("schemaName", _schemaName);
+            url.addParameter("schemaName", userSchemaName);
 
             if (ti.getDomain() != null)
             {
@@ -1365,6 +1366,7 @@ public class QueryController extends SpringActionController
         {
             _schemaName = getViewContext().getActionURL().getParameter("schemaName");
             DbSchema schema = DefaultSchema.get(getUser(), getContainer()).getSchema(_schemaName).getDbSchema();
+            String dbSchemaName = schema.getName();
             DbScope scope = schema.getScope();
             SqlDialect dialect = scope.getSqlDialect();
 
@@ -1372,7 +1374,7 @@ public class QueryController extends SpringActionController
 
             ModelAndView tablesView;
 
-            try (JdbcMetaDataLocator locator = dialect.getJdbcMetaDataLocator(scope, _schemaName, null))
+            try (JdbcMetaDataLocator locator = dialect.getJdbcMetaDataLocator(scope, dbSchemaName, null))
             {
                 JdbcMetaDataSelector selector = new JdbcMetaDataSelector(locator,
                     (dbmd, locator1) -> dbmd.getTables(locator1.getCatalogName(), locator1.getSchemaName(), locator1.getTableName(), null));
