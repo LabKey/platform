@@ -16,11 +16,11 @@
 
 package org.labkey.core.admin;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AdminConsoleService;
-import org.labkey.api.admin.DiagnosticsLink;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * User: emilyz
@@ -28,12 +28,7 @@ import java.util.List;
  */
 public class AdminConsoleServiceImpl implements AdminConsoleService
 {
-    private static List<AdminConsoleHeaderLinkProvider> _providers;
-
-    public AdminConsoleServiceImpl()
-    {
-        _providers = new ArrayList<>();
-    }
+    private final List<AdminConsoleHeaderLinkProvider> _providers = new CopyOnWriteArrayList<>();
 
     @Override
     public void registerAdminConsoleHeaderProvider(AdminConsoleHeaderLinkProvider provider)
@@ -41,6 +36,7 @@ public class AdminConsoleServiceImpl implements AdminConsoleService
         _providers.add(provider);
     }
 
+    @NotNull
     @Override
     public List<AdminConsoleHeaderLinkProvider> getAdminConsoleHeaderProviders()
     {
