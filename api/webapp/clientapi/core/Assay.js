@@ -642,6 +642,13 @@ LABKEY.Assay = new function()
 */
 
 /**
+ * @name domainTypes
+ * @description An mapped enumeration of domain types to domain names. Useful when attempting to find a domain by type.
+ * The value is a domain name which can be used as a key lookup into the "domain" object.
+ * @type Object
+ */
+
+/**
 * @name domains
 * @description Map containing name/value pairs.  Typically contains three entries for three domains (batch, run and results).
   * Each domain is associated with an array of objects that each describe a domain field.
