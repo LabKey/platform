@@ -316,7 +316,20 @@ public class AssayController extends SpringActionController
             TableInfo table = tableInfoMap.get(domain.getKey().getTypeURI());
             domains.put(domain.getKey().getName(), serializeDomain(domain.getKey(), table, user));
         }
+
+        Map<ExpProtocol.AssayDomainTypes, String> domainTypes = new HashMap<>();
+
+        final Domain batchDomain = provider.getBatchDomain(protocol);
+        domainTypes.put(ExpProtocol.AssayDomainTypes.Batch, batchDomain == null ? null : batchDomain.getName());
+
+        final Domain runDomain = provider.getRunDomain(protocol);
+        domainTypes.put(ExpProtocol.AssayDomainTypes.Run, runDomain == null ? null : runDomain.getName());
+
+        final Domain resultsDomain = provider.getResultsDomain(protocol);
+        domainTypes.put(ExpProtocol.AssayDomainTypes.Result, resultsDomain == null ? null : resultsDomain.getName());
+
         assayProperties.put("domains", domains);
+        assayProperties.put("domainTypes", domainTypes);
         assayProperties.put("links", serializeAssayLinks(protocol, provider, c, user));
         return assayProperties;
     }
