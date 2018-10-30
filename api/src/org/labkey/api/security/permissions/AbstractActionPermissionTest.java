@@ -15,6 +15,7 @@
  */
 package org.labkey.api.security.permissions;
 
+import org.jetbrains.annotations.Nullable;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -34,6 +35,7 @@ import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.security.roles.SubmitterRole;
@@ -59,13 +61,16 @@ public abstract class AbstractActionPermissionTest extends Assert
     private static final String AUTHOR_EMAIL = "author@actionpermission.test";
     private static final String READER_EMAIL = "reader@actionpermission.test";
     private static final String SUBMITTER_EMAIL = "submitter@actionpermission.test";
+    private static final String TRUSTED_EDITOR_EMAIL = "trustededitor@actionpermission.test";
+    private static final String TRUSTED_AUTHOR_EMAIL = "trustedauthor@actionpermission.test";
     private static final String[] ALL_EMAILS = {
-            SITE_ADMIN_EMAIL, APPLICATION_ADMIN_EMAIL, PROJECT_ADMIN_EMAIL,
-            FOLDER_ADMIN_EMAIL, EDITOR_EMAIL, AUTHOR_EMAIL, READER_EMAIL, SUBMITTER_EMAIL
+            SITE_ADMIN_EMAIL, APPLICATION_ADMIN_EMAIL, PROJECT_ADMIN_EMAIL, FOLDER_ADMIN_EMAIL, EDITOR_EMAIL,
+            AUTHOR_EMAIL, READER_EMAIL, SUBMITTER_EMAIL, TRUSTED_EDITOR_EMAIL, TRUSTED_AUTHOR_EMAIL
     };
 
     private static Container _c;
     private static Map<String, User> _users;
+    private static final @Nullable Role TRUSTED_ANALYST_ROLE = RoleManager.getRole("org.labkey.api.security.roles.TrustedAnalystRole");
 
     @BeforeClass
     public static void initialize()
@@ -81,6 +86,8 @@ public abstract class AbstractActionPermissionTest extends Assert
         policy.addRoleAssignment(_users.get(AUTHOR_EMAIL), RoleManager.getRole(AuthorRole.class));
         policy.addRoleAssignment(_users.get(READER_EMAIL), RoleManager.getRole(ReaderRole.class));
         policy.addRoleAssignment(_users.get(SUBMITTER_EMAIL), RoleManager.getRole(SubmitterRole.class));
+        policy.addRoleAssignment(_users.get(TRUSTED_EDITOR_EMAIL), RoleManager.getRole(EditorRole.class));
+        policy.addRoleAssignment(_users.get(TRUSTED_AUTHOR_EMAIL), RoleManager.getRole(AuthorRole.class));
         SecurityPolicyManager.savePolicy(policy);
 
         MutableSecurityPolicy projectPolicy = new MutableSecurityPolicy(_c.getProject(), _c.getProject().getPolicy());
@@ -89,6 +96,11 @@ public abstract class AbstractActionPermissionTest extends Assert
         MutableSecurityPolicy rootPolicy = new MutableSecurityPolicy(ContainerManager.getRoot(), ContainerManager.getRoot().getPolicy());
         rootPolicy.addRoleAssignment(_users.get(SITE_ADMIN_EMAIL), RoleManager.getRole(SiteAdminRole.class));
         rootPolicy.addRoleAssignment(_users.get(APPLICATION_ADMIN_EMAIL), RoleManager.getRole(ApplicationAdminRole.class));
+        if (null != TRUSTED_ANALYST_ROLE)
+        {
+            rootPolicy.addRoleAssignment(_users.get(TRUSTED_EDITOR_EMAIL), TRUSTED_ANALYST_ROLE);
+            rootPolicy.addRoleAssignment(_users.get(TRUSTED_AUTHOR_EMAIL), TRUSTED_ANALYST_ROLE);
+        }
         SecurityPolicyManager.savePolicy(rootPolicy);
     }
 
@@ -100,6 +112,11 @@ public abstract class AbstractActionPermissionTest extends Assert
         MutableSecurityPolicy rootPolicy = new MutableSecurityPolicy(ContainerManager.getRoot(), ContainerManager.getRoot().getPolicy());
         rootPolicy.removeRoleAssignment(_users.get(SITE_ADMIN_EMAIL), RoleManager.getRole(SiteAdminRole.class));
         rootPolicy.removeRoleAssignment(_users.get(APPLICATION_ADMIN_EMAIL), RoleManager.getRole(ApplicationAdminRole.class));
+        if (null != TRUSTED_ANALYST_ROLE)
+        {
+            rootPolicy.removeRoleAssignment(_users.get(TRUSTED_EDITOR_EMAIL), TRUSTED_ANALYST_ROLE);
+            rootPolicy.removeRoleAssignment(_users.get(TRUSTED_AUTHOR_EMAIL), TRUSTED_ANALYST_ROLE);
+        }
         SecurityPolicyManager.savePolicy(rootPolicy);
 
         cleanupUsers(ALL_EMAILS);
@@ -291,6 +308,40 @@ public abstract class AbstractActionPermissionTest extends Assert
                 _users.get(FOLDER_ADMIN_EMAIL), _users.get(PROJECT_ADMIN_EMAIL),
                 _users.get(APPLICATION_ADMIN_EMAIL), _users.get(SITE_ADMIN_EMAIL)
             );
+        }
+    }
+
+    public void assertTrustedEditorPermission(PermissionCheckableAction... actions)
+    {
+        for (PermissionCheckableAction action : actions)
+        {
+            assertPermission(_c, action,
+                _users.get(FOLDER_ADMIN_EMAIL),
+                _users.get(APPLICATION_ADMIN_EMAIL),
+                _users.get(SITE_ADMIN_EMAIL)
+            );
+
+            assertNoPermission(_c, action,
+                _users.get(SUBMITTER_EMAIL),
+                _users.get(READER_EMAIL),
+                _users.get(AUTHOR_EMAIL),
+                _users.get(EDITOR_EMAIL),
+                _users.get(TRUSTED_AUTHOR_EMAIL)
+            );
+
+            // If TrustedAnalystRole exists then TRUSTED_EDITOR_EMAIL user should have permission to execute this action; if not, it shouldn't
+            if (null != TRUSTED_ANALYST_ROLE)
+            {
+                assertPermission(_c, action,
+                    _users.get(TRUSTED_EDITOR_EMAIL)
+                );
+            }
+            else
+            {
+                assertNoPermission(_c, action,
+                    _users.get(TRUSTED_EDITOR_EMAIL)
+                );
+            }
         }
     }
 

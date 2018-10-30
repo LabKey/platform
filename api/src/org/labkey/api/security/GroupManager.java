@@ -516,7 +516,7 @@ public class GroupManager
         }
 
         @Test
-        public void testTrustedAnalystRole() throws Exception
+        public void testTrustedAnalystRole()
         {
             User user = _testUser.cloneUser();
             MutableSecurityPolicy policy = new MutableSecurityPolicy(_root);
@@ -536,7 +536,7 @@ public class GroupManager
         }
 
         @Test
-        public void testAnalystRole() throws Exception
+        public void testAnalystRole()
         {
             User user = _testUser.cloneUser();
             MutableSecurityPolicy policy = new MutableSecurityPolicy(_root);
@@ -571,8 +571,8 @@ public class GroupManager
 
             newProject = ContainerManager.createContainer(ContainerManager.getRoot(), newContainerPath);
 
-            UserPrincipal newGroupA = GroupManager.copyGroupToContainer(_groupA, newProject);
-            UserPrincipal newGroupB = SecurityManager.getGroup(SecurityManager.getGroupId(newProject, "b"));
+            Group newGroupA = GroupManager.copyGroupToContainer(_groupA, newProject);
+            Group newGroupB = SecurityManager.getGroup(SecurityManager.getGroupId(newProject, "b"));
 
             MutableSecurityPolicy np = new MutableSecurityPolicy(newProject);
             np.addRoleAssignment(newGroupA, ReaderRole.class);
@@ -597,8 +597,8 @@ public class GroupManager
             assertTrue(np.hasPermission(newGroupB, ReadPermission.class));
 
             //cleanup
-            SecurityManager.deleteGroup((Group)newGroupA);
-            SecurityManager.deleteGroup((Group)newGroupB);
+            SecurityManager.deleteGroup(newGroupA);
+            SecurityManager.deleteGroup(newGroupB);
             assertTrue(ContainerManager.delete(newProject, getUser()));
         }
     }
