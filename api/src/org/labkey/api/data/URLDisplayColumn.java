@@ -34,13 +34,16 @@ public class URLDisplayColumn extends AbstractFileDisplayColumn
     }
 
     // XML defined properties
-    private static final String THUMBNAIL_MIME_TYPE = "thumbnailMimeType";
     private static final String THUMBNAIL_IMAGE_URL = "thumbnailImageUrl";
     private static final String THUMBNAIL_IMAGE_WIDTH = "thumbnailImageWidth";
+    private static final String THUMBNAIL_IMAGE_HEIGHT = "thumbnailImageHeight";
     private static final String POPUP_IMAGE_URL = "popupImageUrl";
     private static final String POPUP_IMAGE_WIDTH = "popupImageWidth";
+    private static final String POPUP_IMAGE_HEIGHT = "popupImageHeight";
 
     private MultiValuedMap<String, String> _properties;
+    private String _thumbnailHeight;
+    private String _popupHeight;
 
     public URLDisplayColumn(ColumnInfo col, MultiValuedMap properties)
     {
@@ -55,6 +58,9 @@ public class URLDisplayColumn extends AbstractFileDisplayColumn
             value = _properties.get(POPUP_IMAGE_WIDTH).stream().findFirst().orElse(null);
             if (value != null)
                 _popupWidth = value;
+
+            _thumbnailHeight = _properties.get(THUMBNAIL_IMAGE_HEIGHT).stream().findFirst().orElse(null);
+            _popupHeight = _properties.get(POPUP_IMAGE_HEIGHT).stream().findFirst().orElse(null);
         }
     }
 
@@ -130,11 +136,13 @@ public class URLDisplayColumn extends AbstractFileDisplayColumn
                 StringBuilder sb = new StringBuilder();
 
                 String thumbnailUrl = _fileIconUrl != null ? ensureAbsoluteUrl(_ctx, _fileIconUrl) : ensureAbsoluteUrl(_ctx, _url);
-                sb.append("<img style=\"display:block; height:auto;").
-                        append(_thumbnailWidth != null ? "width:" + _thumbnailWidth : "max-width:32px").append("; vertical-align:middle\"").
+                sb.append("<img style=\"display:block;").
+                        append(_thumbnailWidth != null ? " width:" + _thumbnailWidth : " max-width:32px").append(";").
+                        append(_thumbnailHeight != null ? " height:" + _thumbnailHeight : " height:auto").append(";").
+                        append(" vertical-align:middle\"").
                         append(" src=\"").append(PageFlowUtil.filter(thumbnailUrl)).append("\"").
                         append(" title=\"").append(PageFlowUtil.filter(_displayName)).append("\"").
-                        append("\" />");
+                        append("/>");
 
                 return sb.toString();
             }
@@ -155,8 +163,9 @@ public class URLDisplayColumn extends AbstractFileDisplayColumn
                 if (popupUrl != null)
                 {
                     sb.append("<img style=\"").
-                            append(_popupWidth != null ? "width:" + _popupWidth : "max-width:300px").append("; height:auto;\" src=\"").
-                            append(PageFlowUtil.filter(popupUrl)).
+                            append(_popupWidth != null ? "width:" + _popupWidth : "max-width:300px").append(";").
+                            append(_popupHeight != null ? " height:" + _popupHeight : " height:auto").append("\"").
+                            append(" src=\"").append(PageFlowUtil.filter(popupUrl)).
                             append("\" />");
                 }
                 return sb.toString();
