@@ -2684,10 +2684,7 @@ public class PageFlowUtil
                 modules.addAll(cd.getRequiredModuleContexts(c));
             }
 
-            for (Module m : c.getActiveModules(u))
-            {
-                modules.add(m);
-            }
+            modules.addAll(c.getActiveModules(u));
 
             for (Module m : modules)
             {
@@ -2703,7 +2700,7 @@ public class PageFlowUtil
         for (ClientDependency r : dependencies)
         {
             HttpServletRequest request = HttpView.currentRequest();
-            Boolean debugScriptMode = null != request && Boolean.parseBoolean(request.getParameter("debugScripts"));
+            boolean debugScriptMode = null != request && Boolean.parseBoolean(request.getParameter("debugScripts"));
 
             if (AppProps.getInstance().isDevMode() || debugScriptMode)
             {
