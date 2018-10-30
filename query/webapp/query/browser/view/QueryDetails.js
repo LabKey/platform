@@ -476,11 +476,9 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
 
         if (queryDetails.isUserDefined) {
             if (queryDetails.canEdit && !queryDetails.isInherited) {
-                if (LABKEY.Security.currentUser.isAdmin) {
-                    children.push(this.formatQueryLink("sourceQuery", params, "edit source"));
-                    children.push(this.formatQueryLink("propertiesQuery", params, "edit properties"));
-                    children.push(this.formatQueryLink("deleteQuery", params, "delete query"));
-                }
+                children.push(this.formatQueryLink("sourceQuery", params, "edit source"));
+                children.push(this.formatQueryLink("propertiesQuery", params, "edit properties"));
+                children.push(this.formatQueryLink("deleteQuery", params, "delete query"));
                 children.push(this.formatQueryLink("metadataQuery", params, "edit metadata"));
             }
             else {
@@ -488,7 +486,7 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
             }
         }
         else {
-            if (LABKEY.Security.currentUser.isAdmin) {
+            if (LABKEY.Security.currentUser.isAdmin) {  // These links go to list designer, etc. Leave as admin-only.
                 if (queryDetails.createDefinitionUrl) {
                     children.push(this.formatQueryLink(null, null, 'create definition', undefined, queryDetails.createDefinitionUrl));
                 }
@@ -545,7 +543,6 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
             expando = Ext4.get(expandos[i]);
             expando.on('click', this.getExpandoClickFn(expando), this);
         }
-
     },
 
     renderQueryDetails : function() {

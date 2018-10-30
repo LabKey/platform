@@ -56,6 +56,7 @@ import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.IgnoresTermsOfUse;
+import org.labkey.api.security.RequiresAllOf;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
@@ -110,6 +111,7 @@ import org.labkey.data.xml.TablesType;
 import org.labkey.data.xml.externalSchema.TemplateSchemaType;
 import org.labkey.query.CustomViewImpl;
 import org.labkey.query.CustomViewUtil;
+import org.labkey.query.EditQueriesPermission;
 import org.labkey.query.EditableCustomView;
 import org.labkey.query.LinkedTableInfo;
 import org.labkey.query.ModuleCustomView;
@@ -157,7 +159,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -789,7 +790,8 @@ public class QueryController extends SpringActionController
     }
 
 
-    @RequiresPermission(AdminPermission.class)
+    // Trusted analysts who are editors can create and modify queries
+    @RequiresAllOf({EditQueriesPermission.class, UpdatePermission.class})
     @Action(ActionType.SelectData.class)
     public class NewQueryAction extends FormViewAction<NewQueryForm>
     {
@@ -999,14 +1001,14 @@ public class QueryController extends SpringActionController
      * If the SQL contains parse errors, a parseErrors object will be returned which contains an array of
      * JSON serialized error information.
      */
-    @RequiresPermission(ReadPermission.class)
+    // Trusted analysts who are editors can create and modify queries
+    @RequiresAllOf({EditQueriesPermission.class, UpdatePermission.class})
     @Action(ActionType.Configure.class)
     public class SaveSourceQueryAction extends MutatingApiAction<SourceForm>
     {
-        SourceForm _form;
-        QuerySchema _baseSchema;
-        QueryDefinition _queryDef;
-
+        private SourceForm _form;
+        private QuerySchema _baseSchema;
+        private QueryDefinition _queryDef;
 
         @Override
         public void validateForm(SourceForm target, Errors errors)
@@ -1145,7 +1147,8 @@ public class QueryController extends SpringActionController
     }
 
 
-    @RequiresPermission(DeletePermission.class)
+    // Trusted analysts who are editors can create and modify queries
+    @RequiresAllOf({EditQueriesPermission.class, DeletePermission.class})
     @Action(ActionType.Configure.class)
     public class DeleteQueryAction extends ConfirmAction<SourceForm>
     {
@@ -1774,7 +1777,8 @@ public class QueryController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
+    // Trusted analysts who are editors can create and modify queries
+    @RequiresAllOf({EditQueriesPermission.class, UpdatePermission.class})
     @Action(ActionType.SelectMetaData.class)
     public class MetadataQueryAction extends FormViewAction<QueryForm>
     {
@@ -6446,7 +6450,6 @@ public class QueryController extends SpringActionController
                 controller.new BeginAction(),
                 controller.new SchemaAction(),
                 controller.new SourceQueryAction(),
-                controller.new SaveSourceQueryAction(),
                 controller.new ExecuteQueryAction(),
                 controller.new PrintRowsAction(),
                 controller.new ExportScriptAction(),
@@ -6486,14 +6489,16 @@ public class QueryController extends SpringActionController
 
             // @RequiresPermission(DeletePermission.class)
             assertForUpdateOrDeletePermission(user,
-                controller.new DeleteQueryAction(),
                 controller.new DeleteQueryRowsAction()
             );
 
             // @RequiresPermission(AdminPermission.class)
             assertForAdminPermission(user,
-                controller.new NewQueryAction(),
+                controller.new DeleteQueryAction(),
                 controller.new MetadataQueryAction(),
+                controller.new NewQueryAction(),
+                controller.new SaveSourceQueryAction(),
+
                 controller.new TruncateTableAction(),
                 controller.new ApiTestAction(),
                 controller.new AdminAction(),
@@ -6532,6 +6537,14 @@ public class QueryController extends SpringActionController
             // @AdminConsoleAction
             assertForAdminPermission(ContainerManager.getRoot(), user,
                 controller.new DataSourceAdminAction()
+            );
+
+            // In addition to administrators (tested above), trusted analysts who are editors can create and edit queries
+            assertTrustedEditorPermission(
+                controller.new DeleteQueryAction(),
+                controller.new MetadataQueryAction(),
+                controller.new NewQueryAction(),
+                controller.new SaveSourceQueryAction()
             );
         }
     }

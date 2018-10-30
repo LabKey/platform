@@ -17,6 +17,7 @@
 package org.labkey.query;
 
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONObject;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.DefaultAuditProvider;
@@ -66,6 +67,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.SummaryStatisticRegistry;
@@ -76,6 +79,7 @@ import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.query.analytics.AggregatesCountNonBlankAnalyticsProvider;
 import org.labkey.query.analytics.AggregatesMaxAnalyticsProvider;
 import org.labkey.query.analytics.AggregatesMeanAnalyticsProvider;
@@ -311,6 +315,12 @@ public class QueryModule extends DefaultModule
         }
 
         QueryManager.registerUsageMetrics(getName());
+
+        EditQueriesPermission perm = new EditQueriesPermission();
+        RoleManager.registerPermission(perm);
+        Role role = RoleManager.getRole("org.labkey.api.security.roles.TrustedAnalystRole");
+        if (null != role)
+            role.addPermission(EditQueriesPermission.class);
     }
 
     @Override
@@ -365,5 +375,15 @@ public class QueryModule extends DefaultModule
             return super.getTabURL(c, user);
         }
         return null;
+    }
+
+    @Override
+    public JSONObject getPageContextJson(ContainerUser context)
+    {
+        JSONObject json = new JSONObject(getDefaultPageContextJson(context.getContainer()));
+        boolean hasEditQueriesPermission = context.getContainer().hasPermission(context.getUser(), EditQueriesPermission.class);
+        json.put("hasEditQueriesPermission", hasEditQueriesPermission);
+
+        return json;
     }
 }

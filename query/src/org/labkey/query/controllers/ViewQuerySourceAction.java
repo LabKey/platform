@@ -69,5 +69,4 @@ public class ViewQuerySourceAction extends SimpleViewAction<QueryForm>
         urlQ.addParameter("queryName", _form.getQueryName());
         return root.addChild("Query '" + _form.getSchemaName() + "." + _form.getQueryName() + "'", urlQ).addChild("Query Source");
     }
-
 }

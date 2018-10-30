@@ -14,4 +14,7 @@
         <dependency path="clientapi/ext4" /> <!-- needed for resizeToViewport -->
         <dependency path="_images/icons.css" />
     </dependencies>
+    <requiredModuleContext>
+        <module name="query"/>
+    </requiredModuleContext>
 </libraries>

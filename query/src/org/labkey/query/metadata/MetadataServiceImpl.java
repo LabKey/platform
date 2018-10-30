@@ -35,7 +35,7 @@ import org.labkey.api.gwt.client.model.GWTConditionalFormat;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -46,6 +46,7 @@ import org.labkey.data.xml.DefaultScaleType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
+import org.labkey.query.EditQueriesPermission;
 import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.metadata.client.GWTColumnInfo;
 import org.labkey.query.metadata.client.GWTTableInfo;
@@ -719,7 +720,8 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
 
     private void validatePermissions()
     {
-        if (!getViewContext().hasPermission(AdminPermission.class))
+        ViewContext ctx = getViewContext();
+        if (!(ctx.hasPermission(EditQueriesPermission.class) && ctx.hasPermission(UpdatePermission.class)))
         {
             throw new UnauthorizedException("You do not have permissions to modify the metadata");
         }

@@ -144,11 +144,14 @@ Ext4.define('LABKEY.query.browser.Browser', {
                 fontCls: 'fa-folder',
                 stacked: true,
                 stackedCls: 'fa-plus labkey-fa-plus-folder',
-                handler: function() {
+                handler: function () {
                     window.location = LABKEY.ActionURL.buildURL('query', 'admin');
                 },
                 scope: this
             });
+        }
+        // Trusted analysts who are editors are allowed to create and edit queries
+        if (LABKEY.moduleContext.query.hasEditQueriesPermission && LABKEY.Security.currentUser.canUpdate) {
             tbar.push({
                 xtype: 'querybutton',
                 text: 'Create New Query',
@@ -159,6 +162,8 @@ Ext4.define('LABKEY.query.browser.Browser', {
                 handler: this.onCreateQueryClick,
                 scope: this
             });
+        }
+        if (LABKEY.Security.currentUser.isAdmin) {
             tbar.push({
                 xtype: 'querybutton',
                 text: 'Manage Remote Connections',

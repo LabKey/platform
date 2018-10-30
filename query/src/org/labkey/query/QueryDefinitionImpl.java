@@ -16,6 +16,7 @@
 
 package org.labkey.query;
 
+import com.google.common.collect.ImmutableSet;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlError;
@@ -48,10 +49,9 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ViewOptions;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -78,7 +78,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.BadSqlGrammarException;
 
 import javax.servlet.http.HttpServletRequest;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -187,7 +186,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     public boolean canEdit(User user)
     {
-        return getDefinitionContainer().hasPermission(user, AdminPermission.class);
+        return getDefinitionContainer().hasPermissions(user, ImmutableSet.of(EditQueriesPermission.class, UpdatePermission.class));
     }
 
     public CustomView getCustomView(@NotNull User owner, @Nullable HttpServletRequest request, String name)
