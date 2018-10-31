@@ -2642,6 +2642,7 @@ public class AdminController extends SpringActionController
         {
             try (QueryProfiler.QueryStatTsvWriter writer = new QueryProfiler.QueryStatTsvWriter())
             {
+                writer.setFilenamePrefix("SQL_Queries");
                 writer.write(response);
             }
         }
