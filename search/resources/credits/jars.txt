@@ -1,6 +1,7 @@
 {table}
 Filename|Component|Version|Source|License|LabKey Dev|Purpose
-cxf-rt-rs-client-3.0.16.jar|Apache CXF|3.0.16|{link:Apache|http://cxf.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|???
+apache-mime4j-core-0.8.1.jar|Apache James Mime4J|0.8.1|{link:Apache|https://james.apache.org/mime4j/index.html}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Parser for email messages
+apache-mime4j-dom-0.8.1.jar|Apache James Mime4J|0.8.1|{link:Apache|https://james.apache.org/mime4j/index.html}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Parser for email messages
 jempbox-1.8.13.jar|jempbox|1.8.13|{link:Apache|https://pdfbox.apache.org/1.8/dependencies.html}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|PDFBox dependency
 jhighlight-1.0.3.jar|JHighlight|1.0.3|{link:codelibs|https://github.com/codelibs/jhighlight}|{link:CDDL|https://github.com/codelibs/jhighlight/blob/master/LICENSE_CDDL.txt}|adam|Parsers for Java, HTML, XHTML, XML and LZX
 lucene-core-7.5.0.jar|Lucene|7.5.0|{link:Apache|http://lucene.apache.org/java/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Full-text search

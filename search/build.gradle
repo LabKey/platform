@@ -1,4 +1,5 @@
 ext.luceneVersion="7.5.0"
+ext.mime4jVersion="0.8.1"
 
 dependencies {
     external "org.apache.lucene:lucene-analyzers-common:${luceneVersion}"
@@ -13,12 +14,13 @@ dependencies {
     // Additional parsing libraries (beyond POI, PDFBox, commons-compress, etc., which are already included in API) that we
     // care about. Adjust these dependencies and versions whenever we upgrade Tika. Or if we want to add or remove a parser.
     // See also tikaConfig.xml to exclude specific parsers or detectors.
-    external "org.apache.cxf:cxf-rt-rs-client:3.0.16"
     external "org.apache.pdfbox:jempbox:1.8.13"
     external "com.drewnoakes:metadata-extractor:2.8.1"
     external "org.apache.poi:poi-scratchpad:${poiVersion}"
     external "org.ccil.cowan.tagsoup:tagsoup:1.2.1"
     external "org.codelibs:jhighlight:1.0.3"
+    external "org.apache.james:apache-mime4j-core:${mime4jVersion}"
+    external "org.apache.james:apache-mime4j-dom:${mime4jVersion}"
 }
 
 // TODO move resources files into resources directory to avoid this overlap
