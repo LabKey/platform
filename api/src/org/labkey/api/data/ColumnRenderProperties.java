@@ -26,6 +26,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.StringExpression;
 
 import java.io.File;
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -583,7 +584,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
             return "Text (String)";
         else if (javaClass.equals(Integer.class) || javaClass.equals(Integer.TYPE) || javaClass.equals(Short.class) || javaClass.equals(Short.TYPE))
             return "Integer";
-        else if (javaClass.equals(Double.class) || javaClass.equals(Double.TYPE))
+        else if (javaClass.equals(Double.class) || javaClass.equals(Double.TYPE) || javaClass.equals(BigDecimal.class))
             return "Number (Double)";
         else if (javaClass.equals(Float.class) || javaClass.equals(Float.TYPE))
             return "Number (Float)";

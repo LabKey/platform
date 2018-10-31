@@ -42,6 +42,7 @@ import org.labkey.api.view.template.ClientDependency;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.Format;
@@ -535,7 +536,8 @@ public abstract class DisplayColumn extends RenderColumn
         else if (Integer.class.isAssignableFrom(valueClass) || int.class.isAssignableFrom(valueClass))
             return "int";
         else if (Double.class.isAssignableFrom(valueClass) || double.class.isAssignableFrom(valueClass)
-                || Float.class.isAssignableFrom(valueClass) || float.class.isAssignableFrom(valueClass))
+                || Float.class.isAssignableFrom(valueClass) || float.class.isAssignableFrom(valueClass)
+                || BigDecimal.class.isAssignableFrom(valueClass))
             return "float";
         else if (Date.class.isAssignableFrom(valueClass))
             return "date";
