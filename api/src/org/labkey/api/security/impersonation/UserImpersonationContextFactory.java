@@ -35,9 +35,8 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -158,11 +157,11 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
         // Site admin can impersonate any active user...
         if (null == project)
         {
-            validUsers = adminUser.hasRootAdminPermission() ? UserManager.getUsers(true) : Collections.emptyList();
+            validUsers = adminUser.hasRootAdminPermission() ? UserManager.getUsers(true) : new ArrayList<>(0); // Mutable list to allow subsequent remove() call
         }
         else if (!project.hasPermission(adminUser, AdminPermission.class))
         {
-            validUsers = Collections.emptyList();
+            validUsers = new ArrayList<>(0); // Mutable list to allow subsequent remove() call
         }
         else
         {
