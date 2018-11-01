@@ -131,7 +131,7 @@ public class SearchModule extends DefaultModule
             AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "full-text search", new ActionURL(SearchController.AdminAction.class, null));
 
             // Update the version number below to force an upgrade of the index to the latest format. This is used when we upgrade Lucene (the indexing library) to a new version.
-            final boolean upgradeIndex = (!moduleContext.isNewInstall() && moduleContext.getOriginalVersion() < 17.21);
+            final boolean upgradeIndex = (!moduleContext.isNewInstall() && moduleContext.getOriginalVersion() < 18.30);
 
             // Update the version number below to force a clear and rebuild of the index. This is used when we change our indexing content or methodology.
             final boolean clearIndex = (!moduleContext.isNewInstall() && moduleContext.getOriginalVersion() < 17.21);
