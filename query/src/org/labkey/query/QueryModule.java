@@ -67,6 +67,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
@@ -316,11 +317,13 @@ public class QueryModule extends DefaultModule
 
         QueryManager.registerUsageMetrics(getName());
 
-        EditQueriesPermission perm = new EditQueriesPermission();
-        RoleManager.registerPermission(perm);
-        Role role = RoleManager.getRole("org.labkey.api.security.roles.TrustedAnalystRole");
-        if (null != role)
-            role.addPermission(EditQueriesPermission.class);
+        // Administrators, Platform Developers, and Trusted Analysts can edit queries, if they also have edit permissions in the current folder
+        RoleManager.registerPermission(new EditQueriesPermission());
+        Role platformDeveloperRole = RoleManager.getRole(PlatformDeveloperRole.class);
+        platformDeveloperRole.addPermission(EditQueriesPermission.class);
+        Role trustedAnalystRole = RoleManager.getRole("org.labkey.api.security.roles.TrustedAnalystRole");
+        if (null != trustedAnalystRole)
+            trustedAnalystRole.addPermission(EditQueriesPermission.class);
     }
 
     @Override
