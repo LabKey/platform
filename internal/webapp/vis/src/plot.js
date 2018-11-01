@@ -1722,11 +1722,12 @@ boxPlot.render();
         // Handles Y Axis domain when performing percent or standard deviation conversions
         var convertYAxisDomain = function (value, stddev, mean) {
             var maxValue, minValue;
-            if (!config.properties.combined && config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings) {
+            if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings
+                    && (!config.properties.combined || config.properties.valueConversion === 'standardDeviation')) {
                 maxValue = mean + (3 * stddev);
-                minValue = mean - (3 * stddev);
+                minValue = mean - (3.5 * stddev);
             }
-            else if (!config.properties.combined && config.qcPlotType === LABKEY.vis.TrendingLinePlotType.MovingRange
+            else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.MovingRange
                     && config.properties.valueConversion === 'percentDeviation') {
                 maxValue = mean * LABKEY.vis.Stat.MOVING_RANGE_UPPER_LIMIT_WEIGHT;
                 minValue = mean;
