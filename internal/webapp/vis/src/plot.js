@@ -1691,46 +1691,54 @@ boxPlot.render();
             return calc;
         };
 
+        var convertValues = function(conversion) {
+            if (!conversion)
+                return;
+
+            // Needed for point hover
+            row.conversion = conversion;
+
+            // Convert values
+            if (row[valProp] !== undefined) {
+                row.rawValue = row[valProp];
+                if (conversion === "percentDeviation") {
+                    row[valProp] = convertToPercentDeviation(row[valProp], row[meanProp]);
+                }
+                else {
+                    row[valProp] = convertToStandardDeviation(row[valProp], row[meanProp], row[sdProp]);
+                }
+            }
+            else if (row[valRightProp] !== undefined) {
+                row.rawValue = row[valRightProp];
+                if (conversion === "percentDeviation") {
+                    row[valRightProp] = convertToPercentDeviation(row[valRightProp], row[meanProp]);
+                }
+                else {
+                    row[valRightProp] = convertToStandardDeviation(row[valRightProp], row[meanProp], row[sdProp]);
+                }
+            }
+        };
+
         // Handles Y Axis domain when performing percent or standard deviation conversions
         var convertYAxisDomain = function (value, stddev, mean) {
             var maxValue, minValue;
             if (!config.properties.combined && config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings) {
                 maxValue = mean + (3 * stddev);
                 minValue = mean - (3 * stddev);
-
-                // if std dev is negative
-                if (minValue > maxValue) {
-                    var tmp = minValue;
-                    minValue = maxValue;
-                    maxValue = tmp;
-                }
-
-                if (value > maxValue)
-                    maxValue = value;
-
-                if (value < minValue)
-                    minValue = value;
-
-                if (config.properties.yAxisDomain[0] > maxValue) {
-                    config.properties.yAxisDomain[0] = maxValue;
-                }
-
-                if (config.properties.yAxisDomain[1] < maxValue) {
-                    config.properties.yAxisDomain[1] = maxValue;
-                }
-
-                if (config.properties.yAxisDomain[0] > minValue) {
-                    config.properties.yAxisDomain[0] = minValue;
-                }
-
-                if (config.properties.yAxisDomain[1] < minValue) {
-                    config.properties.yAxisDomain[1] = minValue;
-                }
             }
             else if (!config.properties.combined && config.qcPlotType === LABKEY.vis.TrendingLinePlotType.MovingRange
                     && config.properties.valueConversion === 'percentDeviation') {
                 maxValue = mean * LABKEY.vis.Stat.MOVING_RANGE_UPPER_LIMIT_WEIGHT;
                 minValue = mean;
+            }
+
+            if (maxValue !== undefined && minValue !== undefined) {
+
+                if (minValue > maxValue) {
+                    var tmp = minValue;
+                    minValue = maxValue;
+                    maxValue = tmp;
+                }
 
                 if (value > maxValue)
                     maxValue = value;
@@ -1790,78 +1798,39 @@ boxPlot.render();
                 if (((valProp && row[valProp] !== undefined) || (valRightProp && row[valRightProp] !== undefined))) {
 
                     // If mean or std dev not in row, use default values
-                    if (config.properties.defaultGuideSets
-                            && config.properties.defaultGuideSets[row[config.properties.groupBy]]
-                            && config.properties.defaultGuideSets[row[config.properties.groupBy]][seriesType]) {
-                        if ((row[meanProp] === undefined || row[meanProp] === null)) {
-                            if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.MovingRange
-                                    && config.properties.defaultGuideSets[row[config.properties.groupBy]][seriesType].MR) {
-                                row[meanProp] = config.properties.defaultGuideSets[row[config.properties.groupBy]][seriesType].MR.Mean;
-                            }
-                            else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings
-                                    && config.properties.defaultGuideSets[row[config.properties.groupBy]][seriesType].LJ) {
-                                row[meanProp] = config.properties.defaultGuideSets[row[config.properties.groupBy]][seriesType].LJ.Mean;
-                            }
-                        }
+                    if (config.properties.defaultGuideSets) {
+                        var defaultGuideSet = config.properties.defaultGuideSets[row[config.properties.groupBy]];
 
-                        if (row[sdProp] === undefined || row[sdProp] === null) {
-                            row[sdProp] = config.properties.defaultStdDev;
-                            if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.MovingRange
-                                    && config.properties.defaultGuideSets[row[config.properties.groupBy]][seriesType].MR) {
-                                row[sdProp] = config.properties.defaultGuideSets[row[config.properties.groupBy]][seriesType].MR.StdDev;
+                        if (defaultGuideSet && defaultGuideSet[seriesType]) {
+                            if ((row[meanProp] === undefined || row[meanProp] === null)) {
+                                if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.MovingRange && defaultGuideSet[seriesType].MR) {
+                                    row[meanProp] = defaultGuideSet[seriesType].MR.Mean;
+                                }
+                                else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings && defaultGuideSet[seriesType].LJ) {
+                                    row[meanProp] = defaultGuideSet[seriesType].LJ.Mean;
+                                }
                             }
-                            else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings
-                                    && config.properties.defaultGuideSets[row[config.properties.groupBy]][seriesType].LJ) {
-                                row[sdProp] = config.properties.defaultGuideSets[row[config.properties.groupBy]][seriesType].LJ.StdDev;
+
+                            if (row[sdProp] === undefined || row[sdProp] === null) {
+                                row[sdProp] = config.properties.defaultStdDev;
+                                if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.MovingRange && defaultGuideSet[seriesType].MR) {
+                                    row[sdProp] = defaultGuideSet[seriesType].MR.StdDev;
+                                }
+                                else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings && defaultGuideSet[seriesType].LJ) {
+                                    row[sdProp] = defaultGuideSet[seriesType].LJ.StdDev;
+                                }
                             }
                         }
                     }
                 }
 
-                // Handle percent of mean value conversion
+                // Handle value conversions
+                convertValues(config.properties.valueConversion);
                 if (config.properties.valueConversion === 'percentDeviation') {
-
-                    // Needed for point hover
-                    row.conversion = 'percentDeviation';
-                    if (valRightProp && row[valRightProp]) {
-                        row.rawRightValue = row[valRightProp];
-                    }
-
-                    // Convert values
-                    if (row[valProp] !== undefined) {
-                        row.rawValue = row[valProp];
-                        row[valProp] = convertToPercentDeviation(row[valProp], row[meanProp]);
-                    }
-                    else if (row[valRightProp] !== undefined) {
-                        row.rawValue = row[valRightProp];
-                        row[valRightProp] = convertToPercentDeviation(row[valRightProp], row[meanProp]);
-                    }
-
                     row[sdProp] = convertToPercentDeviation(row[sdProp], row[meanProp]);
                     row[meanProp] = 100;
                 }
-
-                // Handle standard deviations conversion
                 else if (config.properties.valueConversion === 'standardDeviation') {
-
-                    // Needed for point hover
-                    row.conversion = 'standardDeviation';
-                    row.rawValue = row[valProp];
-
-                    if (valRightProp && row[valRightProp]) {
-                        row.rawRightValue = row[valRightProp];
-                    }
-
-                    // Convert values
-                    if (row[valProp] !== undefined) {
-                        row.rawValue = row[valProp];
-                        row[valProp] = convertToStandardDeviation(row[valProp], row[meanProp], row[sdProp]);
-                    }
-                    else if (row[valRightProp] !== undefined) {
-                        row.rawValue = row[valRightProp];
-                        row[valRightProp] = convertToStandardDeviation(row[valRightProp], row[meanProp], row[sdProp]);
-                    }
-
                     row[sdProp] = 1;
                     row[meanProp] = 0;
                 }
