@@ -51,7 +51,7 @@ public class PropertyColumn extends LookupColumn
     protected boolean _parentIsObjectId = false;
     private final boolean _joinOnContainer;
 
-    public PropertyColumn(PropertyDescriptor pd, TableInfo tinfoParent, String parentLsidColumn, Container container, User user, boolean joinOnContainer)
+    public PropertyColumn(@NotNull PropertyDescriptor pd, @NotNull TableInfo tinfoParent, @NotNull String parentLsidColumn, Container container, User user, boolean joinOnContainer)
     {
         this(pd, tinfoParent.getColumn(parentLsidColumn), container, user, joinOnContainer);
     }
@@ -61,7 +61,7 @@ public class PropertyColumn extends LookupColumn
      * to construct the appropriate TableInfo for lookups.
      * @param joinOnContainer when creating the join as a LookupColumn, whether or not to also match based on container 
      */
-    public PropertyColumn(final PropertyDescriptor pd, final ColumnInfo lsidColumn, final Container container, User user, boolean joinOnContainer)
+    public PropertyColumn(@NotNull final PropertyDescriptor pd, @NotNull final ColumnInfo lsidColumn, final Container container, User user, boolean joinOnContainer)
     {
         super(lsidColumn, OntologyManager.getTinfoObject().getColumn("ObjectURI"), OntologyManager.getTinfoObjectProperty().getColumn(getPropertyCol(pd)));
         _joinOnContainer = joinOnContainer;
@@ -190,7 +190,7 @@ public class PropertyColumn extends LookupColumn
     }
 
 
-    static private String getPropertyCol(PropertyDescriptor pd)
+    static private String getPropertyCol(@NotNull PropertyDescriptor pd)
     {
         if (pd.getPropertyType() == null)
             throw new IllegalStateException("No storage type");

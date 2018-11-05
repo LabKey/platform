@@ -16,18 +16,22 @@
 
 package org.labkey.api.exp.property;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.util.MemTracker;
-import org.apache.log4j.Logger;
 
-import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 
 public class SystemProperty
@@ -60,6 +64,8 @@ public class SystemProperty
 
     public PropertyDescriptor getPropertyDescriptor()
     {
+        if (_pd == null)
+            throw new IllegalStateException("System property can't be used until registered");
         return _pd;
     }
 
