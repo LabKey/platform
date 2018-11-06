@@ -66,6 +66,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -1034,7 +1035,7 @@ public class AuthenticationManager
     // always fail if any secondary authentication is enabled (e.g., Duo).
 
     // Returns null if credentials are incorrect, user doesn't exist, user is inactive, or secondary auth is enabled.
-    public static User authenticate(HttpServletRequest request, String id, String password) throws InvalidEmailException
+    public static @Nullable User authenticate(HttpServletRequest request, String id, String password) throws InvalidEmailException
     {
         PrimaryAuthenticationResult primaryResult = authenticate(request, id, password, null, true);
 
@@ -1047,6 +1048,15 @@ public class AuthenticationManager
         }
 
         return null;
+    }
+
+
+    // Attempt to authenticate outside the context of an HttpServletRequest (e.g., junit test or ODBC connection).
+    // Returns null if credentials are incorrect, user doesn't exist, user is inactive, or secondary auth is enabled.
+    public static @Nullable User authenticate(String id, String password) throws InvalidEmailException
+    {
+        HttpServletRequest mockRequest = ViewServlet.mockRequest("GET", new ActionURL(), null, null, null);
+        return authenticate(mockRequest, id, password);
     }
 
 
