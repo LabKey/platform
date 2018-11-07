@@ -15,29 +15,32 @@
  */
 package org.labkey.api.module;
 
+import org.labkey.api.util.ConfigurationException;
+
 /**
+ * Enum that specifies the versions of Apache Tomcat that LabKey supports plus their properties
+ *
  * Created by adam on 5/27/2017.
  */
 public enum TomcatVersion
 {
-    UNKNOWN(false, null),
-    TOMCAT_7_0(true, "getMaxActive"),
-    TOMCAT_8_0(false, "getMaxTotal"),
-    TOMCAT_8_5(true, "getMaxTotal"),
-    TOMCAT_9_0(true, "getMaxTotal");
+    TOMCAT_7_0(false, "getMaxActive"),
+    TOMCAT_8_5(false, "getMaxTotal"),
+    TOMCAT_9_0(false, "getMaxTotal");
 
-    private final boolean _supported;
+    private final boolean _deprecated;
     private final String _maxTotalMethodName;
 
-    TomcatVersion(boolean supported, String maxTotalMethodName)
+    TomcatVersion(boolean deprecated, String maxTotalMethodName)
     {
-        _supported = supported;
+        _deprecated = deprecated;
         _maxTotalMethodName = maxTotalMethodName;
     }
 
-    public boolean isSupported()
+    // Should LabKey warn administrators that support for this Tomcat version will be removed soon?
+    public boolean isDeprecated()
     {
-        return _supported;
+        return _deprecated;
     }
 
     public String getMaxTotalMethodName()
@@ -45,15 +48,33 @@ public enum TomcatVersion
         return _maxTotalMethodName;
     }
 
-    public static TomcatVersion get(int majorVersion, int minorVersion)
+    private static final String APACHE_TOMCAT_SERVER_NAME_PREFIX = "Apache Tomcat/";
+
+    public static TomcatVersion get()
     {
-        switch (majorVersion * 10 + minorVersion)
+        String serverInfo = ModuleLoader.getServletContext().getServerInfo();
+
+        if (serverInfo.startsWith(APACHE_TOMCAT_SERVER_NAME_PREFIX))
         {
-            case 70: return TomcatVersion.TOMCAT_7_0;
-            case 80: return TomcatVersion.TOMCAT_8_0;
-            case 85: return TomcatVersion.TOMCAT_8_5;
-            case 90: return TomcatVersion.TOMCAT_9_0;
-            default: return TomcatVersion.UNKNOWN;
+            String[] versionParts = serverInfo.substring(APACHE_TOMCAT_SERVER_NAME_PREFIX.length()).split("\\.");
+
+            if (versionParts.length > 1)
+            {
+                int majorVersion = Integer.valueOf(versionParts[0]);
+                int minorVersion = Integer.valueOf(versionParts[1]);
+
+                switch (majorVersion * 10 + minorVersion)
+                {
+                    case 70:
+                        return TomcatVersion.TOMCAT_7_0;
+                    case 85:
+                        return TomcatVersion.TOMCAT_8_5;
+                    case 90:
+                        return TomcatVersion.TOMCAT_9_0;
+                }
+            }
         }
+
+        throw new ConfigurationException("Unsupported Tomcat version: " + serverInfo + ". LabKey Server requires Apache Tomcat 7.0.x, 8.5.x, or 9.0.x.");
     }
 }

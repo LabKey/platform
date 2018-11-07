@@ -141,7 +141,6 @@ public class ModuleLoader implements Filter
     private static final CoreSchema _core = CoreSchema.getInstance();
     private static final Object UPGRADE_LOCK = new Object();
     private static final Object STARTUP_LOCK = new Object();
-    private static final String APACHE_TOMCAT_SERVER_NAME_PREFIX = "Apache Tomcat/";
 
     public static final String MODULE_NAME_REGEX = "\\w+";
     public static final String PRODUCTION_BUILD_TYPE = "Production";
@@ -152,7 +151,7 @@ public class ModuleLoader implements Filter
     private static ModuleLoader _instance = null;
     private static Throwable _startupFailure = null;
     private static boolean _newInstall = false;
-    private static TomcatVersion _tomcatVersion = TomcatVersion.UNKNOWN;
+    private static TomcatVersion _tomcatVersion = null;
 
     private static final String BANNER = "\n" +
             "   __                                   \n" +
@@ -933,8 +932,8 @@ public class ModuleLoader implements Filter
             _log.warn("LabKey Server has not been tested against Java runtime version " + SystemUtils.JAVA_VERSION + ".");
     }
 
-    // Return current Java version, normalized to an int (e.g., 6, 7, 8, 9, 10, 11...). Note that commons lang methods
-    // like SystemUtils.isJavaVersionAtLeast() no longer work with the Java 6-month release cadence.
+    // Return current Java specification version, normalized to an int (e.g., 6, 7, 8, 9, 10, 11...). Note that commons lang methods
+    // like SystemUtils.isJavaVersionAtLeast() aren't keeping up with the Java 6-month release cadence.
     private int getJavaVersion()
     {
         String[] version = SystemUtils.JAVA_VERSION.split("\\.");
@@ -943,28 +942,15 @@ public class ModuleLoader implements Filter
     }
 
     /**
-     * Sets the running Tomcat version, if servlet container is recognized and supported. Otherwise, version is left UNKNOWN.
+     * Sets the running Tomcat version, if servlet container is recognized and supported. Otherwise, ConfigurationException is thrown and server fails to start.
      *
-     * Warnings for deprecated Tomcat versions are specified in CoreWarningProvider
+     * Warnings for deprecated Tomcat versions are handled in CoreWarningProvider
      *
-     * @throws ConfigurationException if Tomcat version is not supported
+     * @throws ConfigurationException if Tomcat version is not recognized or supported
      */
     private void setTomcatVersion()
     {
-        String serverInfo = ModuleLoader.getServletContext().getServerInfo();
-
-        if (serverInfo.startsWith(APACHE_TOMCAT_SERVER_NAME_PREFIX))
-        {
-            String[] versionParts = serverInfo.substring(APACHE_TOMCAT_SERVER_NAME_PREFIX.length()).split("\\.");
-            int majorVersion = Integer.valueOf(versionParts[0]);
-
-            if (majorVersion < 7)
-                throw new ConfigurationException("Unsupported Tomcat version: " + serverInfo + ". LabKey Server requires Apache Tomcat 7 or above.");
-
-            int minorVersion = Integer.valueOf(versionParts[1]);
-
-            _tomcatVersion = TomcatVersion.get(majorVersion, minorVersion);
-        }
+        _tomcatVersion = TomcatVersion.get();
     }
 
     public TomcatVersion getTomcatVersion()
