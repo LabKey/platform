@@ -58,7 +58,7 @@ public class CoreWarningProvider implements WarningProvider
             }
         }
 
-        if (!ModuleLoader.getInstance().getTomcatVersion().isSupported())
+        if (ModuleLoader.getInstance().getTomcatVersion().isDeprecated())
         {
             String serverInfo = ModuleLoader.getServletContext().getServerInfo();
             HelpTopic topic = new HelpTopic("supported");

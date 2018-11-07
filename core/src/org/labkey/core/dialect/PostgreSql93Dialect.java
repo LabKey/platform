@@ -17,16 +17,17 @@
 package org.labkey.core.dialect;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.view.template.Warnings;
 
 import java.util.Set;
 
 /*
-* User: adam
-* Date: Jun 14, 2013
-* Time: 8:50:00 AM
-*/
-public class PostgreSql93Dialect extends PostgreSql92Dialect
+ * PostgreSQL 9.3 is no longer supported, however, we keep this class to track changes we implemented specifically for this version.
+ *
+ * User: adam
+ * Date: Jun 14, 2013
+ * Time: 8:50:00 AM
+ */
+public abstract class PostgreSql93Dialect extends PostgreSql92Dialect
 {
     public PostgreSql93Dialect()
     {
@@ -45,11 +46,5 @@ public class PostgreSql93Dialect extends PostgreSql92Dialect
         words.add("lateral");
 
         return words;
-    }
-
-    @Override
-    public void addAdminWarningMessages(Warnings warnings)
-    {
-        warnings.add("LabKey Server no longer supports " + getProductName() + " " + getProductVersion() + "; please upgrade. " + PostgreSqlDialectFactory.RECOMMENDED);
     }
 }
