@@ -1051,15 +1051,6 @@ public class AuthenticationManager
     }
 
 
-    // Attempt to authenticate outside the context of an HttpServletRequest (e.g., junit test or ODBC connection).
-    // Returns null if credentials are incorrect, user doesn't exist, user is inactive, or secondary auth is enabled.
-    public static @Nullable User authenticate(String id, String password) throws InvalidEmailException
-    {
-        HttpServletRequest mockRequest = ViewServlet.mockRequest("GET", new ActionURL(), null, null, null);
-        return authenticate(mockRequest, id, password);
-    }
-
-
     public static void logout(@NotNull User user, HttpServletRequest request)
     {
         PrimaryAuthenticationProvider provider = _userProviders.get(user.getUserId());
