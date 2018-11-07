@@ -110,14 +110,13 @@ public class RDockerScriptEngine extends RScriptEngine
     @Override
     protected Object eval(File scriptFile, ScriptContext context) throws ScriptException
     {
+        StringBuffer output = new StringBuffer();
         if (null != _ds)
         {
-            StringBuffer output = new StringBuffer();
             try (CustomTiming t = MiniProfiler.custom("docker", "execute r in docker container"))
             {
                 _ds.executeR(_dockerImage, scriptFile, getRWorkingDir(context), _remoteWorkingDir, InputFiles());
                 appendConsoleOutput(context, output);
-                return output.toString();
             }
             catch (Exception e)
             {
@@ -126,8 +125,13 @@ public class RDockerScriptEngine extends RScriptEngine
         }
         else
         {
-            throw new ScriptException("Script evaluation attempted with no RStudioService instance available.");
+            throw new ScriptException("Script evaluation attempted with no DockerService instance available.");
         }
+
+        String scriptOut = output.toString();
+        if (scriptOut.contains("Execution halted")) // unable to capture R command error when run in docker container
+            throw new ScriptException("An error occurred when running the script '" + scriptFile.getName() + "'.\n" + scriptOut);
+        return scriptOut;
     }
 
     /**
