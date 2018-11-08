@@ -80,6 +80,8 @@ LABKEY.Message = new function()
          *      <li>address: the email address of the recipient.</li>
          *  </ul>
          * The utility function LABKEY.Message.createRecipient can be used to help create these objects.
+         * Recipients whose accounts have been deactivated or have never been logged into will be silently dropped from
+         * the message.
          * @param {Object[]} config.msgContent An array of content objects which have the following properties:
          *  <ul>
          *      <li>type: the message content type, must be one of the values from: LABKEY.Message.msgType.</li>
