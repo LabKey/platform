@@ -27,16 +27,9 @@ import org.junit.Test;
 public class NumberUtilsLabKey
 {
     /*
-        This wrapper method exists because the 3.3.1 version of isNumber() had a huge bug, https://issues.apache.org/jira/browse/LANG-992
-        This has supposedly been fixed, but we're using a chokepoint to test the new code and allow for quick revert if needed.
-
-        We'll remove this method once we've confirmed the fix, though we might as well leave the junit test in place.
+        The 3.3.1 version of NumberUtils.isNumber() had a huge bug, https://issues.apache.org/jira/browse/LANG-992
+        The method has been fixed (and renamed to isCreatable()), but we're leaving the test in place to monitor for regressions.
     */
-    public static boolean isNumber(String str)
-    {
-        return NumberUtils.isNumber(str);
-    }
-
     public static class TestCase extends Assert
     {
         @Test
@@ -49,13 +42,13 @@ public class NumberUtilsLabKey
         private void numbers(String... strings)
         {
             for (String string : strings)
-                assertTrue("isNumber(\"" + string + "\" should have returned true!", isNumber(string));
+                assertTrue("isNumber(\"" + string + "\") should have returned true!", NumberUtils.isCreatable(string));
         }
 
         private void notNumbers(String... strings)
         {
             for (String string : strings)
-                assertFalse("isNumber(\"" + string + "\" should have returned false!", isNumber(string));
+                assertFalse("isNumber(\"" + string + "\") should have returned false!", NumberUtils.isCreatable(string));
         }
     }
 }

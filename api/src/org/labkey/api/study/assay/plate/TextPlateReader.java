@@ -16,20 +16,17 @@
 
 package org.labkey.api.study.assay.plate;
 
+import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.study.PlateTemplate;
-import org.labkey.api.exp.ExperimentException;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
-import org.labkey.api.util.NumberUtilsLabKey;
 
 import java.io.File;
-import java.io.LineNumberReader;
-import java.io.FileReader;
 import java.io.IOException;
-import java.util.List;
+import java.io.LineNumberReader;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 
@@ -52,35 +49,30 @@ public class TextPlateReader extends AbstractPlateReader implements PlateReader
         if (!fileName.endsWith(".txt"))
             throw new ExperimentException("Unable to load data file: Invalid Format");
 
-        try {
+        try (LineNumberReader reader = new LineNumberReader(Readers.getReader(dataFile)))
+        {
+            List<String> data = new ArrayList<>();
+            String line;
+            while ((line = reader.readLine()) != null)
+            {
+                if (!StringUtils.isEmpty(line))
+                    data.add(line);
+            }
+
+            int startRow = getStartRow(data);
+            if (startRow == -1)
+            {
+                throw new ExperimentException(dataFile.getName() + " does not appear to be a valid data file: unable to locate spot counts");
+            }
+
             double[][] cellValues = new double[template.getRows()][template.getColumns()];
-            LineNumberReader reader = new LineNumberReader(Readers.getReader(dataFile));
-            try
-            {
-                List<String> data = new ArrayList<>();
-                String line;
-                while((line = reader.readLine()) != null)
-                {
-                    if (!StringUtils.isEmpty(line))
-                        data.add(line);
-                }
 
-                int startRow = getStartRow(data);
-                if (startRow == -1)
-                {
+            for (int i = 0; i < template.getRows(); i++)
+            {
+                if (!getRowData(cellValues[i], data.get(startRow + i), i))
                     throw new ExperimentException(dataFile.getName() + " does not appear to be a valid data file: unable to locate spot counts");
-                }
+            }
 
-                for (int i=0; i < template.getRows(); i++)
-                {
-                    if (!getRowData(cellValues[i], data.get(startRow + i), i))
-                        throw new ExperimentException(dataFile.getName() + " does not appear to be a valid data file: unable to locate spot counts");
-                }
-            }
-            finally
-            {
-                try { reader.close(); } catch (IOException e) {}
-            }
             return cellValues;
         }
         catch (IOException e)

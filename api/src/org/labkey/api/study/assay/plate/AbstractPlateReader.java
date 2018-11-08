@@ -19,10 +19,8 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.study.PlateTemplate;
-import org.labkey.api.util.NumberUtilsLabKey;
 
 import java.io.File;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -41,7 +39,7 @@ public abstract class AbstractPlateReader implements PlateReader
     public String getWellDisplayValue(Object value)
     {
         String strValue = String.valueOf(value);
-        if (NumberUtilsLabKey.isNumber(strValue))
+        if (NumberUtils.isCreatable(strValue))
         {
             double dblValue = NumberUtils.toDouble(strValue);
 
@@ -67,7 +65,7 @@ public abstract class AbstractPlateReader implements PlateReader
      */
     public double convertWellValue(String token) throws ValidationException
     {
-        if (!NumberUtilsLabKey.isNumber(token))
+        if (!NumberUtils.isCreatable(token))
         {
             throw new ValidationException("The specified well value: " + token + " could not be converted into a numeric value");
         }
