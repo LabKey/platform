@@ -92,7 +92,7 @@
     for (String issueId : issueIds )
     {
         Issue issue = null;
-        if (NumberUtils.isNumber(issueId))
+        if (NumberUtils.isCreatable(issueId))
             issue = IssueManager.getIssue(getContainer(), getUser(), Integer.parseInt(issueId));
 
         if (issue == null)
