@@ -33,7 +33,6 @@ import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.category.DefaultCategoryDataset;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.labkey.api.Constants;
@@ -103,7 +102,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
-import org.labkey.api.reports.ExternalScriptEngineFactory;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.*;
@@ -113,7 +111,6 @@ import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
-import org.labkey.api.security.permissions.AbstractSitePermission;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.AdminReadPermission;
@@ -157,7 +154,6 @@ import org.labkey.core.admin.miniprofiler.MiniProfilerController;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.portal.ProjectController;
 import org.labkey.core.query.CoreQuerySchema;
-import org.labkey.core.reports.ScriptEngineManagerImpl;
 import org.labkey.core.security.SecurityController;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.folder.xml.FolderDocument;
@@ -170,7 +166,6 @@ import org.springframework.web.servlet.mvc.Controller;
 
 import javax.mail.MessagingException;
 import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.beans.Introspector;
@@ -1341,14 +1336,6 @@ public class AdminController extends SpringActionController
             }
             props.setXFrameOptions(frameOptions);
 
-            String check = form.getCSRFCheck();
-            if (!check.equals("POST") && !check.equals("ADMINONLY"))
-            {
-                errors.reject(ERROR_MSG, "CSRFCheck must equal POST or ADMINONLY");
-                return false;
-            }
-            props.setCSRFCheck(check);
-
             props.save(getViewContext().getUser());
 
             if (null != level)
@@ -1964,7 +1951,6 @@ public class AdminController extends SpringActionController
         private boolean _allowSessionKeys;
         private boolean _navAccessOpen;
 
-        private String _CSRFCheck;
         private String _XFrameOptions;
 
         public void setDefaultDomain(String defaultDomain)
@@ -2255,16 +2241,6 @@ public class AdminController extends SpringActionController
         public void setAllowSessionKeys(boolean allowSessionKeys)
         {
             _allowSessionKeys = allowSessionKeys;
-        }
-
-        public String getCSRFCheck()
-        {
-            return _CSRFCheck;
-        }
-
-        public void setCSRFCheck(String CSRFCheck)
-        {
-            _CSRFCheck = CSRFCheck;
         }
 
         public String getXFrameOptions()
@@ -8883,50 +8859,6 @@ public class AdminController extends SpringActionController
                 }
             }
             return new ObjectMapper().writeValueAsString(result);
-        }
-    }
-
-
-    public static class ValueForm
-    {
-        private String _value;
-
-        public String getValue()
-        {
-            return _value;
-        }
-
-        public void setValue(String value)
-        {
-            _value = value;
-        }
-    }
-
-
-    @RequiresSiteAdmin
-    static public class ToggleCSRFAction extends MutatingApiAction<ValueForm>
-    {
-        @Override
-        public void validateForm(ValueForm valueForm, Errors errors)
-        {
-            if (!Arrays.asList("POST","ADMINONLY").contains(valueForm.getValue()))
-                errors.reject(ERROR_MSG,"value should be POST or ADMINONLY");
-        }
-
-        @Override
-        public Object execute(ValueForm valueForm, BindException errors)
-        {
-            if (!AppProps.getInstance().isDevMode())
-                throw new UnsupportedOperationException("only allowed in dev mode");
-            String old = AppProps.getInstance().getCSRFCheck();
-            WriteableAppProps props = AppProps.getWriteableInstance();
-            props.setCSRFCheck(valueForm.getValue());
-            props.save(getUser());
-            JSONObject ret = new JSONObject();
-            ret.put("success",true);
-            ret.put("previousValue", old);
-            ret.put("currentValue",  AppProps.getInstance().getCSRFCheck());
-            return ret;
         }
     }
 

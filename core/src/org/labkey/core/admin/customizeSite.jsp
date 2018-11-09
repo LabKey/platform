@@ -401,13 +401,6 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
-    <td class="labkey-form-label">CSRF checking</td>
-    <td><select name="CSRFCheck" id="CSRFCheck">
-        <option value="POST" <%=selectedEq("POST",appProps.getCSRFCheck())%>>All POST requests</option>
-        <option value="ADMINONLY" <%=selectedEq("ADMINONLY",appProps.getCSRFCheck())%>>Admin requests</option>
-    </select></td>
-</tr>
-<tr>
     <td class="labkey-form-label">X-Frame-Options</td>
     <td><select name="XFrameOptions" id="XFrameOptions">
         <% String option = appProps.getXFrameOptions(); %>

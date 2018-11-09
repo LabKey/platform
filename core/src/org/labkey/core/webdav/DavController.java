@@ -1173,16 +1173,13 @@ public class DavController extends SpringActionController
             if (PremiumService.get().isFileUploadDisabled())
                 return WebdavStatus.SC_METHOD_NOT_ALLOWED;
 
-            if ("POST".equals(AppProps.getInstance().getCSRFCheck()))
+            try
             {
-                try
-                {
-                    CSRFUtil.validate(getRequest(), getResponse().response);
-                }
-                catch (CSRFException ex)
-                {
-                    throw new UnauthorizedException(null, ex.getMessage());
-                }
+                CSRFUtil.validate(getRequest(), getResponse().response);
+            }
+            catch (CSRFException ex)
+            {
+                throw new UnauthorizedException(null, ex.getMessage());
             }
 
             WebdavResource resource = resolvePath();
