@@ -91,7 +91,7 @@ public class ValidatorIterator extends AbstractDataIterator implements DataItera
 
     public void addPropertyValidator(int i, DomainProperty prop)
     {
-        addValidators(i, ColumnValidators.createPropertyValidators(prop));
+        addValidators(i, ColumnValidators.createPropertyValidators(null, prop));
     }
 
 

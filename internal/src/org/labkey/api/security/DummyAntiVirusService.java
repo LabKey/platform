@@ -38,7 +38,7 @@ public class DummyAntiVirusService implements AntiVirusService
                 String s = IOUtils.toString(Readers.getReader(f));
                 if (StringUtils.equals(TEST_VIRUS_CONTENT, s.trim()))
                 {
-                    String logmessage = "File failed virus scan: LABKEY virus detected";
+                    String logmessage = "File failed virus scan: LABKEY test virus detected";
                     LOG.warn( (null!=info.getUser() ? info.getUser().getEmail() + " " : "") + logmessage );
                     FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(
                             info.getContainer().getId(), logmessage
@@ -48,7 +48,7 @@ public class DummyAntiVirusService implements AntiVirusService
                     event.setFile(originalName);
                     AuditLogService.get().addEvent(info.getUser(), event);
 
-                    return new ScanResult(originalName, FAILED, "LABKEY virus detected in file: '" + originalName + "'");
+                    return new ScanResult(originalName, FAILED, "LABKEY test virus detected in file: '" + originalName + "'");
                 }
             }
         }

@@ -243,15 +243,6 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
         _searchTerms = searchTerms;
     }
 
-    public String getNonBlankCaption()
-    {
-        if (_label == null || "".equals(_label.trim()))
-        {
-            return getName();
-        }
-        return _label;
-    }
-
     public String getSemanticType()
     {
         return _semanticType;

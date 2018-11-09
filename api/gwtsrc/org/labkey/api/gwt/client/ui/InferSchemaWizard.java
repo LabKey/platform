@@ -155,7 +155,7 @@ public class InferSchemaWizard extends DialogBox
 
         public void onSubmitComplete(FormSubmitCompleteEvent event)
         {
-            String result = event.getResults();
+            String result = event.getResults().trim();
             if (result.startsWith("Success:"))
             {
                 result = result.substring("Success:".length()); // trim the "Success:" prefix
@@ -170,11 +170,13 @@ public class InferSchemaWizard extends DialogBox
             }
             else
             {
+                if (result.startsWith("<pre") && result.endsWith("</pre>") || result.startsWith("<textarea") && result.endsWith("</textarea>"))
+                    result = result.substring(result.indexOf('>')+1, result.lastIndexOf('<'));
                 statusLabel.setText("");
                 Window.alert(result);
                 submitButton.setEnabled(true);
             }
         }
     }
-    
+
 }

@@ -1724,7 +1724,7 @@ boxPlot.render();
             var maxValue, minValue;
             if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings
                     && (!config.properties.combined || config.properties.valueConversion === 'standardDeviation')) {
-                maxValue = mean + (3 * stddev);
+                maxValue = mean + (3.5 * stddev);
                 minValue = mean - (3.5 * stddev);
             }
             else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.MovingRange
@@ -1799,8 +1799,8 @@ boxPlot.render();
                 if (((valProp && row[valProp] !== undefined) || (valRightProp && row[valRightProp] !== undefined))) {
 
                     // If mean or std dev not in row, use default values
-                    if (config.properties.defaultGuideSets) {
-                        var defaultGuideSet = config.properties.defaultGuideSets[row[config.properties.groupBy]];
+                    if (config.properties.defaultGuideSets && config.properties.defaultGuideSetLabel) {
+                        var defaultGuideSet = config.properties.defaultGuideSets[row[config.properties.defaultGuideSetLabel]];
 
                         if (defaultGuideSet && defaultGuideSet[seriesType]) {
                             if ((row[meanProp] === undefined || row[meanProp] === null)) {
@@ -1836,7 +1836,7 @@ boxPlot.render();
                     row[meanProp] = 0;
                 }
 
-                if (!config.properties.valueRight) {
+                if (!config.properties.valueRight && !config.properties.valueRightMR) {
 
                     if (!config.properties.yAxisDomain) {
                         config.properties.yAxisDomain = [0, 0];

@@ -459,7 +459,7 @@ abstract public class JspBase extends JspContext implements HasViewContext
         }
 
         Errors errors = getErrors(beanName);
-        List objectErrors = null;
+        List<ObjectError> objectErrors = null;
 
         if (errors != null)
         {
@@ -471,11 +471,11 @@ abstract public class JspBase extends JspContext implements HasViewContext
                 }
                 else if (field.endsWith("*"))
                 {
-                    objectErrors = errors.getFieldErrors(field);
+                    objectErrors = Collections.unmodifiableList(errors.getFieldErrors(field));
                 }
                 else
                 {
-                    objectErrors = errors.getFieldErrors(field);
+                    objectErrors = Collections.unmodifiableList(errors.getFieldErrors(field));
                 }
             }
 
@@ -484,7 +484,7 @@ abstract public class JspBase extends JspContext implements HasViewContext
                 objectErrors = errors.getGlobalErrors();
             }
         }
-        return (List<ObjectError>)(null == objectErrors ? Collections.emptyList() : objectErrors);
+        return (null == objectErrors ? Collections.emptyList() : objectErrors);
     }
 
     public List<ObjectError> getErrorsForPath(String path)

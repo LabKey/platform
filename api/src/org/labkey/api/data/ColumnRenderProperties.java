@@ -126,6 +126,15 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         to._defaultValueType = _defaultValueType;
     }
 
+    public String getNonBlankCaption()
+    {
+        if (_label == null || "".equals(_label.trim()))
+        {
+            return getName();
+        }
+        return _label;
+    }
+
     public SortDirection getSortDirection()
     {
         return _sortDirection;

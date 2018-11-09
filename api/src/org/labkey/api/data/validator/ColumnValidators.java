@@ -63,7 +63,7 @@ public class ColumnValidators
 
         add(validators, createRequiredValidator(col, dp, allowEmptyString));
         add(validators, createLengthValidator(col, dp));
-        add(validators, createPropertyValidators(dp));
+        add(validators, createPropertyValidators(col, dp));
         add(validators, createDateValidator(col, dp));
         add(validators, createNumberValidator(col, dp));
 
@@ -116,16 +116,41 @@ public class ColumnValidators
     }
 
     @Nullable
-    public static List<? extends ColumnValidator> createPropertyValidators(@Nullable DomainProperty dp)
+    public static List<? extends ColumnValidator> createPropertyValidators(@Nullable ColumnInfo col, @Nullable DomainProperty dp)
     {
-        if (dp == null)
-            return null;
+        List<? extends IPropertyValidator> validators;
+        List<PropertyValidator> ret = null;
 
-        List<? extends IPropertyValidator> validators = dp.getValidators();
-        List<PropertyValidator> ret = new ArrayList<>(validators.size());
-        for (IPropertyValidator pv : validators)
+        // Fix for Issue 36011: Column validator from XML metadata does not trigger during an insert.
+        // Previously, the code was only looking for a Validator that existed in the database, and was bypassing the
+        // Validator that was added via XML Metadata. Below change should recognize the Validator added via XML Metadata.
+        if (null != col)
         {
-            ret.add(new PropertyValidator(dp.getName(), dp.getPropertyDescriptor(), pv));
+            validators = col.getValidators();
+            ret = new ArrayList<>(validators.size());
+            for (IPropertyValidator pv : validators)
+            {
+                ret.add(new PropertyValidator(col.getColumnName(), col, pv)
+                {
+                    @Override
+                    // a hack so that it does not throw UnsupportedOperationException for not using validate(int rowNum, Object value, ValidatorContext validatorContext)
+                    //  esp. from Table.insert (line 710), where it is "hard" to create a validatorContext object which requires a user, and in Table.insert user maybe null.
+                    public String validate(int rowNum, Object value)
+                    {
+                        return null;
+                    }
+                }) ;
+
+            }
+        }
+        else if (null != dp)
+        {
+            validators = dp.getValidators();
+            ret = new ArrayList<>(validators.size());
+            for (IPropertyValidator pv : validators)
+            {
+                ret.add(new PropertyValidator(dp.getName(), dp.getPropertyDescriptor(), pv));
+            }
         }
 
         return ret;

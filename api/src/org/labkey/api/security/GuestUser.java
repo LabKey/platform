@@ -36,6 +36,9 @@ class GuestUser extends User
         this(name, null);
     }
 
+    // For serialization
+    protected GuestUser() { }
+
     @Override
     public boolean isGuest()
     {

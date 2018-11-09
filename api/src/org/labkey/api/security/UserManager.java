@@ -527,6 +527,11 @@ public class UserManager
         return 0 == getActiveUserCount();
     }
 
+    public static boolean hasNoRealUsers()
+    {
+        return 0 == getActiveRealUserCount();
+    }
+
     public static int getUserCount(Date registeredBefore)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Created"), registeredBefore, CompareType.LTE);
@@ -538,6 +543,10 @@ public class UserManager
         return UserCache.getActiveUserCount();
     }
 
+    public static long getActiveRealUserCount()
+    {
+        return UserCache.getActiveRealUserCount();
+    }
 
     public static String validGroupName(String name, @NotNull PrincipalType type)
     {

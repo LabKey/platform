@@ -936,7 +936,7 @@ public class ModuleLoader implements Filter
     // like SystemUtils.isJavaVersionAtLeast() aren't keeping up with the Java 6-month release cadence.
     private int getJavaVersion()
     {
-        String[] version = SystemUtils.JAVA_VERSION.split("\\.");
+        String[] version = SystemUtils.JAVA_SPECIFICATION_VERSION.split("\\.");
 
         return Integer.parseInt("1".equals(version[0]) ? version[1] : version[0]);
     }

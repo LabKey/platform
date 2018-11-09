@@ -15,7 +15,7 @@
  */
 package org.labkey.api.data.validator;
 
-import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.exp.property.ValidatorKind;
@@ -32,15 +32,15 @@ public class PropertyValidator implements ColumnValidator
     final String columnName;
     final ValidatorKind kind;
     final IPropertyValidator propertyValidator;
-    final PropertyDescriptor pd;
+    private ColumnRenderProperties _columnRenderProperties;
     final List<ValidationError> errors = new ArrayList<>(1);
 
-    public PropertyValidator(String columnName, PropertyDescriptor pd, IPropertyValidator propertyValidator)
+    public PropertyValidator(String columnName, ColumnRenderProperties crp, IPropertyValidator propertyValidator)
     {
         this.columnName = columnName;
         this.propertyValidator = propertyValidator;
         this.kind = propertyValidator.getType();
-        this.pd = pd;
+        this._columnRenderProperties = crp;
     }
 
     @Override
@@ -55,7 +55,7 @@ public class PropertyValidator implements ColumnValidator
         // Don't validate null values, #15683, #19352
         if (null == value)
             return null;
-        if (kind.validate(propertyValidator, pd , value, errors, validatorContext))
+        if (kind.validate(propertyValidator, _columnRenderProperties , value, errors, validatorContext))
             return null;
         if (errors.isEmpty())
             return null;

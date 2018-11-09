@@ -15,6 +15,7 @@
  */
 package org.labkey.api.security.roles;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.Iterables;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -43,6 +44,7 @@ public abstract class AbstractRole implements Role
 {
     private final String _name;
     private final String _description;
+    @JsonIgnore
     private final Module _sourceModule;
     private final Set<UserPrincipal> _excludedPrincipals = new HashSet<>();
 

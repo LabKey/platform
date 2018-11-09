@@ -53,6 +53,7 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewService;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.beans.BeansException;
@@ -84,6 +85,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+
+import static org.labkey.api.view.template.PageConfig.Template.Dialog;
 
 /**
  * User: matthewb
@@ -319,6 +322,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
    {
        // TODO: we are assuming that all ApiActions respond with JSON and all !ApiAction respond HTML.  Would be better to be explicit.
        boolean jsonResponse = controller instanceof ApiAction;
+       boolean textResponse = controller instanceof ExportAction;
        boolean htmlWrappedJson = !"XMLHttpRequest".equals(request.getHeader("X-Requested-With" )); // might be hidden form post (e.g. Ext)
 
        if (jsonResponse)
@@ -336,11 +340,22 @@ public abstract class SpringActionController implements Controller, HasViewConte
            return null;
        }
 
+       if (textResponse)
+       {
+           response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+           response.setContentType("text/plain");
+           Writer w = response.getWriter();
+           w.write(x.getMessage());
+           return null;
+       }
+
        // TODO design/text for custom view
        if (x instanceof AntiVirusException)
        {
            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-           SimpleErrorView.fromMessage(x.getMessage()).render(request,response);
+           HttpView view = SimpleErrorView.fromMessage(x.getMessage());
+           view = ViewService.get().getTemplate(Dialog, getViewContext(), view, new PageConfig());
+           view.render(request,response);
            return null;
        }
 
@@ -507,7 +522,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
     public static ActionURL getUpgradeMaintenanceRedirect(HttpServletRequest request, Controller action)
     {
-        if (UserManager.hasNoUsers())
+        if (UserManager.hasNoRealUsers())
         {
             // Let the "initial user" view & post, stylesheet & javascript actions, etc. through... otherwise redirect to initial user action
             if (null != action && action.getClass().isAnnotationPresent(AllowedBeforeInitialUserIsSet.class))

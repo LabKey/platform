@@ -143,6 +143,10 @@ class UserCache
         return getUserCollections().getActiveUserCount();
     }
 
+    static long getActiveRealUserCount()
+    {
+        return getUserCollections().getActiveRealUserCount();
+    }
 
     /**
      * All collections are invalidated for any user change. This seems like the right balance between perf, complexity,
@@ -166,6 +170,7 @@ class UserCache
         private final Map<ValidEmail, User> _emailMap;
         private final Map<String, User> _displayNameMap;
         private final List<User> _activeUsers;
+        private final long _realUserCount;
 
         private UserCollections(Map<Integer, User> userIdMap, Map<ValidEmail, User> emailMap, Map<String, User> displayNameMap, List<User> activeUsers)
         {
@@ -173,6 +178,7 @@ class UserCache
             _emailMap = Collections.unmodifiableMap(emailMap);
             _displayNameMap = displayNameMap;
             _activeUsers = Collections.unmodifiableList(activeUsers);
+            _realUserCount = _activeUsers.stream().filter(user -> !user.getEmail().endsWith("@local.test")).count();
         }
 
         private Map<Integer, User> getUserIdMap()
@@ -198,6 +204,12 @@ class UserCache
         private int getActiveUserCount()
         {
             return _activeUsers.size();
+        }
+
+        // used only by startup to exclude demo users created for eval content etc.
+        private long getActiveRealUserCount()
+        {
+            return _realUserCount;
         }
     }
 
