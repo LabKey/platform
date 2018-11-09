@@ -162,6 +162,8 @@ public interface ProteinService
         private boolean _exactMatch;
         private boolean _restrictProteins;
         protected String _defaultCustomView;
+        private boolean _showMatchingProteins = true;
+        private boolean _showProteinGroups = true;
 
         private int[] _seqIds;
 
@@ -236,5 +238,25 @@ public interface ProteinService
         }
 
         public abstract int[] getSeqId();
+
+        public boolean isShowMatchingProteins()
+        {
+            return _showMatchingProteins;
+        }
+
+        public void setShowMatchingProteins(boolean showMatchingProteins)
+        {
+            _showMatchingProteins = showMatchingProteins;
+        }
+
+        public boolean isShowProteinGroups()
+        {
+            return _showProteinGroups;
+        }
+
+        public void setShowProteinGroups(boolean showProteinGroups)
+        {
+            _showProteinGroups = showProteinGroups;
+        }
     }
 }
