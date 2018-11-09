@@ -371,7 +371,6 @@ public class MemTracker
         return true;
     }
 
-    // Work around Java 7 PriorityBlockingQueue bug, http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=7161229
     public void register(MemTrackerListener generator)
     {
         assert _listeners.add(generator);
