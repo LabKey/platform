@@ -92,7 +92,6 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     static final String ALLOW_API_KEYS = "allowApiKeys";
     static final String API_KEY_EXPIRATION_SECONDS = "apiKeyExpirationSeconds";
     static final String ALLOW_SESSION_KEYS = "allowSessionKeys";
-    static final String CSRF_CHECK = "CSRFCheck";
     static final String X_FRAME_OPTIONS = "XFrameOption";
 
     private static final String SERVER_GUID = "serverGUID";
@@ -520,12 +519,6 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     public boolean isAllowSessionKeys()
     {
         return lookupBooleanValue(ALLOW_SESSION_KEYS, false);
-    }
-
-    @Override
-    public String getCSRFCheck()
-    {
-        return lookupStringValue(CSRF_CHECK, "POST");
     }
 
     @Override

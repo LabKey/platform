@@ -202,11 +202,6 @@ public interface AppProps
     // configurable http security settings
 
     /**
-     * @return "POST" or "ADMINONLY"
-     */
-    String getCSRFCheck();
-
-    /**
      * @return "SAMEORIGIN" or "DENY" or "ALLOW"
      */
     String getXFrameOptions();

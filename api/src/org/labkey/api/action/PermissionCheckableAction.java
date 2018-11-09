@@ -15,8 +15,6 @@
  */
 package org.labkey.api.action;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.AdminConsoleAction;
@@ -34,14 +32,10 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.AdminOperationsPermission;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.AdminReadPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.CSRFException;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.view.ForbiddenProjectException;
 import org.labkey.api.view.NotFoundException;
@@ -188,37 +182,8 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
         if (!policy.hasPermissions(user, permissionsRequired, contextualRoles))
             throw new UnauthorizedException();
 
-
-        CSRF.Method csrfCheck = CSRF.Method.POST;
-        if ("ADMINONLY".equals(AppProps.getInstance().getCSRFCheck()))
-        {
-            boolean requiresAdmin = requiresSiteAdmin || permissionsRequired.contains(AdminPermission.class) || permissionsRequired.contains(AdminOperationsPermission.class);
-            csrfCheck = requiresAdmin ? CSRF.Method.POST : CSRF.Method.NONE;
-        }
-
-        CSRF csrfAnnotation = null;
-        if (actionClass.isAnnotationPresent(CSRF.class))
-        {
-            csrfAnnotation = actionClass.getAnnotation(CSRF.class);
-            csrfCheck = csrfAnnotation.value();
-        }
-
+        CSRF.Method csrfCheck = actionClass.isAnnotationPresent(CSRF.class) ? actionClass.getAnnotation(CSRF.class).value() : CSRF.Method.POST;
         csrfCheck.validate(context);
-
-        // if csrfCheck != POST, check to see if it would have failed with csrfCheck == POST, for auditing purposes
-        if (csrfCheck != CSRF.Method.POST && (csrfAnnotation==null || csrfAnnotation.value() != CSRF.Method.NONE))
-        {
-            try
-            {
-                CSRF.Method.POST.validate(context);
-            }
-            catch (CSRFException ex)
-            {
-                String referer = StringUtils.trimToNull(ex.getReferer());
-                Logger.getLogger(PermissionCheckableAction.class).warn("CSRF checking will fail for this request: " + getClass() + (null != referer ? " referer: " + referer : ""));
-                SpringActionController.getActionDescriptor(this.getClass()).addException(ex);
-            }
-        }
 
         // User must have at least one permission in this set
         Set<Class<? extends Permission>> permissionsAnyOf = Collections.emptySet();

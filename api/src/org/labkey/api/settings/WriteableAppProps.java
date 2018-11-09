@@ -213,9 +213,4 @@ public class WriteableAppProps extends AppPropsImpl
     {
         storeStringValue(X_FRAME_OPTIONS, option);
     }
-
-    public void setCSRFCheck(String check)
-    {
-        storeStringValue(CSRF_CHECK, check);
-    }
 }
