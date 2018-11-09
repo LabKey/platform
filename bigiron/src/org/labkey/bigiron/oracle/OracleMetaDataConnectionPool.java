@@ -2,6 +2,7 @@ package org.labkey.bigiron.oracle;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import org.apache.log4j.Logger;
 import org.labkey.api.data.ConnectionPool;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SqlSelector;
@@ -15,15 +16,31 @@ public class OracleMetaDataConnectionPool extends ConnectionPool
 {
     // A concurrent weak map to count usages of each connection
     private final Cache<Connection, AtomicInteger> MAP = CacheBuilder.newBuilder().weakKeys().build();
-    private final int _openCursorsMax;
+    private int _openCursorsMax;
     private final DbScope _dbScope;
     private final int _openCursorTarget;
+    private static final Logger LOG = Logger.getLogger(OracleMetaDataConnectionPool.class);
 
     public OracleMetaDataConnectionPool(DbScope scope)
     {
         super(scope, 5, "SELECT 1 FROM DUAL");
         _dbScope = scope;
-        _openCursorsMax = new SqlSelector(_dbScope, "SELECT VALUE FROM V$PARAMETER WHERE Name = 'open_cursors'").getObject(Integer.class);
+
+        try
+        {
+            // At minimum, a read-only access to V$PARAMETER is necessary in order get the open_cursors value set for your Oracle instance.
+            _openCursorsMax = new SqlSelector(_dbScope, "SELECT VALUE FROM V$PARAMETER WHERE Name = 'open_cursors'").getObject(Integer.class);
+        }
+        catch (Exception e)
+        {
+            // In case if something goes wrong running above query, setting Max Open Cursors to Oracle's default of 50.
+            // (Ex. this can happen if LK application is logged into Oracle with a
+            // non-sys admin credentials and perhaps not have at least read-only access to V$PARAMETER)
+            LOG.warn("Unable to determine max open cursors for datasource " + _dbScope.getDataSourceName() +". Setting max open cursors to Oracle's default value of 50.");
+            LOG.debug("Encountered an Exception while attempting to determine max open cursors: " , e);
+            _openCursorsMax = 50;
+        }
+
         _openCursorTarget = ((Double)(_openCursorsMax * .8)).intValue(); //a target value to get a new connection when no. of open cursors reach 80% of max open cursor limit (rather than getting a new connection after the limit has reached).
     }
 

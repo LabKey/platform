@@ -1709,7 +1709,7 @@ public class LoginController extends SpringActionController
         @Override
         protected void verify(SetPasswordForm form, ValidEmail email, Errors errors)
         {
-            if (!UserManager.hasNoUsers())
+            if (!UserManager.hasNoRealUsers())
                 throw new RedirectException(AdminController.getModuleStatusURL(null));
 
             _email = email;

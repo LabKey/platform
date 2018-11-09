@@ -24,6 +24,8 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DeferredUpgrade;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.SqlExecutingSelector;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
@@ -40,6 +42,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.NetworkDriveProps;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.core.reports.ScriptEngineManagerImpl;
+import org.labkey.remoteapi.query.SqlExecuteCommand;
 
 import static org.labkey.core.reports.ScriptEngineManagerImpl.SCRIPT_ENGINE_MAP;
 
@@ -209,5 +212,12 @@ public class CoreUpgradeCode implements UpgradeCode
         {
             /* pass */
         }
+    }
+
+    public void purgeDeveloperRole()
+    {
+        // delete "DeveloperRole" assignments that have been left scattered around
+        new SqlExecutor(CoreSchema.getInstance().getSchema())
+                .execute("DELETE FROM core.roleassignments WHERE role = 'org.labkey.api.security.roles.DeveloperRole'");
     }
 }

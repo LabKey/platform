@@ -8986,6 +8986,7 @@ public class AdminController extends SpringActionController
      */
     @Marshal(Marshaller.Jackson)
     @RequiresNoPermission
+    @AllowedBeforeInitialUserIsSet
     public class ConfigurationSummaryAction extends ApiAction<Object>
     {
         @Override
@@ -8995,7 +8996,7 @@ public class AdminController extends SpringActionController
                 throw new NotFoundException();
 
             // requires site-admin, unless there are not users
-            if (!UserManager.hasNoUsers() && !getContainer().hasPermission(getUser(), AdminOperationsPermission.class))
+            if (!UserManager.hasNoRealUsers() && !getContainer().hasPermission(getUser(), AdminOperationsPermission.class))
                 throw new UnauthorizedException();
 
             Map<String,Object> json;

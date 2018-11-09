@@ -185,14 +185,14 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
 
     }
 
-    public Object deserializeFromJSON(String xml, Class<?> cls)
+    public Object deserializeFromJSON(String json, Class<?> cls)
     {
 
         ObjectMapper mapper = PipelineJob.createObjectMapper();
 
         try
         {
-            return mapper.readValue(xml, cls);
+            return mapper.readValue(json, cls);
         }
         catch (Exception e)
         {
