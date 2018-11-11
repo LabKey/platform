@@ -71,21 +71,6 @@
         <exception-strategy className="org.labkey.pipeline.mule.PipelineJobExceptionStrategy" />
     </connector>
 
-    <connector name="jmsConnectorMsdaplLoaderWork" className="org.mule.providers.jms.activemq.ActiveMqJmsConnector">
-        <properties>
-            <!-- JMS connector from JNDI. -->
-            <property name="connectionFactoryJndiName" value="java:comp/env/jms/ConnectionFactory"/>
-            <property name="jndiInitialFactory" value="org.apache.naming.java.javaURLContextFactory"/>
-            <property name="persistentDelivery" value="true"/>
-
-            <property name="specification" value="1.1"/>
-        </properties>
-        <threading-profile id="receiver" maxBufferSize="0" maxThreadsActive="1"
-                maxThreadsIdle="0" threadTTL="100" poolExhaustedAction="WAIT"/>
-
-        <exception-strategy className="org.labkey.pipeline.mule.PipelineJobExceptionStrategy" />
-    </connector>
-
     <connector name="jmsConnectorRemoteExecution" className="org.mule.providers.jms.activemq.ActiveMqJmsConnector">
         <properties>
             <!-- JMS connector from JNDI. -->
@@ -283,59 +268,6 @@
             <properties>
                 <property name="location" value="webserver-fasta-check" />
             </properties>
-        </mule-descriptor>
-
-        <!-- Define a worker for doing MSDaPl loads -->
-        <mule-descriptor name="PipelineJobRunnerMSDaPlUMO"
-            implementation="org.labkey.pipeline.mule.PipelineTaskRunner">
-            <inbound-router>
-                <endpoint type="receiver" address="JobMQ" transformers="JMSMessageToJob"
-                        responseTransformers="NoOpTransformer" connector="jmsConnectorMsdaplLoaderWork">
-                    <filter className="org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter">
-                        <properties>
-                            <property name="location" value="msdapl"/>
-                        </properties>
-                    </filter>
-                </endpoint>
-            </inbound-router>
-
-            <!-- Return to job queue (task runner cannot complete) -->
-            <outbound-router>
-                <router className="org.mule.routing.outbound.OutboundPassThroughRouter">
-                    <endpoint type="sender" address="JobMQ" transformers="JobToJMSMessage"
-                            connector="jmsConnectorMsdaplLoaderWork" />
-                </router>
-            </outbound-router>
-
-            <threading-profile maxThreadsActive="1" maxThreadsIdle="0" threadTTL="100"/>
-            <pooling-profile maxActive="1" maxIdle="0" initialisationPolicy="INITIALISE_NONE"/>
-
-            <properties>
-                <property name="location" value="msdapl" />
-            </properties>
-        </mule-descriptor>
-
-        <mule-descriptor name="PipelineProgressionRunnerUMO"
-            implementation="org.labkey.pipeline.mule.PipelineProgressionRunner">
-            <inbound-router>
-                <endpoint type="receiver" address="JobMQ" transformers="JMSMessageToJob"
-                        responseTransformers="NoOpTransformer" connector="jmsConnectorState">
-                    <!--<transaction action="ALWAYS_BEGIN" factory="org.mule.providers.jms.JmsTransactionFactory" />-->
-                    <filter className="org.labkey.pipeline.mule.filters.TaskStateChangeJmsSelectorFilter"/>
-                </endpoint>
-            </inbound-router>
-
-            <!-- Return to job queue if not complete -->
-            <outbound-router>
-                <router className="org.labkey.pipeline.mule.routing.EPipelineQueueMessageSplitter">
-                    <endpoint type="sender" address="JobMQ" transformers="JobToJMSMessage"
-                            connector="jmsConnectorState"/>
-                    <filter className="org.labkey.pipeline.mule.filters.JobIncompleteFilter"/>
-                </router>
-            </outbound-router>
-
-            <threading-profile maxThreadsActive="1" maxThreadsIdle="0" threadTTL="100"/>
-            <pooling-profile maxActive="1" maxIdle="0" initialisationPolicy="INITIALISE_NONE"/>
         </mule-descriptor>
 
         <mule-descriptor name="PipelineStatusSetterUMO"
