@@ -21,6 +21,7 @@ import org.labkey.api.pipeline.PipelineJobService;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Utility to map Windows file shares as "drives" with their own letter. Shells out to do a NET USE to map it
@@ -89,8 +90,8 @@ public class NetworkDrive
             int count;
             char buffer[] = new char[4096];
 
-            InputStreamReader reader = new InputStreamReader(p.getErrorStream(), "US-ASCII");
-            StringBuffer errors = new StringBuffer();
+            InputStreamReader reader = new InputStreamReader(p.getErrorStream(), StandardCharsets.US_ASCII);
+            StringBuilder errors = new StringBuilder();
             while ((count = reader.read(buffer, 0, buffer.length - 1)) != -1)
                 errors.append(buffer, 0, count);
 
