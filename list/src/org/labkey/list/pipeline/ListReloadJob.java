@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -57,12 +56,6 @@ public class ListReloadJob extends PipelineJob
         ListImporter importer = new ListImporter(_importContext);
 
         getLogger().info("Loading " + _dataFile.getName());
-
-        // Issue 35420: Filewatcher data reload fails when the audit log attempts to record lookup-validation query on row insertion
-        // CONSIDER: removing these if ComplianceQueryLoggingProfilerListener can ignore passed in user/container and get them somewhere else (like QueryLogging)
-        // See 33016 for more information
-        QueryService.get().setEnvironment(QueryService.Environment.USER, getInfo().getUser());
-        QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, getInfo().getContainer());
 
         List<String> errors = new LinkedList<>();
         try

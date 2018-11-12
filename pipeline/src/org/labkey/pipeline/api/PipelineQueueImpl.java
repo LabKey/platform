@@ -26,6 +26,7 @@ import org.labkey.api.pipeline.PipelineJobData;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.JobRunner;
@@ -87,6 +88,11 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
         assert removed;
         _running.add(job);
         thread.setPriority(Thread.NORM_PRIORITY - 1);
+
+        // Set centrally to avoid needing to set in each job. See PipelineJobRunner for equivalent functionality
+        // when running through Enterprise Pipeline
+        QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, job.getContainer());
+        QueryService.get().setEnvironment(QueryService.Environment.USER, job.getUser());
     }
 
 
@@ -98,6 +104,11 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
         try
         {
             LOG.debug("COMPLETED: " + job.toString());
+
+            // Clear centrally to avoid needing to set in each job. See PipelineJobRunner for equivalent functionality
+            // when running through Enterprise Pipeline
+            QueryService.get().clearEnvironment();
+
             notifyDone(job);
             ConnectionWrapper.dumpLeaksForThread(Thread.currentThread());
             boolean removed = _running.remove(job);

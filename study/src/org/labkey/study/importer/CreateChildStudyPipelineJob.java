@@ -262,11 +262,6 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
 
                 // export objects from the parent study, then import them into the new study
                 getLogger().info("Exporting data from parent study.");
-                // Issue 33016: Publish study fails when dataset has a PHI column
-                // ComplianceQueryLoggingProfilerListener.queryInvoked() (in compliance module) will get null user/container without the next two lines
-                // CONSIDER: removing these if ComplianceQueryLoggingProfilerListener can ignore passed in user/container and get them somewhere else (like QueryLogging)
-                QueryService.get().setEnvironment(QueryService.Environment.USER, user);
-                QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, sourceStudy.getContainer());
                 exportFromParentStudy(folderExportContext, vf);
 
                 // import folder items (reports, lists, etc)

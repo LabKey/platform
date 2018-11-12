@@ -16,7 +16,6 @@
 package org.labkey.query;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
@@ -246,11 +245,18 @@ public class QueryImporter implements FolderImporter
             User user = ctx.getUser();
             DefaultSchema defSchema = DefaultSchema.get(user, container);
 
+            boolean clearEnvironment = false;
             try
             {
-                // Retrieve userid for queries being validated through the pipeline (study import).
-                QueryService.get().setEnvironment(QueryService.Environment.USER, user);
-                QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, container);
+                // Some invocations will have already set this, so avoid clearing when we're just piggybacking on the
+                // existing context
+                if (QueryService.get().getEnvironment(QueryService.Environment.USER) == null)
+                {
+                    // Retrieve userid for queries being validated through the pipeline (study import).
+                    QueryService.get().setEnvironment(QueryService.Environment.USER, user);
+                    QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, container);
+                    clearEnvironment = true;
+                }
 
                 ValidateQueriesVisitor validator = new ValidateQueriesVisitor();
                 Boolean valid = validator.visitTop(defSchema, ctx.getLogger());
@@ -274,7 +280,10 @@ public class QueryImporter implements FolderImporter
             }
             finally
             {
-                QueryService.get().clearEnvironment();
+                if (clearEnvironment)
+                {
+                    QueryService.get().clearEnvironment();
+                }
             }
         }
 
