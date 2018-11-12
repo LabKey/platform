@@ -33,7 +33,6 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.exceptions.OptimisticConflictException;
-import org.labkey.api.security.CSRF;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.IgnoresTermsOfUse;
@@ -714,7 +713,6 @@ public class SecurityApiActions
     }
 
     @RequiresPermission(AdminPermission.class)
-    @CSRF
     public static class SavePolicyAction extends MutatingApiAction<SavePolicyForm>
     {
         protected enum RoleModification
@@ -922,7 +920,6 @@ public class SecurityApiActions
     }
 
     @RequiresPermission(AdminPermission.class)
-    @CSRF
     public static class DeletePolicyAction extends MutatingApiAction<PolicyIdForm>
     {
         public ApiResponse execute(PolicyIdForm form, BindException errors)
@@ -1048,7 +1045,6 @@ public class SecurityApiActions
 
     @RequiresPermission(AdminPermission.class)
     @ApiVersion(16.1)
-    @CSRF
     public static class AddAssignmentAction extends BaseUpdateAssignmentAction
     {
         public ApiResponse execute(RoleAssignmentForm form, BindException errors) throws Exception
@@ -1065,7 +1061,6 @@ public class SecurityApiActions
 
     @RequiresPermission(AdminPermission.class)
     @ApiVersion(16.1)
-    @CSRF
     public static class RemoveAssignmentAction extends BaseUpdateAssignmentAction
     {
         public ApiResponse execute(RoleAssignmentForm form, BindException errors) throws Exception
@@ -1082,7 +1077,6 @@ public class SecurityApiActions
 
     @RequiresPermission(AdminPermission.class)
     @ApiVersion(16.1)
-    @CSRF
     public static class ClearAssignedRolesAction extends BaseUpdateAssignmentAction
     {
         @Override
@@ -1183,7 +1177,6 @@ public class SecurityApiActions
     }
 
     @RequiresPermission(AdminPermission.class)
-    @CSRF
     public static class CreateGroupAction extends MutatingApiAction<NameForm>
     {
         public ApiResponse execute(NameForm form, BindException errors)
@@ -1215,7 +1208,6 @@ public class SecurityApiActions
     }
 
     @RequiresPermission(AdminPermission.class)
-    @CSRF
     @ApiVersion(16.1)
     @Marshal(Marshaller.Jackson)
     public static class BulkUpdateGroupAction extends MutatingApiAction<GroupForm>
@@ -1715,7 +1707,6 @@ public class SecurityApiActions
 
 
     @RequiresPermission(AdminPermission.class)
-    @CSRF
     public static class DeleteGroupAction extends MutatingApiAction<IdForm>
     {
         public ApiResponse execute(IdForm form, BindException errors)
@@ -1749,7 +1740,6 @@ public class SecurityApiActions
     }
 
     @RequiresPermission(UserManagementPermission.class)
-    @CSRF
     public static class DeleteUserAction extends MutatingApiAction<IdForm>
     {
         public ApiResponse execute(IdForm form, BindException errors) throws Exception
@@ -1804,7 +1794,6 @@ public class SecurityApiActions
 
 
     @RequiresPermission(AdminPermission.class)
-    @CSRF
     public static class RenameGroupAction extends FormApiAction<RenameForm>
     {
         Group group;
@@ -2036,7 +2025,6 @@ public class SecurityApiActions
     }
 
     @RequiresPermission(AdminPermission.class)
-    @CSRF
     public static class CreateNewUserAction extends MutatingApiAction<CreateNewUserForm>
     {
         public ApiResponse execute(CreateNewUserForm form, BindException errors) throws Exception
@@ -2087,7 +2075,6 @@ public class SecurityApiActions
      * Invalidate existing password and send new password link
      */
     @RequiresPermission(UserManagementPermission.class)
-    @CSRF
     public static class AdminRotatePasswordAction extends MutatingApiAction<SecurityController.EmailForm>
     {
         @Override
@@ -2128,7 +2115,6 @@ public class SecurityApiActions
     }
 
     @RequiresPermission(UserManagementPermission.class)
-    @CSRF
     public static class ListProjectGroupsAction extends ApiAction<ListGroupsForm>
     {
         @Override

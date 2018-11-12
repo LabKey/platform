@@ -77,7 +77,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchResultTemplate;
 import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchUrls;
-import org.labkey.api.security.CSRF;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
@@ -1768,11 +1767,9 @@ public class IssuesController extends SpringActionController
 
     }
 
-    // All three impersonate API actions have the same form
-    @RequiresPermission(AdminPermission.class) @CSRF
+    @RequiresPermission(AdminPermission.class)
     public class MoveAction extends MutatingApiAction<MoveIssueForm>
     {
-
         @Override
         public ApiResponse execute(MoveIssueForm form, BindException errors)
         {

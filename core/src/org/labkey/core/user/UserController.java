@@ -66,7 +66,6 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AvatarThumbnailProvider;
-import org.labkey.api.security.CSRF;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.MemberType;
@@ -517,7 +516,6 @@ public class UserController extends SpringActionController
     }
 
     @RequiresPermission(UserManagementPermission.class)
-    @CSRF
     public class DeactivateUsersAction extends BaseActivateUsersAction
     {
         public DeactivateUsersAction()
@@ -527,7 +525,6 @@ public class UserController extends SpringActionController
     }
 
     @RequiresPermission(UserManagementPermission.class)
-    @CSRF
     public class ActivateUsersAction extends BaseActivateUsersAction
     {
         public ActivateUsersAction()
@@ -537,7 +534,6 @@ public class UserController extends SpringActionController
     }
 
     @RequiresPermission(UserManagementPermission.class)
-    @CSRF
     public class DeleteUsersAction extends FormViewAction<UserIdForm>
     {
         public void validateCommand(UserIdForm target, Errors errors)
@@ -908,7 +904,7 @@ public class UserController extends SpringActionController
         }
     }
 
-    @RequiresLogin @CSRF
+    @RequiresLogin
     public class ShowUpdateAction extends UserSchemaAction
     {
         Integer _userId;
@@ -1686,7 +1682,7 @@ public class UserController extends SpringActionController
         return url;
     }
 
-    @RequiresLogin @CSRF
+    @RequiresLogin
     public class ChangeEmailAction extends FormViewAction<UserForm>
     {
         private String _currentEmailFromDatabase;
@@ -2608,7 +2604,7 @@ public class UserController extends SpringActionController
     }
 
 
-    @RequiresPermission(AdminPermission.class) @CSRF
+    @RequiresPermission(AdminPermission.class)
     public class ImpersonateUserAction extends ImpersonateApiAction<ImpersonateUserForm>
     {
         @Override
@@ -2685,7 +2681,7 @@ public class UserController extends SpringActionController
 
     // TODO: Better instructions
     // TODO: Messages for no groups, no users
-    @RequiresPermission(AdminPermission.class) @CSRF
+    @RequiresPermission(AdminPermission.class)
     public class ImpersonateGroupAction extends ImpersonateApiAction<ImpersonateGroupForm>
     {
         @Override
@@ -2782,7 +2778,7 @@ public class UserController extends SpringActionController
 
 
     // Permissions are checked in impersonate() to let an admin adjust an existing impersonation
-    @RequiresNoPermission @CSRF
+    @RequiresNoPermission
     public class ImpersonateRolesAction extends ImpersonateApiAction<ImpersonateRolesForm>
     {
         @Nullable

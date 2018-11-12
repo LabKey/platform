@@ -390,7 +390,6 @@ public class LoginController extends SpringActionController
     @SuppressWarnings("unused")
     @RequiresNoPermission
     @IgnoresTermsOfUse
-    @CSRF
     public class RegisterAction extends SimpleViewAction<RegisterForm>
     {
         public ModelAndView getView(RegisterForm form, BindException errors)
@@ -421,7 +420,6 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
-    @CSRF
     public class RegisterUserAction extends MutatingApiAction<RegisterForm>
     {
 
@@ -937,7 +935,6 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
-    @CSRF
     public class GetRegistrationConfigApiAction extends ApiAction
     {
         @Override
@@ -1104,7 +1101,6 @@ public class LoginController extends SpringActionController
 
     @RequiresNoPermission
     @IgnoresTermsOfUse
-    @CSRF
     public class AgreeToTermsAction extends FormViewAction<AgreeToTermsForm>
     {
         @Override
@@ -1591,7 +1587,6 @@ public class LoginController extends SpringActionController
 
     @RequiresNoPermission
     @AllowedDuringUpgrade
-    @CSRF
     public class SetPasswordAction extends AbstractSetPasswordAction
     {
         @Override
@@ -2029,7 +2024,6 @@ public class LoginController extends SpringActionController
 
     @RequiresNoPermission
     @AllowedDuringUpgrade
-    @CSRF
     public class ResetPasswordAction extends FormViewAction<LoginForm>
     {
         private HttpView _finishView = null;

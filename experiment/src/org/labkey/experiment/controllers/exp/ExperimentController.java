@@ -56,8 +56,8 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
-import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
@@ -104,7 +104,6 @@ import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.ActionNames;
-import org.labkey.api.security.CSRF;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
@@ -1961,7 +1960,7 @@ public class ExperimentController extends SpringActionController
     }
 
 
-    @CSRF @RequiresNoPermission
+    @RequiresNoPermission
     public class ParseFileAction extends ApiAction<ParseForm>
     {
         @Override
@@ -2258,7 +2257,7 @@ public class ExperimentController extends SpringActionController
     }
 
 
-    @RequiresPermission(ReadPermission.class) @CSRF
+    @RequiresPermission(ReadPermission.class)
     public static class ConvertHtmlToExcelAction extends FormViewAction<ConvertHtmlToExcelForm>
     {
         String _responseHtml = null;
@@ -6022,7 +6021,6 @@ public class ExperimentController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(AdminPermission.class)
-    @CSRF
     public class RebuildEdgesAction extends MutatingApiAction<ExperimentRunForm>
     {
         @Override

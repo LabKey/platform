@@ -20,7 +20,6 @@ import org.labkey.api.action.FormArrayList;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.security.CSRF;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
@@ -485,21 +484,6 @@ public class TestController extends SpringActionController
         public void setBeans(ArrayList<TestBean> beans)
         {
             this.beans = beans;
-        }
-    }
-
-
-    @CSRF @RequiresNoPermission
-    public class CSRFAction extends SimpleViewAction
-    {
-        public ModelAndView getView(Object o, BindException errors)
-        {
-            return new HtmlView("SUCCESS - CSRF");
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return navTrail(root, "CSRF test");
         }
     }
 

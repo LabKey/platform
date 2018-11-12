@@ -1218,7 +1218,6 @@ public class AdminController extends SpringActionController
 
 
     @AdminConsoleAction(AdminOperationsPermission.class)
-    @CSRF
     public class CustomizeSiteAction extends FormViewAction<SiteSettingsForm>
     {
         public ModelAndView getView(SiteSettingsForm form, boolean reshow, BindException errors)
@@ -1359,7 +1358,6 @@ public class AdminController extends SpringActionController
 
     @RequiresPermission(AdminOperationsPermission.class)
     @AdminConsoleAction
-    @CSRF
     public class MapNetworkDriveAction extends FormViewAction<SiteSettingsForm>
     {
         @Override

@@ -60,7 +60,6 @@ import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.pipeline.view.SetupForm;
-import org.labkey.api.security.CSRF;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.RequiresPermission;
@@ -182,7 +181,6 @@ public class PipelineController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    @CSRF
     public class SetupAction extends AbstractSetupAction<SetupForm>
     {
         protected SetupField getFormField()

@@ -57,14 +57,12 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.ExcelFormatException;
 import org.labkey.api.reader.TabLoader;
-import org.labkey.api.security.CSRF;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.FileType;
 import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.Pair;
@@ -392,7 +390,6 @@ public class PropertyController extends SpringActionController
      * Infer the fields from the uploaded file and return the array of fields in a format that can
      * be used in the CreateDomainAction.
      */
-    @CSRF
     @RequiresPermission(ReadPermission.class)
     public class InferDomainAction extends ApiAction<Object>
     {

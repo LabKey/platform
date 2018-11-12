@@ -31,7 +31,6 @@ import org.labkey.api.data.BeanViewForm;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.security.AdminConsoleAction;
-import org.labkey.api.security.CSRF;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
@@ -78,7 +77,6 @@ public class MiniProfilerController extends SpringActionController
 
     @AdminConsoleAction
     @RequiresPermission(AdminPermission.class)
-    @CSRF
     public class ManageAction extends FormViewAction<MiniProfilerSettingsForm>
     {
         @Override
@@ -124,7 +122,6 @@ public class MiniProfilerController extends SpringActionController
     }
 
     @RequiresSiteAdmin
-    @CSRF
     public class SettingsAction extends ApiAction<MiniProfiler.Settings>
     {
         public SettingsAction()
@@ -153,7 +150,6 @@ public class MiniProfilerController extends SpringActionController
 
     @AdminConsoleAction
     @RequiresPermission(AdminPermission.class)
-    @CSRF
     public class ResetAction extends SimpleRedirectAction
     {
         @Override
@@ -165,7 +161,6 @@ public class MiniProfilerController extends SpringActionController
     }
 
     @RequiresSiteAdmin
-    @CSRF
     public class EnabledAction extends ApiAction<EnabledForm>
     {
         @Override

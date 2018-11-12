@@ -22,7 +22,6 @@ import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.AdminConsoleAction;
-import org.labkey.api.security.CSRF;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
@@ -63,7 +62,6 @@ public class LdapController extends SpringActionController
 
 
     @AdminConsoleAction(AdminOperationsPermission.class)
-    @CSRF
     public class ConfigureAction extends FormViewAction<Config>
     {
         public ModelAndView getView(Config form, boolean reshow, BindException errors)
