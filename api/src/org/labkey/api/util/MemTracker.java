@@ -383,12 +383,31 @@ public class MemTracker
 
     public Set<Object> beforeReport()
     {
-        Set<Object> ignorableReferences = Collections.newSetFromMap(new IdentityHashMap<Object, Boolean>());
+        Set<Object> ignorableReferences = Collections.newSetFromMap(new IdentityHashMap<>());
 
         for (MemTrackerListener generator : _instance._listeners)
             generator.beforeReport(ignorableReferences);
 
         return ignorableReferences;
+    }
+
+    // Filters out threads that should be ignored (never displayed as an "Active Thread" on the Memory Usage page)
+    public interface ThreadFilter
+    {
+        // Return true to instruct the Memory Usage page to never display this thread as an "Active Thread"
+        boolean ignore(Thread thread);
+    }
+
+    private final List<ThreadFilter> _threadFilters = new CopyOnWriteArrayList<>();
+
+    public void register(ThreadFilter filter)
+    {
+        _threadFilters.add(filter);
+    }
+
+    public boolean shouldDisplay(Thread thread)
+    {
+        return _threadFilters.stream().noneMatch(threadFilter -> threadFilter.ignore(thread));
     }
 
     //
