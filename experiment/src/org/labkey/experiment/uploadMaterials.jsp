@@ -119,7 +119,7 @@
     or place the file in this folder's pipeline directory and import using the
     <a href="<%= urlProvider(PipelineUrls.class).urlBrowse(getContainer(), getActionURL()) %>">Data Pipeline</a>.
 </p>
-<labkey:form id="sampleSetUploadForm" action="<%=h(buildURL(ExperimentController.ShowUploadMaterialsAction.class))%>" method="POST">
+<labkey:form id="sampleSetUploadForm" action="<%=h(buildURL(ExperimentController.ShowUploadMaterialsAction.class))%>" method="POST" enctype="multipart/form-data">
     <input type="hidden" name="<%= h(ActionURL.Param.returnUrl)%>" value="<%=h(form.getReturnUrl())%>" />
 <table class="lk-fields-table">
     <tr>
@@ -651,6 +651,8 @@ function enableFileUpload() {
             if (select3) select3.disabled = true;
         }
 
+        // Disable file input before submitting - the data is sent as a tsv in the 'data' input field
+        document.getElementById("upload-run-field-file").disabled = true;
 
         document.getElementById("uploading").style.display = "";
         return true;

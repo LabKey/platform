@@ -29,6 +29,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
@@ -39,12 +40,10 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SimpleRunRecord;
 import org.labkey.api.exp.property.Domain;
@@ -63,6 +62,7 @@ import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.MultiPhaseCPUTimer;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -72,7 +72,6 @@ import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpSampleSetImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.MaterialSource;
-import org.labkey.api.data.NameGenerator;
 import org.labkey.experiment.controllers.exp.RunInputOutputBean;
 import org.labkey.experiment.samples.UploadMaterialSetForm.InsertUpdateChoice;
 import org.labkey.experiment.samples.UploadMaterialSetForm.NameFormatChoice;
@@ -90,6 +89,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.util.MultiPhaseCPUTimer.InvocationTimer.Order.EnumOrder;
+
 public class UploadSamplesHelper
 {
     private static final Logger _log = Logger.getLogger(UploadSamplesHelper.class);
@@ -97,6 +98,23 @@ public class UploadSamplesHelper
     private static final SchemaKey SCHEMA_EXP = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME);
     private static final SchemaKey SCHEMA_EXP_DATA = SchemaKey.fromString(SCHEMA_EXP, ExpSchema.NestedSchemas.data.name());
     private static final SchemaKey SCHEMA_SAMPLES = SchemaKey.fromParts(SamplesSchema.SCHEMA_NAME);
+
+    private static MultiPhaseCPUTimer<Phase> TIMER = new MultiPhaseCPUTimer<>(Phase.class, Phase.values());
+
+    private enum Phase
+    {
+        columnDescriptors,
+        ensureSampleSet,
+        loadRows,
+        alternateKeys,
+        sampleNames,
+        deleteOld,
+        insertTabDelimited,
+        aliases,
+        derivation,
+        auditEvent,
+        onSamplesChanged,
+    }
 
     UploadMaterialSetForm _form;
     private MaterialSource _materialSource;
@@ -147,6 +165,10 @@ public class UploadSamplesHelper
     // TODO: This function is way to long and difficult to read. Break it out.
     public Pair<MaterialSource, List<ExpMaterial>> uploadMaterials() throws ExperimentException, ValidationException, IOException
     {
+        long start = System.currentTimeMillis();
+        _log.info("started importing materials");
+        MultiPhaseCPUTimer.InvocationTimer<Phase> timer = TIMER.getInvocationTimer();
+
         List<ExpMaterial> materials;
         DataLoader loader = _form.getLoader();
         // Look at more rows than normal when inferring types for sample set columns
@@ -184,6 +206,8 @@ public class UploadSamplesHelper
             boolean addedProperty = false;
             Set<String> inputOutputColumns = new HashSet<>();
             Set<DomainProperty> alternateKeyCandidates = new HashSet<>();
+
+            timer.setPhase(Phase.columnDescriptors);
             ColumnDescriptor[] columns = loader.getColumns();
 
             for (ColumnDescriptor cd : columns)
@@ -322,12 +346,15 @@ public class UploadSamplesHelper
                 parentColPropertyURI = null;
             }
 
+            timer.setPhase(Phase.ensureSampleSet);
             boolean createdSampleSet = ensureSampleSet(nameExpression, usingNameAsUniqueColumn, idColPropertyURIs, parentColPropertyURI);
 
-            List<Map<String, Object>> maps = loadRows(loader, alternateKeyCandidates);
+            timer.setPhase(Phase.loadRows);
+            List<Map<String, Object>> maps = loadRows(loader, alternateKeyCandidates, timer);
 
             Set<PropertyDescriptor> descriptors = getPropertyDescriptors(domain, maps);
 
+            timer.setPhase(Phase.sampleNames);
             _sampleSet.createSampleNames(maps, null, null, null,
                     _form.getInsertUpdateChoiceEnum() == InsertUpdateChoice.insertIgnore,
                     _form.isAddUniqueSuffixForDuplicateNames());
@@ -335,13 +362,19 @@ public class UploadSamplesHelper
             Set<String> reusedMaterialLSIDs = Collections.emptySet();
             if (!createdSampleSet)
             {
+                timer.setPhase(Phase.deleteOld);
                 reusedMaterialLSIDs = deleteOldPropertyValues(hasCommentHeader, maps, descriptors);
             }
 
-            materials = insertTabDelimitedMaterial(maps, new ArrayList<>(descriptors), _materialSource, reusedMaterialLSIDs, inputOutputColumns, _form.isSkipDerivation());
+            materials = insertTabDelimitedMaterial(maps, new ArrayList<>(descriptors), _materialSource, reusedMaterialLSIDs, inputOutputColumns, _form.isSkipDerivation(), timer);
+
+            timer.setPhase(Phase.onSamplesChanged);
             _sampleSet.onSamplesChanged(_form.getUser(), null);
 
             transaction.commit();
+
+            _log.info("finished importing " + materials.size() + " materials, elapsed " + ((System.currentTimeMillis() - start)));
+            _log.debug(timer.getTimings("material import timings:", EnumOrder, ":\t"));
         }
         catch (SQLException e)
         {
@@ -351,14 +384,20 @@ public class UploadSamplesHelper
         {
             throw new ExperimentException(e.getMessage(), e);
         }
+        finally
+        {
+            TIMER.releaseInvocationTimer(timer);
+        }
 
         return new Pair<>(_materialSource, materials);
     }
 
-    private List<Map<String, Object>> loadRows(DataLoader loader, final Set<DomainProperty> alternateKeyCandidates) throws ExperimentException, IOException
+    private List<Map<String, Object>> loadRows(DataLoader loader, final Set<DomainProperty> alternateKeyCandidates, MultiPhaseCPUTimer.InvocationTimer<Phase> timer) throws ExperimentException, IOException
     {
         if (alternateKeyCandidates.isEmpty())
             return loader.load();
+
+        timer.setPhase(Phase.alternateKeys);
 
         // once the Sample Set is guaranteed to exist we can look for the ForeignKey information for alternateKeyCandidates
         UserSchema ssSchema = QueryService.get().getUserSchema(_form.getUser(), _form.getContainer(), SchemaKey.fromParts(SamplesSchema.SCHEMA_NAME));
@@ -645,12 +684,9 @@ public class UploadSamplesHelper
         }
     }
 
-    public List<ExpMaterial> insertTabDelimitedMaterial(List<Map<String, Object>> rows, List<PropertyDescriptor> descriptors, MaterialSource source, Set<String> reusedMaterialLSIDs, Set<String> inputOutputColumns, boolean skipDerivation)
+    public List<ExpMaterial> insertTabDelimitedMaterial(List<Map<String, Object>> rows, List<PropertyDescriptor> descriptors, MaterialSource source, Set<String> reusedMaterialLSIDs, Set<String> inputOutputColumns, boolean skipDerivation, MultiPhaseCPUTimer.InvocationTimer<Phase> timer)
             throws SQLException, ValidationException, ExperimentException
     {
-        long start = System.currentTimeMillis();
-        _log.info("starting sample insert");
-
         if (rows.size() == 0)
             return Collections.emptyList();
 
@@ -660,9 +696,11 @@ public class UploadSamplesHelper
         int ownerObjectId = OntologyManager.ensureObject(source.getContainer(), source.getLSID());
         MaterialImportHelper helper = new MaterialImportHelper(c, source, _form.getUser(), reusedMaterialLSIDs);
 
+        timer.setPhase(Phase.insertTabDelimited);
         OntologyManager.insertTabDelimited(c, _form.getUser(), ownerObjectId, helper, descriptors, rows, true);
 
         // process any alias values
+        timer.setPhase(Phase.aliases);
         Map<String, ExpMaterial> materialMap = new HashMap<>();
         List<String> idColumns = new ArrayList<>();
         getIdColPropertyURIs(source, idColumns);
@@ -683,6 +721,7 @@ public class UploadSamplesHelper
             }
         });
 
+        timer.setPhase(Phase.derivation);
         if (!skipDerivation && (source.getParentCol() != null || !inputOutputColumns.isEmpty()))
         {
             assert rows.size() == helper._materials.size() : "Didn't find as many materials as we have rows";
@@ -741,6 +780,7 @@ public class UploadSamplesHelper
             }
         }
 
+        timer.setPhase(Phase.auditEvent);
         SampleSetAuditProvider.SampleSetAuditEvent event = new SampleSetAuditProvider.SampleSetAuditEvent(getContainer().getId(), "Samples inserted or updated in: " + _form.getName());
 
         event.setSourceLsid(source.getLSID());
@@ -748,7 +788,6 @@ public class UploadSamplesHelper
         event.setInsertUpdateChoice(_form.getInsertUpdateChoice());
 
         AuditLogService.get().addEvent(_form.getUser(), event);
-        _log.info("finished inserting samples : time elapsed " + (System.currentTimeMillis() - start));
 
         return helper._materials;
     }
