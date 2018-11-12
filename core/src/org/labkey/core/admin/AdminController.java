@@ -133,6 +133,7 @@ import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.*;
+import org.labkey.api.util.MemTracker.HeldReference;
 import org.labkey.api.util.SystemMaintenance.SystemMaintenanceProperties;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
@@ -3176,7 +3177,7 @@ public class AdminController extends SpringActionController
     {
         public final List<Pair<String, MemoryUsageSummary>> memoryUsages = new ArrayList<>();
         public final List<Pair<String, Object>> systemProperties = new ArrayList<>();
-        public final List<MemTracker.HeldReference> references;
+        public final List<HeldReference> references;
         public final List<String> graphNames = new ArrayList<>();
         public final List<String> activeThreads = new LinkedList<>();
 
@@ -3184,7 +3185,8 @@ public class AdminController extends SpringActionController
 
         private MemBean(HttpServletRequest request, Set<Object> objectsToIgnore)
         {
-            List<MemTracker.HeldReference> all = MemTracker.getInstance().getReferences();
+            MemTracker memTracker = MemTracker.getInstance();
+            List<HeldReference> all = memTracker.getReferences();
             long threadId = Thread.currentThread().getId();
 
             // Attempt to detect other threads running labkey code -- mem tracker page will warn if any are found
@@ -3199,14 +3201,17 @@ public class AdminController extends SpringActionController
                 {
                     boolean labkeyThread = false;
 
-                    for (StackTraceElement element : thread.getStackTrace())
+                    if (memTracker.shouldDisplay(thread))
                     {
-                        String className = element.getClassName();
-
-                        if (className.startsWith("org.labkey") || className.startsWith("org.fhcrc"))
+                        for (StackTraceElement element : thread.getStackTrace())
                         {
-                            labkeyThread = true;
-                            break;
+                            String className = element.getClassName();
+
+                            if (className.startsWith("org.labkey") || className.startsWith("org.fhcrc"))
+                            {
+                                labkeyThread = true;
+                                break;
+                            }
                         }
                     }
 
@@ -3219,7 +3224,7 @@ public class AdminController extends SpringActionController
             long start = ViewServlet.getRequestStartTime(request) - 2000;
             references = new ArrayList<>(all.size());
 
-            for (MemTracker.HeldReference r : all)
+            for (HeldReference r : all)
             {
                 if (r.getThreadId() == threadId && r.getAllocationTime() >= start)
                     continue;
