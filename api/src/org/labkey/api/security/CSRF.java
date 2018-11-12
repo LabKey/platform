@@ -50,7 +50,7 @@ public @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target(ElementT
         {
             public boolean check(String method)
             {
-                return StringUtils.equalsIgnoreCase("POST",method);
+                return StringUtils.equalsIgnoreCase("POST", method);
             }
         },
 
@@ -72,5 +72,5 @@ public @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target(ElementT
         }
     }
 
-    Method value() default Method.POST;
+    Method value();
 }
