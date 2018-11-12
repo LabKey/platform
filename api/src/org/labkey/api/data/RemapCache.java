@@ -9,6 +9,7 @@ import org.labkey.api.view.NotFoundException;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class RemapCache
 {
@@ -29,6 +30,25 @@ public class RemapCache
             _user = user;
             _container = container;
             _containerFilterType = containerFilterType;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Key key = (Key) o;
+            return Objects.equals(_schemaKey, key._schemaKey) &&
+                    Objects.equals(_queryName, key._queryName) &&
+                    Objects.equals(_user, key._user) &&
+                    Objects.equals(_container, key._container) &&
+                    _containerFilterType == key._containerFilterType;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hash(_schemaKey, _queryName, _user, _container, _containerFilterType);
         }
     }
 
