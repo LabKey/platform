@@ -161,9 +161,9 @@ public class StudyDataspaceTest extends StudyBaseTest
 
         // Export archive without Treatment, Product, etc.
         clickFolder(FOLDER_STUDY5);
-        goToFolderManagement();
+        goToFolderManagement(); //todo: refactor to use page class (folderExportPage?)
         clickAndWait(Locator.linkWithText("Export"));
-        new Checkbox(Locator.tagWithText("label", "Assay Schedule").precedingSibling("input").findElement(getDriver())).uncheck();
+        new Checkbox(Locator.tagWithText("label", "Assay Schedule").precedingSibling("input").waitForElement(getDriver(), WAIT_FOR_JAVASCRIPT)).uncheck();
         new Checkbox(Locator.tagWithText("label", "Treatment Data").precedingSibling("input").findElement(getDriver())).uncheck();
         checkRadioButton(Locator.tagWithClass("table", "export-location").index(0));
         clickButton("Export");
