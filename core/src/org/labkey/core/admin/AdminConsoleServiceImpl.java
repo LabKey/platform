@@ -17,6 +17,7 @@
 package org.labkey.core.admin;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.admin.AdminConsoleHeaderLinkProvider;
 import org.labkey.api.admin.AdminConsoleService;
 
 import java.util.List;

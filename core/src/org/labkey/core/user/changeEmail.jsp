@@ -16,14 +16,14 @@
  */
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.core.user.UserController.ChangeEmailAction" %>
-<%@ page import="org.labkey.core.user.UserController" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.security.UserManager" %>
-<%@ page import="org.labkey.core.login.LoginController" %>
+<%@ page import="org.labkey.api.security.UserManager"%>
 <%@ page import="org.labkey.api.security.permissions.UserManagementPermission" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.core.login.LoginController" %>
+<%@ page import="org.labkey.core.user.UserController" %>
+<%@ page import="org.labkey.core.user.UserController.ChangeEmailAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<UserController.UserForm> me = (JspView<UserController.UserForm>) HttpView.currentView();
