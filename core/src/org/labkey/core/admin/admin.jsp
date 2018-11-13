@@ -16,6 +16,7 @@
  */
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.labkey.api.admin.AdminBean" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.CoreSchema" %>
 <%@ page import="org.labkey.api.module.DefaultModule" %>
@@ -28,17 +29,12 @@
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.NavTree"%>
 <%@ page import="org.labkey.core.admin.AdminController" %>
-<%@ page import="java.util.Collection"%>
+<%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Date" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
-<%@ page import="org.labkey.api.admin.DiagnosticsLink" %>
-<%@ page import="org.labkey.api.admin.AdminConsoleService" %>
-<%@ page import="org.labkey.api.admin.AdminBean" %>
-<%@ page import="org.labkey.core.admin.AdminConsoleHeaderLinkProvider" %>
-<%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
