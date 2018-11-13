@@ -27,7 +27,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
-import org.labkey.core.admin.AdminConsoleHeaderLinkProvider;
 
 import java.io.File;
 import java.util.ArrayList;

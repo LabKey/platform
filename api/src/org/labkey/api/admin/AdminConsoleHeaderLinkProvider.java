@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.core.admin;
+package org.labkey.api.admin;
 
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
