@@ -1503,7 +1503,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         if (templates.size() == 0)
         {
             ActionURL url = PageFlowUtil.urlProvider(QueryUrls.class).urlCreateExcelTemplate(ctx.getContainer(), getPublicSchemaName(), getName());
-            url.addParameter("headerType", ColumnHeaderType.Name.name()); // CONSIDER: Use DisplayFieldKey instead
+            url.addParameter("headerType", ColumnHeaderType.DisplayFieldKey.name());
             if(url != null)
                 templates.add(Pair.of("Download Template", url.toString()));
         }
