@@ -164,8 +164,8 @@ public interface ProteinService
         protected String _defaultCustomView;
         private boolean _showMatchingProteins = true;
         private boolean _showProteinGroups = true;
-
         private int[] _seqIds;
+        private String _location;
 
         public String getDefaultCustomView()
         {
@@ -257,6 +257,16 @@ public interface ProteinService
         public void setShowProteinGroups(boolean showProteinGroups)
         {
             _showProteinGroups = showProteinGroups;
+        }
+
+        public String getLocation()
+        {
+            return _location;
+        }
+
+        public void setLocation(String location)
+        {
+            _location = location;
         }
     }
 }
