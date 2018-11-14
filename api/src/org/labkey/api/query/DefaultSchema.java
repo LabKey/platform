@@ -16,6 +16,7 @@
 
 package org.labkey.api.query;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
@@ -29,6 +30,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.visualization.VisualizationProvider;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -214,6 +216,18 @@ final public class DefaultSchema extends AbstractSchema
             if (project != null && project.hasPermission(getUser(), ReadPermission.class))
             {
                 return new FolderSchemaProvider.FolderSchema(name, getUser(), project, DefaultSchema.get(getUser(), project));
+            }
+        }
+
+        if (name.contains("."))
+        {
+            String[] schemaParts = name.split("\\.");
+            for (int i = 0; i < schemaParts.length; i++)
+            {
+                List<String> parts = Arrays.asList(schemaParts).subList(0, i);
+                provider = _providers.get(StringUtils.join(parts, '.'));
+                if (provider != null)
+                    return provider.getSchema(this);
             }
         }
 
