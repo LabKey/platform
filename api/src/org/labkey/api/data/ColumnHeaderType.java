@@ -59,7 +59,7 @@ public enum ColumnHeaderType
     },
 
     // Use ColumnInfo name -- usually just the FieldKey -- and use "." for lookup separators without FieldKey escaping.
-    DisplayFieldKey("Field Name", "The friendly field name, for example 'Participant ID'.") {
+    DisplayFieldKey("Field Name", "The official name of the field, without escaping for special characters") {
         @Override
         public String getText(DisplayColumn dc)
         {
