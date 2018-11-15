@@ -45,6 +45,7 @@ import java.nio.channels.FileLock;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -159,6 +160,20 @@ public class FileUtil
                 else
                     Files.copy(srcChild, destChild, StandardCopyOption.REPLACE_EXISTING);
             }
+        }
+    }
+
+    // return true if file exists and is not a directory
+    public static boolean isFileAndExists(@Nullable Path path)
+    {
+        try
+        {
+            // One call to cloud rather than two (exists && !isDirectory)
+            return (null != path && !Files.readAttributes(path, BasicFileAttributes.class).isDirectory());
+        }
+        catch (IOException e)
+        {
+            return false;
         }
     }
 
