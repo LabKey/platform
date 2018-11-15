@@ -49,7 +49,6 @@ import org.apache.lucene.search.SortField;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.WildcardQuery;
-import org.apache.lucene.store.AlreadyClosedException;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.BytesRef;
 import org.apache.tika.config.LoadErrorHandler;
@@ -670,7 +669,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             // Prefer using cause since ClassNotFoundException's message is consistent across JVMs, but NoClassDefFoundError's is not.
             // However, fall back on the message if cause is null.
-            if (cause != null && cause instanceof ClassNotFoundException)
+            if (cause instanceof ClassNotFoundException)
                 message = cause.getMessage();
             else
                 message = err.getMessage();
@@ -1717,6 +1716,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             add(map, "jpg_sample.jpg", 0);
             add(map, "js_sample.js", 21405, "Magnific Popup Core JS file", "convert jQuery collection to array", "");
             add(map, "mov_sample.mov", 0);
+            add(map, "msg_outlook_sample.msg", 1830, "Nouvel utilisateur de Outlook Express", "Messagerie et groupes de discussion", "R\u00E8gles am\u00E9lior\u00E9es");
             add(map, "pdf_sample.pdf", 1501, "acyclic is a filter that takes a directed graph", "The following options");
             add(map, "png_sample.png", 0);
             add(map, "ppt_sample.ppt", 116, "Slide With Image", "Slide With Text", "Hello world", "How are you?");
