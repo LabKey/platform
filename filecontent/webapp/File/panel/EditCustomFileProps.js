@@ -208,14 +208,18 @@ Ext4.define('File.panel.EditCustomFileProps', {
             var formPage = this.formPages[i];
             var rec = this.fileRecords[i];
             var row = {
+                // This is required when a row does not exist in Exp.Data table and an insert needs to be performed
+                dataFileUrl: rec.data.dataFileUrl,
                 Name: rec.data.name,
+                // This is required when requesting the Resource from FileContentService
                 id: rec.data.href,
                 'Flag/Comment': rec.data.description
             };
 
             var prevValues = this.fileProps[rec.data.id];
-            if (prevValues) {
-                row["RowId"] = prevValues["rowId"];
+            if (prevValues && prevValues.rowId !== undefined) {
+                // This is required when a row does exist for this file in Exp.Data table and an update can be performed
+                row.RowId = prevValues.rowId;
             }
 
             for (var r = 0; r < this.extraColumns.length; r++) {
@@ -236,47 +240,53 @@ Ext4.define('File.panel.EditCustomFileProps', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             jsonData: { files: files },
-            success: function() {
+            success: LABKEY.Utils.getCallbackWrapper(function(json) {
+                if (!json.success) {
+                    this.onSaveFailure(json);
+                    return;
+                }
+
                 var win = Ext4.getCmp(this.winId);
                 if (win) {
                     win.fireEvent('successfulsave');
                     win.close();
                 }
-            },
-            failure: LABKEY.Utils.getCallbackWrapper(function(json) {
-                var errorMsg = '';
-
-                if (json) {
-                    if (json.errors) {
-                        for (var i=0; i < json.errors.length; i++) {
-                            var error = json.errors[i];
-                            errorMsg += '<span class="labkey-error"> + error.message + </span>';
-                        }
-                    }
-                    else if (json.exception) {
-                        errorMsg = json.exception;
-                    }
-                }
-
-                if (!errorMsg) {
-                    errorMsg = 'An unknown error occurred';
-                }
-
-                var el = Ext4.get('file-props-status');
-                if (el) {
-                    el.update(errorMsg);
-                }
-                else {
-                    Ext4.Msg.alert('Error', errorMsg);
-                }
-
-                var win = Ext4.getCmp(this.winId);
-                if (win) {
-                    win.close();
-                }
-            }, this, true),
+            }),
+            failure: LABKEY.Utils.getCallbackWrapper(this.onSaveFailure, this, true),
             scope: this
         });
+    },
+
+    onSaveFailure : function(json) {
+        var errorMsg = '';
+
+        if (json) {
+            if (json.errors) {
+                for (var i=0; i < json.errors.length; i++) {
+                    errorMsg += '<span class="labkey-error">' + json.errors[i].message + '</span>';
+                }
+            }
+            else if (json.exception) {
+                errorMsg = json.exception;
+            }
+        }
+
+        if (!errorMsg) {
+            errorMsg = 'Failed to update file properties. An unspecified error occurred.';
+        }
+
+        var el = Ext4.get('file-props-status');
+        if (el) {
+            el.update(errorMsg);
+        }
+        else {
+            Ext4.Msg.alert('Error', errorMsg);
+        }
+
+        var win = Ext4.getCmp(this.winId);
+        if (win) {
+            win.close();
+        }
     },
 
     saveFormPage : function()

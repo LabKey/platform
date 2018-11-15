@@ -166,7 +166,7 @@ public class UploadSamplesHelper
     public Pair<MaterialSource, List<ExpMaterial>> uploadMaterials() throws ExperimentException, ValidationException, IOException
     {
         long start = System.currentTimeMillis();
-        _log.info("started importing materials");
+        _log.debug("started importing materials");
         MultiPhaseCPUTimer.InvocationTimer<Phase> timer = TIMER.getInvocationTimer();
 
         List<ExpMaterial> materials;
@@ -373,8 +373,7 @@ public class UploadSamplesHelper
 
             transaction.commit();
 
-            _log.info("finished importing " + materials.size() + " materials, elapsed " + ((System.currentTimeMillis() - start)));
-            _log.debug(timer.getTimings("material import timings:", EnumOrder, ":\t"));
+            _log.debug(timer.getTimings("finished importing " + materials.size() + " materials, elapsed " + ((System.currentTimeMillis() - start)), EnumOrder, ":\t"));
         }
         catch (SQLException e)
         {

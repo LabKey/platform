@@ -16,6 +16,9 @@
 
 package org.labkey.study;
 
+import org.apache.commons.collections4.bag.HashBag;
+import org.apache.commons.lang3.mutable.MutableInt;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -28,8 +31,11 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.ExperimentRunType;
@@ -166,6 +172,7 @@ import org.labkey.study.security.roles.SpecimenRequesterRole;
 import org.labkey.study.specimen.SpecimenCommentAuditProvider;
 import org.labkey.study.specimen.SpecimenSearchWebPart;
 import org.labkey.study.specimen.SpecimenWebPart;
+import org.labkey.study.specimen.settings.RepositorySettings;
 import org.labkey.study.view.AssayBatchesWebPartFactory;
 import org.labkey.study.view.AssayList2WebPartFactory;
 import org.labkey.study.view.AssayListWebPartFactory;
@@ -204,6 +211,8 @@ import java.util.stream.Collectors;
 
 public class StudyModule extends SpringModule implements SearchService.DocumentProvider
 {
+    private static final Logger LOG = Logger.getLogger(StudyModule.class);
+
     public static final String MODULE_NAME = "Study";
 
     public static final BaseWebPartFactory reportsPartFactory = new ReportsWebPartFactory();
@@ -478,6 +487,45 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 );
 
                 metric.put("studyReloadCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Study WHERE AllowReload = ? AND ReloadInterval > ?", true, 0).getObject(Long.class));
+
+                // Collect and add specimen repository statistics: simple vs. advanced study count, event/vial/specimen count, count of studies with requests enabled, request count by status
+                HashBag<String> specimenBag = new HashBag<>();
+                MutableInt requestsEnabled = new MutableInt(0);
+
+                StudyManager.getInstance().getAllStudies().stream()
+                    .map(study->StudyQuerySchema.createSchema(study, null, false))
+                    .forEach(schema->{
+                        RepositorySettings settings = SpecimenManager.getInstance().getRepositorySettings(schema.getContainer());
+
+                        if (settings.isSimple())
+                        {
+                            specimenBag.add("simple");
+                            TableInfo simpleSpecimens = schema.getTable(StudyQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME);
+                            specimenBag.add("simpleSpecimens", (int)new TableSelector(simpleSpecimens).getRowCount());
+                        }
+                        else
+                        {
+                            specimenBag.add("advanced");
+                            TableInfo events = schema.getTable(StudyQuerySchema.SPECIMEN_EVENT_TABLE_NAME);
+                            TableInfo vials = schema.getTable(StudyQuerySchema.SPECIMEN_DETAIL_TABLE_NAME);
+                            TableInfo specimens = schema.getTable(StudyQuerySchema.SPECIMEN_SUMMARY_TABLE_NAME);
+                            specimenBag.add("events", (int)new TableSelector(events).getRowCount());
+                            specimenBag.add("vials", (int)new TableSelector(vials).getRowCount());
+                            specimenBag.add("specimens", (int)new TableSelector(specimens).getRowCount());
+                        }
+
+                        if (settings.isEnableRequests())
+                            requestsEnabled.increment();
+
+                        LOG.debug(specimenBag.toString());
+                    });
+
+                Map<String, Object> specimensMap = specimenBag.uniqueSet().stream().collect(Collectors.toMap(s->s, specimenBag::getCount));
+                Map<String, Object> requestsMap = new SqlSelector(StudySchema.getInstance().getSchema(), new SQLFragment("SELECT Label, COUNT(*) FROM study.SampleRequest INNER JOIN study.SampleRequestStatus srs ON StatusId = srs.RowId GROUP BY Label")).getValueMap();
+                requestsMap.put("enabled", requestsEnabled);
+                specimensMap.put("requests", requestsMap);
+
+                metric.put("specimens", specimensMap);
 
                 return metric;
             });

@@ -187,7 +187,7 @@ public class FileContentServiceImpl implements FileContentService
         {
             case files:
                 String folderName = getFolderName(type);
-                java.nio.file.Path dir = _getFileRoot(c);
+                java.nio.file.Path dir = getFileRootPath(c);
                 return dir != null ? new File(dir.toFile(), folderName) : null;
 
             case pipeline:
@@ -203,7 +203,7 @@ public class FileContentServiceImpl implements FileContentService
         switch (type)
         {
             case files:
-                java.nio.file.Path fileRootPath = _getFileRoot(c);
+                java.nio.file.Path fileRootPath = getFileRootPath(c);
                 if (null != fileRootPath && !FileUtil.hasCloudScheme(fileRootPath))  // Don't add @files when we're in the cloud
                     fileRootPath = fileRootPath.resolve(getFolderName(type));
                 return fileRootPath;
@@ -211,24 +211,6 @@ public class FileContentServiceImpl implements FileContentService
             case pipeline:
                 PipeRoot root = PipelineService.get().findPipelineRoot(c);
                 return root != null ? root.getRootNioPath() : null;
-        }
-        return null;
-    }
-
-    private @Nullable java.nio.file.Path _getFileRoot(Container c)
-    {
-        java.nio.file.Path root = getFileRootPath(c);
-        if (root != null)
-        {
-            java.nio.file.Path dir;
-
-            //Don't want the Project part of the path.
-            if (c.isRoot())
-                dir = getSiteDefaultRootPath();
-            else
-                dir = root;
-
-            return dir;
         }
         return null;
     }
@@ -294,26 +276,23 @@ public class FileContentServiceImpl implements FileContentService
             java.nio.file.Path fileRootPath;
             if (FileUtil.hasCloudScheme(parentRoot))
             {
+                // For cloud root, we don't have to create directories for this path
                 fileRootPath = CloudStoreService.get().getPathForOtherContainer(firstOverride, c, FileUtil.pathToString(parentRoot), new Path(""));
             }
             else
             {
+                // For local, the path may be several directories deep (since it matches the LK folder path), so we should create the directories for that path
                 fileRootPath = new File(parentRoot.toFile(), getRelativePath(c, firstOverride)).toPath();
-            }
 
-            try
-            {
-                if (null != fileRootPath && !Files.exists(fileRootPath) && createDir)
-                    Files.createDirectories(fileRootPath);
-            }
-            catch (IOException e)
-            {
-                return null; //  throw new RuntimeException(e);    TODO: does returning null make certain tests, like TargetedMSQCGuideSetTest pass on Windows?
-            }
-            catch (Exception e)
-            {
-                // Amazon can throw // TODO probably need to include S3 jar in this module to be more specific
-                return null;
+                try
+                {
+                    if (createDir && !Files.exists(fileRootPath))
+                        Files.createDirectories(fileRootPath);
+                }
+                catch (IOException e)
+                {
+                    return null; //  throw new RuntimeException(e);    TODO: does returning null make certain tests, like TargetedMSQCGuideSetTest pass on Windows?
+                }
             }
 
             return fileRootPath;
@@ -707,26 +686,26 @@ public class FileContentServiceImpl implements FileContentService
     public java.nio.file.Path getMappedDirectory(Container c, boolean create) throws UnsetRootDirectoryException, IOException
     {
         java.nio.file.Path root = getFileRootPath(c);
-        if (null == root)
+        if (!FileUtil.hasCloudScheme(root))
         {
-            if (create)
-                throw new UnsetRootDirectoryException(c.isRoot() ? c : c.getProject());
-            else
-                return null;
-        }
+            if (null == root)
+            {
+                if (create)
+                    throw new UnsetRootDirectoryException(c.isRoot() ? c : c.getProject());
+                else
+                    return null;
+            }
 
-        if (!Files.exists(root))
-        {
-            if (create)
-                throw new MissingRootDirectoryException(c.isRoot() ? c : c.getProject(), root);
-            else
-                return null;
-        }
+            if (!Files.exists(root))
+            {
+                if (create)
+                    throw new MissingRootDirectoryException(c.isRoot() ? c : c.getProject(), root);
+                else
+                    return null;
 
-        java.nio.file.Path dirPath = _getFileRoot(c);
-        if (create && null != dirPath && !Files.exists(dirPath))
-            Files.createDirectories(dirPath);
-        return dirPath;
+            }
+        }
+        return root;
     }
 
     @Override
@@ -762,11 +741,8 @@ public class FileContentServiceImpl implements FileContentService
         {
             try
             {
-                java.nio.file.Path dir = getMappedDirectory(c, false);
-                //Don't try to create dir if root not configured.
-                //But if we should have a directory, create it
-                if (null != dir && !Files.exists(dir))
-                    getMappedDirectory(c, true);
+                // Will create directory if it's a default dir
+                getMappedDirectory(c, false);
             }
             catch (IOException ex)
             {
@@ -781,10 +757,10 @@ public class FileContentServiceImpl implements FileContentService
             try
             {
                 // don't delete the file contents if they have a project override
-                if (isUseDefaultRoot(c))
+                if (isUseDefaultRoot(c) && !isCloudRoot(c))         // Don't do anything for cloud root here. CloudContainerListener will handle
                     dir = getMappedDirectory(c, false);
 
-                if (null != dir && Files.exists(dir))
+                if (null != dir)
                 {
                     FileUtil.deleteDir(dir);
                 }
@@ -811,8 +787,8 @@ public class FileContentServiceImpl implements FileContentService
              *************************************************************/
             if (isUseDefaultRoot(c))
             {
-                java.nio.file.Path srcParent = _getFileRoot(oldParent);
-                java.nio.file.Path dest = _getFileRoot(c);
+                java.nio.file.Path srcParent = getFileRootPath(oldParent);
+                java.nio.file.Path dest = getFileRootPath(c);
                 if (null != srcParent && null != dest)
                 {
                     if (!FileUtil.hasCloudScheme(srcParent))
@@ -1062,7 +1038,7 @@ public class FileContentServiceImpl implements FileContentService
             {
                 // At least one is in the cloud
                 FileUtil.copyDirectory(prev, dest);
-                FileUtil.deleteDir(prev);
+                FileUtil.deleteDir(prev);                          // TODO use more efficient delete
                 fireFileMoveEvent(prev, dest, user, container);
             }
             catch (IOException e)

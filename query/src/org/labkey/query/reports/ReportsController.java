@@ -1486,7 +1486,11 @@ public class ReportsController extends SpringActionController
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("success", true);
-            response.put("redirect", form.getRedirectUrl() != null ? form.getRedirectUrl() : report.getRunReportURL(getViewContext()));
+
+            // Issue 32095: don't need a redirect on the redirect URl we are creating for the report save
+            ActionURL defaultRedirectUrl = report.getRunReportURL(getViewContext()).deleteParameter(ReportDescriptor.Prop.redirectUrl);
+            response.put("redirect", form.getRedirectUrl() != null ? form.getRedirectUrl() : defaultRedirectUrl);
+
             return response;
         }
     }

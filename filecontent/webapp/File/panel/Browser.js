@@ -1283,7 +1283,6 @@ Ext4.define('File.panel.Browser', {
         return this.fileStore;
     },
 
-
     attachCustomFileProperties : function() {
 
         if (this.isWebDav) {
@@ -1295,15 +1294,14 @@ Ext4.define('File.panel.Browser', {
 
         // Formerly we did selectRows on Exp.Data here and asked for columns Run and Flag/Comment. But those were not used by the processing
         Ext4.Ajax.request({
-            url: LABKEY.ActionURL.buildURL('fileContent', 'getCustomProperties', null, {'customProperties' : extraColumnNames}),
-            method: 'GET',
-            success : function(resp) {
-                var respText = Ext4.decode(resp.responseText);
-                this.processCustomFileProperties(respText.rows, extraColumnNames);
-            },
+            url: LABKEY.ActionURL.buildURL('fileContent', 'getCustomProperties.api', undefined, {
+                customProperties: extraColumnNames
+            }),
+            success: LABKEY.Utils.getCallbackWrapper(function(data) {
+                this.processCustomFileProperties(data.rows, extraColumnNames);
+            }),
             scope: this
         });
-
     },
 
     processCustomFileProperties : function(rows, extraColumnNames) {
@@ -1337,8 +1335,8 @@ Ext4.define('File.panel.Browser', {
                 }, this);
                 rec.set(values);
 
-                propName.rowId = row['rowId'];
-                propName.name = row['name'];
+                propName.rowId = row.rowId;
+                propName.name = row.name;
                 this.fileProps[recId] = propName;
             }
         }, this);

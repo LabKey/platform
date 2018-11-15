@@ -90,7 +90,7 @@ public class FileContentModule extends DefaultModule
         List<String> result = new ArrayList<>();
         FileContentService service = FileContentService.get();
         Path file = service.getFileRootPath(c, FileContentService.ContentType.files);
-        if (file != null && Files.exists(file) && Files.isDirectory(file))
+        if (file != null && Files.isDirectory(file))
         {
             int fileCount = 0;
             int directoryCount = 0;

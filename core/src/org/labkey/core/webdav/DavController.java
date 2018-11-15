@@ -1233,8 +1233,6 @@ public class DavController extends SpringActionController
                 WebdavResource dest = resource.find(filename);
                 if (null == dest)
                     return WebdavStatus.SC_METHOD_NOT_ALLOWED;
-                if (!dest.exists())
-                    checkAllowedFileName(dest.getName());
 
                 setFileStream(stream, dest.getName());
 

@@ -325,7 +325,8 @@
                         }
                     }
                     else {
-                        onFailure(response, options);
+                        if (!config.suppressDirConflictError || 409 !== result.status)      // Suppress SC_CONFLICT (409)
+                            onFailure(response, options);
                     }
                 }, this),
                 failure: onFailure,

@@ -213,7 +213,7 @@ public class FileSystemAttachmentParent implements AttachmentDirectory
                     {
                         paths.forEach(attachmentFile -> {
                             String fileName = FileUtil.getFileName(attachmentFile);
-                            if (!Files.isDirectory(attachmentFile) && !fileName.startsWith(".") && Files.exists(attachmentFile))
+                            if (!fileName.startsWith(".") && FileUtil.isFileAndExists(attachmentFile))
                             {
                                 try
                                 {

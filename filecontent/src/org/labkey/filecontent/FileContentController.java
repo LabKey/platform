@@ -891,18 +891,20 @@ public class FileContentController extends SpringActionController
 
         public ApiResponse execute(FilePropsForm form, BindException errors) throws Exception
         {
-            ApiSimpleResponse response = new ApiSimpleResponse();
             TableInfo ti = ExpSchema.TableType.Data.createTable(new ExpSchema(getUser(), getContainer()), ExpSchema.TableType.Data.toString());
             QueryUpdateService qus = ti.getUpdateService();
 
-            try {
+            try
+            {
                 qus.updateRows(getUser(), getContainer(), _files, null, null, null);
-                response.put("success", !errors.hasErrors());
             }
             catch (QueryUpdateServiceException e)
             {
-                response.put("success", false);
+                errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
             }
+
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("success", !errors.hasErrors());
             return response;
         }
 
@@ -1329,7 +1331,7 @@ public class FileContentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetCustomProperties extends ApiAction<CustomPropertiesForm>
+    public class GetCustomPropertiesAction extends ApiAction<CustomPropertiesForm>
     {
         @Override
         public ApiResponse execute(CustomPropertiesForm form, BindException errors)
@@ -1343,7 +1345,7 @@ public class FileContentController extends SpringActionController
                 if (null != encodedUrl)
                 {
                     Map<String, Object> row = new HashMap<>();
-                    row.put("dataFileUrl", encodedUrl);
+                    row.put("dataFileUrl", FileUtil.pathToString(FileUtil.stringToPath(getContainer(), (String) encodedUrl)));
                     row.put("rowId", data.get("RowId"));
                     row.put("name", data.get("Name"));
                     if (null != form.getCustomProperties())
