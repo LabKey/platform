@@ -132,18 +132,32 @@ LABKEY.Query = new function(impl, $) {
         select.empty().append($('<option>', {text: 'Loading...'}));
     }
 
-    function populateSelect(select, options, valueProperty, textProperty, initialValue) {
-        select.empty().append($('<option>'));
+    function populateSelect(select, options, valueProperty, textProperty, initialValue, isRequired, includeBlankOption) {
+        select.empty();
+
+        var validInitialValue = false;
         $.each(options, function (i, option) {
             var value = valueProperty ? option[valueProperty] : option;
             var text = textProperty ? option[textProperty] : option;
             var selected = initialValue && value === initialValue;
+            if (selected)
+                validInitialValue = true;
             select.append($('<option>', { value: value,  text: text,  selected: selected}));
         });
 
+        if (includeBlankOption !== false) {
+            var elem = '<option';
+            if (isRequired)
+                elem += ' hidden disabled';
+            if (!validInitialValue)
+                elem += ' selected';
+            elem += ' ></option>';
+            select.prepend($(elem));
+        }
+
         select.prop('disabled', false);
         select.on('change', function(){
-            if (initialValue != select.val())
+            if (initialValue !== select.val())
                 LABKEY.setDirty(true);
         });
     }
@@ -155,12 +169,12 @@ LABKEY.Query = new function(impl, $) {
     }
 
     var SCHEMA_QUERIES_CACHE = {}; // cache of queries by schema
-    function loadQueries(schemaSelect, querySelect, selectedSchema, initialValue) {
+    function loadQueries(schemaSelect, querySelect, selectedSchema, initialValue, isRequired, includeBlankOption) {
         schemaSelect.prop('disabled', true);
         loadingSelect(querySelect);
 
         if (SCHEMA_QUERIES_CACHE[selectedSchema]) {
-            populateSelect(querySelect, SCHEMA_QUERIES_CACHE[selectedSchema], 'name', 'title', initialValue);
+            populateSelect(querySelect, SCHEMA_QUERIES_CACHE[selectedSchema], 'name', 'title', initialValue, isRequired, includeBlankOption);
             schemaSelect.prop('disabled', false);
         }
         else {
@@ -171,7 +185,7 @@ LABKEY.Query = new function(impl, $) {
                     // add the sorted set of queries for this schema to the cache
                     SCHEMA_QUERIES_CACHE[selectedSchema] = data.queries.sort(sortObjectArrayByTitle);
 
-                    populateSelect(querySelect, SCHEMA_QUERIES_CACHE[selectedSchema], 'name', 'title', initialValue);
+                    populateSelect(querySelect, SCHEMA_QUERIES_CACHE[selectedSchema], 'name', 'title', initialValue, isRequired, includeBlankOption);
                     schemaSelect.prop('disabled', false);
 
                     // if there is a selected query, fire the change event
@@ -184,15 +198,15 @@ LABKEY.Query = new function(impl, $) {
     }
 
     var QUERY_COLUMNS_CACHE = {}; // cache of columns by schema|query
-    function loadQueryColumns(select, schemaName, queryName, filterFn, initValue) {
+    function loadQueryColumns(select, schemaName, queryName, filterFn, initValue, isRequired, includeBlankOption) {
         loadingSelect(select);
 
         var queryKey = schemaName + '|' + queryName;
         if (LABKEY.Utils.isArray(QUERY_COLUMNS_CACHE[queryKey])) {
-            populateColumnsWithFilterFn(select, QUERY_COLUMNS_CACHE[queryKey], filterFn, initValue);
+            populateColumnsWithFilterFn(select, QUERY_COLUMNS_CACHE[queryKey], filterFn, initValue, isRequired, includeBlankOption);
         }
         else if (QUERY_COLUMNS_CACHE[queryKey] === 'loading') {
-            setTimeout(loadQueryColumns, 500, select, schemaName, queryName, filterFn, initValue);
+            setTimeout(loadQueryColumns, 500, select, schemaName, queryName, filterFn, initValue, isRequired, includeBlankOption);
         }
         else {
             QUERY_COLUMNS_CACHE[queryKey] = 'loading';
@@ -215,13 +229,13 @@ LABKEY.Query = new function(impl, $) {
                         QUERY_COLUMNS_CACHE[queryKey] = queryView.fields.sort(sortObjectArrayByTitle);
                     }
 
-                    populateColumnsWithFilterFn(select, QUERY_COLUMNS_CACHE[queryKey], filterFn, initValue);
+                    populateColumnsWithFilterFn(select, QUERY_COLUMNS_CACHE[queryKey], filterFn, initValue, isRequired, includeBlankOption);
                 }
             });
         }
     }
 
-    function populateColumnsWithFilterFn(select, origFields, filterFn, initValue) {
+    function populateColumnsWithFilterFn(select, origFields, filterFn, initValue, isRequired, includeBlankOption) {
         var fields = [];
         $.each(origFields, function(i, field) {
             var includeField = true;
@@ -242,7 +256,7 @@ LABKEY.Query = new function(impl, $) {
         });
 
         if (fields.length > 0) {
-            populateSelect(select, fields, 'name', 'caption', initValue);
+            populateSelect(select, fields, 'name', 'caption', initValue, isRequired, includeBlankOption);
         }
         else {
             select.empty().append($('<option>', {text: 'No columns available'}));
@@ -270,7 +284,7 @@ LABKEY.Query = new function(impl, $) {
         LABKEY.Query.getSchemas({
             includeHidden: false,
             success: function(data) {
-                populateSelect(SCHEMA_SELECT, data.schemas.sort(), null, null, config.initValue);
+                populateSelect(SCHEMA_SELECT, data.schemas.sort(), null, null, config.initValue, config.isRequired, config.includeBlankOption);
 
                 // if there is a selected schema, fire the change event
                 if (SCHEMA_SELECT.val()) {
@@ -311,7 +325,7 @@ LABKEY.Query = new function(impl, $) {
         }
 
         SCHEMA_SELECT.on('change', function (event, schemaName) {
-            loadQueries(SCHEMA_SELECT, QUERY_SELECT, schemaName || event.target.value, config.initValue);
+            loadQueries(SCHEMA_SELECT, QUERY_SELECT, schemaName || event.target.value, config.initValue, config.isRequired, config.includeBlankOption);
         });
     };
 
@@ -342,7 +356,7 @@ LABKEY.Query = new function(impl, $) {
             return;
         }
 
-        loadQueryColumns(COLUMN_SELECT, config.schemaName, config.queryName, config.filterFn, config.initValue);
+        loadQueryColumns(COLUMN_SELECT, config.schemaName, config.queryName, config.filterFn, config.initValue, config.isRequired, config.includeBlankOption);
     };
 
     /**
