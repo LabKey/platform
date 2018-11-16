@@ -179,7 +179,7 @@ Ext4.define('File.panel.Admin', {
         }
 
         Ext4.Ajax.request({
-            url: LABKEY.ActionURL.buildURL('pipeline', 'updatePipelineActionConfig', this.containerPath),
+            url: LABKEY.ActionURL.buildURL('pipeline', 'updatePipelineActionConfig.api', this.containerPath),
             method: 'POST',
             jsonData: postData,
             success: function(response) {
@@ -213,8 +213,11 @@ Ext4.define('File.panel.Admin', {
         var tab = this.getActiveTab();
 
         var requestConfig = {
-            url: LABKEY.ActionURL.buildURL('filecontent', 'resetFileOptions', null, {type: tab.optionsType}),
+            url: LABKEY.ActionURL.buildURL('filecontent', 'resetFileOptions.api', this.containerPath),
             method: 'POST',
+            jsonData: {
+                type: tab.optionsType
+            },
             success: function(response) {
 
                 // just say all the things changed

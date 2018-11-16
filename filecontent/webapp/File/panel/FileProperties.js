@@ -41,7 +41,7 @@ Ext4.define('File.panel.FileProperties', {
             proxy: {
                 type: 'ajax',
                 extraParams: {fileConfig: this.fileConfig},
-                url: LABKEY.ActionURL.buildURL('pipeline', 'getPipelineFileProperties', this.containerPath),
+                url: LABKEY.ActionURL.buildURL('pipeline', 'getPipelineFileProperties.api', this.containerPath),
                 reader: {type: 'json', root: 'fileProperties'}
             },
             autoLoad: true

@@ -139,7 +139,7 @@ Ext4.define('File.panel.Browser', {
     /**
      * @cfg {Object} gridConfig
      */
-    gridConfig : {},
+    // Declared in initComponent
 
     /**
      * @cfg {Boolean} layout
@@ -177,14 +177,17 @@ Ext4.define('File.panel.Browser', {
      * @cfg {Boolean} disableContextMenu
      */
     disableContextMenu : false,
+
     /**
      * @cfg {Boolean} isWebDav
      */
     isWebDav : false,
+
     /**
      * @cfg {Boolean} disableFileUpload
      */
     disableFileUpload: false,
+
     /**
      * @cfg {Boolean} rootName
      */
@@ -254,7 +257,7 @@ Ext4.define('File.panel.Browser', {
      * An additional set of toolbar configurable items that can be supplied at runtime.
      * @cfg {Array} tbarItems
      */
-    tbarItems : [],
+    // Declared in initComponent
 
     /**
      * EXPERIMENTAL
@@ -273,7 +276,7 @@ Ext4.define('File.panel.Browser', {
          */
         _getActions : function(cb, containerPath, scope) {
             Ext4.Ajax.request({
-                url: LABKEY.ActionURL.buildURL('pipeline', 'actions', containerPath, {path : decodeURIComponent(scope.getFullFolderOffset()) }),
+                url: LABKEY.ActionURL.buildURL('pipeline', 'actions.api', containerPath, {path : decodeURIComponent(scope.getFullFolderOffset()) }),
                 method: 'GET',
                 disableCaching: false,
                 success : Ext4.isFunction(cb) ? cb : undefined,
@@ -317,7 +320,7 @@ Ext4.define('File.panel.Browser', {
 
                 // cache miss
                 Ext4.Ajax.request({
-                    url: LABKEY.ActionURL.buildURL('pipeline', 'getPipelineActionConfig', containerPath),
+                    url: LABKEY.ActionURL.buildURL('pipeline', 'getPipelineActionConfig.api', containerPath),
                     method: 'GET',
                     disableCaching: false,
                     success : function(response) {
@@ -368,7 +371,6 @@ Ext4.define('File.panel.Browser', {
 
             LABKEY.Utils.signalWebDriverTest("import-actions-updated", selection.length);
         }
-
     },
 
     constructor : function(config) {
@@ -410,7 +412,7 @@ Ext4.define('File.panel.Browser', {
             '</tpl>';
 
         //
-        // Configure private flags
+        // Configure private members
         //
         Ext4.apply(this, {
             actionsConfig : {},
@@ -430,7 +432,12 @@ Ext4.define('File.panel.Browser', {
             longMsgNoMatchTpl: new Ext4.XTemplate('This action can only operate on this list of file(s):&lt;br/&gt;', fileListTemplate).compile(),
 
             shortMsgTpl: new Ext4.XTemplate('<span style="margin-left: 5px;" class="labkey-mv">{msg}</span>').compile(),
-            shortMsgEnabledTpl : new Ext4.XTemplate('<span style="margin-left:5px;" class="labkey-mv">using {count} out of {total} file(s)</span>').compile()
+            shortMsgEnabledTpl: new Ext4.XTemplate('<span style="margin-left:5px;" class="labkey-mv">using {count} out of {total} file(s)</span>').compile()
+        });
+
+        Ext4.applyIf(this, {
+            gridConfig: {},
+            tbarItems: []
         });
 
         // Initialize the actions that are available
@@ -556,7 +563,7 @@ Ext4.define('File.panel.Browser', {
                 scope: this,
                 disabled: true,
                 hideText: true,
-                shouldDisable : function (fileSystem, record) {
+                shouldDisable : function(fileSystem, record) {
                     return !fileSystem.canDelete(record);
                 }
             });
@@ -572,7 +579,7 @@ Ext4.define('File.panel.Browser', {
                 scope: this,
                 disabled: true,
                 hideText: true,
-                shouldDisable : function (fileSystem, record) {
+                shouldDisable : function(fileSystem, record) {
                     return !fileSystem.canMove(record);
                 }
             });
@@ -939,7 +946,7 @@ Ext4.define('File.panel.Browser', {
     },
 
     // minor hack call with scope having decorateIcon functions
-    iconRenderer: function (value, metadata, record/*, rowIndex, colIndex, store, grid*/) {
+    iconRenderer: function(value, metadata, record/*, rowIndex, colIndex, store, grid*/) {
         if (!value) {
             if (record.get('collection')) {
                 value = 'fa fa-folder-o';
@@ -960,124 +967,126 @@ Ext4.define('File.panel.Browser', {
     },
 
     _generateColumns : function(columnNames) {
-        if (!this._genColumns) {
-            this._genColumns = {
-                iconfacls: {
-                    renderer : this.iconRenderer,
-                    text  : '',
-                    dataIndex : 'iconfacls',
-                    sortable : !this.bufferFiles,
-                    width : 25,
-                    height : 20,
-                    scope : this
-                },
-                name: {
-                    xtype : 'templatecolumn',
-                    text  : 'Name',
-                    dataIndex : 'name',
-                    sortable : true,
-                    height : 20,
-                    minWidth : 188,
-                    flex : 3,
-                    tpl : '<div height="16px" width="100%">' +
+        // all keys must be lower-case
+        var columns = {
+            iconfacls: {
+                renderer: this.iconRenderer,
+                text: '',
+                dataIndex: 'iconfacls',
+                sortable: !this.bufferFiles,
+                width: 25,
+                height: 20,
+                scope: this
+            },
+            name: {
+                xtype: 'templatecolumn',
+                text : 'Name',
+                dataIndex: 'name',
+                sortable: true,
+                height: 20,
+                minWidth: 188,
+                flex: 3,
+                tpl: (
+                    '<div height="16px" width="100%">' +
                         '<div style="float: left;"></div>' +
                         '<div style="padding-left: 8px; white-space:normal !important;">' +
                             '<span style="display: inline-block; white-space: nowrap;">{name:htmlEncode}</span>' +
                         '</div>' +
-                    '</div>',
-                    scope : this
-                },
-                lastmodified: {
-                    header: "Last Modified",
-                    flex: 2,
-                    dataIndex: 'lastmodified',
-                    sortable: true,
-                    hidden: false,
-                    height : 20,
-                    renderer: this.dateRenderer
-                },
-                size: {
-                    header: "Size",
-                    flex: 1,
-                    dataIndex: 'size',
-                    sortable: true,
-                    hidden: false,
-                    height : 20,
-                    renderer: this.gridSizeRenderer,
-                    align : 'right'
-                },
-                createdby: {
-                    header: "Created By",
-                    flex: 2,
-                    dataIndex: 'createdby',
-                    sortable: true,
-                    hidden: false,
-                    height : 20
-                },
-                description: {
-                    header: "Description",
-                    flex: 3,
-                    dataIndex: 'description',
-                    sortable: true,
-                    hidden: false,
-                    height : 20,
-                    renderer: Ext4.htmlEncode
-                },
-                actions: {
-                    header: "Usages",
-                    flex: 2,
-                    dataIndex: 'actions',
-                    sortable: !this.bufferFiles,
-                    hidden: false,
-                    height : 20,
-                    showContextMenu: false,
-                    renderer: this.usageRenderer
-                },
-                fileLink: {
-                    header: "Download Link",
-                    flex: 2,
-                    dataIndex: 'fileLink',
-                    sortable: !this.bufferFiles,
-                    hidden: true,
-                    showContextMenu: false,
-                    height : 20
-                },
-                fileExt: {
-                    header: "File Extension",
-                    flex: 1,
-                    dataIndex: 'fileExt',
-                    sortable: !this.bufferFiles,
-                    hidden: true,
-                    height : 20,
-                    renderer: Ext4.htmlEncode
-                },
-                absolutePath: {
-                    header: "Absolute File Path",
-                    flex: 7,
-                    dataIndex: 'absolutePath',
-                    sortable: !this.bufferFiles,
-                    hidden: true,
-                    height : 20,
-                    renderer: Ext4.htmlEncode
-                }
-            };
-        }
+                    '</div>'
+                ),
+                scope: this
+            },
+            lastmodified: {
+                header: "Last Modified",
+                flex: 2,
+                dataIndex: 'lastmodified',
+                sortable: true,
+                hidden: false,
+                height: 20,
+                renderer: this.dateRenderer
+            },
+            size: {
+                header: "Size",
+                flex: 1,
+                dataIndex: 'size',
+                sortable: true,
+                hidden: false,
+                height: 20,
+                renderer: this.gridSizeRenderer,
+                align: 'right'
+            },
+            createdby: {
+                header: "Created By",
+                flex: 2,
+                dataIndex: 'createdby',
+                sortable: true,
+                hidden: false,
+                height: 20
+            },
+            description: {
+                header: "Description",
+                flex: 3,
+                dataIndex: 'description',
+                sortable: true,
+                hidden: false,
+                height: 20,
+                renderer: Ext4.htmlEncode
+            },
+            actions: {
+                header: "Usages",
+                flex: 2,
+                dataIndex: 'actions',
+                sortable: !this.bufferFiles,
+                hidden: false,
+                height: 20,
+                showContextMenu: false,
+                renderer: this.usageRenderer
+            },
+            filelink: {
+                header: "Download Link",
+                flex: 2,
+                dataIndex: 'fileLink',
+                sortable: !this.bufferFiles,
+                hidden: true,
+                showContextMenu: false,
+                height: 20
+            },
+            fileext: {
+                header: "File Extension",
+                flex: 1,
+                dataIndex: 'fileExt',
+                sortable: !this.bufferFiles,
+                hidden: true,
+                height: 20,
+                renderer: Ext4.htmlEncode
+            },
+            absolutepath: {
+                header: "Absolute File Path",
+                flex: 7,
+                dataIndex: 'absolutePath',
+                sortable: !this.bufferFiles,
+                hidden: true,
+                height: 20,
+                renderer: Ext4.htmlEncode
+            }
+        };
 
         var columnSet = [];
         Ext4.each(columnNames, function(name) {
-            var col = this._genColumns[name];
-            if (col) {
-                columnSet.push(col);
-            }
-            else {
-                console.warn('column "' + name + '" is not a valid column');
+            if (name) {
+                var col = columns[name.toLowerCase()];
+                if (col) {
+                    columnSet.push(col);
+                }
+                else {
+                    console.warn('column "' + name + '" is not a valid column');
+                }
             }
         }, this);
         return columnSet;
     },
 
-    initGridColumns : function()
-    {
+    initGridColumns : function() {
         var columnNames,
             includeExtraColumns = true;
 
@@ -1141,8 +1150,9 @@ Ext4.define('File.panel.Browser', {
                     finalColumns[index].sortable = gridConfigColInfo[i].sortable;
                     finalColumns[index].position = gridConfigColInfo[i].ind;
 
-                    if (!json.canSeeFilePaths && 'absolutePath' === finalColumns[index].dataIndex)
+                    if (!json.canSeeFilePaths && 'absolutePath' === finalColumns[index].dataIndex) {
                         finalColumns[index].hidden = true;    // Hide if user can't see file paths, even if customization showed it
+                    }
                 }
             }
             if (gridConfigColInfo.length > 0) {
@@ -1269,10 +1279,10 @@ Ext4.define('File.panel.Browser', {
             this.onSelection(this.getGrid(), this.getGridSelection());
         }, this, {single: true});
         if (!this.showFolderTreeOnly) {
-            this.fileStore.on('beforeload', function () {
+            this.fileStore.on('beforeload', function() {
                 this.getGrid().setLoading(true);
             }, this);
-            this.fileStore.on('load', function () {
+            this.fileStore.on('load', function() {
                 this.getGrid().setLoading(false);
             }, this);
         }
@@ -1586,8 +1596,7 @@ Ext4.define('File.panel.Browser', {
             if (s.success) {
                 treeStore.getRootNode().set('options', s.resultSet.records[0].get('options'));
             }
-            else if (!isWebDav && s.error && s.error.status === 404)
-            {
+            else if (!isWebDav && s.error && s.error.status === 404) {
                 Ext4.Msg.alert("Error", "File root directory configured for this web part could not be found.");
             }
 
@@ -1669,8 +1678,7 @@ Ext4.define('File.panel.Browser', {
             if (path == this.folderSeparator) {
                 this.unlockState(true /* refresh */);
                 // update actions on Files web part load
-                if (!this.isWebDav && this.tree && this.tree.getStore())
-                {
+                if (!this.isWebDav && this.tree && this.tree.getStore()) {
                     var root = this.tree.getStore().getRootNode();
                     this.onFolderChange(null, root);
                 }
@@ -2234,7 +2242,7 @@ Ext4.define('File.panel.Browser', {
 
             // Skip if we don't have the button information back yet
             if (this.linkIdMap) {
-                Ext4.iterate(this.actionMap, function (providerId, action) {
+                Ext4.iterate(this.actionMap, function(providerId, action) {
                     btn = Ext4.getCmp(this.linkIdMap[providerId]);
 
                     //
@@ -2355,7 +2363,7 @@ Ext4.define('File.panel.Browser', {
                     }
                 },
 
-                cellcontextmenu : function (grid, td, cellIndex, record, tr, rowIndex, e, eOpts) {
+                cellcontextmenu : function(grid, td, cellIndex, record, tr, rowIndex, e, eOpts) {
                     if (this.disableContextMenu)
                         return;
                     if (record && record.data) {
@@ -2376,7 +2384,7 @@ Ext4.define('File.panel.Browser', {
                     }
                 },
 
-                containercontextmenu : function (grid, e, eOpts) {
+                containercontextmenu : function(grid, e, eOpts) {
                     if (this.disableContextMenu)
                         return;
                     this.showContextMenu(null, e);
@@ -2475,7 +2483,7 @@ Ext4.define('File.panel.Browser', {
             listeners : {
                 transfercomplete : function(options) {
                     this.reload({
-                        callback: function () {
+                        callback: function() {
                             this.afterFileSystemChange(true, options);
                         },
                         scope: this
@@ -2762,7 +2770,7 @@ Ext4.define('File.panel.Browser', {
         }
     },
 
-    onViewFile : function () {
+    onViewFile : function() {
         var recs = this.getGridSelection();
         if (recs.length === 1) {
             var rec = recs[0];
@@ -2773,7 +2781,7 @@ Ext4.define('File.panel.Browser', {
         }
     },
 
-    viewFile : function (rec) {
+    viewFile : function(rec) {
         if (rec.data.collection)
             this.changeFolder(rec);
         else if (rec.data.href)
@@ -2885,9 +2893,9 @@ Ext4.define('File.panel.Browser', {
                 }
             }],
             listeners: {
-                afterrender: function (win) {
+                afterrender: function(win) {
                     Ext4.create("Ext.util.KeyNav", win.getEl(), {
-                        enter: function () {
+                        enter: function() {
                             okHandler.call(this, win);
                         }
                     })
@@ -3011,9 +3019,9 @@ Ext4.define('File.panel.Browser', {
                 }
             }],
             listeners: {
-                afterrender: function (win) {
+                afterrender: function(win) {
                     Ext4.create("Ext.util.KeyNav", win.getEl(), {
-                        enter: function () {
+                        enter: function() {
                             okHandler.call(this, win);
                         }
                     })
@@ -3168,9 +3176,9 @@ Ext4.define('File.panel.Browser', {
             autoShow: true,
             items: [editPropsPanel],
             listeners : {
-                afterrender: function (win) {
+                afterrender: function(win) {
                     Ext4.create("Ext.util.KeyNav", win.getEl(), {
-                        enter: function () {
+                        enter: function() {
                             if (editPropsPanel) {
                                 editPropsPanel.doSave();
                             }
@@ -3206,7 +3214,7 @@ Ext4.define('File.panel.Browser', {
         // We have to do this every time we reshow the menu. After some actions
         // (e.g., renaming a file), the actions will unset their text causing
         // the context menu items to lose their label... :(
-        menu.items.each(function (item) {
+        menu.items.each(function(item) {
             if (item.itemId) {
                 if (this.actions.indexOf(item.itemId) > -1) {
                     item.setText(item.initialConfig.hardText);
@@ -3219,7 +3227,7 @@ Ext4.define('File.panel.Browser', {
         e.preventDefault();
     },
 
-    getContextMenu : function () {
+    getContextMenu : function() {
         if (!this.contextMenu) {
             // TODO: This should respect the visibility/availability as specified by the pipeline configuration
             var actions = this.getActions().map,

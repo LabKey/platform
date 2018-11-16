@@ -259,7 +259,7 @@ Ext4.define('File.panel.Actions', {
         // request actions
         if (this.isPipelineRoot) {
             Ext4.Ajax.request({
-                url: LABKEY.ActionURL.buildURL('pipeline', 'actions', this.containerPath, { allActions: true }),
+                url: LABKEY.ActionURL.buildURL('pipeline', 'actions.api', this.containerPath, { allActions: true }),
                 method: 'GET',
                 disableCaching: false,
                 success: function(response) {
