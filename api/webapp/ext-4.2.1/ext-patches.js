@@ -1013,6 +1013,7 @@ Ext4.override(Ext4.window.Window, {
 
 /**
  * Fix bug in MessageBox (with endDrag()) that was fixed in 4.2.2 (maybe EXTJSIV-10566)
+ * See issue #36106.
  */
 Ext4.override(Ext4.window.MessageBox, {
     hide: function() {
