@@ -1011,3 +1011,22 @@ Ext4.override(Ext4.window.Window, {
     }
 });
 
+/**
+ * Fix bug in MessageBox (with endDrag()) that was fixed in 4.2.2 (maybe EXTJSIV-10566)
+ */
+Ext4.override(Ext4.window.MessageBox, {
+    hide: function() {
+        var me = this,
+            cls = me.cfg.cls;
+
+        //me.dd.endDrag();  // bug is here
+
+        me.progressBar.reset();
+        if (cls) {
+            me.removeCls(cls);
+        }
+        //me.callParent(arguments);
+        me.callSuper(arguments);  // modified from above to avoid getting bug again
+    }
+});
+
