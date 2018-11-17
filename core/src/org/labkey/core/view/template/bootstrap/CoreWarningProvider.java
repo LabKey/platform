@@ -26,16 +26,24 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UsageReportingLevel;
+import org.labkey.api.view.AbstractDismissibleWarningMessageImpl;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.WarningProvider;
 import org.labkey.api.view.template.Warnings;
+import org.labkey.core.CoreController;
 
+import javax.servlet.http.HttpSession;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
-public class CoreWarningProvider implements WarningProvider
+public class CoreWarningProvider extends AbstractDismissibleWarningMessageImpl implements WarningProvider
 {
+    public static String SHOW_BANNER_KEY = CoreWarningProvider.class.getName() + "$SHOW_BANNER_KEY";
+
     @Override
     public void addStaticWarnings(Warnings warnings)
     {
@@ -83,16 +91,34 @@ public class CoreWarningProvider implements WarningProvider
     }
 
     @Override
-    public void addWarnings(Warnings warnings, ViewContext context)
+    public void addDismissibleWarnings(Warnings warnings, ViewContext context)
     {
-        User user = context.getUser();
+        if (showMessage(context))
+        {
+            String messageHtml = getMessageHtml(context);
+            if (!StringUtils.isEmpty(messageHtml))
+                warnings.add(messageHtml);
+        }
+    }
+
+    @Override
+    protected String getDismissActionUrl(ViewContext viewContext)
+    {
+        return new ActionURL(CoreController.DismissCoreWarningsAction.class, viewContext.getContainer()).toString();
+    }
+
+    @Override
+    protected String getMessageText(ViewContext viewContext)
+    {
+        List<String> messages = new ArrayList<>();
+        User user = viewContext.getUser();
 
         if (null != user && user.isInSiteAdminGroup())
         {
             //admin-only mode--show to admins
             if (AppProps.getInstance().isUserRequestedAdminOnlyMode())
             {
-                warnings.add("This site is configured so that only administrators may sign in. To allow other users to sign in, turn off admin-only mode via the <a href=\""
+                messages.add("This site is configured so that only administrators may sign in. To allow other users to sign in, turn off admin-only mode via the <a href=\""
                         + PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeSiteURL()
                         + "\">"
                         + "site settings page</a>.");
@@ -102,8 +128,8 @@ public class CoreWarningProvider implements WarningProvider
             Map<String, Throwable> moduleFailures = ModuleLoader.getInstance().getModuleFailures();
             if (null != moduleFailures && moduleFailures.size() > 0)
             {
-                warnings.add("The following modules experienced errors during startup: "
-                        + "<a href=\"" + PageFlowUtil.urlProvider(AdminUrls.class).getModuleErrorsURL(context.getContainer()) + "\">"
+                messages.add("The following modules experienced errors during startup: "
+                        + "<a href=\"" + PageFlowUtil.urlProvider(AdminUrls.class).getModuleErrorsURL(viewContext.getContainer()) + "\">"
                         + PageFlowUtil.filter(moduleFailures.keySet())
                         + "</a>");
             }
@@ -112,7 +138,7 @@ public class CoreWarningProvider implements WarningProvider
             String upgradeMessage = UsageReportingLevel.getUpgradeMessage();
             if (StringUtils.isNotEmpty(upgradeMessage))
             {
-                warnings.add(upgradeMessage);
+                messages.add(upgradeMessage);
             }
         }
 
@@ -124,15 +150,43 @@ public class CoreWarningProvider implements WarningProvider
                 int count = ConnectionWrapper.getActiveConnectionCount();
                 String connectionsInUse = "<a href=\"" + PageFlowUtil.urlProvider(AdminUrls.class).getMemTrackerURL() + "\">" + count + " DB connection" + (count == 1 ? "" : "s") + " in use.";
                 connectionsInUse += " " + leakCount + " probable leak" + (leakCount == 1 ? "" : "s") + ".</a>";
-                warnings.add(connectionsInUse);
+                messages.add(connectionsInUse);
             }
         }
 
         if (AppProps.getInstance().isShowRibbonMessage() && !StringUtils.isEmpty(AppProps.getInstance().getRibbonMessageHtml()))
         {
             String message = AppProps.getInstance().getRibbonMessageHtml();
-            message = ModuleHtmlView.replaceTokens(message, context);
-            warnings.add(message);
+            message = ModuleHtmlView.replaceTokens(message, viewContext);
+            messages.add(message);
         }
+
+        if (messages.isEmpty())
+            return null;
+        if (messages.size() > 1)
+        {
+            StringBuilder ret = new StringBuilder();
+            ret.append("<ul>");
+            messages.forEach(m -> ret.append("<li>").append(m).append("</li>"));
+            ret.append("</ul>");
+            return ret.toString();
+        }
+        return messages.get(0);
+    }
+
+    @Override
+    public boolean showMessage(ViewContext viewContext)
+    {
+        if (viewContext != null && viewContext.getRequest() != null)
+        {
+            HttpSession session = viewContext.getRequest().getSession(true);
+            if (session.getAttribute(SHOW_BANNER_KEY) == null)
+                session.setAttribute(SHOW_BANNER_KEY, true);
+
+            return (boolean) session.getAttribute(SHOW_BANNER_KEY);
+
+        }
+
+        return false;
     }
 }

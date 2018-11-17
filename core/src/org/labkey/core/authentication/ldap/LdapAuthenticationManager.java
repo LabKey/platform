@@ -21,10 +21,13 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.UsageReportingLevel;
+import org.labkey.core.CoreModule;
 
 import javax.naming.AuthenticationException;
 import javax.naming.Context;
@@ -36,8 +39,9 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
-
+import java.util.Collections;
 import java.util.Hashtable;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -381,5 +385,15 @@ public class LdapAuthenticationManager
     public static boolean useSASL()
     {
         return "TRUE".equalsIgnoreCase(getProperty(Key.SASL, "FALSE"));
+    }
+
+    public static void registerMetricsProvider()
+    {
+        UsageMetricsService.get().registerUsageMetrics(UsageReportingLevel.MEDIUM, CoreModule.CORE_MODULE_NAME, () -> {
+            Map<String, Object> results = new LinkedHashMap<>();
+            results.put("enabled", AuthenticationManager.getActiveProviders().stream().anyMatch(p->"LDAP".equals(p.getName())));
+            results.put("search", null != ldapSearchConfig);
+            return Collections.singletonMap("ldap", results);
+        });
     }
 }

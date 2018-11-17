@@ -148,6 +148,7 @@ import org.labkey.api.writer.Writer;
 import org.labkey.api.writer.ZipUtil;
 import org.labkey.core.reports.ExternalScriptEngineDefinitionImpl;
 import org.labkey.core.security.SecurityController;
+import org.labkey.core.view.template.bootstrap.CoreWarningProvider;
 import org.labkey.core.workbook.CreateWorkbookBean;
 import org.labkey.core.workbook.MoveWorkbooksBean;
 import org.labkey.core.workbook.WorkbookFolderType;
@@ -164,6 +165,7 @@ import javax.script.ScriptEngineFactory;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -2251,6 +2253,18 @@ public class CoreController extends SpringActionController
                 }
             }
             return new ApiSimpleResponse("success", true);
+        }
+    }
+
+    @RequiresNoPermission
+    public class DismissCoreWarningsAction extends ApiAction
+    {
+        @Override
+        public Object execute(Object o, BindException errors)
+        {
+            HttpSession session = getViewContext().getRequest().getSession(true);
+            session.setAttribute(CoreWarningProvider.SHOW_BANNER_KEY, false);
+            return success();
         }
     }
 
