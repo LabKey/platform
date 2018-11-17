@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.Constants;
-import org.labkey.api.annotations.JavaRuntimeVersion;
+import org.labkey.api.gwt.client.ui.property.FormatItem;
 import org.labkey.api.view.NavTree;
 
 import java.util.Formatter;
@@ -37,12 +37,9 @@ public class HelpTopic
     private static final String HELP_VERSION = Formats.f1.format(Constants.getPreviousReleaseVersion());
     private static final String HELP_LINK_PREFIX = "https://www.labkey.org/Documentation/" + HELP_VERSION + "/wiki-page.view?name=";
 
-    @JavaRuntimeVersion // Update this link whenever we require a new major Java version so we always point at the current docs
-    private static final String JDK_JAVADOC_BASE_URL = "http://docs.oracle.com/javase/8/docs/api/";
-
-    private String _topic;
-
     public static final HelpTopic DEFAULT_HELP_TOPIC = new HelpTopic("default");
+
+    private final String _topic;
 
     public HelpTopic(@NotNull String topic)
     {
@@ -104,7 +101,7 @@ public class HelpTopic
      */
     public static String getJDKJavaDocLink(Class c)
     {
-        return JDK_JAVADOC_BASE_URL + c.getName().replace(".", "/").replace("$", ".") + ".html";
+        return FormatItem.JDK_JAVADOC_BASE_URL + c.getName().replace(".", "/").replace("$", ".") + ".html";
     }
 
     public static class TestCase extends Assert
@@ -112,8 +109,8 @@ public class HelpTopic
         @Test
         public void testJavaDocLinkGeneration()
         {
-            assertEquals(JDK_JAVADOC_BASE_URL + "java/util/Formatter.html", getJDKJavaDocLink(Formatter.class));
-            assertEquals(JDK_JAVADOC_BASE_URL + "java/util/Map.Entry.html", getJDKJavaDocLink(Map.Entry.class));
+            assertEquals(FormatItem.JDK_JAVADOC_BASE_URL + "java/util/Formatter.html", getJDKJavaDocLink(Formatter.class));
+            assertEquals(FormatItem.JDK_JAVADOC_BASE_URL + "java/util/Map.Entry.html", getJDKJavaDocLink(Map.Entry.class));
         }
     }
 }

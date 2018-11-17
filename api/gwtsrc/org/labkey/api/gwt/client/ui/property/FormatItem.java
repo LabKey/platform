@@ -15,13 +15,17 @@
  */
 package org.labkey.api.gwt.client.ui.property;
 
-import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.gwt.client.model.GWTDomain;
-import org.labkey.api.gwt.client.ui.HelpPopup;
-import org.labkey.api.gwt.client.ui.PropertyType;
-import org.labkey.api.gwt.client.ui.PropertyPane;
-import com.google.gwt.user.client.ui.*;
 import com.google.gwt.user.client.DOM;
+import com.google.gwt.user.client.ui.FlexTable;
+import com.google.gwt.user.client.ui.FlowPanel;
+import com.google.gwt.user.client.ui.InlineLabel;
+import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.TextBox;
+import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.gwt.client.ui.HelpPopup;
+import org.labkey.api.gwt.client.ui.PropertyPane;
+import org.labkey.api.gwt.client.ui.PropertyType;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 
 /**
@@ -30,11 +34,16 @@ import org.labkey.api.gwt.client.util.PropertyUtil;
  */
 public class FormatItem<DomainType extends GWTDomain<FieldType>, FieldType extends GWTPropertyDescriptor> extends PropertyPaneItem<DomainType, FieldType>
 {
-    // @JavaRuntimeVersion: Update these documentation links whenever we require a new major Java version so we always point at the current docs.
+    // @JavaRuntimeVersion
+    // Update the below constant whenever we require a new major Java version so we always point at the current docs.
+    // Why is this global constant defined in such an obscure class? Ideally, we would define it in HelpTopic, but that class
+    // is not available to GWT client code. Defining it here allows us to use it in both GWT and server code.
+    public static final String JDK_JAVADOC_BASE_URL = "https://docs.oracle.com/en/java/javase/11/docs/api/java.base/";
+
     // Should match Formats.getDecimalFormatDocumentationURL()
-    private static final String DECIMAL_FORMAT_DOCUMENTATION_LINK = "http://docs.oracle.com/javase/8/docs/api/java/text/DecimalFormat.html";
+    private static final String DECIMAL_FORMAT_DOCUMENTATION_LINK = JDK_JAVADOC_BASE_URL + "java/text/DecimalFormat.html";
     // Should match DateUtil.getSimpleDateFormatDocumentationURL()
-    private static final String SIMPLE_DATE_FORMAT_DOCUMENTATION_LINK = "http://docs.oracle.com/javase/8/docs/api/java/text/SimpleDateFormat.html";
+    private static final String SIMPLE_DATE_FORMAT_DOCUMENTATION_LINK = JDK_JAVADOC_BASE_URL + "java/text/SimpleDateFormat.html";
 
     private static final String FORMAT_HELP_BOOLEAN = "Booleans can be formatted by specifying the text to show when the value is" +
             "true followed by a semicolon and the text for when the value is false, optionally followed by a semicolon and the " +
