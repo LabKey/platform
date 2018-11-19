@@ -6431,7 +6431,7 @@ public class AdminController extends SpringActionController
                         writer.write(sourceContainer, exportCtx, vf);
 
                         // create the new target container
-                        c = ContainerManager.createContainer(parent, folderName, null, null, NormalContainerType.NAME, getUser());
+                        c = ContainerManager.createContainer(parent, folderName, ((form.isTitleSameAsName() || folderName.equals(form.getTitle())) ? null : form.getTitle()), null, NormalContainerType.NAME, getUser());
 
                         // import objects into the target folder
                         XmlObject folderXml = vf.getXmlBean("folder.xml");
