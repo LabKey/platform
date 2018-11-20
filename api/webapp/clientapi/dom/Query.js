@@ -197,28 +197,30 @@ LABKEY.Query = new function(impl, $) {
         }
     }
 
-    var QUERY_COLUMNS_CACHE = {}; // cache of columns by schema|query
-    function loadQueryColumns(select, schemaName, queryName, filterFn, initValue, isRequired, includeBlankOption) {
+    var QUERY_COLUMNS_CACHE = {}; // cache of columns by schema|query|view
+    function loadQueryColumns(select, schemaName, queryName, viewName, filterFn, initValue, isRequired, includeBlankOption) {
         loadingSelect(select);
 
-        var queryKey = schemaName + '|' + queryName;
+        if (viewName === undefined || viewName === null)
+            viewName = ""; //'default' view has an empty string as its name
+
+        var queryKey = schemaName + '|' + queryName + "|" + viewName;
         if (LABKEY.Utils.isArray(QUERY_COLUMNS_CACHE[queryKey])) {
             populateColumnsWithFilterFn(select, QUERY_COLUMNS_CACHE[queryKey], filterFn, initValue, isRequired, includeBlankOption);
         }
         else if (QUERY_COLUMNS_CACHE[queryKey] === 'loading') {
-            setTimeout(loadQueryColumns, 500, select, schemaName, queryName, filterFn, initValue, isRequired, includeBlankOption);
+            setTimeout(loadQueryColumns, 500, select, schemaName, queryName, viewName, filterFn, initValue, isRequired, includeBlankOption);
         }
         else {
             QUERY_COLUMNS_CACHE[queryKey] = 'loading';
             LABKEY.Query.getQueryDetails({
                 schemaName: schemaName,
                 queryName: queryName,
+                viewName: "*",
                 success: function(data) {
-                    // find the default view from the views array returned
-                    // NOTE: in the future if we allow this to work for view other than the default, this logic will need to change
                     var queryView = null;
                     $.each(data.views, function(i, view) {
-                        if (view['default']) {
+                        if (view['name'] === viewName) {
                             queryView = view;
                             return false;
                         }
@@ -260,6 +262,58 @@ LABKEY.Query = new function(impl, $) {
         }
         else {
             select.empty().append($('<option>', {text: 'No columns available'}));
+        }
+    }
+
+    var QUERY_VIEWS_CACHE = {}; // cache of columns by schema|query
+    function loadQueryViews(schemaSelect, querySelect, queryViewselect, initValue) {
+        var schemaName = schemaSelect.val(), queryName = querySelect.val();
+        if (!schemaName || !queryName)
+            return;
+
+        schemaSelect.prop('disabled', true);
+        querySelect.prop('disabled', true);
+
+        loadingSelect(queryViewselect);
+
+        var queryKey = schemaName + '|' + queryName;
+        if (LABKEY.Utils.isArray(QUERY_VIEWS_CACHE[queryKey])) {
+            populateViews(queryViewselect, QUERY_VIEWS_CACHE[queryKey], initValue);
+            schemaSelect.prop('disabled', false);
+            querySelect.prop('disabled', false);
+        }
+        else if (QUERY_VIEWS_CACHE[queryKey] === 'loading') {
+            setTimeout(loadQueryViews, 500, schemaSelect, querySelect, queryViewselect, initValue);
+        }
+        else {
+            QUERY_COLUMNS_CACHE[queryKey] = 'loading';
+            LABKEY.Query.getQueryViews({
+                schemaName: schemaName,
+                queryName: queryName,
+                success: function(data) {
+                    var views = [];
+                    $.each(data.views, function(i, view) {
+                        if (!view.hidden) {
+                            views.push(view)
+                        }
+                    });
+
+                    QUERY_VIEWS_CACHE[queryKey] = views;
+
+                    schemaSelect.prop('disabled', false);
+                    querySelect.prop('disabled', false);
+                    populateViews(queryViewselect, QUERY_VIEWS_CACHE[queryKey], initValue);
+                }
+            })
+        }
+    }
+
+    function populateViews(select, views, initValue) {
+        if (views.length > 0) {
+            populateSelect(select, views, 'name', 'label', initValue, true, false);
+        }
+        else {
+            select.empty().append($('<option>', {text: 'No views available'}));
         }
     }
 
@@ -356,7 +410,52 @@ LABKEY.Query = new function(impl, $) {
             return;
         }
 
-        loadQueryColumns(COLUMN_SELECT, config.schemaName, config.queryName, config.filterFn, config.initValue, config.isRequired, config.includeBlankOption);
+        loadQueryColumns(COLUMN_SELECT, config.schemaName, config.queryName, config.viewName, config.filterFn, config.initValue, config.isRequired, config.includeBlankOption);
+    };
+
+    impl.queryViewSelectInput = function(config) {
+        var QUERYVIEW_SELECT, SCHEMA_SELECT, QUERY_SELECT;
+
+        if (!config || !config.renderTo || !config.schemaInputId || !config.queryInputId) {
+            var msg = 'Invalid config object. ';
+            if (!config.renderTo) {
+                msg += 'Missing renderTo property for the <select> element. ';
+            }
+            if (!config.schemaInputId) {
+                msg += 'Missing schemaInputId property for the schema <select> element. ';
+            }
+            if (!config.queryInputId) {
+                msg += 'Missing queryInputId property for the query <select> element. ';
+            }
+            console.error(msg);
+            return;
+        }
+
+        if (!config.initValue) {
+            config.initValue = 'default';
+        }
+
+        QUERYVIEW_SELECT = $("select[id='" + config.renderTo + "']");
+        if (QUERYVIEW_SELECT.length !== 1) {
+            console.error('Invalid config object. Expect to find exactly one <select> element with the name provided (found: ' + QUERYVIEW_SELECT.length + ').');
+            return;
+        }
+
+        SCHEMA_SELECT = $("select[id='" + config.schemaInputId + "']");
+        if (SCHEMA_SELECT.length !== 1) {
+            console.error('Invalid config object. Expect to find exactly one <select> element with the name provided (found: ' + SCHEMA_SELECT.length + ').');
+            return;
+        }
+
+        QUERY_SELECT = $("select[id='" + config.queryInputId + "']");
+        if (QUERY_SELECT.length !== 1) {
+            console.error('Invalid config object. Expect to find exactly one <select> element with the name provided (found: ' + QUERY_SELECT.length + ').');
+            return;
+        }
+
+        QUERY_SELECT.on('change', function () {
+            loadQueryViews(SCHEMA_SELECT, QUERY_SELECT, QUERYVIEW_SELECT, config.initValue, config.isRequired); //never include a blank option
+        });
     };
 
     /**

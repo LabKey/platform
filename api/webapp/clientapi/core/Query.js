@@ -3240,6 +3240,23 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
  */
 
 /**
+ * Load the set of views for a given schema/query into a standard &lt;select&gt; input. The config object
+ * must define which &lt;select&gt; input is for the schemas and which &lt;select&gt; input is for the queries. This function
+ * also then associates the two &lt;select&gt; inputs so that a selection change in the query input will update the
+ * views input accordingly.
+ *
+ * @memberOf LABKEY.Query
+ * @function
+ * @static
+ * @name queryViewSelectInput
+ * @param config An object which contains the following configuration properties.
+ * @param {String} config.renderTo the id of the &lt;select&gt; input to load the LabKey query views into. Required.
+ * @param {String} config.schemaInputId the name of the &lt;select&gt; input to pull the LabKey schema from.
+ * @param {String} config.queryInputId the name of the &lt;select&gt; input to load the LabKey query from.
+ * @param {String} config.initValue the initial value to try and set the &lt;select&gt; element value after it loads. Optional.
+ */
+
+/**
  * Bulk import data rows into a table.
  * One of 'text', 'path', 'moduleResource', or 'file' is required and cannot be combined.
  *
