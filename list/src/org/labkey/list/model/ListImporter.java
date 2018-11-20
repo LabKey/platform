@@ -139,7 +139,7 @@ public class ListImporter
                     BatchValidationException batchErrors = new BatchValidationException();
                     DataLoader loader = DataLoader.get().createLoader(fileName, null, stream, true, null, null);
 
-                    //Don't infer values if xmlmetadata is available. Fix for Issue 35760: List Archive Imports change numbers into scientific notation on text fields
+                    //Don't infer types if xmlmetadata is available. Fix for Issue 35760: List Archive Imports change numbers into scientific notation on text fields
                     if(hasXmlMetadata)
                         loader.setInferTypes(false);
 
