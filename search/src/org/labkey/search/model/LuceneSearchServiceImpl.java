@@ -842,6 +842,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             // Usually "org.apache.commons.compress.archivers.ArchiveException: No Archiver found for the stream signature"
             logAsWarning(r, "Can't decompress this file", rootMessage);
         }
+        else if (topMessage.equals("can't copy beyond array length"))
+        {
+            // Extraction exception for .chm (compressed HTML) file. See #36057 and MACMAN.chm.
+            logAsWarning(r, "Can't extract text from this file", rootMessage);
+        }
         else
         {
             logAsPreProcessingException(r, e);
@@ -1764,8 +1769,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         @SuppressWarnings("unused")
         public void testTika()
         {
-            File root = new File("c:\\Users\\adam");
-            Predicate<WebdavResource> fileFilter = webdavResource -> webdavResource.getName().endsWith(".pdf");
+            File root = new File("c:\\");
+            Predicate<WebdavResource> fileFilter = webdavResource -> StringUtils.endsWithIgnoreCase(webdavResource.getName(), ".chm");
 
             MutableSecurityPolicy policy = new MutableSecurityPolicy(ContainerManager.getRoot());
             policy.addRoleAssignment(User.getSearchUser(), ReaderRole.class);
