@@ -911,7 +911,7 @@ public class ModuleLoader implements Filter
         return _webappDir;
     }
 
-    private static final int LOWEST_SUPPORTED_JAVA = 8;
+    private static final int LOWEST_SUPPORTED_JAVA = 11;
     private static final int HIGHEST_TESTED_JAVA = 11;
 
     /**
@@ -927,7 +927,7 @@ public class ModuleLoader implements Filter
         int version = getJavaVersion();
 
         if (version < LOWEST_SUPPORTED_JAVA)
-            throw new ConfigurationException("Unsupported Java runtime version: " + SystemUtils.JAVA_VERSION + ". LabKey Server requires Java 8, 9, 10, or 11.");
+            throw new ConfigurationException("Unsupported Java runtime version: " + SystemUtils.JAVA_VERSION + ". LabKey Server requires Java 11.");
         else if (version > HIGHEST_TESTED_JAVA)
             _log.warn("LabKey Server has not been tested against Java runtime version " + SystemUtils.JAVA_VERSION + ".");
     }
