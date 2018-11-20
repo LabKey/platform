@@ -842,9 +842,15 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             // Usually "org.apache.commons.compress.archivers.ArchiveException: No Archiver found for the stream signature"
             logAsWarning(r, "Can't decompress this file", rootMessage);
         }
-        else if (topMessage.equals("can't copy beyond array length"))
+        else if (StringUtils.endsWithIgnoreCase(r.getName(), ".chm"))
         {
-            // Extraction exception for .chm (compressed HTML) file. See #36057 and MACMAN.chm.
+            // ChmExtractor throws exceptions for many .chm (compressed HTML) files that it attempts to parse, so we just
+            // supress the lot of them. Some of the messages include:
+            // - can't copy beyond array length (see #36057 and MACMAN.chm)
+            // - resetTable.getBlockAddress().length should be greater than zero
+            // - Table overflow
+            // - cannot parse chm file index > data.length
+            // - Index 32768 out of bounds for length 32768
             logAsWarning(r, "Can't extract text from this file", rootMessage);
         }
         else
@@ -1772,14 +1778,14 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             File root = new File("c:\\");
             Predicate<WebdavResource> fileFilter = webdavResource -> StringUtils.endsWithIgnoreCase(webdavResource.getName(), ".chm");
 
-            MutableSecurityPolicy policy = new MutableSecurityPolicy(ContainerManager.getRoot());
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(_c);
             policy.addRoleAssignment(User.getSearchUser(), ReaderRole.class);
             FileSystemResource rootResource = new FileSystemResource(Path.parse(root.getAbsolutePath()), root, policy)
             {
                 @Override
                 public String getContainerId()
                 {
-                    return ContainerManager.getRoot().getId();
+                    return _c.getId();
                 }
             };
 
@@ -1788,6 +1794,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
         private void traverse(WebdavResource rootResource, Predicate<WebdavResource> fileFilter)
         {
+            // TODO: processAndIndex() call fails now because resource.getParent() is null (therefore getExecuteHref() throws). Fix.
             rootResource.list().stream()
                 .filter(Resource::isFile)
                 .filter(fileFilter)
