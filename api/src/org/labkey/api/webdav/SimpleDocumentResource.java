@@ -25,7 +25,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
 import java.util.HashMap;
