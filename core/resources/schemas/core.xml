@@ -593,7 +593,7 @@
     <columns>
       <column columnName="Container"/>
       <column columnName="RowId"/>
-      <column columnName="PageId"/>
+      <column columnName="PortalPageId"/>
       <column columnName="Index"/>
       <column columnName="Name"/>
       <column columnName="Location"/>
@@ -605,6 +605,7 @@
   </table>
   <table tableName="PortalPages" tableDbType="TABLE">
     <columns>
+      <column columnName="RowId"/>
       <column columnName="entityid"/>
       <column columnName="container"/>
       <column columnName="pageid"/>
