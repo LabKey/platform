@@ -71,7 +71,6 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.Serializable;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -169,6 +168,7 @@ public class Portal
     {
         Container container;
         String pageId;
+        int portalPageId;
         int rowId;
         int index = 999;
         String name;
@@ -191,6 +191,7 @@ public class Portal
         public WebPart(WebPart copyFrom)
         {
             pageId = copyFrom.pageId;
+            portalPageId = copyFrom.portalPageId;
             container = copyFrom.container;
             index = copyFrom.index;
             rowId = copyFrom.rowId;
@@ -206,6 +207,16 @@ public class Portal
         public String getPageId()
         {
             return pageId;
+        }
+
+        public int getPortalPageId()
+        {
+            return portalPageId;
+        }
+
+        public void setPortalPageId(int portalPageId)
+        {
+            this.portalPageId = portalPageId;
         }
 
         public void setPageId(String pageId)
@@ -367,6 +378,7 @@ public class Portal
             if (location != null ? !location.equals(webPart.location) : webPart.location != null) return false;
             if (name != null ? !name.equals(webPart.name) : webPart.name != null) return false;
             if (pageId != null ? !pageId.equals(webPart.pageId) : webPart.pageId != null) return false;
+            if (portalPageId != webPart.portalPageId) return false;
             if (propertyMap != null ? !propertyMap.equals(webPart.propertyMap) : webPart.propertyMap != null)
                 return false;
 
@@ -378,6 +390,7 @@ public class Portal
         {
             int result = container != null ? container.hashCode() : 0;
             result = 31 * result + (pageId != null ? pageId.hashCode() : 0);
+            result = 31 * result + portalPageId;
             result = 31 * result + index;
             result = 31 * result + (name != null ? name.hashCode() : 0);
             result = 31 * result + (location != null ? location.hashCode() : 0);
@@ -521,7 +534,11 @@ public class Portal
     // TODO: Should use WebPartCache... but we need pageId to do that. Fortunately, this is used infrequently now (see #13267).
     public static WebPart getPart(Container c, int webPartRowId)
     {
-        return new TableSelector(getTableInfoPortalWebParts(), SimpleFilter.createContainerFilter(c), null).getObject(webPartRowId, WebPart.class);
+        WebPart webPart = new TableSelector(getTableInfoPortalWebParts(), SimpleFilter.createContainerFilter(c), null).getObject(webPartRowId, WebPart.class);
+        PortalPage page = new TableSelector(getTableInfoPortalPages(), new SimpleFilter(FieldKey.fromParts("RowId"), webPart.getPortalPageId()), null).getObject(PortalPage.class);
+        if (null != page)
+            webPart.setPageId(page.getPageId());
+        return webPart;
     }
 
 
@@ -766,23 +783,22 @@ public class Portal
         }
     }
 
-    private static PortalPage insertPortalPage(TableInfo portalTable, Container c, String pageId, int index, @Nullable String caption)
+    private static void insertPortalPage(TableInfo portalTable, Container c, String pageId, int index, @Nullable String caption)
     {
         PortalPage p = new PortalPage();
         p.setPageId(pageId);
         p.setIndex(index);
         if (null != caption)
             p.setCaption(caption);
-        return insertPortalPage(portalTable, c, p);
+        insertPortalPage(portalTable, c, p);
     }
 
-    private static PortalPage insertPortalPage(TableInfo portalTable, Container c, PortalPage p)
+    private static void insertPortalPage(TableInfo portalTable, Container c, PortalPage p)
     {
         p.setEntityId(new GUID());
         p.setContainer(new GUID(c.getId()));
         p.setType("portal");
         _insertOrUpdate(portalTable, p, false);
-        return p;
     }
 
     private static void _insertOrUpdate(TableInfo portalTable, PortalPage p, boolean update)
@@ -898,18 +914,43 @@ public class Portal
 
     public static void swapPageIndexes(Container c, PortalPage page1, PortalPage page2)
     {
-        int newIndex = page2.getIndex();
-        int oldIndex = page1.getIndex();
-
-        try (DbScope.Transaction transaction = getSchema().getScope().ensureTransaction())
+        // In rare cases the 2 indexes could be the same; if so change all the indexes;
+        if (page2.getIndex() == page1.getIndex())
         {
-            page2.setIndex(-1);
-            Portal.updatePortalPage(c, page2);
-            page1.setIndex(newIndex);
-            Portal.updatePortalPage(c, page1);
-            page2.setIndex(oldIndex);
-            Portal.updatePortalPage(c, page2);
-            transaction.commit();
+            String pageId1 = page1.getPageId();
+            String pageId2 = page2.getPageId();
+            List<PortalPage> pagesList = Portal.getTabPages(c, true);
+
+            try (DbScope.Transaction transaction1 = getSchema().getScope().ensureTransaction())
+            {
+                int index = 0;
+                for (PortalPage page : pagesList)
+                {
+                    page.setIndex(index++);
+                    Portal.updatePortalPage(c, page);
+                }
+                transaction1.commit();
+            }
+
+            page1 = WebPartCache.getPortalPage(c, pageId1);
+            page2 = WebPartCache.getPortalPage(c, pageId2);
+        }
+
+        if (null != page1 && null != page2)
+        {
+            int newIndex = page2.getIndex();
+            int oldIndex = page1.getIndex();
+
+            try (DbScope.Transaction transaction = getSchema().getScope().ensureTransaction())
+            {
+                page2.setIndex(-1);
+                Portal.updatePortalPage(c, page2);
+                page1.setIndex(newIndex);
+                Portal.updatePortalPage(c, page1);
+                page2.setIndex(oldIndex);
+                Portal.updatePortalPage(c, page2);
+                transaction.commit();
+            }
         }
     }
 
@@ -925,17 +966,24 @@ public class Portal
         // make sure indexes are unique
         Arrays.sort(newParts, Comparator.comparingInt(w -> w.index));
 
-        for (int i = 0; i < newParts.length; i++)
-        {
-            WebPart part = newParts[i];
-            part.index = i + 1;
-            part.pageId = pageId;
-            part.container = c;
-        }
-
         try
         {
-            ensurePage(c, pageId);
+            if (null == page)
+            {
+                ensurePage(c, pageId);
+                page = getPortalPageDirect(c, pageId);      // WebPartCache won't load it yet
+                if (null == page)
+                    throw new IllegalStateException("Ensure page failed.");
+            }
+
+            for (int i = 0; i < newParts.length; i++)
+            {
+                WebPart part = newParts[i];
+                part.index = i + 1;
+                part.pageId = pageId;
+                part.portalPageId = page.getRowId();
+                part.container = c;
+            }
 
             List<WebPart> oldParts = getParts(c, pageId);
             Set<Integer> oldPartIds = new HashSet<>();
@@ -1226,6 +1274,16 @@ public class Portal
         return WebPartCache.getPortalPage(container, pageId);
     }
 
+    @Nullable
+    private static PortalPage getPortalPageDirect(Container container, String pageId)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container).addCondition(FieldKey.fromString("pageId"), pageId);
+        ArrayList<PortalPage> pages = new TableSelector(getTableInfoPortalPages(), filter, null).getArrayList(PortalPage.class);
+        if (!pages.isEmpty())
+            return pages.get(0);        // In rare cases there could be more than one.
+        return null;
+    }
+
     public static String getCustomizeURL(ViewContext context, Portal.WebPart webPart)
     {
         return PageFlowUtil.urlProvider(ProjectUrls.class).getCustomizeWebPartURL(context.getContainer(), webPart, context.getActionURL()).getLocalURIString();
@@ -1422,9 +1480,9 @@ public class Portal
             TableInfo tableInfo = getTableInfoPortalWebParts();
             SimpleFilter filter = new SimpleFilter();
             filter.addCondition(tableInfo.getColumn("container"), page.getContainer());
-            filter.addCondition(tableInfo.getColumn("pageid"), page.getPageId());
+            filter.addCondition(tableInfo.getColumn("portalpageid"), page.getRowId());
             Table.delete(tableInfo, filter);
-            Table.delete(getTableInfoPortalPages(), new Object[] {page.getContainer(), page.getPageId()});
+            Table.delete(getTableInfoPortalPages(), page.getRowId());
         }
         finally
         {
@@ -1458,7 +1516,7 @@ public class Portal
         {
             page = page.copy();
             page.setHidden(hidden);
-            Table.update(null, getTableInfoPortalPages(), page, new Object[] {page.getContainer(), page.getPageId()});
+            Table.update(null, getTableInfoPortalPages(), page, page.getRowId());
         }
         finally
         {
@@ -1502,7 +1560,7 @@ public class Portal
             try
             {
                 page = page.copy();
-                Table.update(null, getTableInfoPortalPages(), page, new Object[] {page.getContainer(), page.getPageId()});
+                Table.update(null, getTableInfoPortalPages(), page, page.getRowId());
             }
             catch (RuntimeSQLException | DataIntegrityViolationException x)
             {
@@ -1561,7 +1619,7 @@ public class Portal
     {
         try
         {
-            Table.update(null, getTableInfoPortalPages(), page, new Object[] {page.getContainer(), page.getPageId()});
+            Table.update(null, getTableInfoPortalPages(), page, page.getRowId());
         }
         finally
         {
@@ -1591,6 +1649,7 @@ public class Portal
         private String action;       // detailsurl (type==action)
         private GUID targetFolder;   // continerId (type==folder)
         private boolean permanent;   // may not rename,hide,delete
+        private int rowId;
 
         private final Map<String, String> propertyMap = new HashMap<>();
         private final LinkedHashMap<Integer, WebPart> webparts = new LinkedHashMap<>();
@@ -1750,6 +1809,16 @@ public class Portal
             if (null != customTab && customTab.equalsIgnoreCase("true"))
                 return true;
             return false;
+        }
+
+        public int getRowId()
+        {
+            return rowId;
+        }
+
+        public void setRowId(int rowId)
+        {
+            this.rowId = rowId;
         }
     }
 

@@ -15,12 +15,14 @@
  */
 package org.labkey.api.view;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
@@ -36,6 +38,7 @@ import org.labkey.api.view.Portal.WebPart;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -45,6 +48,7 @@ import java.util.Map;
  */
 public class WebPartCache
 {
+    private static final Logger LOG = Logger.getLogger(WebPartCache.class);
     private static final StringKeyCache<Map<String, Portal.PortalPage>> CACHE = CacheManager.getStringKeyCache(10000, CacheManager.DAY, "Webparts");
 
     static public Portal.PortalPage getPortalPage(@NotNull Container c, @NotNull String pageId)
@@ -87,36 +91,43 @@ public class WebPartCache
     }
 
 
-    static CacheLoader<String, Map<String, Portal.PortalPage>> _webpartLoader = new CacheLoader<String, Map<String, Portal.PortalPage>>()
+    static CacheLoader<String, Map<String, Portal.PortalPage>> _webpartLoader = (containerId, o) ->
     {
-        @Override
-        public Map<String, Portal.PortalPage> load(String containerId, Object o)
         {
             DbSchema schema = CoreSchema.getInstance().getSchema();
             final CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>();
+            Container container = ContainerManager.getForId(containerId);
 
             SQLFragment selectPages = new SQLFragment("SELECT * FROM " + Portal.getTableInfoPortalPages().getSelectName() + " WHERE Container = ? ORDER BY \"index\"", containerId);
             Collection<Portal.PortalPage> pagesSelect = new SqlSelector(schema, selectPages).getCollection(Portal.PortalPage.class);
 
+            Map<Integer, Portal.PortalPage> pagesByRowId = new HashMap<>();       // For webparts to lookup
             for (Portal.PortalPage p : pagesSelect)
             {
                 if (null == p.getEntityId())
                 {
                     GUID g = new GUID();
-                    SQLFragment updateEntityId = new SQLFragment("UPDATE " + Portal.getTableInfoPortalPages().getSelectName() + " SET EntityId = ? WHERE Container = ? AND PageId = ? AND EntityId IS NULL",
-                            g, containerId, p.getPageId());
+                    SQLFragment updateEntityId = new SQLFragment("UPDATE " + Portal.getTableInfoPortalPages().getSelectName() + " SET EntityId = ? WHERE Container = ? AND RowId = ? AND EntityId IS NULL",
+                            g, containerId, p.getRowId());
                     new SqlExecutor(schema).execute(updateEntityId);
                     p.setEntityId(g);
                 }
+                if (pages.containsKey(p.getPageId()) && null != container)
+                    LOG.warn("Page '" + p.getPageId() + "' in container '" + container.getPath() +
+                            "' is duplicated, meaning some expected web parts may be missing. Recommended to remove the page (tab), which should remove one of them, and set web parts as desired.");
                 pages.put(p.getPageId(), p);
+                pagesByRowId.put(p.getRowId(), p);
             }
 
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), containerId);
 
             new TableSelector(Portal.getTableInfoPortalWebParts(), filter, new Sort("Index")).forEach(wp -> {
-                Portal.PortalPage p = pages.get(wp.getPageId());
+                Portal.PortalPage p = pagesByRowId.get(wp.getPortalPageId());
                 if (null != p)
+                {
                     p.addWebPart(wp);
+                    wp.setPageId(p.getPageId());
+                }
             }, WebPart.class);
 
             return Collections.unmodifiableMap(pages);
