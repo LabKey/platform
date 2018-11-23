@@ -25,14 +25,12 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.util.UnexpectedException;
 
-import javax.servlet.ServletException;
 import java.io.PrintWriter;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.IdentityHashMap;
 import java.util.Map;
 
 import static org.labkey.query.sql.antlr.SqlBaseParser.FALSE;
@@ -353,7 +351,7 @@ abstract public class QNode implements Cloneable
     {
         SqlParser parser = new SqlParser();
 
-        //* simple resovler for expression testing */
+        //* simple resolver for expression testing */
         QExpr resolveFields(QExpr expr, @Nullable QNode parent, @Nullable Object referant)
         {
             FieldKey key = expr.getFieldKey();

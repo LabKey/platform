@@ -845,7 +845,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         else if (StringUtils.endsWithIgnoreCase(r.getName(), ".chm"))
         {
             // ChmExtractor throws exceptions for many .chm (compressed HTML) files that it attempts to parse, so we just
-            // supress the lot of them. Some of the messages include:
+            // suppress the lot of them. Some of the messages include:
             // - can't copy beyond array length (see #36057 and MACMAN.chm)
             // - resetTable.getBlockAddress().length should be greater than zero
             // - Table overflow
