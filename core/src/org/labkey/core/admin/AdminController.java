@@ -2375,7 +2375,7 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return null;
+            return root.addChild("Test Mapping Network Drive");
         }
     }
 
