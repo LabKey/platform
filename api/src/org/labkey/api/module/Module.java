@@ -277,6 +277,7 @@ public interface Module extends Comparable<Module>
     String getVcsUrl();
     String getVcsBranch();
     String getVcsTag();
+    String getBuildNumber();
     Map<String, String> getProperties();
     Set<String> getModuleDependenciesAsSet();
     @JsonIgnore

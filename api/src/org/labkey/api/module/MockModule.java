@@ -317,6 +317,12 @@ public class MockModule implements Module
     }
 
     @Override
+    public String getBuildNumber()
+    {
+        return null;
+    }
+
+    @Override
     public String getVcsUrl()
     {
         return null;

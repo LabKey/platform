@@ -922,6 +922,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         _buildPath = buildPath;
     }
 
+    @Override
     public final String getBuildNumber()
     {
         return _buildNumber;

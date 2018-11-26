@@ -21,6 +21,8 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -209,7 +211,7 @@ public class MothershipReport implements Runnable
         }
     }
 
-    public MothershipReport(Type type, Target target, String errorCode) throws MalformedURLException, URISyntaxException
+    public MothershipReport(Type type, Target target, @Nullable String errorCode) throws MalformedURLException, URISyntaxException
     {
         _target = target;
         _url = target.getUrl(type.getURL());
@@ -383,11 +385,12 @@ public class MothershipReport implements Runnable
     public void addServerSessionParams()
     {
         Module coreModule = ModuleLoader.getInstance().getCoreModule();
-        if (coreModule.getVcsRevision() != null)
+        String svnRevision = getVCSRevisionToReport(coreModule.getBuildNumber(), coreModule.getVcsRevision());
+        if (svnRevision != null)
         {
-            addParam("svnRevision", coreModule.getVcsRevision());
+            addParam("svnRevision", svnRevision);
         }
-        if (!NumberUtils.isDigits(coreModule.getVcsRevision()))
+        if (svnRevision != null && !NumberUtils.isDigits(svnRevision))
         {
             addParam("description", "Core v" + coreModule.getFormattedVersion());
         }
@@ -460,5 +463,39 @@ public class MothershipReport implements Runnable
         }
 
         return distributionStamp;
+    }
+
+    private String getVCSRevisionToReport(String buildNumber, String vcsRevision)
+    {
+        String result = null;
+        // Issue 36116 - prefer first part of build number (which is the latest across all SVN modules) to SVN
+        // revision (which is scoped more narrowly to just the core module) when possible
+        if (buildNumber != null)
+        {
+            result = buildNumber.split("\\.")[0];
+        }
+
+        if (!NumberUtils.isDigits(result) && vcsRevision != null)
+        {
+            // Fall back to just the SVN revision of the core module
+            result = vcsRevision;
+        }
+        return result;
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testRevisionReporting() throws MalformedURLException, URISyntaxException
+        {
+            MothershipReport r = new MothershipReport(Type.CheckForUpdates, Target.local, null);
+            assertNull(r.getVCSRevisionToReport(null, null));
+            assertEquals("Unknown", r.getVCSRevisionToReport("Unknown", "Unknown"));
+            assertEquals("Unknown", r.getVCSRevisionToReport(null, "Unknown"));
+            assertEquals("Unknown", r.getVCSRevisionToReport("Unknown", null));
+            assertEquals("100", r.getVCSRevisionToReport("100.5", "99"));
+            assertEquals("99", r.getVCSRevisionToReport("Unknown", "99"));
+            assertEquals("100", r.getVCSRevisionToReport("100.5", "Unknown"));
+        }
     }
 }
