@@ -3156,9 +3156,9 @@ public class DavController extends SpringActionController
                 }
 
                 File file = resource.getFile();
+                boolean isBrowserDev = getUser().isTrustedBrowserDev();
                 if (range != null)
                 {
-                    boolean isBrowserDev = getUser().isTrustedBrowserDev();
                     if (resource.getContentType().startsWith("text/html") && !isBrowserDev)
                         throw new DavException(WebdavStatus.SC_FORBIDDEN, "Partial writing of html files is not allowed");
                     if (null != AntiVirusService.get())
@@ -3181,8 +3181,7 @@ public class DavController extends SpringActionController
                 }
                 else
                 {
-                    boolean hasDeveloperPermission = getUser().isTrustedBrowserDev();
-                    if (resource.getContentType().startsWith("text/html") && hasDeveloperPermission)
+                    if (resource.getContentType().startsWith("text/html") && !isBrowserDev)
                     {
                         _ByteArrayOutputStream bos = new _ByteArrayOutputStream(4*1025);
                         FileUtil.copyData(getFileStream(resource.getName()).openInputStream(), bos);
