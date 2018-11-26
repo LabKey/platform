@@ -15,6 +15,7 @@
  */
 package org.labkey.api.util;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.pipeline.PipelineJobService;
 
@@ -22,6 +23,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Utility to map Windows file shares as "drives" with their own letter. Shells out to do a NET USE to map it
@@ -66,23 +69,20 @@ public class NetworkDrive
     public String mount(char driveChar) throws InterruptedException, IOException
     {
         unmount(driveChar);
-        StringBuilder sb = new StringBuilder();
-        sb.append("net use ");
-        sb.append(driveChar);
-        sb.append(": ");
-        sb.append(getPath());
-        sb.append(" ");
+        List<String> args = new ArrayList<>();
+        args.add("net");
+        args.add("use");
+        args.add(driveChar + ":");
+        args.add(getPath());
         if (getPassword() != null && !"".equals(getPassword().trim()))
         {
-            sb.append(getPassword());
+            args.add(getPassword());
         }
         if (getUser() != null && !"".equals(getUser().trim()))
         {
-            sb.append(" /USER:");
-            sb.append(getUser());
+            args.add("/USER:" + getUser());
         }
-        String connCommand = sb.toString();
-        Process p = Runtime.getRuntime().exec(connCommand);
+        Process p = Runtime.getRuntime().exec(args.toArray(new String[0]));
         p.waitFor();
 
         if (p.exitValue() != 0)
@@ -96,7 +96,7 @@ public class NetworkDrive
                 errors.append(buffer, 0, count);
 
             return "Failed to map network drive for " + path + ":\n" +
-                    connCommand + "\n" +
+                    StringUtils.join(args, " ") + "\n" +
                     errors;
         }
         return null;
@@ -106,8 +106,7 @@ public class NetworkDrive
         throws IOException, InterruptedException
     {
         // Make sure OS isn't holding another path mapped to this drive.
-        String disconnCommand = "net use " + driveChar + ": " + "/d";
-        Process p = Runtime.getRuntime().exec(disconnCommand);
+        Process p = Runtime.getRuntime().exec(new String[] { "net", "use", driveChar + ":", "/d", "/y" });
         p.waitFor();
     }
 
