@@ -380,7 +380,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
 
             if (data == null)
             {
-                _log.warn("Unable to locate the ExpData object for : " + dataFileUrl + " one has been automatically created.");
+                _log.debug("Auto-creating ExpData object, as one was not already available. DataFileURL : " + dataFileUrl);
 
                 data = ExperimentService.get().createData(container, new DataType("UploadedFile"));
                 data.setName(resource.getName());
