@@ -23,7 +23,6 @@ import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.PanelButton;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
@@ -146,8 +145,7 @@ public class ListManagerSchema extends UserSchema
                 {
                     ActionURL urlCreate = new ActionURL(ListController.EditListDefinitionAction.class, getContainer());
                     urlCreate.addReturnURL(getReturnURL());
-                    ActionButton btnCreate = new ActionButton(urlCreate, "Create New List");
-                    btnCreate.setActionType(ActionButton.Action.GET);
+                    ActionButton btnCreate = new ActionButton("Create New List", urlCreate);
                     btnCreate.setDisplayPermission(DesignListPermission.class);
                     return btnCreate;
                 }
