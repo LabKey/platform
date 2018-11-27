@@ -148,10 +148,10 @@ LABKEY.Query = new function(impl, $) {
         if (includeBlankOption !== false) {
             var elem = '<option';
             if (isRequired)
-                elem += ' hidden disabled';
+                elem += ' hidden';
             if (!validInitialValue)
                 elem += ' selected';
-            elem += ' ></option>';
+            elem += '></option>';
             select.prepend($(elem));
         }
 
