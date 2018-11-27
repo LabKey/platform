@@ -2844,7 +2844,7 @@ public class WikiController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors)
         {
             Container c = getContainer();
-            MultiValuedMap<String, Wiki> mmap = new ArrayListValuedHashMap<>();
+            MultiValuedMap<Wiki, String> mmap = new ArrayListValuedHashMap<>();
             Map<Wiki, Collection<String>> unusedAttachments = new TreeMap<>(Comparator.comparing(Wiki::getName, String.CASE_INSENSITIVE_ORDER));
             Set<WikiTree> trees = WikiSelectManager.getWikiTrees(c);
             WikiManager mgr = getWikiManager();
@@ -2867,14 +2867,14 @@ public class WikiController extends SpringActionController
                     if (name.startsWith("#"))
                     {
                         if (!html.getAnchors().contains(name))
-                            mmap.put(name, wiki);
+                            mmap.put(wiki, name);
                     }
                     else
                     {
                         if (attachmentNames.contains(name))
                             orphanedAttachments.remove(name);
                         else
-                            mmap.put(name, wiki);
+                            mmap.put(wiki, name);
                     }
                 }
 
@@ -2885,9 +2885,9 @@ public class WikiController extends SpringActionController
             }
 
             StringBuilder html = new StringBuilder();
-            html.append(renderTable(c, mmap, "Invalid links", false));
+            html.append(renderTable(c, mmap, "Pages with invalid links", false));
             html.append(renderUnusedAttachments(c, unusedAttachments));
-            html.append(renderTable(c, mmap, "Links to valid wikis, attachments, and anchors", true));
+            html.append(renderTable(c, mmap, "Pages with valid links", true));
 
             return new HtmlView(html.toString());
         }
@@ -2919,42 +2919,47 @@ public class WikiController extends SpringActionController
 
             if (html.length() > 0)
             {
-                html.insert(0, "<table>\n<tr><td colspan=2><b>" + PageFlowUtil.filter("Unlinked Attachments") + "</b></td></tr>\n");
+                html.insert(0, "<table>\n<tr><td colspan=2><b>" + PageFlowUtil.filter("Pages with unlinked attachments") + "</b></td></tr>\n");
                 html.append("</table><br>\n");
             }
 
             return html;
         }
 
-        private StringBuilder renderTable(Container c, MultiValuedMap<String, Wiki> mmap, String title, boolean validWiki)
+        private StringBuilder renderTable(Container c, MultiValuedMap<Wiki, String> mmap, String title, boolean validWiki)
         {
             StringBuilder html = new StringBuilder();
-            Set<String> names =  new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
-            names.addAll(mmap.keySet());
+            Set<Wiki> wikis = new TreeSet<>((o1, o2) -> o1.getName().compareToIgnoreCase(o2.getName()));
+            wikis.addAll(mmap.keySet());
             int row = 0;
 
-            for (String name : names)
+            for (Wiki wiki : wikis)
             {
-                Wiki page = WikiSelectManager.getWiki(c, name);
+                StringBuilder linksHtml = new StringBuilder();
+                Collection<String> names = mmap.get(wiki);
+                String sep = "";
 
-                if (null == page ^ validWiki)
+                for (String name : names)
                 {
-                    html.append("    <tr class=\"").append(row++ % 2 == 0 ? "labkey-alternate-row" : "labkey-row").append("\"><td>");
-                    html.append(getSimpleLink(name, getPageURL(c, name)));
-                    Collection<Wiki> wikis = mmap.get(name);
+                    Wiki page = WikiSelectManager.getWiki(c, name);
 
-                    html.append("</td><td>");
-                    String sep = "";
-
-                    for (Wiki wiki : wikis)
+                    if (null == page ^ validWiki)
                     {
-                        html.append(sep);
-                        html.append(getSimpleLink(wiki.getName(), getPageURL(wiki, c)));
+                        linksHtml.append(sep);
+                        linksHtml.append(name);
                         sep = ", ";
                     }
-
-                    html.append("</td></tr>\n");
                 }
+
+                if (0 == linksHtml.length())
+                    continue;
+
+                html.append("    <tr class=\"").append(row++ % 2 == 0 ? "labkey-alternate-row" : "labkey-row").append("\"><td>");
+                html.append(getSimpleLink(wiki.getName(), getPageURL(c, wiki.getName())));
+
+                html.append("</td><td>");
+                html.append(linksHtml);
+                html.append("</td></tr>\n");
             }
 
             if (html.length() > 0)

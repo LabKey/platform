@@ -79,10 +79,9 @@ public class HtmlRenderer implements WikiRenderer
         // Remove degenerate comments (e.g. "<!-->") as Tidy does not handle them properly
         text = text.replaceAll("<!--*>|<!>", "");
 
-        LinkedHashSet<ClientDependency> cds = new LinkedHashSet<>();
         FormattedHtml formattedHtml = handleLabKeySubstitutions(text);
         boolean volatilePage = formattedHtml.isVolatile();
-        cds.addAll(formattedHtml.getClientDependencies());
+        LinkedHashSet<ClientDependency> cds = new LinkedHashSet<>(formattedHtml.getClientDependencies());
 
         Document doc = TidyUtil.convertHtmlToDocument("<html><body>" + StringUtils.trimToEmpty(formattedHtml.getHtml()) + "</body></html>", false, errors);
         if (!errors.isEmpty() || doc == null)
@@ -95,6 +94,8 @@ public class HtmlRenderer implements WikiRenderer
             }
             return new FormattedHtml(innerHtml.toString(), false, cds);
         }
+
+        Set<String> wikiDependencies = new HashSet<>();
 
         // process A and IMG
         NodeList nl = doc.getElementsByTagName("a");
@@ -110,10 +111,11 @@ public class HtmlRenderer implements WikiRenderer
                 if (null != at)
                 {
                     a.setAttribute("href", _attachPrefix + PageFlowUtil.encode(at.getName()));
+                    wikiDependencies.add(at.getName());
                     continue;
                 }
 
-                if (href.startsWith("#"))
+                if (href.isBlank() || href.startsWith("#"))
                     continue;
 
                 String title = _nameTitleMap.get(href);
@@ -122,6 +124,7 @@ public class HtmlRenderer implements WikiRenderer
                     // UNDONE: why is l.getName() null???
                     //a.setAttribute("href", _hrefPrefix + PageFlowUtil.encode(.getName()));
                     a.setAttribute("href", _hrefPrefix + PageFlowUtil.encode(href));
+                    wikiDependencies.add(href);
                     continue;
                 }
 
@@ -129,6 +132,7 @@ public class HtmlRenderer implements WikiRenderer
                 if (StringUtils.containsNone(href, "?:/.&"))
                 {
                     a.setAttribute("href", _hrefPrefix + PageFlowUtil.encode(href));
+                    wikiDependencies.add(href);
                 }
             }
             catch (IllegalArgumentException e)
@@ -146,7 +150,10 @@ public class HtmlRenderer implements WikiRenderer
             src = PageFlowUtil.decode(src);
             Attachment at = _attachments.get(src);
             if (null != at)
+            {
                 img.setAttribute("src", _attachPrefix + PageFlowUtil.encode(at.getName()));
+                wikiDependencies.add(at.getName());
+            }
         }
 
         // back to html
@@ -180,7 +187,7 @@ public class HtmlRenderer implements WikiRenderer
                 }
             }
 
-            innerHtml.append(bodyHtml.substring("<body>".length(), bodyHtml.length()-"</body>".length()));
+            innerHtml.append(bodyHtml, "<body>".length(), bodyHtml.length()-"</body>".length());
         }
         catch (Exception e)
         {
@@ -189,7 +196,7 @@ public class HtmlRenderer implements WikiRenderer
             volatilePage = false;
         }
 
-        return new FormattedHtml(innerHtml.toString(), volatilePage, cds);
+        return new FormattedHtml(innerHtml.toString(), volatilePage, wikiDependencies, Collections.emptySet(), cds);
     }
 
 
