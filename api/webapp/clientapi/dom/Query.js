@@ -433,7 +433,7 @@ LABKEY.Query = new function(impl, $) {
         }
 
         if (!config.initValue) {
-            config.initValue = 'default';
+            config.initValue = '';
         }
 
         QUERYVIEW_SELECT = $("select[id='" + config.renderTo + "']");
