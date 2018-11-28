@@ -118,13 +118,14 @@ public class HtmlRenderer implements WikiRenderer
                 if (href.isBlank() || href.startsWith("#"))
                     continue;
 
-                String title = _nameTitleMap.get(href);
+                String wikiName = StringUtils.substringBefore(href, "#");
+                String title = _nameTitleMap.get(wikiName);
                 if (null != title)
                 {
                     // UNDONE: why is l.getName() null???
                     //a.setAttribute("href", _hrefPrefix + PageFlowUtil.encode(.getName()));
                     a.setAttribute("href", _hrefPrefix + PageFlowUtil.encode(href));
-                    wikiDependencies.add(href);
+                    wikiDependencies.add(wikiName);
                     continue;
                 }
 
@@ -132,7 +133,7 @@ public class HtmlRenderer implements WikiRenderer
                 if (StringUtils.containsNone(href, "?:/.&"))
                 {
                     a.setAttribute("href", _hrefPrefix + PageFlowUtil.encode(href));
-                    wikiDependencies.add(href);
+                    wikiDependencies.add(wikiName);
                 }
             }
             catch (IllegalArgumentException e)
