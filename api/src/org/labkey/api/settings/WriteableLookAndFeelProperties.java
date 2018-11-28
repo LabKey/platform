@@ -142,17 +142,17 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
     public boolean isValidUrl(String url)
     {
         if (StringUtils.isEmpty(url))
-        {
             return true;
-        }
 
-        ActionURL actionURL = new ActionURL(url);
-        if (StringUtils.isEmpty(actionURL.getAction()) || StringUtils.isEmpty(actionURL.getController()))
+        try
+        {
+            ActionURL actionURL = new ActionURL(url);
+            return !StringUtils.isEmpty(actionURL.getAction()) && !StringUtils.isEmpty(actionURL.getController());
+        }
+        catch (IllegalArgumentException x)
         {
             return false;
         }
-
-        return true;
     }
 
     public static void populateLookAndFeelWithStartupProps()
