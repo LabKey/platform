@@ -847,10 +847,13 @@ public class ExceptionUtil
         // backup strategy!
         try
         {
-            PrintWriter out = response.getWriter();
-            out.println("\"'>--></script><script type=\"text/javascript\">");
-            out.println("window.location = '" + url + "';");
-            out.println("</script>");
+            if (response.isCommitted())
+            {
+                PrintWriter out = response.getWriter();
+                out.println("\"'>--></script><script type=\"text/javascript\">");
+                out.println("window.location = '" + url + "';");
+                out.println("</script>");
+            }
         }
         catch (IOException x)
         {
