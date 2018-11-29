@@ -535,6 +535,8 @@ public class Portal
     public static WebPart getPart(Container c, int webPartRowId)
     {
         WebPart webPart = new TableSelector(getTableInfoPortalWebParts(), SimpleFilter.createContainerFilter(c), null).getObject(webPartRowId, WebPart.class);
+        if (null == webPart)
+            return null;
         PortalPage page = new TableSelector(getTableInfoPortalPages(), new SimpleFilter(FieldKey.fromParts("RowId"), webPart.getPortalPageId()), null).getObject(PortalPage.class);
         if (null != page)
             webPart.setPageId(page.getPageId());
