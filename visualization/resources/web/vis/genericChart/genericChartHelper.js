@@ -14,6 +14,7 @@ if(!LABKEY.vis) {
 LABKEY.vis.GenericChartHelper = new function(){
 
     var DEFULAT_TICK_LABEL_MAX = 25;
+    var $ = jQuery;
 
     var getRenderTypes = function() {
         return [
@@ -125,11 +126,11 @@ LABKEY.vis.GenericChartHelper = new function(){
         var label = getDefaultMeasuresLabel(properties);
 
         if (label !== '' && measureName === 'y' && (renderType === 'bar_chart' || renderType === 'pie_chart')) {
-            var aggregateProps = Ext4.isArray(properties) && properties.length === 1
+            var aggregateProps = LABKEY.Utils.isArray(properties) && properties.length === 1
                     ? properties[0].aggregate : properties.aggregate;
 
-            if (Ext4.isDefined(aggregateProps)) {
-                var aggLabel = Ext4.isObject(aggregateProps) ? aggregateProps.name : Ext4.String.capitalize(aggregateProps.toLowerCase());
+            if (LABKEY.Utils.isDefined(aggregateProps)) {
+                var aggLabel = LABKEY.Utils.isObject(aggregateProps) ? aggregateProps.name : LABKEY.Utils.capitalize(aggregateProps.toLowerCase());
                 label = aggLabel + ' of ' + label;
             }
             else {
@@ -150,14 +151,14 @@ LABKEY.vis.GenericChartHelper = new function(){
     {
         var queryLabels = [];
 
-        if (Ext4.isObject(measures))
+        if (LABKEY.Utils.isObject(measures))
         {
-            if (Ext4.isArray(measures.y))
+            if (LABKEY.Utils.isArray(measures.y))
             {
-                Ext4.each(measures.y, function(m)
+                $.each(measures.y, function(idx, m)
                 {
                     var measureQueryLabel = m.queryLabel || m.queryName;
-                    if (queryLabels.indexOf(measureQueryLabel) == -1)
+                    if (queryLabels.indexOf(measureQueryLabel) === -1)
                         queryLabels.push(measureQueryLabel);
                 });
             }
@@ -225,11 +226,11 @@ LABKEY.vis.GenericChartHelper = new function(){
     {
         var queryFields = [],
             queryFieldKeys = [],
-            columnTypes = Ext4.isDefined(columnList.columns) ? columnList.columns : {};
+            columnTypes = LABKEY.Utils.isDefined(columnList.columns) ? columnList.columns : {};
 
-        Ext4.each(columnMetadata, function(column)
+        $.each(columnMetadata, function(idx, column)
         {
-            var f = Ext4.clone(column);
+            var f = $.extend(true, {}, column);
             f.schemaName = queryConfig.schemaName;
             f.queryName = queryConfig.queryName;
             f.isCohortColumn = false;
@@ -281,18 +282,18 @@ LABKEY.vis.GenericChartHelper = new function(){
     var getChartTypeBasedWidth = function(chartType, measures, measureStore, defaultWidth) {
         var width = defaultWidth;
 
-        if (chartType == 'bar_chart' && Ext4.isObject(measures.x)) {
+        if (chartType == 'bar_chart' && LABKEY.Utils.isObject(measures.x)) {
             // 15px per bar + 15px between bars + 300 for default margins
             var xBarCount = measureStore.members(measures.x.name).length;
             width = Math.max((xBarCount * 15 * 2) + 300, defaultWidth);
 
-            if (Ext4.isObject(measures.xSub)) {
+            if (LABKEY.Utils.isObject(measures.xSub)) {
                 // 15px per bar per group + 200px between groups + 300 for default margins
                 var xSubCount = measureStore.members(measures.xSub.name).length;
                 width = (xBarCount * xSubCount * 15) + (xSubCount * 200) + 300;
             }
         }
-        else if (chartType == 'box_plot' && Ext4.isObject(measures.x)) {
+        else if (chartType == 'box_plot' && LABKEY.Utils.isObject(measures.x)) {
             // 20px per box + 20px between boxes + 300 for default margins
             var xBoxCount = measureStore.members(measures.x.name).length;
             width = Math.max((xBoxCount * 20 * 2) + 300, defaultWidth);
@@ -308,8 +309,8 @@ LABKEY.vis.GenericChartHelper = new function(){
     var getDistinctYAxisSides = function(measures)
     {
         var distinctSides = [];
-        Ext4.each(ensureMeasuresAsArray(measures.y), function (measure) {
-            if (Ext4.isObject(measure)) {
+        $.each(ensureMeasuresAsArray(measures.y), function (idx, measure) {
+            if (LABKEY.Utils.isObject(measure)) {
                 var side = measure.yAxis || 'left';
                 if (distinctSides.indexOf(side) === -1) {
                     distinctSides.push(side);
@@ -326,13 +327,13 @@ LABKEY.vis.GenericChartHelper = new function(){
      */
     var getDefaultMeasuresLabel = function(measures)
     {
-        if (Ext4.isDefined(measures)) {
-            if (!Ext4.isArray(measures)) {
+        if (LABKEY.Utils.isDefined(measures)) {
+            if (!LABKEY.Utils.isArray(measures)) {
                 return measures.label || measures.queryName || '';
             }
 
             var label = '', sep = '';
-            Ext4.each(measures, function(m) {
+            $.each(measures, function(idx, m) {
                 label += sep + (m.label || m.queryName);
                 sep = ', ';
             });
@@ -371,8 +372,8 @@ LABKEY.vis.GenericChartHelper = new function(){
      */
     var generateScales = function(chartType, measures, savedScales, aes, measureStore, defaultFormatFn) {
         var scales = {};
-        var data = Ext4.isArray(measureStore.rows) ? measureStore.rows : measureStore.records();
-        var fields = Ext4.isObject(measureStore.metaData) ? measureStore.metaData.fields : measureStore.getResponseMetadata().fields;
+        var data = LABKEY.Utils.isArray(measureStore.rows) ? measureStore.rows : measureStore.records();
+        var fields = LABKEY.Utils.isObject(measureStore.metaData) ? measureStore.metaData.fields : measureStore.getResponseMetadata().fields;
         var subjectColumn = _getStudySubjectInfo().columnName;
         var valExponentialDigits = 6;
 
@@ -432,7 +433,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                 };
 
                 //bar chart x-axis subcategories support
-                if (Ext4.isDefined(measures.xSub)) {
+                if (LABKEY.Utils.isDefined(measures.xSub)) {
                     scales.xSub = {
                         scaleType: 'discrete',
                         sortFn: LABKEY.vis.discreteSortFn,
@@ -476,7 +477,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             }
 
             var yMeasures = ensureMeasuresAsArray(measures.y);
-            Ext4.each(yMeasures, function(yMeasure) {
+            $.each(yMeasures, function(idx, yMeasure) {
                 var isMeasureYMatch = yMeasure && _isFieldKeyMatch(yMeasure, fields[i].fieldKey);
                 var isConvertedYMeasure = isMeasureYMatch && yMeasure.converted;
                 if (isMeasureYMatch && (isNumericType(type) || isConvertedYMeasure)) {
@@ -490,10 +491,10 @@ LABKEY.vis.GenericChartHelper = new function(){
 
                     var ySide = yMeasure.yAxis === 'right' ? 'yRight' : 'y';
                     scales[ySide].tickFormat = function(value) {
-                        if (Ext4.isNumber(value) && Math.abs(Math.round(value)).toString().length >= valExponentialDigits) {
+                        if (LABKEY.Utils.isNumber(value) && Math.abs(Math.round(value)).toString().length >= valExponentialDigits) {
                             return value.toExponential();
                         }
-                        else if (Ext4.isFunction(tickFormatFn)) {
+                        else if (LABKEY.Utils.isFunction(tickFormatFn)) {
                             return tickFormatFn(value);
                         }
                         return value;
@@ -503,10 +504,10 @@ LABKEY.vis.GenericChartHelper = new function(){
         }
 
         _applySavedScaleDomain(scales, savedScales, 'x');
-        if (Ext4.isDefined(measures.xSub)) {
+        if (LABKEY.Utils.isDefined(measures.xSub)) {
             _applySavedScaleDomain(scales, savedScales, 'xSub');
         }
-        if (Ext4.isDefined(measures.y)) {
+        if (LABKEY.Utils.isDefined(measures.y)) {
             _applySavedScaleDomain(scales, savedScales, 'y');
             _applySavedScaleDomain(scales, savedScales, 'yRight');
         }
@@ -515,7 +516,7 @@ LABKEY.vis.GenericChartHelper = new function(){
     };
 
     var _isFieldKeyMatch = function(measure, fieldKey) {
-        if (Ext4.isFunction(fieldKey.getName)) {
+        if (LABKEY.Utils.isFunction(fieldKey.getName)) {
             return fieldKey.getName() === measure.name || fieldKey.getName() === measure.fieldKey;
         }
 
@@ -523,8 +524,8 @@ LABKEY.vis.GenericChartHelper = new function(){
     };
 
     var ensureMeasuresAsArray = function(measures) {
-        if (Ext4.isDefined(measures)) {
-            return Ext4.isArray(measures) ? Ext4.Array.clone(measures) : [Ext4.clone(measures)];
+        if (LABKEY.Utils.isDefined(measures)) {
+            return LABKEY.Utils.isArray(measures) ? $.extend(true, [], measures) : [$.extend(true, {}, measures)];
         }
         return [];
     };
@@ -563,7 +564,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         }
 
         // charts that have multiple y-measures selected will need to put the aes.y function on their specific layer
-        if (Ext4.isDefined(measures.y) && !Ext4.isArray(measures.y))
+        if (LABKEY.Utils.isDefined(measures.y) && !LABKEY.Utils.isArray(measures.y))
         {
             var sideAesName = (measures.y.yAxis || 'left') === 'left' ? 'y' : 'yRight';
             var yMeasureName = measures.y.converted ? measures.y.convertedName : measures.y.name;
@@ -643,10 +644,10 @@ LABKEY.vis.GenericChartHelper = new function(){
         return function(row) {
             var hover = '', sep = '', distinctNames = [];
 
-            Ext4.Object.each(measures, function(key, measureObj) {
+            $.each(measures, function(key, measureObj) {
                 var measureArr = ensureMeasuresAsArray(measureObj);
-                Ext4.each(measureArr, function(measure) {
-                    if (Ext4.isObject(measure) && distinctNames.indexOf(measure.name) == -1) {
+                $.each(measureArr, function(idx, measure) {
+                    if (LABKEY.Utils.isObject(measure) && distinctNames.indexOf(measure.name) == -1) {
                         hover += sep + measure.label + ': ' + _getRowValue(row, measure.name);
                         sep = ', \n';
 
@@ -753,7 +754,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         return function(row)
         {
             var value = null;
-            if (Ext4.isArray(row) && row.length > 0) {
+            if (LABKEY.Utils.isArray(row) && row.length > 0) {
                 value = _getRowValue(row[0], measureName);
             }
             else {
@@ -796,7 +797,7 @@ LABKEY.vis.GenericChartHelper = new function(){
 
         _addPointClickMeasureInfo(measureInfo, measures, 'x', 'xAxis');
         _addPointClickMeasureInfo(measureInfo, measures, 'y', 'yAxis');
-        Ext4.each(['color', 'shape', 'series'], function(name) {
+        $.each(['color', 'shape', 'series'], function(idx, name) {
             _addPointClickMeasureInfo(measureInfo, measures, name, name + 'Name');
         }, this);
 
@@ -808,13 +809,13 @@ LABKEY.vis.GenericChartHelper = new function(){
     };
 
     var _addPointClickMeasureInfo = function(measureInfo, measures, name, key) {
-        if (Ext4.isDefined(measures[name])) {
+        if (LABKEY.Utils.isDefined(measures[name])) {
             var measuresArr = ensureMeasuresAsArray(measures[name]);
-            Ext4.each(measuresArr, function(measure) {
-                if (!Ext4.isDefined(measureInfo[key])) {
+            $.each(measuresArr, function(idx, measure) {
+                if (!LABKEY.Utils.isDefined(measureInfo[key])) {
                     measureInfo[key] = measure.name;
                 }
-                else if (!Ext4.isDefined(measureInfo[measure.name])) {
+                else if (!LABKEY.Utils.isDefined(measureInfo[measure.name])) {
                     measureInfo[measure.name] = measure.name;
                 }
             }, this);
@@ -921,33 +922,33 @@ LABKEY.vis.GenericChartHelper = new function(){
 
         // if we have multiple y-measures and the request is to plot them separately, call the generatePlotConfig function
         // for each y-measure separately with its own copy of the chartConfig object
-        if (chartConfig.geomOptions.chartLayout === 'per_measure' && Ext4.isArray(chartConfig.measures.y)) {
+        if (chartConfig.geomOptions.chartLayout === 'per_measure' && LABKEY.Utils.isArray(chartConfig.measures.y)) {
 
             // if 'automatic across charts' scales are requested, need to manually calculate the min and max
             if (chartConfig.scales.y && chartConfig.scales.y.type === 'automatic') {
-                scales.y = Ext4.apply(scales.y, _getScaleDomainValuesForAllMeasures(data, chartConfig.measures.y, 'left'));
+                scales.y = $.extend(scales.y, _getScaleDomainValuesForAllMeasures(data, chartConfig.measures.y, 'left'));
             }
             if (chartConfig.scales.yRight && chartConfig.scales.yRight.type === 'automatic') {
-                scales.yRight = Ext4.apply(scales.yRight, _getScaleDomainValuesForAllMeasures(data, chartConfig.measures.y, 'right'));
+                scales.yRight = $.extend(scales.yRight, _getScaleDomainValuesForAllMeasures(data, chartConfig.measures.y, 'right'));
             }
 
-            Ext4.each(chartConfig.measures.y, function(yMeasure) {
+            $.each(chartConfig.measures.y, function(idx, yMeasure) {
                 // copy the config and reset the measures.y array with the single measure
-                var newChartConfig = Ext4.clone(chartConfig);
-                newChartConfig.measures.y = Ext4.clone(yMeasure);
+                var newChartConfig = $.extend(true, {}, chartConfig);
+                newChartConfig.measures.y = $.extend(true, {}, yMeasure);
 
                 // copy the labels object so that we can set the subtitle based on the y-measure
-                var newLabels = Ext4.clone(labels);
+                var newLabels = $.extend(true, {}, labels);
                 newLabels.subtitle = {value: yMeasure.label || yMeasure.name};
 
                 // only copy over the scales that are needed for this measures
                 var side = yMeasure.yAxis || 'left';
-                var newScales = {x: Ext4.clone(scales.x)};
+                var newScales = {x: $.extend(true, {}, scales.x)};
                 if (side === 'left') {
-                    newScales.y = Ext4.clone(scales.y);
+                    newScales.y = $.extend(true, {}, scales.y);
                 }
                 else {
-                    newScales.yRight = Ext4.clone(scales.yRight);
+                    newScales.yRight = $.extend(true, {}, scales.yRight);
                 }
 
                 plotConfigArr.push(generatePlotConfig(renderTo, newChartConfig, newLabels, aes, newScales, geom, data));
@@ -963,7 +964,7 @@ LABKEY.vis.GenericChartHelper = new function(){
     var _getScaleDomainValuesForAllMeasures = function(data, measures, side) {
         var min = null, max = null;
 
-        Ext4.each(measures, function(measure) {
+        $.each(measures, function(idx, measure) {
             var measureSide = measure.yAxis || 'left';
             if (side === measureSide) {
                 var accFn = LABKEY.vis.GenericChartHelper.getYMeasureAes(measure);
@@ -1009,7 +1010,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             return _generatePieChartConfig(plotConfig, chartConfig, labels, data);
         }
 
-        clipRect = (scales.x && Ext4.isArray(scales.x.domain)) || (scales.y && Ext4.isArray(scales.y.domain));
+        clipRect = (scales.x && LABKEY.Utils.isArray(scales.x.domain)) || (scales.y && LABKEY.Utils.isArray(scales.y.domain));
 
         // account for one or many y-measures by ensuring that we have an array of y-measures
         var yMeasures = ensureMeasuresAsArray(chartConfig.measures.y);
@@ -1017,7 +1018,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         if (renderType === 'bar_chart') {
             aes = { x: 'label', y: 'value' };
 
-            if (Ext4.isDefined(chartConfig.measures.xSub))
+            if (LABKEY.Utils.isDefined(chartConfig.measures.xSub))
             {
                 aes.xSub = 'subLabel';
                 aes.color = 'label';
@@ -1028,9 +1029,9 @@ LABKEY.vis.GenericChartHelper = new function(){
             }
 
             if (!scales.y.domain) {
-                var values = Ext4.Array.pluck(data, 'value'),
-                    min = Math.min(0, Ext4.Array.min(values)),
-                    max = Math.max(0, Ext4.Array.max(values));
+                var values = $.map(data, function(d) {return d.value;}),
+                    min = Math.min(0, Math.min.apply(Math, values)),
+                    max = Math.max(0, Math.max.apply(Math, values));
 
                 scales.y.domain = [min, max];
             }
@@ -1048,7 +1049,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             var xName = chartConfig.measures.x.name,
                 isDate = isDateType(getMeasureType(chartConfig.measures.x));
 
-            Ext4.each(yMeasures, function(yMeasure) {
+            $.each(yMeasures, function(idx, yMeasure) {
                 var pathAes = {
                     sortFn: function(a, b) {
                         // No need to handle the case for a or b or a.getValue() or b.getValue() null as they are
@@ -1094,7 +1095,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         }
 
         var margins = _getPlotMargins(renderType, scales, aes, data, plotConfig);
-        if (Ext4.isObject(margins)) {
+        if (LABKEY.Utils.isObject(margins)) {
             plotConfig.margins = margins;
         }
 
@@ -1107,7 +1108,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         }
 
         if ((renderType === 'line_plot' || renderType === 'scatter_plot') && yMeasures.length > 0) {
-            Ext4.each(yMeasures, function (yMeasure) {
+            $.each(yMeasures, function (idx, yMeasure) {
                 var layerAes = {};
                 layerAes[yMeasure.yAxis === 'right' ? 'yRight' : 'yLeft'] = getYMeasureAes(yMeasure);
 
@@ -1137,7 +1138,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             );
         }
 
-        plotConfig = Ext4.apply(plotConfig, {
+        plotConfig = $.extend(plotConfig, {
             clipRect: clipRect,
             data: data,
             labels: labels,
@@ -1160,11 +1161,11 @@ LABKEY.vis.GenericChartHelper = new function(){
 
     var _getPlotMargins = function(renderType, scales, aes, data, plotConfig) {
         // issue 29690: for bar and box plots, set default bottom margin based on the number of labels and the max label length
-        if (Ext4.isArray(data)) {
+        if (LABKEY.Utils.isArray(data)) {
             var maxLen = 0;
-            Ext4.each(data, function(d) {
-                var val = Ext4.isFunction(aes.x) ? aes.x(d) : d[aes.x];
-                if (Ext4.isString(val)) {
+            $.each(data, function(idx, d) {
+                var val = LABKEY.Utils.isFunction(aes.x) ? aes.x(d) : d[aes.x];
+                if (LABKEY.Utils.isString(val)) {
                     maxLen = Math.max(maxLen, val.length);
                 }
             });
@@ -1183,7 +1184,7 @@ LABKEY.vis.GenericChartHelper = new function(){
     {
         var hasData = data.length > 0;
 
-        return Ext4.apply(baseConfig, {
+        return $.extend(baseConfig, {
             data: hasData ? data : [{label: '', value: 1}],
             header: {
                 title: { text: labels.main.value },
@@ -1233,7 +1234,7 @@ LABKEY.vis.GenericChartHelper = new function(){
      */
     var validateResponseHasData = function(measureStore, includeFilterMsg)
     {
-        var dataArray = Ext4.isDefined(measureStore) ? measureStore.rows || measureStore.records() : [];
+        var dataArray = LABKEY.Utils.isDefined(measureStore) ? measureStore.rows || measureStore.records() : [];
         if (dataArray.length == 0)
         {
             return 'The response returned 0 rows of data. The query may be empty or the applied filters may be too strict.'
@@ -1259,7 +1260,7 @@ LABKEY.vis.GenericChartHelper = new function(){
      * @returns {Object}
      */
     var validateAxisMeasure = function(chartType, chartConfigOrMeasure, measureName, aes, scales, data, dataConversionHappened) {
-        var measure = Ext4.isObject(chartConfigOrMeasure) && chartConfigOrMeasure.measures ? chartConfigOrMeasure.measures[measureName] : chartConfigOrMeasure;
+        var measure = LABKEY.Utils.isObject(chartConfigOrMeasure) && chartConfigOrMeasure.measures ? chartConfigOrMeasure.measures[measureName] : chartConfigOrMeasure;
         return _validateAxisMeasure(chartType, measure, measureName, aes, scales, data, dataConversionHappened);
     };
 
@@ -1333,25 +1334,25 @@ LABKEY.vis.GenericChartHelper = new function(){
     };
 
     var getMeasureType = function(measure) {
-        return Ext4.isObject(measure) ? (measure.normalizedType || measure.type) : null;
+        return LABKEY.Utils.isObject(measure) ? (measure.normalizedType || measure.type) : null;
     };
 
     var isNumericType = function(type)
     {
-        var t = Ext4.isString(type) ? type.toLowerCase() : null;
+        var t = LABKEY.Utils.isString(type) ? type.toLowerCase() : null;
         return t == 'int' || t == 'integer' || t == 'float' || t == 'double';
     };
 
     var isDateType = function(type)
     {
-        var t = Ext4.isString(type) ? type.toLowerCase() : null;
+        var t = LABKEY.Utils.isString(type) ? type.toLowerCase() : null;
         return t == 'date';
     };
 
     var _getStudySubjectInfo = function()
     {
         var studyCtx = LABKEY.getModuleContext("study") || {};
-        return Ext4.isObject(studyCtx.subject) ? studyCtx.subject : {
+        return LABKEY.Utils.isObject(studyCtx.subject) ? studyCtx.subject : {
             tableName: 'Participant',
             columnName: 'ParticipantId',
             nounPlural: 'Participants',
@@ -1362,17 +1363,17 @@ LABKEY.vis.GenericChartHelper = new function(){
     var _getStudyTimepointType = function()
     {
         var studyCtx = LABKEY.getModuleContext("study") || {};
-        return Ext4.isDefined(studyCtx.timepointType) ? studyCtx.timepointType : null;
+        return LABKEY.Utils.isDefined(studyCtx.timepointType) ? studyCtx.timepointType : null;
     };
 
     var _getMeasureRestrictions = function (chartType, measure)
     {
         var measureRestrictions = {};
-        Ext4.each(getRenderTypes(), function (renderType)
+        $.each(getRenderTypes(), function (idx, renderType)
         {
             if (renderType.name === chartType)
             {
-                Ext4.each(renderType.fields, function (field)
+                $.each(renderType.fields, function (idx2, field)
                 {
                     if (field.name === measure)
                     {
@@ -1400,9 +1401,9 @@ LABKEY.vis.GenericChartHelper = new function(){
     {
         var measuresForProcessing = {}, measureRestrictions = {}, configMeasure;
         for (var measureName in chartConfig.measures) {
-            if (chartConfig.measures.hasOwnProperty(measureName) && Ext4.isObject(chartConfig.measures[measureName])) {
+            if (chartConfig.measures.hasOwnProperty(measureName) && LABKEY.Utils.isObject(chartConfig.measures[measureName])) {
                 configMeasure = chartConfig.measures[measureName];
-                Ext4.apply(measureRestrictions, _getMeasureRestrictions(renderType, measureName));
+                $.extend(measureRestrictions, _getMeasureRestrictions(renderType, measureName));
 
                 var isGroupingMeasure = measureName === 'color' || measureName === 'shape' || measureName === 'series';
                 var isXAxis = measureName === 'x' || measureName === 'xSub';
@@ -1422,7 +1423,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         }
 
         var response = {processed: {}};
-        if (!Ext4.Object.isEmpty(measuresForProcessing)) {
+        if (!LABKEY.Utils.isEmptyObj(measuresForProcessing)) {
             response = _processMeasureData(data, aes, measuresForProcessing);
         }
 
@@ -1453,7 +1454,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         var droppedValues = {}, processedMeasures = {}, dataIsNull;
         rows.forEach(function(row) {
             //convert measures if applicable
-            if (!Ext4.Object.isEmpty(measuresForProcessing)) {
+            if (!LABKEY.Utils.isEmptyObj(measuresForProcessing)) {
                 for (var measure in measuresForProcessing) {
                     if (measuresForProcessing.hasOwnProperty(measure)) {
                         dataIsNull = true;
@@ -1534,6 +1535,141 @@ LABKEY.vis.GenericChartHelper = new function(){
         return chartConfig;
     };
 
+    var renderChartSVG = function(renderTo, queryConfig, chartConfig) {
+        queryConfig.containerPath = LABKEY.container.path;
+
+        if (queryConfig.filterArray && queryConfig.filterArray.length > 0) {
+            var filters = [];
+
+            for (var i = 0; i < queryConfig.filterArray.length; i++) {
+                var f = queryConfig.filterArray[i];
+                if (f.hasOwnProperty('getValue')) {
+                    filters.push(f);
+                }
+                else {
+                    filters.push(LABKEY.Filter.create(f.name,  f.value, LABKEY.Filter.getFilterTypeForURLSuffix(f.type)));
+                }
+            }
+
+            queryConfig.filterArray = filters;
+        }
+
+        queryConfig.success = function(measureStore) {
+            _renderChartSVG(renderTo, chartConfig, measureStore);
+        };
+
+        LABKEY.Query.MeasureStore.selectRows(queryConfig);
+    };
+
+    var _renderChartSVG = function(renderTo, chartConfig, measureStore) {
+        var responseMetaData = measureStore.getResponseMetadata();
+
+        // explicitly set the chart width/height if not set in the config
+        if (!chartConfig.hasOwnProperty('width') || chartConfig.width == null) chartConfig.width = 1000;
+        if (!chartConfig.hasOwnProperty('height') || chartConfig.height == null) chartConfig.height = 600;
+
+        var xAxisType = chartConfig.measures.x ? (chartConfig.measures.x.normalizedType || chartConfig.measures.x.type) : null;
+        var chartType = getChartType(chartConfig.renderType, xAxisType);
+        var aes = generateAes(chartType, chartConfig.measures, responseMetaData.schemaName, responseMetaData.queryName);
+        var valueConversionResponse = doValueConversion(chartConfig, aes, chartType, measureStore.records());
+        if (!LABKEY.Utils.isEmptyObj(valueConversionResponse.processed)) {
+            $.extend(true, chartConfig.measures, valueConversionResponse.processed);
+            aes = generateAes(chartType, chartConfig.measures, responseMetaData.schemaName, responseMetaData.queryName);
+        }
+        var data = measureStore.records();
+        if (chartType === 'scatter_plot' && data.length > chartConfig.geomOptions.binThreshold) {
+            chartConfig.geomOptions.binned = true;
+        }
+        var scales = generateScales(chartType, chartConfig.measures, chartConfig.scales, aes, measureStore);
+        var geom = generateGeom(chartType, chartConfig.geomOptions);
+        var labels = generateLabels(chartConfig.labels);
+
+        if (chartType === 'bar_chart' || chartType === 'pie_chart') {
+            var dimName = null, subDimName = null; measureName = null, aggType = 'COUNT';
+
+            if (chartConfig.measures.x) {
+                dimName = chartConfig.measures.x.converted ? chartConfig.measures.x.convertedName : chartConfig.measures.x.name;
+            }
+            if (chartConfig.measures.xSub) {
+                subDimName = chartConfig.measures.xSub.converted ? chartConfig.measures.xSub.convertedName : chartConfig.measures.xSub.name;
+            }
+            if (chartConfig.measures.y) {
+                measureName = chartConfig.measures.y.converted ? chartConfig.measures.y.convertedName : chartConfig.measures.y.name;
+
+                if (LABKEY.Utils.isDefined(chartConfig.measures.y.aggregate)) {
+                    aggType = chartConfig.measures.y.aggregate;
+                    aggType = LABKEY.Utils.isObject(aggType) ? aggType.value : aggType;
+                }
+                else if (measureName != null) {
+                    aggType = 'SUM';
+                }
+            }
+
+            data = LABKEY.vis.getAggregateData(data, dimName, subDimName, measureName, aggType, '[Blank]', false);
+        }
+
+        var validation = _validateChartConfig(chartConfig, aes, scales, measureStore);
+        _renderMessages(renderTo, validation.messages);
+        if (!validation.success)
+            return;
+
+        var plotConfigArr = generatePlotConfigs(renderTo, chartConfig, labels, aes, scales, geom, data);
+        $.each(plotConfigArr, function(idx, plotConfig) {
+            if (chartType === 'pie_chart') {
+                new LABKEY.vis.PieChart(plotConfig);
+            }
+            else {
+                new LABKEY.vis.Plot(plotConfig).render();
+            }
+        }, this);
+    };
+
+    var _renderMessages = function(divId, messages) {
+        if (messages && messages.length > 0) {
+            var errorDiv = document.createElement('div');
+            errorDiv.setAttribute('style', 'padding: 10px; background-color: #ffe5e5; color: #d83f48; font-weight: bold;');
+            errorDiv.innerHTML = messages.join('<br/>');
+            document.getElementById(divId).appendChild(errorDiv);
+        }
+    };
+
+    var _validateChartConfig = function(chartConfig, aes, scales, measureStore) {
+        var hasNoDataMsg = validateResponseHasData(measureStore, false);
+        if (hasNoDataMsg != null)
+            return {success: false, messages: [hasNoDataMsg]};
+
+        var messages = [], firstRecord = measureStore.records()[0], measureNames = Object.keys(chartConfig.measures);
+        for (var i = 0; i < measureNames.length; i++) {
+            var measuresArr = ensureMeasuresAsArray(chartConfig.measures[measureNames[i]]);
+            for (var j = 0; j < measuresArr.length; j++) {
+                var measure = measuresArr[j];
+                if (LABKEY.Utils.isObject(measure)) {
+                    if (measure.name && !LABKEY.Utils.isDefined(firstRecord[measure.name])) {
+                        return {success: false, messages: ['The measure, ' + measure.label + ', is not available. It may have been renamed or removed.']};
+                    }
+
+                    var validation;
+                    if (measureNames[i] === 'y') {
+                        var yAes = {y: getYMeasureAes(measure)};
+                        validation = validateAxisMeasure(chartConfig.renderType, measure, 'y', yAes, scales, measureStore.records());
+                    }
+                    else if (measureNames[i] === 'x' || measureNames[i] === 'xSub') {
+                        validation = validateAxisMeasure(chartConfig.renderType, measure, measureNames[i], aes, scales, measureStore.records());
+                    }
+
+                    if (LABKEY.Utils.isObject(validation)) {
+                        if (validation.message != null)
+                            messages.push(validation.message);
+                        if (!validation.success)
+                            return {success: false, messages: messages};
+                    }
+                }
+            }
+        }
+
+        return {success: true, messages: messages};
+    };
+
     return {
         // NOTE: the @function below is needed or JSDoc will not include the documentation for loadVisDependencies. Don't
         // ask me why, I do not know.
@@ -1573,6 +1709,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         validateAxisMeasure: validateAxisMeasure,
         validateXAxis: validateXAxis,
         validateYAxis: validateYAxis,
+        renderChartSVG: renderChartSVG,
         /**
          * Loads all of the required dependencies for a Generic Chart.
          * @param {Function} callback The callback to be executed when all of the visualization dependencies have been loaded.

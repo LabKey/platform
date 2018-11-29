@@ -22,6 +22,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiAction;
@@ -37,6 +38,8 @@ import org.labkey.api.data.BeanViewForm;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.views.DataViewInfo;
+import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.QueryDefinition;
@@ -103,6 +106,7 @@ import org.labkey.study.reports.ExportExcelReport;
 import org.labkey.study.reports.ExternalReport;
 import org.labkey.study.reports.ParticipantReport;
 import org.labkey.study.reports.ReportManager;
+import org.labkey.study.reports.ReportViewProvider;
 import org.labkey.study.view.StudyGWTView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -1905,6 +1909,57 @@ public class ReportsController extends BaseStudyController
                 }
             }
             return response;
+        }
+    }
+
+
+    @RequiresPermission(ReadPermission.class)
+    public class GetReportInfosAction extends ApiAction<GetReportInfosForm>
+    {
+        @Override
+        public ApiResponse execute(GetReportInfosForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            List<JSONObject> json = new ArrayList<>();
+
+            ReportViewProvider provider = new ReportViewProvider();
+            List<DataViewInfo> reports = provider.getViews(getViewContext(), form.getSchemaName(), form.getQueryName());
+            for (DataViewInfo report : reports)
+            {
+                json.add(DataViewService.get().toJSON(getContainer(), getUser(), report));
+            }
+
+            response.put("schemaName", form.getSchemaName());
+            response.put("queryName", form.getQueryName());
+            response.put("reports", json);
+            response.put("success", true);
+            return response;
+        }
+    }
+
+    private static class GetReportInfosForm
+    {
+        private String _schemaName;
+        private String _queryName;
+
+        public String getSchemaName()
+        {
+            return _schemaName;
+        }
+
+        public void setSchemaName(String schemaName)
+        {
+            _schemaName = schemaName;
+        }
+
+        public String getQueryName()
+        {
+            return _queryName;
+        }
+
+        public void setQueryName(String queryName)
+        {
+            _queryName = queryName;
         }
     }
 }

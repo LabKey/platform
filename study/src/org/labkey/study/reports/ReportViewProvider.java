@@ -98,6 +98,11 @@ public class ReportViewProvider implements DataViewProvider
     @Override
     public List<DataViewInfo> getViews(ViewContext context)
     {
+        return getViews(context, null, null);
+    }
+
+    public List<DataViewInfo> getViews(ViewContext context, @Nullable String schemaName, @Nullable String queryName)
+    {
         Container container = context.getContainer();
         User user = context.getUser();
 
@@ -109,7 +114,7 @@ public class ReportViewProvider implements DataViewProvider
             if (StudyService.get().getStudy(container) != null)
                 filter = new ReportManager.StudyReportFilter(false);
 
-            return getViews(context, null, null, filter);
+            return getViews(context, schemaName, queryName, filter);
         }
         return Collections.emptyList();
     }
