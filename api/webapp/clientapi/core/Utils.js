@@ -206,6 +206,10 @@ LABKEY.Utils = new function()
             return Object.prototype.toString.call(value) === '[object Date]';
         },
 
+        isNumber: function(value) {
+            return typeof value === 'number' && isFinite(value);
+        },
+
         isDefined: function(value) {
             return typeof value !== 'undefined';
         },
@@ -819,6 +823,18 @@ LABKEY.Utils = new function()
          */
         isString: function(value) {
             return typeof value === 'string';
+        },
+
+        /**
+         * Returns the string value with the first char capitalized.
+         * @param {String} value The string value to capitalize
+         * @return {String}
+         */
+        capitalize: function(value) {
+            if (value && LABKEY.Utils.isString(value) && value.length > 0) {
+                return value.charAt(0).toUpperCase() + value.substr(1);
+            }
+            return value;
         },
 
         onReady: function(config) {
