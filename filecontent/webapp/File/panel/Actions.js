@@ -227,12 +227,7 @@ Ext4.define('File.panel.Actions', {
                             'An administrator may have set a pipeline override or configured the display of non-file content. ' +
                             '<a href="https://www.labkey.org/Documentation/wiki-page.view?name=fileManagementAdmin#actions" target="_blank">(more info...)</a>' +
                             '<br/><br/>';
-                    if (LABKEY.ActionURL.getController() !== 'filecontent') {
-                        descriptionText += 'Customize this web part to use the pipeline directory by clicking on the ' +
-                        '"more" button in the web part title area and selecting the "customize" option. You can then set this ' +
-                        'web part to show files from the pipeline directory.<br>';
-                    }
-                    else {
+                    if (LABKEY.ActionURL.getController() === 'filecontent') {
                         descriptionText += LABKEY.Utils.textLink({text: "Go To Pipeline Directory", href: LABKEY.ActionURL.buildURL('pipeline', 'browse')});
                     }
 
