@@ -41,4 +41,5 @@ public class FolderArchiveDataTypes
     public static final String ROLE_ASSIGNMENTS = "Role assignments for users and groups";
     public static final String STUDY = "Study";
     public static final String FILES = "Files";
+    public static final String ETLS = "ETL Definitions";
 }

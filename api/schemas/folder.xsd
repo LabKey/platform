@@ -53,6 +53,7 @@
                 <xs:element name="lists" minOccurs="0" type="exportDirType" />
                 <xs:element name="missingValueIndicators" type="study:missingValueIndicatorsType" minOccurs="0" />
                 <xs:element name="wikis" minOccurs="0" type="exportDirType"/>
+                <xs:element name="etls" minOccurs="0" type="exportDirType"/>
                 <xs:element name="externalSchemas" minOccurs="0" type="exportDirType"/>
                 <xs:element name="study" minOccurs="0" type="exportDirType"/>
                 <xs:element name="subfolders" minOccurs="0" type="exportDirType"/>
