@@ -919,8 +919,15 @@ table.labkey-manage-display
   }
 
   .code {
-    padding-left: 0.25in;
     padding-top: 5px; padding-bottom:5px;
+  }
+
+  > pre {
+    padding-top: 19px;
+  }
+
+  > pre, .code { //36031
+    padding-left: 0.25in;
     background-color: #EEEEEE;
     border: 1px solid #CCCCCC;
     color: #2020BE;
