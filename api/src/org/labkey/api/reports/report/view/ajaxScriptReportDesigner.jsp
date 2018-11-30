@@ -43,6 +43,7 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="static java.lang.Boolean.TRUE" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -67,7 +68,7 @@
     Mode mode = bean.getMode();
     boolean sourceAndHelp = mode.showSourceAndHelp(ctx) || bean.isSourceTabVisible();
     String knitrFormat = bean.getKnitrFormat() != null ? bean.getKnitrFormat() : "None";
-    boolean useGetDataApi = report.getReportId() == null || bean.isUseGetDataApi();
+    boolean useGetDataApi = report.getReportId() == null || TRUE==bean.isUseGetDataApi();
     ActionURL saveURL = urlProvider(ReportUrls.class).urlAjaxSaveScriptReport(c);
     ActionURL initialViewURL = urlProvider(ReportUrls.class).urlViewScriptReport(c);
     ActionURL baseViewURL = initialViewURL.clone();
