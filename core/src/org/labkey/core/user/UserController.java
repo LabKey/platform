@@ -864,7 +864,7 @@ public class UserController extends SpringActionController
         public @Nullable Pair<AttachmentParent, String> getAttachment(AttachmentForm form)
         {
             boolean isUserManager = getUser().hasRootPermission(UserManagementPermission.class);
-            User user = UserManager.getUser(form.getUserId());
+            User user = form.getUserId() == null ? null : UserManager.getUser(form.getUserId());
             if (null == user)
             {
                 throw new NotFoundException("Unable to find user");
