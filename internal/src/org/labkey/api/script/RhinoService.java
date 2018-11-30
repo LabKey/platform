@@ -115,8 +115,8 @@ public final class RhinoService
 
     public static void clearCaches()
     {
-        // Clear Rhino's internal module script cache and shared topLevel. LabKey caches will be cleared separately.
-        LOG.info("Purging RhinoService caches");
+        // Clear Rhino's internal module script cache and shared topLevel. LabKey caches can be cleared separately.
+        LOG.debug("Purging RhinoService caches");
         RhinoEngine.clearTopLevel();
     }
 
