@@ -214,6 +214,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.labkey.api.settings.AdminConsole.SettingsLinkType.Configuration;
 import static org.labkey.api.settings.AdminConsole.SettingsLinkType.Diagnostics;
 import static org.labkey.api.view.FolderManagement.EVERY_CONTAINER;
@@ -1101,8 +1102,8 @@ public class AdminController extends SpringActionController
 
     private void validateNetworkDrive(SiteSettingsForm form, Errors errors)
     {
-        if (StringUtils.isBlank(form.getNetworkDriveUser()) || StringUtils.isBlank(form.getNetworkDrivePath()) ||
-            StringUtils.isBlank(form.getNetworkDrivePassword()) || StringUtils.isBlank(form.getNetworkDriveLetter()))
+        if (isBlank(form.getNetworkDriveUser()) || isBlank(form.getNetworkDrivePath()) ||
+            isBlank(form.getNetworkDrivePassword()) || isBlank(form.getNetworkDriveLetter()))
         {
             errors.reject(ERROR_MSG, "All fields are required");
         }
@@ -3624,7 +3625,7 @@ public class AdminController extends SpringActionController
         {
             super.validateCommand(form, errors);
 
-            if (StringUtils.isBlank(form.getNotificationEmail()))
+            if (isBlank(form.getNotificationEmail()))
             {
                 errors.reject(SpringActionController.ERROR_MSG, "Notification email address may not be blank.");
             }
@@ -4507,7 +4508,7 @@ public class AdminController extends SpringActionController
 
                 // make sure the file is not empty and that it has a .zip extension
                 MultipartFile zipFile = map.values().iterator().next();
-                if (0 == zipFile.getSize() || StringUtils.isBlank(zipFile.getOriginalFilename()) || !zipFile.getOriginalFilename().toLowerCase().endsWith(".zip"))
+                if (0 == zipFile.getSize() || isBlank(zipFile.getOriginalFilename()) || !zipFile.getOriginalFilename().toLowerCase().endsWith(".zip"))
                 {
                     errors.reject("folderImport", "You must select a valid zip archive (folder or study).");
                     return false;
@@ -6931,6 +6932,9 @@ public class AdminController extends SpringActionController
     {
         public ApiResponse execute(RevertFolderForm form, BindException errors)
         {
+            if (isBlank(form.getContainerPath()))
+                throw new NotFoundException();
+
             boolean success = false;
             Container revertContainer = ContainerManager.getForPath(form.getContainerPath());
             if (null != revertContainer)
@@ -8001,6 +8005,8 @@ public class AdminController extends SpringActionController
     private static void setCustomizeMenuForm(CustomizeMenuForm form, Container container, User user)
     {
         Portal.WebPart webPart = Portal.getPart(container, form.getPageId(), form.getWebPartIndex());
+        if (null == webPart)
+            throw new NotFoundException();
         Map<String, String> menuProps = webPart.getPropertyMap();
 
         menuProps.put(CUSTOMMENU_SCHEMA, form.getSchemaName());
@@ -8948,7 +8954,7 @@ public class AdminController extends SpringActionController
                 {
                     sb.append("<tr><td>")
                             .append(PageFlowUtil.filter(s.host));
-                    if (!StringUtils.isBlank(s.user))
+                    if (!isBlank(s.user))
                             sb.append("&nbsp;(" + PageFlowUtil.filter(s.user) + ")");
                      sb.append("</td><td>")
                             .append(PageFlowUtil.filter(s.userAgent))
