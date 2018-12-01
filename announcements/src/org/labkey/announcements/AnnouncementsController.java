@@ -2251,9 +2251,17 @@ public class AnnouncementsController extends SpringActionController
             String returnURL = (String)ctx.get(ActionURL.Param.returnUrl.name());
 
             if (null != returnURL)
-                return new ActionURL(returnURL);
-            else
-                return ctx.getActionURL();
+            {
+                try
+                {
+                    return new ActionURL(returnURL);
+                }
+                catch (IllegalArgumentException x)
+                {
+                    // pass
+                }
+            }
+            return ctx.getActionURL();
         }
 
         public static class MessagesBean extends LinkBarBean

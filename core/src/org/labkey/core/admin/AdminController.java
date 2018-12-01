@@ -8028,7 +8028,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class AddTabAction extends ApiAction<TabActionForm>
+    public class AddTabAction extends MutatingApiAction<TabActionForm>
     {
         public void validateCommand(TabActionForm form, Errors errors)
         {
@@ -8320,7 +8320,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class RenameTabAction extends ApiAction<TabActionForm>
+    public class RenameTabAction extends MutatingApiAction<TabActionForm>
     {
         public void validateCommand(TabActionForm form, Errors errors)
         {
@@ -8414,6 +8414,8 @@ public class AdminController extends SpringActionController
         @Override
         public ApiResponse execute(DeletedFoldersForm form, BindException errors)
         {
+            if (isBlank(form.getContainerPath()))
+                throw new NotFoundException();
             Container container = ContainerManager.getForPath(form.getContainerPath());
             for (String tabName : form.getResurrectFolders())
             {

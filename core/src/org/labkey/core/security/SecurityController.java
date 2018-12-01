@@ -1690,7 +1690,10 @@ public class SecurityController extends SpringActionController
             }
 
             sbReset.append("</p>");
-            sbReset.append(PageFlowUtil.button("Done").href(form.getReturnURLHelper()));
+            if (null != form.getReturnURLHelper())
+                sbReset.append(PageFlowUtil.button("Done").href(form.getReturnURLHelper()));
+            else
+                sbReset.append(PageFlowUtil.button("Done").href(AppProps.getInstance().getHomePageActionURL()));
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             return new HtmlView(sbReset.toString());
         }
