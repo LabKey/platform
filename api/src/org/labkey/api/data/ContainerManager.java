@@ -923,7 +923,7 @@ public class ContainerManager
     }
 
 
-    public static Container getForPath(String path)
+    public static Container getForPath(@NotNull String path)
     {
         Path p = Path.parse(path);
         return getForPath(p);

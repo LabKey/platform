@@ -121,7 +121,7 @@ public class Path implements Serializable, Comparable, Iterable<String>
 
 
     /** create a Path from an unencoded string */
-    public static Path parse(String path)
+    public static Path parse(@NotNull String path)
     {
         String strip = StringUtils.strip(path,"/");
         if (strip.length() == 0)
