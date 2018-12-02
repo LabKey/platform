@@ -137,7 +137,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
         PipelineStatusManager.storeJob(job.getJobGUID(), PipelineJob.serializeJob(job, true));
     }
 
-    // Synchronize all spliting and joining to avoid SQL deadlocks.  Splitting
+    // Synchronize all splitting and joining to avoid SQL deadlocks.  Splitting
     // and joining currently only touches a single table, but it can do so a
     // fair number of times, which has caused deadlocks.  SQL indexes have been
     // added in an effort to prevent the deadlocks on the database side, but
@@ -154,11 +154,8 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
     public void split(PipelineJob job) throws IOException
     {
         DbScope scope = PipelineSchema.getInstance().getSchema().getScope();
-        boolean active = scope.isTransactionActive();
         try (DbScope.Transaction transaction = scope.ensureTransaction(new PipelineStatusManager.PipelineStatusTransactionKind(), SPLIT_LOCK))
         {
-            PipelineStatusManager.enforceLockOrder(job.getJobGUID(), active);
-
             // Make sure the join job has an existing status record before creating
             // the rows for the split jobs.  Just to ensure a consistent creation order.
             if (PipelineStatusManager.getJobStatusFile(job.getJobGUID()) == null)
@@ -198,12 +195,9 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
     public void join(PipelineJob job) throws IOException, NoSuchJobException
     {
         DbScope scope = PipelineSchema.getInstance().getSchema().getScope();
-        boolean active = scope.isTransactionActive();
         try (DbScope.Transaction transaction = scope.ensureTransaction(new PipelineStatusManager.PipelineStatusTransactionKind(), SPLIT_LOCK))
         {
             TaskId tid = job.getActiveTaskId();
-
-            PipelineStatusManager.enforceLockOrder(job.getJobGUID(), active);
 
             int count = getIncompleteSplitCount(job.getParentGUID(), job.getContainer());
             setCompleteSplit(job);

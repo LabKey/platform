@@ -279,11 +279,9 @@ public class PipelineStatusManager
     public static void updateStatusFile(PipelineStatusFileImpl sf)
     {
         DbScope scope = PipelineSchema.getInstance().getSchema().getScope();
-        boolean active = scope.isTransactionActive();
         try (DbScope.Transaction transaction = scope.ensureTransaction(new PipelineStatusTransactionKind()))
         {
             // Use separate transaction/connection for TableInfoStatusFiles
-            enforceLockOrder(sf.getJob(), active);
             // Issue 19987 - If the job has been reparented on the web server and we're updating the status based
             // on a running job, it may not have the new parent job id. Check to make sure we're not trying to
             // point back at a defunct job, and restore the database record's notion of parent if we are.
@@ -312,10 +310,8 @@ public class PipelineStatusManager
     public static void resetJobId(Container container, Path path, String jobId)
     {
         DbScope scope = PipelineSchema.getInstance().getSchema().getScope();
-        boolean active = scope.isTransactionActive();
         try (DbScope.Transaction transaction = scope.ensureTransaction(new PipelineStatusTransactionKind()))
         {
-            enforceLockOrder(jobId, active);
 
             PipelineStatusFileImpl sfExist = getStatusFile(container, path);
             if (!jobId.equals(sfExist.getJob()))
@@ -326,7 +322,6 @@ public class PipelineStatusManager
                     LOG.debug("Resetting parent job ID for child job " + child.getRowId() + " - " + child.getFilePath());
                     child.setJobParent(null);
                     child.beforeUpdate(null, child);
-                    enforceLockOrder(child.getJobId(), active);
                     updateStatusFile(child);
                 }
                 sfExist.setJob(jobId);
@@ -364,12 +359,10 @@ public class PipelineStatusManager
         try (DbScope.Transaction transaction = getTableInfo().getSchema().getScope().ensureTransaction(new PipelineStatusTransactionKind()))
         {
             // Use separate transaction/connection for TableInfoStatusFiles
-            StringBuilder sql = new StringBuilder();
-            sql.append("UPDATE ").append(_schema.getTableInfoStatusFiles())
-                    .append(" SET JobStore = ?")
-                    .append(" WHERE RowId = ?");
-
-            new SqlExecutor(_schema.getSchema()).execute(sql.toString(), xml, sfExist.getRowId());
+            String sql = "UPDATE " + _schema.getTableInfoStatusFiles() +
+                    " SET JobStore = ?" +
+                    " WHERE RowId = ?";
+            new SqlExecutor(_schema.getSchema()).execute(sql, xml, sfExist.getRowId());
             transaction.commit();
         }
     }
@@ -398,12 +391,10 @@ public class PipelineStatusManager
         try (DbScope.Transaction transaction = getTableInfo().getSchema().getScope().ensureTransaction(new PipelineStatusTransactionKind()))
         {
             // Use separate transaction/connection for TableInfoStatusFiles
-            StringBuilder sql = new StringBuilder();
-            sql.append("UPDATE ").append(_schema.getTableInfoStatusFiles())
-                    .append(" SET JobStore = NULL")
-                    .append(" WHERE RowId = ?");
-
-            new SqlExecutor(_schema.getSchema()).execute(sql.toString(), sfExist.getRowId());
+            String sql = "UPDATE " + _schema.getTableInfoStatusFiles() +
+                    " SET JobStore = NULL" +
+                    " WHERE RowId = ?";
+            new SqlExecutor(_schema.getSchema()).execute(sql, sfExist.getRowId());
             transaction.commit();
         }
 
@@ -571,11 +562,7 @@ public class PipelineStatusManager
         // Make entire transaction use the PipelineStatus connection, since Exp.Data/Exp.ExperimentRun are tied to Pipeline.StatusFiles
         try (DbScope.Transaction transaction = _schema.getSchema().getScope().ensureTransaction(new PipelineStatusTransactionKind()))
         {
-            Set<Integer> ids = new HashSet<>(rowIds.size());
-            for (int rowId : rowIds)
-            {
-                ids.add(rowId);
-            }
+            Set<Integer> ids = new HashSet<>(rowIds);
             deleteStatus(c, u, deleteExpRuns, ids);
             if (!ids.isEmpty())
             {
@@ -648,7 +635,7 @@ public class PipelineStatusManager
                     .append(" SET JobId = NULL ")
                     .append("WHERE JobId ");
 
-            List<Object> statusFileIds = new ArrayList<>();
+            List<Integer> statusFileIds = new ArrayList<>();
             for (PipelineStatusFile pipelineStatusFile : deleteable)
             {
                 Container targetContainer = pipelineStatusFile.lookupContainer();
@@ -804,35 +791,6 @@ public class PipelineStatusManager
         else
         {
             return false;
-        }
-    }
-
-    /**
-    *  grabs shared locks on the index pages of the secondary indexes for the job about to be updated.
-     * NO-op if the database is not SQL Server.  In SQL Server 2000 and possibly later versions,
-     * the 3 different unique keys to a pipeline stastus file can cause reader - writer deadlocks when a
-     * writer's change causes an update to an index that a reader is accessing.  The SQL lock hints
-     * used here grab exclusive locks on these index keys at the start of the transaction, preventing
-     * readers from getting a share lock and ensuring the updater can update the index if necessary.
-    *
-    * @param jobId of the job that is going to be updated
-    */
-    protected static void enforceLockOrder(String jobId, boolean active)
-    {
-        if (active)
-            return;
-
-        if (!_schema.getSchema().getSqlDialect().isSqlServer())
-            return;
-
-        if (null != jobId)
-        {
-            try (DbScope.Transaction transaction = _schema.getSchema().getScope().ensureTransaction(new PipelineStatusTransactionKind()))
-            {
-                String lockCmd = "SELECT Job, JobParent, Container FROM " + _schema.getTableInfoStatusFiles() + " WITH (TABLOCKX) WHERE Job = ?;";
-                new SqlExecutor(_schema.getSchema()).execute(lockCmd, jobId);
-                transaction.commit();
-            }
         }
     }
 }
