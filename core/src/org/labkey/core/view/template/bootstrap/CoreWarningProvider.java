@@ -22,30 +22,84 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.security.impersonation.AbstractImpersonationContextFactory;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UsageReportingLevel;
-import org.labkey.api.view.AbstractDismissibleWarningMessageImpl;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.WarningProvider;
 import org.labkey.api.view.template.Warnings;
-import org.labkey.core.CoreController;
 
 import javax.servlet.http.HttpSession;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
-public class CoreWarningProvider extends AbstractDismissibleWarningMessageImpl implements WarningProvider
+import static org.labkey.api.view.template.PageConfig.SESSION_WARNINGS_BANNER_KEY;
+
+public class CoreWarningProvider implements WarningProvider
 {
-    public static String SHOW_BANNER_KEY = CoreWarningProvider.class.getName() + "$SHOW_BANNER_KEY";
+
+    public CoreWarningProvider()
+    {
+        AbstractImpersonationContextFactory.registerSessionAttributeToStash(SESSION_WARNINGS_BANNER_KEY);
+    }
 
     @Override
     public void addStaticWarnings(Warnings warnings)
+    {
+        // Warn if running on a deprecated database version or some other non-fatal database configuration issue
+        DbScope labkeyScope = DbScope.getLabKeyScope();
+        labkeyScope.getSqlDialect().addAdminWarningMessages(warnings);
+
+        getHeapSizeWarnings(warnings);
+
+        getConnectionPoolSizeWarnings(warnings, labkeyScope);
+
+        getDeprecatedTomcatWarnings(warnings);
+    }
+
+    @Override
+    public void addDismissibleWarnings(Warnings warnings, ViewContext context)
+    {
+        if (context != null && context.getRequest() != null)
+        {
+            HttpSession session = context.getRequest().getSession(true);
+
+            if (session.getAttribute(SESSION_WARNINGS_BANNER_KEY) == null)
+                session.setAttribute(SESSION_WARNINGS_BANNER_KEY, true);
+
+            if ((boolean) session.getAttribute(SESSION_WARNINGS_BANNER_KEY))
+            {
+                User user = context.getUser();
+                if (null != user && user.isInSiteAdminGroup())
+                {
+                    getUserRequestedAdminOnlyModeWarnings(warnings);
+
+                    getModuleErrorWarnings(warnings, context);
+
+                    getProbableLeakCountWarnings(warnings);
+
+                    //upgrade message--show to admins
+                    String upgradeMessage = UsageReportingLevel.getUpgradeMessage();
+                    if (StringUtils.isNotEmpty(upgradeMessage))
+                    {
+                        warnings.add(upgradeMessage);
+                    }
+                }
+
+                if (AppProps.getInstance().isShowRibbonMessage() && !StringUtils.isEmpty(AppProps.getInstance().getRibbonMessageHtml()))
+                {
+                    String message = AppProps.getInstance().getRibbonMessageHtml();
+                    message = ModuleHtmlView.replaceTokens(message, context);
+                    warnings.add(message);
+                }
+            }
+        }
+    }
+
+    private void getHeapSizeWarnings(Warnings warnings)
     {
         //FIX: 9683
         //show admins warning about inadequate heap size (<= 256Mb)
@@ -59,12 +113,11 @@ public class CoreWarningProvider extends AbstractDismissibleWarningMessageImpl i
                     new HelpTopic("configWebappMemory").getSimpleLinkHtml("setting the maximum heap to at least one gigabyte (-Xmx1024M)")
                     + ".");
         }
+    }
 
-        // Warn if running on a deprecated database version or some other non-fatal database configuration issue
-        DbScope labkeyScope = DbScope.getLabKeyScope();
-        labkeyScope.getSqlDialect().addAdminWarningMessages(warnings);
-
-        // Warn if running in production mode with an inadequate labkey db connection pool size
+    // Warn if running in production mode with an inadequate labkey db connection pool size
+    private void getConnectionPoolSizeWarnings(Warnings warnings, DbScope labkeyScope)
+    {
         if (!AppProps.getInstance().isDevMode())
         {
             Integer maxTotal = labkeyScope.getDataSourceProperties().getMaxTotal();
@@ -80,7 +133,10 @@ public class CoreWarningProvider extends AbstractDismissibleWarningMessageImpl i
                         "See the " + topic.getSimpleLinkHtml("Connection Pool Size section of the Troubleshooting page") + " for more information.");
             }
         }
+    }
 
+    private void getDeprecatedTomcatWarnings(Warnings warnings)
+    {
         if (ModuleLoader.getInstance().getTomcatVersion().isDeprecated())
         {
             String serverInfo = ModuleLoader.getServletContext().getServerInfo();
@@ -90,58 +146,33 @@ public class CoreWarningProvider extends AbstractDismissibleWarningMessageImpl i
         }
     }
 
-    @Override
-    public void addDismissibleWarnings(Warnings warnings, ViewContext context)
+    private void getModuleErrorWarnings(Warnings warnings, ViewContext context)
     {
-        if (showMessage(context))
+        //module failures during startup--show to admins
+        Map<String, Throwable> moduleFailures = ModuleLoader.getInstance().getModuleFailures();
+        if (null != moduleFailures && moduleFailures.size() > 0)
         {
-            String messageHtml = getMessageHtml(context);
-            if (!StringUtils.isEmpty(messageHtml))
-                warnings.add(messageHtml);
+            warnings.add("The following modules experienced errors during startup: "
+                    + "<a href=\"" + PageFlowUtil.urlProvider(AdminUrls.class).getModuleErrorsURL(context.getContainer()) + "\">"
+                    + PageFlowUtil.filter(moduleFailures.keySet())
+                    + "</a>");
         }
     }
 
-    @Override
-    protected String getDismissActionUrl(ViewContext viewContext)
+    private void getUserRequestedAdminOnlyModeWarnings(Warnings warnings)
     {
-        return new ActionURL(CoreController.DismissCoreWarningsAction.class, viewContext.getContainer()).toString();
+        //admin-only mode--show to admins
+        if (AppProps.getInstance().isUserRequestedAdminOnlyMode())
+        {
+            warnings.add("This site is configured so that only administrators may sign in. To allow other users to sign in, turn off admin-only mode via the <a href=\""
+                    + PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeSiteURL()
+                    + "\">"
+                    + "site settings page</a>.");
+        }
     }
 
-    @Override
-    protected String getMessageText(ViewContext viewContext)
+    private void getProbableLeakCountWarnings(Warnings warnings)
     {
-        List<String> messages = new ArrayList<>();
-        User user = viewContext.getUser();
-
-        if (null != user && user.isInSiteAdminGroup())
-        {
-            //admin-only mode--show to admins
-            if (AppProps.getInstance().isUserRequestedAdminOnlyMode())
-            {
-                messages.add("This site is configured so that only administrators may sign in. To allow other users to sign in, turn off admin-only mode via the <a href=\""
-                        + PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeSiteURL()
-                        + "\">"
-                        + "site settings page</a>.");
-            }
-
-            //module failures during startup--show to admins
-            Map<String, Throwable> moduleFailures = ModuleLoader.getInstance().getModuleFailures();
-            if (null != moduleFailures && moduleFailures.size() > 0)
-            {
-                messages.add("The following modules experienced errors during startup: "
-                        + "<a href=\"" + PageFlowUtil.urlProvider(AdminUrls.class).getModuleErrorsURL(viewContext.getContainer()) + "\">"
-                        + PageFlowUtil.filter(moduleFailures.keySet())
-                        + "</a>");
-            }
-
-            //upgrade message--show to admins
-            String upgradeMessage = UsageReportingLevel.getUpgradeMessage();
-            if (StringUtils.isNotEmpty(upgradeMessage))
-            {
-                messages.add(upgradeMessage);
-            }
-        }
-
         if (AppProps.getInstance().isDevMode())
         {
             int leakCount = ConnectionWrapper.getProbableLeakCount();
@@ -150,43 +181,8 @@ public class CoreWarningProvider extends AbstractDismissibleWarningMessageImpl i
                 int count = ConnectionWrapper.getActiveConnectionCount();
                 String connectionsInUse = "<a href=\"" + PageFlowUtil.urlProvider(AdminUrls.class).getMemTrackerURL() + "\">" + count + " DB connection" + (count == 1 ? "" : "s") + " in use.";
                 connectionsInUse += " " + leakCount + " probable leak" + (leakCount == 1 ? "" : "s") + ".</a>";
-                messages.add(connectionsInUse);
+                warnings.add(connectionsInUse);
             }
         }
-
-        if (AppProps.getInstance().isShowRibbonMessage() && !StringUtils.isEmpty(AppProps.getInstance().getRibbonMessageHtml()))
-        {
-            String message = AppProps.getInstance().getRibbonMessageHtml();
-            message = ModuleHtmlView.replaceTokens(message, viewContext);
-            messages.add(message);
-        }
-
-        if (messages.isEmpty())
-            return null;
-        if (messages.size() > 1)
-        {
-            StringBuilder ret = new StringBuilder();
-            ret.append("<ul>");
-            messages.forEach(m -> ret.append("<li>").append(m).append("</li>"));
-            ret.append("</ul>");
-            return ret.toString();
-        }
-        return messages.get(0);
-    }
-
-    @Override
-    public boolean showMessage(ViewContext viewContext)
-    {
-        if (viewContext != null && viewContext.getRequest() != null)
-        {
-            HttpSession session = viewContext.getRequest().getSession(true);
-            if (session.getAttribute(SHOW_BANNER_KEY) == null)
-                session.setAttribute(SHOW_BANNER_KEY, true);
-
-            return (boolean) session.getAttribute(SHOW_BANNER_KEY);
-
-        }
-
-        return false;
     }
 }

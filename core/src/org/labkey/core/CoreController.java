@@ -149,7 +149,6 @@ import org.labkey.api.writer.Writer;
 import org.labkey.api.writer.ZipUtil;
 import org.labkey.core.reports.ExternalScriptEngineDefinitionImpl;
 import org.labkey.core.security.SecurityController;
-import org.labkey.core.view.template.bootstrap.CoreWarningProvider;
 import org.labkey.core.workbook.CreateWorkbookBean;
 import org.labkey.core.workbook.MoveWorkbooksBean;
 import org.labkey.core.workbook.WorkbookFolderType;
@@ -182,6 +181,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static org.labkey.api.view.template.PageConfig.SESSION_WARNINGS_BANNER_KEY;
 
 /**
  * User: jeckels
@@ -264,6 +265,12 @@ public class CoreController extends SpringActionController
         public ActionURL getPermissionsURL(@NotNull Container c)
         {
             return new ActionURL(SecurityController.PermissionsAction.class, c);
+        }
+
+        @Override
+        public ActionURL getDismissCoreWarningActionURL(ViewContext viewContext)
+        {
+            return new ActionURL(CoreController.DismissCoreWarningsAction.class, viewContext.getContainer());
         }
     }
 
@@ -2263,7 +2270,7 @@ public class CoreController extends SpringActionController
         public Object execute(Object o, BindException errors)
         {
             HttpSession session = getViewContext().getRequest().getSession(true);
-            session.setAttribute(CoreWarningProvider.SHOW_BANNER_KEY, false);
+            session.setAttribute(SESSION_WARNINGS_BANNER_KEY, false);
             return success();
         }
     }
