@@ -21,6 +21,7 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.admin.CoreUrls;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.User;
@@ -40,6 +41,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.labkey.api.util.PageFlowUtil.urlProvider;
 
 /**
  * User: brittp
@@ -75,6 +78,8 @@ public class PageConfig
 	{
 		Default, True, False
 	}
+
+    public static final String SESSION_WARNINGS_BANNER_KEY = "PAGE_CONFIG$SESSION_WARNINGS_BANNER_KEY";
 
     private static final Collection<String> STATIC_ADMIN_WARNINGS = getStaticAdminWarnings();
 
@@ -407,6 +412,39 @@ public class PageConfig
         return messages;
     }
 
+    protected final static String DISMISSAL_SCRIPT_FORMAT =
+            "<script type=\"text/javascript\">\n" +
+            "    (function($) {\n" +
+            "        function dismissMessage() {\n" +
+            "            var config = {\n" +
+            "                url: %1$s,\n" +
+            "                method: 'POST',\n" +
+            "                success: function () {$(\".lk-dismissable-warn\").hide()},\n" +
+            "                failure: LABKEY.Utils.displayAjaxErrorResponse\n" +
+            "            };\n" +
+            "            LABKEY.Ajax.request(config); \n" +
+            "            return false;\n" +
+            "        }\n" +
+            "       $('body').on('click', 'a.lk-dismissable-warn-close', function() {\n" +
+            "           dismissMessage();\n" +
+            "       });" +
+            "    })(jQuery);\n" +
+            "</script>\n";
+
+    private void appendDismissableMessageHtml(ViewContext viewContext, List<String> warnings, StringBuilder html)
+    {
+        html.append("<div class=\"lk-dismissable-warn\">");
+        appendMessageContent(warnings, html);
+        html.append("</div>");
+
+        CoreUrls coreUrls = urlProvider(CoreUrls.class);
+        if (coreUrls != null)
+        {
+            String dismissURL = coreUrls.getDismissCoreWarningActionURL(viewContext).toString();
+            html.append(String.format(DISMISSAL_SCRIPT_FORMAT, PageFlowUtil.jsString(dismissURL)));
+        }
+    }
+
     // For now, gives a central place to render messaging
     public String renderSiteMessages(ViewContext context)
     {
@@ -436,10 +474,9 @@ public class PageConfig
 
         if (!dismissibleWarningMessages.isEmpty())
         {
-            messages.append("<div class=\"alert alert-warning alert-dismissable lk-dismissable-warn\">");
+            messages.append("<div class=\"alert alert-warning alert-dismissable\">");
             messages.append("<a href=\"#\" class=\"close lk-dismissable-warn-close\" data-dismiss=\"alert\" aria-label=\"dismiss\" title=\"dismiss\">×</a>");
-
-            appendMessageContent(dismissibleWarningMessages, messages);
+            appendDismissableMessageHtml(context, dismissibleWarningMessages, messages);
             messages.append("</div>");
         }
 

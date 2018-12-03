@@ -1853,7 +1853,6 @@ api/src/org/labkey/api/util/emailTemplate/EmailTemplate.java -text
 api/src/org/labkey/api/util/emailTemplate/EmailTemplateService.java -text
 api/src/org/labkey/api/util/emailTemplate/UserOriginatedEmailTemplate.java -text
 api/src/org/labkey/api/util/mime.txt -text
-api/src/org/labkey/api/view/AbstractDismissibleWarningMessageImpl.java -text
 api/src/org/labkey/api/view/AbstractView.java -text
 api/src/org/labkey/api/view/AjaxCompletion.java -text
 api/src/org/labkey/api/view/AlwaysAvailableWebPartFactory.java -text

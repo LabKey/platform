@@ -20,6 +20,7 @@ import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 
 /**
  * User: adam
@@ -40,4 +41,6 @@ public interface CoreUrls extends UrlProvider
     ActionURL getDownloadFileLinkBaseURL(Container container, PropertyDescriptor pd);
 
     ActionURL getPermissionsURL(@NotNull Container c);
+
+    ActionURL getDismissCoreWarningActionURL(ViewContext context);
 }
