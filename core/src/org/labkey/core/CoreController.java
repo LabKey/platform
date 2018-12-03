@@ -126,6 +126,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.PageFlowUtil.Content;
 import org.labkey.api.util.PageFlowUtil.NoContent;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
@@ -622,8 +623,7 @@ public class CoreController extends SpringActionController
                 //open the file and stream it back to the client
                 HttpServletResponse response = getViewContext().getResponse();
                 response.setContentType(PageFlowUtil.getContentTypeFor(path));
-                response.setHeader("Cache-Control", "public");
-                response.setHeader("Pragma", "");
+                ResponseHelper.setPublic(response);
 
                 WebdavResolver staticFiles = ServiceRegistry.get().getService(WebdavResolver.class);
                 WebdavResource file = staticFiles.lookup(Path.parse(path));

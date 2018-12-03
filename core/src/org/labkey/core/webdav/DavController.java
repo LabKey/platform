@@ -85,6 +85,7 @@ import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
@@ -529,10 +530,9 @@ public class DavController extends SpringActionController
             return _message;
         }
 
-        void setExpires(long expires, String cache)
+        void setPublicStatic(int days)
         {
-            response.setDateHeader("Expires", expires);
-            response.setHeader("Cache-Control", cache);
+            ResponseHelper.setPublicStatic(response, days);
         }
 
         void setContentEncoding(String value)
@@ -543,7 +543,7 @@ public class DavController extends SpringActionController
 
         void setCacheForUserOnly()
         {
-            response.addHeader("Vary", "Cookie");
+            ResponseHelper.setPrivate(response);
         }
 
         void setContentDisposition(String value)
@@ -4839,8 +4839,7 @@ public class DavController extends SpringActionController
 
                 if (allowCaching || isPerfectCache || alwaysCacheFile(resource.getPath()))
                 {
-                    int expireInDays = isPerfectCache ? 365 : 35;
-                    getResponse().setExpires(HeartBeat.currentTimeMillis() + TimeUnit.DAYS.toMillis(expireInDays), "public");
+                    getResponse().setPublicStatic(isPerfectCache ? 365 : 35);
                 }
             }
         }

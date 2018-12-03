@@ -53,6 +53,7 @@ import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderManagement.FolderManagementViewPostAction;
@@ -78,6 +79,7 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.Date;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -771,10 +773,7 @@ public class SearchController extends SpringActionController
 
             // reenable caching for search results page (fast browser back button)
             HttpServletResponse response = getViewContext().getResponse();
-            response.setDateHeader("Expires", HeartBeat.currentTimeMillis() + (5 * 60 * 1000));
-            response.setHeader("Cache-Control", "private");
-            response.setHeader("Pragma", "cache");
-            response.addHeader("Vary", "Cookie");
+            ResponseHelper.setPrivate(response, Duration.ofMinutes(5));
             getPageConfig().setNoIndex();
             getPageConfig().setHelpTopic(new HelpTopic("luceneSearch"));
 

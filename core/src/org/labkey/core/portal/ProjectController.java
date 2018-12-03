@@ -62,6 +62,7 @@ import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderTab;
@@ -1614,8 +1615,7 @@ public class ProjectController extends SpringActionController
                 path = Attachment.getFileIcon(name);
 
             // allow caching
-            getViewContext().getResponse().setDateHeader("Expires", HeartBeat.currentTimeMillis() + 1000 * 60 * 60 * 24);
-            getViewContext().getResponse().setHeader("Cache-Control", "private");
+            ResponseHelper.setPrivate(getViewContext().getResponse(), 1);
 
             RequestDispatcher d = getViewContext().getRequest().getRequestDispatcher(path);
             getPageConfig().setTemplate(Template.None);

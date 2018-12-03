@@ -129,6 +129,7 @@ import org.labkey.api.util.ImageUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.TidyUtil;
 import org.labkey.api.util.URLHelper;
@@ -2135,8 +2136,7 @@ public class ExperimentController extends SpringActionController
 
                 response.setContentType(docType.getMimeType());
                 response.setHeader("Content-disposition", "attachment; filename=\"" + filename +"\"");
-                response.setHeader("Pragma", "private");
-                response.setHeader("Cache-Control", "private");
+                ResponseHelper.setPrivate(response);
                 workbook.write(response.getOutputStream());
             }
             catch (JSONException | ClassCastException e)
@@ -3965,8 +3965,7 @@ public class ExperimentController extends SpringActionController
 
                 getViewContext().getResponse().setContentType("application/zip");
                 getViewContext().getResponse().setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
-                getViewContext().getResponse().setHeader("Pragma", "private");
-                getViewContext().getResponse().setHeader("Cache-Control", "private");
+                ResponseHelper.setPrivate(getViewContext().getResponse());
 
                 exporter.write(getViewContext().getResponse().getOutputStream());
                 return null;

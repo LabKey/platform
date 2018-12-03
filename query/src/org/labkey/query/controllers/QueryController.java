@@ -81,6 +81,7 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.TestContext;
@@ -1717,8 +1718,7 @@ public class QueryController extends SpringActionController
             // so we need to allow caching so that Excel can read from IE on Windows.
             HttpServletResponse response = getViewContext().getResponse();
             // Set the headers to allow the client to cache, but not proxies
-            response.setHeader("Pragma", "private");
-            response.setHeader("Cache-Control", "private");
+            ResponseHelper.setPrivate(response);
 
             ensureQueryExists(form);
             QueryView view = QueryView.create(form, errors);
@@ -3362,8 +3362,7 @@ public class QueryController extends SpringActionController
             view.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
 
             //export it
-            response.setHeader("Pragma", "private");
-            response.setHeader("Cache-Control", "private");
+            ResponseHelper.setPrivate(response);
             response.setHeader("X-Robots-Tag", "noindex");
 
             if ("excel".equalsIgnoreCase(form.getFormat()))
