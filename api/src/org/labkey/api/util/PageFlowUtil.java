@@ -1091,9 +1091,7 @@ public class PageFlowUtil
     {
         // TODO content.getContentType()
         response.setContentType(contentType);
-        response.setDateHeader("Expires", HeartBeat.currentTimeMillis() + TimeUnit.DAYS.toMillis(35));
-        response.setHeader("Cache-Control", "private");
-        response.setHeader("Pragma", "cache");
+        ResponseHelper.setPrivate(response, 35);
         response.setDateHeader("Last-Modified", content.modified);
 
         if (!checkIfModifiedSince(request, content.modified))

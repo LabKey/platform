@@ -53,6 +53,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
@@ -1246,12 +1247,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             stackSize = HttpView.getStackSize();
 
             response.setContentType("text/html;charset=UTF-8");
-            response.setHeader("Expires", "Sun, 01 Jan 2000 00:00:00 GMT");
-            response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-            if ("HTTP/1.0".equals(request.getProtocol()))
-            {
-                response.setHeader("Pragma", "no-cache");
-            }
+            ResponseHelper.setNoCache(response);
 
             HttpView.initForRequest(rootContext, request, response);
             assert rootContext == HttpView.currentContext();

@@ -54,6 +54,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -2693,8 +2694,7 @@ public class QueryView extends WebPartView<Object>
         // Bug 5610 & 6179. Excel web queries don't work over SSL if caching is disabled,
         // so we need to allow caching so that Excel can read from IE on Windows.
         // Set the headers to allow the client to cache, but not proxies
-        response.setHeader("Pragma", "private");
-        response.setHeader("Cache-Control", "private");
+        ResponseHelper.setPrivate(response);
 
         HtmlWriter writer = new HtmlWriter();
         writer.write(rs, getExportColumns(rgn.getDisplayColumns()), response, ctx, true);

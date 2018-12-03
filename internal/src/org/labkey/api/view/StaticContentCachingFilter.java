@@ -18,6 +18,7 @@ package org.labkey.api.view;
 
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HeartBeat;
+import org.labkey.api.util.ResponseHelper;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -43,8 +44,7 @@ public class StaticContentCachingFilter implements Filter
         if (cachableJsFile || _cachingAllowed)
         {
             HttpServletResponse response = (HttpServletResponse)servletResponse;
-            response.setDateHeader("Expires", HeartBeat.currentTimeMillis() + 1000 * 60 * 60 * 24 * 5);
-            response.setHeader("Cache-Control", "public");
+            ResponseHelper.setPublicStatic(response, 5);
         }
 
         filterChain.doFilter(servletRequest, servletResponse);
