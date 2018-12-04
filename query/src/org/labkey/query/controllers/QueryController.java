@@ -2650,7 +2650,7 @@ public class QueryController extends SpringActionController
 
     public static final int DEFAULT_API_MAX_ROWS = 100000;
 
-    @CSRF(CSRF.Method.NONE)//TODO remove this annotation when possible (see flow-reports-create, flow-reports-update)
+    @CSRF(CSRF.Method.NONE) // No need for CSRF token --- this is a non-mutating action that supports POST to allow for large payloads, see #36056
     @ActionNames("selectRows, getQuery")
     @RequiresPermission(ReadPermission.class)
     @ApiVersion(9.1)
@@ -2844,7 +2844,7 @@ public class QueryController extends SpringActionController
         }
     }
 
-    @CSRF(CSRF.Method.NONE)//TODO remove this annotation when possible (see assay-assayResults.view various luminex reports)
+    @CSRF(CSRF.Method.NONE) // No need for CSRF token --- this is a non-mutating action that supports POST to allow for large payloads, see #36056
     @RequiresPermission(ReadPermission.class)
     @ApiVersion(9.1)
     @Action(ActionType.SelectData.class)
