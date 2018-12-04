@@ -145,6 +145,12 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver implements File
     @Override
     public void fileCreated(@NotNull File created, @Nullable User user, @Nullable Container container)
     {
+        fileCreated(created.toPath(), user, container);
+    }
+
+    @Override
+    public void fileCreated(@NotNull java.nio.file.Path created, @Nullable User user, @Nullable Container container)
+    {
         if (container != null)
         {
             invalidateCache(container.getParsedPath(), true);
@@ -153,6 +159,12 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver implements File
 
     @Override
     public void fileMoved(@NotNull File src, @NotNull File dest, @Nullable User user, @Nullable Container container)
+    {
+        fileMoved(src.toPath(), dest.toPath(), user, container);
+    }
+
+    @Override
+    public void fileMoved(@NotNull java.nio.file.Path src, @NotNull java.nio.file.Path dest, @Nullable User user, @Nullable Container container)
     {
         if (AppProps.getInstance().isWebfilesRootEnabled() && container != null)
         {

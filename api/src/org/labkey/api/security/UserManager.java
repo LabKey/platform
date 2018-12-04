@@ -86,6 +86,7 @@ public class UserManager
 
     // NOTE: This static map will slowly grow, since user IDs & timestamps are added and never removed. It's a trivial amount of data, though.
     private static final Map<Integer, Long> RECENT_USERS = new HashMap<>(100);
+    public static final String GROUP_NAME_CHAR_EXCLUSION_LIST = "@/\\&~";  // see renameGroup.jsp if you change this
 
     public static final String USER_AUDIT_EVENT = "UserAuditEvent";
     public static final int VALID_GROUP_NAME_LENGTH = 64;
@@ -565,7 +566,7 @@ public class UserManager
             case ROLE:
             case GROUP:
                 // see renameGroup.jsp if you change this
-                if (!StringUtils.containsNone(name, "@./\\-&~_"))
+                if (!StringUtils.containsNone(name, GROUP_NAME_CHAR_EXCLUSION_LIST))
                     return "Group name should not contain punctuation.";
                 if (name.length() > VALID_GROUP_NAME_LENGTH) // issue 14147
                     return "Name value is too long, maximum length is " + VALID_GROUP_NAME_LENGTH + " characters, but supplied value was " + name.length() + " characters.";
