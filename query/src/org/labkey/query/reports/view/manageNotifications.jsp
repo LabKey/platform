@@ -43,9 +43,9 @@
         var categories = getCategories();
         var returnUrl = null;
         <% if (null != returnURLString) {%>
-            returnUrl = '<%=returnURLString%>';
+            returnUrl = <%=q(returnURLString)%>;
         <%}%>
-        var notifyOption = <%=q(me.getModelBean().getNotifyOption())%>
+        var notifyOption = <%=q(me.getModelBean().getNotifyOption())%>;
 
         var manager = Ext4.create('LABKEY.ext4.ManageReportNotifications');
         var panel = manager.getManageReportPanel({
@@ -66,7 +66,7 @@
             ViewCategory category = categoryNode.getViewCategory();
         %>
             categories.push({
-                'label' : '<%=category.getLabel()%>',
+                'label' : <%=qh(category.getLabel())%>,
                 'rowid' : '<%=category.getRowId()%>',
                 'subscribed' : <%=categoryNode.isUserSubscribed()%>
             });
@@ -76,7 +76,7 @@
                 ViewCategory subCategory = subCategoryNode.getViewCategory();
         %>
                 categories.push({
-                    'label' : '&nbsp;&nbsp;&nbsp;&nbsp;' + '<%=subCategory.getLabel()%>',
+                    'label' : '&nbsp;&nbsp;&nbsp;&nbsp;' + <%=qh(subCategory.getLabel())%>,
                     'rowid' : '<%=subCategory.getRowId()%>',
                     'subscribed' : <%=subCategoryNode.isUserSubscribed()%>
                 });

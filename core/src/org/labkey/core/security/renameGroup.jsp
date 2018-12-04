@@ -42,7 +42,7 @@
         var validGroupName = function(s) {
             if (!s)
                 return "Required";
-            if (!s.match(/^[^@\.\/\\\-&~_]+$/))
+            if (!s.match(/^[^@/\\&~]+$/))
                 return "Group name should not contain punctuation.";
             return true;
         };

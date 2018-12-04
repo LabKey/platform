@@ -468,12 +468,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                 scales.x.tickFormat = function(){return '******'};
             }
             else if (isMeasureXMatch && isNumericType(type)) {
-                if (fields[i].extFormatFn) {
-                    scales.x.tickFormat = eval(fields[i].extFormatFn);
-                }
-                else if (defaultFormatFn) {
-                    scales.x.tickFormat = defaultFormatFn;
-                }
+                scales.x.tickFormat = _getNumberFormatFn(fields[i], defaultFormatFn);
             }
 
             var yMeasures = ensureMeasuresAsArray(measures.y);
@@ -481,13 +476,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                 var isMeasureYMatch = yMeasure && _isFieldKeyMatch(yMeasure, fields[i].fieldKey);
                 var isConvertedYMeasure = isMeasureYMatch && yMeasure.converted;
                 if (isMeasureYMatch && (isNumericType(type) || isConvertedYMeasure)) {
-                    var tickFormatFn;
-                    if (fields[i].extFormatFn) {
-                        tickFormatFn = eval(fields[i].extFormatFn);
-                    }
-                    else if (defaultFormatFn) {
-                        tickFormatFn = defaultFormatFn;
-                    }
+                    var tickFormatFn = _getNumberFormatFn(fields[i], defaultFormatFn);
 
                     var ySide = yMeasure.yAxis === 'right' ? 'yRight' : 'y';
                     scales[ySide].tickFormat = function(value) {
@@ -513,6 +502,23 @@ LABKEY.vis.GenericChartHelper = new function(){
         }
 
         return scales;
+    };
+
+    // Issue 36227: if Ext4 is not available, try to generate our own number format function based on the "format" field metadata
+    var _getNumberFormatFn = function(field, defaultFormatFn) {
+        if (field.extFormatFn) {
+            if (window.Ext4) {
+                return eval(field.extFormatFn);
+            }
+            else if (field.format && LABKEY.Utils.isString(field.format) && field.format.indexOf('.') > -1) {
+                var precision = field.format.length - field.format.indexOf('.') - 1;
+                return function(v) {
+                    return LABKEY.Utils.isNumber(v) ? v.toFixed(precision) : v;
+                }
+            }
+        }
+
+        return defaultFormatFn;
     };
 
     var _isFieldKeyMatch = function(measure, fieldKey) {
