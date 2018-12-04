@@ -35,6 +35,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewService;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.http.HttpSession;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -471,13 +472,20 @@ public class PageConfig
             appendMessageContent(warningMessages, messages);
             messages.append("</div>");
         }
-
-        if (!dismissibleWarningMessages.isEmpty())
+        if (context != null && context.getRequest() != null)
         {
-            messages.append("<div class=\"alert alert-warning alert-dismissable\">");
-            messages.append("<a href=\"#\" class=\"close lk-dismissable-warn-close\" data-dismiss=\"alert\" aria-label=\"dismiss\" title=\"dismiss\">×</a>");
-            appendDismissableMessageHtml(context, dismissibleWarningMessages, messages);
-            messages.append("</div>");
+            HttpSession session = context.getRequest().getSession(true);
+
+            if (session.getAttribute(SESSION_WARNINGS_BANNER_KEY) == null)
+                session.setAttribute(SESSION_WARNINGS_BANNER_KEY, true);
+
+            if ((boolean) session.getAttribute(SESSION_WARNINGS_BANNER_KEY) && !dismissibleWarningMessages.isEmpty())
+            {
+                messages.append("<div class=\"alert alert-warning alert-dismissable\">");
+                messages.append("<a href=\"#\" class=\"close lk-dismissable-warn-close\" data-dismiss=\"alert\" aria-label=\"dismiss\" title=\"dismiss\">×</a>");
+                appendDismissableMessageHtml(context, dismissibleWarningMessages, messages);
+                messages.append("</div>");
+            }
         }
 
         // Display a <noscript> warning message
