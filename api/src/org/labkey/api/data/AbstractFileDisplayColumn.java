@@ -64,7 +64,15 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
     {
        renderIconAndFilename(ctx, out, filename, null, null, link, thumbnail);
     }
-    
+
+    protected boolean isImage(String filename)
+    {
+        return filename.toLowerCase().endsWith(".png")
+            || filename.toLowerCase().endsWith(".jpeg")
+            || filename.toLowerCase().endsWith(".jpg")
+            || filename.toLowerCase().endsWith(".gif");
+    }
+
     protected void renderIconAndFilename(RenderContext ctx, Writer out, String filename, @Nullable String fileIconUrl, @Nullable String popupIconUrl, boolean link, boolean thumbnail) throws IOException
     {
         if (null != filename)
@@ -82,10 +90,7 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
             }
 
             String displayName = getFileName(ctx, filename);
-            boolean isImage = filename.toLowerCase().endsWith(".png")
-                    || filename.toLowerCase().endsWith(".jpeg")
-                    || filename.toLowerCase().endsWith(".jpg")
-                    || filename.toLowerCase().endsWith(".gif");
+            boolean isImage = isImage(filename);
 
             FileImageRenderHelper renderHelper = createRenderHelper(ctx, url, filename, displayName, fileIconUrl, popupIconUrl, thumbnail, isImage);
 
