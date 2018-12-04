@@ -2162,19 +2162,23 @@ public class LoginController extends SpringActionController
 
     @SuppressWarnings("unused")
     @RequiresNoPermission
-    public class InvalidateTokenAction extends SimpleViewAction<TokenAuthenticationForm>
+    public class InvalidateTokenAction extends RedirectAction<TokenAuthenticationForm>
     {
-        public ModelAndView getView(TokenAuthenticationForm form, BindException errors) throws Exception
+        @Override
+        public URLHelper getSuccessURL(TokenAuthenticationForm form)
+        {
+            URLHelper returnUrl = form.getValidReturnUrl();
+            if (null != returnUrl)
+                return returnUrl;
+            return AppProps.getInstance().getHomePageActionURL();
+        }
+
+        @Override
+        public boolean doAction(TokenAuthenticationForm form, BindException errors) throws Exception
         {
             if (null != form.getLabkeyToken())
                 TokenAuthenticationManager.get().invalidateKey(form.getLabkeyToken());
-
-            URLHelper returnUrl = form.getValidReturnUrl();
-
-            if (null != returnUrl)
-                getViewContext().getResponse().sendRedirect(returnUrl.getURIString());
-
-            return null;
+            return true;
         }
 
         public NavTree appendNavTrail(NavTree root)
