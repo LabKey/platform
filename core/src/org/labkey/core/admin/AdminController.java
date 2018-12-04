@@ -6249,7 +6249,6 @@ public class AdminController extends SpringActionController
         public ModelAndView getView(ManageFoldersForm form, BindException errors)
         {
             Container c = getContainer();
-            Container newParent =  ContainerManager.getForPath(form.getTarget());
 
             if (c.isRoot())
                 throw new NotFoundException("Can't move the root folder.");  // Don't show move tree from root
@@ -6257,6 +6256,7 @@ public class AdminController extends SpringActionController
             if (c.equals(ContainerManager.getSharedContainer()) || c.equals(ContainerManager.getHomeContainer()))
                 throw new UnsupportedOperationException("Moving /Shared or /home is not possible.");
 
+            Container newParent = isBlank(form.getTarget()) ? null : ContainerManager.getForPath(form.getTarget());
             if (null == newParent)
             {
                 errors.reject(ERROR_MSG, "Target '" + form.getTarget() + "' folder does not exist.");
