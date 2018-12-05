@@ -161,6 +161,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -6591,6 +6592,8 @@ public class ExperimentServiceImpl implements ExperimentService
         YEARLY("yyyy");
 
         final DateTimeFormatter _formatter;
+        // we are totally 'leaking' these sequences, however a) they are small b) we leak < 2 a day, so...
+        static final HashMap<String, DbSequence> _sequences = new HashMap<>();
 
         SampleSequenceType(String pattern)
         {
@@ -6607,24 +6610,32 @@ public class ExperimentServiceImpl implements ExperimentService
             String suffix = _formatter.format(ldt);
             return "org.labkey.api.exp.api.ExpMaterial:" + name() + ":" + suffix;
         }
-    }
 
-    private DbSequence getSampleSequence(@NotNull SampleSequenceType type, @Nullable Date date)
-    {
-        // For now, we only create sequences globally for all samples.  We could create sequences for each SampleSet
-        // as well by using the id parameter as the SampleSet's rowId, but we don't need them at this time.
-        DbSequence sequence = DbSequenceManager.get(ContainerManager.getRoot(), type.getSequenceName(date));
-        return sequence;
+        public int next(Date date)
+        {
+            String seqName = getSequenceName(date);
+            DbSequence seq;
+            synchronized (_sequences)
+            {
+                seq = _sequences.get(seqName);
+                if (seq == null)
+                {
+                    seq = DbSequenceManager.getPreallocatingSequence(ContainerManager.getRoot(), seqName);
+                    _sequences.put(seqName, seq);
+                }
+            }
+            return seq.next();
+        }
     }
 
     @Override
     public Map<String, Integer> incrementSampleCounts(@Nullable Date counterDate)
     {
         Map<String, Integer> counts = new HashMap<>();
-        counts.put("dailySampleCount", getSampleSequence(SampleSequenceType.DAILY, counterDate).next());
-        counts.put("weeklySampleCount", getSampleSequence(SampleSequenceType.WEEKLY, counterDate).next());
-        counts.put("monthlySampleCount", getSampleSequence(SampleSequenceType.MONTHLY, counterDate).next());
-        counts.put("yearlySampleCount", getSampleSequence(SampleSequenceType.YEARLY, counterDate).next());
+        counts.put("dailySampleCount",   SampleSequenceType.DAILY.next(counterDate));
+        counts.put("weeklySampleCount",  SampleSequenceType.WEEKLY.next(counterDate));
+        counts.put("monthlySampleCount", SampleSequenceType.MONTHLY.next(counterDate));
+        counts.put("yearlySampleCount",  SampleSequenceType.YEARLY.next(counterDate));
         return counts;
     }
 
