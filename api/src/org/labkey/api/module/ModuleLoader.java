@@ -131,7 +131,7 @@ import java.util.stream.Collectors;
  */
 public class ModuleLoader implements Filter
 {
-    private static final double EARLIEST_UPGRADE_VERSION = 16.1;
+    private static final double EARLIEST_UPGRADE_VERSION = 16.3;
     private static final Logger _log = Logger.getLogger(ModuleLoader.class);
     private static final Map<String, Throwable> _moduleFailures = new HashMap<>();
     private static final Map<String, Module> _controllerNameToModule = new HashMap<>();
