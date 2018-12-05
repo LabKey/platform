@@ -27,10 +27,13 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.Pair;
 import org.springframework.dao.DataIntegrityViolationException;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -51,10 +54,25 @@ public class DbSequenceManager
         return get(c, name, 0);
     }
 
-
     public static DbSequence get(Container c, String name, int id)
     {
-        return new DbSequence(c, ensure(c, name, id));
+        return new DbSequence(c, name, ensure(c, name, id));
+    }
+
+    // assert that we don't create duplicate preallocating sequences
+    static final Set<String> allocatedSequences_debug = Collections.synchronizedSet(new HashSet<>());
+
+
+    public static DbSequence getPreallocatingSequence(Container c, String name)
+    {
+        return getPreallocatingSequence(c, name, 0);
+    }
+
+    public static DbSequence getPreallocatingSequence(Container c, String name, int id)
+    {
+        DbSequence.Preallocate ret = new DbSequence.Preallocate(c, name, ensure(c, name, id));
+        assert allocatedSequences_debug.add(c.getId() + "/" + ret.getName());
+        return ret;
     }
 
 
@@ -171,14 +189,25 @@ public class DbSequenceManager
 
     static int next(DbSequence sequence)
     {
+        Pair<Integer,Integer> p = reserve(sequence, 1);
+        return p.second;
+    }
+
+
+    // .first value returned is 'current', call to next() should return current+1
+    // .second value is reserved for use by caller
+    // in other words, next() should return values [pair.first+1, pair.second] inclusive
+    static Pair<Integer,Integer> reserve(DbSequence sequence, int count)
+    {
         TableInfo tinfo = getTableInfo();
 
         SQLFragment sql = new SQLFragment();
-        sql.append("UPDATE ").append(tinfo.getSelectName()).append(" SET Value = ");
+        sql.append("UPDATE ").append(tinfo.getSelectName()).append(" SET Value = (");
 
         addValueSql(sql, tinfo, sequence);
 
-        sql.append(" + 1 WHERE Container = ? AND RowId = ?");
+        sql.append(") + ? WHERE Container = ? AND RowId = ?");
+        sql.add(count);
         sql.add(sequence.getContainer());
         sql.add(sequence.getRowId());
 
@@ -188,7 +217,9 @@ public class DbSequenceManager
         // Add locking appropriate to this dialect
         addLocks(tinfo, sql);
 
-        return executeAndReturnInt(tinfo, sql, Level.WARN);
+        int last = executeAndReturnInt(tinfo, sql, Level.WARN);
+        int first = last - count;
+        return new Pair<>(first,last);
     }
 
 
@@ -232,6 +263,22 @@ public class DbSequenceManager
 
         sql.append(" < ?");
         sql.add(minimum);
+
+        // Add locking appropriate to this dialect
+        addLocks(tinfo, sql);
+
+        execute(tinfo, sql);
+    }
+
+    // Explicitly sets the sequence value, only used at shutdown!
+    static void setSequenceValue(DbSequence sequence, int value)
+    {
+        TableInfo tinfo = getTableInfo();
+
+        SQLFragment sql = new SQLFragment("UPDATE ").append(tinfo.getSelectName()).append(" SET Value = ? WHERE Container = ? AND RowId = ?");
+        sql.add(value);
+        sql.add(sequence.getContainer());
+        sql.add(sequence.getRowId());
 
         // Add locking appropriate to this dialect
         addLocks(tinfo, sql);
@@ -299,8 +346,10 @@ public class DbSequenceManager
     {
         // Append a GUID to allow multiple, simultaneous invocations of this test
         private final String NAME = "org.labkey.api.data.DbSequence.Test/" + GUID.makeGUID();
+        private final String NAME_BULK = "org.labkey.api.data.DbSequence.TestBulk/" + GUID.makeGUID();
 
         private DbSequence _sequence;
+        private DbSequence.Preallocate _sequenceBulk;
 
         @Before
         public void setup()
@@ -309,37 +358,43 @@ public class DbSequenceManager
 
             DbSequenceManager.delete(c, NAME);
             _sequence = DbSequenceManager.get(c, NAME);
+            _sequenceBulk = (DbSequence.Preallocate)DbSequenceManager.getPreallocatingSequence(c, NAME_BULK);
+        }
+
+        void _testBasicOperations(DbSequence seq)
+        {
+            assertEquals(0, seq.current());
+            assertEquals(1, seq.next());
+            assertEquals(1, seq.current());
+            assertEquals(2, seq.next());
+            assertEquals(2, seq.current());
+
+            seq.ensureMinimum(1000);
+            assertEquals(1000, seq.current());
+            seq.ensureMinimum(500);
+            assertEquals(1000, seq.current());
+            seq.ensureMinimum(-3);
+            assertEquals(1000, seq.current());
+            assertEquals(1001, seq.next());
+            assertEquals(1001, seq.current());
+            seq.ensureMinimum(1002);
+            assertEquals(1002, seq.current());
         }
 
         @Test
         public void testBasicOperations()
         {
-            assertEquals(0, _sequence.current());
-            assertEquals(1, _sequence.next());
-            assertEquals(1, _sequence.current());
-            assertEquals(2, _sequence.next());
-            assertEquals(2, _sequence.current());
-
-            _sequence.ensureMinimum(1000);
-            assertEquals(1000, _sequence.current());
-            _sequence.ensureMinimum(500);
-            assertEquals(1000, _sequence.current());
-            _sequence.ensureMinimum(-3);
-            assertEquals(1000, _sequence.current());
-            assertEquals(1001, _sequence.next());
-            assertEquals(1001, _sequence.current());
-            _sequence.ensureMinimum(1002);
-            assertEquals(1002, _sequence.current());
+            _testBasicOperations(_sequence);
+            _testBasicOperations(_sequenceBulk);
         }
 
-        @Test
-        public void testPerformance()
+        void _testPerformance(DbSequence seq)
         {
             final int n = 1000;
             final long start = System.currentTimeMillis();
 
             for (int i = 0; i < n; i++)
-                assertEquals(i + 1, _sequence.next());
+                assertEquals(i + 1, seq.next());
 
             final long elapsed = System.currentTimeMillis() - start;
             final double perSecond = n / (elapsed / 1000.0);
@@ -348,8 +403,13 @@ public class DbSequenceManager
 //            assertTrue("Less than 100 iterations per second: " + perSecond, perSecond > 100);   // A very low bar
         }
 
-        @Test
-        public void multiThreadIncrementStressTest() throws Throwable
+        public void testPerformance()
+        {
+            _testPerformance(_sequence);
+            _testPerformance(_sequenceBulk);
+        }
+
+        void _multiThreadIncrementStressTest(DbSequence seq) throws Throwable
         {
             final int threads = 5;
             final int n = 1000;
@@ -359,7 +419,7 @@ public class DbSequenceManager
             final long start = System.currentTimeMillis();
 
             JunitUtil.createRaces(() -> {
-                int next = _sequence.next();
+                int next = seq.next();
                 if (!values.add(next))
                     duplicateValues.add(next);
             }, threads, n, 60);
@@ -375,6 +435,14 @@ public class DbSequenceManager
 
             assertTrue("Less than 100 iterations per second: " + perSecond, perSecond > 100);   // A very low bar
         }
+
+        @Test
+        public void multiThreadIncrementStressTest() throws Throwable
+        {
+            _multiThreadIncrementStressTest(_sequence);
+            _multiThreadIncrementStressTest(_sequenceBulk);
+        }
+
 
         @Test
         // Simple test that create() responds gracefully if the sequence already exists. See #19673.
@@ -396,6 +464,16 @@ public class DbSequenceManager
             JunitUtil.createRaces(() -> {
                 DbSequenceManager.ensure(JunitUtil.getTestContainer(), name, 0);
             }, threads, 1, 60);
+        }
+
+        @Test
+        public void testShutdown() throws Throwable
+        {
+            int first = _sequenceBulk.next();
+            _sequenceBulk.shutdownPre();
+            _sequenceBulk.shutdownStarted();
+            int after = _sequenceBulk.next();
+            assertEquals(first+1, after);
         }
 
         @After
