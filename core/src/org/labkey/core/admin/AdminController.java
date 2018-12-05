@@ -6218,21 +6218,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
-    public class ShowMoveFolderTreeAction extends SimpleViewAction<ManageFoldersForm>
-    {
-        public ModelAndView getView(ManageFoldersForm form, BindException errors)
-        {
-            return new MoveFolderTreeView(form, errors);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            root = root.addChild("Folder Management", getManageFoldersURL());
-            return root.addChild("Move Folder");
-        }
-    }
-
 
     public static class MoveFolderTreeView extends JspView<ManageFoldersForm>
     {
@@ -6244,9 +6229,14 @@ public class AdminController extends SpringActionController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class MoveFolderAction extends SimpleViewAction<ManageFoldersForm>
+    @ActionNames("ShowMoveFolderTree,MoveFolder")
+    public class MoveFolderAction extends FormViewAction<ManageFoldersForm>
     {
-        public ModelAndView getView(ManageFoldersForm form, BindException errors)
+        boolean showConfirmPage = false;
+        boolean moveFailed = false;
+
+        @Override
+        public void validateCommand(ManageFoldersForm form, Errors errors)
         {
             Container c = getContainer();
 
@@ -6254,34 +6244,46 @@ public class AdminController extends SpringActionController
                 throw new NotFoundException("Can't move the root folder.");  // Don't show move tree from root
 
             if (c.equals(ContainerManager.getSharedContainer()) || c.equals(ContainerManager.getHomeContainer()))
-                throw new UnsupportedOperationException("Moving /Shared or /home is not possible.");
+                errors.reject(ERROR_MSG, "Moving /Shared or /home is not possible.");
 
             Container newParent = isBlank(form.getTarget()) ? null : ContainerManager.getForPath(form.getTarget());
             if (null == newParent)
             {
                 errors.reject(ERROR_MSG, "Target '" + form.getTarget() + "' folder does not exist.");
-                return new MoveFolderTreeView(form, errors);    // Redisplay the move folder tree
             }
-
-            if (!newParent.hasPermission(getUser(), AdminPermission.class))
+            else if (!newParent.hasPermission(getUser(), AdminPermission.class))
             {
                 throw new UnauthorizedException();
             }
-
-            if (newParent.hasChild(c.getName()))
+            else if (newParent.hasChild(c.getName()))
             {
                 errors.reject(ERROR_MSG, "Error: The selected folder already has a folder with that name.  Please select a different location (or Cancel).");
-                return new MoveFolderTreeView(form, errors);    // Redisplay the move folder tree
             }
+        }
 
-            assert !errors.hasErrors();
+        @Override
+        public ModelAndView getView(ManageFoldersForm form, boolean reshow, BindException errors) throws Exception
+        {
+            if (showConfirmPage)
+                return new JspView<>("/org/labkey/core/admin/confirmProjectMove.jsp", form);
+            if (moveFailed)
+                return new SimpleErrorView(errors);
+            else
+                return new MoveFolderTreeView(form, errors);
+        }
 
+        @Override
+        public boolean handlePost(ManageFoldersForm form, BindException errors) throws Exception
+        {
+            Container c = getContainer();
+            Container newParent = ContainerManager.getForPath(form.getTarget());
             Container oldProject = c.getProject();
             Container newProject = newParent.isRoot() ? c : newParent.getProject();
+
             if (!oldProject.getId().equals(newProject.getId()) && !form.isConfirmed())
             {
-                getPageConfig().setTemplate(Template.Dialog);
-                return new JspView<>("/org/labkey/core/admin/confirmProjectMove.jsp", form);
+                showConfirmPage = true;
+                return false;   // reshow
             }
 
             try
@@ -6290,12 +6292,15 @@ public class AdminController extends SpringActionController
             }
             catch (ValidationException e)
             {
+                moveFailed = true;
                 getPageConfig().setTemplate(Template.Dialog);
                 for (ValidationError validationError : e.getErrors())
                 {
                     errors.addError(new LabKeyError(validationError.getMessage()));
                 }
-                return new SimpleErrorView(errors);
+                if (!errors.hasErrors())
+                    errors.addError(new LabKeyError("Move failed"));
+                return false;
             }
 
             if (form.isAddAlias())
@@ -6305,9 +6310,15 @@ public class AdminController extends SpringActionController
                 newAliases.add(c.getPath());
                 ContainerManager.saveAliasesForContainer(c, newAliases);
             }
+            return true;
+        }
 
+        @Override
+        public URLHelper getSuccessURL(ManageFoldersForm manageFoldersForm)
+        {
+            Container c = getContainer();
             c = ContainerManager.getForId(c.getId());      // Reload container to populate new location
-            return HttpView.redirect(new AdminUrlsImpl().getManageFoldersURL(c));
+            return new AdminUrlsImpl().getManageFoldersURL(c);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -9081,7 +9092,6 @@ public class AdminController extends SpringActionController
                     controller.new CustomizeEmailAction(),
                     controller.new DeleteCustomEmailAction(),
                     controller.new RenameFolderAction(),
-                    controller.new ShowMoveFolderTreeAction(),
                     controller.new MoveFolderAction(),
                     controller.new ConfirmProjectMoveAction(),
                     controller.new CreateFolderAction(),
