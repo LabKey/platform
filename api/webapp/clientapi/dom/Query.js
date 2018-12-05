@@ -136,10 +136,24 @@ LABKEY.Query = new function(impl, $) {
     function populateSelect(select, options, valueProperty, textProperty, initialValue, isRequired, includeBlankOption) {
         select.empty();
 
+        // if we have duplicate text options, fall back to displaying the value
+        var textOptions = {}, duplicates = {};
+        $.each(options, function(i, option) {
+            var textValue = option[textProperty];
+            if (textOptions[textValue] === undefined)
+                textOptions[textValue] = true;
+            else {
+                option[textProperty] = option[valueProperty];
+                duplicates[textValue] = true;
+            }
+        });
+
         var validInitialValue = false;
         $.each(options, function (i, option) {
             var value = valueProperty ? option[valueProperty] : option;
             var text = textProperty ? option[textProperty] : option;
+            if (duplicates[text] !== undefined)
+                text = value;
             var selected = initialValue && value === initialValue;
             if (selected)
                 validInitialValue = true;
