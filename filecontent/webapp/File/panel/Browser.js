@@ -276,7 +276,7 @@ Ext4.define('File.panel.Browser', {
          */
         _getActions : function(cb, containerPath, scope) {
             Ext4.Ajax.request({
-                url: LABKEY.ActionURL.buildURL('pipeline', 'actions.api', containerPath, {path : decodeURIComponent(scope.getFullFolderOffset()) }),
+                url: LABKEY.ActionURL.buildURL('pipeline', 'actions.api', containerPath, {path : scope.getFullFolderOffset() }),
                 method: 'GET',
                 disableCaching: false,
                 success : Ext4.isFunction(cb) ? cb : undefined,
@@ -2613,13 +2613,16 @@ Ext4.define('File.panel.Browser', {
         var onCreateDir = function(panel) {
 
             var path = this.getFolderURL();
+            if (!LABKEY.Utils.endsWith(path, this.folderSeparator))
+                path = path + this.folderSeparator;
             if (panel.getForm().isValid()) {
                 var values = panel.getForm().getValues();
                 if (values && values.folderName) {
                     var folder = values.folderName;
                     var browser = this;
+                    var modifiedPath = path;
                     this.fileSystem.createDirectory({
-                        path : path + this.folderSeparator + folder,
+                        path : this.fileSystem.encodePercent(path + folder),
                         success : function(path) {
                             win.close();
                             this.afterFileSystemChange();

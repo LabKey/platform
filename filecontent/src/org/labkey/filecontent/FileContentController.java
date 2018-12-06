@@ -1208,7 +1208,7 @@ public class FileContentController extends SpringActionController
             if (root != null && root.isValid())
             {
                 String webdavURL = root.getWebdavURL();
-                if (null != webdavURL && webdavURL.contains(URLEncoder.encode(FileContentService.PIPELINE_LINK)) && root.getContainer().equals(getContainer()))
+                if (null != webdavURL && webdavURL.contains(FileContentService.PIPELINE_LINK) && root.getContainer().equals(getContainer()))
                     ret.put(FileContentService.PIPELINE_LINK, WebdavService.getPath().append(getContainer().getParsedPath()).append(FileContentService.PIPELINE_LINK).toString());
             }
 

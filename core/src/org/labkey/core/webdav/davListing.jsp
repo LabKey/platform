@@ -71,9 +71,9 @@
             relativePath = resourcePath.subpath(listpage.root.size(),relativePath.size());
         %>
 
-        // the rootPath here is encoded but the rootOffset is not (but may have already been) - not sure if this is what we want
+        // Don't encode rootPath or rootOffset
         var fileSystem = Ext4.create('File.system.Webdav', {
-            rootPath: <%=q(Path.parse(request.getContextPath()).append(listpage.root).encode("/",null))%>,
+            rootPath: <%=q(Path.parse(request.getContextPath()).append(listpage.root).toString())%>,
             rootOffset: <%=q(relativePath.toString("/","/"))%>,
             rootName: <%=q(app.getServerName())%>
         });

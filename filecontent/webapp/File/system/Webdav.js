@@ -48,17 +48,17 @@
             }
 
             // '/home/@files' -- a stripped version of the rootPath
-            this.baseUrl = LABKEY.ActionURL.decodePath(this.rootPath.replace(this.contextUrl, ''));
+            this.baseUrl = this.rootPath.replace(this.contextUrl, '');
 
             this.offsetUrl = '/';
 
             if (this.rootOffset)
             {
-                if (this.rootOffset.indexOf(this.contextUrl) == 0)
+                if (this.rootOffset.indexOf(this.contextUrl) === 0)
                 {
                     this.rootOffset = this.rootOffset.substring(this.contextUrl.length);
                 }
-                this.offsetUrl = LABKEY.ActionURL.decodePath(this.rootOffset.replace(this.baseUrl, ''));
+                this.offsetUrl = this.rootOffset.replace(this.baseUrl, '');
             }
 
             this.callParent([config]);
@@ -81,18 +81,16 @@
 
         changeFromURL : function(rawURL)
         {
-            var decoded = LABKEY.ActionURL.decodePath(rawURL),
-                newRootOffset = decoded.replace(this.rootPath, '/');
-
-            this.changeOffsetURL(newRootOffset);
-
+            // rawURL is encoded
+            this.rootOffset  = LABKEY.ActionURL.decodePath(rawURL).replace(this.rootPath, '/');
+            this.offsetUrl = this.rootOffset.replace(this.baseUrl, '');
             return this.rootOffset;
         },
 
         changeOffsetURL : function(newRootOffset, encode)
         {
             this.rootOffset = newRootOffset;
-            this.offsetUrl = LABKEY.ActionURL.decodePath(this.rootOffset.replace(this.baseUrl, ''));
+            this.offsetUrl = this.rootOffset.replace(this.baseUrl, '');
 
             var path = this.concatPaths(this.rootPath, this.rootOffset);
 
@@ -298,7 +296,7 @@
         /**
          * Will create a directory at the provided location.  This does not perform permission checking, which can be done using canMkDir().
          * @param config Configuration properties.
-         * @param {String} config.path The path of the folder to create. This should be the full url webdav path
+         * @param {String} config.path The path of the folder to create. This should be the full url webdav path; '%' must be encoded
          * @param {Function} config.success Success callback function.  It will be called with the following arguments:
          * <li>Filesystem: A reference to the filesystem</li>
          * <li>Path: The path that was created</li>
@@ -336,6 +334,9 @@
             return true;
         },
 
+        encodePercent: function(str) {
+            return str.replace(/%/g, '%25');
+        },
 
         /**
          * Can be used to delete a file or folder.

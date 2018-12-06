@@ -61,7 +61,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
             return null;
 
         String webdavURL = root.getWebdavURL();
-        if (null != webdavURL && webdavURL.contains(URLEncoder.encode(PIPELINE_LINK)) && root.getContainer().equals(c))
+        if (null != webdavURL && webdavURL.contains(PIPELINE_LINK) && root.getContainer().equals(c))
             return PageFlowUtil.set(PIPELINE_LINK);
 
         return null;

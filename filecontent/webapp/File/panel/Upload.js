@@ -122,9 +122,12 @@ Ext4.define('File.panel.Upload', {
                     var uri = this.uploadPanel.fileSystem.concatPaths(root, file.fullPath ? file.fullPath : file.name);
 
                     var parentFolderUri = this.uploadPanel.fileSystem.getParentPath(uri);
+                    if (!LABKEY.Utils.endsWith(parentFolderUri, '/'))
+                        parentFolderUri = parentFolderUri + '/';
+
                     var suppressDirConflictError = (-1 != parentFolderUri.indexOf('%40cloud') || -1 != parentFolderUri.indexOf('@cloud'));
                     this.uploadPanel.fileSystem.createDirectory({
-                        path : parentFolderUri + '/' + file.name,
+                        path : parentFolderUri + this.uploadPanel.fileSystem.encodePercent(file.name),
                         suppressDirConflictError: suppressDirConflictError
                     });
                 }
