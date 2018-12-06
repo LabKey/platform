@@ -40,7 +40,7 @@
     {
         Ext4.Ajax.request({
             url: <%=q(startReportURL.getLocalURIString())%>,
-            method: 'GET',
+            method: 'POST',
             success: function(resp) {
                 var outputs = Ext4.dom.Query.select('table[@class=labkey-output]');
                 if (outputs && outputs.length > 0)

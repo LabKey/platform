@@ -379,7 +379,7 @@
                 var callConfig = mapIndexConfigParameters(config, MOVE_ACTION, MOVE_UP);
                 LABKEY.Ajax.request({
                     url: LABKEY.ActionURL.buildURL('project', 'moveWebPartAsync.api', config.containerPath),
-                    method : 'GET',
+                    method : 'POST',
                     success: LABKEY.Utils.getOnSuccess(callConfig),
                     failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(callConfig), callConfig.scope, true),
                     params: callConfig.params
@@ -427,7 +427,7 @@
                 var callConfig = mapIndexConfigParameters(config, MOVE_ACTION, MOVE_DOWN);
                 LABKEY.Ajax.request({
                     url: LABKEY.ActionURL.buildURL('project', 'moveWebPartAsync.api', config.containerPath),
-                    method : 'GET',
+                    method : 'POST',
                     success: LABKEY.Utils.getOnSuccess(callConfig),
                     failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(callConfig), callConfig.scope, true),
                     params: callConfig.params
@@ -472,7 +472,7 @@
                 var callConfig = mapIndexConfigParameters(config, REMOVE_ACTION, undefined);
                 LABKEY.Ajax.request({
                     url: LABKEY.ActionURL.buildURL('project', 'deleteWebPartAsync.api', config.containerPath),
-                    method : 'GET',
+                    method : 'POST',
                     success: LABKEY.Utils.getOnSuccess(callConfig),
                     failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(callConfig), callConfig.scope, true),
                     params: callConfig.params
@@ -484,7 +484,7 @@
                 var callConfig = mapIndexConfigParameters(config, TOGGLE_FRAME_ACTION, undefined);
                 LABKEY.Ajax.request({
                     url: LABKEY.ActionURL.buildURL('project', 'toggleWebPartFrameAsync.api', config.containerPath),
-                    method : 'GET',
+                    method : 'POST',
                     success: LABKEY.Utils.getOnSuccess(callConfig),
                     failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(callConfig), callConfig.scope, true),
                     params: callConfig.params
@@ -500,7 +500,7 @@
             {
                 LABKEY.Ajax.request({
                     url: LABKEY.ActionURL.buildURL('admin', 'moveTab.api', LABKEY.container.path),
-                    method: 'GET',
+                    method: 'POST',
                     params: {
                         pageId: pageId,
                         direction: MOVE_LEFT
@@ -528,7 +528,7 @@
             {
                 LABKEY.Ajax.request({
                     url: LABKEY.ActionURL.buildURL('admin', 'moveTab.api', LABKEY.container.path),
-                    method: 'GET',
+                    method: 'POST',
                     params: {
                         pageId: pageId,
                         direction: MOVE_RIGHT

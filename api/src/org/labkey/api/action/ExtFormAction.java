@@ -15,6 +15,9 @@
  */
 package org.labkey.api.action;
 
+import org.springframework.web.servlet.ModelAndView;
+
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 /**
@@ -24,7 +27,7 @@ import java.io.IOException;
  * User: Dave
  * Date: Sep 3, 2008
  */
-public abstract class ExtFormAction<FORM> extends ApiAction<FORM>
+public abstract class ExtFormAction<FORM> extends MutatingApiAction<FORM>
 {
     public ExtFormAction()
     {
