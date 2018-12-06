@@ -359,7 +359,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         {
             if (!_allowedDavNames.contains(davName))              // TODO and I don't think we need to encode
                 throw new IllegalStateException("unrecognized DavName");
-            relativePath += URLEncoder.encode(davName);
+            relativePath += davName;
             if (fileset != null)
                 relativePath += "/" + fileset;
         }
@@ -369,7 +369,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
     private static String _getRootPath(Container c, @Nullable String relativePath, boolean skipDavPrefix)
     {
         String webdavPrefix = skipDavPrefix ? "" : AppProps.getInstance().getContextPath() + "/" + WebdavService.getServletPath();
-        String rootPath = webdavPrefix + c.getEncodedPath();
+        String rootPath = webdavPrefix + c.getPath();
 
         if (!rootPath.endsWith("/"))
             rootPath += "/";
