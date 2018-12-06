@@ -122,6 +122,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import static com.rometools.utils.Strings.isBlank;
+import static org.apache.commons.lang3.StringUtils.trimToNull;
 import static org.labkey.api.util.PageFlowUtil.filter;
 
 public class SecurityController extends SpringActionController
@@ -642,7 +644,7 @@ public class SecurityController extends SpringActionController
             for (String rawEmail : invalidEmails)
             {
                 // Ignore lines of all whitespace, otherwise show an error.
-                String e = StringUtils.trimToNull(rawEmail);
+                String e = trimToNull(rawEmail);
                 if (null != e)
                     errors.reject(ERROR_MSG, "Could not add user " + filter(e) + ": Invalid email address");
             }
@@ -676,7 +678,7 @@ public class SecurityController extends SpringActionController
             for (String rawEmail : invalidEmails)
             {
                 // Ignore lines of all whitespace, otherwise show an error.
-                String e = StringUtils.trimToNull(rawEmail);
+                String e = trimToNull(rawEmail);
                 if (null != e)
                     errors.reject(ERROR_MSG, "Could not remove user " + filter(e) + ": Invalid email address");
             }
@@ -1043,7 +1045,9 @@ public class SecurityController extends SpringActionController
     {
         public void export(GroupForm form, HttpServletResponse response, BindException errors) throws Exception
         {
-            String group = form.getGroup();
+            String group = trimToNull(form.getGroup());
+            if (null == group)
+                throw new NotFoundException("group not specified");
             if (group.startsWith("/"))
                 group = group.substring(1);
             // validate that group is in the current project!
