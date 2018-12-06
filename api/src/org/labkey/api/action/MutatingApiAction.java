@@ -26,7 +26,7 @@ import javax.servlet.http.HttpServletResponse;
  * User: Dave
  * Date: May 25, 2009
  */
-public abstract class MutatingApiAction<FORM> extends ApiAction<FORM>
+public abstract class MutatingApiAction<FORM> extends ReadOnlyApiAction<FORM>
 {
     public MutatingApiAction()
     {
