@@ -2002,7 +2002,7 @@ public class QueryController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.Configure.class)
-    public class SaveQueryViewsAction extends ApiAction<SimpleApiJsonForm>
+    public class SaveQueryViewsAction extends MutatingApiAction<SimpleApiJsonForm>
     {
         @Override
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors)
@@ -3511,7 +3511,7 @@ public class QueryController extends SpringActionController
     /**
      * Base action class for insert/update/delete actions
      */
-    public abstract class BaseSaveRowsAction extends ApiAction<ApiSaveRowsForm>
+    public abstract class BaseSaveRowsAction extends MutatingApiAction<ApiSaveRowsForm>
     {
         public static final String PROP_SCHEMA_NAME = "schemaName";
         public static final String PROP_QUERY_NAME = "queryName";

@@ -6939,7 +6939,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class RevertFolderAction extends ApiAction<RevertFolderForm>
+    public class RevertFolderAction extends MutatingApiAction<RevertFolderForm>
     {
         public ApiResponse execute(RevertFolderForm form, BindException errors)
         {
@@ -8144,7 +8144,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class ShowTabAction extends ApiAction<TabActionForm>
+    public class ShowTabAction extends MutatingApiAction<TabActionForm>
     {
         public void validateCommand(TabActionForm form, Errors errors)
         {
@@ -8208,7 +8208,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class MoveTabAction extends ApiAction<MoveTabForm>
+    public class MoveTabAction extends MutatingApiAction<MoveTabForm>
     {
         @Override
         public ApiResponse execute(MoveTabForm form, BindException errors)

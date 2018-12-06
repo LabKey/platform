@@ -24,6 +24,8 @@
 <%@ page import="org.labkey.core.login.LoginController" %>
 <%@ page import="org.labkey.core.user.UserController" %>
 <%@ page import="org.labkey.core.user.UserController.ChangeEmailAction" %>
+<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.view.NotFoundException" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<UserController.UserForm> me = (JspView<UserController.UserForm>) HttpView.currentView();
@@ -33,9 +35,16 @@
 
     String currentEmail;
     if (!isUserManager)
+    {
         currentEmail = getUser().getEmail();
+    }
     else
-        currentEmail = UserManager.getUser(form.getUserId()).getEmail();
+    {
+        User u = UserManager.getUser(form.getUserId());
+        if (null == u || form.getUserId() <= 0)
+            throw new NotFoundException();
+        currentEmail = u.getEmail();
+    }
 
     String errors = formatMissedErrorsStr("form");
     if (errors.length() > 0)

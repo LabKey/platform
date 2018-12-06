@@ -1537,7 +1537,7 @@ public class ReportsController extends SpringActionController
      * Ajax action to start a pipeline-based R view.
      */
     @RequiresPermission(ReadPermission.class)
-    public class StartBackgroundRReportAction extends ApiAction<RReportBean>
+    public class StartBackgroundRReportAction extends MutatingApiAction<RReportBean>
     {
         public ApiResponse execute(RReportBean form, BindException errors) throws Exception
         {

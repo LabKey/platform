@@ -30,6 +30,7 @@ import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.HasViewContext;
+import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -711,7 +712,7 @@ public class ProjectController extends SpringActionController
 
     @RequiresPermission(AdminPermission.class)
     @ApiVersion(10.2)
-    public class DeleteWebPartAsyncAction extends ApiAction<CustomizePortletApiForm>
+    public class DeleteWebPartAsyncAction extends MutatingApiAction<CustomizePortletApiForm>
     {
         @Override
         public ApiResponse execute(CustomizePortletApiForm customizePortletForm, BindException errors)
@@ -742,7 +743,7 @@ public class ProjectController extends SpringActionController
 
     @RequiresPermission(AdminPermission.class)
     @ApiVersion(10.2)
-    public class MoveWebPartAsyncAction extends ApiAction<CustomizePortletApiForm>
+    public class MoveWebPartAsyncAction extends MutatingApiAction<CustomizePortletApiForm>
     {
         @Override
         public ApiResponse execute(CustomizePortletApiForm movePortletForm, BindException errors)

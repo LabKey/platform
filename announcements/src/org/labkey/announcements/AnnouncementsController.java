@@ -1605,7 +1605,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class SetBulkEmailOptions extends ApiAction<AbstractConfigTypeProvider.EmailConfigFormImpl>
+    public class SetBulkEmailOptions extends MutatingApiAction<AbstractConfigTypeProvider.EmailConfigFormImpl>
     {
         @Override
         public ApiResponse execute(AbstractConfigTypeProvider.EmailConfigFormImpl form, BindException errors)

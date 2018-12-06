@@ -663,7 +663,7 @@ public class CoreController extends SpringActionController
 
     // Requires at least insert permission. Will check for admin if needed
     @RequiresPermission(InsertPermission.class)
-    public class CreateContainerAction extends ApiAction<SimpleApiJsonForm>
+    public class CreateContainerAction extends MutatingApiAction<SimpleApiJsonForm>
     {
         @Override
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors)
@@ -767,7 +767,7 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class MoveContainerAction extends ApiAction<SimpleApiJsonForm>
+    public class MoveContainerAction extends MutatingApiAction<SimpleApiJsonForm>
     {
         private Container target;
         private Container parent;
@@ -1555,7 +1555,7 @@ public class CoreController extends SpringActionController
 
     //Note: ModuleProperty.saveValue() performs additional permissions check
     @RequiresPermission(ReadPermission.class) @RequiresLogin
-    public class SaveModulePropertiesAction extends ApiAction<SaveModulePropertiesForm>
+    public class SaveModulePropertiesAction extends MutatingApiAction<SaveModulePropertiesForm>
     {
         @Override
         public ApiResponse execute(SaveModulePropertiesForm form, BindException errors)
@@ -1851,9 +1851,8 @@ public class CoreController extends SpringActionController
         if (form.getArchiveFilePath() != null && form.getArchiveFilePath().toLowerCase().endsWith(".zip"))
         {
             VirtualFile vf = getArchiveFileParent(form.getArchiveFilePath());
-            return vf.getXmlBean("folder.xml") == null && vf.getXmlBean("study.xml") == null;
+            return null != vf && vf.getXmlBean("folder.xml") == null && vf.getXmlBean("study.xml") == null;
         }
-
         return false;
     }
 
@@ -2276,7 +2275,7 @@ public class CoreController extends SpringActionController
     }
 
     @AdminConsoleAction(AdminOperationsPermission.class)
-    public class ScriptEnginesDeleteAction extends ApiAction<ExternalScriptEngineDefinitionImpl>
+    public class ScriptEnginesDeleteAction extends MutatingApiAction<ExternalScriptEngineDefinitionImpl>
     {
         public ApiResponse execute(ExternalScriptEngineDefinitionImpl def, BindException errors)
         {
