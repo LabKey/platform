@@ -730,6 +730,7 @@ public class IssuesController extends SpringActionController
                 IssueValidation.validateNotifyList(issuesForm, errors);
                 IssueValidation.validateAssignedTo(issuesForm, getContainer(), errors);
                 IssueValidation.validateStringFields(issuesForm, ccc, errors);
+                IssueValidation.validateComments(issuesForm, errors);
             }
         }
 
@@ -1059,6 +1060,7 @@ public class IssuesController extends SpringActionController
                 if (form.getStrings().containsKey("action") && !IssuesController.CloseAction.class.equals(form.getAction()))
                     IssueValidation.validateAssignedTo(form, getContainer(), errors);
                 IssueValidation.validateStringFields(form, getColumnConfiguration(), errors);
+                IssueValidation.validateComments(form, errors);
             }
         }
 

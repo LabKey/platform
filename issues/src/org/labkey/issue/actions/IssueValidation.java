@@ -34,6 +34,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.view.ViewServlet;
 import org.labkey.issue.CustomColumnConfiguration;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.model.Issue;
@@ -256,5 +257,11 @@ public class IssueValidation
         // this sets the collection of integer ids for all related issues
         issue.setRelatedIssues(newRelatedIssues);
         return true;
+    }
+
+    public static void validateComments(IssuesController.IssuesForm form, Errors errors)
+    {
+        if (!ViewServlet.validChars(form.getComment()))
+            errors.reject(SpringActionController.ERROR_MSG, "Comment has invalid characters");
     }
 }
