@@ -32,6 +32,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -168,10 +169,16 @@ public class PipelineQuerySchema extends UserSchema
         }
         else if (TRIGGER_CONFIGURATIONS_TABLE_NAME.equalsIgnoreCase(name) && getUser().hasRootPermission(AdminOperationsPermission.class))
         {
-            return new TriggerConfigurationsTable(this).init();
+            return createTriggerConfigurationsTable();
         }
         
         return null;
+    }
+
+    // for pipeline internal use only; other uses should go through createTable() above for proper permissions check
+    protected SimpleUserSchema.SimpleTable<PipelineQuerySchema> createTriggerConfigurationsTable()
+    {
+        return new TriggerConfigurationsTable(this).init();
     }
 
     public Set<String> getTableNames()

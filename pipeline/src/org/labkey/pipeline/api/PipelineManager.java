@@ -236,7 +236,7 @@ public class PipelineManager
         try
         {
             PipelineQuerySchema schema = new PipelineQuerySchema(user, container);
-            TableInfo table = schema.getTable(PipelineQuerySchema.TRIGGER_CONFIGURATIONS_TABLE_NAME);
+            TableInfo table = schema.createTriggerConfigurationsTable();  // bypass security check since this is internal, see issue 36249
             table.getUpdateService().truncateRows(user, container, null, null);
         }
         catch (SQLException e)
