@@ -436,7 +436,8 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         }
         else if (AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME.equals(key.getName()))
         {
-            return AbstractAssayProvider.findType(value, getProvider().getParticipantVisitResolverTypes()).getDescription();
+            if (!getProvider().getParticipantVisitResolverTypes().isEmpty())
+                return AbstractAssayProvider.findType(value, getProvider().getParticipantVisitResolverTypes()).getDescription();
         }
 
         PdLookupForeignKey lookupKey = null;

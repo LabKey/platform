@@ -332,7 +332,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         }
 
         DisplayColumn participantVisitResolverCol = view.getDataRegion().getDisplayColumn(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME);
-        if (participantVisitResolverCol != null)
+        if (participantVisitResolverCol != null && !form.getProvider().getParticipantVisitResolverTypes().isEmpty())
         {
             view.getDataRegion().replaceDisplayColumn(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME,
                     new ParticipantVisitResolverChooser(participantVisitResolverCol.getName(), form.getProvider().getParticipantVisitResolverTypes(),
@@ -525,8 +525,11 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             if (entry.getKey().getName().equals(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME))
             {
                 ParticipantVisitResolverType resolverType = AbstractAssayProvider.findType(entry.getValue(), newRunForm.getProvider().getParticipantVisitResolverTypes());
-                resolverType.addHiddenFormFields(newRunForm, insertView);
-                break;
+                if (resolverType != null)
+                {
+                    resolverType.addHiddenFormFields(newRunForm, insertView);
+                    break;
+                }
             }
         }
 
