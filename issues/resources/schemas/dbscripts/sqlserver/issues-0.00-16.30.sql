@@ -25,44 +25,11 @@ CREATE TABLE issues.Issues
     Container ENTITYID NOT NULL,
     IssueId INT IDENTITY(1,1) NOT NULL,
     EntityId ENTITYID DEFAULT NEWID(),    -- used for attachments
-
-    Title NVARCHAR(255) NOT NULL,
-    Status NVARCHAR(8) NOT NULL,
-    AssignedTo USERID NOT NULL,
-    Type NVARCHAR(32),
-
-    Area NVARCHAR(32),
-
-    Priority INT NOT NULL DEFAULT 2,
-    Milestone NVARCHAR(32),
-    BuildFound NVARCHAR(32),
-
-    ModifiedBy USERID NOT NULL,
-    Modified DATETIME DEFAULT GETDATE(),
-
-    CreatedBy USERID NOT NULL,
-    Created DATETIME DEFAULT GETDATE(),
-    Tag NVARCHAR(32),
-
-    ResolvedBy USERID,
-    Resolved DATETIME,
-    Resolution NVARCHAR(32),
     Duplicate INT,
-
-    ClosedBy USERID,
-    Closed DATETIME,
-
-    Int1 INT NULL,
-    Int2 INT NULL,
-    String1 VARCHAR(200) NULL,
-    String2 VARCHAR(200) NULL,
-    NotifyList TEXT,
     LastIndexed DATETIME NULL,
 
     CONSTRAINT PK_Issues PRIMARY KEY (IssueId)
 );
-CREATE INDEX IX_Issues_AssignedTo ON issues.Issues (AssignedTo);
-CREATE INDEX IX_Issues_Status ON issues.Issues (Status);
 
 CREATE TABLE issues.Comments
 (
@@ -101,25 +68,6 @@ CREATE TABLE issues.EmailPrefs
     CONSTRAINT FK_EmailPrefs_Principals FOREIGN KEY (UserId) REFERENCES core.Principals (UserId),
 );
 
-/* issues-10.20-10.30.sql */
-
-ALTER TABLE issues.Issues ADD
-    String3 VARCHAR(200) NULL,
-    String4 VARCHAR(200) NULL,
-    String5 VARCHAR(200) NULL;
-
-ALTER TABLE issues.Issues
-    ALTER COLUMN Area NVARCHAR(200) NULL;
-
- ALTER TABLE issues.Issues
-    ALTER COLUMN Milestone NVARCHAR(200) NULL;
-
- ALTER TABLE issues.Issues
-    ALTER COLUMN Type NVARCHAR(200) NULL;
-    
- ALTER TABLE issues.Issues
-    ALTER COLUMN Resolution NVARCHAR(200) NULL;
-
 /* issues-12.30-13.10.sql */
 
 -- Move the column settings from properties to a proper table, add column permissions
@@ -146,16 +94,6 @@ INSERT INTO issues.CustomColumns
 -- These properties have been moved to a dedicated table
 DELETE FROM prop.Properties WHERE "Set" IN (SELECT "Set" FROM prop.PropertySets WHERE Category = 'IssuesCaptions');
 DELETE FROM prop.PropertySets WHERE Category = 'IssuesCaptions';
-
-UPDATE issues.issues SET type = NULL WHERE type = '';
-UPDATE issues.issues SET area = NULL WHERE area = '';
-UPDATE issues.issues SET milestone = NULL WHERE milestone = '';
-UPDATE issues.issues SET resolution = NULL WHERE resolution = '';
-UPDATE issues.issues SET string1 = NULL WHERE string1 = '';
-UPDATE issues.issues SET string2 = NULL WHERE string2 = '';
-UPDATE issues.issues SET string3 = NULL WHERE string3 = '';
-UPDATE issues.issues SET string4 = NULL WHERE string4 = '';
-UPDATE issues.issues SET string5 = NULL WHERE string5 = '';
 
 /* issues-14.10-14.20.sql */
 
@@ -209,19 +147,3 @@ ALTER TABLE issues.IssueListDef ALTER COLUMN Label NVARCHAR(200) NOT NULL;
 /* issues-16.20-16.30.sql */
 
 ALTER TABLE issues.issuelistdef ADD kind NVARCHAR(200) NOT NULL DEFAULT 'IssueDefinition';
-
-EXEC core.executeJavaUpgradeCode 'upgradeSpecialFields';
-
-DROP INDEX IX_Issues_AssignedTo ON issues.issues;
-DROP INDEX IX_Issues_Status ON issues.issues;
-
--- Must drop default constraint before dropping column
-EXEC core.fn_dropifexists @objname='Issues', @objschema='issues', @objtype='DEFAULT', @subobjname='Priority'
-EXEC core.fn_dropifexists @objname='Issues', @objschema='issues', @objtype='DEFAULT', @subobjname='Created'
-EXEC core.fn_dropifexists @objname='Issues', @objschema='issues', @objtype='DEFAULT', @subobjname='Modified'
-
--- delete obsolete fields from the issues.issues table
-EXEC core.executeJavaUpgradeCode 'dropLegacyFields';
-
--- drop redundant properties from the issues provisioned tables
-EXEC core.executeJavaUpgradeCode 'dropRedundantProperties';

@@ -193,11 +193,4 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
     {
         new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute("UPDATE issues.issues SET lastIndexed=NULL");
     }
-
-    @Nullable
-    @Override
-    public UpgradeCode getUpgradeCode()
-    {
-        return new IssuesUpgradeCode();
-    }
 }

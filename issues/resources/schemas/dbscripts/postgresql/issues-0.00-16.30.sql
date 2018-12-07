@@ -1,3 +1,5 @@
+-- noinspection SqlNoDataSourceInspectionForFile
+
 /*
  * Copyright (c) 2010-2018 LabKey Corporation
  *
@@ -24,47 +26,11 @@ CREATE TABLE issues.Issues
     Container ENTITYID NOT NULL,
     IssueId SERIAL,
     EntityId ENTITYID NOT NULL,
-
-    Title VARCHAR(255) NOT NULL,
-    Status VARCHAR(8) NOT NULL,
-    AssignedTo USERID NOT NULL,
-    Type VARCHAR(32),
-
-    --Product VARCHAR(32), -- implied by parent?
-    Area VARCHAR(32),
-    --SubArea VARCHAR(32) -- nah
-
-    Priority INT NOT NULL DEFAULT 2,
-    --Severity INT NOT NULL DEFAULT 2, -- let's just use Priority for now
-    Milestone VARCHAR(32),
-    BuildFound VARCHAR(32),
-
-    ModifiedBy USERID NOT NULL,
-    Modified TIMESTAMP DEFAULT now(),
-
-    CreatedBy USERID NOT NULL,
-    Created TIMESTAMP DEFAULT now(),
-    Tag VARCHAR(32),
-
-    ResolvedBy USERID,
-    Resolved TIMESTAMP,
-    Resolution VARCHAR(32),
     Duplicate INT,
-
-    ClosedBy USERID,
-    Closed TIMESTAMP,
-
-    Int1 INT NULL,
-    Int2 INT NULL,
-    String1 VARCHAR(200) NULL,
-    String2 VARCHAR(200) NULL,
-    NotifyList TEXT,
     LastIndexed TIMESTAMP NULL,
 
     CONSTRAINT PK_Issues PRIMARY KEY (IssueId)
 );
-CREATE INDEX IX_Issues_AssignedTo ON issues.Issues (AssignedTo);
-CREATE INDEX IX_Issues_Status ON issues.Issues (Status);
 
 CREATE TABLE issues.Comments
 (
@@ -100,21 +66,6 @@ CREATE TABLE issues.EmailPrefs
     CONSTRAINT FK_EmailPrefs_Principals FOREIGN KEY (UserId) REFERENCES core.Principals (UserId)
 );
 
-/* issues-10.20-10.30.sql */
-
-ALTER TABLE issues.Issues
-    ADD COLUMN String3 VARCHAR(200) NULL,
-    ADD COLUMN String4 VARCHAR(200) NULL,
-    ADD COLUMN String5 VARCHAR(200) NULL;
-
-/* issues-11.20-11.30.sql */
-
-ALTER TABLE issues.Issues
-    ALTER COLUMN Area TYPE VARCHAR(200),
-    ALTER COLUMN Type TYPE VARCHAR(200),
-    ALTER COLUMN Milestone TYPE VARCHAR(200),
-    ALTER COLUMN Resolution TYPE VARCHAR(200);
-
 /* issues-12.30-13.10.sql */
 
 -- Move the column settings from properties to a proper table, add column permissions
@@ -141,16 +92,6 @@ INSERT INTO issues.CustomColumns
 -- These properties have been moved to a dedicated table
 DELETE FROM prop.Properties WHERE Set IN (SELECT Set FROM prop.PropertySets WHERE Category = 'IssuesCaptions');
 DELETE FROM prop.PropertySets WHERE Category = 'IssuesCaptions';
-
-UPDATE issues.issues SET type = NULL WHERE type = '';
-UPDATE issues.issues SET area = NULL WHERE area = '';
-UPDATE issues.issues SET milestone = NULL WHERE milestone = '';
-UPDATE issues.issues SET resolution = NULL WHERE resolution = '';
-UPDATE issues.issues SET string1 = NULL WHERE string1 = '';
-UPDATE issues.issues SET string2 = NULL WHERE string2 = '';
-UPDATE issues.issues SET string3 = NULL WHERE string3 = '';
-UPDATE issues.issues SET string4 = NULL WHERE string4 = '';
-UPDATE issues.issues SET string5 = NULL WHERE string5 = '';
 
 /* issues-14.10-14.20.sql */
 
@@ -190,7 +131,6 @@ CREATE TABLE issues.IssueDef
 -- Rename from IssueDef to IssueListDef
 ALTER TABLE issues.IssueDef RENAME TO IssueListDef;
 
-
 ALTER TABLE issues.Issues ADD COLUMN IssueDefId INTEGER;
 ALTER TABLE issues.Issues ADD CONSTRAINT FK_IssueListDef_IssueDefId_RowId FOREIGN KEY (IssueDefId) REFERENCES issues.IssueListDef(RowId);
 
@@ -201,14 +141,3 @@ ALTER TABLE issues.IssueListDef ALTER COLUMN Label SET NOT NULL;
 /* issues-16.20-16.30.sql */
 
 ALTER TABLE issues.issuelistdef ADD COLUMN kind VARCHAR(200) NOT NULL DEFAULT 'IssueDefinition';
-
-SELECT core.executeJavaUpgradeCode('upgradeSpecialFields');
-
-DROP INDEX issues.IX_Issues_AssignedTo;
-DROP INDEX issues.IX_Issues_Status;
-
--- delete obsolete fields from the issues.issues table
-SELECT core.executeJavaUpgradeCode('dropLegacyFields');
-
--- drop redundant properties from the issues provisioned tables
-SELECT core.executeJavaUpgradeCode('dropRedundantProperties');

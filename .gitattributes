@@ -1187,14 +1187,12 @@ issues/src/org/labkey/issue/IssueGroupListener.java -text
 issues/src/org/labkey/issue/IssueUpdateEmailTemplate.java -text
 issues/src/org/labkey/issue/IssueUserListener.java -text
 issues/src/org/labkey/issue/IssuesModule.java -text
-issues/src/org/labkey/issue/IssuesUpgradeCode.java -text
 issues/src/org/labkey/issue/actions/ChangeSummary.java -text
 issues/src/org/labkey/issue/actions/DeleteIssueListAction.java -text
 issues/src/org/labkey/issue/actions/GetRelatedFolder.java -text
 issues/src/org/labkey/issue/actions/InsertIssueDefAction.java -text
 issues/src/org/labkey/issue/actions/IssueServiceAction.java -text
 issues/src/org/labkey/issue/actions/IssueValidation.java -text
-issues/src/org/labkey/issue/actions/RepairIssueLookupsAction.java -text
 issues/src/org/labkey/issue/actions/ValidateIssueDefNameAction.java -text
 issues/src/org/labkey/issue/model/ColumnConfigurationCache.java -text
 issues/src/org/labkey/issue/model/CommentAttachmentParent.java -text
