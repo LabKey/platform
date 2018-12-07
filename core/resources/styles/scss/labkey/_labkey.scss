@@ -926,10 +926,13 @@ table.labkey-manage-display
     padding-top: 19px;
   }
 
-  > pre, .code { //36031
+  > pre { //36031
     padding-left: 0.25in;
-    background-color: #EEEEEE;
     border: 1px solid #CCCCCC;
+  }
+
+  > pre, code {
+    background-color: #EEEEEE;
     color: #2020BE;
     font-family: $lk-font-family-code;
   }
