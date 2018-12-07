@@ -222,6 +222,7 @@ LABKEY.Query = new function(impl, $) {
         var queryKey = schemaName + '|' + queryName + "|" + viewName;
         if (LABKEY.Utils.isArray(QUERY_COLUMNS_CACHE[queryKey])) {
             populateColumnsWithFilterFn(select, QUERY_COLUMNS_CACHE[queryKey], filterFn, initValue, isRequired, includeBlankOption);
+            LABKEY.Utils.signalWebDriverTest("queryColumnsLoaded"); // used for test
         }
         else if (QUERY_COLUMNS_CACHE[queryKey] === 'loading') {
             setTimeout(loadQueryColumns, 500, select, schemaName, queryName, viewName, filterFn, initValue, isRequired, includeBlankOption);
@@ -247,6 +248,7 @@ LABKEY.Query = new function(impl, $) {
                     }
 
                     populateColumnsWithFilterFn(select, QUERY_COLUMNS_CACHE[queryKey], filterFn, initValue, isRequired, includeBlankOption);
+                    LABKEY.Utils.signalWebDriverTest("queryColumnsLoaded"); // used for test
                 }
             });
         }
