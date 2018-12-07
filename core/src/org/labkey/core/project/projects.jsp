@@ -166,11 +166,12 @@ Ext4.onReady(function() {
         store: store
     };
 
-    //NOTE: separated to differentiate site/app admins from those w/ admin permission in this container
-    if (<%=isRootAdmin%>) {
+    //NOTE: separated to differentiate site/app admins from those w/ admin permission in this container (projects require site/app admin)
+    if (((config.noun === 'Project') && <%=isRootAdmin%>)
+            || ((config.noun === 'Subfolder') && LABKEY.Security.currentUser.isAdmin)) {
         panelCfg.buttons = [{
             text: 'Create New ' + config.noun,
-            hidden: !LABKEY.Security.currentUser.isAdmin || config.hideCreateButton,
+            hidden: config.hideCreateButton,
             handler: function() {
                 var isProject = panel.containerTypes && panel.containerTypes.match(/project/),
                     params = { returnUrl: <%= q(getActionURL().toString()) %> };
