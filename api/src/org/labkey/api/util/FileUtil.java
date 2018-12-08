@@ -375,6 +375,8 @@ public class FileUtil
         String str2 = str;
         if (str2.startsWith("/"))
             str2 = "file://" + str;
+
+        LOG.debug("CreateUri from: " + str + " [" + Thread.currentThread().getStackTrace()[2].toString() + "]");
         str2 = str2.replace(" ", "%20"); // Spaces in paths make URI unhappy
         try
         {

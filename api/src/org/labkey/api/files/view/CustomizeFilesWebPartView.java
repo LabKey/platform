@@ -208,12 +208,12 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
                     if (null != path)
                     {
                         if (Files.exists(path.resolve(fileRoot)))
-                            treeFileRoot = c.getEncodedPath() + fileRoot;
+                            treeFileRoot = c.getPath() + "/" + fileRoot;
                     }
                 }
                 else
                 {
-                    treeFileRoot = c.getEncodedPath() + fileRoot;
+                    treeFileRoot = c.getPath() + "/" + fileRoot;
                 }
             }
             else if (legacyFileRoot != null) // legacy file root
