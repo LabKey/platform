@@ -842,7 +842,7 @@ public class AdminController extends SpringActionController
     @RequiresNoPermission
     @AllowedDuringUpgrade
     @AllowedBeforeInitialUserIsSet
-    public class HealthCheckAction extends ApiAction<HealthCheckForm>
+    public class HealthCheckAction extends ReadOnlyApiAction<HealthCheckForm>
     {
         @Override
         public ApiResponse execute(HealthCheckForm form, BindException errors) throws Exception
@@ -7815,7 +7815,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class ExperimentalFeatureAction extends ApiAction<ExperimentalFeaturesForm>
+    public class ExperimentalFeatureAction extends MutatingApiAction<ExperimentalFeaturesForm>
     {
         @Override
         public ApiResponse execute(ExperimentalFeaturesForm form, BindException errors)
@@ -7942,7 +7942,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class CustomizeMenuAction extends ApiAction<CustomizeMenuForm>
+    public class CustomizeMenuAction extends MutatingApiAction<CustomizeMenuForm>
     {
         public ApiResponse execute(CustomizeMenuForm form, BindException errors)
         {
@@ -8420,7 +8420,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class ClearDeletedTabFoldersAction extends ApiAction<DeletedFoldersForm>
+    public class ClearDeletedTabFoldersAction extends MutatingApiAction<DeletedFoldersForm>
     {
         @Override
         public ApiResponse execute(DeletedFoldersForm form, BindException errors)
@@ -9010,7 +9010,7 @@ public class AdminController extends SpringActionController
     @Marshal(Marshaller.Jackson)
     @RequiresNoPermission
     @AllowedBeforeInitialUserIsSet
-    public class ConfigurationSummaryAction extends ApiAction<Object>
+    public class ConfigurationSummaryAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public Object execute(Object o, BindException errors)

@@ -617,8 +617,6 @@ public class ProjectController extends SpringActionController
 
         public ModelAndView getView(AddWebPartForm form, boolean reshow, BindException errors)
         {
-            // UNDONE: this seems to be used a link, fix to make POST
-            handlePost(form, errors);
             URLHelper successURL = getSuccessURL(form);
             if (null != successURL)
                 return HttpView.redirect(successURL);
