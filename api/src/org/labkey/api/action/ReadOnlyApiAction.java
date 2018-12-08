@@ -50,9 +50,10 @@ import java.net.SocketTimeoutException;
 import java.util.Map;
 
 /**
- * Base class for API actions, which typically consume/produce JSON instead of HTML.
+ * NOTE: Even if your action is read-only, consider extending MutableApiAction anyway if it does not need to support GET,
+ * and most API actions _do_not_ need to support GET, because they are called from code.
  *
- * NOTE: Despite the name this does not enforce ReadOnly-ness, it is an marker of intent however.
+ * NOTE: Despite the name this does not enforce ReadOnly-ness, it is only a marker of intent.
  *
  * User: Dave
  * Date: Feb 8, 2008

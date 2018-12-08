@@ -59,6 +59,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
@@ -1120,7 +1121,8 @@ public class Portal
         ActionURL currentURL = viewContext.getActionURL();
         StringBuilder sb = new StringBuilder();
         sb.append("<div>\n");
-        sb.append("<form class=\"form-inline ").append(pullClass).append(" ").append(visibilityClass).append("\" action=\"").append(PageFlowUtil.urlProvider(ProjectUrls.class).getAddWebPartURL(c)).append("\">\n");
+        sb.append("<form method=\"POST\" class=\"form-inline ").append(pullClass).append(" ").append(visibilityClass).append("\" action=\"").append(PageFlowUtil.urlProvider(ProjectUrls.class).getAddWebPartURL(c)).append("\">\n");
+        sb.append("<input type=\"hidden\" name=\"X-LABKEY-CSRF\" value=\"").append(PageFlowUtil.filter(CSRFUtil.getExpectedToken(viewContext))).append("\"/>\n");
         sb.append("<input type=\"hidden\" name=\"pageId\" value=\"").append(PageFlowUtil.filter(bean.pageId)).append("\"/>\n");
         sb.append("<input type=\"hidden\" name=\"location\" value=\"").append(bean.location).append("\"/>\n");
         sb.append(ReturnUrlForm.generateHiddenFormField(currentURL)).append("\n");
