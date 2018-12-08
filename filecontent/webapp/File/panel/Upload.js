@@ -127,7 +127,7 @@ Ext4.define('File.panel.Upload', {
 
                     var suppressDirConflictError = (-1 != parentFolderUri.indexOf('%40cloud') || -1 != parentFolderUri.indexOf('@cloud'));
                     this.uploadPanel.fileSystem.createDirectory({
-                        path : parentFolderUri + this.uploadPanel.fileSystem.encodePercent(file.name),
+                        path : this.uploadPanel.fileSystem.encodePercent(parentFolderUri + file.name),
                         suppressDirConflictError: suppressDirConflictError
                     });
                 }

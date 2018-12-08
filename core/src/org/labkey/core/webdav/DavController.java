@@ -6731,8 +6731,8 @@ public class DavController extends SpringActionController
             return "Filename may not contain any of these characters: " + restrictedPrintable;
         if (StringUtils.containsAny(s, "\t\n\r"))
             return "Filename may not contain 'tab', 'new line', or 'return' characters.";
-        if (StringUtils.contains("-$%", s.charAt(0)))
-            return "Filename may not begin with any of these characters: -$%";
+        if (StringUtils.contains("-$", s.charAt(0)))
+            return "Filename may not begin with any of these characters: -$";
         if (Pattern.matches(".*\\s-[^ ].*",s))
             return "Filename may not contain space followed by dash.";
         return null;
@@ -6750,6 +6750,7 @@ public class DavController extends SpringActionController
             assertNull(isAllowedFileName("a b"));
             assertNull(isAllowedFileName("a%b"));
             assertNull(isAllowedFileName("a$b"));
+            assertNull(isAllowedFileName("%ab"));                               
 
             assertNotNull(isAllowedFileName(null));
             assertNotNull(isAllowedFileName(""));
@@ -6769,7 +6770,7 @@ public class DavController extends SpringActionController
             assertNotNull(isAllowedFileName("a`b"));
             assertNotNull(isAllowedFileName("$ab"));
             assertNotNull(isAllowedFileName("-ab"));
-            assertNotNull(isAllowedFileName("%a`b"));
+            assertNotNull(isAllowedFileName("a`b"));
         }
     }
 }
