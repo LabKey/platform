@@ -77,7 +77,7 @@ public class GroupGrid extends EditableGrid
         if (col == 0)
             return group.getName();
         else
-            return new Integer(group.getCount());
+            return Integer.valueOf(group.getCount());
     }
 
     public Widget getGhostRowWidget(int col)

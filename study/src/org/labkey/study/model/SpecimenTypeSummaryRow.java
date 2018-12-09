@@ -61,7 +61,7 @@ public class SpecimenTypeSummaryRow
 
     public Integer getVialCount()
     {
-        return _vialCount != null ? _vialCount : new Integer(0);
+        return _vialCount != null ? _vialCount : Integer.valueOf(0);
     }
 
     public void setVialCount(Integer vialCount)

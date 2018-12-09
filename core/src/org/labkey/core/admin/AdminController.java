@@ -3401,7 +3401,7 @@ public class AdminController extends SpringActionController
 
         public int compareTo(@NotNull MemoryCategory o)
         {
-            return new Double(getMb()).compareTo(new Double(o.getMb()));
+            return Double.compare(getMb(), o.getMb());
         }
 
         public String getType()

@@ -1234,7 +1234,7 @@ public class SqlScriptController extends SpringActionController
             List<Module> modules = ModuleLoader.getInstance().getModules();
             Set<SqlScript> unreachableScripts = new TreeSet<>((s1, s2) -> {
                 // Order scripts by fromVersion.  If fromVersion is the same, use standard compare order (schema + from + to)
-                int fromCompare = new Double(s1.getFromVersion()).compareTo(s2.getFromVersion());
+                int fromCompare = Double.compare(s1.getFromVersion(), s2.getFromVersion());
 
                 if (0 != fromCompare)
                     return fromCompare;

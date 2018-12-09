@@ -75,7 +75,7 @@ public class GWTSampleMeasure extends AbstractXMLSavable implements IsSerializab
 
     public int hashCode()
     {
-        return new Double(amount).hashCode() ^ (unit.hashCode() << 1) ^ (type.hashCode() << 2);
+        return Double.valueOf(amount).hashCode() ^ (unit.hashCode() << 1) ^ (type.hashCode() << 2);
     }
 
     public boolean equals(Object o)
@@ -86,7 +86,7 @@ public class GWTSampleMeasure extends AbstractXMLSavable implements IsSerializab
 
     public Element toElement(Document doc)
     {
-        return createTag(doc, "amount", new Double(amount), "unit", unit, "type", type);
+        return createTag(doc, "amount", Double.valueOf(amount), "unit", unit, "type", type);
     }
 
     public double getAmount()

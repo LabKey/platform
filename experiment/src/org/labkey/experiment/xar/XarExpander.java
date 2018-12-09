@@ -16,26 +16,51 @@
 
 package org.labkey.experiment.xar;
 
-import org.fhcrc.cpas.exp.xml.*;
+import org.fhcrc.cpas.exp.xml.DataBaseType;
+import org.fhcrc.cpas.exp.xml.ExperimentArchiveType;
+import org.fhcrc.cpas.exp.xml.ExperimentLogEntryType;
 import org.fhcrc.cpas.exp.xml.ExperimentRunType;
-import org.labkey.api.exp.*;
+import org.fhcrc.cpas.exp.xml.InputOutputRefsType;
+import org.fhcrc.cpas.exp.xml.InstanceDetailsType;
+import org.fhcrc.cpas.exp.xml.MaterialBaseType;
+import org.fhcrc.cpas.exp.xml.ProtocolApplicationBaseType;
+import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
+import org.fhcrc.cpas.exp.xml.SimpleValueCollectionType;
+import org.fhcrc.cpas.exp.xml.SimpleValueType;
+import org.labkey.api.exp.AbstractParameter;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.ProtocolParameter;
+import org.labkey.api.exp.XarContext;
+import org.labkey.api.exp.XarFormatException;
+import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.exp.xar.LsidUtils;
-import org.labkey.api.exp.xar.Replacer;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.xar.LsidUtils;
+import org.labkey.api.exp.xar.Replacer;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.util.Pair;
-import org.labkey.experiment.api.*;
+import org.labkey.experiment.api.Data;
+import org.labkey.experiment.api.ExpMaterialImpl;
+import org.labkey.experiment.api.ExperimentRun;
+import org.labkey.experiment.api.ExperimentServiceImpl;
+import org.labkey.experiment.api.Material;
+import org.labkey.experiment.api.ProtocolActionPredecessor;
+import org.labkey.experiment.api.ProtocolActionStepDetail;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * User: jeckels
@@ -72,7 +97,6 @@ public class XarExpander extends AbstractXarImporter
         {
             _allMaterial.put(material.getLSID(), material);
         }
-
     }
 
     private String trimString(String s)
@@ -86,7 +110,7 @@ public class XarExpander extends AbstractXarImporter
     {
         XarContext context = new XarContext(parentContext);
 
-        Integer actionSequence = step.getActionSequenceRef();
+        int actionSequence = step.getActionSequenceRef();
 
         String runProtocolLSID = _run.getProtocolLSID();
         ProtocolActionStepDetail stepProtocol = ExperimentServiceImpl.get().getProtocolActionStepDetail(runProtocolLSID, actionSequence);
@@ -433,7 +457,7 @@ public class XarExpander extends AbstractXarImporter
             String intString = LsidUtils.resolveNameFromTemplate(param.getStringValue(), context, fileResolver);
             try
             {
-                result = new Integer(intString);
+                result = Integer.valueOf(intString);
             }
             catch (NumberFormatException e)
             {
@@ -663,7 +687,7 @@ public class XarExpander extends AbstractXarImporter
     {
         public PredecessorStep(String lsid, int sequence)
         {
-            super(lsid, new Integer(sequence));
+            super(lsid, Integer.valueOf(sequence));
         }
 
         public String getLSID()

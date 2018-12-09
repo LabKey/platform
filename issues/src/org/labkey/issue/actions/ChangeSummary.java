@@ -78,15 +78,15 @@ public class ChangeSummary
 {
     private static final Logger _log = Logger.getLogger(ChangeSummary.class);
 
-    private Issue.Comment _comment;
-    private String _textChanges;
-    private String _summary;
+    private final Issue.Comment _comment;
+    private final String _textChanges;
+    private final String _summary;
 
-    private IssueListDef _issueListDef;
-    private Issue _issue;
-    private Issue _prevIssue;
-    private Class<? extends Controller> _action;
-    private Map<String, Object> _issueProperties = new HashMap<>();
+    private final IssueListDef _issueListDef;
+    private final Issue _issue;
+    private final Issue _prevIssue;
+    private final Class<? extends Controller> _action;
+    private final Map<String, Object> _issueProperties;
 
     private static Set<String> _standardFields = new CaseInsensitiveHashSet();
 
@@ -301,11 +301,10 @@ public class ChangeSummary
         StringBuilder sb = new StringBuilder();
         Issue relatedIssue = IssueManager.getIssue(null, user, relatedIssueId);
         Set<Integer> prevRelated = relatedIssue.getRelatedIssues();
-        Set<Integer> newRelated = new TreeSet<>();
-        newRelated.addAll(prevRelated);
+        Set<Integer> newRelated = new TreeSet<>(prevRelated);
 
         if (drop)
-            newRelated.remove(new Integer(issueId));
+            newRelated.remove(Integer.valueOf(issueId));
         else
             newRelated.add(issueId);
 

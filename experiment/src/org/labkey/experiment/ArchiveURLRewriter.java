@@ -167,7 +167,7 @@ public class ArchiveURLRewriter extends URLRewriter
         }
         else
         {
-            Integer newCopy = copy == null ? new Integer(1) : new Integer(copy.intValue() + 1);
+            Integer newCopy = copy == null ? Integer.valueOf(1) : Integer.valueOf(copy.intValue() + 1);
             return uniquifyFileName(originalName, directoryName, newCopy);
         }
     }

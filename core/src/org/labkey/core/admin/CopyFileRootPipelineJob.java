@@ -183,7 +183,7 @@ public class CopyFileRootPipelineJob extends PipelineJob
                 try
                 {
                     // Count files and sum sizes
-                    Pair<Integer, Long> stats = new Pair<>(new Integer(0), new Long(0));
+                    Pair<Integer, Long> stats = new Pair<>(Integer.valueOf(0), Long.valueOf(0));
                     status = updateIfError(status, getStats(sourceDir, stats));
                     info("Source directory has " + stats.first + " files (" + stats.second + " total bytes)");
 

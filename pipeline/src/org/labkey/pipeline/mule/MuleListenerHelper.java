@@ -81,23 +81,23 @@ public class MuleListenerHelper implements ServletContext
             {
                 // static initializer
                 {
-                    Integer value = new Integer(ThreadingProfile.WHEN_EXHAUSTED_WAIT);
+                    Integer value = Integer.valueOf(ThreadingProfile.WHEN_EXHAUSTED_WAIT);
                     this.put("WHEN_EXHAUSTED_WAIT", value);
                     this.put("WAIT", value);
 
-                    value = new Integer(ThreadingProfile.WHEN_EXHAUSTED_DISCARD);
+                    value = Integer.valueOf(ThreadingProfile.WHEN_EXHAUSTED_DISCARD);
                     this.put("WHEN_EXHAUSTED_DISCARD", value);
                     this.put("DISCARD", value);
 
-                    value = new Integer(ThreadingProfile.WHEN_EXHAUSTED_DISCARD_OLDEST);
+                    value = Integer.valueOf(ThreadingProfile.WHEN_EXHAUSTED_DISCARD_OLDEST);
                     this.put("WHEN_EXHAUSTED_DISCARD_OLDEST", value);
                     this.put("DISCARD_OLDEST", value);
 
-                    value = new Integer(ThreadingProfile.WHEN_EXHAUSTED_ABORT);
+                    value = Integer.valueOf(ThreadingProfile.WHEN_EXHAUSTED_ABORT);
                     this.put("WHEN_EXHAUSTED_ABORT", value);
                     this.put("ABORT", value);
 
-                    value = new Integer(ThreadingProfile.WHEN_EXHAUSTED_RUN);
+                    value = Integer.valueOf(ThreadingProfile.WHEN_EXHAUSTED_RUN);
                     this.put("WHEN_EXHAUSTED_RUN", value);
                     this.put("RUN", value);
                 }

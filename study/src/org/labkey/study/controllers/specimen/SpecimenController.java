@@ -3612,7 +3612,7 @@ public class SpecimenController extends BaseStudyController
                 Double visit;
                 if (isDateStudy)
                     if (null != vial.getDrawTimestamp())
-                        visit = new Double((vial.getDrawTimestamp().getTime() - startDate.getTime()) / DateUtils.MILLIS_PER_DAY);
+                        visit = Double.valueOf((vial.getDrawTimestamp().getTime() - startDate.getTime()) / DateUtils.MILLIS_PER_DAY);
                     else
                         visit = null;
                 else

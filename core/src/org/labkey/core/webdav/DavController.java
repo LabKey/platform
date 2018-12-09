@@ -3884,7 +3884,7 @@ public class DavController extends SpringActionController
                 }
                 if (lockDurationStr.startsWith("Second-"))
                 {
-                    lockDuration = (new Integer(lockDurationStr.substring(7))).intValue();
+                    lockDuration = Integer.parseInt(lockDurationStr.substring(7));
                 }
                 else
                 {
@@ -3896,7 +3896,7 @@ public class DavController extends SpringActionController
                     {
                         try
                         {
-                            lockDuration = (new Integer(lockDurationStr)).intValue();
+                            lockDuration = Integer.parseInt(lockDurationStr);
                         }
                         catch (NumberFormatException e)
                         {
@@ -4945,8 +4945,8 @@ public class DavController extends SpringActionController
                         _log.warn("Failed to get absolute path for '" + FileUtil.getFileName(file));
                     long length  = Files.size(file);
                     request.setAttribute("org.apache.tomcat.sendfile.filename", absolutePath);
-                    request.setAttribute("org.apache.tomcat.sendfile.start", new Long(0L));
-                    request.setAttribute("org.apache.tomcat.sendfile.end", new Long(length));
+                    request.setAttribute("org.apache.tomcat.sendfile.start", Long.valueOf(0L));
+                    request.setAttribute("org.apache.tomcat.sendfile.end", Long.valueOf(length));
                     request.setAttribute("org.apache.tomcat.sendfile.token", this);
                     getResponse().setContentLength(length);
                     _log.debug("sendfile: " + absolutePath);

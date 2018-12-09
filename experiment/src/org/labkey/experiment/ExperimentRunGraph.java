@@ -596,14 +596,14 @@ public class ExperimentRunGraph
         {
             mPANodesPerSequence = new TreeMap<>();
         }
+
         public int getPACountForSequence(int seq)
         {
-            Integer c = mPANodesPerSequence.get(new Integer(seq));
+            Integer c = mPANodesPerSequence.get(Integer.valueOf(seq));
             if (null==c)
                 return 0;
             return c.intValue();
         }
-
     }
 
 
@@ -629,8 +629,8 @@ public class ExperimentRunGraph
             int curS = step.getActionSequence();
 
             Integer countSeq = ctrlProps.mPANodesPerSequence.get(curS);
-            if (null==countSeq)
-                countSeq=new Integer(1);
+            if (null == countSeq)
+                countSeq = Integer.valueOf(1);
             else
                 countSeq++;
             ctrlProps.mPANodesPerSequence.put(curS, countSeq);

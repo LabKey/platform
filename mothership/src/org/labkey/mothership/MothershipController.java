@@ -1123,7 +1123,7 @@ public class MothershipController extends SpringActionController
         {
             try
             {
-                return new Integer(getSvnRevision());
+                return Integer.valueOf(getSvnRevision());
             }
             catch (NumberFormatException e)
             {

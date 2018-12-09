@@ -125,7 +125,7 @@ public class ImmunizationPanel extends Composite
             else
             {
                 if (group.getCount() > 0)
-                    return new Integer(group.getCount());
+                    return Integer.valueOf(group.getCount());
                 else
                     return null;
             }

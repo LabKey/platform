@@ -1884,10 +1884,10 @@ public class XarReader extends AbstractXarImporter
                 switch (valType.intValue())
                 {
                     case (SimpleTypeNames.INT_INTEGER):
-                        val = new Integer(sVal.getStringValue());
+                        val = Integer.valueOf(sVal.getStringValue());
                         break;
                     case (SimpleTypeNames.INT_DOUBLE):
-                        val = new Double(sVal.getStringValue());
+                        val = Double.valueOf(sVal.getStringValue());
                         break;
                     case (SimpleTypeNames.INT_DATE_TIME):
                         val = new Date(DateUtil.parseDateTime(getContainer(), sVal.getStringValue()));

@@ -37,7 +37,7 @@ public abstract class AssayBaseWebPartFactory extends BaseWebPartFactory
         {
             try
             {
-                return new Integer(value);
+                return Integer.valueOf(value);
             }
             catch (NumberFormatException e)
             {
