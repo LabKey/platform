@@ -60,7 +60,7 @@ public class DoubleProperty implements IPropertyWrapper, IsSerializable
     public void setDbl(double d)
     {
         //this.d = Double.valueOf(d);
-        this.d = new Double(d);
+        this.d = Double.valueOf(d);
     }
 
     public double getDbl()

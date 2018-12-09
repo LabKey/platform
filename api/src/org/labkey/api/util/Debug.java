@@ -23,7 +23,7 @@ public class Debug
     public static int RELEASE = 0;
     public static int DEBUG = 1;
     public static int VERBOSE = 2;
-    private static Integer iDEBUG = new Integer(DEBUG);
+    private static Integer iDEBUG = Integer.valueOf(DEBUG);
 
     private static Map<String, Integer> _map = new HashMap<>();
 

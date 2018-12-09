@@ -134,7 +134,7 @@ final class ExternalScriptable implements Scriptable
      * @return the value of the property (may be null), or NOT_FOUND
      */
     public synchronized Object get(int index, Scriptable start) {
-        Integer key = new Integer(index);
+        Integer key = Integer.valueOf(index);
         if (indexedProps.containsKey(index)) {
             return indexedProps.get(key);
         } else {
@@ -167,7 +167,7 @@ final class ExternalScriptable implements Scriptable
      * @return true if and only if the property was found in the object
      */
     public synchronized boolean has(int index, Scriptable start) {
-        Integer key = new Integer(index);
+        Integer key = Integer.valueOf(index);
         return indexedProps.containsKey(key);
     }
 
@@ -208,7 +208,7 @@ final class ExternalScriptable implements Scriptable
     public void put(int index, Scriptable start, Object value) {
         if (start == this) {
             synchronized (this) {
-                indexedProps.put(new Integer(index), value);
+                indexedProps.put(Integer.valueOf(index), value);
             }
         } else {
             start.put(index, start, value);
@@ -243,7 +243,7 @@ final class ExternalScriptable implements Scriptable
      * @param index the numeric index for the property
      */
     public void delete(int index) {
-        indexedProps.remove(new Integer(index));
+        indexedProps.remove(Integer.valueOf(index));
     }
 
     /**

@@ -107,7 +107,7 @@ public class AssayDesignerMainPanel extends AbstractDesignerMainPanel implements
         super(rootPanel);
 
         String protocolIdStr = PropertyUtil.getServerProperty("protocolId");
-        _protocolId = protocolIdStr != null ? new Integer(Integer.parseInt(protocolIdStr)) : null;
+        _protocolId = protocolIdStr != null ? Integer.valueOf(Integer.parseInt(protocolIdStr)) : null;
         _providerName = PropertyUtil.getServerProperty("providerName");
         String copyStr = PropertyUtil.getServerProperty("copy");
         _copy = copyStr != null && Boolean.TRUE.toString().equals(copyStr);

@@ -92,7 +92,7 @@ public class StringUtilsLabKey
     {
         StringBuilder builder = new StringBuilder(length);
         int chunkLength = MAX_LONG_LENGTH;
-        long maxValue = new Double(Math.pow(10, MAX_LONG_LENGTH)).longValue();
+        long maxValue = Double.valueOf(Math.pow(10, MAX_LONG_LENGTH)).longValue();
         while (length > 0)
         {
             if (length > MAX_LONG_LENGTH)
@@ -102,7 +102,7 @@ public class StringUtilsLabKey
             else
             {
                 chunkLength = length;
-                maxValue = new Double(Math.pow(10, chunkLength)).longValue();
+                maxValue = Double.valueOf(Math.pow(10, chunkLength)).longValue();
                 length = 0;
             }
             String unpadded = String.valueOf(Math.abs(RANDOM.nextLong()) % maxValue);

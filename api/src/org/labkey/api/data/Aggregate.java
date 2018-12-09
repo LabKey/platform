@@ -556,9 +556,9 @@ public class Aggregate
             {
                 double resultValue = ((Number)o).doubleValue();
                 if (resultValue == Math.floor(resultValue))
-                    o = new Long((long) resultValue);
+                    o = Long.valueOf((long) resultValue);
                 else
-                    o = new Double(resultValue);
+                    o = Double.valueOf(resultValue);
             }
         }
 

@@ -26,6 +26,7 @@ import java.util.ArrayList;
 public class DoubleArray
 {
     private static final int ARRAY_LEN = 1024;
+
     ArrayList<double[]> list = new ArrayList<>();
     double[] arrayLast;
     int lenLast = 0;

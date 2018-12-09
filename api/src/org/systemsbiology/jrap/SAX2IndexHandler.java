@@ -151,7 +151,7 @@ public final class SAX2IndexHandler extends DefaultHandler
         {
             try
             {
-                Long l = new Long(buffer.toString());
+                Long l = Long.valueOf(buffer.toString());
                 offsets.put(_currentId, l);
             } catch (NumberFormatException e)
             {

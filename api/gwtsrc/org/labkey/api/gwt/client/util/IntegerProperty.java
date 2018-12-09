@@ -60,7 +60,7 @@ public class IntegerProperty implements IPropertyWrapper, IsSerializable
     public void setInt(int i)
     {
         // this.i = Integer.valueOf(i);
-        this.i = new Integer(i);
+        this.i = Integer.valueOf(i);
     }
 
     public int intValue()

@@ -369,28 +369,36 @@ public class JSONTokener {
             if (b == '0') {
                 if (s.length() > 2 &&
                         (s.charAt(1) == 'x' || s.charAt(1) == 'X')) {
-                    try {
-                        return new Integer(Integer.parseInt(s.substring(2),
-                                16));
+                    try
+                    {
+                        return Integer.valueOf(Integer.parseInt(s.substring(2), 16));
                     } catch (Exception e) {
                         /* Ignore the error */
                     }
                 } else {
-                    try {
-                        return new Integer(Integer.parseInt(s, 8));
+                    try
+                    {
+                        return Integer.valueOf(Integer.parseInt(s, 8));
                     } catch (Exception e) {
                         /* Ignore the error */
                     }
                 }
             }
-            try {
-                return new Integer(s);
-            } catch (Exception e) {
-                try {
-                    return new Long(s);
-                } catch (Exception f) {
-                    try {
-                        return new Double(s);
+            try
+            {
+                return Integer.valueOf(s);
+            }
+            catch (Exception e)
+            {
+                try
+                {
+                    return Long.valueOf(s);
+                }
+                catch (Exception f)
+                {
+                    try
+                    {
+                        return Double.valueOf(s);
                     }  catch (Exception g) {
                         return s;
                     }

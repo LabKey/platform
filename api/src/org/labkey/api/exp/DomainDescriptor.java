@@ -228,7 +228,7 @@ public final class DomainDescriptor
     @Override
     public int hashCode()
     {
-        return new Integer(getDomainId()).hashCode();
+        return Integer.valueOf(getDomainId()).hashCode();
     }
 
     @Override

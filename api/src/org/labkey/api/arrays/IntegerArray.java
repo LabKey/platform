@@ -28,10 +28,12 @@ import java.util.ArrayList;
 public class IntegerArray
 {
     private static final int ARRAY_LEN = 1024;
-    ArrayList<int[]> list = new ArrayList<>();
-    int[] arrayLast;
-    int lenLast = 0;
-    int size = 0;
+
+    private final ArrayList<int[]> list;
+
+    private int[] arrayLast;
+    private int lenLast = 0;
+    private int size = 0;
 
 
     public IntegerArray()

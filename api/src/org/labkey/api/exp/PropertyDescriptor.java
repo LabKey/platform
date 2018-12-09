@@ -388,7 +388,7 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
 
     public int hashCode()
     {
-        return new Integer(getPropertyId()).hashCode();
+        return Integer.valueOf(getPropertyId()).hashCode();
     }
 
     public boolean equals(Object obj)

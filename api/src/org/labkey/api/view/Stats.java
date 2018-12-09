@@ -395,7 +395,7 @@ public abstract class Stats
 
         public Double getMin()
         {
-            return new Double(min);
+            return Double.valueOf(min);
         }
 
         public Double getMax()

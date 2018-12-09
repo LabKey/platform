@@ -456,18 +456,20 @@ public class MemTracker
             // test identity
             Object a = "I'm me";
             t._put(a);
-            assertTrue(t.getReferences().size() == 1);
+            assertEquals(1, t.getReferences().size());
             t._put(a);
-            assertTrue(t.getReferences().size() == 1);
+            assertEquals(1, t.getReferences().size());
 
+            // Intentional use of deprecated constructor below because we want distinct instances of the same integer;
+            // Integer.valueOf() will return the same object.
             Object b = new Integer(1);
             Object c = new Integer(1);
-            assertFalse(b == c);
-            assertTrue(b.equals(c));
+            assertNotSame(b, c);
+            assertEquals(b, c);
             t._put(b);
-            assertTrue(t.getReferences().size() == 2);
+            assertEquals(2, t.getReferences().size());
             t._put(c);
-            assertTrue(t.getReferences().size() == 3);
+            assertEquals(3, t.getReferences().size());
 
             List<HeldReference> list = t.getReferences();
             for (HeldReference o : list)

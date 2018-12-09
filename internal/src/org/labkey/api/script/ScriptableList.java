@@ -179,7 +179,7 @@ public class ScriptableList extends NativeJavaObject {
 
     public Object get(String name, Scriptable start) {
         if ("length".equals(name) && list != null) {
-            return new Integer(list.size());
+            return Integer.valueOf(list.size());
         }
         return super.get(name, start);
     }
@@ -190,7 +190,7 @@ public class ScriptableList extends NativeJavaObject {
         int size = list.size();
         Object[] ids = new Object[size];
         for (int i = 0; i < size; ++i) {
-            ids[i] = new Integer(i);
+            ids[i] = Integer.valueOf(i);
         }
         return ids;
     }

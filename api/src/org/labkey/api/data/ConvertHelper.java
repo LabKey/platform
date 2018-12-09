@@ -769,13 +769,13 @@ public class ConvertHelper implements PropertyEditorRegistrar
             }
             else if (value instanceof Number)
             {
-                return new Double(((Number) value).doubleValue());
+                return Double.valueOf(((Number) value).doubleValue());
             }
 
             String s = value.toString();
             try
             {
-                return new Double(s);
+                return Double.valueOf(s);
             }
             catch (NumberFormatException x)
             {

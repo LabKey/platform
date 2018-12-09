@@ -261,11 +261,11 @@ public abstract class AbstractParameter extends BoundMap
             if (stringValue == null)
                 val = stringValue;
             else if (type.equals(SimpleTypeNames.INTEGER))
-                val = new Integer(stringValue);
+                val = Integer.valueOf(stringValue);
             else if (type.equals(SimpleTypeNames.DATE_TIME))
                 val = new Date(DateUtil.parseDateTime(stringValue));
             else if (type.equals(SimpleTypeNames.DOUBLE))
-                val = new Double(stringValue);
+                val = Double.valueOf(stringValue);
             else if (type.equals(SimpleTypeNames.BOOLEAN))
                 val = Boolean.valueOf(stringValue);
             else if (type.equals(SimpleTypeNames.FILE_LINK))

@@ -527,7 +527,7 @@ public class ContainerManager
             Integer count = nameCounts.get(c.getFolderType().getName());
             if (null == count)
             {
-                count = new Integer(0);
+                count = Integer.valueOf(0);
             }
             nameCounts.put(c.getFolderType().getName(), ++count);
         }

@@ -41,7 +41,6 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.data.xml.queryCustomView.OperatorType;
 
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -100,6 +99,7 @@ public abstract class CompareType
                 return value.equals(convert(filterValues[0], value.getClass()));
             }
         };
+
     public static final CompareType DATE_EQUAL = new CompareType("(Date) Equals", "dateeq", "DATE_EQUAL", true, null, OperatorType.DATEEQ)
         {
             @Override
@@ -1208,7 +1208,7 @@ public abstract class CompareType
                 }
                 try
                 {
-                    return new Integer(stringValue);
+                    return Integer.valueOf(stringValue);
                 }
                 catch (NumberFormatException e)
                 {
@@ -1220,7 +1220,7 @@ public abstract class CompareType
             {
                 try
                 {
-                    return new Long(stringValue);
+                    return Long.valueOf(stringValue);
                 }
                 catch (NumberFormatException e)
                 {
@@ -1273,7 +1273,7 @@ public abstract class CompareType
                     {
                         return new Parameter.TypedValue(null, JdbcType.DOUBLE);
                     }
-                    return new Double(stringValue);
+                    return Double.valueOf(stringValue);
                 }
                 catch (NumberFormatException e)
                 {
