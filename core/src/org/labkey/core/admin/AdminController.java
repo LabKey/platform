@@ -24,7 +24,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.spi.LoggingEvent;
-import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -41,8 +40,6 @@ import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.admin.AdminBean;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.FolderExportContext;
-import org.labkey.api.admin.FolderImportContext;
-import org.labkey.api.admin.FolderImporterImpl;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterImpl;
@@ -146,7 +143,6 @@ import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.api.writer.FileSystemFile;
-import org.labkey.api.writer.MemoryVirtualFile;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.api.writer.ZipUtil;
 import org.labkey.core.CoreModule;
@@ -157,7 +153,6 @@ import org.labkey.core.portal.ProjectController;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.security.SecurityController;
 import org.labkey.data.xml.TablesDocument;
-import org.labkey.folder.xml.FolderDocument;
 import org.labkey.security.xml.GroupEnumType;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -6434,27 +6429,7 @@ public class AdminController extends SpringActionController
                             return false;
                         }
 
-                        MemoryVirtualFile vf = new MemoryVirtualFile();
-
-                        // export objects from the source folder
-                        FolderWriterImpl writer = new FolderWriterImpl();
-                        FolderExportContext exportCtx = new FolderExportContext(getUser(), sourceContainer, PageFlowUtil.set(form.getTemplateWriterTypes()), "new",
-                                form.getTemplateIncludeSubfolders(), PHI.NotPHI, false, false, false, new StaticLoggerGetter(Logger.getLogger(FolderWriterImpl.class)));
-                        writer.write(sourceContainer, exportCtx, vf);
-
-                        // create the new target container
-                        c = ContainerManager.createContainer(parent, folderName, ((form.isTitleSameAsName() || folderName.equals(form.getTitle())) ? null : form.getTitle()), null, NormalContainerType.NAME, getUser());
-
-                        // import objects into the target folder
-                        XmlObject folderXml = vf.getXmlBean("folder.xml");
-                        if (folderXml instanceof FolderDocument)
-                        {
-                            FolderDocument folderDoc = (FolderDocument)folderXml;
-                            FolderImportContext importCtx = new FolderImportContext(getUser(), c, folderDoc, null, new StaticLoggerGetter(Logger.getLogger(FolderImporterImpl.class)), vf);
-
-                            FolderImporterImpl importer = new FolderImporterImpl();
-                            importer.process(null, importCtx, vf);
-                        }
+                        c = ContainerManager.createContainerFromTemplate(parent, folderName, sourceContainer, getUser());
                     }
                     else
                     {
