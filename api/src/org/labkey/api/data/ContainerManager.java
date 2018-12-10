@@ -20,6 +20,7 @@ import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
@@ -27,6 +28,11 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.FolderExportContext;
+import org.labkey.api.admin.FolderImportContext;
+import org.labkey.api.admin.FolderImporterImpl;
+import org.labkey.api.admin.FolderWriterImpl;
+import org.labkey.api.admin.StaticLoggerGetter;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
@@ -58,11 +64,9 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.AuthorRole;
-import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.test.TestTimeout;
 import org.labkey.api.test.TestWhen;
@@ -79,6 +83,8 @@ import org.labkey.api.view.NavTreeManager;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.MemoryVirtualFile;
+import org.labkey.folder.xml.FolderDocument;
 import org.springframework.validation.BindException;
 
 import java.beans.PropertyChangeEvent;
@@ -321,6 +327,37 @@ public class ContainerManager
         _removeFromCache(parent);
 
         fireCreateContainer(c, user);
+        return c;
+    }
+
+    public static Container createContainerFromTemplate(Container parent, String name, Container templateContainer, User user) throws Exception
+    {
+        MemoryVirtualFile vf = new MemoryVirtualFile();
+
+        // TODO get this from call that create folder jsp uses
+        Set<String> dataTypes = new HashSet<>(Arrays.asList("Folder type and active modules", "Full-text search settings", "Webpart properties and layout", "Container specific module properties", "Queries", "Grid Views", "Reports and Charts", "External schema definitions", "Lists", "Wikis and their attachments", "Notification settings", "Missing value indicators", "Study"));
+
+        // export objects from the source template folder
+        FolderWriterImpl writer = new FolderWriterImpl();
+        FolderExportContext exportCtx = new FolderExportContext(user, templateContainer, dataTypes, "new",
+                false, PHI.NotPHI, false, false, false,
+                new StaticLoggerGetter(Logger.getLogger(FolderWriterImpl.class)));
+        writer.write(templateContainer, exportCtx, vf);
+
+        // create the new target container
+        Container c = ContainerManager.createContainer(parent, name, null, null, NormalContainerType.NAME, user);
+
+        // import objects into the target folder
+        XmlObject folderXml = vf.getXmlBean("folder.xml");
+        if (folderXml instanceof FolderDocument)
+        {
+            FolderDocument folderDoc = (FolderDocument)folderXml;
+            FolderImportContext importCtx = new FolderImportContext(user, c, folderDoc, null, new StaticLoggerGetter(Logger.getLogger(FolderImporterImpl.class)), vf);
+
+            FolderImporterImpl importer = new FolderImporterImpl();
+            importer.process(null, importCtx, vf);
+        }
+
         return c;
     }
 
