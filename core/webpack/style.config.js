@@ -4,7 +4,9 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 const path = require('path');
-const ExtractTextPlugin = require('extract-text-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
+const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 
 const inProduction = process.env.NODE_ENV === 'production';
 const baseJsDir = './resources/styles/js/';
@@ -33,7 +35,13 @@ module.exports = function(env) {
     return {
         context: path.resolve(__dirname, '..'),
 
+        mode: inProduction ? 'production' : 'development',
+
         devtool: useSourceMaps ? 'source-map' : false,
+
+        performance: {
+            hints: false
+        },
 
         entry: entry,
 
@@ -44,8 +52,7 @@ module.exports = function(env) {
         },
 
         plugins: [
-            new ExtractTextPlugin({
-                allChunks: true,
+            new MiniCssExtractPlugin({
                 filename: '[name].css'
             })
         ],
@@ -58,58 +65,70 @@ module.exports = function(env) {
             jQuery: 'jQuery'
         },
 
+        optimization: inProduction ? {
+            minimizer: [
+                new UglifyJsPlugin({
+                    cache: false,
+                    parallel: true,
+                    sourceMap: useSourceMaps
+                }),
+                new OptimizeCSSAssetsPlugin({})
+            ]
+        } : undefined,
+
         module: {
             rules: [
                 {
                     // labkey scss
                     test: /\.scss$/,
-                    loader: ExtractTextPlugin.extract({
-                        use: [{
+                    use: [
+                        MiniCssExtractPlugin.loader,
+                        {
                             loader: 'css-loader',
                             options: {
-                                minimize: inProduction,
                                 sourceMap: useSourceMaps,
                                 url: false
+                                // TODO: Consider passing a function and only processing font awesome relative URLs
+                                // This wasn't working as expected with css-loader
+                                // see https://github.com/webpack-contrib/css-loader#url
                             }
-                        },{
-                            loader: 'postcss-loader',
-                            options: {
-                                sourceMap: useSourceMaps ? 'inline' : undefined
-                            }
-                        },{
+                        },
+                        {
+                            loader: 'postcss-loader'
+                        },
+                        {
                             loader: 'sass-loader',
                             options: {
                                 sourceMap: useSourceMaps
                             }
-                        }],
-                        fallback: 'style-loader'
-                    }),
+                        }
+                    ],
                     exclude: [/node_modules/]
                 },
                 {
-                    // TODO: Need to figure out a way to get ~scss imports to resolve via the webpack loader.
-                    // That way we can have specific libraries run through the resolve-url-loader.
-                    // For now, font-awesome is included directly in style.js
-                    // node modules scss
+                    // Duplicate configuration with alternate css-loader "url" property set
+                    // See https://github.com/webpack/webpack/issues/5433#issuecomment-357489401
+                    // labkey scss
                     test: /\.scss$/,
-                    loader: ExtractTextPlugin.extract({
-                        use: [{
+                    use: [
+                        MiniCssExtractPlugin.loader,
+                        {
                             loader: 'css-loader',
                             options: {
-                                sourceMap: useSourceMaps
+                                sourceMap: useSourceMaps,
+                                url: true
                             }
-                        },{
+                        },
+                        {
                             loader: 'postcss-loader'
-                        },{
-                            loader: 'resolve-url-loader'
-                        },{
+                        },
+                        {
                             loader: 'sass-loader',
                             options: {
                                 sourceMap: useSourceMaps
                             }
-                        }],
-                        fallback: 'style-loader'
-                    }),
+                        }
+                    ],
                     include: [/node_modules/]
                 },
                 {

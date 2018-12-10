@@ -4,9 +4,8 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 // Dependencies
-require('bootstrap-sass'); // javascript
+import 'bootstrap-sass'; // javascript
 
-require('./navigation');
+import './navigation';
 
-// Dependencies
-require('font-awesome/scss/font-awesome.scss');
+import 'font-awesome/scss/font-awesome.scss';

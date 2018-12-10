@@ -1061,7 +1061,7 @@ textarea.x-form-field {
   }
 
   .labkey-trigger-elipsis {
-    background-image: url('#{$api-images-dir}/elipsis.gif') !important;
+    background-image: url('#{$internal-images-dir}/elipsis.gif') !important;
     cursor: pointer;
   }
 }
@@ -3395,7 +3395,7 @@ td.x-date-mp-sep {
 }
 
 .x-menu-item-arrow {
-  background: transparent url('#{api-images-dir}/arrow_right.png') no-repeat right;
+  background: transparent url('#{$internal-images-dir}/arrow_right.png') no-repeat right;
 }
 
 .x-menu-sep {
