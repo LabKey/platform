@@ -198,7 +198,7 @@ import org.labkey.core.admin.writer.SecurityGroupWriterFactory;
 import org.labkey.core.analytics.AnalyticsController;
 import org.labkey.core.analytics.AnalyticsServiceImpl;
 import org.labkey.core.attachment.AttachmentServiceImpl;
-import org.labkey.core.authentication.ldap.LdapAuthenticationManager;
+import org.labkey.api.ldap.LdapAuthenticationManager;
 import org.labkey.core.authentication.ldap.LdapAuthenticationProvider;
 import org.labkey.core.authentication.ldap.LdapController;
 import org.labkey.core.authentication.test.TestSecondaryController;

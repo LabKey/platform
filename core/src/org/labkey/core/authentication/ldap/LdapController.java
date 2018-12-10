@@ -21,6 +21,8 @@ import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.ldap.Config;
+import org.labkey.api.ldap.LdapAuthenticationManager;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.RequiresPermission;
@@ -103,71 +105,6 @@ public class LdapController extends SpringActionController
         public ActionURL getSuccessURL(Config config)
         {
             return getConfigureURL(true);  // Redirect to same action -- reload props from database
-        }
-    }
-
-
-    public static class Config extends ReturnUrlForm
-    {
-        public boolean reshow = false;
-
-        private String servers = StringUtils.join(LdapAuthenticationManager.getServers(), ";");
-        private String domain = LdapAuthenticationManager.getDomain();
-        private String principalTemplate = LdapAuthenticationManager.getPrincipalTemplate();
-        private boolean useSASL = false;   // Always initialize to false because of checkbox behavior
-
-        public String getServers()
-        {
-            return servers;
-        }
-
-        @SuppressWarnings("UnusedDeclaration")
-        public void setServers(String servers)
-        {
-            this.servers = servers;
-        }
-
-        public String getDomain()
-        {
-            return domain;
-        }
-
-        @SuppressWarnings("UnusedDeclaration")
-        public void setDomain(String domain)
-        {
-            this.domain = domain;
-        }
-
-        public String getPrincipalTemplate()
-        {
-            return principalTemplate;
-        }
-
-        @SuppressWarnings("UnusedDeclaration")
-        public void setPrincipalTemplate(String principalTemplate)
-        {
-            this.principalTemplate = principalTemplate;
-        }
-
-        public boolean getSASL()
-        {
-            return useSASL;
-        }
-
-        public void setSASL(boolean useSASL)
-        {
-            this.useSASL = useSASL;
-        }
-
-        @SuppressWarnings("UnusedDeclaration")
-        public boolean isReshow()
-        {
-            return reshow;
-        }
-
-        @SuppressWarnings("UnusedDeclaration")
-        public void setReshow(boolean reshow) {
-            this.reshow = reshow;
         }
     }
 

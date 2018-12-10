@@ -171,6 +171,9 @@ core/api-src/org/labkey/api/admin/sitevalidation/SiteValidationResult.java -text
 core/api-src/org/labkey/api/admin/sitevalidation/SiteValidationResultList.java -text
 core/api-src/org/labkey/api/admin/sitevalidation/SiteValidationService.java -text
 core/api-src/org/labkey/api/admin/sitevalidation/SiteValidatorDescriptor.java -text
+core/api-src/org/labkey/api/ldap/Config.java -text
+core/api-src/org/labkey/api/ldap/LdapAuthenticationManager.java -text
+core/api-src/org/labkey/api/ldap/LdapAuthenticator.java -text
 core/build.gradle -text
 core/build.js -text
 core/module.properties -text
@@ -525,7 +528,6 @@ core/src/org/labkey/core/attachment/AttachmentCache.java -text
 core/src/org/labkey/core/attachment/AttachmentServiceImpl.java -text
 core/src/org/labkey/core/attachment/DatabaseAttachmentFile.java -text
 core/src/org/labkey/core/attachment/showErrors.jsp -text
-core/src/org/labkey/core/authentication/ldap/LdapAuthenticationManager.java -text
 core/src/org/labkey/core/authentication/ldap/LdapAuthenticationProvider.java -text
 core/src/org/labkey/core/authentication/ldap/LdapController.java -text
 core/src/org/labkey/core/authentication/ldap/configure.jsp -text

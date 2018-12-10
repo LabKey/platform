@@ -18,6 +18,7 @@ package org.labkey.core.authentication.ldap;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.ldap.LdapAuthenticationManager;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.ValidEmail;

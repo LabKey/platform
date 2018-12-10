@@ -16,12 +16,12 @@
  */
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%@ page import="org.labkey.api.ldap.Config" %>
 <%@ page import="org.labkey.api.security.LoginUrls" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.authentication.ldap.LdapController" %>
-<%@ page import="org.labkey.core.authentication.ldap.LdapController.Config" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Config> me = (JspView<Config>)HttpView.currentView();
