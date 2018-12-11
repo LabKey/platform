@@ -16,9 +16,9 @@
 
 package org.labkey.api.exp.api;
 
-import com.google.common.base.Objects;
-import org.labkey.api.util.URLHelper;
+import com.google.common.base.MoreObjects;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.util.URLHelper;
 
 /**
  * Recognizes {@link ExpData} based on the namespace prefix in their LSIDs to identify specific flavors that have custom handling within the
@@ -73,7 +73,7 @@ public class DataType
     @Override
     public String toString()
     {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .omitNullValues()
                 .addValue(_namespacePrefix)
                 .toString();

@@ -18,8 +18,6 @@ package org.labkey.api.admin;
 import org.apache.log4j.Logger;
 import org.labkey.api.pipeline.PipelineJob;
 
-import java.io.Serializable;
-
 /**
  * Implementation used within a pipeline job. The job knows how to create a Logger that writes to the job's log file.
  * User: jeckels

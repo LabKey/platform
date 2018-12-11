@@ -32,7 +32,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AbstractTsvAssayProvider;
 import org.labkey.api.study.assay.AssayProvider;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
