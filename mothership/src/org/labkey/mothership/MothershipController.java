@@ -1023,6 +1023,7 @@ public class MothershipController extends SpringActionController
         private String _exceptionReportingLevel;
         private String _jsonMetrics;
         private String _serverHostName;
+        private String _buildTime;
 
         public String getSvnURL()
         {
@@ -1212,7 +1213,7 @@ public class MothershipController extends SpringActionController
             ServerSession session = new ServerSession();
             SoftwareRelease release = MothershipManager.get().ensureSoftwareRelease(container, parseSvnRevision(), getSvnURL(), getDescription());
             session.setSoftwareReleaseId(release.getSoftwareReleaseId());
-
+            session.setBuildTime(getBuildTime());
             session.setServerSessionGUID(getServerSessionGUID());
             session.setDatabaseDriverName(getDatabaseDriverName());
             session.setDatabaseDriverVersion(getDatabaseDriverVersion());
@@ -1315,6 +1316,16 @@ public class MothershipController extends SpringActionController
         public void setJsonMetrics(String jsonMetrics)
         {
             _jsonMetrics = jsonMetrics;
+        }
+
+        public String getBuildTime()
+        {
+            return _buildTime;
+        }
+
+        public void setBuildTime(String buildTime)
+        {
+            _buildTime = buildTime;
         }
     }
 

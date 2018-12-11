@@ -30,6 +30,7 @@ public class ServerSession
     private Date _earliestKnownTime;
     private Date _lastKnownTime;
     private String _container;
+    private String _buildTime;
 
     private int _softwareReleaseId;
     private String _databaseProductVersion;
@@ -147,6 +148,16 @@ public class ServerSession
     public void setSoftwareReleaseId(int softwareReleaseId)
     {
         _softwareReleaseId = softwareReleaseId;
+    }
+
+    public String getBuildTime()
+    {
+        return _buildTime;
+    }
+
+    public void setBuildTime(String buildTime)
+    {
+        _buildTime = buildTime;
     }
 
     public void setDatabaseProductVersion(String databaseProductVersion)
