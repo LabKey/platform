@@ -28,7 +28,7 @@ import java.util.Map;
  * Should probably be included on DisplayColumnFactory.  However there are a lot of implementations to update.
  * ColumnInfo calls checkLocked(), but be careful about modifying shared instances.
  */
-public interface RemappingDisplayColumnFactory extends DisplayColumnFactory
+public interface RemappingDisplayColumnFactory extends DisplayColumnFactory, Cloneable
 {
-    public void remapFieldKeys(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap);
+    RemappingDisplayColumnFactory remapFieldKeys(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap);
 }

@@ -2054,9 +2054,7 @@ public class ColumnInfo extends ColumnRenderProperties
         remapTextExpressionFieldKeys(parent, remap);
         remapForeignKeyFieldKeys(parent, remap);
         remapSortFieldKeys(parent, remap);
-        DisplayColumnFactory factory = getDisplayColumnFactory();
-        if (null != factory && DEFAULT_FACTORY != factory && factory instanceof RemappingDisplayColumnFactory)
-            ((RemappingDisplayColumnFactory)factory).remapFieldKeys(parent, remap);
+        remapDisplayColumnFactory(parent, remap);
     }
 
 
@@ -2103,6 +2101,16 @@ public class ColumnInfo extends ColumnRenderProperties
         }
 
         setSortFieldKeys(remappedKeys);
+    }
+
+    protected void remapDisplayColumnFactory(@Nullable FieldKey parent,  @Nullable Map<FieldKey, FieldKey> remap)
+    {
+        DisplayColumnFactory factory = getDisplayColumnFactory();
+        if (DEFAULT_FACTORY == factory || !(factory instanceof RemappingDisplayColumnFactory))
+            return;
+
+        RemappingDisplayColumnFactory remapped = ((RemappingDisplayColumnFactory) factory).remapFieldKeys(parent, remap);
+        setDisplayColumnFactory(remapped);
     }
 
     private void checkLocked()

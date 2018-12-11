@@ -90,12 +90,14 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
         }
 
         @Override
-        public void remapFieldKeys(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
+        public Factory remapFieldKeys(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
         {
-            if (_pkFieldKey != null)
-                _pkFieldKey = FieldKey.remap(_pkFieldKey, parent, remap);
-            if (_objectURIFieldKey != null)
-                _objectURIFieldKey = FieldKey.remap(_objectURIFieldKey, parent, remap);
+            Factory remapped = this.clone();
+            if (remapped._pkFieldKey != null)
+                remapped._pkFieldKey = FieldKey.remap(_pkFieldKey, parent, remap);
+            if (remapped._objectURIFieldKey != null)
+                remapped._objectURIFieldKey = FieldKey.remap(_objectURIFieldKey, parent, remap);
+            return remapped;
         }
 
         @Override
@@ -109,6 +111,19 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
                 return new FileLinkDisplayColumn(col, _pd, _container, _objectURIFieldKey);
             else
                 throw new IllegalArgumentException("Cannot create a renderer from the specified configuration properties");
+        }
+
+        @Override
+        public FileLinkDisplayColumn.Factory clone()
+        {
+            try
+            {
+                return (Factory)super.clone();
+            }
+            catch (CloneNotSupportedException e)
+            {
+                throw new RuntimeException(e);
+            }
         }
     }
 
