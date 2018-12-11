@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineService;
@@ -424,6 +425,9 @@ public class MothershipReport implements Runnable
         addParam("distribution", getDistributionStamp());
         addParam("usageReportingLevel", AppProps.getInstance().getUsageReportingLevel().toString());
         addParam("exceptionReportingLevel", AppProps.getInstance().getExceptionReportingLevel().toString());
+
+        DefaultModule coreDefaultModule = (DefaultModule) coreModule;
+        addParam("buildTime", coreDefaultModule.getBuildTime());
     }
 
     public String getContent()
