@@ -16,7 +16,7 @@
  * limitations under the License.
 
  -->
-<tables xsi:schemaLocation="http://cpas.fhcrc.org/data/xml ..\..\..\..\schemas\tableInfo.xsd" xmlns="http://labkey.org/data/xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<tables xsi:schemaLocation="" xmlns="http://labkey.org/data/xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <table tableName="Announcements" tableDbType="TABLE">
     <columns>
       <column columnName="RowId">

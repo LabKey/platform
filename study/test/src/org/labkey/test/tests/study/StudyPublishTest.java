@@ -35,6 +35,7 @@ import org.labkey.test.components.ChartQueryDialog;
 import org.labkey.test.components.ChartTypeDialog;
 import org.labkey.test.components.LookAndFeelTimeChart;
 import org.labkey.test.components.PropertiesEditor;
+import org.labkey.test.components.SaveChartDialog;
 import org.labkey.test.components.html.SiteNavBar;
 import org.labkey.test.pages.DatasetPropertiesPage;
 import org.labkey.test.pages.TimeChartWizard;
@@ -883,12 +884,11 @@ public class StudyPublishTest extends StudyPHIExportTest
         ChartQueryDialog queryDialog = new ChartQueryDialog(getDriver());
         queryDialog.selectSchema("study").selectQuery("Visit");
         ChartTypeDialog chartTypeDialog = queryDialog.clickOk();
-        chartTypeDialog.setChartType(ChartTypeDialog.ChartType.Time)
+        TimeChartWizard timeChartWizard = chartTypeDialog.setChartType(ChartTypeDialog.ChartType.Time)
                 .selectStudyQuery(datasetMeasurePairs[0][0])
                 .setYAxis(datasetMeasurePairs[0][1])
                 .clickApply();
 
-        TimeChartWizard timeChartWizard = new TimeChartWizard(this);
         timeChartWizard.waitForWarningMessage("No data found for the following measures/dimensions", true);
 
         if (datasetMeasurePairs.length > 1)
@@ -919,14 +919,12 @@ public class StudyPublishTest extends StudyPHIExportTest
 
         // Switch to Visit-based chart
         chartTypeDialog = timeChartWizard.clickChartTypeButton();
-        chartTypeDialog.setTimeAxisType(ChartTypeDialog.TimeAxisType.Visit).clickApply();
+        timeChartWizard = chartTypeDialog.setTimeAxisType(ChartTypeDialog.TimeAxisType.Visit).clickApply();
         waitForElement(Locator.css("svg text").containing("Visit"));
 
-        clickButton("Save", 0);
-        waitForText("Viewable By");
-        setFormElement(Locator.name("reportName"), name);
-
-        clickButtonByIndex("Save", 1);
+        SaveChartDialog saveChartDialog = timeChartWizard.clickSave();
+        saveChartDialog.setReportName(name)
+                .clickSave();
     }
 
     private static final String ADD_MEASURE_TITLE = "Add Measure";

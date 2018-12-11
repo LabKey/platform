@@ -787,8 +787,10 @@ public class StudySimpleExportTest extends StudyBaseTest
             beginAt("/query/" + getProjectName() + "/executeQuery.view?schemaName=study&query.queryName=" + entry.getKey());
             DataRegionTable dt = new DataRegionTable("query", getDriver());
             dt.checkCheckbox(0);
-            dt.clickHeaderButton("Delete");
-            assertAlert("Are you sure you want to delete the selected row?");
+            doAndWaitForPageToLoad(() -> {
+                dt.clickHeaderButton("Delete");
+                assertAlert("Are you sure you want to delete the selected row?");
+            });
         }
 
         log("StudyDesign Tables: import study into subfolder");

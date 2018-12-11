@@ -21,7 +21,7 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.components.PropertiesEditor;
 import org.labkey.test.pages.EditDatasetDefinitionPage;
 import org.labkey.test.pages.study.ManageVisitPage;
-import org.labkey.test.util.ListHelper;
+import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.util.StudyHelper;
 
 import java.io.File;
@@ -224,9 +224,8 @@ public abstract class StudyManualTest extends StudyTest
 
         click(Locator.radioButtonById("button_dataField"));
 
-        _listHelper.addField("Dataset Fields", "otherData", "Other Data", ListHelper.ListColumnType.String);
         PropertiesEditor editor = PropertiesEditor.PropertiesEditor(getDriver()).withTitleContaining("Dataset Fields").find();
-        PropertiesEditor.FieldRow row = editor.selectField("otherData");
+        PropertiesEditor.FieldRow row = editor.addField(new FieldDefinition("otherData").setLabel("Other Data").setType(FieldDefinition.ColumnType.String));
         PropertiesEditor.FieldPropertyDock.AdvancedTabPane tabPane = row.properties().selectAdvancedTab();
         tabPane.importAliasesInput.set("aliasedColumn");
 

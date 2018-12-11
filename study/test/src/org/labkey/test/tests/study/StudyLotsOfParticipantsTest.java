@@ -104,7 +104,7 @@ public class StudyLotsOfParticipantsTest extends BaseWebDriverTest
         timeChartWizard.verifySvgChart(14, null);
 
         // save so we don't get confirm navigation alert
-        timeChartWizard.saveReport("Test time chart", "", true);
+        timeChartWizard.saveReport("Test time chart", "");
     }
 
     private void importEmptyFolderAndLoadData()

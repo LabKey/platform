@@ -34,7 +34,6 @@ import org.labkey.test.components.study.DatasetFacetPanel;
 import org.labkey.test.pages.EditDatasetDefinitionPage;
 import org.labkey.test.pages.TimeChartWizard;
 import org.labkey.test.util.DataRegionTable;
-import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
 import org.labkey.test.util.PortalHelper;
@@ -536,12 +535,10 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         goToManageViews();
         clickViewDetailsLink(SCATTER_PLOT_REPORT_NAME);
         clickAndWait(Locator.linkContainingText("Edit Report"));
-        _ext4Helper.waitForMaskToDisappear();
+        TimeChartWizard chartWizard = new TimeChartWizard(this).waitForReportRender();
         assertTextNotPresent("An unexpected error occurred while retrieving data", "doesn't exist", "may have been deleted");
         // verify that the main title reset goes back to the dataset label - measue name
-        waitForElement(Ext4Helper.Locators.ext4Button("Chart Layout").enabled());
-        clickButton("Chart Layout", 0);
-        LookAndFeelScatterPlot layoutDialog = new LookAndFeelScatterPlot(getDriver());
+        LookAndFeelScatterPlot layoutDialog = chartWizard.clickChartLayoutButton(LookAndFeelScatterPlot.class);
         layoutDialog.setPlotTitle("test");
         layoutDialog.clickCancel();
         assertTextPresent("APX Main Title", 2); // The count is 2 because the text is present on the plot, and in the dialog (which is now hidden).
