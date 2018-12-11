@@ -137,15 +137,30 @@ public class TSVProtocolSchema extends AssayProtocolSchema
         }
 
         @Override
-        public void remapFieldKeys(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
+        public _FlagDisplayColumnFactory remapFieldKeys(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
         {
-            rowId = FieldKey.remap(rowId, parent, remap);
+            _FlagDisplayColumnFactory remapped = this.clone();
+            remapped.rowId = FieldKey.remap(rowId, parent, remap);
+            return remapped;
         }
 
         @Override
         public DisplayColumn createRenderer(ColumnInfo colInfo)
         {
             return new _FlagColumnRenderer(colInfo, rowId, protocol, dataregion);
+        }
+
+        @Override
+        protected _FlagDisplayColumnFactory clone()
+        {
+            try
+            {
+                return (_FlagDisplayColumnFactory)super.clone();
+            }
+            catch (CloneNotSupportedException e)
+            {
+                throw new RuntimeException(e);
+            }
         }
     }
 

@@ -56,9 +56,24 @@ public class PathDisplayColumn extends DataColumn
         }
 
         @Override
-        public void remapFieldKeys(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
+        public Factory remapFieldKeys(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
         {
-            _pathParts = FieldKey.remap(_pathParts, parent, remap);
+            Factory remapped = this.clone();
+            remapped._pathParts = FieldKey.remap(_pathParts, parent, remap);
+            return remapped;
+        }
+
+        @Override
+        protected Factory clone()
+        {
+            try
+            {
+                return (Factory)super.clone();
+            }
+            catch (CloneNotSupportedException e)
+            {
+                throw new RuntimeException(e);
+            }
         }
     }
 
