@@ -330,12 +330,9 @@ public class ContainerManager
         return c;
     }
 
-    public static Container createContainerFromTemplate(Container parent, String name, Container templateContainer, User user) throws Exception
+    public static Container createContainerFromTemplate(Container parent, String name, Container templateContainer, Set<String> dataTypes, User user) throws Exception
     {
         MemoryVirtualFile vf = new MemoryVirtualFile();
-
-        // TODO get this from call that create folder jsp uses
-        Set<String> dataTypes = new HashSet<>(Arrays.asList("Folder type and active modules", "Full-text search settings", "Webpart properties and layout", "Container specific module properties", "Queries", "Grid Views", "Reports and Charts", "External schema definitions", "Lists", "Wikis and their attachments", "Notification settings", "Missing value indicators", "Study"));
 
         // export objects from the source template folder
         FolderWriterImpl writer = new FolderWriterImpl();
