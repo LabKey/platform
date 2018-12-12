@@ -6429,7 +6429,7 @@ public class AdminController extends SpringActionController
                             return false;
                         }
 
-                        c = ContainerManager.createContainerFromTemplate(parent, folderName, sourceContainer, getUser());
+                        c = ContainerManager.createContainerFromTemplate(parent, folderName, sourceContainer, PageFlowUtil.set(form.getTemplateWriterTypes()), getUser());
                     }
                     else
                     {
