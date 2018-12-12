@@ -479,7 +479,8 @@
 
             // Combine move fields into single configuration string
             if (data['containerMove'] || data['directoryMove']) {
-                data['move'] = data['containerMove'] + '/@pipeline/' + data['directoryMove'];
+                var pipelineStr = data['containerMove'] ? '/@pipeline/' : '@pipeline/';
+                data['move'] = data['containerMove'] + pipelineStr + data['directoryMove'];
             } else {
                 data['move'] = "";
             }
