@@ -57,14 +57,6 @@
 		<pkColumnName>Created,IssueId</pkColumnName>
 		<titleColumn>IssueId</titleColumn>
 	</table>
-	<table tableName="IssueKeywords" tableDbType="TABLE">
-		<columns>
-			<column columnName="Container"/>
-			<column columnName="Type"/>
-			<column columnName="Keyword"/>
-            <column columnName="Default"/>
-		</columns>
-	</table>
 	<table tableName="Issues" tableDbType="TABLE">
         <description>Contains a row for each issue created in this folder.</description>
 		<columns>
@@ -128,15 +120,6 @@
             <column columnName="Container"/>
             <column columnName="UserId"/>
             <column columnName="EmailOption"/>
-        </columns>
-    </table>
-    <table tableName="CustomColumns" tableDbType="TABLE">
-        <columns>
-            <column columnName="Container"/>
-            <column columnName="Name"/>
-            <column columnName="Caption"/>
-            <column columnName="PickList"/>
-            <column columnName="Permission"/>
         </columns>
     </table>
     <table tableName="RelatedIssues" tableDbType="TABLE">

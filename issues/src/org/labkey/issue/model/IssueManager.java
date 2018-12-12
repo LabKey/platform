@@ -28,9 +28,25 @@ import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.*;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DatabaseCache;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.Entity;
+import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.issues.IssuesListDefProvider;
 import org.labkey.api.issues.IssuesListDefService;
 import org.labkey.api.issues.IssuesSchema;
@@ -71,8 +87,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.webdav.AbstractDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
-import org.labkey.issue.ColumnTypeEnum;
-import org.labkey.issue.CustomColumnConfiguration;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.IssuesModule;
 import org.labkey.issue.query.IssueDefDomainKind;
@@ -94,7 +108,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -393,189 +406,6 @@ public class IssueManager
             Table.insert(user, _issuesSchema.getTableInfoRelatedIssues(), m);
         }
     }
-
-
-    public static Map<ColumnTypeEnum, String> getAllDefaults(Container container)
-    {
-        final Map<ColumnTypeEnum, String> defaults = new HashMap<>();
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container).addCondition(FieldKey.fromParts("Default"), true);
-        Selector selector = new TableSelector(_issuesSchema.getTableInfoIssueKeywords(), PageFlowUtil.set("Type", "Keyword", "Container", "Default"), filter, null);
-
-        selector.forEach(rs ->
-        {
-            ColumnTypeEnum type = ColumnTypeEnum.forOrdinal(rs.getInt("Type"));
-
-            assert null != type;
-
-            if (null != type)
-                defaults.put(type, rs.getString("Keyword"));
-        });
-
-        return defaults;
-    }
-
-
-    @Deprecated // Remove in 19.1
-    public static CustomColumnConfiguration getCustomColumnConfiguration(Container c)
-    {
-        return ColumnConfigurationCache.get(c);
-    }
-
-
-    @Deprecated // Remove in 19.1
-    static class CustomColumnMap extends LinkedHashMap<String, CustomColumn>
-    {
-        private CustomColumnMap(Map<String, CustomColumn> map)
-        {
-            // Copy the map ensuring the canonical order specified by COLUMN_NAMES
-            for (String name : CustomColumnConfigurationImpl.COLUMN_NAMES)
-            {
-                CustomColumn cc = map.get(name);
-
-                if (null != cc)
-                    put(name, cc);
-            }
-        }
-    }
-
-
-    @Deprecated // Remove in 19.1
-    public static class CustomColumnConfigurationImpl implements CustomColumnConfiguration
-    {
-        private static final String[] COLUMN_NAMES = {"type", "area", "priority", "milestone", "resolution", "related", "int1", "int2", "string1", "string2", "string3", "string4", "string5"};
-
-        private final CustomColumnMap _map;
-
-        // Values are being loaded from the database
-        public CustomColumnConfigurationImpl(@NotNull Map<String, CustomColumn> map, Container c)
-        {
-            Container inheritFrom = getInheritFromContainer(c); //get the container from which c inherited its admin settings
-
-            //Merge non-conflicting Custom Column values for Integer1, Integer2, String 1 to String 5 if inheriting.
-            //Non-conflicting custom column values are values such that container c and inheritFrom are
-            //not occupying the same Custom Column.
-            if(inheritFrom != null)
-            {
-                //Simply iterating through the map and using remove() throws java.util.ConcurrentModificationException.
-                // Hence, using a iterator to avoid this exception.
-                Iterator<Map.Entry<String, CustomColumn>> iter = map.entrySet().iterator();
-
-                while(iter.hasNext())
-                {
-                    Map.Entry<String, CustomColumn> col = iter.next();
-                    String colName = col.getKey();
-
-                    //Remove any pre-existing values for these six custom columns of the current container
-                    //to be able to inherit these from inheritFrom container, even if empty.
-                    //Rationale: Enabling to modify these custom col fields if not inherited, would also
-                    //modify the name in the 'Keyword' section/Options section (last/bottom section of the Admin page).
-                    //For example: user inherits 'Type Options' in the Keyword section, and 'Type' under
-                    // 'Custom Column' is enabled, allowing to add a custom field value for 'Type' will
-                    // modify 'Type Options' to '<User defined Type name> Options' (in the Keyword section).
-                    if(colName != null && (colName.equals(ColumnTypeEnum.TYPE.name()) || colName.equals(ColumnTypeEnum.AREA.name())
-                            || colName.equals(ColumnTypeEnum.PRIORITY.name()) || colName.equals(ColumnTypeEnum.MILESTONE.name())
-                            || colName.equals(ColumnTypeEnum.RESOLUTION.name()) || colName.equals(ColumnTypeEnum.RELATED.name())))
-                    {
-                        iter.remove();
-                    }
-                }
-
-                CustomColumnConfiguration inheritFromCCC = getCustomColumnConfiguration(inheritFrom);
-                Collection<CustomColumn> inheritFromCC = inheritFromCCC.getCustomColumns();
-
-                for(CustomColumn cc : inheritFromCC)
-                {
-                    //override with inheritFrom container
-                    cc.setInherited(true);
-                    map.put(cc.getName(), cc);
-                }
-            }
-
-            _map = new CustomColumnMap(map);
-        }
-
-        @Override
-        public CustomColumn getCustomColumn(String name)
-        {
-            return _map.get(name);
-        }
-
-        @Override
-        public Map<String, DomainProperty> getPropertyMap()
-        {
-            throw new UnsupportedOperationException("Only implemented for the experimental issues list");
-        }
-
-        @Override
-        public Collection<DomainProperty> getCustomProperties()
-        {
-            throw new UnsupportedOperationException("Only implemented for the experimental issues list");
-        }
-
-        @Override
-        @Deprecated
-        public Collection<CustomColumn> getCustomColumns()
-        {
-            return _map.values();
-        }
-
-        @Override
-        public Collection<CustomColumn> getCustomColumns(User user)
-        {
-            List<CustomColumn> list = new LinkedList<>();
-
-            for (CustomColumn customColumn : _map.values())
-                if (customColumn.hasPermission(user))
-                    list.add(customColumn);
-
-            return list;
-        }
-
-        @Override
-        @Deprecated
-        public boolean shouldDisplay(String name)
-        {
-            return _map.containsKey(name);
-        }
-
-        @Override
-        public boolean shouldDisplay(User user, String name)
-        {
-            CustomColumn cc = getCustomColumn(name);
-
-            return null != cc && cc.getContainer().hasPermission(user, cc.getPermission());
-        }
-
-        @Override
-        public @Nullable String getCaption(String name)
-        {
-            CustomColumn cc = getCustomColumn(name);
-
-            return null != cc ? cc.getCaption() : null;
-        }
-
-        @Override
-        public int hashCode()
-        {
-            int result;
-            result = (_map != null ? _map.hashCode() : 0);
-            return result;
-        }
-
-        @Override
-        public boolean equals(Object o)
-        {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            CustomColumnConfigurationImpl that = (CustomColumnConfigurationImpl) o;
-            if (_map != null ? !_map.equals(that._map) : that._map != null)
-                return false;
-
-            return true;
-        }
-    }
-
 
     public static Collection<Map<String, Object>> getSummary(Container c, User user, @Nullable IssueListDef issueListDef)
     {
@@ -1045,10 +875,7 @@ public class IssueManager
             {
                 deleteIssueListDef(issueListDef.getRowId(), c, user);
             }
-            ContainerUtil.purgeTable(_issuesSchema.getTableInfoIssueKeywords(), c, null);
             ContainerUtil.purgeTable(_issuesSchema.getTableInfoEmailPrefs(), c, null);
-            ContainerUtil.purgeTable(_issuesSchema.getTableInfoCustomColumns(), c, null);
-
             transaction.commit();
         }
         catch (Exception e)
@@ -1078,7 +905,6 @@ public class IssueManager
             int relatedIssuesDeleted = new SqlExecutor(_issuesSchema.getSchema()).execute(deleteRelatedIssues);
 
             int issuesDeleted = ContainerUtil.purgeTable(_issuesSchema.getTableInfoIssues(), null);
-            ContainerUtil.purgeTable(_issuesSchema.getTableInfoIssueKeywords(), null);
             transaction.commit();
 
             message = String.format("deleted %d issues<br>\ndeleted %d comments<br>\ndeleted %d relatedIssues", issuesDeleted, commentsDeleted, relatedIssuesDeleted);

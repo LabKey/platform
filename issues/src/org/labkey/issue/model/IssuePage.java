@@ -53,7 +53,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
-import org.labkey.issue.ColumnType;
 import org.labkey.issue.CustomColumnConfiguration;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.model.Issue.Comment;
@@ -596,11 +595,6 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         {
             return _issue.getNotifyListDisplayNames(_user);
         }
-    }
-
-    public String getLabel(ColumnType type, boolean markIfRequired)
-    {
-        return getLabel(type.getColumnName(), markIfRequired);
     }
 
     public String getLabel(String columnName, boolean markIfRequired)

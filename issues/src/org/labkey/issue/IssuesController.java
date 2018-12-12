@@ -25,11 +25,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleRedirectAction;
@@ -281,13 +281,6 @@ public class IssuesController extends SpringActionController
             return root.addChild("Issues", getListURL(getContainer()));
         }
     }
-
-
-    private CustomColumnConfiguration getCustomColumnConfiguration()
-    {
-        return IssueManager.getCustomColumnConfiguration(getContainer());
-    }
-
 
     public static ActionURL getListURL(Container c)
     {
@@ -692,7 +685,7 @@ public class IssuesController extends SpringActionController
     }
 
     @RequiresPermission(InsertPermission.class)
-    public class InsertIssuesAction extends ApiAction<IssuesApiForm>
+    public class InsertIssuesAction extends MutatingApiAction<IssuesApiForm>
     {
         @Override
         public void validateForm(IssuesApiForm form, Errors errors)
@@ -723,7 +716,7 @@ public class IssuesController extends SpringActionController
                     }
                     issuesForm.setStrings(stringMap);
                 }
-                CustomColumnConfiguration ccc = new NewCustomColumnConfiguration(getContainer(), getUser(), issueListDef);
+                CustomColumnConfiguration ccc = new CustomColumnConfigurationImpl(getContainer(), getUser(), issueListDef);
                 IssueValidation.validateRequiredFields(issueListDef, ccc, issuesForm, getUser(), errors);
                 IssueValidation.validateNotifyList(issuesForm, errors);
                 IssueValidation.validateAssignedTo(issuesForm, getContainer(), errors);
@@ -747,7 +740,7 @@ public class IssuesController extends SpringActionController
                     IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), NumberUtils.toInt(issuesForm.getIssueDefId()));
                     if (issueListDef != null)
                     {
-                        CustomColumnConfiguration ccc = new NewCustomColumnConfiguration(getContainer(), getUser(), issueListDef);
+                        CustomColumnConfiguration ccc = new CustomColumnConfigurationImpl(getContainer(), getUser(), issueListDef);
                         Issue issue = issuesForm.getBean();
 
                         issue.open(getContainer(), getUser());
@@ -1051,7 +1044,7 @@ public class IssuesController extends SpringActionController
             {
                 setIssue(form.getBean());
 
-                IssueValidation.validateRequiredFields(getIssueListDef(), getCustomColumnConfiguration(), form, getUser(), errors);
+                IssueValidation.validateRequiredFields(getIssueListDef(), getColumnConfiguration(), form, getUser(), errors);
                 IssueValidation.validateNotifyList(form, errors);
                 // don't validate the assigned to field if the issue is either closed or we are in the process
                 // of closing it
@@ -1197,7 +1190,7 @@ public class IssuesController extends SpringActionController
         {
             if (_columnConfiguration == null)
             {
-                _columnConfiguration = new NewCustomColumnConfiguration(getContainer(), getUser(), getIssueListDef());
+                _columnConfiguration = new CustomColumnConfigurationImpl(getContainer(), getUser(), getIssueListDef());
             }
             return _columnConfiguration;
         }
@@ -1247,7 +1240,7 @@ public class IssuesController extends SpringActionController
         }
     }
 
-    public static class NewCustomColumnConfiguration implements CustomColumnConfiguration
+    public static class CustomColumnConfigurationImpl implements CustomColumnConfiguration
     {
         private Map<String, CustomColumn> _columnMap = new LinkedCaseInsensitiveMap<>();
         private Map<String, String> _captionMap = new LinkedCaseInsensitiveMap<>();
@@ -1255,7 +1248,7 @@ public class IssuesController extends SpringActionController
         private Map<String, DomainProperty> _propertyMap = new CaseInsensitiveHashMap<>();
         private List<DomainProperty> _customProperties = new ArrayList<>();
 
-        public NewCustomColumnConfiguration(Container c, User user, IssueListDef issueDef)
+        public CustomColumnConfigurationImpl(Container c, User user, IssueListDef issueDef)
         {
             if (issueDef != null)
             {
@@ -1503,15 +1496,7 @@ public class IssuesController extends SpringActionController
 
             if (_issue.getResolution() == null || _issue.getResolution().isEmpty())
             {
-                Map<ColumnTypeEnum, String> defaults = IssueManager.getAllDefaults(getContainer());
-
-                String resolution = defaults.get(ColumnTypeEnum.RESOLUTION);
-
-                if (resolution != null && !resolution.isEmpty() && form.get("resolution") == null)
-                {
-                    _issue.setResolution(resolution);
-                }
-                else if (form.get("resolution") != null)
+                if (form.get("resolution") != null)
                 {
                     _issue.setResolution((String) form.get("resolution"));
                 }
@@ -1681,7 +1666,7 @@ public class IssuesController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class GetMoveDestinationAction extends ApiAction<IssuesController.IssuesForm>
+    public class GetMoveDestinationAction extends ReadOnlyApiAction<IssuesForm>
     {
         @Override
         public ApiResponse execute(IssuesController.IssuesForm form, BindException errors)
@@ -1702,7 +1687,7 @@ public class IssuesController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class GetContainersAction extends ApiAction
+    public class GetContainersAction extends ReadOnlyApiAction
     {
         @Override
         public ApiResponse execute(Object object, BindException errors)
@@ -2115,7 +2100,7 @@ public class IssuesController extends SpringActionController
 
 
     @RequiresPermission(ReadPermission.class)
-    public class GetIssueAction extends ApiAction<IssueIdForm>
+    public class GetIssueAction extends ReadOnlyApiAction<IssueIdForm>
     {
         @Override
         public ApiResponse execute(IssueIdForm issueIdForm, BindException errors)
@@ -2127,12 +2112,6 @@ public class IssuesController extends SpringActionController
             JSONObject jsonIssue = new JSONObject(wrapper);
             jsonIssue.remove("lastComment");
             jsonIssue.remove("class");
-
-            for (CustomColumn cc : getCustomColumnConfiguration().getCustomColumns(user))
-            {
-                jsonIssue.remove(cc.getName());
-                jsonIssue.put(cc.getCaption(), wrapper.get(cc.getName()));
-            }
 
             JSONArray comments = new JSONArray();
             jsonIssue.put("comments", comments);

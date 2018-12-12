@@ -1142,6 +1142,7 @@ issues/resources/data/resolution.tsv -text
 issues/resources/data/type.tsv -text
 issues/resources/domain-templates/issue-lookup.template.xml -text
 issues/resources/schemas/dbscripts/postgresql/issues-0.00-16.30.sql -text
+issues/resources/schemas/dbscripts/postgresql/issues-18.30-18.31.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-0.00-10.30.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-0.00-11.30.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-0.00-13.10.sql -text
@@ -1162,6 +1163,7 @@ issues/resources/schemas/dbscripts/postgresql/obsolete/issues-16.21-16.22.sql -t
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-16.22-16.23.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-16.23-16.24.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-0.00-16.30.sql -text
+issues/resources/schemas/dbscripts/sqlserver/issues-18.30-18.31.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/issues-0.00-10.30.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/issues-0.00-11.30.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/issues-0.00-13.10.sql -text
@@ -1181,8 +1183,6 @@ issues/resources/schemas/dbscripts/sqlserver/obsolete/issues-16.20-16.30.sql -te
 issues/resources/schemas/dbscripts/sqlserver/obsolete/issues-16.21-16.22.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/issues-16.22-16.23.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/issues-16.23-16.24.sql -text
-issues/src/org/labkey/issue/ColumnType.java -text
-issues/src/org/labkey/issue/ColumnTypeEnum.java -text
 issues/src/org/labkey/issue/CustomColumnConfiguration.java -text
 issues/src/org/labkey/issue/IssueContainerListener.java -text
 issues/src/org/labkey/issue/IssueGroupListener.java -text
@@ -1196,7 +1196,6 @@ issues/src/org/labkey/issue/actions/InsertIssueDefAction.java -text
 issues/src/org/labkey/issue/actions/IssueServiceAction.java -text
 issues/src/org/labkey/issue/actions/IssueValidation.java -text
 issues/src/org/labkey/issue/actions/ValidateIssueDefNameAction.java -text
-issues/src/org/labkey/issue/model/ColumnConfigurationCache.java -text
 issues/src/org/labkey/issue/model/CommentAttachmentParent.java -text
 issues/src/org/labkey/issue/model/CustomColumn.java -text
 issues/src/org/labkey/issue/model/GeneralIssuesListDefProvider.java -text
@@ -1207,7 +1206,6 @@ issues/src/org/labkey/issue/model/IssueListDefCache.java -text
 issues/src/org/labkey/issue/model/IssueManager.java -text
 issues/src/org/labkey/issue/model/IssuePage.java -text
 issues/src/org/labkey/issue/model/IssuesListDefServiceImpl.java -text
-issues/src/org/labkey/issue/model/KeywordManager.java -text
 issues/src/org/labkey/issue/query/AllIssuesTable.java -text
 issues/src/org/labkey/issue/query/CommentsTable.java -text
 issues/src/org/labkey/issue/query/IssueDefDomainKind.java -text
