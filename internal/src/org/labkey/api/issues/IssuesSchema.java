@@ -17,8 +17,8 @@
 package org.labkey.api.issues;
 
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.dialect.SqlDialect;
 
 /**
  * User: Tamra Myers
@@ -66,19 +66,9 @@ public class IssuesSchema
         return getSchema().getTable("EmailPrefs");
     }
 
-    public TableInfo getTableInfoIssueKeywords()
-    {
-        return getSchema().getTable("IssueKeywords");
-    }
-
     public TableInfo getTableInfoIssues()
     {
         return getSchema().getTable("Issues");
-    }
-
-    public TableInfo getTableInfoCustomColumns()
-    {
-        return getSchema().getTable("CustomColumns");
     }
 
     public TableInfo getTableInfoRelatedIssues()
