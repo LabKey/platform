@@ -50,6 +50,7 @@ import org.labkey.pipeline.xml.TaskPipelineType;
 import org.labkey.pipeline.xml.TaskRefType;
 import org.labkey.pipeline.xml.TaskType;
 
+import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -70,6 +71,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
     private String _analyzeURL;
     private boolean _initialFileTypesFromTask;
     private List<FileType> _initialFileTypes;
+    private boolean _initialFileTypesRequired = true;
     private FileFilter _initialInputFileFilter;
     private Map<FileType, List<FileType>> _typeHierarchy;
     /** If set, the default location for the action in the UI */
@@ -111,44 +113,51 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         if (settings.getAnalyzeURL() != null)
             _analyzeURL = settings.getAnalyzeURL();
 
-        // Convert any input filter extensions to array of file types.
-        List<FileType> inputFilterExts = settings.getInitialInputExts();
-        if (inputFilterExts != null)
+        if (settings.isInitialInputExtsRequired())
         {
-            _initialFileTypesFromTask = false;
-            _initialFileTypes = inputFilterExts;
-        }
-        else if (_initialFileTypesFromTask || getInitialFileTypes() == null)
-        {
-            _initialFileTypesFromTask = true;
-            TaskId tid = getTaskProgression()[0];
-            TaskFactory factory = PipelineJobService.get().getTaskFactory(tid);
-            _initialFileTypes = factory.getInputTypes();
-        }
-
-        if (settings.getInitialInputFileFilter() != null)
-            _initialInputFileFilter = settings.getInitialInputFileFilter();
-
-        // Misconfiguration: the user will never be able to start this pipeline
-        if ((_initialFileTypes == null || _initialFileTypes.isEmpty()) && _initialInputFileFilter == null)
-            throw new IllegalArgumentException("File analysis pipelines require at least one initial file type.");
-
-        // Convert any input extension hierarchy into file types.
-        Map<FileType, List<FileType>> extHierarchy = settings.getFileExtHierarchy();
-        if (extHierarchy != null || _typeHierarchy == null)
-            _typeHierarchy = new HashMap<>();
-
-        // Add the initial types to the hierarchy
-        for (FileType ft : _initialFileTypes)
-            _typeHierarchy.put(ft, Collections.emptyList());
-
-        if (extHierarchy != null)
-        {
-            for (Map.Entry<FileType, List<FileType>> entry  : extHierarchy.entrySet())
+            // Convert any input filter extensions to array of file types.
+            List<FileType> inputFilterExts = settings.getInitialInputExts();
+            if (inputFilterExts != null)
             {
-                List<FileType> inputExtList = entry.getValue();
-                _typeHierarchy.put(entry.getKey(), Collections.unmodifiableList(inputExtList));
+                _initialFileTypesFromTask = false;
+                _initialFileTypes = inputFilterExts;
             }
+            else if (_initialFileTypesFromTask || getInitialFileTypes() == null)
+            {
+                _initialFileTypesFromTask = true;
+                TaskId tid = getTaskProgression()[0];
+                TaskFactory factory = PipelineJobService.get().getTaskFactory(tid);
+                _initialFileTypes = factory.getInputTypes();
+            }
+
+            if (settings.getInitialInputFileFilter() != null)
+                _initialInputFileFilter = settings.getInitialInputFileFilter();
+
+            // Misconfiguration: the user will never be able to start this pipeline
+            if ((_initialFileTypes == null || _initialFileTypes.isEmpty()) && _initialInputFileFilter == null)
+                throw new IllegalArgumentException("File analysis pipelines require at least one initial file type.");
+
+            // Convert any input extension hierarchy into file types.
+            Map<FileType, List<FileType>> extHierarchy = settings.getFileExtHierarchy();
+            if (extHierarchy != null || _typeHierarchy == null)
+                _typeHierarchy = new HashMap<>();
+
+            // Add the initial types to the hierarchy
+            for (FileType ft : _initialFileTypes)
+                _typeHierarchy.put(ft, Collections.emptyList());
+
+            if (extHierarchy != null)
+            {
+                for (Map.Entry<FileType, List<FileType>> entry  : extHierarchy.entrySet())
+                {
+                    List<FileType> inputExtList = entry.getValue();
+                    _typeHierarchy.put(entry.getKey(), Collections.unmodifiableList(inputExtList));
+                }
+            }
+        } else {
+            // protocol will accept every kind of file
+            _initialFileTypesRequired = false;
+            _initialFileTypes = Collections.emptyList();
         }
 
         if (settings.getDefaultDisplayState() != null)
@@ -195,10 +204,21 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
     @NotNull
     public FileFilter getInitialFileTypeFilter()
     {
+        if (!isInitialFileTypesRequired()) {
+            return new PipelineProvider.FileEntryFilter()
+            {
+                @Override
+                public boolean accept(File pathname)
+                {
+                    return true;
+                }
+            };
+        }
+
         if (_initialInputFileFilter != null)
             return _initialInputFileFilter;
-        else
-            return new PipelineProvider.FileTypesEntryFilter(_initialFileTypes);
+
+        return new PipelineProvider.FileTypesEntryFilter(_initialFileTypes);
     }
 
     @NotNull
@@ -265,6 +285,12 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
     public Boolean isMoveAvailable()
     {
         return _moveAvailable;
+    }
+
+    @Override
+    public Boolean isInitialFileTypesRequired()
+    {
+        return _initialFileTypesRequired;
     }
 
     /**

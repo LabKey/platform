@@ -223,11 +223,19 @@
                               forceSmallContext="true"
                               contextContent="Number of seconds to wait after file activity before executing a job (minimum is 1)."/>
 
-                <labkey:input name ="move"
+                <labkey:input name="containerMove"
                               className="form-control lk-pipeline-input"
-                              label="Move Process To"
+                              label="Move to container"
                               forceSmallContext="true"
-                              contextContent="Where the file should be moved before analysis. This must be a relative or absolute container path."/>
+                              placeholder="/Other Project/Subfolder A"
+                              contextContent="Move the file to this container before analysis. This must be a relative or absolute container path."/>
+
+                <labkey:input name="directoryMove"
+                              className="form-control lk-pipeline-input"
+                              label="Move to subdirectory"
+                              forceSmallContext="true"
+                              placeholder="My Watched Files/Move here"
+                              contextContent="Move the file to this directory underneath the destination container's pipeline root. Leaving this blank will default to the pipeline root directory."/>
 
                 <labkey:input name="copy"
                               className="form-control lk-pipeline-input"
@@ -331,13 +339,35 @@
                 }
 
                 //config objects must first be parsed as JSON
-                var configObj = JSON.parse(row.Configuration);
+                var configObj = splitMoveConfig(JSON.parse(row.Configuration));
                 processConfigJson(configObj);
 
                 var customConfigObj = JSON.parse(row.CustomConfiguration);
                 processCustomConfigJson(customConfigObj);
 
                 LABKEY.Utils.signalWebDriverTest("triggerConfigLoaded");
+            }
+
+            function splitMoveConfig(configObj) {
+                var PIPELINE_STR = "/@pipeline",
+                        containerStr = "",
+                        directoryStr = "";
+
+                if (configObj.hasOwnProperty('move') && configObj['move']) {
+                    var moveStr = configObj['move'];
+                    if (moveStr.indexOf(PIPELINE_STR) > -1) {
+                        containerStr = moveStr.substring(0, moveStr.indexOf(PIPELINE_STR));
+                        directoryStr = moveStr.substring(moveStr.indexOf(PIPELINE_STR) + PIPELINE_STR.length);
+                        if (directoryStr.indexOf('/') === 0) {
+                            directoryStr = directoryStr.substring(1);
+                        }
+                    } else {
+                        containerStr = moveStr;
+                    }
+                }
+                configObj['containerMove'] = containerStr;
+                configObj['directoryMove'] = directoryStr;
+                return configObj;
             }
 
             function onFailure(data) {
@@ -436,10 +466,9 @@
         $("#btnSubmit").on('click', (function() {
             var data = {};
             $("#pipelineForm").serializeArray().map(function(x){
-
-                if (!data[x.name])
+                if (!data[x.name]) {
                     data[x.name] = x.value;
-                else {
+                } else {
                     if (!$.isArray(data[x.name])){
                         var prev = data[x.name];
                         data[x.name] = [prev];
@@ -447,6 +476,15 @@
                     data[x.name].push(x.value);
                 }
             });
+
+            // Combine move fields into single configuration string
+            if (data['containerMove'] || data['directoryMove']) {
+                data['move'] = data['containerMove'] + '/@pipeline/' + data['directoryMove'];
+            } else {
+                data['move'] = "";
+            }
+            delete data['containerMove'];
+            delete data['directoryMove'];
 
             LABKEY.Ajax.request({
                 url : LABKEY.ActionURL.buildURL("pipeline", "savePipelineTrigger.api"),
@@ -473,11 +511,13 @@
 
         function handleMoveField(taskId) {
             if (taskId) {
-                var moveElem = $("input[name='move']");
-                moveElem.prop('disabled', !taskPipelineVariables[taskId].moveEnabled);
-                if (!taskPipelineVariables[taskId].moveEnabled) {
-                    moveElem[0].value = "";
-                }
+                ['containerMove', 'directoryMove'].forEach(function(s) {
+                    var moveElem = $("input[name='" + s + "']");
+                    moveElem.prop('disabled', !taskPipelineVariables[taskId].moveEnabled);
+                    if (!taskPipelineVariables[taskId].moveEnabled) {
+                        moveElem[0].value = "";
+                    }
+                });
             }
         }
 
