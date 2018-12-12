@@ -62,7 +62,7 @@ public interface FileAnalysisTaskPipeline extends TaskPipeline<FileAnalysisTaskP
     URLHelper getAnalyzeURL(Container c, String path);
 
     @NotNull
-    public Map<FileType, List<FileType>> getTypeHierarchy();
+    Map<FileType, List<FileType>> getTypeHierarchy();
 
     @Nullable
     PipelineActionConfig.displayState getDefaultDisplayState();
@@ -90,5 +90,7 @@ public interface FileAnalysisTaskPipeline extends TaskPipeline<FileAnalysisTaskP
     String getHelpText();
 
     Boolean isMoveAvailable();
+
+    Boolean isInitialFileTypesRequired();
 
 }

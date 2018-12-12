@@ -54,6 +54,11 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
     private String _protocolFactoryName;
 
     /**
+     * Whether an initial list of file input extensions are required for the pipeline
+     */
+    private boolean _initialInputExtsRequired = true;
+
+    /**
      * Extensions used as filters for files to show in the user interface
      * when initiating the pipeline.
      */
@@ -137,6 +142,16 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
     public void setProtocolFactoryName(String protocolFactoryName)
     {
         _protocolFactoryName = protocolFactoryName;
+    }
+
+    public Boolean isInitialInputExtsRequired()
+    {
+        return _initialInputExtsRequired;
+    }
+
+    public void setInitialInputExtsRequired(boolean initialInputExtsRequired)
+    {
+        _initialInputExtsRequired = initialInputExtsRequired;
     }
 
     public List<FileType> getInitialInputExts()
