@@ -169,6 +169,7 @@
             <column columnName="JsonMetrics"/>
             <column columnName="UsageReportingLevel"/>
             <column columnName="ExceptionReportingLevel"/>
+            <column columnName="buildtime"/>
         </columns>
     </table>
 
