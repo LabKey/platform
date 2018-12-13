@@ -1,2 +1,2 @@
 ALTER TABLE mothership.ServerSession
-  ADD COLUMN buildTime timestamp NOT NULL ;
+  ADD COLUMN buildTime timestamp;
