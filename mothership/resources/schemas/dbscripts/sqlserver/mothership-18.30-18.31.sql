@@ -1,3 +1,3 @@
 ALTER TABLE mothership.ServerSession
-  ADD buildTime datetime NOT NULL ;
+  ADD buildTime timestamp NOT NULL ;
 GO
