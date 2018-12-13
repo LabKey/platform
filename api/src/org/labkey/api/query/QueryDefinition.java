@@ -95,6 +95,12 @@ public interface QueryDefinition
     @Nullable TableInfo getTable(List<QueryException> errors, boolean includeMetadata);
     @Nullable TableInfo getTable(UserSchema schema, List<QueryException> errors, boolean includeMetadata);
 
+    /**
+     * Use skipSuggestedColumns=TRUE to skip adding suggested/referenced columns.
+     * Issue 36275: ODBC/Tableau generates select query containing columns from referenced table
+     */
+    @Nullable TableInfo getTable(UserSchema schema, List<QueryException> errors, boolean includeMetadata, boolean skipSuggestedColumns);
+
     String getSql();
     String getMetadataXml();
     String getDescription();
