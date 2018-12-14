@@ -1573,7 +1573,7 @@ public class DavController extends SpringActionController
                                 {
                                     CloudStoreService cloudStoreService = CloudStoreService.get();
                                     Container resourceContainer = ContainerManager.getForId(resource.getContainerId());
-                                    if (null != cloudStoreService && null != resourceContainer && cloudStoreService.getEnabledCloudStores(resourceContainer).isEmpty())
+                                    if (null != cloudStoreService && null != resourceContainer && cloudStoreService.getEnabledCloudStores(resourceContainer, true).isEmpty())
                                         continue;
                                 }
                                 Path newPath = currentPath.append(listPath);

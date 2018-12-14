@@ -82,7 +82,9 @@ public class WikiWebdavProvider implements WebdavService.Provider
     final static String WIKI_NAME = "@wiki";
     
     // currently addChildren is called only for web folders
-    public Set<String> addChildren(@NotNull WebdavResource target)
+    @Override
+    @Nullable
+    public Set<String> addChildren(@NotNull WebdavResource target, boolean isListing)
     {
         if (!(target instanceof WebdavResolverImpl.WebFolderResource))
             return null;

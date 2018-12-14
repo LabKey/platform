@@ -53,8 +53,9 @@ import java.util.Set;
  */
 public class FileWebdavProvider implements WebdavService.Provider
 {
+    @Override
     @Nullable
-    public Set<String> addChildren(@NotNull WebdavResource target)
+    public Set<String> addChildren(@NotNull WebdavResource target, boolean isListing)
     {
         if (!(target instanceof WebdavResolverImpl.WebFolderResource))
             return null;

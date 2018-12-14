@@ -17,6 +17,7 @@ package org.labkey.query;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.query.DefaultSchema;
@@ -56,7 +57,9 @@ public class QueryWebdavProvider implements WebdavService.Provider
 {
 	final String QUERY_NAME = "@query";
 
-	public Set<String> addChildren(@NotNull WebdavResource target)
+	@Override
+	@Nullable
+	public Set<String> addChildren(@NotNull WebdavResource target, boolean isListing)
 	{
 		if (target instanceof WebdavResolverImpl.WebFolderResource)
 			return PageFlowUtil.set(QUERY_NAME);

@@ -48,8 +48,9 @@ public class PipelineWebdavProvider implements WebdavService.Provider
     public static final String PIPELINE_LINK = "@pipeline";
 
     // currently addChildren is called only for web folders
+    @Override
     @Nullable
-    public Set<String> addChildren(@NotNull WebdavResource target)
+    public Set<String> addChildren(@NotNull WebdavResource target, boolean isListing)
     {
         if (!(target instanceof WebdavResolverImpl.WebFolderResource))
             return null;

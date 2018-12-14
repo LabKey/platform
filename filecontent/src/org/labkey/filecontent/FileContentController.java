@@ -1345,7 +1345,8 @@ public class FileContentController extends SpringActionController
                 if (null != encodedUrl)
                 {
                     Map<String, Object> row = new HashMap<>();
-                    row.put("dataFileUrl", FileUtil.pathToString(FileUtil.stringToPath(getContainer(), (String) encodedUrl)));
+                    java.nio.file.Path dataFilePath = FileUtil.stringToPath(getContainer(), (String) encodedUrl);
+                    row.put("dataFileUrl", null != dataFilePath ? FileUtil.pathToString(dataFilePath) : null);
                     row.put("rowId", data.get("RowId"));
                     row.put("name", data.get("Name"));
                     if (null != form.getCustomProperties())

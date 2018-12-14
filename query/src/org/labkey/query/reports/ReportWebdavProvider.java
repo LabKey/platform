@@ -16,6 +16,7 @@
 package org.labkey.query.reports;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
@@ -49,7 +50,9 @@ public class ReportWebdavProvider implements WebdavService.Provider
 {
     final static String VIEW_NAME = "@views";
 
-    public Set<String> addChildren(@NotNull WebdavResource target)
+    @Override
+    @Nullable
+    public Set<String> addChildren(@NotNull WebdavResource target, boolean isListing)
     {
         if (!(target instanceof WebdavResolverImpl.WebFolderResource))
             return null;
