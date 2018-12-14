@@ -1709,21 +1709,21 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             Map<String, Pair<Integer, String[]>> map = new HashMap<>();
 
             add(map, "cmd_sample.cmd", 844, "Delete SetupPolicies directory");
-            add(map, "cpp_sample.cpp", 1508, "Rcpp::NumericVector");
-            add(map, "css_sample.css", 8642, "math display", "fixes display issues");
+            add(map, "cpp_sample.cpp", 281, "Rcpp::NumericVector");
+            add(map, "css_sample.css", 697, "math display", "fixes display issues");
             add(map, "csv_sample.csv", 690, "NpodDonorSamplesTest.testWizardCustomizationAndDataEntry");
             add(map, "dll_sample.dll", 0);
-            add(map, "doc_sample.doc", 9002, "In the Learn section you can find detailed information", "In reality that visit is at a different week across studies and treatments");
-            add(map, "docx_sample.docx", 8989, "In the Learn section you can find detailed information", "In reality that visit is at a different week across studies and treatments");
-            add(map, "dot_sample.dot", 9002, "In the Learn section you can find detailed information", "In reality that visit is at a different week across studies and treatments");
-            add(map, "dotx_sample.dotx", 8989, "In the Learn section you can find detailed information", "In reality that visit is at a different week across studies and treatments");
+            add(map, "doc_sample.doc", 3585, "In the Learn section you can find detailed information", "In reality that visit is at a different week across studies and treatments");
+            add(map, "docx_sample.docx", 3580, "In the Learn section you can find detailed information", "In reality that visit is at a different week across studies and treatments");
+            add(map, "dot_sample.dot", 3589, "In the Learn section you can find detailed information", "In reality that visit is at a different week across studies and treatments");
+            add(map, "dotx_sample.dotx", 3579, "In the Learn section you can find detailed information", "In reality that visit is at a different week across studies and treatments");
             add(map, "exe_sample.exe", 0);
-            add(map, "html_sample.html", 354182, "Align redeploy resource modification", "57855: Explicitly handle the case");
+            add(map, "html_sample.html", 1049, "Align redeploy resource modification", "57855: Explicitly handle the case");
             add(map, "ico_sample.ico", 0);
 //            Our version of Tika can't extract text from .class and .jar files since we stopped including asm.jar. If we ever add it back then uncomment the line below to test decompilation.
 //            add(map, "jar_sample.jar", 712120, "private double _requiredVersion", "protected java.util.Map findObject(java.util.List, String, String);");
             add(map, "jar_sample.jar", 49162, "org/json/simple/JSONValue.class", "Main-Class: org.labkey.AssayValidator");
-            add(map, "java_sample.java", 9251, "Jackson databinding bean for the controlInfo object", "private String errors");
+            add(map, "java_sample.java", 149, "main(String[] args)", "System.out.println");
             add(map, "jpg_sample.jpg", 0);
             add(map, "js_sample.js", 21405, "Magnific Popup Core JS file", "convert jQuery collection to array", "");
             add(map, "mov_sample.mov", 0);
@@ -1734,11 +1734,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             add(map, "pptx_sample.pptx", 109, "Slide With Image", "Slide With Text", "Hello world", "How are you?");
             add(map, "rtf_sample.rtf", 11, "One on One");
             add(map, "sample.txt", 48, "Sample text file", "1", "2", "9");
-            add(map, "sql_sample.sql", 15272, "for JDBC Login support", "Container of parent, if parent has no ACLs");
+            add(map, "sql_sample.sql", 2322, "for JDBC Login support", "Container of parent, if parent has no ACLs");
             add(map, "svg_sample.svg", 18, " "); // Not empty, but just a bunch of whitespace
             add(map, "tgz_sample.tgz", 7767, "assertthat is an extension", "Custom failure messages");
             add(map, "tif_sample.tif", 0);
-            add(map, "tsv_sample.tsv", 488328, "1264.5", "10JAN07_plate_1.xls");
+            add(map, "tsv_sample.tsv", 2986, "1264.5", "10JAN07_plate_1.xls");
             add(map, "vsd_sample.vsd", 982, "Contoso Pharmaceuticals, Inc.", "Trial Continuation Process", "events depicted herein are fictitious");
             add(map, "xls_sample.xls", 250, "Column 03 attachment", "Bird", "help.jpg");
             add(map, "xlsx_sample.xlsx", 2096, "Failure History", "NpodDonorSamplesTest.testWizardCustomizationAndDataEntry", "Sample Error", "DailyB postgres", "StudySimpleExportTest.verifyCustomParticipantView", "You're trying to decode an invalid JSON String");
