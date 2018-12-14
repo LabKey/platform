@@ -231,13 +231,13 @@ public class Query
     }
 
 
-    public void parse(boolean skipSuggestedColumns)
+    public void parse()
     {
         if (null == _querySource)
             throw new IllegalStateException("SQL has not been specified");
 
         Logger.getLogger(Query.class).debug("Query.parse()\n" + _querySource);
-        _parse(_querySource, skipSuggestedColumns);
+        _parse(_querySource);
         
         for (QueryException e : _parseErrors)
         {
@@ -256,17 +256,12 @@ public class Query
 
     public void parse(String queryText)
     {
-        parse(queryText, false);
-    }
-
-    public void parse(String queryText, boolean skipSuggestedColumns)
-    {
         _querySource = queryText;
-        parse(skipSuggestedColumns);
+        parse();
     }
 
 
-	private void _parse(String queryText, boolean skipSuggestedColumns)
+	private void _parse(String queryText)
     {
 		try
 		{
@@ -285,7 +280,7 @@ public class Query
             _parameters = parser.getParameters();
 
 			QNode root = parser.getRoot();
-            QueryRelation relation = createQueryRelation(this, root, false, skipSuggestedColumns);
+            QueryRelation relation = createQueryRelation(this, root, false);
 
             if (relation == null)
                 return;
@@ -308,12 +303,9 @@ public class Query
 		}
     }
 
-    public static QueryRelation createQueryRelation(Query query, QNode root, boolean inFromClause)
-    {
-        return createQueryRelation(query, root, inFromClause, false);
-    }
 
-    public static QueryRelation createQueryRelation(Query query, QNode root, boolean inFromClause, boolean skipSuggestedColumns)
+
+    public static QueryRelation createQueryRelation(Query query, QNode root, boolean inFromClause)
     {
         QueryWith queryWith = null;
         if (root instanceof QWithQuery)
@@ -331,16 +323,7 @@ public class Query
         else if (root instanceof QQuery)
         {
 
-            QuerySelect select = new QuerySelect(query, (QQuery) root, inFromClause)
-            {
-                @Override
-                protected Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
-                {
-                    if (skipSuggestedColumns)
-                        return Collections.emptySet();
-                    return super.getSuggestedColumns(selected);
-                }
-            };
+            QuerySelect select = new QuerySelect(query, (QQuery) root, inFromClause);
             QueryLookupWrapper wrapper;
 
             if (null == root.getChildOfType(QPivot.class))
