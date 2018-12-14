@@ -114,6 +114,14 @@ public interface CloudStoreService
     Collection<String> getEnabledCloudStores(Container container);
 
     /**
+     * Returns a list of enabled store names in the container, excluding 'except'.
+     */
+    default Collection<String> getEnabledCloudStores(Container container, boolean exceptFileRoot)
+    {
+        return getEnabledCloudStores(container);            // Only so old CloudStoreServiceImpl works
+    }
+
+    /**
      * Set the enabled stores within the container -- other stores not included will be disabled.
      */
     void setEnabledCloudStores(Container c, Set<String> enabledCloudStores);

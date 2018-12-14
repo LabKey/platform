@@ -257,7 +257,7 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver implements File
         }
 
         @Override
-        public synchronized List<String> getWebFoldersNames()
+        public synchronized List<String> getWebFoldersNames(boolean isListing)
         {
             Container container = getContainer();
             if (null == _children)
@@ -328,7 +328,7 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver implements File
         public WebdavResource find(String child)
         {
             String name = null;
-            for (String folder : getWebFoldersNames())
+            for (String folder : getWebFoldersNames(false))
             {
                 if (folder.equalsIgnoreCase(child))
                 {

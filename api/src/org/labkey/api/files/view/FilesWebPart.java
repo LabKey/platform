@@ -359,9 +359,17 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         {
             if (!_allowedDavNames.contains(davName))              // TODO and I don't think we need to encode
                 throw new IllegalStateException("unrecognized DavName");
-            relativePath += davName;
-            if (fileset != null)
-                relativePath += "/" + fileset;
+
+            if (FileContentService.CLOUD_LINK.equalsIgnoreCase(davName) && FileContentService.get().getCloudRootName(c).equalsIgnoreCase(fileset))
+            {
+                relativePath += FileContentService.FILES_LINK;
+            }
+            else
+            {
+                relativePath += davName;
+                if (fileset != null)
+                    relativePath += "/" + fileset;
+            }
         }
 
         return _getRootPath(c, relativePath, skipDavPrefix);
@@ -671,6 +679,16 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             {
                 return isCloudStoreEnabled(container);
             }
+
+            if (isAtFilesRootPath() && FileContentService.get().isCloudRoot(container))
+            {
+                String storeName = FileContentService.get().getCloudRootName(container);
+                if (null != storeName && CloudStoreService.get().isEnabled(storeName))
+                    return true;
+                else
+                    return false;
+            }
+
             return (_rootDirectory != null && Files.exists(_rootDirectory));
         }
 
@@ -762,6 +780,12 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         {
             return -1 != StringUtils.indexOf(_rootPath, CLOUD_PATTERN) ||
                    -1 != StringUtils.indexOf(_rootPath, CLOUD_PATTERN_ENCODED);
+        }
+
+        public boolean isAtFilesRootPath()
+        {
+            return -1 != StringUtils.indexOf(_rootPath, "@files/") ||
+                   -1 != StringUtils.indexOf(_rootPath, "%40files/");
         }
     }
 }

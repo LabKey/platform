@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
 <%@ page import="org.labkey.api.premium.PremiumService" %>
+<%@ page import="org.labkey.api.files.FileContentService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -50,7 +51,7 @@
     }
     else if (!bean.isRootValid(c))
     {
-        if (bean.isCloudRootPath())
+        if (bean.isCloudRootPath() || (bean.isAtFilesRootPath() && FileContentService.get().isCloudRoot(c)))
         {
 %>
     <span class="labkey-error">

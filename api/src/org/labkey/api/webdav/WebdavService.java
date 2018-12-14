@@ -152,8 +152,7 @@ public class WebdavService
     public interface Provider
     {
         // currently addChildren is called only for web folders
-        @Nullable
-        Set<String> addChildren(@NotNull WebdavResource target);
+        @Nullable Set<String> addChildren(@NotNull WebdavResource target, boolean isListing);
         WebdavResource resolve(@NotNull WebdavResource parent, @NotNull String name);
     }
 

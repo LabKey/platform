@@ -44,8 +44,6 @@
     FileContentService svc = FileContentService.get();
     Collection<AttachmentDirectory> attDirs = svc.getRegisteredDirectories(getContainer());
 
-    List<String> cloudStoreNames = form.getEnabledCloudStores(getContainer());
-
     boolean small = false;
     boolean medium = false;
     boolean large = false;

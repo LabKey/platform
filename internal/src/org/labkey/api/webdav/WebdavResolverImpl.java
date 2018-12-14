@@ -143,7 +143,7 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
         public WebdavResource find(String child)
         {
             String name = null;
-            for (String folder : getWebFoldersNames())
+            for (String folder : getWebFoldersNames(false))
             {
                 if (folder.equalsIgnoreCase(child))
                 {

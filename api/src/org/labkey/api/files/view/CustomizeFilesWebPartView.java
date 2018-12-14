@@ -164,19 +164,6 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
             _title = title;
         }
 
-        public List<String> getEnabledCloudStores(Container container)
-        {
-            List<String> cloudStoreNames = new ArrayList<>();
-            CloudStoreService cloud = CloudStoreService.get();
-            if (cloud != null)
-            {
-                for (String store : cloud.getEnabledCloudStores(container))
-                    if (cloud.containerFolderExists(store, container))
-                        cloudStoreNames.add(store);
-            }
-            return cloudStoreNames;
-        }
-
         public String getFileRoot()
         {
             return fileRoot;

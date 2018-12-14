@@ -227,7 +227,7 @@ public abstract class AbstractWebdavResolver implements WebdavResolver
             return exists();
         }
 
-        public synchronized List<String> getWebFoldersNames()
+        public synchronized List<String> getWebFoldersNames(boolean isListing)
         {
             if (null == _children)
             {
@@ -238,7 +238,7 @@ public abstract class AbstractWebdavResolver implements WebdavResolver
 
                 for (WebdavService.Provider p : WebdavService.get().getProviders())
                 {
-                    Set<String> s = p.addChildren(this);
+                    Set<String> s = p.addChildren(this, isListing);
                     if (s != null)
                         children.addAll(s);
                 }
@@ -289,7 +289,7 @@ public abstract class AbstractWebdavResolver implements WebdavResolver
             Set<String> set = new TreeSet<>();
 //            if (null != _attachmentResource)
 //                set.addAll(_attachmentResource.listNames());
-            set.addAll(getWebFoldersNames());
+            set.addAll(getWebFoldersNames(true));
             ArrayList<String> list = new ArrayList<>(set);
             Collections.sort(list);
             return list;
