@@ -88,6 +88,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1023,7 +1024,7 @@ public class MothershipController extends SpringActionController
         private String _exceptionReportingLevel;
         private String _jsonMetrics;
         private String _serverHostName;
-        private String _buildTime;
+        private Date _buildTime;
 
         public String getSvnURL()
         {
@@ -1318,12 +1319,12 @@ public class MothershipController extends SpringActionController
             _jsonMetrics = jsonMetrics;
         }
 
-        public String getBuildTime()
+        public Date getBuildTime()
         {
             return _buildTime;
         }
 
-        public void setBuildTime(String buildTime)
+        public void setBuildTime(Date buildTime)
         {
             _buildTime = buildTime;
         }
