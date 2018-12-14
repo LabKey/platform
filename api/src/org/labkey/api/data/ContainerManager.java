@@ -330,7 +330,7 @@ public class ContainerManager
         return c;
     }
 
-    public static Container createContainerFromTemplate(Container parent, String name, Container templateContainer, Set<String> dataTypes, User user) throws Exception
+    public static Container createContainerFromTemplate(Container parent, String name, String title, Container templateContainer, Set<String> dataTypes, User user) throws Exception
     {
         MemoryVirtualFile vf = new MemoryVirtualFile();
 
@@ -342,7 +342,7 @@ public class ContainerManager
         writer.write(templateContainer, exportCtx, vf);
 
         // create the new target container
-        Container c = ContainerManager.createContainer(parent, name, null, null, NormalContainerType.NAME, user);
+        Container c = ContainerManager.createContainer(parent, name, title, null, NormalContainerType.NAME, user);
 
         // import objects into the target folder
         XmlObject folderXml = vf.getXmlBean("folder.xml");
