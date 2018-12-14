@@ -520,15 +520,19 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
         addHiddenBatchProperties(newRunForm, insertView);
 
-        for (Map.Entry<DomainProperty, String> entry : newRunForm.getBatchProperties().entrySet())
+        List<ParticipantVisitResolverType> participantVisitResolverTypes = newRunForm.getProvider().getParticipantVisitResolverTypes();
+        if (participantVisitResolverTypes != null && !participantVisitResolverTypes.isEmpty())
         {
-            if (entry.getKey().getName().equals(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME))
+            for (Map.Entry<DomainProperty, String> entry : newRunForm.getBatchProperties().entrySet())
             {
-                ParticipantVisitResolverType resolverType = AbstractAssayProvider.findType(entry.getValue(), newRunForm.getProvider().getParticipantVisitResolverTypes());
-                if (resolverType != null)
+                if (entry.getKey().getName().equals(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME))
                 {
-                    resolverType.addHiddenFormFields(newRunForm, insertView);
-                    break;
+                    ParticipantVisitResolverType resolverType = AbstractAssayProvider.findType(entry.getValue(), participantVisitResolverTypes);
+                    if (resolverType != null)
+                    {
+                        resolverType.addHiddenFormFields(newRunForm, insertView);
+                        break;
+                    }
                 }
             }
         }

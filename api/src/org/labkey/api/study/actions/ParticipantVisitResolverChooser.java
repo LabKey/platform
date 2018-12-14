@@ -58,6 +58,12 @@ public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
 
     public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
     {
+        if (_resolvers.isEmpty())
+        {
+            out.write("<input type=\"hidden\" name = \"" + PageFlowUtil.filter(_typeInputName) + "\"/>None available<br/> ");
+            return;
+        }
+
         boolean disabledInput = isDisabledInput();
         ParticipantVisitResolverType selected = null;
         for (ParticipantVisitResolverType resolver : _resolvers)
@@ -78,7 +84,7 @@ public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
 
         if (_resolvers.size() < 2)
         {
-            out.write("<input type=\"hidden\" name = \"" + _typeInputName + "\" value=\"" + PageFlowUtil.filter(selected.getName()) + "\"/>" + PageFlowUtil.filter(selected.getDescription()) + "<br/> ");
+            out.write("<input type=\"hidden\" name = \"" + PageFlowUtil.filter(_typeInputName) + "\" value=\"" + PageFlowUtil.filter(selected.getName()) + "\"/>" + PageFlowUtil.filter(selected.getDescription()) + "<br/> ");
             try
             {
                 selected.render(ctx);
@@ -97,7 +103,7 @@ public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
             {
                 out.write("<tr><td>");
                 out.write("<input");
-                out.write(" onClick=\"typeElements = document.getElementsByName('" + _typeInputName+ "'); " +
+                out.write(" onClick=\"typeElements = document.getElementsByName(" + PageFlowUtil.jsString(_typeInputName)+ "); " +
                         "for (i = 0; i < typeElements.length; i++) " +
                         "{ var resolverSubSectionDiv = document.getElementById('ResolverDiv-' + typeElements[i].value); " +
                         " if (resolverSubSectionDiv != null) resolverSubSectionDiv.style.display='none'; } "
@@ -112,7 +118,7 @@ public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
 
                 out.write("\" ");
                 out.write(" type=\"radio\" " +
-                        "name=\"" + _typeInputName + "\"" +
+                        "name=\"" + PageFlowUtil.filter(_typeInputName) + "\"" +
                         ( resolver == selected ? " checked=\"true\"" : "") + " " +
                         "value=\"" + PageFlowUtil.filter(resolver.getName()) + "\"" +
                         "id=\"RadioBtn-" + PageFlowUtil.filter(resolver.getName()) + "\"" +
@@ -139,7 +145,7 @@ public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
                     }
                     out.write("</div>");
                     if (disabledInput)
-                        out.write("<input type=\"hidden\" name=\"" + _typeInputName + "\" value=\"" + PageFlowUtil.filter(selected.getName()) + "\">");
+                        out.write("<input type=\"hidden\" name=\"" + PageFlowUtil.filter(_typeInputName) + "\" value=\"" + PageFlowUtil.filter(selected.getName()) + "\">");
                     out.write("</td></tr>");
                 }
             }
