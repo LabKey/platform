@@ -6384,6 +6384,7 @@ public class AdminController extends SpringActionController
         {
             Container parent = getViewContext().getContainerNoTab();
             String folderName = StringUtils.trimToNull(form.getName());
+            String folderTitle = (form.isTitleSameAsName() || folderName.equals(form.getTitle())) ? null : form.getTitle();
             StringBuilder error = new StringBuilder();
 
             if (Container.isLegalName(folderName, parent.isRoot(), error))
@@ -6429,7 +6430,7 @@ public class AdminController extends SpringActionController
                             return false;
                         }
 
-                        c = ContainerManager.createContainerFromTemplate(parent, folderName, sourceContainer, PageFlowUtil.set(form.getTemplateWriterTypes()), getUser());
+                        c = ContainerManager.createContainerFromTemplate(parent, folderName, folderTitle, sourceContainer, PageFlowUtil.set(form.getTemplateWriterTypes()), getUser());
                     }
                     else
                     {
@@ -6452,7 +6453,7 @@ public class AdminController extends SpringActionController
                             }
                         }
 
-                        c = ContainerManager.createContainer(parent, folderName, ((form.isTitleSameAsName() || folderName.equals(form.getTitle())) ? null : form.getTitle()), null, NormalContainerType.NAME, getUser());
+                        c = ContainerManager.createContainer(parent, folderName, folderTitle, null, NormalContainerType.NAME, getUser());
                         c.setFolderType(type, getUser());
 
                         if (null == StringUtils.trimToNull(folderType) || FolderType.NONE.getName().equals(folderType))
