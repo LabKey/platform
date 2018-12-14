@@ -137,10 +137,10 @@ Ext4.define('Security.panel.PermissionEditor', {
             // success
             else {
                 if (Ext4.isFunction(onSuccess)) {
-                    onSuccess.call(this);
+                    onSuccess.call(this, response);
                 }
                 else {
-                    policyEditor.saveSuccess();
+                    policyEditor.saveSuccess(response);
                 }
             }
         });

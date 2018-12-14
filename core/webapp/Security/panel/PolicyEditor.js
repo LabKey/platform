@@ -701,7 +701,7 @@ Ext4.define('Security.panel.PolicyEditor', {
     },
 
 
-    saveSuccess : function()
+    saveSuccess : function(response)
     {
         if (this.getEl()) {
             this.getEl().unmask();
@@ -711,13 +711,14 @@ Ext4.define('Security.panel.PolicyEditor', {
         Security.util.Policy.getPolicy({resourceId:this.resource.id, successCallback:this.setPolicy, scope:this});
 
         // feedback
+        var msg = response && response.hasOwnProperty('hasChanges') && !response.hasChanges ? 'No changes to be saved.' : 'Changes saved successful.';
         var mb = Ext4.MessageBox.show({
             title  : 'Save',
-            msg:'<div align=center><span style="color:green; font-weight:bold; font-size:133%;">save successful</span></div>',
+            msg:'<span class="labkey-message" style="font-weight:bold; font-size:133%;">' + msg + '</span>',
             width  : 150
         });
 
-        Ext4.defer(mb.hide, 1000, mb);
+        Ext4.defer(mb.hide, 2500, mb);
     },
 
     saveFail : function(json, response, options)

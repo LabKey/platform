@@ -756,19 +756,19 @@ public class SecurityApiActions
             if (policy == null)
                 throw new IllegalArgumentException("Unable to load policy from map.");
 
+            // CONSIDER move check for unauthorized changes to a new SecurityPolicy save() method
+            SortedSet<RoleAssignment> savedAssignments   = oldPolicy.getAssignments();
+            SortedSet<RoleAssignment> updatedAssignments = policy.getAssignments();
+            Set<Role> changedRoles = new HashSet<>();
+            for (RoleAssignment r : savedAssignments)
+                if (!updatedAssignments.contains(r))
+                    changedRoles.add(r.getRole());
+            for (RoleAssignment r : updatedAssignments)
+                if (!savedAssignments.contains(r))
+                    changedRoles.add(r.getRole());
+
             if (container.isRoot() && !user.isInSiteAdminGroup())
             {
-                // CONSIDER move check for unauthorized changes to a new SecurityPolicy save() method
-                SortedSet<RoleAssignment> savedAssignments   = oldPolicy.getAssignments();
-                SortedSet<RoleAssignment> updatedAssignments = policy.getAssignments();
-                Set<Role> changedRoles = new HashSet<>();
-                for (RoleAssignment r : savedAssignments)
-                    if (!updatedAssignments.contains(r))
-                        changedRoles.add(r.getRole());
-                for (RoleAssignment r : updatedAssignments)
-                    if (!savedAssignments.contains(r))
-                        changedRoles.add(r.getRole());
-
                 // AppAdmin cannot change assignments to SiteAdminRole or PlatformDeveloperRole
                 if (changedRoles.contains(RoleManager.getRole(SiteAdminRole.class)))
                     errors.reject(ERROR_MSG, "You do not have permission to modify the Site Admin role");
@@ -804,7 +804,10 @@ public class SecurityApiActions
                 }
             }
 
-            return new ApiSimpleResponse("success", !errors.hasErrors());
+            Map<String, Object> props = new HashMap<>();
+            props.put("success", !errors.hasErrors());
+            props.put("hasChanges", !changedRoles.isEmpty());
+            return new ApiSimpleResponse(props);
         }
 
         protected void writeToAuditLog(SecurableResource resource, @Nullable SecurityPolicy oldPolicy, SecurityPolicy newPolicy)

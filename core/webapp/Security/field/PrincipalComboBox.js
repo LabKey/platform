@@ -61,6 +61,8 @@ Ext4.define('Security.field.PrincipalComboBox', {
             this.excludedPrincipals[a[i]] = true;
         }
 
+        var emptyText = (config.emptyTextPrefix || 'Select') + (config.groupsOnly ? ' group...' : config.usersOnly ? ' user...' : ' user or group...');
+
         config = Ext4.apply({}, config, {
             store          : config.cache.principalsStore,
             minListWidth   : 200,
@@ -69,7 +71,7 @@ Ext4.define('Security.field.PrincipalComboBox', {
             forceSelection : true,
             typeAhead      : true,
             displayField   : 'Name',
-            emptyText : config.groupsOnly ? 'Add group...' : config.usersOnly ? 'Add user...' : 'Add user or group...',
+            emptyText : emptyText,
             itemId    : 'Users_dropdownMenu'
         });
 

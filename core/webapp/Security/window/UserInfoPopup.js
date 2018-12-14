@@ -110,6 +110,7 @@ Ext4.define('Security.window.UserInfoPopup', {
                 width  : 350,
                 cache  : this.cache,
                 forceSelection : false,
+                emptyTextPrefix : 'Add',
                 listeners: {
                     select     : this.Combo_onSelect,
                     specialkey : this.Combo_onKeyPress,
