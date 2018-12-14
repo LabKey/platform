@@ -2622,7 +2622,7 @@ Ext4.define('File.panel.Browser', {
                     var browser = this;
                     var modifiedPath = path;
                     this.fileSystem.createDirectory({
-                        path : this.fileSystem.encodePercent(path + folder),
+                        path : this.fileSystem.encodeForURL(path + folder),
                         success : function(path) {
                             win.close();
                             this.afterFileSystemChange();

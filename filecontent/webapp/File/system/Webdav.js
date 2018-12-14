@@ -334,8 +334,23 @@
             return true;
         },
 
-        encodePercent: function(str) {
-            return str.replace(/%/g, '%25');
+        encodeForURL: function(str) {
+            // str is unencoded; we need certain special chars encoded for it to become a URL
+            // % & # @ ~ {} []
+            var res = '';
+            for (var i = 0; i < str.length; i++) {
+                if ('%' === str[i]) res += '%25';
+                else if ('#' === str[i]) res += '%23';
+                else if ('&' === str[i]) res += '%26';
+                else if ('@' === str[i]) res += '%40';
+                else if ('~' === str[i]) res += '%7E';
+                else if ('{' === str[i]) res += '%7B';
+                else if ('}' === str[i]) res += '%7D';
+                else if ('[' === str[i]) res += '%5B';
+                else if (']' === str[i]) res += '%5D';
+                else res += str[i];
+            }
+            return res;
         },
 
         /**
