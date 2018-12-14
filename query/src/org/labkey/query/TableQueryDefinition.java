@@ -177,7 +177,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
     }
 
     @Override
-    public TableInfo createTable(@NotNull UserSchema schema, @Nullable List<QueryException> errors, boolean includeMetadata, @Nullable Query query)
+    public TableInfo createTable(@NotNull UserSchema schema, @Nullable List<QueryException> errors, boolean includeMetadata, @Nullable Query query, boolean skipSuggestedColumns)
     {
         try
         {
