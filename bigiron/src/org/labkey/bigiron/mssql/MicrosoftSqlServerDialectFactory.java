@@ -70,7 +70,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
         }
     }
 
-    static final String RECOMMENDED = PRODUCT_NAME + " 2016 is the recommended version.";
+    static final String RECOMMENDED = PRODUCT_NAME + " 2017 is the recommended version.";
 
     @Override
     public @Nullable SqlDialect createFromMetadata(DatabaseMetaData md, boolean logWarnings, boolean primaryDataSource) throws SQLException, DatabaseNotSupportedException
@@ -99,6 +99,15 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
         // We support only 2012 and higher as the primary data source, or 2008/2008R2 as an external data source
         if (version >= 100)
         {
+            if (version >= 150)
+            {
+                // Warn for SQL Server 2019, for now. TODO: remove after further testing and SS 2019 release.
+                if (logWarnings)
+                    LOG.warn("LabKey Server no longer supports " + getProductName() + " version " + databaseProductVersion + ". " + RECOMMENDED);
+
+                return new MicrosoftSqlServer2019Dialect(_tableResolver);
+            }
+
             if (version >= 140)
                 return new MicrosoftSqlServer2017Dialect(_tableResolver);
 
@@ -167,14 +176,17 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
             // >= 11.0 and < 12.0 should result in MicrosoftSqlServer2012Dialect
             good("Microsoft SQL Server", 11.0, 12.0, "", null, MicrosoftSqlServer2012Dialect.class);
 
-            // >= 12.0 should result in MicrosoftSqlServer2014Dialect
+            // >= 12.0 and < 13.0 should result in MicrosoftSqlServer2014Dialect
             good("Microsoft SQL Server", 12.0, 13.0, "", null, MicrosoftSqlServer2014Dialect.class);
 
-            // >= 13.0 should result in MicrosoftSqlServer2016Dialect
+            // >= 13.0 and < 14.0 should result in MicrosoftSqlServer2016Dialect
             good("Microsoft SQL Server", 13.0, 14.0, "", null, MicrosoftSqlServer2016Dialect.class);
 
-            // >= 14.0 should result in MicrosoftSqlServer2017Dialect
-            good("Microsoft SQL Server", 14.0, 16.0, "", null, MicrosoftSqlServer2017Dialect.class);
+            // >= 14.0 and < 15.0 should result in MicrosoftSqlServer2017Dialect
+            good("Microsoft SQL Server", 14.0, 15.0, "", null, MicrosoftSqlServer2017Dialect.class);
+
+            // >= 15.0 should result in MicrosoftSqlServer2019Dialect
+            good("Microsoft SQL Server", 15.0, 17.0, "", null, MicrosoftSqlServer2019Dialect.class);
         }
     }
 
