@@ -39,7 +39,8 @@
 
     Ext4.onReady(function() {
 
-        var returnUrl = encodeURIComponent(LABKEY.contextPath + document.URL.split(LABKEY.contextPath)[1]);
+        var url = new URL(document.URL);
+        var returnUrl = encodeURIComponent(url.pathname + url.search);
 
         var loginAction = new Ext4.Action({
             text : 'Login',

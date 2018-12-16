@@ -70,9 +70,11 @@
         {
             var url = null, rootPath = this.rootPath;
             Ext4.each(File.system.Webdav.rootOptions, function (root) {
-                if (rootPath.indexOf(LABKEY.contextPath + "/" + root + "/") == 0)
+                // Handle when deployed to the root context path or an explicit context path like /labkey
+                var prefix = LABKEY.contextPath === '' ? '' : (LABKEY.contextPath + "/");
+                if (rootPath.indexOf(prefix + root + "/") === 0)
                 {
-                    url = LABKEY.contextPath + "/" + root;
+                    url = prefix + root;
                     return false;
                 }
             });
