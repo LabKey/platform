@@ -500,7 +500,10 @@ public class DavController extends SpringActionController
             }
             catch (Exception x)
             {
-                _log.error("unexpected error", x);
+                if (!ExceptionUtil.isClientAbortException(x))
+                {
+                    _log.error("unexpected error", x);
+                }
             }
             return _status;
         }
