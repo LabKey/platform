@@ -206,23 +206,27 @@ public class QuerySelect extends QueryRelation implements Cloneable
         // CONSIDER: find selected group keys if they are already in the select list
         Map<String,SelectColumn> ret = new HashMap<>();
         int index = 0;
-groupByLoop:        
-        for (QNode gb : _groupBy.childList())
+
+        if (null != _groupBy)
         {
-            index++;
-            for (SelectColumn c : _columns.values())
+groupByLoop:
+            for (QNode gb : _groupBy.childList())
             {
-                QNode n = c._field;
-                if (n.equals(gb))
+                index++;
+                for (SelectColumn c : _columns.values())
                 {
-                    ret.put(c.getName(), c);
-                    continue groupByLoop;
+                    QNode n = c._field;
+                    if (n.equals(gb))
+                    {
+                        ret.put(c.getName(), c);
+                        continue groupByLoop;
+                    }
                 }
+                QExpr copy = ((QExpr) gb).copyTree();
+                SelectColumn col = new SelectColumn(copy, "__gb_key__" + index);
+                _columns.put(col.getFieldKey(), col);
+                ret.put(col.getName(), col);
             }
-            QExpr copy = ((QExpr)gb).copyTree();
-            SelectColumn col = new SelectColumn(copy, "__gb_key__" + index);
-            _columns.put(col.getFieldKey(), col);
-            ret.put(col.getName(), col);
         }
         return ret;
     }
@@ -233,14 +237,13 @@ groupByLoop:
         if (root == null)
             return;
         _limit = root.getLimit();
-        QSelect select = root.getSelect();
 
         QFrom from = root.getFrom();
         if (from == null)
         {
-            _parsedTables = Collections.EMPTY_MAP;
-            _parsedJoins = Collections.EMPTY_LIST;
-            _onExpressions = Collections.EMPTY_LIST;
+            _parsedTables = Collections.emptyMap();
+            _parsedJoins = Collections.emptyList();
+            _onExpressions = Collections.emptyList();
         }
         else
         {
@@ -1152,7 +1155,7 @@ groupByLoop:
      */
     public QueryTableInfo getTableInfo()
     {
-        Set<RelationColumn> set = new LinkedHashSet<RelationColumn>(_columns.values());
+        Set<RelationColumn> set = new LinkedHashSet<>(_columns.values());
 
         getOrderedSuggestedColumns(set);
         if (!getParseErrors().isEmpty())
@@ -1191,8 +1194,8 @@ groupByLoop:
                 if (null != selectedFieldKeys && !selectedFieldKeys.isEmpty())
                 {
                     Set<String> names = selectedFieldKeys.stream()
-                            .map((k) -> k.getRootName())
-                            .collect(Collectors.toSet());
+                        .map(FieldKey::getRootName)
+                        .collect(Collectors.toSet());
                     releaseAllSelected(_query);
                     markAllSelected(new CaseInsensitiveHashSet(names),_query);
                 }
@@ -1234,7 +1237,6 @@ groupByLoop:
                     return sc.getName();
                 return super.getTitleColumn();
             }
-
         };
 
         Collection<String> keys = getKeyColumns();
@@ -1495,6 +1497,9 @@ groupByLoop:
         }
         if (_having != null)
         {
+            if (!_query.isAggregate())
+                parseError("HAVING requires an aggregate in the SELECT list", _having);
+
             sql.pushPrefix("\nHAVING ");
             for (QNode expr : _having.children())
             {

@@ -304,7 +304,7 @@ unionTerm
 
 
 select
-	: (selectFrom (whereClause)? (groupByClause (havingClause)? (pivotClause)?)?)
+	: (selectFrom (whereClause)? (groupByClause)? (havingClause)? (pivotClause)?)
 	    -> ^(QUERY selectFrom whereClause? groupByClause? havingClause? pivotClause?)
     ;
 

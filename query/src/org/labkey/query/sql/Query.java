@@ -340,17 +340,26 @@ public class Query
                     return super.getSuggestedColumns(selected);
                 }
             };
-            QueryLookupWrapper wrapper;
 
-            if (null == root.getChildOfType(QPivot.class))
+            QPivot qPivot = root.getChildOfType(QPivot.class);
+
+            if (null == qPivot)
             {
                 relation = new QueryLookupWrapper(query, select, null);
             }
             else
             {
                 QueryPivot pivot = new QueryPivot(query, select, (QQuery) root);
+
+                // Grammar was relaxed to allow HAVING without GROUP BY for #36276; need to enforce here that PIVOT requires GROUP BY
+                if (null == ((QQuery) root).getGroupBy())
+                {
+                    query.getParseErrors().add(new QueryParseException("PIVOT queries must include a GROUP BY clause", null, qPivot.getLine(), qPivot.getColumn()));
+                    return select;
+                }
+
                 pivot.setAlias("_pivot");
-                wrapper = new QueryLookupWrapper(query, pivot, null);
+                QueryLookupWrapper wrapper = new QueryLookupWrapper(query, pivot, null);
 
                 if (null == ((QQuery) root).getLimit() && null == ((QQuery) root).getOrderBy())
                 {
@@ -1469,6 +1478,9 @@ public class Query
         new SqlTest("SELECT seven, GROUP_CONCAT(twelve) as twelve FROM R GROUP BY seven", 2, 7),
         new SqlTest("SELECT R.seven, MAX(R.twelve) AS _max FROM R GROUP BY R.seven HAVING SUM(R.twelve) > 5", 2, 7),
 
+        // Naked HAVING is allowed
+        new SqlTest("SELECT MIN(R.seven), MAX(R.twelve) AS _max FROM R HAVING SUM(R.twelve) > 5", 2, 1),
+
         // METHODS
         new SqlTest("SELECT ROUND(R.d) AS _d, ROUND(R.d, 1) AS _rnd, ROUND(3.1415, 2) AS _pi, CONVERT(R.d, SQL_VARCHAR) AS _str FROM R", 4, Rsize),
         new MethodSqlTest("SELECT ABS(-1) FROM R WHERE rowid=1", JdbcType.INTEGER, 1),
@@ -1636,7 +1648,6 @@ public class Query
 		new FailTest("SELECT S.d, S.seven FROM Folder.S"),
 		new FailTest("SELECT S.d, S.seven FROM Folder.qtest.S"),
 		new FailTest("SELECT S.d, S.seven FROM Folder.qtest.list.S"),
-        new FailTest("SELECT R.seven, MAX(R.twelve) AS _max FROM R HAVING SUM(R.twelve) > 5"),
         new FailTest("SELECT * FROM R A inner join R B ON 1=1"),            // ambiguous columns
         new FailTest("SELECT SUM(*) FROM R"),
         new FailTest("SELECT d FROM R A inner join R B on 1=1"),            // ambiguous
