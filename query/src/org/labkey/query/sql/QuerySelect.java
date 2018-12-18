@@ -1497,7 +1497,7 @@ groupByLoop:
         }
         if (_having != null)
         {
-            if (!_query.isAggregate())
+            if (!isAggregate())
                 parseError("HAVING requires an aggregate in the SELECT list", _having);
 
             sql.pushPrefix("\nHAVING ");
