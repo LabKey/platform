@@ -117,7 +117,7 @@ if (settings.hasExpires())
                 <div class="tab-pane active" id="source" role="tabpanel" aria-labelledby="source-tab">
                     <textarea cols='120' rows='15' id="body" name='body' style="width: 100%;" onChange="LABKEY.setDirty(true);"><%=h(ann.getBody()) %></textarea>
                 </div>
-                <div class="tab-pane message-preview form-control" id="preview" role="tabpanel" aria-labelledby="preview-tab">
+                <div class="labkey-wiki tab-pane message-preview form-control" id="preview" role="tabpanel" aria-labelledby="preview-tab">
                 </div>
             </div>
         </td>
