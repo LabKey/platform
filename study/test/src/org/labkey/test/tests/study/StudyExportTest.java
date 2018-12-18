@@ -498,11 +498,7 @@ public class StudyExportTest extends StudyManualTest
 
         log("Test deleting rows in a dataset");
         checkCheckbox(Locator.xpath("//input[contains(@value, '999320529')]"));
-        doAndWaitForPageToLoad(() -> {
-                    DataRegionTable.DataRegion(getDriver()).find().clickHeaderButton("Delete");
-                    acceptAlert(); // TODO: add check for expected alert text
-                },
-                WAIT_FOR_PAGE);
+        DataRegionTable.DataRegion(getDriver()).find().deleteSelectedRows();
         assertTextNotPresent("999320529");
 
         // configure QC state management to show all data by default so the next steps don't have to keep changing the state:

@@ -28,7 +28,6 @@ import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.categories.FileBrowser;
 import org.labkey.test.components.PropertiesEditor;
-import org.labkey.test.components.SubfoldersWebPart;
 import org.labkey.test.pages.EditDatasetDefinitionPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.params.FieldDefinition;
@@ -37,7 +36,6 @@ import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.ListHelper;
 import org.labkey.test.util.StudyHelper;
-import org.openqa.selenium.By;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -787,10 +785,7 @@ public class StudySimpleExportTest extends StudyBaseTest
             beginAt("/query/" + getProjectName() + "/executeQuery.view?schemaName=study&query.queryName=" + entry.getKey());
             DataRegionTable dt = new DataRegionTable("query", getDriver());
             dt.checkCheckbox(0);
-            doAndWaitForPageToLoad(() -> {
-                dt.clickHeaderButton("Delete");
-                assertAlert("Are you sure you want to delete the selected row?");
-            });
+            dt.deleteSelectedRows();
         }
 
         log("StudyDesign Tables: import study into subfolder");
