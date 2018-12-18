@@ -267,8 +267,9 @@ public class Path implements Serializable, Comparable, Iterable<String>
 
     public Path normalize()
     {
-        for (String s : _path)
+        for (int i = 0; i < _length; i++)
         {
+            String s = _path[i];
             if (s.length() == 0 || ".".equals(s) || "..".equals(s))
                 return _normalize();
         }
