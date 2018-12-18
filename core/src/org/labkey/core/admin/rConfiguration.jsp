@@ -27,6 +27,7 @@
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="java.util.Arrays" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -45,6 +46,17 @@
 
     LabkeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
     List<ExternalScriptEngineDefinition> engineDefinitions = new ArrayList<>();
+
+    boolean isFolderScoped = false;
+    LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+    for (ExternalScriptEngineDefinition def : svc.getScopedEngines(getContainer()))
+    {
+        if (def.isEnabled() && Arrays.asList(def.getExtensions()).contains("r"))
+        {
+            isFolderScoped = true;
+            break;
+        }
+    }
 
     ScriptEngine currentEngine = null;
     if (null != mgr)
@@ -67,10 +79,10 @@ if (parentEngine != null)
     run under a different R configuration in this folder and in child folders.
 </div>
 <labkey:form id="configForm" action="<%=postURL%>" method="POST">
-<div style="max-width: 535px">
+<div style="max-width: 600px">
     <div class="row" style="height: 25px;">
         <div class="col-xs-5">
-            Parent R Configuration:
+            Use parent R configuration:
         </div>
         <div id="parentConfig" class="col-xs-7">
             <labkey:radio name="overrideDefault" value="parent" currentValue="parent"/><%=h(parentName)%>
@@ -78,34 +90,23 @@ if (parentEngine != null)
     </div>
     <div class="row" style="height: 30px;">
         <div class="col-xs-5">
-            <label for="overrideDefault">Override R Configuration?</label>
+            <label for="overrideDefault">Use folder level R Configuration</label>
         </div>
         <div class="col-xs-7 form-inline">
             <labkey:radio name="overrideDefault" value="override" currentValue="parent"/>
             <labkey:select name="engineRowId">
-            <%
-            if (engineDefinitions.size() == 1) {
-            %>
-                <option>No additional configurations available</option>
-            <%
-            } else {
-            %>
-                <option disabled <%= selected(currentName.equals(parentName)) %> value="">
+                <option disabled <%= selected(!isFolderScoped) %> value="">
                     Select a configuration...
                 </option>
             <%
                 for (ExternalScriptEngineDefinition def : engineDefinitions)
                 {
-                    if (!parentName.equals(def.getName()))
-                    {
             %>
-                    <option <%= selected(currentName.equals(def.getName())) %> value="<%=h(def.getRowId())%>">
+                    <option <%= selected(isFolderScoped && currentName.equals(def.getName())) %> value="<%=h(def.getRowId())%>">
                         <%=h(def.getName())%>
                     </option>
             <%
-                    }
                 }
-            }
             %>
             </labkey:select>
 
@@ -128,7 +129,7 @@ if (parentEngine != null)
     var saveBtn = $("#saveBtn");
 
     window.onload = function() {
-        if (<%=parentName.equals(currentName)%>) {
+        if (<%=parentName.equals(currentName) && !isFolderScoped%>) {
             useParent.prop("checked", true);
             engineSelect.prop("disabled", true);
         }
@@ -136,11 +137,7 @@ if (parentEngine != null)
             overrideParent.prop("checked", true);
             initialOverride = engineSelect.find(":selected").text();
         }
-
-        if(<%=engineDefinitions.size() == 1%>) {
-            overrideParent.prop("disabled", true);
-        }
-    }
+    };
 
     useParent.click(function() {
         engineSelect.prop("disabled", true);
