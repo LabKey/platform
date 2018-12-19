@@ -111,6 +111,7 @@ public class AnalysisController extends SpringActionController
         {
             try
             {
+                getPageConfig().setIncludePostParameters(true);
                 if (analyzeForm.getTaskId() == null || "".equals(analyzeForm.getTaskId()))
                     throw new NotFoundException("taskId required");
 
