@@ -24,7 +24,6 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
-import org.labkey.test.util.StudyHelper;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -82,7 +81,6 @@ public class StudyVisitTagTest extends StudyBaseTest
 
         doCleanup(false);
         initializeFolder();
-        setPipelineRoot(StudyHelper.getStudySampleDataPath() + "VisitTags");
         importStudies();
     }
 
