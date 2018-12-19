@@ -70,6 +70,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.ContainerUser;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
@@ -92,6 +93,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.servlet.jsp.PageContext;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.OutputKeys;
@@ -1550,17 +1552,22 @@ public class PageFlowUtil
 
     public static String getAppIncludes(ViewContext context, @Nullable  LinkedHashSet<ClientDependency> resources)
     {
-        return _getStandardIncludes(context, resources, false, false);
+        return _getStandardIncludes(context, null, resources, false, false);
     }
 
 
     public static String getStandardIncludes(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources, boolean includePostParameters)
     {
-        return _getStandardIncludes(context, resources, true, includePostParameters);
+        return _getStandardIncludes(context, null, resources, true, includePostParameters);
+    }
+
+    public static String getStandardIncludes(ViewContext context, PageConfig config)
+    {
+        return _getStandardIncludes(context, config, config.getClientDependencies(), true, config.shouldIncludePostParameters());
     }
 
 
-    private static String _getStandardIncludes(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources,
+    private static String _getStandardIncludes(ViewContext context, @Nullable PageConfig config, @Nullable LinkedHashSet<ClientDependency> resources,
             boolean includeDefaultResources, boolean includePostParameters)
 
     {
@@ -1579,7 +1586,7 @@ public class PageFlowUtil
             }
         }
 
-        StringBuilder sb = new StringBuilder(getIncludes(context, resources, includeDefaultResources, includePostParameters));
+        StringBuilder sb = new StringBuilder(getIncludes(context, config, resources, includeDefaultResources, includePostParameters));
 
         if (currentId != -1)
         {
@@ -1611,8 +1618,8 @@ public class PageFlowUtil
         return sb;
     }
 
-    private static String getIncludes(ViewContext context, @Nullable LinkedHashSet<ClientDependency> extraResources,
-            boolean includeDefaultResources, boolean includePostParameters)
+    private static String getIncludes(ViewContext context, @Nullable PageConfig config, @Nullable LinkedHashSet<ClientDependency> extraResources,
+              boolean includeDefaultResources, boolean includePostParameters)
     {
         Container c = context.getContainer();
 
@@ -1642,7 +1649,7 @@ public class PageFlowUtil
             resources.addAll(extraResources);
 
         StringBuilder sb = getFaviconIncludes(c);
-        sb.append(getLabkeyJS(context, resources, includePostParameters));
+        sb.append(getLabkeyJS(context, config, resources, includePostParameters));
         sb.append(getStylesheetIncludes(c, resources, includeDefaultResources));
         sb.append(getJavaScriptIncludes(c, resources));
 
@@ -1843,7 +1850,7 @@ public class PageFlowUtil
     }
 
 
-    public static String getLabkeyJS(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources, boolean includePostParameters)
+    public static String getLabkeyJS(ViewContext context, @Nullable PageConfig config, @Nullable LinkedHashSet<ClientDependency> resources, boolean includePostParameters)
     {
         StringBuilder sb = new StringBuilder();
 
@@ -1858,7 +1865,7 @@ public class PageFlowUtil
         }
 
         sb.append("<script type=\"text/javascript\">\n");
-        sb.append("LABKEY.init(").append(jsInitObject(context, resources, includePostParameters)).append(");\n");
+        sb.append("LABKEY.init(").append(jsInitObject(context, config, resources, includePostParameters)).append(");\n");
         sb.append("</script>\n");
 
         return sb.toString();
@@ -2050,10 +2057,10 @@ public class PageFlowUtil
     {
         // Ugly: Is there some way for the JavaScript initialization in init.js to pass through the ViewContext?
         ViewContext context = HttpView.currentView().getViewContext();
-        return jsInitObject(context, new LinkedHashSet<>(), false);
+        return jsInitObject(context, null, new LinkedHashSet<>(), false);
     }
 
-    public static JSONObject jsInitObject(ContainerUser context, @Nullable LinkedHashSet<ClientDependency> resources, boolean includePostParameters)
+    public static JSONObject jsInitObject(ContainerUser context, @Nullable PageConfig config, @Nullable LinkedHashSet<ClientDependency> resources, boolean includePostParameters)
     {
         AppProps appProps = AppProps.getInstance();
         String contextPath = appProps.getContextPath();
@@ -2186,6 +2193,9 @@ public class PageFlowUtil
 
         // Include a few server-generated GUIDs/UUIDs
         json.put("uuids", Arrays.asList(GUID.makeGUID(), GUID.makeGUID(), GUID.makeGUID()));
+
+        if (null != config)
+            json.put("portalContext", config.getPortalContext());
 
         return json;
     }

@@ -81,7 +81,7 @@ public interface WebPartFactory
     /** For backwards compatibility, names that this web part might have been previously called and should still match it for existing portal configurations */
     List<String> getLegacyNames();
 
-    boolean isAvailable(Container c, String location);
+    boolean isAvailable(Container c, String scope, String location);
 
     Map<String, String> serializePropertyMap(ImportContext ctx, Map<String, String> propertyMap);
 

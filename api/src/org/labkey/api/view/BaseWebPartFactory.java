@@ -24,6 +24,7 @@ import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.Portal.WebPart;
 
 import java.util.ArrayList;
@@ -42,6 +43,7 @@ import java.util.Set;
 public abstract class BaseWebPartFactory implements WebPartFactory
 {
     private static final Logger LOG = Logger.getLogger(Portal.class);
+    private static final Set<String> defaultAllowableScopes = PageFlowUtil.set("folder");
 
     private final boolean _editable;
     private final boolean _showCustomizeOnInsert;
@@ -51,6 +53,7 @@ public abstract class BaseWebPartFactory implements WebPartFactory
     private List<String> _legacyNames = Collections.emptyList();
 
     protected Set<String> _allowableLocations;
+    protected Set<String> _allowableScopes = null; // AKA portal page type e.g. folder, participant, ..._
 
     public BaseWebPartFactory(String name, boolean isEditable, boolean showCustomizeOnInsert, @NotNull String defaultLocation, String... additionalLocations)
     {
@@ -103,6 +106,11 @@ public abstract class BaseWebPartFactory implements WebPartFactory
     public Set<String> getAllowableLocations()
     {
         return _allowableLocations;
+    }
+
+    public Set<String> getAllowableScopes()
+    {
+        return _allowableScopes==null ? defaultAllowableScopes : _allowableScopes;
     }
 
     public String getDefaultLocation()
@@ -186,12 +194,13 @@ public abstract class BaseWebPartFactory implements WebPartFactory
         return _legacyNames;
     }
 
-    public boolean isAvailable(Container c, String location)
+    public boolean isAvailable(Container c, String scope, String location)
     {
-        if (!getAllowableLocations().contains(location))
-        {
+        if (!getAllowableScopes().contains(scope))
             return false;
-        }
+        if (!getAllowableLocations().contains(location))
+            return false;
+
         for (WebPart webPart : c.getFolderType().getPreferredWebParts())
         {
             if (getName().equals(webPart.getName()) || getLegacyNames().contains(webPart.getName()))

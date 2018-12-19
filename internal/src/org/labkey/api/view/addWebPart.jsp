@@ -24,4 +24,4 @@
 
     // TODO: Reconsider use of a .jsp
 %>
-<%=text(Portal.addWebPartWidgets(bean, getViewContext()))%>
+<%=text(Portal.addWebPartWidgets(getViewContext(),bean))%>

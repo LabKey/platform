@@ -21,6 +21,7 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.admin.CoreUrls;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.module.Module;
@@ -104,6 +105,7 @@ public class PageConfig
     private FrameOption _frameOption = FrameOption.ALLOW;
     private boolean _trackingScript = true;
     private String _canonicalLink = null;
+    private JSONObject _portalContext = new JSONObject();
     private boolean _includePostParameters = false;
 
     public PageConfig()
@@ -510,5 +512,10 @@ public class PageConfig
                 html.append("</ul>");
             }
         }
+    }
+
+    public JSONObject getPortalContext()
+    {
+        return _portalContext;
     }
 }

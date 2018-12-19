@@ -32,12 +32,14 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.data.xml.webpart.AvailableEnum;
 import org.labkey.data.xml.webpart.LocationType;
+import org.labkey.data.xml.webpart.ScopeType;
 import org.labkey.data.xml.webpart.WebpartDocument;
 import org.labkey.data.xml.webpart.WebpartType;
 
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -126,7 +128,7 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
             // Establish a default location, which the base class can use to do a first pass of determining if this
             // web part should be available in the list
             Set<String> locations = new LinkedHashSet<>();
-            if(null != _webPartDef.getLocations())
+            if (null != _webPartDef.getLocations())
             {
                 for(LocationType declaredLoc : _webPartDef.getLocations().getLocationArray())
                 {
@@ -147,6 +149,15 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
                 locations.add(WebPartFactory.LOCATION_BODY);
             }
             _allowableLocations = Collections.unmodifiableSet(locations);
+
+            if (null != _webPartDef.getScopes())
+            {
+                Set<String> set = new HashSet<>();
+                for(ScopeType declaredScope : _webPartDef.getScopes().getScopeArray())
+                    set.add(declaredScope.getName().toString());
+                if (!set.isEmpty())
+                    _allowableScopes = set;
+            }
 
         }
         catch(Exception e)
@@ -223,7 +234,7 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
     }
 
     @Override
-    public boolean isAvailable(Container c, String location)
+    public boolean isAvailable(Container c, String scope, String location)
     {
         //if loading the definition failed, we are not available
         if (null == _webPartDef)
@@ -233,20 +244,20 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
             return false;
 
         //if super thinks it should be available, return true
-        if(super.isAvailable(c, location))
+        if (super.isAvailable(c, scope, location))
             return true;
 
         //translate internal location name to public API name
         String publicLocName = getFriendlyLocationName(location);
-        if(null == publicLocName)
+        if (null == publicLocName)
             return false;
 
         //check web part definition to see when it should be available and
         //in which locations it should be available
-        if(AvailableEnum.ALWAYS.equals(_webPartDef.getAvailable()) ||
+        if (AvailableEnum.ALWAYS.equals(_webPartDef.getAvailable()) ||
                 c.getActiveModules().contains(getModule()))
         {
-            if(getAllowableLocations().contains(location))
+            if (getAllowableScopes().contains(scope) && getAllowableLocations().contains(location))
                 return true;
         }
         

@@ -40,8 +40,10 @@ public abstract class ProteomicsWebPartFactory extends BaseWebPartFactory
 
     /** Available in all proteomics folder types, as long as current location is default location */
     @Override
-    public final boolean isAvailable(Container c, String location)
+    public final boolean isAvailable(Container c, String scope, String location)
     {
+        if (!getAllowableScopes().contains(scope))
+            return false;
         for (Module module1 : c.getActiveModules())
         {
             if (module1 instanceof ProteomicsModule)

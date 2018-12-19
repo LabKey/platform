@@ -48,8 +48,8 @@ public abstract class AlwaysAvailableWebPartFactory extends BaseWebPartFactory
     // Available in all folder types, as long as current location is default location
 
     @Override
-    public final boolean isAvailable(Container c, String location)
+    public final boolean isAvailable(Container c, String scope, String location)
     {
-        return getAllowableLocations().contains(location);
+        return getAllowableScopes().contains(scope) && getAllowableLocations().contains(location);
     }
 }

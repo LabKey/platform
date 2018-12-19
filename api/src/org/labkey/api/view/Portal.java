@@ -95,6 +95,9 @@ public class Portal
     private static final Logger LOG = Logger.getLogger(Portal.class);
     private static final WebPartBeanLoader FACTORY = new WebPartBeanLoader();
 
+    public static final String FOLDER_PORTAL_PAGE = "folder";
+    public static final String STUDY_PARTICIPANT_PORTAL_PAGE = "participant";
+
     public static final String DEFAULT_PORTAL_PAGE_ID = "portal.default";
     public static final int MOVE_UP = 0;
     public static final int MOVE_DOWN = 1;
@@ -1043,9 +1046,10 @@ public class Portal
         public String pageId;
         public String location;
         public boolean rightEmpty;
+        public String scope;
     }
 
-    private static void addCustomizeDropdowns(Container c, HttpView template, String id, Collection<String> occupiedLocations)
+    private static void addCustomizeDropdowns(ViewContext context, HttpView template, String id, Collection<String> occupiedLocations, String scope)
     {
         Set<String> regionNames = new HashSet<>();
 
@@ -1065,15 +1069,16 @@ public class Portal
                 addPart.pageId = id;
                 addPart.location = regionName;
                 addPart.rightEmpty = rightEmpty;
+                addPart.scope = scope;
 
-                WebPartView addPartView = new JspView<>("/org/labkey/api/view/addWebPart.jsp", addPart);
+                HtmlView addPartView = new HtmlView(addWebPartWidgets(context,addPart));
                 addPartView.setFrame(WebPartView.FrameType.NONE);
                 addViewToRegion(template, regionName, addPartView);
             }
         }
     }
 
-    public static String addWebPartWidgets(AddWebParts bean, ViewContext viewContext)
+    public static String addWebPartWidgets(ViewContext viewContext, AddWebParts bean)
     {
         if (WebPartFactory.LOCATION_MENUBAR.equals(bean.location))
         {
@@ -1088,6 +1093,7 @@ public class Portal
                 newBean.pageId = bean.pageId;
                 newBean.location = WebPartFactory.LOCATION_RIGHT;
                 newBean.rightEmpty = true;
+                newBean.scope = bean.scope;
                 // Add right webpart dropdown should be hidden on extra small screens
                 StringBuilder rightWidget = addWebPartWidget(newBean, viewContext, "hidden-xs", "pull-right");
                 return leftWidget.append(rightWidget).toString();
@@ -1101,6 +1107,7 @@ public class Portal
             newBean.pageId = bean.pageId;
             newBean.location = WebPartFactory.LOCATION_BODY;
             newBean.rightEmpty = false;
+            newBean.scope = bean.scope;
             StringBuilder leftBottomWidget = addWebPartWidget(newBean, viewContext, "visible-xs-inline visible-sm-inline", "pull-left");
             // Add right webpart dropdown should be hidden on extra small screens
             StringBuilder rightBottomWidget = addWebPartWidget(bean, viewContext, "visible-sm-inline", "pull-right");
@@ -1129,9 +1136,28 @@ public class Portal
         sb.append("<div class=\"input-group\">\n");
         sb.append("<select name=\"name\" class=\"form-control\">\n");
         sb.append("<option value=\"\">&lt;Select Web Part&gt;</option>\n");
-        for (Map.Entry<String, String> entry : Portal.getPartsToAdd(c, bean.location).entrySet())
+
+        Set<String> partsSeen = new HashSet<>();
+        if (null != bean.scope && !"folder".equals(bean.scope))
         {
-            sb.append("<option value=\"").append(entry.getKey()).append("\">").append(entry.getValue()).append("</option>\n");
+            int count = 0;
+            for (Map.Entry<String, String> entry : Portal.getPartsToAdd(c, bean.scope, bean.location).entrySet())
+            {
+                if (partsSeen.add(entry.getKey()))
+                {
+                    sb.append("<option value=\"").append(entry.getKey()).append("\">").append(entry.getValue()).append("</option>\n");
+                    count++;
+                }
+            }
+            if (count > 0)
+            {
+                    sb.append("<option value=\"\"><hr></option>\n");
+            }
+        }
+        for (Map.Entry<String, String> entry : Portal.getPartsToAdd(c, FOLDER_PORTAL_PAGE, bean.location).entrySet())
+        {
+            if (partsSeen.add(entry.getKey()))
+                sb.append("<option value=\"").append(entry.getKey()).append("\">").append(entry.getValue()).append("</option>\n");
         }
         sb.append("</select>\n");
         sb.append("<span class=\"input-group-btn\">\n");
@@ -1141,7 +1167,7 @@ public class Portal
         return sb;
     }
 
-    private static void addViewToRegion(HttpView template, String regionName, HttpView view)
+    public static void addViewToRegion(HttpView template, String regionName, HttpView view)
     {
         //place
         ModelAndView region = template.getView(regionName);
@@ -1162,13 +1188,20 @@ public class Portal
     public static void populatePortalView(ViewContext context, String id, HttpView template, boolean printView)
     {
         boolean canCustomize = context.getContainer().hasPermission("populatePortalView",context.getUser(), AdminPermission.class);
-        populatePortalView(context, id, template, printView, canCustomize, false, true);
+        populatePortalView(context, id, template, printView, canCustomize, false, true, FOLDER_PORTAL_PAGE);
+    }
+
+    public static void populatePortalView(ViewContext context, String id, HttpView template, boolean printView,
+                                          boolean canCustomize, boolean alwaysShowCustomize, boolean allowHideFrame)
+    {
+        populatePortalView(context, id, template, printView, canCustomize, false, true, FOLDER_PORTAL_PAGE);
     }
 
 
-    public static void populatePortalView(ViewContext context, String id, HttpView template, boolean printView,
-                          boolean canCustomize, boolean alwaysShowCustomize, boolean allowHideFrame)
+    public static int populatePortalView(ViewContext context, String id, HttpView template, boolean printView,
+                          boolean canCustomize, boolean alwaysShowCustomize, boolean allowHideFrame, String scope)
     {
+        int count = 0;
         boolean showCustomize = alwaysShowCustomize || PageFlowUtil.isPageAdminMode(context);
         id = StringUtils.defaultString(id, DEFAULT_PORTAL_PAGE_ID);
         List<WebPart> parts = getParts(context.getContainer(), id, context);
@@ -1190,7 +1223,7 @@ public class Portal
         for (String location : locations)
         {
             Collection<WebPart> partsForLocation = locationMap.get(location);
-            int i = 0;
+            int index = 0;
 
             for (WebPart part : partsForLocation)
             {
@@ -1213,12 +1246,12 @@ public class Portal
 
                     if (showCustomize)
                     {
-                        if (i > 0)
+                        if (index > 0)
                             navTree.addChild("Move Up", getMoveURL(context, part, MOVE_UP), null, "fa fa-caret-square-o-up labkey-fa-portal-nav");
                         else
                             navTree.addChild("Move Up", getMoveURL(context, part, MOVE_UP), null, "fa fa-caret-square-o-up labkey-btn-default-toolbar-small-disabled labkey-fa-portal-nav");
 
-                        if (i < partsForLocation.size() - 1)
+                        if (index < partsForLocation.size() - 1)
                             navTree.addChild("Move Down", getMoveURL(context, part, MOVE_DOWN), null, "fa fa-caret-square-o-down labkey-fa-portal-nav");
                         else
                             navTree.addChild("Move Down", getMoveURL(context, part, MOVE_DOWN), null, "fa fa-caret-square-o-down labkey-btn-default-toolbar-small-disabled labkey-fa-portal-nav");
@@ -1252,12 +1285,14 @@ public class Portal
                 }
 
                 addViewToRegion(template, location, view);
-                i++;
+                index++;
+                count++;
             }
         }
 
         if (showCustomize && canCustomize && !printView)
-            addCustomizeDropdowns(context.getContainer(), template, id, locations);
+            addCustomizeDropdowns(context, template, id, locations, scope);
+        return count;
     }
 
     @Nullable
@@ -1420,7 +1455,7 @@ public class Portal
         }
     }
 
-    public static Map<String, String> getPartsToAdd(Container c, String location)
+    static Map<String, String> getPartsToAdd(Container c, String scope, String location)
     {
         //TODO: Cache these?
         Map<String, String> webPartNames = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
@@ -1429,7 +1464,7 @@ public class Portal
         {
             for (WebPartFactory factory : module.getWebPartFactories())
             {
-                if (factory.isAvailable(c, location))
+                if (factory.isAvailable(c, scope, location))
                     webPartNames.put(factory.getName(), factory.getDisplayName(c, location));
             }
         }
