@@ -506,15 +506,17 @@
                     cellMetaData.tdCls += tdCls.join(' ');
                 }
 
-                Util.buildQtip({
-                    displayValue: displayValue,
-                    value: value,
-                    meta: meta,
-                    col: col,
-                    record: record,
-                    store: store,
-                    cellMetaData: cellMetaData
-                });
+                if (!meta.hasOwnProperty('showTooltip') || meta.showTooltip === true) {
+                    Util.buildQtip({
+                        displayValue: displayValue,
+                        value: value,
+                        meta: meta,
+                        col: col,
+                        record: record,
+                        store: store,
+                        cellMetaData: cellMetaData
+                    });
+                }
 
                 return displayValue;
             }
