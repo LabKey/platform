@@ -28,6 +28,7 @@ import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DataRegionSelection;
@@ -241,7 +242,7 @@ public class ParticipantGroupController extends BaseStudyController
 
 
     @RequiresPermission(ReadPermission.class)
-    public class GetParticipantCategory extends ApiAction<ParticipantCategoryImpl>
+    public class GetParticipantCategory extends ReadOnlyApiAction<ParticipantCategoryImpl>
     {
         @Override
         public ApiResponse execute(ParticipantCategoryImpl form, BindException errors)
@@ -258,7 +259,7 @@ public class ParticipantGroupController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetParticipantCategories extends ApiAction<GetParticipantCategoriesForm>
+    public class GetParticipantCategories extends ReadOnlyApiAction<GetParticipantCategoriesForm>
     {
         @Override
         public ApiResponse execute(GetParticipantCategoriesForm form, BindException errors)
@@ -288,7 +289,7 @@ public class ParticipantGroupController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetParticipantGroupsWithLiveFilters extends ApiAction
+    public class GetParticipantGroupsWithLiveFilters extends ReadOnlyApiAction
     {
         public ApiResponse execute(Object form, BindException errors)
         {
@@ -494,7 +495,7 @@ public class ParticipantGroupController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class BrowseParticipantGroups extends ApiAction<BrowseGroupsForm>
+    public class BrowseParticipantGroups extends ReadOnlyApiAction<BrowseGroupsForm>
     {
         private Collection<String> _allParticipants;
 
@@ -851,7 +852,7 @@ public class ParticipantGroupController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetSubjectsFromGroups extends ApiAction<GroupsForm>
+    public class GetSubjectsFromGroups extends ReadOnlyApiAction<GroupsForm>
     {
         private StudyImpl _study;
 
