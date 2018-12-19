@@ -17,6 +17,7 @@ package org.labkey.study.view;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
+import org.labkey.api.view.AlwaysAvailableWebPartFactory;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -30,20 +31,15 @@ import org.labkey.api.view.WebPartView;
  * Date: Nov 17, 2008
  * Time: 9:28:08 PM
  */
-public class StudyListWebPartFactory extends BaseWebPartFactory
+public class StudyListWebPartFactory extends AlwaysAvailableWebPartFactory
 {
     public static final String DISPLAY_TYPE_PROPERTY = "displayType";
 
     public StudyListWebPartFactory()
     {
-       super("Study List", true, false, LOCATION_MENUBAR);
+       super("Study List", true, false, LOCATION_MENUBAR, LOCATION_BODY);
     }
 
-    @Override
-    public boolean isAvailable(Container c, String location)
-    {
-        return location.equals(WebPartFactory.LOCATION_MENUBAR) || location.equals(HttpView.BODY);
-    }
 
     public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
@@ -54,10 +50,10 @@ public class StudyListWebPartFactory extends BaseWebPartFactory
             if ("grid".equals(webPart.getPropertyMap().get(DISPLAY_TYPE_PROPERTY)))
                 view = new StudyListQueryView(portalCtx);
             else
-                view = new JspView(this.getClass(), "studyListWide.jsp", null);
+                view = new JspView<>(this.getClass(), "studyListWide.jsp", null);
         }
         else
-            view = new JspView(this.getClass(), "studyList.jsp", null);
+            view = new JspView<>(this.getClass(), "studyList.jsp", null);
         view.setTitle("Studies");
         return view;
     }
@@ -65,6 +61,6 @@ public class StudyListWebPartFactory extends BaseWebPartFactory
     @Override
     public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
     {
-        return new JspView(this.getClass(), "customizeStudyList.jsp", webPart);
+        return new JspView<>(this.getClass(), "customizeStudyList.jsp", webPart);
     }
 }

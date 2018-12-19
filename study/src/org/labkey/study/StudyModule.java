@@ -680,7 +680,12 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     {
         public SubjectsWebPartFactory()
         {
-            super("Subject List", SubjectsWebPart.class, WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT);
+            super("Subject List", SubjectsWebPart.class,
+                    WebPartFactory.LOCATION_BODY,
+                    WebPartFactory.LOCATION_RIGHT,
+                    Participant.class.getName() + ":" + WebPartFactory.LOCATION_BODY,
+                    Participant.class.getName() + ":" + WebPartFactory.LOCATION_RIGHT
+                    );
         }
 
         @Override

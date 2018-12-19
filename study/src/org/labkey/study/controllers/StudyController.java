@@ -56,6 +56,8 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.module.DefaultFolderType;
+import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
@@ -111,6 +113,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.MasterPatientIndexService;
 import org.labkey.api.study.ParticipantCategory;
@@ -132,6 +135,7 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
+import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.GridView;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -148,6 +152,7 @@ import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.CohortFilter;
@@ -1040,6 +1045,25 @@ public class StudyController extends BaseStudyController
     }
 
 
+    Participant findParticipant(Study study, String particpantId) throws StudyManager.ParticipantNotUniqueException
+    {
+        Participant participant = StudyManager.getInstance().getParticipant(study, particpantId);
+        if (participant == null)
+        {
+            if (study.isDataspaceStudy())
+            {
+                Container c = StudyManager.getInstance().findParticipant(study, particpantId);
+                Study s = null == c ? null : StudyManager.getInstance().getStudy(c);
+                if (null != s && c.hasPermission(getUser(), ReadPermission.class))
+                {
+                    participant = StudyManager.getInstance().getParticipant(s, particpantId);
+                }
+            }
+        }
+        return participant;
+    }
+
+
     @RequiresPermission(ReadPermission.class)
     public class ParticipantAction extends SimpleViewAction<ParticipantForm>
     {
@@ -1058,27 +1082,16 @@ public class StudyController extends BaseStudyController
                 throw new NotFoundException("No " + study.getSubjectNounSingular() + " specified");
             }
 
-            Participant participant = StudyManager.getInstance().getParticipant(study, form.getParticipantId());
-            if (participant == null)
+            Participant participant = null;
+            try
             {
-                try
-                {
-                    if (study.isDataspaceStudy())
-                    {
-                        Container c = StudyManager.getInstance().findParticipant(study, form.getParticipantId());
-                        Study s = null == c ? null : StudyManager.getInstance().getStudy(c);
-                        if (null != s && c.hasPermission(getUser(), ReadPermission.class))
-                        {
-                            participant = StudyManager.getInstance().getParticipant(s, form.getParticipantId());
-                        }
-                    }
-                    if (null == participant)
-                        throw new NotFoundException("Could not find " + study.getSubjectNounSingular() + " " + form.getParticipantId());
-                }
-                catch (StudyManager.ParticipantNotUniqueException x)
-                {
-                    return new HtmlView(PageFlowUtil.filter(x.getMessage()));
-                }
+                participant = findParticipant(study, form.getParticipantId());
+                if (null == participant)
+                    throw new NotFoundException("Could not find " + study.getSubjectNounSingular() + " " + form.getParticipantId());
+            }
+            catch (StudyManager.ParticipantNotUniqueException x)
+            {
+                return new HtmlView(PageFlowUtil.filter(x.getMessage()));
             }
 
             String viewName = (String) getViewContext().get(DATASET_VIEW_NAME_PARAMETER_NAME);
@@ -1145,6 +1158,99 @@ public class StudyController extends BaseStudyController
                     addChild(StudyService.get().getSubjectNounSingular(getContainer()) + " - " + id(_bean.getParticipantId()));
         }
     }
+
+
+    public static class Participant2Form
+    {
+        String participantId;
+
+        public String getParticipantId()
+        {
+            return participantId;
+        }
+
+        public void setParticipantId(String participantId)
+        {
+            this.participantId = participantId;
+        }
+    }
+
+
+    @RequiresPermission(ReadPermission.class)
+    public class Participant2Action extends SimpleViewAction<ParticipantForm>
+    {
+        // TODO participant list support? cohortfilter support?
+        // TODO define participant context
+//        {
+//            particpantId:"",
+//            participantGroup:""
+//            demoMode:false
+//        }
+
+
+        @Override
+        public ModelAndView getView(ParticipantForm form, BindException errors) throws Exception
+        {
+            ViewContext context = getViewContext();
+            Study study = getStudyRedirectIfNull();
+            ActionURL previousParticipantURL = null;
+            ActionURL nextParticipantURL = null;
+
+            if (form.getParticipantId() == null)
+            {
+                throw new NotFoundException("No " + study.getSubjectNounSingular() + " specified");
+            }
+
+            Participant participant = null;
+            try
+            {
+                participant = findParticipant(study, form.getParticipantId());
+                if (null == participant)
+                    throw new NotFoundException("Could not find " + study.getSubjectNounSingular() + " " + form.getParticipantId());
+            }
+            catch (StudyManager.ParticipantNotUniqueException x)
+            {
+                return new HtmlView(PageFlowUtil.filter(x.getMessage()));
+            }
+
+            PageConfig page = getPageConfig();
+
+            // add participant to view context for java/jsp based web parts
+            context.put(Participant.class.getName(), participant);
+            // add to javascript context for file based web parts
+            page.getPortalContext().put("participantId", participant.getParticipantId());
+
+            String pageId = Participant.class.getName();
+            boolean canCustomize = context.getContainer().hasPermission("populatePortalView",context.getUser(), AdminPermission.class);
+
+            HttpView template = PageConfig.Template.Home.getTemplate(getViewContext(), new VBox(), page);
+            int parts = Portal.populatePortalView(getViewContext(), pageId, template, isPrint(), canCustomize, false, true, Portal.STUDY_PARTICIPANT_PORTAL_PAGE);
+
+            if (parts == 0 && canCustomize)
+            {
+                // TODO: make webparts out of default views and actually save portal config
+//                ParticipantAction pa = new ParticipantAction();
+//                pa.setViewContext(context);
+//                ModelAndView v = pa.getView(form, errors);
+//                Portal.addViewToRegion(template, WebPartFactory.LOCATION_BODY, (HttpView)v);
+
+                // force page admin mode
+                template = PageConfig.Template.Home.getTemplate(getViewContext(), new VBox(), page);
+                Portal.populatePortalView(getViewContext(), pageId, template, isPrint(), canCustomize, true, true, Participant.class.getName());
+
+            }
+
+            getPageConfig().setTemplate(PageConfig.Template.None);
+            return template;
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
 
 
     // Obfuscate the passed in test if this user is in "demo" mode in this container

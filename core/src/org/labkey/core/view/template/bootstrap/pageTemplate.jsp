@@ -51,7 +51,7 @@
     <% if (me.isAppTemplate()) { %>
     <%= PageFlowUtil.getAppIncludes(getViewContext(), model.getClientDependencies()) %>
     <% } else { %>
-    <%= PageFlowUtil.getStandardIncludes(getViewContext(), model.getClientDependencies(), model.shouldIncludePostParameters()) %>
+    <%= PageFlowUtil.getStandardIncludes(getViewContext(), model) %>
     <% } %>
     <% if (null != model.getRssUrl()) { %>
     <link href="<%=text(model.getRssUrl().getEncodedLocalURIString())%>" type="application/rss+xml" title="<%=h(model.getRssTitle())%>" rel="alternate"/>

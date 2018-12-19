@@ -518,7 +518,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 }
 
                 @Override
-                public boolean isAvailable(Container c, String location)
+                public boolean isAvailable(Container c, String scope, String location)
                 {
                     return false;
                 }
@@ -543,9 +543,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 }
 
                 @Override
-                public boolean isAvailable(Container c, String location)
+                public boolean isAvailable(Container c, String scope, String location)
                 {
-                    return !c.isWorkbook() && location.equalsIgnoreCase(HttpView.BODY);
+                    return !c.isWorkbook() && "folder".equals(scope) && location.equalsIgnoreCase(HttpView.BODY);
                 }
             },
             new BaseWebPartFactory("Workbook Description")
@@ -559,7 +559,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 }
 
                 @Override
-                public boolean isAvailable(Container c, String location)
+                public boolean isAvailable(Container c, String scope, String location)
                 {
                     return false;
                 }
@@ -620,7 +620,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 }
 
                 @Override
-                public boolean isAvailable(Container c, String location)
+                public boolean isAvailable(Container c, String scope, String location)
                 {
                     return false;
                 }
@@ -665,11 +665,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     view.setTitle("Menu Project Navigation");
                     view.setFrame(WebPartView.FrameType.NONE);
                     return view;
-
                 }
 
                 @Override
-                public boolean isAvailable(Container c, String location)
+                public boolean isAvailable(Container c, String scope, String location)
                 {
                     return false;
                 }

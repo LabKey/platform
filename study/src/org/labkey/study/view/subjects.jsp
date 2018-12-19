@@ -72,6 +72,9 @@
 
 
     ActionURL subjectUrl = new ActionURL(StudyController.ParticipantAction.class, container);
+    if ("participant2".equals(getViewContext().getActionURL().getAction()))
+        subjectUrl = new ActionURL(StudyController.Participant2Action.class, container);
+
     String urlTemplate   = subjectUrl.getEncodedLocalURIString();
     DbSchema dbschema    = StudySchema.getInstance().getSchema();
     final JspWriter _out = out;

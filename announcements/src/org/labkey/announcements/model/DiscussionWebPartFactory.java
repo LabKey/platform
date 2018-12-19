@@ -40,7 +40,7 @@ public class DiscussionWebPartFactory extends BaseWebPartFactory
     }
 
     @Override
-    public boolean isAvailable(Container c, String location)
+    public boolean isAvailable(Container c, String scope, String location)
     {
         return false;     // This webpart is used via JavaScript, not from the portal page.  See #7431
     }

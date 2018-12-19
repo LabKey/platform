@@ -24,6 +24,7 @@ import org.labkey.api.exp.list.ListUrls;
 import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.AlwaysAvailableWebPartFactory;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -38,20 +39,17 @@ import java.io.PrintWriter;
 import java.util.Map;
 import java.util.TreeSet;
 
+import static org.labkey.api.view.WebPartFactory.LOCATION_BODY;
+import static org.labkey.api.view.WebPartFactory.LOCATION_RIGHT;
+
 public class ListsWebPart extends WebPartView<ViewContext>
 {
-    public static final BaseWebPartFactory FACTORY = new BaseWebPartFactory("Lists")
+    public static final BaseWebPartFactory FACTORY = new AlwaysAvailableWebPartFactory("Lists", LOCATION_BODY, LOCATION_RIGHT)
     {
         public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
-            boolean narrow = webPart.getLocation().equals(WebPartFactory.LOCATION_RIGHT);
+            boolean narrow = webPart.getLocation().equals(LOCATION_RIGHT);
             return new ListsWebPart(narrow, portalCtx);
-        }
-
-        @Override
-        public boolean isAvailable(Container c, String location)
-        {
-            return location.equals(HttpView.BODY) || location.equals(WebPartFactory.LOCATION_RIGHT);
         }
     };
 

@@ -88,9 +88,9 @@ public class SharedStudyController extends BaseStudyController
         }
 
         @Override
-        public boolean isAvailable(Container c, String location)
+        public boolean isAvailable(Container c, String scope, String location)
         {
-            if (!super.isAvailable(c, location))
+            if (!super.isAvailable(c, scope, location))
                 return false;
 
             Container project = c.getProject();

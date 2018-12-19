@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -34,6 +35,7 @@ import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.StudyManager;
 
 import java.util.Map;
+import java.util.Set;
 
 import static org.labkey.api.util.PageFlowUtil.filter;
 
@@ -77,6 +79,12 @@ public class SubjectDetailsWebPartFactory extends BaseWebPartFactory
     }
 
     @Override
+    public Set<String> getAllowableLocations()
+    {
+        return PageFlowUtil.set(LOCATION_BODY, Participant.class.getName() + ":" + LOCATION_BODY);
+    }
+
+    @Override
     public String getDisplayName(Container container, String location)
     {
         return StudyModule.getWebPartSubjectNoun(container) + " Details";
@@ -87,6 +95,11 @@ public class SubjectDetailsWebPartFactory extends BaseWebPartFactory
         String participantId = webPart.getPropertyMap().get(PARTICIPANT_ID_KEY);
         String currentUrl = webPart.getPropertyMap().get(CURRENT_URL_KEY);
         String sourceDatasetIdString = webPart.getPropertyMap().get(SOURCE_DATASET_ID_KEY);
+
+        // check if we are in a participant portal page
+        Participant participant = (Participant)portalCtx.get(Participant.class.getName());
+        if (null != participant)
+            participantId = participant.getParticipantId();
 
         // check first for an explicit QC state; this will be the case for participant webparts included
         // via the client API:
