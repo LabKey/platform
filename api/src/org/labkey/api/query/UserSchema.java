@@ -89,7 +89,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         assert MemTracker.getInstance().put(this);
     }
 
-    public String getName()
+    public @NotNull String getName()
     {
         return _name;
     }
@@ -284,7 +284,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     }
 
     /** Returns a SchemaKey encoded name for this schema. */
-    public String getSchemaName()
+    public @NotNull String getSchemaName()
     {
         return _path.toString();
     }

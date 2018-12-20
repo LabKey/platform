@@ -15,6 +15,7 @@
  */
 package org.labkey.api.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
@@ -105,13 +106,13 @@ public class QuerySchemaWrapper implements QuerySchema
         return Collections.emptySet();
     }
 
-    public String getName()
+    public @NotNull String getName()
     {
         return _schema.getName();
     }
 
     @Override
-    public String getSchemaName()
+    public @NotNull String getSchemaName()
     {
         return _schema.getName();
     }

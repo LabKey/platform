@@ -309,7 +309,7 @@ final public class DefaultSchema extends AbstractSchema
         return visitor.visitTop(getSchemas(includeHidden), null);
     }
 
-    public String getName()
+    public @NotNull String getName()
     {
         return "default";
     }
