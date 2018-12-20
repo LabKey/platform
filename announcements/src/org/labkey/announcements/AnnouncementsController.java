@@ -314,7 +314,6 @@ public class AnnouncementsController extends SpringActionController
 
     public abstract class DeleteMessageAction extends ConfirmAction<AnnouncementDeleteForm>
     {
-        protected URLHelper _returnUrl;
         protected URLHelper _cancelUrl;
 
         public ModelAndView getConfirmView(AnnouncementDeleteForm form, BindException errors)
@@ -336,15 +335,14 @@ public class AnnouncementsController extends SpringActionController
                 throw new UnauthorizedException();
             }
 
-            _returnUrl = form.getReturnURLHelper();
-            _cancelUrl = form.getCancelActionURL();
+            _cancelUrl = form.getCancelActionURL(form.getReturnActionURL(getThreadURL(AnnouncementsController.this.getContainer(), ann.getEntityId(), ann.getRowId())));
 
             return new ConfirmDeleteView(ann, getWhat(), getSettings(getContainer()));
         }
 
         public URLHelper getSuccessURL(AnnouncementDeleteForm form)
         {
-            return form.getSuccessActionURL();
+            return form.getReturnURLHelper(new ActionURL(BeginAction.class, getContainer()));
         }
 
         public boolean handlePost(AnnouncementDeleteForm form, BindException errors)
@@ -437,7 +435,7 @@ public class AnnouncementsController extends SpringActionController
 
         public URLHelper getCancelUrl()
         {
-            return _returnUrl;
+            return _cancelUrl;
         }
     }
 
