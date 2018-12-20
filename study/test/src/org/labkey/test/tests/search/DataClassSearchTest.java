@@ -289,8 +289,8 @@ public class DataClassSearchTest extends BaseWebDriverTest
         deleteRowsCommand.execute(connection, getCurrentContainerPath());
 
         // commented out due to intermittently failing on TeamCity
-        // TODO: if issue #26116 is ever resolved, re-enable this part of the test
-        //testSearchAfterModifyingDomain();
+        // TODO: now uncommented, monitor this test (see issue #26116)
+        testSearchAfterModifyingDomain();
     }
 
     private void testSearchAfterModifyingDomain() throws Exception
