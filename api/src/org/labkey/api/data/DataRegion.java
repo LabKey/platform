@@ -2502,7 +2502,7 @@ public class DataRegion extends DisplayElement
         {
             FieldKey fk = entry.getKey();
 
-            if (1 == fk.getParts().size())
+            if (1 == fk.size())
             {
                 Object value;
 

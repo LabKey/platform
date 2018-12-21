@@ -321,7 +321,7 @@ public class JsonWriter
             lookupInfo.put("schema", schemaName);
 
             ColumnInfo displayColumn = fk.createLookupColumn(columnInfo, null);
-            if (displayColumn != null && displayColumn.getFieldKey() != null && displayColumn.getFieldKey().getParts().size() > columnInfo.getFieldKey().getParts().size())
+            if (displayColumn != null && displayColumn.getFieldKey() != null && displayColumn.getFieldKey().size() > columnInfo.getFieldKey().size())
             {
                 lookupInfo.put("displayColumn", displayColumn.getFieldKey().getName());
             }
