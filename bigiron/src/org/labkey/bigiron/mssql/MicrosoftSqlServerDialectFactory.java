@@ -103,7 +103,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
             {
                 // Warn for SQL Server 2019, for now. TODO: remove after further testing and SS 2019 release.
                 if (logWarnings)
-                    LOG.warn("LabKey Server no longer supports " + getProductName() + " version " + databaseProductVersion + ". " + RECOMMENDED);
+                    LOG.warn("LabKey Server has not been tested against " + getProductName() + " version " + databaseProductVersion + ". " + RECOMMENDED);
 
                 return new MicrosoftSqlServer2019Dialect(_tableResolver);
             }
