@@ -75,7 +75,6 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.visualization.GenericChartReport;
 import org.labkey.api.visualization.TimeChartReport;
-import org.labkey.api.writer.ContainerUser;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
@@ -2089,9 +2088,9 @@ public class QueryView extends WebPartView<Object>
         return _buttonBarConfig;
     }
 
-    private boolean isReportView(ContainerUser cu)
+    private boolean isReportView(ViewContext viewContext)
     {
-        _report = getSettings().getReportView(cu);
+        _report = getSettings().getReportView(viewContext);
 
         return _report != null && StringUtils.trimToNull(getSettings().getViewName()) == null;
     }

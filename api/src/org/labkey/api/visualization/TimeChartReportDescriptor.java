@@ -30,6 +30,7 @@ import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -318,6 +319,11 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
 
     public String getViewClass()
     {
-        return "/org/labkey/visualization/views/chartWizard.jsp";
+        return VisualizationReportDescriptor.VIEW_CLASS;
+    }
+
+    public void updateChartViewJsonConfig(ViewContext viewContext)
+    {
+        //TODO
     }
 }

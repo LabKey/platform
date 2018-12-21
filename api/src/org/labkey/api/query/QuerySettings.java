@@ -34,6 +34,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.report.ChartReport;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.MemTracker;
@@ -534,12 +535,19 @@ public class QuerySettings
         return queryDef.getCustomView(context.getUser(), context.getRequest(), getViewName());
     }
 
-    public Report getReportView(ContainerUser cu)
+    public Report getReportView(ViewContext viewContext)
     {
         try {
             if (getReportId() != null)
             {
-                return getReportId().getReport(cu);
+                Report report = getReportId().getReport(viewContext);
+                if (report instanceof ChartReport && AppProps.getInstance().isExperimentalFeatureEnabled(ReportService.EXPERIMENTAL_SHOW_CONVERTED_CHART_VIEW))
+                {
+                    Report convertedReport = ReportService.get().createConvertedChartViewReportInstance(report, viewContext);
+                    if (convertedReport != null)
+                        report = convertedReport;
+                }
+                return report;
             }
         }
         catch (Exception e)

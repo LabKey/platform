@@ -15,13 +15,25 @@
  */
 package org.labkey.api.visualization;
 
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.QueryChangeListener;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.model.ReportPropsManager;
+import org.labkey.api.reports.report.ChartReportDescriptor;
+import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.view.ViewContext;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -47,7 +59,7 @@ public class GenericChartReportDescriptor extends VisualizationReportDescriptor
 
     public String getViewClass()
     {
-        return "/org/labkey/visualization/views/chartWizard.jsp";
+        return VIEW_CLASS;
     }
 
     public Map<String, Object> getReportProps()
@@ -173,4 +185,125 @@ public class GenericChartReportDescriptor extends VisualizationReportDescriptor
 
         return newJson.toString();
     }
+
+    public void updateChartViewJsonConfig(ViewContext viewContext) throws ValidationException
+    {
+        setJSON(getChartViewJSON(viewContext));
+    }
+
+    public String getChartViewJSON(ViewContext viewContext) throws ValidationException
+    {
+        String schemaName = getProperty(ReportDescriptor.Prop.schemaName);
+        String queryName = getProperty(ReportDescriptor.Prop.queryName);
+        String viewName = getProperty(ReportDescriptor.Prop.viewName);
+        String dataRegionName = getProperty(ReportDescriptor.Prop.dataRegionName);
+        String plotName = getReportName();
+        boolean isLogX = BooleanUtils.toBoolean(getProperty(ChartReportDescriptor.Prop.isLogX));
+        boolean isLogY = BooleanUtils.toBoolean(getProperty(ChartReportDescriptor.Prop.isLogY));
+        String xColName = getProperty(ChartReportDescriptor.Prop.columnXName);
+        String[] ys = getColumnYName();
+        List<String> yColNames = Arrays.asList(ys);
+        int width = NumberUtils.toInt(getProperty(ChartReportDescriptor.Prop.width), 640);
+        int height = NumberUtils.toInt(getProperty(ChartReportDescriptor.Prop.height), 400);
+
+        boolean isMultiYAxis = BooleanUtils.toBoolean(getProperty(ChartReportDescriptor.Prop.showMultipleYAxis));
+        boolean showMultiPlot = BooleanUtils.toBoolean(getProperty(ChartReportDescriptor.Prop.showMultipleCharts));
+        //showLines and isVerticalOrientation not supported in new chart
+
+        QueryView queryView = getSourceQueryView(viewContext, schemaName, queryName, viewName, dataRegionName);
+
+        JSONObject measures = new JSONObject();
+        List<DisplayColumn> displayColumns = queryView.getDisplayColumns();
+        DisplayColumn xCol = null;
+        List<DisplayColumn> yCols = new ArrayList<>();
+        for (DisplayColumn col : displayColumns)
+        {
+            if (col.getColumnInfo() == null)
+                continue;
+            String colFieldKey = col.getColumnInfo().getJdbcRsName();
+            if (colFieldKey.equals(xColName))
+                xCol = col;
+            else if (yColNames.contains(colFieldKey))
+                yCols.add(col);
+        }
+
+        if (xCol == null || yCols.size() == 0)
+            throw new ValidationException("Unable to convert chart view");
+
+        JSONObject xColJson = getColumnInfoJson(xCol, schemaName, queryName);
+        measures.put("x", xColJson);
+
+        JSONArray yArray = new JSONArray();
+        for (int i = 0; i < yCols.size(); i++)
+        {
+            DisplayColumn yCol = yCols.get(i);
+            JSONObject yColJson = getColumnInfoJson(yCol, schemaName, queryName);
+            String position = "left";
+            if (i > 0 && (showMultiPlot || isMultiYAxis))
+                position = "right";
+            yColJson.put("yAxis", position);
+            yArray.put(yColJson);
+        }
+        measures.put("y", yArray);
+
+        JSONObject newChartConfig = new JSONObject();
+        newChartConfig.put("measures", measures);
+
+        JSONObject scales = new JSONObject();
+        scales.put("x", new JSONObject().put("trans", isLogX ? "log" : "linear"));
+        scales.put("y", new JSONObject().put("trans", isLogY ? "log" : "linear"));
+        if (yCols.size() > 1 && (showMultiPlot || isMultiYAxis))
+            scales.put("yRight", new JSONObject().put("trans", isLogY ? "log" : "linear"));
+        newChartConfig.put("scales", scales);
+
+        JSONObject geomOptions = new JSONObject();
+        geomOptions.put("boxFillColor", "3366FF");
+        geomOptions.put("lineColor", "000000");
+        geomOptions.put("lineWidth", 1);
+        geomOptions.put("opacity", 0.5);
+        geomOptions.put("pointFillColor", "3366FF");
+        geomOptions.put("pointSize", 5);
+        geomOptions.put("chartLayout", showMultiPlot ? "per_measure" : "single");
+        newChartConfig.put("geomOptions", geomOptions);
+
+        JSONObject labels = new JSONObject();
+        labels.put("x", xCol.getCaption());
+        if (yColNames.size() > 1 && (showMultiPlot || isMultiYAxis))
+        {
+            labels.put("y", yColNames.get(0));
+            labels.put("yRight", StringUtils.join(yColNames.subList(1, yColNames.size()), ", "));
+        }
+        else
+            labels.put("y", StringUtils.join(yColNames, ", "));
+
+        labels.put("main", plotName);
+        newChartConfig.put("labels", labels);
+
+        newChartConfig.put("renderType", "scatter_plot");
+        newChartConfig.put("width", width);
+        newChartConfig.put("height", height);
+
+        JSONObject newJson = new JSONObject();
+        newJson.put("chartConfig", newChartConfig);
+
+        JSONObject newQueryConfig = new JSONObject();
+        newQueryConfig.put("maxRows", -1);
+        newQueryConfig.put("viewName", viewName);
+        newQueryConfig.put("method", "POST");
+        newQueryConfig.put("requiredVersion", 13.2);
+        newQueryConfig.put("queryName", queryName);
+        newQueryConfig.put("queryLabel", queryName);
+        newQueryConfig.put("schemaName", schemaName);
+        JSONArray colArray = new JSONArray();
+        queryView.getDisplayColumns().forEach(col -> {
+            if (col.getColumnInfo() != null)
+                colArray.put(col.getColumnInfo().getFieldKey());
+        });
+        newQueryConfig.put("columns", colArray);
+
+        newJson.put("queryConfig", newQueryConfig);
+
+        return newJson.toString();
+    }
+
 }

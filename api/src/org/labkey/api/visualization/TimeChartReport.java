@@ -17,9 +17,12 @@
 package org.labkey.api.visualization;
 
 import org.labkey.api.reports.report.AbstractReport;
+import org.labkey.api.reports.report.ChartReport;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+
+import java.io.IOException;
 
 /*
 * User: brittp
@@ -59,4 +62,6 @@ public abstract class TimeChartReport extends AbstractReport
     {
         return "Time Chart";
     }
+
+    public abstract void setChartViewDescriptor(ChartReport report, ViewContext viewContext) throws IOException;
 }

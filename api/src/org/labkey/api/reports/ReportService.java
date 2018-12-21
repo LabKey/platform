@@ -52,6 +52,7 @@ public interface ReportService
 {
     String LINK_REPORT_TYPE = "ReportService.linkReport";
     String EXPERIMENTAL_DEPRECATED_CHART_VIEW = "ExperimentalDeprecatedChartView";
+    String EXPERIMENTAL_SHOW_CONVERTED_CHART_VIEW = "ExperimentalConvertChartView";
 
     static ReportService get()
     {
@@ -177,6 +178,13 @@ public interface ReportService
     void validateReportPermissions(ContainerUser context, Report report);
 
     boolean tryValidateReportPermissions(ContainerUser context, Report report, List<ValidationError> errors);
+
+    /**
+     * Convert legacy chart view report to new JS report
+     * @param report
+     * @return
+     */
+    Report createConvertedChartViewReportInstance(Report report, ViewContext viewContext);
 
     interface DesignerInfo
     {
