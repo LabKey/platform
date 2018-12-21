@@ -902,7 +902,7 @@ public class UserManager
     {
         List<AjaxCompletion> completions = new ArrayList<>();
 
-        boolean showEmailAddresses =  SecurityManager.canSeeEmailAddresses(c, currentUser);
+        boolean showEmailAddresses =  SecurityManager.canSeeUserDetails(c, currentUser);
         for (User user : users)
         {
             final String fullName = StringUtils.defaultString(user.getFirstName()) + " " + StringUtils.defaultString(user.getLastName());

@@ -186,7 +186,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
      */
     public String getAutocompleteName(@Nullable Container c, @Nullable User currentUser)
     {
-        if (c != null && currentUser != null && SecurityManager.canSeeEmailAddresses(c, currentUser))
+        if (c != null && currentUser != null && SecurityManager.canSeeUserDetails(c, currentUser))
         {
             String result = getEmail();
             if (StringUtils.isNotBlank(getDisplayName(currentUser)))

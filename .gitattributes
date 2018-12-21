@@ -1464,7 +1464,7 @@ api/src/org/labkey/api/security/permissions/Permission.java -text
 api/src/org/labkey/api/security/permissions/PlatformDeveloperPermission.java -text
 api/src/org/labkey/api/security/permissions/ReadPermission.java -text
 api/src/org/labkey/api/security/permissions/ReadSomePermission.java -text
-api/src/org/labkey/api/security/permissions/SeeUserEmailAddressesPermission.java -text
+api/src/org/labkey/api/security/permissions/SeeUserDetailsPermission.java -text
 api/src/org/labkey/api/security/permissions/TrustedPermission.java -text
 api/src/org/labkey/api/security/permissions/UpdatePermission.java -text
 api/src/org/labkey/api/security/permissions/UserManagementPermission.java -text
@@ -1491,8 +1491,8 @@ api/src/org/labkey/api/security/roles/RestrictedReaderRole.java -text
 api/src/org/labkey/api/security/roles/Role.java -text
 api/src/org/labkey/api/security/roles/RoleConverter.java -text
 api/src/org/labkey/api/security/roles/RoleManager.java -text
-api/src/org/labkey/api/security/roles/SeeEmailAddressesRole.java -text
 api/src/org/labkey/api/security/roles/SeeFilePathsRole.java -text
+api/src/org/labkey/api/security/roles/SeeUserDetailsRole.java -text
 api/src/org/labkey/api/security/roles/SharedViewEditorRole.java -text
 api/src/org/labkey/api/security/roles/SiteAdminRole.java -text
 api/src/org/labkey/api/security/roles/SubmitterRole.java -text
@@ -7128,7 +7128,6 @@ internal/src/org/labkey/api/util/SessionTempFileHolder.java -text
 internal/src/org/labkey/api/util/SortHelpers.java -text
 internal/src/org/labkey/api/util/TextExtractor.java -text
 internal/src/org/labkey/api/util/wiki_markup.properties -text
-internal/src/org/labkey/api/view/ContactWebPart.java -text
 internal/src/org/labkey/api/view/DefaultWebPartFactory.java -text
 internal/src/org/labkey/api/view/FileServlet.java -text
 internal/src/org/labkey/api/view/LinkBarView.java -text

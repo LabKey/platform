@@ -61,7 +61,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.SeeUserEmailAddressesPermission;
+import org.labkey.api.security.permissions.SeeUserDetailsPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.roles.ApplicationAdminRole;
@@ -3158,9 +3158,9 @@ public class SecurityManager
         }
     }
 
-    public static boolean canSeeEmailAddresses(Container c, User user)
+    public static boolean canSeeUserDetails(Container c, User user)
     {
-        return c.hasPermission(user, SeeUserEmailAddressesPermission.class) || user.hasRootPermission(SeeUserEmailAddressesPermission.class);
+        return c.hasPermission(user, SeeUserDetailsPermission.class) || user.hasRootPermission(SeeUserDetailsPermission.class);
     }
 
     public static boolean canSeeAuditLog(User user)

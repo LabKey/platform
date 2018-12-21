@@ -20,10 +20,10 @@ package org.labkey.api.security.permissions;
  * Date: 2012-09-14
  * Time: 1:35 PM
  */
-public class SeeUserEmailAddressesPermission extends AbstractPermission
+public class SeeUserDetailsPermission extends AbstractPermission
 {
-    public SeeUserEmailAddressesPermission()
+    public SeeUserDetailsPermission()
     {
-        super("See Email Addresses", "Allows non-administrators to see email addresses of other users.");
+        super("See User Details", "Allows non-administrators to see email addresses and contact information of other users.");
     }
 }

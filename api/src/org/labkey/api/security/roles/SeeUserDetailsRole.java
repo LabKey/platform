@@ -17,19 +17,19 @@ package org.labkey.api.security.roles;
 
 import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.permissions.SeeUserEmailAddressesPermission;
+import org.labkey.api.security.permissions.SeeUserDetailsPermission;
 
 /*
 * User: adam
 * Date: Jan 22, 2010
 * Time: 1:22:04 PM
 */
-public class SeeEmailAddressesRole extends AbstractRootContainerRole
+public class SeeUserDetailsRole extends AbstractRootContainerRole
 {
-    public SeeEmailAddressesRole()
+    public SeeUserDetailsRole()
     {
-        super("See Email Addresses", "Allows non-administrators to see email addresses",
-                SeeUserEmailAddressesPermission.class);
+        super("See User Details", "Allows non-administrators to see email addresses and contact information of other users.",
+                SeeUserDetailsPermission.class);
 
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupGuests));
     }
