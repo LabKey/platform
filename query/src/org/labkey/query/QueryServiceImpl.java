@@ -1964,7 +1964,7 @@ public class QueryServiceImpl implements QueryService
         {
             return QueryService.MODULE_QUERIES_PATH;
         }
-        List<String> subDirs = new ArrayList<>(schemaKey.getParts().size() + 1);
+        List<String> subDirs = new ArrayList<>(schemaKey.size() + 1);
         subDirs.add(QueryService.MODULE_QUERIES_DIRECTORY);
         subDirs.addAll(schemaKey.getParts());
         return new Path(subDirs);
