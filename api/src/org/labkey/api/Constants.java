@@ -82,7 +82,7 @@ public class Constants
         {
             double version = 16.20;
 
-            for (double expected : new double[]{16.30, 17.10, 17.20, 17.30, 18.10, 18.20})
+            for (double expected : new double[]{16.30, 17.10, 17.20, 17.30, 18.10, 18.20, 18.30, 19.10, 19.20})
             {
                 version = incrementVersion(version);
                 assertEquals(expected, version, 0);
