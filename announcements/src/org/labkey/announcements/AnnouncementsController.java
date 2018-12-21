@@ -1833,7 +1833,7 @@ public class AnnouncementsController extends SpringActionController
             String memberListInput = bean.getMemberListInput();
             List<Integer> memberListIds = new ArrayList<>();
 
-            boolean currentUserCanSeeEmails = SecurityManager.canSeeEmailAddresses(getContainer(), getUser());
+            boolean currentUserCanSeeEmails = SecurityManager.canSeeUserDetails(getContainer(), getUser());
             if (null != memberListInput)
             {
                 List<String> parsedMemberList = UserManager.parseUserListInput(StringUtils.split(StringUtils.trimToEmpty(memberListInput), "\n"));

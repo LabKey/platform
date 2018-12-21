@@ -61,6 +61,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.TestDomainKind;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.iterator.MarkableIterator;
+import org.labkey.api.ldap.LdapAuthenticationManager;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.FolderType;
@@ -80,6 +81,8 @@ import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reader.DataLoaderFactory;
@@ -144,7 +147,6 @@ import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
 import org.labkey.api.view.BaseWebPartFactory;
-import org.labkey.api.view.ContactWebPart;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.JspView;
@@ -198,7 +200,6 @@ import org.labkey.core.admin.writer.SecurityGroupWriterFactory;
 import org.labkey.core.analytics.AnalyticsController;
 import org.labkey.core.analytics.AnalyticsServiceImpl;
 import org.labkey.core.attachment.AttachmentServiceImpl;
-import org.labkey.api.ldap.LdapAuthenticationManager;
 import org.labkey.core.authentication.ldap.LdapAuthenticationProvider;
 import org.labkey.core.authentication.ldap.LdapController;
 import org.labkey.core.authentication.test.TestSecondaryController;
@@ -500,7 +501,17 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             {
                 public WebPartView getWebPartView(@NotNull ViewContext ctx, @NotNull WebPart webPart)
                 {
-                    return new ContactWebPart();
+                    UserSchema schema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), CoreQuerySchema.NAME);
+                    QuerySettings settings = new QuerySettings(ctx, QueryView.DATAREGIONNAME_DEFAULT);
+
+                    settings.setQueryName(CoreQuerySchema.USERS_TABLE_NAME);
+
+                    QueryView view = schema.createView(ctx, settings, null);
+                    view.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
+                    view.setFrame(WebPartView.FrameType.PORTAL);
+                    view.setTitle("Project Contacts");
+
+                    return view;
                 }
             },
             new BaseWebPartFactory("FolderNav")

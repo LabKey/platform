@@ -20,7 +20,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NullColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -47,9 +46,9 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
@@ -57,6 +56,7 @@ import org.labkey.core.security.SecurityController;
 import org.labkey.core.user.UserController;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -71,9 +71,19 @@ import java.util.Set;
 */
 public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
 {
-    List<FieldKey> _defaultColumns;
-    Set<String> _illegalColumns;
-    boolean _mustCheckPermissions = true;
+    private Set<String> _illegalColumns;
+    private boolean _mustCheckPermissions = true;
+    private boolean _canSeeDetails;
+    private static final Set<FieldKey> ALWAYS_AVAILABLE_FIELDS;
+
+    static
+    {
+        ALWAYS_AVAILABLE_FIELDS = new HashSet<>();
+        ALWAYS_AVAILABLE_FIELDS.addAll(Arrays.asList(
+                FieldKey.fromParts("EntityId"),
+                FieldKey.fromParts("UserId"),
+                FieldKey.fromParts("DisplayName")));
+    }
 
     private final static Logger LOG = Logger.getLogger(UsersTable.class);
 
@@ -83,8 +93,8 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
         setDescription("Contains all users who are members of the current project." +
                 " The data in this table are available only to users who are signed-in (not guests). Guests will see no rows." +
-                " All signed-in users will see the columns UserId, EntityId, DisplayName, Email, FirstName, LastName, Description, Created, Modified." +
-                " Users with administrator permissions will also see the columns Phone, Mobile, Pager, IM, Active and LastLogin.");
+                " All signed-in users will see the columns UserId, EntityId, and DisplayName." +
+                " Users with the : 'See User Details' permission will see all standard and custom columns.");
         setImportURL(LINK_DISABLER);
         if (schema.getUser().hasRootPermission(UserManagementPermission.class))
         {
@@ -96,39 +106,46 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
             setDeleteURL(LINK_DISABLER);
             setInsertURL(LINK_DISABLER);
         }
+
+        _canSeeDetails = SecurityManager.canSeeUserDetails(getContainer(), getUser()) || getUser().isSearchUser();
+    }
+
+    public boolean isCanSeeDetails()
+    {
+        return _canSeeDetails;
     }
 
     @Override
     public void addColumns()
     {
-        _defaultColumns = new ArrayList<>();
+        List<FieldKey> defaultColumns = new ArrayList<>();
 
-        wrapAllColumns();
-
-        if (SecurityManager.canSeeEmailAddresses(getContainer(), getUser()) || getUser().isSearchUser())
+        // wrap all the columns in the real table
+        for (ColumnInfo col : getRealTable().getColumns())
         {
-            addWrapColumn(getRealTable().getColumn("Email"));
-        }
-        else
-        {
-            ColumnInfo emailCol = addColumn(new NullColumnInfo(this, "Email", JdbcType.VARCHAR));
-            emailCol.setReadOnly(true);
+            if (acceptColumn(col))
+            {
+                if (ALWAYS_AVAILABLE_FIELDS.contains(col.getFieldKey()))
+                    wrapColumn(col);
+                else
+                    addUserDetailColumn(col, isCanSeeDetails(), true);
+            }
         }
 
         // add the standard default columns
-        _defaultColumns.add(FieldKey.fromParts("UserId"));
-        _defaultColumns.add(FieldKey.fromParts("DisplayName"));
-        _defaultColumns.add(FieldKey.fromParts("Email"));
-        _defaultColumns.add(FieldKey.fromParts("Active"));
-        _defaultColumns.add(FieldKey.fromParts("LastLogin"));
-        _defaultColumns.add(FieldKey.fromParts("Created"));
+        defaultColumns.add(FieldKey.fromParts("UserId"));
+        defaultColumns.add(FieldKey.fromParts("DisplayName"));
+        defaultColumns.add(FieldKey.fromParts("Email"));
+        defaultColumns.add(FieldKey.fromParts("Active"));
+        defaultColumns.add(FieldKey.fromParts("LastLogin"));
+        defaultColumns.add(FieldKey.fromParts("Created"));
 
         if (null != PropertyService.get())
         {
             Collection<FieldKey> domainDefaultCols = addDomainColumns();
-            _defaultColumns.addAll(domainDefaultCols);
+            defaultColumns.addAll(domainDefaultCols);
         }
-        setDefaultVisibleColumns(_defaultColumns);
+        setDefaultVisibleColumns(defaultColumns);
 
         // expiration date will only show for admins under Site Users, if enabled
         hideExpirationDateColumn();
@@ -149,6 +166,30 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 userIdCol.setShownInInsertView(false);
                 userIdCol.setShownInUpdateView(false);
             }
+        }
+    }
+
+    /**
+     * Add the specified column if the user has permission to see user details or add a column which displays only
+     * blank values.
+     *
+     * @param wrapColumn true to wrap the column when it is already in the underlying physical table
+     */
+    private void addUserDetailColumn(ColumnInfo col, boolean canSeeDetails, boolean wrapColumn)
+    {
+        if (canSeeDetails || !_mustCheckPermissions)
+        {
+            if (wrapColumn)
+                wrapColumn(col);
+            else
+                addColumn(col);
+        }
+        else
+        {
+            // display a column with blank results
+            ColumnInfo nullColumn = addColumn(new NullColumnInfo(this, col.getName(), col.getJdbcType()));
+            nullColumn.setReadOnly(true);
+            nullColumn.setHidden(col.isHidden());
         }
     }
 
@@ -176,19 +217,12 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
         if (_illegalColumns == null)
         {
             _illegalColumns = new HashSet<>();
-
-            // handle the email column through a different code path
-            _illegalColumns.add("Email");
-
             if (!getUser().hasRootPermission(UserManagementPermission.class) && !getContainer().hasPermission(getUser(), AdminPermission.class))
             {
-                //_illegalColumns.add("UserId");
-
                 _illegalColumns.add("Active");
                 _illegalColumns.add("LastLogin");
             }
         }
-
         return !_illegalColumns.contains(col.getName());
     }
 
@@ -218,7 +252,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
                         if (col != null)
                         {
                             if (col.getScale() != pd.getScale())
-                                LOG.error("Scale doesn't match for column " + col.getName() + ": " + col.getScale() + " vs " + pd.getScale());
+                                LOG.warn("Scale doesn't match for column " + col.getName() + ": " + col.getScale() + " vs " + pd.getScale());
                             pd.copyTo(col);
                             if (!col.isHidden())
                                 defaultCols.add(FieldKey.fromParts(col.getName()));
@@ -228,7 +262,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
                     {
                         if (!pd.isHidden())
                             defaultCols.add(FieldKey.fromParts(propColumn.getName()));
-                        addColumn(propColumn);
+                        addUserDetailColumn(propColumn, isCanSeeDetails(), false);
                     }
                 }
             }

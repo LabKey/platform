@@ -17,25 +17,7 @@ package org.labkey.core.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerForeignKey;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.ContainerTable;
-import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
-import org.labkey.api.data.ForeignKey;
-import org.labkey.api.data.LookupColumn;
-import org.labkey.api.data.MultiValuedForeignKey;
-import org.labkey.api.data.MultiValuedLookupColumn;
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.Results;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -248,7 +230,7 @@ public class CoreQuerySchema extends UserSchema
 
     public TableInfo getSiteUsers()
     {
-        FilteredTable<UserSchema> users = _getUserTable();
+        UsersTable users = _getUserTable();
 
         // only root admins (i.e. site admins and app admins) are allowed to see all site users,
         // if the user is a guest, return an empty set, else just filter to the logged in user,
@@ -426,7 +408,7 @@ public class CoreQuerySchema extends UserSchema
         if (getContainer().isRoot())
             return getSiteUsers();
 
-        FilteredTable<UserSchema> users = _getUserTable();
+        UsersTable users = _getUserTable();
 
         //if the user is a guest, add a filter to produce a null set
         if (getUser().isGuest())
@@ -456,35 +438,41 @@ public class CoreQuerySchema extends UserSchema
 
         users.setDescription("Contains all users who are members of the current project, based on being added to a project group or assigned permission directly within the project." +
         " The data in this table are available only to users who are signed-in (not guests). Guests will see no rows." +
-        " All signed-in users will see the columns UserId, EntityId, DisplayName, Email, FirstName, LastName, Description, Created, Modified," +
-        " although non-administrator users must be added to the \"See Email Addresses\" role to see values in the Email column." +
-        " Users with administrator permissions will also see the columns Phone, Mobile, Pager, IM, Active and LastLogin.");
+        " All signed-in users will see the columns UserId, EntityId, and DisplayName." +
+        " Users with the : 'See User Details' permission will see all standard and custom columns.");
 
         return users;
     }
 
-
-    private void addGroupsColumn(FilteredTable users)
+    private void addGroupsColumn(UsersTable users)
     {
-        ColumnInfo groupsCol = users.wrapColumn("Groups", users.getRealTable().getColumn("userid"));
-        groupsCol.setFk(new MultiValuedForeignKey(new LookupForeignKey("User")
+        ColumnInfo groupsCol;
+        if (users.isCanSeeDetails())
         {
-            @Override
-            public TableInfo getLookupTableInfo()
+            groupsCol = users.wrapColumn("Groups", users.getRealTable().getColumn("userid"));
+            groupsCol.setFk(new MultiValuedForeignKey(new LookupForeignKey("User")
             {
-                return getMembersTable();
-            }
-        }, "Group"){
-            @Override
-            protected MultiValuedLookupColumn createMultiValuedLookupColumn(ColumnInfo lookupColumn, ColumnInfo parent, ColumnInfo childKey, ColumnInfo junctionKey, ForeignKey fk)
-            {
-                ((LookupColumn)lookupColumn)._joinType = LookupColumn.JoinType.inner;
-                return super.createMultiValuedLookupColumn(lookupColumn, parent, childKey, junctionKey, fk);
-            }
-        });
-        groupsCol.setDescription("List of the user's group memberships.");
-        users.addColumn(groupsCol);
-
+                @Override
+                public TableInfo getLookupTableInfo()
+                {
+                    return getMembersTable();
+                }
+            }, "Group"){
+                @Override
+                protected MultiValuedLookupColumn createMultiValuedLookupColumn(ColumnInfo lookupColumn, ColumnInfo parent, ColumnInfo childKey, ColumnInfo junctionKey, ForeignKey fk)
+                {
+                    ((LookupColumn)lookupColumn)._joinType = LookupColumn.JoinType.inner;
+                    return super.createMultiValuedLookupColumn(lookupColumn, parent, childKey, junctionKey, fk);
+                }
+            });
+            groupsCol.setDescription("List of the user's group memberships.");
+            users.addColumn(groupsCol);
+        }
+        else
+        {
+            groupsCol = users.addColumn(new NullColumnInfo(users, "Groups", JdbcType.VARCHAR));
+            groupsCol.setReadOnly(true);
+        }
         List<FieldKey> visibleColumns = new ArrayList<>(users.getDefaultVisibleColumns());
         visibleColumns.add(groupsCol.getFieldKey());
         users.setDefaultVisibleColumns(visibleColumns);
@@ -532,11 +520,11 @@ public class CoreQuerySchema extends UserSchema
         return result;
     }
 
-    private FilteredTable<UserSchema> _getUserTable()
+    private UsersTable _getUserTable()
     {
         UsersTable table = new UsersTable(this, CoreSchema.getInstance().getSchema().getTable(USERS_TABLE_NAME));
-        table.init();
         table.setMustCheckPermissions(_mustCheckPermissions);
+        table.init();
         return table;
     }
 

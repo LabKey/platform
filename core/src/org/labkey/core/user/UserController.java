@@ -1507,7 +1507,7 @@ public class UserController extends SpringActionController
             else if (table instanceof AbstractTableInfo)
             {
                 // conditionally remove the email and groups columns only for this view
-                if (!SecurityManager.canSeeEmailAddresses(getContainer(), getUser()))
+                if (!SecurityManager.canSeeUserDetails(getContainer(), getUser()))
                 {
                     ColumnInfo col = table.getColumn(FieldKey.fromParts("Email"));
                     if (col != null)
@@ -2445,7 +2445,7 @@ public class UserController extends SpringActionController
                 if (nameFilter.length() > 0)
                     response.put("name", nameFilter);
 
-                boolean includeEmail = SecurityManager.canSeeEmailAddresses(getContainer(), currentUser);
+                boolean includeEmail = SecurityManager.canSeeUserDetails(getContainer(), currentUser);
                 boolean userHasPermission;
 
                 for (User user : users)

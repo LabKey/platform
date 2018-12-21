@@ -184,19 +184,6 @@
     </columns>
     <titleColumn>DisplayName</titleColumn>
   </table>
-  <table tableName="Contacts" tableDbType="VIEW">
-    <columns>
-      <column columnName="Name">
-        <url>org.labkey.core.user.UserController$DetailsAction.class?userId=${UserId}</url>
-      </column>
-      <column columnName="Email"/>
-      <column columnName="Phone"/>
-      <column columnName="UserId"/>
-      <column columnName="OwnerId"/>
-      <column columnName="Container"/>
-      <column columnName="DisplayName"/>
-    </columns>
-  </table>
   <table tableName="Users" tableDbType="VIEW">
     <cacheSize>10000</cacheSize>
     <columns>

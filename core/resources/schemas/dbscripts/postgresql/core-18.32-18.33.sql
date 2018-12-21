@@ -1,0 +1,1 @@
+UPDATE core.RoleAssignments SET role = 'org.labkey.api.security.roles.SeeUserDetailsRole' WHERE role = 'org.labkey.api.security.roles.SeeEmailAddressesRole';

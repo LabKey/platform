@@ -63,7 +63,7 @@ import org.labkey.api.security.permissions.EditSharedViewPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
-import org.labkey.api.security.permissions.SeeUserEmailAddressesPermission;
+import org.labkey.api.security.permissions.SeeUserDetailsPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.roles.ApplicationAdminRole;
@@ -2062,7 +2062,7 @@ public class SecurityController extends SpringActionController
                 DeletePermission.class,
                 AdminPermission.class,
                 EditSharedViewPermission.class,
-                SeeUserEmailAddressesPermission.class,
+                SeeUserDetailsPermission.class,
                 CanSeeAuditLogPermission.class,
                 FolderExportPermission.class
             );
