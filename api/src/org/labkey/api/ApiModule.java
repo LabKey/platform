@@ -26,6 +26,8 @@ import org.labkey.api.exp.api.ExpRunAttachmentType;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.reports.report.ReportType;
 import org.labkey.api.security.ApiKeyManager;
 import org.labkey.api.security.ApiKeyManager.ApiKeyMaintenanceTask;
@@ -78,7 +80,9 @@ public class ApiModule extends CodeOnlyModule
         return ImmutableSet.of(
             Constants.TestCase.class,
             DataIteratorUtil.TestCase.class,
-            SqlScanner.TestCase.class
+            SqlScanner.TestCase.class,
+            FieldKey.TestCase.class,
+            SchemaKey.TestCase.class
         );
     }
 

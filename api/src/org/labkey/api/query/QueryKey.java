@@ -196,6 +196,16 @@ import java.util.Objects;
 
 
     /**
+     * Returns the number of parts in this QueryKey. Equivalent to getParts().size(), but more efficient.
+     * @return Number of parts that would be returned by getParts()
+     */
+    public int size()
+    {
+        return _parent == null ? 1 : _parent.size() + 1;
+    }
+
+
+    /**
      * generate a URL encoded string representing this field key
      * may be parsed by FieldKey.parse()
      */
@@ -255,4 +265,20 @@ import java.util.Objects;
         return true;
     }
 
+    public boolean startsWith(@NotNull QueryKey<? extends QueryKey> prefix)
+    {
+        if (size() < prefix.size())
+            return false;
+
+        List<String> target = getParts();
+        List<String> prefixParts = prefix.getParts();
+
+        for (int i = 0; i < prefixParts.size(); i++)
+        {
+            if (!target.get(i).equalsIgnoreCase(prefixParts.get(i)))
+                return false;
+        }
+
+        return true;
+    }
 }
