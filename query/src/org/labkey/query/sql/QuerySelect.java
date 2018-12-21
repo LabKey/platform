@@ -69,7 +69,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
 {
     private static final Logger _log = Logger.getLogger(QuerySelect.class);
 
-    String _queryText = null;
+    String _queryText;
     private Map<FieldKey, SelectColumn> _columns;
 
     // these three fields are accessed by QueryPivot
@@ -89,6 +89,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
     private List<QExpr> _onExpressions;
 
     private Map<FieldKey, QueryRelation> _tables;
+    private List<FieldKey> _schemas = null;
     // Don't forget to recurse passing container filter into subqueries.
     private List<QueryRelation> _subqueries = new ArrayList<>();
     private Map<FieldKey, RelationColumn> _declaredFields = new HashMap<>();
@@ -164,7 +165,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
         QTable t = new QTable(from, alias);
         _parsedJoins = new ArrayList<>();
         _parsedJoins.add(t);
-        _onExpressions = Collections.EMPTY_LIST;
+        _onExpressions = Collections.emptyList();
         _parsedTables = new LinkedHashMap<>();
         _parsedTables.put(t.getTableKey(), t);
         _select = new QSelect();
@@ -356,7 +357,7 @@ groupByLoop:
         ArrayList<SelectColumn> columnList = new ArrayList<>();
         if (_select != null)
         {
-            LinkedList<QNode> process = new LinkedList(_select.childList());
+            LinkedList<QNode> process = new LinkedList<>(_select.childList());
             while (!process.isEmpty())
             {
                 QNode node = process.removeFirst();
@@ -445,7 +446,7 @@ groupByLoop:
             while (fieldKeys.containsKey(new FieldKey(null,"Expression" + ++expressionUniq)))
                 ;
             name = "Expression" + expressionUniq;
-            reportWarning("Automatially creating alias for expression column: " + name, column._node);
+            reportWarning("Automatically creating alias for expression column: " + name, column._node);
             if (null == column._key)
                 column._key = new FieldKey(null,name);
             fieldKeys.put(column._key, column._key);
@@ -802,14 +803,39 @@ groupByLoop:
         List<String> parts = declareKey.getParts();
         QueryRelation table = null;
         FieldKey tableKey = null;
+        FieldKey schemaKey = null;
         boolean qualified = true;
 
+        // Handle possible schema prefix, #36273
+        if (parts.size() >= 3)
+        {
+            FieldKey key = getSchema(declareKey);
+
+            if (null != key)
+            {
+                parts.subList(0, key.size()).clear();
+                schemaKey = key;
+            }
+        }
+
+        // Handle possible table prefix
         if (parts.size() >= 2)
         {
             tableKey = new FieldKey(null, parts.get(0));
             table = getTable(tableKey);
             if (table != null)
+            {
                 parts.remove(0);
+
+                if (null != schemaKey)
+                {
+                    // Verify that specified schema matches the table's schema
+                    if (!FieldKey.decode(table.getSchema().getSchemaName()).equals(schemaKey))
+                        parseError("Schema and table mismatch: " + declareKey, location);
+
+                    tableKey = FieldKey.fromParts(schemaKey, tableKey);
+                }
+            }
         }
 
         if (null == table)
@@ -894,6 +920,26 @@ groupByLoop:
         return colParent;
     }
 
+
+    // Return this column's schema prefix, if one is specified
+    private @Nullable FieldKey getSchema(FieldKey declareKey)
+    {
+        // Initialize _schemas lazily, since most queries don't use schema-qualified column names
+        if (null == _schemas)
+        {
+            _schemas = _tables.values().stream()
+                .map(t->t.getSchema().getSchemaName())
+                .map(FieldKey::decode)
+                .distinct()
+                .collect(Collectors.toList());
+        }
+
+        for (FieldKey schemaKey : _schemas)
+            if (declareKey.startsWith(schemaKey))
+                return schemaKey;
+
+        return null;
+    }
 
 
     private void declareFields(QExpr expr)
