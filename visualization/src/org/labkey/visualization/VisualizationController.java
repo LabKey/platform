@@ -78,6 +78,7 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.model.ReportPropsManager;
+import org.labkey.api.reports.report.ChartReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.view.ReportUtil;
@@ -87,6 +88,7 @@ import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -1025,6 +1027,15 @@ public class VisualizationController extends SpringActionController
             {
                 errors.reject(ERROR_MSG, "You do not have permissions to view this private report.");
                 return;
+            }
+
+            if (report instanceof ChartReport && AppProps.getInstance().isExperimentalFeatureEnabled(ReportService.EXPERIMENTAL_SHOW_CONVERTED_CHART_VIEW))
+            {
+                Report convertedReport = ReportService.get().createConvertedChartViewReportInstance(report, getViewContext());
+                if (convertedReport != null)
+                {
+                    report = convertedReport;
+                }
             }
 
             descriptor = report.getDescriptor();

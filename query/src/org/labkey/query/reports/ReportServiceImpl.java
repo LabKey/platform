@@ -48,6 +48,8 @@ import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryListener;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.report.AbstractReportIdentifier;
+import org.labkey.api.reports.report.ChartReport;
+import org.labkey.api.reports.report.ChartReportDescriptor;
 import org.labkey.api.reports.report.DbReportIdentifier;
 import org.labkey.api.reports.report.ReportDB;
 import org.labkey.api.reports.report.ReportDescriptor;
@@ -70,6 +72,8 @@ import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.visualization.GenericChartReport;
+import org.labkey.api.visualization.TimeChartReport;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.DefaultContainerUser;
 import org.labkey.api.writer.VirtualFile;
@@ -221,6 +225,36 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         Report report = createReportInstance(descriptor.getReportType());
         report.setDescriptor(descriptor);
         return report;
+    }
+
+    @Nullable
+    @Override
+    public Report createConvertedChartViewReportInstance(Report report, ViewContext viewContext)
+    {
+        ReportDescriptor descriptor = report.getDescriptor();
+        if (!(descriptor instanceof ChartReportDescriptor))
+            return createReportInstance(descriptor);
+        ChartReportDescriptor chartReportDescriptor = (ChartReportDescriptor) descriptor;
+        Report newReport = createReportInstance(chartReportDescriptor.getChartViewNewType());
+        try
+        {
+            if (newReport instanceof GenericChartReport)
+            {
+                GenericChartReport chartReport = (GenericChartReport) newReport;
+                chartReport.setChartViewDescriptor((ChartReport) report, viewContext);
+            }
+            else if (newReport instanceof TimeChartReport)
+            {
+                TimeChartReport timeReport = (TimeChartReport) newReport;
+                timeReport.setChartViewDescriptor((ChartReport) report, viewContext);
+            }
+        }
+        catch (IOException | ValidationException e)
+        {
+            _log.error("Unable to convert chart view for " + report.getDescriptor().getReportName());
+            return null;
+        }
+        return newReport;
     }
 
     private static TableInfo getTable()

@@ -17,6 +17,7 @@ package org.labkey.visualization.report;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.reports.Report;
+import org.labkey.api.reports.report.ChartReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.ThumbnailUtil;
@@ -30,8 +31,11 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.visualization.SvgThumbnailGenerator;
 import org.labkey.api.visualization.TimeChartReport;
 import org.labkey.api.visualization.TimeChartReportDescriptor;
+import org.labkey.api.visualization.VisualizationReportDescriptor;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.visualization.VisualizationController;
+
+import java.io.IOException;
 
 /*
  * User: brittp
@@ -103,5 +107,16 @@ public class TimeChartReportImpl extends TimeChartReport implements SvgThumbnail
     public boolean isSandboxed()
     {
         return true;
+    }
+
+    @Override
+    public void setChartViewDescriptor(ChartReport report, ViewContext viewContext) throws IOException
+    {
+        ReportDescriptor descriptor = VisualizationReportDescriptor.getConvertedChartViewDescriptor(report, TimeChartReportDescriptor.TYPE, TimeChartReport.TYPE);
+        if (descriptor instanceof TimeChartReportDescriptor)
+        {
+            ((TimeChartReportDescriptor) descriptor).updateChartViewJsonConfig(viewContext);
+            setDescriptor(descriptor);
+        }
     }
 }

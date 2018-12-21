@@ -223,6 +223,8 @@ public class QueryModule extends DefaultModule
                         "recommend creating new charts using the newer wizard; the older chart designer will soon be removed and older charts " +
                         "migrated to the new approach, if possible.",
                 false);
+
+        AdminConsole.addExperimentalFeatureFlag(ReportService.EXPERIMENTAL_SHOW_CONVERTED_CHART_VIEW, "Show converted chart view display", "Show modern, JavaScript-based charts instead of legacy chart views.", false);
     }
 
 

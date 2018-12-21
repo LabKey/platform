@@ -17,8 +17,10 @@ package org.labkey.visualization.report;
 
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.report.ChartReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.ThumbnailUtil;
@@ -28,9 +30,13 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.visualization.GenericChartReport;
+import org.labkey.api.visualization.GenericChartReportDescriptor;
 import org.labkey.api.visualization.SvgThumbnailGenerator;
+import org.labkey.api.visualization.VisualizationReportDescriptor;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.visualization.VisualizationController;
+
+import java.io.IOException;
 
 /**
  * User: klum
@@ -107,5 +113,16 @@ public class GenericChartReportImpl extends GenericChartReport implements SvgThu
     public boolean isSandboxed()
     {
         return true;
+    }
+
+    @Override
+    public void setChartViewDescriptor(ChartReport report, ViewContext viewContext) throws IOException, ValidationException
+    {
+        VisualizationReportDescriptor descriptor = VisualizationReportDescriptor.getConvertedChartViewDescriptor(report, GenericChartReportDescriptor.TYPE, GenericChartReport.TYPE);
+        if (descriptor instanceof GenericChartReportDescriptor)
+        {
+            ((GenericChartReportDescriptor) descriptor).updateChartViewJsonConfig(viewContext);
+            setDescriptor(descriptor);
+        }
     }
 }
