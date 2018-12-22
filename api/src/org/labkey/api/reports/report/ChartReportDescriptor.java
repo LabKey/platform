@@ -19,7 +19,6 @@ package org.labkey.api.reports.report;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.visualization.GenericChartReport;
-import org.labkey.api.visualization.TimeChartReport;
 
 import java.util.Arrays;
 import java.util.List;
@@ -123,8 +122,6 @@ public class ChartReportDescriptor extends ReportDescriptor
 
     public String getChartViewNewType()
     {
-        if (getProperty(Prop.chartType).equalsIgnoreCase(CHART_XY))
-            return GenericChartReport.TYPE;
-        return TimeChartReport.TYPE;
+        return GenericChartReport.TYPE;
     }
 }

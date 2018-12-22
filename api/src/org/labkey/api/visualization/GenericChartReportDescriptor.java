@@ -20,10 +20,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.QueryChangeListener;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.report.ChartReportDescriptor;
@@ -208,7 +212,8 @@ public class GenericChartReportDescriptor extends VisualizationReportDescriptor
 
         boolean isMultiYAxis = BooleanUtils.toBoolean(getProperty(ChartReportDescriptor.Prop.showMultipleYAxis));
         boolean showMultiPlot = BooleanUtils.toBoolean(getProperty(ChartReportDescriptor.Prop.showMultipleCharts));
-        //showLines and isVerticalOrientation not supported in new chart
+        boolean showLines = BooleanUtils.toBoolean(getProperty(ChartReportDescriptor.Prop.showLines));
+        //isVerticalOrientation not supported in new chart
 
         QueryView queryView = getSourceQueryView(viewContext, schemaName, queryName, viewName, dataRegionName);
 
@@ -279,7 +284,7 @@ public class GenericChartReportDescriptor extends VisualizationReportDescriptor
         labels.put("main", plotName);
         newChartConfig.put("labels", labels);
 
-        newChartConfig.put("renderType", "scatter_plot");
+        newChartConfig.put("renderType", showLines ? "line_plot" : "scatter_plot");
         newChartConfig.put("width", width);
         newChartConfig.put("height", height);
 
@@ -304,6 +309,58 @@ public class GenericChartReportDescriptor extends VisualizationReportDescriptor
         newJson.put("queryConfig", newQueryConfig);
 
         return newJson.toString();
+    }
+
+    public String[] getColumnYName()
+    {
+        final Object colY = _props.get(ChartReportDescriptor.Prop.columnYName.toString());
+        if (colY instanceof List)
+            return ((List<String>)colY).toArray(new String[0]);
+        else if (colY instanceof String)
+            return new String[]{(String)colY};
+
+        return new String[0];
+    }
+
+    public JSONObject getColumnInfoJson(DisplayColumn displayColumn, String schemaName, String queryName)
+    {
+        JSONObject column = new JSONObject();
+        column.put("schemaName", schemaName);
+        column.put("queryName", queryName);
+        column.put("queryLabel", queryName);
+
+        ColumnInfo columnInfo = displayColumn.getColumnInfo();
+
+        column.put("alias", columnInfo.getAlias());
+        column.put("name", columnInfo.getName());
+        column.put("fieldKey", columnInfo.getFieldKey());
+        column.put("shortCaption", columnInfo.getShortLabel());
+        column.put("label", columnInfo.getLabel());
+        column.put("hidden", columnInfo.isHidden());
+        column.put("measure", columnInfo.isMeasure());
+        column.put("dimension", columnInfo.isDimension());
+        column.put("type", displayColumn.getJsonTypeName());
+        column.put("displayFieldJsonType", displayColumn.getDisplayJsonTypeName());
+        column.put("normalizedType", displayColumn.getDisplayJsonTypeName());
+
+        return column;
+    }
+
+    public QueryView getSourceQueryView(ViewContext viewContext, String schemaName, String queryName, String viewName, String dataRegionName) throws ValidationException
+    {
+        UserSchema schema = QueryService.get().getUserSchema(viewContext.getUser(), viewContext.getContainer(), schemaName);
+        if (schema == null)
+        {
+            throw new ValidationException("Invalid schema name: " + schemaName + ". ");
+        }
+        QuerySettings settings = schema.getSettings(viewContext, dataRegionName == null ? "query" : dataRegionName, queryName, viewName);
+        QueryView queryView = schema.createView(viewContext, settings, null);
+        if (queryView == null)
+        {
+            throw new ValidationException("Invalid query/view.");
+        }
+
+        return queryView;
     }
 
 }
