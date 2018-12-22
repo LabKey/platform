@@ -73,7 +73,6 @@ import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.visualization.GenericChartReport;
-import org.labkey.api.visualization.TimeChartReport;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.DefaultContainerUser;
 import org.labkey.api.writer.VirtualFile;
@@ -242,11 +241,6 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
             {
                 GenericChartReport chartReport = (GenericChartReport) newReport;
                 chartReport.setChartViewDescriptor((ChartReport) report, viewContext);
-            }
-            else if (newReport instanceof TimeChartReport)
-            {
-                TimeChartReport timeReport = (TimeChartReport) newReport;
-                timeReport.setChartViewDescriptor((ChartReport) report, viewContext);
             }
         }
         catch (IOException | ValidationException e)

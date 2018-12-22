@@ -15,11 +15,14 @@
  */
 package org.labkey.visualization.report;
 
+import org.apache.commons.beanutils.BeanUtils;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.ChartReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.thumbnail.Thumbnail;
@@ -32,7 +35,6 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.visualization.GenericChartReport;
 import org.labkey.api.visualization.GenericChartReportDescriptor;
 import org.labkey.api.visualization.SvgThumbnailGenerator;
-import org.labkey.api.visualization.VisualizationReportDescriptor;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.visualization.VisualizationController;
 
@@ -118,11 +120,45 @@ public class GenericChartReportImpl extends GenericChartReport implements SvgThu
     @Override
     public void setChartViewDescriptor(ChartReport report, ViewContext viewContext) throws IOException, ValidationException
     {
-        VisualizationReportDescriptor descriptor = VisualizationReportDescriptor.getConvertedChartViewDescriptor(report, GenericChartReportDescriptor.TYPE, GenericChartReport.TYPE);
-        if (descriptor instanceof GenericChartReportDescriptor)
-        {
-            ((GenericChartReportDescriptor) descriptor).updateChartViewJsonConfig(viewContext);
-            setDescriptor(descriptor);
-        }
+        GenericChartReportDescriptor descriptor = getConvertedChartViewDescriptor(report, viewContext);
+        setDescriptor(descriptor);
     }
+
+    public static GenericChartReportDescriptor getConvertedChartViewDescriptor(ChartReport report, ViewContext viewContext) throws IOException, ValidationException
+    {
+        String newDescriptorType = GenericChartReportDescriptor.TYPE;
+        String newReportType = GenericChartReport.TYPE;
+        String xml = report.getDescriptor().serialize(ContainerManager.getForId(report.getContainerId()));
+        xml = xml.replace("descriptorType=\"chartDescriptor\"", "descriptorType=\"" + newDescriptorType + "\"");
+        xml = xml.replace("<Prop name=\"descriptorType\">chartDescriptor</Prop>", "<Prop name=\"descriptorType\">" + newDescriptorType + "</Prop>");
+        xml = xml.replace("<Prop name=\"reportType\">" + ChartQueryReport.TYPE + "</Prop>", "<Prop name=\"reportType\">" + newReportType + "</Prop>");
+        xml = xml.replace("<Prop name=\"reportType\">Study.chartQueryReport</Prop>", "<Prop name=\"reportType\">" + newReportType + "</Prop>");
+        xml = xml.replace("<Prop name=\"reportType\">Study.datasetChart</Prop>", "<Prop name=\"reportType\">" + newReportType + "</Prop>");
+        xml = xml.replace("<Prop name=\"reportType\">Study.chartReport</Prop>", "<Prop name=\"reportType\">" + newReportType + "</Prop>");
+
+        xml = xml.replace("<Prop name=\"filterParam\">participantId</Prop>", "<Prop name=\"showInParticipantView\">true</Prop>");
+
+        ReportDescriptor descriptor = ReportDescriptor.createFromXML(xml);
+
+        if (descriptor != null)
+        {
+            try
+            {
+                BeanUtils.copyProperties(descriptor, report.getDescriptor());
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
+
+            descriptor.setDescriptorType(newDescriptorType);
+            descriptor.setReportType(newReportType);
+            descriptor.initProperties();
+        }
+        if (!(descriptor instanceof GenericChartReportDescriptor))
+            return null;
+        ((GenericChartReportDescriptor) descriptor).updateChartViewJsonConfig(viewContext);
+        return (GenericChartReportDescriptor) descriptor;
+    }
+
 }

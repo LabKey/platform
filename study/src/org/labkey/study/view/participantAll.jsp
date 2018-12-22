@@ -73,6 +73,8 @@
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.TreeMap" %>
 <%@ page import="java.util.TreeSet" %>
+<%@ page import="org.labkey.api.reports.report.ChartReport" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -635,6 +637,13 @@
         for (Report report : datasetReports)
         {
             ReportDescriptor reportDescriptor = report.getDescriptor();
+
+            if (report instanceof ChartReport && AppProps.getInstance().isExperimentalFeatureEnabled(ReportService.EXPERIMENTAL_SHOW_CONVERTED_CHART_VIEW))
+            {
+                Report convertedReport = ReportService.get().createConvertedChartViewReportInstance(report, getViewContext());
+                if (convertedReport != null)
+                    report = convertedReport;
+            }
 
             // for now we only want to include generic charts and time charts
             if (!(report instanceof GenericChartReport || report instanceof TimeChartReport))

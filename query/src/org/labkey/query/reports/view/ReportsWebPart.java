@@ -20,6 +20,8 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.reports.Report;
+import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.report.ChartReport;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
@@ -52,7 +54,15 @@ public class ReportsWebPart extends WebPartView
 
         try
         {
-            _report = getReport(properties);
+            Report report = getReport(properties);
+            if (report instanceof ChartReport && AppProps.getInstance().isExperimentalFeatureEnabled(ReportService.EXPERIMENTAL_SHOW_CONVERTED_CHART_VIEW))
+            {
+                Report convertedReport = ReportService.get().createConvertedChartViewReportInstance(report, getViewContext());
+                if (convertedReport != null)
+                    report = convertedReport;
+            }
+
+            _report = report;
             if (null != _report)
             {
                 setTitleHref(_report.getRunReportURL(context));
