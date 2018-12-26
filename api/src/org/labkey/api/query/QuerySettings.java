@@ -43,7 +43,6 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.writer.ContainerUser;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
@@ -541,7 +540,7 @@ public class QuerySettings
             if (getReportId() != null)
             {
                 Report report = getReportId().getReport(viewContext);
-                if (report instanceof ChartReport && AppProps.getInstance().isExperimentalFeatureEnabled(ReportService.EXPERIMENTAL_SHOW_CONVERTED_CHART_VIEW))
+                if (report instanceof ChartReport && AppProps.getInstance().isDevMode() && !AppProps.getInstance().isExperimentalFeatureEnabled(ReportService.EXPERIMENTAL_RENDER_DEPRECATED_CHART_VIEW))
                 {
                     Report convertedReport = ReportService.get().createConvertedChartViewReportInstance(report, viewContext);
                     if (convertedReport != null)

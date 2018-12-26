@@ -52,7 +52,7 @@ public interface ReportService
 {
     String LINK_REPORT_TYPE = "ReportService.linkReport";
     String EXPERIMENTAL_DEPRECATED_CHART_VIEW = "ExperimentalDeprecatedChartView";
-    String EXPERIMENTAL_SHOW_CONVERTED_CHART_VIEW = "ExperimentalConvertChartView";
+    String EXPERIMENTAL_RENDER_DEPRECATED_CHART_VIEW = "ExperimentalRenderDeprecatedChartView";
 
     static ReportService get()
     {
