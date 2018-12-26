@@ -13,6 +13,8 @@ if(!LABKEY.vis) {
  */
 LABKEY.vis.TimeChartHelper = new function() {
 
+    var $ = jQuery;
+
     /**
      * Generate the main title and axis labels for the chart based on the specified x-axis and y-axis (left and right) labels.
      * @param {String} mainTitle The label to be used as the main chart title.
@@ -74,10 +76,10 @@ LABKEY.vis.TimeChartHelper = new function() {
                     yLeftMax = typeof axis.range.max == "number" ? axis.range.max : (config.hasNoData ? 10 : null);
                     yLeftTrans = axis.scale ? axis.scale : "linear";
                     yLeftTickFormat = function(value) {
-                        if (Ext4.isNumber(value) && Math.abs(Math.round(value)).toString().length >= valExponentialDigits) {
+                        if (LABKEY.Utils.isNumber(value) && Math.abs(Math.round(value)).toString().length >= valExponentialDigits) {
                             return value.toExponential();
                         }
-                        else if (Ext4.isFunction(numberFormats.left)) {
+                        else if (LABKEY.Utils.isFunction(numberFormats.left)) {
                             return numberFormats.left(value);
                         }
                         return value;
@@ -89,10 +91,10 @@ LABKEY.vis.TimeChartHelper = new function() {
                     yRightMax = typeof axis.range.max == "number" ? axis.range.max : (config.hasNoData ? 10 : null);
                     yRightTrans = axis.scale ? axis.scale : "linear";
                     yRightTickFormat = function(value) {
-                        if (Ext4.isNumber(value) && Math.abs(Math.round(value)).toString().length >= valExponentialDigits) {
+                        if (LABKEY.Utils.isNumber(value) && Math.abs(Math.round(value)).toString().length >= valExponentialDigits) {
                             return value.toExponential();
                         }
-                        else if (Ext4.isFunction(numberFormats.right)) {
+                        else if (LABKEY.Utils.isFunction(numberFormats.right)) {
                             return numberFormats.right(value);
                         }
                         return value;
@@ -121,7 +123,7 @@ LABKEY.vis.TimeChartHelper = new function() {
         else if (config.measures[0].time == 'date' && config.measures[0].dateOptions.interval == 'Days')
         {
             xTickFormat = function(value) {
-                return Ext4.isNumber(value) && value % 1 != 0 ? null : value;
+                return LABKEY.Utils.isNumber(value) && value % 1 != 0 ? null : value;
             };
         }
 
@@ -245,7 +247,7 @@ LABKEY.vis.TimeChartHelper = new function() {
                 return _getRowValue(row, individualSubjectColumn);
             },
             pathColor: function(rows) {
-                return Ext4.isArray(rows) && rows.length > 0 ? _getRowValue(rows[0], individualSubjectColumn) : null;
+                return LABKEY.Utils.isArray(rows) && rows.length > 0 ? _getRowValue(rows[0], individualSubjectColumn) : null;
             }
         };
     };
@@ -297,7 +299,7 @@ LABKEY.vis.TimeChartHelper = new function() {
                 return _getRowValue(row, subjectColumn);
             };
             aes.pathColor = function(rows) {
-                return Ext4.isArray(rows) && rows.length > 0 ? _getRowValue(rows[0], subjectColumn) : null;
+                return LABKEY.Utils.isArray(rows) && rows.length > 0 ? _getRowValue(rows[0], subjectColumn) : null;
             };
             aes.error = function(row) {
                 return row[errorColumn] ? _getRowValue(row, errorColumn) : null;
@@ -606,10 +608,10 @@ LABKEY.vis.TimeChartHelper = new function() {
             throw "We expect to either be displaying individual series lines or aggregate data!";
 
         var rows = [];
-        if (Ext4.isDefined(data.individual)) {
+        if (LABKEY.Utils.isDefined(data.individual)) {
             rows = data.individual.measureStore.records();
         }
-        else if (Ext4.isDefined(data.aggregate)) {
+        else if (LABKEY.Utils.isDefined(data.aggregate)) {
             rows = data.aggregate.measureStore.records();
         }
 
@@ -845,7 +847,7 @@ LABKEY.vis.TimeChartHelper = new function() {
                         applyClipRect: applyClipRect
                     });
 
-                    if (plotConfigInfoArr.length > maxCharts)
+                    if (plotConfigInfoArr.length >= maxCharts)
                         break;
                 }
             }
@@ -1042,7 +1044,7 @@ LABKEY.vis.TimeChartHelper = new function() {
 
         var successCallback = function(response, dataType) {
             // check for success=false
-            if (Ext4.isBoolean(response.success) && !response.success)
+            if (LABKEY.Utils.isDefined(response.success) && LABKEY.Utils.isBoolean(response.success) && !response.success)
             {
                 config.failure.call(config.scope, response);
                 return;
@@ -1104,7 +1106,7 @@ LABKEY.vis.TimeChartHelper = new function() {
             {
                 // Issue 28529: if we have a SubjectVisit/sequencenum column, use that instead of SubjectVisit/Visit/SequenceNumMin
                 var sequenceNumCol = response.measureToColumn[nounSingular + 'Visit/sequencenum'];
-                if (!Ext4.isDefined(sequenceNumCol))
+                if (!LABKEY.Utils.isDefined(sequenceNumCol))
                     sequenceNumCol = response.measureToColumn[getSubjectVisitColName(nounSingular, 'SequenceNumMin')];
 
                 sort += ',' + response.measureToColumn[getSubjectVisitColName(nounSingular, 'DisplayOrder')] + ',' + sequenceNumCol;
@@ -1220,7 +1222,7 @@ LABKEY.vis.TimeChartHelper = new function() {
     var getStudyTimepointType = function()
     {
         var studyCtx = LABKEY.getModuleContext("study") || {};
-        return Ext4.isDefined(studyCtx.timepointType) ? studyCtx.timepointType : null;
+        return LABKEY.Utils.isDefined(studyCtx.timepointType) ? studyCtx.timepointType : null;
     };
 
     /**
@@ -1353,8 +1355,8 @@ LABKEY.vis.TimeChartHelper = new function() {
             noDataCounter = 0;
 
         // warn the user if the data limit has been reached
-        var individualDataCount = Ext4.isDefined(data.individual) ? data.individual.measureStore.records().length : null;
-        var aggregateDataCount = Ext4.isDefined(data.aggregate) ? data.aggregate.measureStore.records().length : null;
+        var individualDataCount = LABKEY.Utils.isDefined(data.individual) ? data.individual.measureStore.records().length : null;
+        var aggregateDataCount = LABKEY.Utils.isDefined(data.aggregate) ? data.aggregate.measureStore.records().length : null;
         if (individualDataCount >= limit || aggregateDataCount >= limit) {
             message += sep + "The data limit for plotting has been reached. Consider filtering your data.";
             sep = "<br/>";
@@ -1435,7 +1437,7 @@ LABKEY.vis.TimeChartHelper = new function() {
      */
     var convertSavedReportConfig = function(chartInfo, savedReportInfo)
     {
-        if (Ext4.isDefined(chartInfo))
+        if (LABKEY.Utils.isDefined(chartInfo))
         {
             Ext4.applyIf(chartInfo, {
                 axis: [],
@@ -1493,7 +1495,7 @@ LABKEY.vis.TimeChartHelper = new function() {
             }
         }
 
-        if (Ext4.isObject(chartInfo) && Ext4.isObject(savedReportInfo))
+        if (LABKEY.Utils.isObject(chartInfo) && LABKEY.Utils.isObject(savedReportInfo))
         {
             if (chartInfo.saveThumbnail != undefined)
             {
@@ -1510,7 +1512,7 @@ LABKEY.vis.TimeChartHelper = new function() {
     var getStudySubjectInfo = function()
     {
         var studyCtx = LABKEY.getModuleContext("study") || {};
-        return Ext4.isObject(studyCtx.subject) ? studyCtx.subject : {
+        return LABKEY.Utils.isObject(studyCtx.subject) ? studyCtx.subject : {
             tableName: 'Participant',
             columnName: 'ParticipantId',
             nounPlural: 'Participants',
@@ -1520,7 +1522,7 @@ LABKEY.vis.TimeChartHelper = new function() {
 
     var getMeasureAlias = function(measure)
     {
-        if (Ext4.isString(measure.alias))
+        if (LABKEY.Utils.isString(measure.alias))
             return measure.alias;
         else
             return measure.schemaName + '_' + measure.queryName + '_' + measure.name;
@@ -1564,6 +1566,134 @@ LABKEY.vis.TimeChartHelper = new function() {
         return undefined;
     };
 
+    var renderChartSVG = function(renderTo, queryConfig, chartConfig) {
+        // Before we load the data, validate some information about the chart config
+        var messages = [];
+        var validation = validateChartConfig(chartConfig);
+        if (validation.message != null)
+        {
+            messages.push(validation.message);
+        }
+        if (!validation.success)
+        {
+            _renderMessages(renderTo, messages);
+            return;
+        }
+
+        var nounSingular = 'Participant';
+        var subjectColumnName = 'ParticipantId';
+        if (LABKEY.moduleContext.study && LABKEY.moduleContext.study.subject)
+        {
+            nounSingular = LABKEY.moduleContext.study.subject.nounSingular;
+            subjectColumnName = LABKEY.moduleContext.study.subject.columnName;
+        }
+
+        // When all the dependencies are loaded, we load the data using time chart helper getChartData
+        Ext4.applyIf(queryConfig, {
+            chartInfo: chartConfig,
+            containerPath: LABKEY.container.path,
+            nounSingular: nounSingular,
+            subjectColumnName: subjectColumnName,
+            dataLimit: 10000,
+            maxCharts: 20,
+            defaultMultiChartHeight: 380,
+            defaultSingleChartHeight: 600,
+            defaultWidth: 1075,
+            defaultNumberFormat: function(v) { return v.toFixed(1); }
+        });
+
+        queryConfig.success = function(response) {
+            _getChartDataCallback(renderTo, queryConfig, chartConfig, response);
+        };
+        queryConfig.failure = function(info) {
+            _renderMessages(renderTo, ['Error: ' + info.exception]);
+        };
+
+        LABKEY.vis.TimeChartHelper.getChartData(queryConfig);
+    };
+
+    var _getChartDataCallback = function(renderTo, queryConfig, chartConfig, responseData) {
+        var individualColumnAliases = responseData.individual ? responseData.individual.columnAliases : null;
+        var aggregateColumnAliases = responseData.aggregate ? responseData.aggregate.columnAliases : null;
+        var visitMap = responseData.individual ? responseData.individual.visitMap : responseData.aggregate.visitMap;
+        var intervalKey = generateIntervalKey(chartConfig, individualColumnAliases, aggregateColumnAliases, queryConfig.nounSingular);
+        var aes = generateAes(chartConfig, visitMap, individualColumnAliases, intervalKey, queryConfig.subjectColumnName);
+        var tickMap = generateTickMap(visitMap);
+        var seriesList = generateSeriesList(chartConfig.measures);
+        var applyClipRect = generateApplyClipRect(chartConfig);
+
+        // Once we have the data, we can set all of the axis min/max range values
+        generateAcrossChartAxisRanges(chartConfig, responseData, seriesList, queryConfig.nounSingular);
+        var scales = generateScales(chartConfig, tickMap, responseData.numberFormats);
+
+        // Validate that the chart data has expected values and give warnings if certain elements are not present
+        var messages = [];
+        var validation = validateChartData(responseData, chartConfig, seriesList, queryConfig.dataLimit, false);
+        if (validation.message != null)
+        {
+            messages.push(validation.message);
+        }
+        if (!validation.success)
+        {
+            _renderMessages(renderTo, messages);
+            return;
+        }
+
+        // For time charts, we allow multiple plots to be displayed by participant, group, or measure/dimension
+        var plotConfigsArr = generatePlotConfigs(chartConfig, responseData, seriesList, applyClipRect, queryConfig.maxCharts, queryConfig.subjectColumnName);
+        for (var configIndex = plotConfigsArr.length - 1; configIndex >= 0; configIndex--)
+        {
+            var clipRect = plotConfigsArr[configIndex].applyClipRect;
+            var series = plotConfigsArr[configIndex].series;
+            var height = chartConfig.height || (plotConfigsArr.length > 1 ? queryConfig.defaultMultiChartHeight : queryConfig.defaultSingleChartHeight);
+            var width = chartConfig.width || queryConfig.defaultWidth;
+            var labels = generateLabels(plotConfigsArr[configIndex].title, chartConfig.axis, plotConfigsArr[configIndex].subtitle);
+            var layers = generateLayers(chartConfig, visitMap, individualColumnAliases, aggregateColumnAliases, plotConfigsArr[configIndex].aggregateData, series, intervalKey, queryConfig.subjectColumnName);
+            var data = plotConfigsArr[configIndex].individualData ? plotConfigsArr[configIndex].individualData : plotConfigsArr[configIndex].aggregateData;
+
+            var plotConfig = {
+                renderTo: renderTo,
+                rendererType: 'd3',
+                clipRect: clipRect,
+                width: width,
+                height: height,
+                labels: labels,
+                aes: aes,
+                scales: scales,
+                layers: layers,
+                data: data
+            };
+
+            var plot = new LABKEY.vis.Plot(plotConfig);
+            plot.render();
+        }
+
+        // Give a warning if the max number of charts has been exceeded
+        if (plotConfigsArr.length >= queryConfig.maxCharts)
+            messages.push('Only showing the first ' + queryConfig.maxCharts + ' charts.');
+
+        _renderMessages(renderTo, messages);
+    };
+
+    var _renderMessages = function(id, messages) {
+        var messageDiv;
+        var el = document.getElementById(id);
+        var child;
+        if (el && el.children.length > 0)
+            child = el.children[0];
+
+        for (var i = 0; i < messages.length; i++)
+        {
+            messageDiv = document.createElement('div');
+            messageDiv.setAttribute('style', 'font-style:italic');
+            messageDiv.innerHTML = messages[i];
+            if (child)
+                el.insertBefore(messageDiv, child);
+            else
+                el.appendChild(messageDiv);
+        }
+    };
+
     return {
         /**
          * Loads all of the required dependencies for a Time Chart.
@@ -1592,6 +1722,7 @@ LABKEY.vis.TimeChartHelper = new function() {
         getChartData : getChartData,
         validateChartConfig : validateChartConfig,
         validateChartData : validateChartData,
-        convertSavedReportConfig : convertSavedReportConfig
+        convertSavedReportConfig : convertSavedReportConfig,
+        renderChartSVG: renderChartSVG
     };
 };

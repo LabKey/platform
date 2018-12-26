@@ -158,7 +158,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 xtype: 'toolbar',
                 dock: 'top',
                 style: 'border-color: #b4b4b4;',
-                hidden: this.hasParticipantViewFilter(),
                 items: toolbarButtons
             }],
             items: []
@@ -197,7 +196,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             this.filtersPanel = Ext4.create('LABKEY.vis.ChartFilterPanel', {
                 region: 'west',
                 border: true,
-                hidden: this.hasParticipantViewFilter(),
                 subject: this.chartInfo.subject,
                 subjectSelection: this.chartInfo.chartSubjectSelection,
                 listeners: {
@@ -820,16 +818,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             return undefined;
     },
 
-    hasParticipantViewFilter : function() {
-        return this.getParticipantViewFilter() != null;
-    },
-
-    getParticipantViewFilter : function() {
-        // check for explicit ParticipantView filter parameter (see usage in participantAll.jsp)
-        var filters = LABKEY.Filter.getFiltersFromUrl(this.baseUrl, 'ParticipantView');
-        return filters && filters.length > 0 ? filters[0] : null;
-    },
-
     loadFiltersPanelValues : function()
     {
         if (!this.chartFilterPanelLoadComplete)
@@ -1386,7 +1374,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 this.exportChartToImage(newChartDiv, LABKEY.vis.SVGConverter.FORMAT_PNG);
             }));
         }
-        if (this.isDeveloper && !this.hasParticipantViewFilter())
+        if (this.isDeveloper)
         {
             newChartDiv.add(this.createExportIcon('fa-file-code-o', 'Export as Script', this.supportedBrowser ? 2 : 0, function(){
                 this.exportChartToScript();
@@ -1563,14 +1551,9 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         config.filterUrl = this.chartInfo.filterUrl;
         config.filterQuery = this.chartInfo.filterQuery;
 
+        // get the subject info based on the selected chart layout
         var hasGroupsSelected = config.chartSubjectSelection == 'groups';
-        if (!hasGroupsSelected && this.hasParticipantViewFilter()) {
-            config.subject = {values: this.getParticipantViewFilter().getURLParameterValue()}
-        }
-        else {
-            // get the subject info based on the selected chart layout
-            config.subject = this.getFiltersPanel().getSubject(hasGroupsSelected, config.displayIndividual);
-        }
+        config.subject = this.getFiltersPanel().getSubject(hasGroupsSelected, config.displayIndividual);
 
         // get the measure and dimension information for the y-axis (can be > 1 measure)
         Ext4.each(this.chartTypeMeasures, function(measure)

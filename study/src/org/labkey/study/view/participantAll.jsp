@@ -50,6 +50,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.visualization.GenericChartReport" %>
 <%@ page import="org.labkey.api.visualization.TimeChartReport" %>
 <%@ page import="org.labkey.study.StudySchema" %>
@@ -77,6 +78,16 @@
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%!
+    @Override
+    public void addClientDependencies(ClientDependencies dependencies)
+    {
+        dependencies.add("Ext4");
+        dependencies.add("vis/vis");
+        dependencies.add("vis/genericChart/genericChartHelper.js");
+        dependencies.add("vis/timeChart/timeChartHelper.js");
+    }
+%>
 
 <%
     ViewContext context = getViewContext();
@@ -204,8 +215,10 @@
     }
 
     .labkey-ptid-chart {
-        padding-top: 10px;
-        width: 1200px;
+        margin-top: 10px;
+        width: 900px;
+        background-color: white;
+        border: solid 1px #808080;
     }
 
     .labkey-ptid-remove, .labkey-ptid-add {
@@ -293,18 +306,44 @@
     }
 
     function renderChartWebpart(divId, reportId) {
-        var config = {reportId: reportId};
+        LABKEY.Query.Visualization.get({
+            reportId: reportId,
+            success: function(response) {
+                var visConfig = response.visualizationConfig;
 
-        // add config param to allow the saved char to apply the ptid filter
-        var ptidColName = LABKEY.getModuleContext('study') ? LABKEY.getModuleContext('study').subject.columnName : 'ParticipantId';
-        config['ParticipantView.' + ptidColName + '~eq'] = '<%=bean.getParticipantId()%>';
+                // determine which chart helper to use based on visConfig info
+                if (visConfig.queryConfig && visConfig.chartConfig) {
+                    // add ptid filter to the chart queryConfig filterArray
+                    var ptidColName = LABKEY.getModuleContext('study') ? LABKEY.getModuleContext('study').subject.columnName : 'ParticipantId';
+                    visConfig.queryConfig.filterArray.push({name: ptidColName, type: 'eq', value: <%=q(bean.getParticipantId())%>});
 
-        new LABKEY.WebPart({
-            partName: 'Report',
-            renderTo: divId,
-            frame: 'none',
-            partConfig: config
-        }).render();
+                    // explicitly set the chart height and width
+                    visConfig.chartConfig.width = 900;
+                    visConfig.chartConfig.height = 505;
+
+                    LABKEY.vis.GenericChartHelper.renderChartSVG(divId, visConfig.queryConfig, visConfig.chartConfig);
+                }
+                else {
+                    var studyContext = LABKEY.getModuleProperty('study', 'subject');
+                    var queryConfig = {
+                        containerPath: LABKEY.container.path,
+                        nounSingular: studyContext.nounSingular || "Participant",
+                        subjectColumnName: studyContext.columnName || "ParticipantId"
+                    };
+
+                    // explicitly set the subject values array to the single ptid from this context
+                    if (visConfig.subject) {
+                        visConfig.subject.values = [<%=q(bean.getParticipantId())%>];
+                    }
+
+                    // explicitly set the chart height and width
+                    visConfig.width = 900;
+                    visConfig.height = 505;
+
+                    LABKEY.vis.TimeChartHelper.renderChartSVG(divId, queryConfig, visConfig);
+                }
+            }
+        });
     }
 })(jQuery);
 </script>
@@ -669,9 +708,7 @@
                     {
                         String divId1 = "labkey-ptid-chart-" + getRequestScopedUID();
 %>
-                        <div id="<%=h(divId1)%>" class="labkey-ptid-chart labkey-ptid-chart-dataset<%=datasetId%>" report-id="<%=h(reportId)%>">
-                            <i class="fa fa-spinner fa-pulse"></i> loading...
-                        </div>
+                        <div id="<%=h(divId1)%>" class="labkey-ptid-chart labkey-ptid-chart-dataset<%=datasetId%>" report-id="<%=h(reportId)%>"></div>
 <%
                         if (updateAccess)
                         {
