@@ -133,8 +133,10 @@ public class GenericChartReportImpl extends GenericChartReport implements SvgThu
         xml = xml.replace("<Prop name=\"descriptorType\">chartDescriptor</Prop>", "<Prop name=\"descriptorType\">" + newDescriptorType + "</Prop>");
         xml = xml.replace("<Prop name=\"reportType\">" + ChartQueryReport.TYPE + "</Prop>", "<Prop name=\"reportType\">" + newReportType + "</Prop>");
         xml = xml.replace("<Prop name=\"reportType\">Study.chartQueryReport</Prop>", "<Prop name=\"reportType\">" + newReportType + "</Prop>");
+
         xml = xml.replace("<Prop name=\"reportType\">Study.datasetChart</Prop>", "<Prop name=\"reportType\">" + newReportType + "</Prop>");
         xml = xml.replace("<Prop name=\"reportType\">Study.chartReport</Prop>", "<Prop name=\"reportType\">" + newReportType + "</Prop>");
+        xml = xml.replace("<Prop name=\"reportType\">Study.chartReportView</Prop>", "<Prop name=\"reportType\">" + newReportType + "</Prop>");
 
         xml = xml.replace("<Prop name=\"filterParam\">participantId</Prop>", "<Prop name=\"showInParticipantView\">true</Prop>");
 

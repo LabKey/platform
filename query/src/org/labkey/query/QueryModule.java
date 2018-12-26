@@ -224,7 +224,7 @@ public class QueryModule extends DefaultModule
                         "migrated to the new approach, if possible.",
                 false);
 
-        AdminConsole.addExperimentalFeatureFlag(ReportService.EXPERIMENTAL_SHOW_CONVERTED_CHART_VIEW, "Show converted chart view display", "Show modern, JavaScript-based charts instead of legacy chart views.", false);
+        AdminConsole.addExperimentalFeatureFlag(ReportService.EXPERIMENTAL_RENDER_DEPRECATED_CHART_VIEW, "Use JFree for chart views", "Show deprecated JFree chart display for deprecated chart view, instead of its converted JavaScript-based view.", false);
     }
 
 

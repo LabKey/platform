@@ -638,7 +638,7 @@
         {
             ReportDescriptor reportDescriptor = report.getDescriptor();
 
-            if (report instanceof ChartReport && AppProps.getInstance().isExperimentalFeatureEnabled(ReportService.EXPERIMENTAL_SHOW_CONVERTED_CHART_VIEW))
+            if (report instanceof ChartReport && AppProps.getInstance().isDevMode() && !AppProps.getInstance().isExperimentalFeatureEnabled(ReportService.EXPERIMENTAL_RENDER_DEPRECATED_CHART_VIEW))
             {
                 Report convertedReport = ReportService.get().createConvertedChartViewReportInstance(report, getViewContext());
                 if (convertedReport != null)

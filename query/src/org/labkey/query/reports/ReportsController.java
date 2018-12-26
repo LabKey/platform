@@ -1123,7 +1123,7 @@ public class ReportsController extends SpringActionController
             if (null == report)
                 return new HtmlView("<span class=\"labkey-error\">Invalid report identifier, unable to create report.</span>");
 
-            if (report instanceof ChartReport && AppProps.getInstance().isExperimentalFeatureEnabled(ReportService.EXPERIMENTAL_SHOW_CONVERTED_CHART_VIEW))
+            if (report instanceof ChartReport && AppProps.getInstance().isDevMode() && !AppProps.getInstance().isExperimentalFeatureEnabled(ReportService.EXPERIMENTAL_RENDER_DEPRECATED_CHART_VIEW))
             {
                 Report convertedReport = ReportService.get().createConvertedChartViewReportInstance(report, getViewContext());
                 if (convertedReport != null)
