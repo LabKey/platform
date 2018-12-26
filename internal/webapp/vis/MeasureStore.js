@@ -1042,7 +1042,7 @@
                         schemaName: results.schemaName,
                         queryName: results.queryName
                     },
-                    results.getMetaData()
+                    (results.getMetaData ? results.getMetaData() : results.metaData)
                 );
 
             // TODO: Remove this backwards compatibility once cds/fb_refinement is ready
