@@ -410,8 +410,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         registerHealthChecks();
 
         ContextListener.addNewInstallCompleteListener(() -> sendSystemReadyEmail(UserManager.getAppAdmins()));
-
-        RoleManager.registerPermission(new QCAnalystPermission());
     }
 
     private void registerHealthChecks()
@@ -994,6 +992,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         FileContentService fileContentService = FileContentService.get();
         if (fileContentService != null)
             fileContentService.addFileListener(WebFilesResolverImpl.get());
+
+        RoleManager.registerPermission(new QCAnalystPermission());
     }
 
     @Override
