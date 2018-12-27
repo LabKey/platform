@@ -118,6 +118,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.ReaderRole;
@@ -409,6 +410,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         registerHealthChecks();
 
         ContextListener.addNewInstallCompleteListener(() -> sendSystemReadyEmail(UserManager.getAppAdmins()));
+
+        RoleManager.registerPermission(new QCAnalystPermission());
     }
 
     private void registerHealthChecks()

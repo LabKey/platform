@@ -111,6 +111,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
+import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -3730,7 +3731,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
+    @RequiresPermission(QCAnalystPermission.class)
     public class UpdateQCStateAction extends FormViewAction<UpdateQCStateForm>
     {
         private int _datasetId;

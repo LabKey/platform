@@ -54,6 +54,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.DataspaceContainerFilter;
@@ -504,14 +505,25 @@ public class DatasetQueryView extends StudyQueryView
                 setItem.setSelected(true);
             button.addMenuItem(setItem);
         }
-        if (getContainer().hasPermission(getUser(), AdminPermission.class))
+
+        boolean addSeparator = false;
+        if (getContainer().hasPermission(getUser(), QCAnalystPermission.class))
         {
-            button.addSeparator();
+            if (!addSeparator)
+            {
+                addSeparator = true;
+                button.addSeparator();
+            }
             ActionURL updateAction = new ActionURL(StudyController.UpdateQCStateAction.class, getContainer());
             NavTree updateItem = button.addMenuItem("Update state of selected rows", "#", "if (verifySelected(" + DataRegion.getJavaScriptObjectReference(getDataRegionName()) + ".form, \"" +
                     updateAction.getLocalURIString() + "\", \"post\", \"rows\")) " + DataRegion.getJavaScriptObjectReference(getDataRegionName()) + ".form.submit()");
             updateItem.setId("QCState:updateSelected");
+        }
 
+        if (getContainer().hasPermission(getUser(), AdminPermission.class))
+        {
+            if (!addSeparator)
+                button.addSeparator();
             button.addMenuItem("Manage states", new ActionURL(StudyController.ManageQCStatesAction.class,
                     getContainer()).addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().getLocalURIString()));
         }
