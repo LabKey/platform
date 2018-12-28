@@ -76,6 +76,8 @@
 <%@ page import="java.util.TreeSet" %>
 <%@ page import="org.labkey.api.reports.report.ChartReport" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ page import="org.labkey.api.reports.report.view.ChartDesignerBean" %>
+<%@ page import="org.labkey.study.reports.StudyChartQueryReport" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -100,6 +102,19 @@
     String currentUrl = bean.getRedirectUrl();
     if (currentUrl == null)
         currentUrl = getActionURL().getLocalURIString();
+
+    ActionURL oldChartDesignerURL = null;
+    if (AppProps.getInstance().isExperimentalFeatureEnabled(ReportService.EXPERIMENTAL_DEPRECATED_CHART_VIEW))
+    {
+        ChartDesignerBean chartBean = new ChartDesignerBean();
+        chartBean.setReportType(StudyChartQueryReport.TYPE);
+        chartBean.setSchemaName(querySchema.getSchemaName());
+        oldChartDesignerURL = ReportUtil.getChartDesignerURL(context, chartBean);
+        oldChartDesignerURL.setAction(ReportsController.DesignChartAction.class);
+        oldChartDesignerURL.addParameter("returnUrl", currentUrl);
+        oldChartDesignerURL.addParameter("isParticipantChart", "true");
+        oldChartDesignerURL.addParameter("participantId", bean.getParticipantId());
+    }
 
     StudyManager manager = StudyManager.getInstance();
     StudyImpl study = manager.getStudy(getContainer());
@@ -648,8 +663,36 @@
 <%
         }
 
-        // Display of legacy chart views that have previously been saved to this ptid view
-        for (Report report : ReportService.get().getReports(user, study.getContainer(), Integer.toString(datasetId)))
+    String datasetName = dataset.getName();
+    String reportKey = ReportUtil.getReportKey("study", datasetName);
+    Collection<Report> datasetReports = ReportService.get().getReports(getUser(), getContainer(), reportKey);
+
+    Map<String, String> reportIdWithNames = new HashMap<>(); // reports available to be added to the display
+    Map<String, String> reportsToRender = new HashMap<>(); // reports already selected to be rendered in the page
+
+    // Display of legacy chart views that have previously been saved to this ptid view
+    List<Report> legacyReports = new ArrayList<>(ReportService.get().getReports(user, study.getContainer(), Integer.toString(datasetId)));
+    List<String> ptidLegacyReportIds = new ArrayList<>();
+    List<String> legacyReportIds = new ArrayList<>();
+
+    legacyReports.forEach(report -> ptidLegacyReportIds.add(report.getDescriptor().getProperty("reportId")));
+
+    for (Report report : datasetReports) // legacy participant chart views for the dataset
+    {
+        if (report instanceof ChartReport)
+        {
+            ReportDescriptor reportDescriptor = report.getDescriptor();
+            String filterParam = reportDescriptor.getProperty("filterParam");
+            if ("participantId".equals(filterParam))
+                legacyReports.add(report);
+            else
+                reportIdWithNames.put(reportDescriptor.getProperty("reportId"), reportDescriptor.getProperty("reportName"));
+        }
+    }
+
+    if ((!AppProps.getInstance().isDevMode()) || AppProps.getInstance().isExperimentalFeatureEnabled(ReportService.EXPERIMENTAL_RENDER_DEPRECATED_CHART_VIEW))
+    {
+        for (Report report : legacyReports)
         {
 %>
             <tr style="<%=text(expanded ? "" : "display:none")%>">
@@ -658,10 +701,22 @@
 <%
                         if (updateAccess)
                         {
+                            String reportId = report.getDescriptor().getProperty("reportId");
+                            if (ptidLegacyReportIds.contains(reportId))
+                            {
 %>
-                            <br/>
-                            <a class="labkey-text-link" href="<%=new ActionURL(ReportsController.DeleteReportAction.class, study.getContainer()).addParameter(ReportDescriptor.Prop.redirectUrl.name(), currentUrl).addParameter(ReportDescriptor.Prop.reportId.name(), report.getDescriptor().getReportId().toString())%>">Remove Chart</a>
-<%
+                                <br/>
+                                <a class="labkey-text-link" href="<%=new ActionURL(ReportsController.DeleteReportAction.class, study.getContainer()).addParameter(ReportDescriptor.Prop.redirectUrl.name(), currentUrl).addParameter(ReportDescriptor.Prop.reportId.name(), report.getDescriptor().getReportId().toString())%>">Remove Chart</a>
+                                <%
+                            }
+                            else
+                            {
+                                %>
+                                <br/>
+                    <a class="labkey-text-link labkey-ptid-remove" onclick="LABKEY.ParticipantViewRemoveChart('<%=h(reportId)%>', true)">Remove Chart</a>
+                                <%
+                            }
+
                       }
                 %>
                 </td>
@@ -669,22 +724,31 @@
 <%
         }
 
-        String datasetName = dataset.getName();
-        String reportKey = ReportUtil.getReportKey("study",datasetName);
-        Collection<Report> datasetReports = ReportService.get().getReports(getUser(), getContainer(),reportKey);
-
-        Map<String, String> reportIdWithNames = new HashMap<>(); // reports available to be added to the display
-        Map<String, String> reportsToRender = new HashMap<>(); // reports already selected to be rendered in the page
-        for (Report report : datasetReports)
+    }
+    else
+    {
+        for (Report report : legacyReports)
         {
             ReportDescriptor reportDescriptor = report.getDescriptor();
+            legacyReportIds.add(reportDescriptor.getProperty("reportId"));
+            reportsToRender.put(reportDescriptor.getProperty("reportId"), reportDescriptor.getProperty("reportName"));
+        }
+    }
 
-            if (report instanceof ChartReport && AppProps.getInstance().isDevMode() && !AppProps.getInstance().isExperimentalFeatureEnabled(ReportService.EXPERIMENTAL_RENDER_DEPRECATED_CHART_VIEW))
-            {
-                Report convertedReport = ReportService.get().createConvertedChartViewReportInstance(report, getViewContext());
-                if (convertedReport != null)
-                    report = convertedReport;
-            }
+    if (updateAccess && null != oldChartDesignerURL)
+    {
+%>
+    <tr style="<%=text(expanded ? "" : "display:none")%>">
+        <td colspan="<%=totalSeqKeyCount+1%>"
+            class="labkey-alternate-row"><%=textLink("add chart view", oldChartDesignerURL.replaceParameter("queryName", dataset.getName()).replaceParameter("datasetId", String.valueOf(datasetId)))%>
+        </td>
+    </tr>
+    <%
+        }
+
+     for (Report report : datasetReports)
+        {
+            ReportDescriptor reportDescriptor = report.getDescriptor();
 
             // for now we only want to include generic charts and time charts
             if (!(report instanceof GenericChartReport || report instanceof TimeChartReport))
@@ -714,9 +778,18 @@
 <%
                         if (updateAccess)
                         {
+                            if (ptidLegacyReportIds.contains(reportId))
+                            {
 %>
-                            <a class="labkey-text-link labkey-ptid-remove" onclick="LABKEY.ParticipantViewRemoveChart('<%=h(reportId)%>')">Remove Chart</a>
+                                <a class="labkey-text-link" href="<%=new ActionURL(ReportsController.DeleteReportAction.class, study.getContainer()).addParameter(ReportDescriptor.Prop.redirectUrl.name(), currentUrl).addParameter(ReportDescriptor.Prop.reportId.name(), ReportService.get().getReportIdentifier(reportId).toString())%>">Remove Chart</a>
+                                <%
+                            }
+                            else
+                            {
+%>
+                                <a class="labkey-text-link labkey-ptid-remove" onclick="LABKEY.ParticipantViewRemoveChart('<%=h(reportId)%>')">Remove Chart</a>
 <%
+                            }
                         }
                     }
 %>

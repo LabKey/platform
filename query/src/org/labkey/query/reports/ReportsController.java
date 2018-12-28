@@ -4073,6 +4073,10 @@ public class ReportsController extends SpringActionController
         {
             ReportDescriptor reportDescriptor = _report.getDescriptor();
             reportDescriptor.setProperty(ReportDescriptor.Prop.showInParticipantView, form.isShowInParticipantView());
+            if (_report instanceof ChartReport)
+            {
+                reportDescriptor.setProperty(ReportDescriptor.Prop.filterParam, form.isShowInParticipantView() ? "participantId" : "");
+            }
             ReportService.get().saveReport(getViewContext(), reportDescriptor.getReportKey(), _report);
 
             ApiSimpleResponse response = new ApiSimpleResponse();
