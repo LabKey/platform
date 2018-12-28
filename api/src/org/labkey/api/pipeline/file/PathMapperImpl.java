@@ -27,9 +27,11 @@ import org.labkey.api.util.FileUtil;
 import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * Translates paths from one machine to another, assuming they have access to a shared network file system.
@@ -46,7 +48,7 @@ public class PathMapperImpl implements PathMapper
      * <li>file:/C:/projects/root2 -> file:/home/user/projects/root2
      * <ul>
      */
-    private Map<String, String> _pathMap = new LinkedHashMap<>();
+    private Map<URI, URI> _uriMap = new LinkedHashMap<>();
     private boolean _remoteIgnoreCase;
     private boolean _localIgnoreCase;
     private ValidationException _validationErrors;
@@ -64,7 +66,7 @@ public class PathMapperImpl implements PathMapper
     {
         setPathMap(pathMap);
     }
-    
+
     public PathMapperImpl(Map<String, String> pathMap, boolean remoteIgnoreCase, boolean localIgnoreCase)
     {
         this(pathMap);
@@ -72,14 +74,44 @@ public class PathMapperImpl implements PathMapper
         _localIgnoreCase = localIgnoreCase;
     }
 
+    /**
+     * Returns a copy of the path map as strings
+     * @return
+     */
+    @Deprecated //Use getURIPathMap instead
     public Map<String, String> getPathMap()
     {
-        return _pathMap;
+        Map<String, String> stringMap = new LinkedHashMap<>();
+        _uriMap.forEach((k, v) -> stringMap.put(k.toString(), v.toString()));
+        return stringMap;
     }
 
+    /**
+     *
+     * @return unmodifiable copy of underlying uri map
+     */
+    @Override
+    public Map<URI, URI> getURIPathMap()
+    {
+        return Collections.unmodifiableMap(_uriMap);
+    }
+
+    public void setURIPathMap(Map<URI, URI> pathMap)
+    {
+        _uriMap = pathMap;
+    }
+
+    @Deprecated // Use setURIPathMap
     public void setPathMap(Map<String, String> pathMap)
     {
-        pathMap.forEach((remote, local) -> _pathMap.put(StringUtils.removeEnd(remote, "/"), StringUtils.removeEnd(local, "/")));
+        _uriMap = new LinkedHashMap<>();
+        // TODO: Change may have side-effects old version would have kept pre-existing keys not in pathMap arg...
+        pathMap.forEach((remote, local) -> {
+            //URI relativize will sub final entry w/o the closing '/' //TODO do we map files to files directly?...
+            String rURI = remote.endsWith("/") ? remote : remote + '/' ;
+            String lURI = local.endsWith("/") ? local : local + '/' ;
+            _uriMap.put(URI.create(rURI).normalize(), URI.create(lURI).normalize());
+        });
     }
 
     public boolean isRemoteIgnoreCase()
@@ -116,23 +148,7 @@ public class PathMapperImpl implements PathMapper
      */
     public String remoteToLocal(String path)
     {
-        Map.Entry<String, String> bestEntry = null;
-        if (_pathMap != null && path != null)
-        {
-            for (Map.Entry<String, String> e : _pathMap.entrySet())
-            {
-                String prefix = e.getKey();
-                if (match(prefix, path, _remoteIgnoreCase) && (bestEntry == null || prefix.length() > bestEntry.getKey().length()))
-                {
-                    bestEntry = e;
-                }
-            }
-        }
-        if (bestEntry != null)
-        {
-            return bestEntry.getValue() + path.substring(bestEntry.getKey().length());
-        }
-        return capitalizeDriveLetter(path);
+        return capitalizeDriveLetter(remoteToLocal(FileUtil.createUri(path)).toString());
     }
 
     private String capitalizeDriveLetter(String path)
@@ -163,24 +179,46 @@ public class PathMapperImpl implements PathMapper
      */
     public String localToRemote(String path)
     {
-        Map.Entry<String, String> bestEntry = null;
-        if (_pathMap != null && path != null)
+        return localToRemote(FileUtil.createUri(path)).toString();
+    }
+
+    @Override
+    public URI localToRemote(URI path)
+    {
+        return mapPath(path, _localIgnoreCase, Map.Entry::getValue, Map.Entry::getKey);
+    }
+
+    @Override
+    public URI remoteToLocal(URI path)
+    {
+        return mapPath(path, _remoteIgnoreCase, Map.Entry::getKey, Map.Entry::getValue);
+    }
+
+    private URI mapPath(URI mapMe, boolean ignoreCase, Function<Map.Entry<URI, URI>, URI> getStart, Function<Map.Entry<URI, URI>, URI> getFinish)
+    {
+        if (_uriMap != null && mapMe != null)
         {
-            for (Map.Entry<String, String> e : _pathMap.entrySet())
+            Map.Entry<URI, URI> to = null;
+            URI bestRel = null;
+            for(Map.Entry<URI, URI> e : _uriMap.entrySet())
             {
-                String prefix = e.getValue();
-                if (match(prefix, path, _localIgnoreCase) && (bestEntry == null || prefix.length() > bestEntry.getKey().length()))
+                URI from = getStart.apply(e);
+                String prefix = StringUtils.substring(mapMe.getPath(), from.getPath().length());  //Path prefix if ignoring case
+                URI rel = ignoreCase ? FileUtil.createUri(prefix) : from.relativize(mapMe);
+
+                // keeping the "match" method to maintain case sensitivity behavior
+                if (match(from.getPath(), mapMe.getPath(), ignoreCase) && (bestRel == null || bestRel.getPath().length() > rel.getPath().length()))
                 {
-                    bestEntry = e;
+                    to = e;
+                    bestRel = rel;
                 }
             }
+
+            if (bestRel != null)
+                return getFinish.apply(to).resolve(bestRel);
         }
 
-        if (bestEntry != null)
-        {
-            return bestEntry.getKey() + path.substring(bestEntry.getValue().length());
-        }
-        return path;
+        return mapMe;
     }
 
     /**
@@ -201,13 +239,7 @@ public class PathMapperImpl implements PathMapper
         if (lenPath < lenPrefix)
             return false;
 
-        String start = path.substring(0, prefix.length());
-
-        boolean ret;
-        if (ignoreCase)
-            ret = start.equalsIgnoreCase(prefix);
-        else
-            ret = start.equals(prefix);
+        boolean ret = ignoreCase ? StringUtils.startsWithIgnoreCase(path, prefix) : path.startsWith(prefix);
 
         // Accept either a slash or a colon from a Windows drive letter
         return ret &&
@@ -225,7 +257,7 @@ public class PathMapperImpl implements PathMapper
 
         JSONArray jsonPaths = new JSONArray();
         json.put("paths", jsonPaths);
-        for (Map.Entry<String, String> pair : _pathMap.entrySet())
+        for (Map.Entry<URI, URI> pair : _uriMap.entrySet())
         {
             JSONObject jsonPair = new JSONObject();
             jsonPair.put("remoteURI", pair.getKey());
@@ -366,29 +398,29 @@ public class PathMapperImpl implements PathMapper
         {
             Map<String, String> m = new HashMap<>();
             m.put("file:/T:/edi", "file:/home/edi");
-            m.put("file:/T:/data", "file:/data");
             m.put("file:///T:/edi", "file:///home/edi");
+            m.put("file:/T:/data", "file:/data");
             m.put("file:///T:/data", "file:///data");
 
             PathMapper mapper = new PathMapperImpl(m, false, false);
 
-            assertEquals(mapper.localToRemote("file:/home/edi/testFile.txt"), "file:/T:/edi/testFile.txt");
-            assertEquals(mapper.localToRemote("file:/data/testFile.txt"), "file:/T:/data/testFile.txt");
-            assertEquals(mapper.localToRemote("file:/Data/testFile.txt"), "file:/Data/testFile.txt");
+            assertEquals("file:/T:/edi/testFile.txt", mapper.localToRemote("file:/home/edi/testFile.txt"));
+            assertEquals("file:/T:/data/testFile.txt", mapper.localToRemote("file:/data/testFile.txt"));
+            assertEquals("file:/Data/testFile.txt", mapper.localToRemote("file:/Data/testFile.txt"));
 
-            assertEquals(mapper.remoteToLocal("file:/T:/edi/testFile.txt"), "file:/home/edi/testFile.txt");
-            assertEquals(mapper.remoteToLocal("file:/T:/data/testFile.txt"), "file:/data/testFile.txt");
-            assertEquals(mapper.remoteToLocal("file:/t:/data/testFile.txt"), "file:/T:/data/testFile.txt");
-            assertEquals(mapper.remoteToLocal("file:/e:/data/testFile.txt"), "file:/E:/data/testFile.txt");
+            assertEquals("file:/home/edi/testFile.txt", mapper.remoteToLocal("file:/T:/edi/testFile.txt"));
+            assertEquals("file:/data/testFile.txt", mapper.remoteToLocal("file:/T:/data/testFile.txt"));
+            assertEquals("file:/T:/data/testFile.txt", mapper.remoteToLocal("file:/t:/data/testFile.txt"));
+            assertEquals("file:/E:/data/testFile.txt", mapper.remoteToLocal("file:/e:/data/testFile.txt"));
 
-            assertEquals(mapper.localToRemote("file:///home/edi/testFile.txt"), "file:///T:/edi/testFile.txt");
-            assertEquals(mapper.localToRemote("file:///data/testFile.txt"), "file:///T:/data/testFile.txt");
-            assertEquals(mapper.localToRemote("file:///Data/testFile.txt"), "file:///Data/testFile.txt");
+            assertEquals("file:/T:/edi/testFile.txt", mapper.localToRemote("file:///home/edi/testFile.txt"));
+            assertEquals("file:/T:/data/testFile.txt", mapper.localToRemote("file:///data/testFile.txt"));
+            assertEquals("file:///Data/testFile.txt", mapper.localToRemote("file:///Data/testFile.txt"));
 
-            assertEquals(mapper.remoteToLocal("file:///T:/edi/testFile.txt"), "file:///home/edi/testFile.txt");
-            assertEquals(mapper.remoteToLocal("file:///T:/data/testFile.txt"), "file:///data/testFile.txt");
-            assertEquals(mapper.remoteToLocal("file:///t:/data/testFile.txt"), "file:///T:/data/testFile.txt");
-            assertEquals(mapper.remoteToLocal("file:///e:/data/testFile.txt"), "file:///E:/data/testFile.txt");
+            assertEquals("file:/home/edi/testFile.txt", mapper.remoteToLocal("file:///T:/edi/testFile.txt"));
+            assertEquals("file:/data/testFile.txt", mapper.remoteToLocal("file:///T:/data/testFile.txt"));
+            assertEquals("file:///T:/data/testFile.txt", mapper.remoteToLocal("file:///t:/data/testFile.txt"));
+            assertEquals("file:///E:/data/testFile.txt", mapper.remoteToLocal("file:///e:/data/testFile.txt"));
         }
 
         @Test
@@ -409,13 +441,13 @@ public class PathMapperImpl implements PathMapper
             assertEquals("file:/data/testFile.txt", mapper.remoteToLocal("file:/T:/data/testFile.txt"));
             assertEquals("file:/data/testFile.txt", mapper.remoteToLocal("file:/t:/data/testFile.txt"));
 
-            assertEquals("file:///T:/edi/testFile.txt", mapper.localToRemote("file:///home/edi/testFile.txt"));
-            assertEquals("file:///T:/data/testFile.txt", mapper.localToRemote("file:///data/testFile.txt"));
-            assertEquals("file:///T:/data/testFile.txt", mapper.localToRemote("file:///Data/testFile.txt"));
+            assertEquals("file:/T:/edi/testFile.txt", mapper.localToRemote("file:///home/edi/testFile.txt"));
+            assertEquals("file:/T:/data/testFile.txt", mapper.localToRemote("file:///data/testFile.txt"));
+            assertEquals("file:/T:/data/testFile.txt", mapper.localToRemote("file:///Data/testFile.txt"));
 
-            assertEquals("file:///home/edi/testFile.txt", mapper.remoteToLocal("file:///T:/edi/testFile.txt"));
-            assertEquals("file:///data/testFile.txt", mapper.remoteToLocal("file:///T:/data/testFile.txt"));
-            assertEquals("file:///data/testFile.txt", mapper.remoteToLocal("file:///t:/data/testFile.txt"));
+            assertEquals("file:/home/edi/testFile.txt", mapper.remoteToLocal("file:///T:/edi/testFile.txt"));
+            assertEquals("file:/data/testFile.txt", mapper.remoteToLocal("file:///T:/data/testFile.txt"));
+            assertEquals("file:/data/testFile.txt", mapper.remoteToLocal("file:///t:/data/testFile.txt"));
         }
 
         @Test
@@ -438,13 +470,13 @@ public class PathMapperImpl implements PathMapper
             assertEquals("file:/data/testFile.txt", mapper.remoteToLocal("file:/T:/data/testFile.txt"));
             assertEquals("file:/home/edi/testFile.txt", mapper.remoteToLocal("file:/T:/edi/testFile.txt"));
 
-            assertEquals("file:///T:/edi/testFile.txt", mapper.localToRemote("file:///home/edi/testFile.txt"));
-            assertEquals("file:///T:/data/testFile.txt", mapper.localToRemote("file:///data/testFile.txt"));
-            assertEquals("file:///T:/testFile.txt", mapper.localToRemote("file:///home/stedi/testFile.txt"));
+            assertEquals("file:/T:/edi/testFile.txt", mapper.localToRemote("file:///home/edi/testFile.txt"));
+            assertEquals("file:/T:/data/testFile.txt", mapper.localToRemote("file:///data/testFile.txt"));
+            assertEquals("file:/T:/testFile.txt", mapper.localToRemote("file:///home/stedi/testFile.txt"));
 
-            assertEquals("file:///home/stedi/testFile.txt", mapper.remoteToLocal("file:///T:/testFile.txt"));
-            assertEquals("file:///data/testFile.txt", mapper.remoteToLocal("file:///T:/data/testFile.txt"));
-            assertEquals("file:///home/edi/testFile.txt", mapper.remoteToLocal("file:///T:/edi/testFile.txt"));
+            assertEquals("file:/home/stedi/testFile.txt", mapper.remoteToLocal("file:///T:/testFile.txt"));
+            assertEquals("file:/data/testFile.txt", mapper.remoteToLocal("file:///T:/data/testFile.txt"));
+            assertEquals("file:/home/edi/testFile.txt", mapper.remoteToLocal("file:///T:/edi/testFile.txt"));
         }
 
         @Test
@@ -473,10 +505,31 @@ public class PathMapperImpl implements PathMapper
 
             PathMapper mapper = new PathMapperImpl(m, false, false);
 
-            assertEquals(mapper.localToRemote("file:/testFile.txt"), "file:/T:/testFile.txt");
-            assertEquals(mapper.remoteToLocal("file:/T:/testFile.txt"), "file:/testFile.txt");
-            assertEquals(mapper.localToRemote("file:///testFile.txt"), "file:///T:/testFile.txt");
-            assertEquals(mapper.remoteToLocal("file:///T:/testFile.txt"), "file:///testFile.txt");
+            assertEquals("file:/T:/testFile.txt", mapper.localToRemote("file:/testFile.txt"));
+            assertEquals("file:/T:/testFile.txt", mapper.localToRemote("file:///testFile.txt"));
+            assertEquals("file:/testFile.txt", mapper.remoteToLocal("file:///T:/testFile.txt"));
+            assertEquals("file:/testFile.txt", mapper.remoteToLocal("file:/T:/testFile.txt"));
         }
+
+        @Test
+        public void testFileRoot_URI()
+        {
+            Map<String, String> m = new HashMap<>();
+            m.put("file:/T:", "file:/");
+            m.put("file:///T:", "file:///");
+
+            PathMapper mapper = new PathMapperImpl(m, false, false);
+
+            URI driveLetter = URI.create("file:/T:/testFile.txt");
+            URI fileRoot = URI.create("file:/testFile.txt");
+            URI tripleDriveLetter = URI.create("file:///T:/testFile.txt");
+            URI tripleFileRoot = URI.create("file:///testFile.txt");
+
+            assertEquals(0, driveLetter.compareTo(mapper.localToRemote(URI.create("file:/testFile.txt"))));
+            assertEquals(0, tripleDriveLetter.compareTo(mapper.localToRemote(URI.create("file:///testFile.txt"))));
+            assertEquals(0, fileRoot.compareTo(mapper.remoteToLocal(URI.create("file:///T:/testFile.txt"))));
+            assertEquals(0, tripleFileRoot.compareTo(mapper.remoteToLocal(URI.create("file:/T:/testFile.txt"))));
+        }
+
     }
 }

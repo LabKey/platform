@@ -18,6 +18,7 @@ package org.labkey.api.pipeline.file;
 import org.json.JSONObject;
 import org.labkey.api.query.ValidationException;
 
+import java.net.URI;
 import java.util.Map;
 
 /**
@@ -27,11 +28,18 @@ import java.util.Map;
  */
 public interface PathMapper
 {
+    @Deprecated //Please use getURIPathMap
     Map<String, String> getPathMap();
 
-    String remoteToLocal(String remoteURI);
+    Map<URI, URI> getURIPathMap();
 
+    @Deprecated //Please use the URI version
+    String remoteToLocal(String remoteURI);
+    URI remoteToLocal(URI path);
+
+    @Deprecated //Please use the URI version
     String localToRemote(String localURI);
+    URI localToRemote(URI localURI);
 
     ValidationException getValidationErrors();
 
