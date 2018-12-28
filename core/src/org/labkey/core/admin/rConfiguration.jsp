@@ -28,6 +28,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="java.util.Arrays" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -41,15 +42,14 @@
 <%
     JspView<RConfigForm> me = (JspView<RConfigForm>) HttpView.currentView();
     RConfigForm form = me.getModelBean();
-
-    ActionURL postURL = new ActionURL(AdminController.RConfigurationAction.class, getContainer());
+    Container container = getContainer();
+    ActionURL postURL = new ActionURL(AdminController.RConfigurationAction.class, container);
 
     LabkeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
     List<ExternalScriptEngineDefinition> engineDefinitions = new ArrayList<>();
 
     boolean isFolderScoped = false;
-    LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
-    for (ExternalScriptEngineDefinition def : svc.getScopedEngines(getContainer()))
+    for (ExternalScriptEngineDefinition def : mgr.getScopedEngines(container))
     {
         if (def.isEnabled() && Arrays.asList(def.getExtensions()).contains("r"))
         {
@@ -62,15 +62,17 @@
     if (null != mgr)
     {
         engineDefinitions.addAll(mgr.getEngineDefinitions(ExternalScriptEngineDefinition.Type.R, true));
-        currentEngine = mgr.getEngineByExtension(getContainer(), "r");
+        currentEngine = mgr.getEngineByExtension(container, "r");
     }
     String currentName = ((currentEngine != null) ? currentEngine.getFactory().getEngineName() : null);
-%>
-<%
-ScriptEngine parentEngine = mgr.getEngineByExtension(getContainer().getParent(), "r");
-if (parentEngine != null)
-{
-    String parentName = parentEngine.getFactory().getEngineName();
+    Container parentContainer = container.getParent();
+    if (parentContainer != null)
+    {
+        ScriptEngine parentEngine = mgr.getEngineByExtension(parentContainer, "r");
+        if (parentEngine != null)
+        {
+            String parentName = parentEngine.getFactory().getEngineName();
+
 %>
 <h4>Available R Configurations</h4>
 <hr/>
@@ -193,19 +195,31 @@ if (parentEngine != null)
     };
 })(jQuery);
 </script>
-<%
-}
-else
-{
-%>
-<h4>No Available R Configurations</h4>
-<hr/>
-<div>
-    No R engines are configured. For more information on how to configure R engines, click
-    <a href="https://www.labkey.org/Documentation/wiki-page.view?name=configureScripting&_docid=wiki%3A32d70ce8-ed56-1034-b734-fe851e088836">here</a>.
-</div>
-<%
-}
+            <%
+            }
+            else
+            {
+            %>
+            <h4>No Available R Configurations</h4>
+            <hr/>
+            <div>
+                No R engines are configured. For more information on how to configure R engines, click
+                <a href="https://www.labkey.org/Documentation/wiki-page.view?name=configureScripting">here</a>.
+            </div>
+            <%
+            }
+        }
+        else // override not allwed at root
+        {
+            %>
+            <h4>R Configuration override not allowed</h4>
+            <hr/>
+            <div>
+                R configuration is not allowed for root folder. For more information on how to configure R engines, click
+                <a href="https://www.labkey.org/Documentation/wiki-page.view?name=configureScripting">here</a>.
+            </div>
+            <%
+        }
 %>
 
 
