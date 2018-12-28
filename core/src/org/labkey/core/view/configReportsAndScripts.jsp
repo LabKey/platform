@@ -29,6 +29,7 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.reports.ExternalScriptEngineDefinition" %>
 <%@ page import="org.labkey.api.docker.DockerService" %>
+<%@ page import="org.labkey.api.premium.PremiumService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -39,7 +40,7 @@
     }
 %>
 <%
-    boolean isRemoteEnabled = AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING);
+    boolean isRemoteEnabled = PremiumService.get().isRServeEnabled();
     boolean isRDockerAvailable = false;
     if (AppProps.getInstance().isExperimentalFeatureEnabled(RStudioService.R_DOCKER_SANDBOX))
     {

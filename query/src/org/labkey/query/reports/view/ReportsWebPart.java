@@ -18,6 +18,7 @@ package org.labkey.query.reports.view;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.premium.PremiumService;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
@@ -88,7 +89,7 @@ public class ReportsWebPart extends WebPartView
         if (properties.containsKey(Report.renderParam.showSection.name()))
             getViewContext().put(Report.renderParam.showSection.name(), properties.get(Report.renderParam.showSection.name()));
 
-        if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
+        if (PremiumService.get().isRServeEnabled())
         {
             if (properties.containsKey(Report.renderParam.reportSessionId.name()))
                 getViewContext().put(Report.renderParam.reportSessionId.name(), properties.get(Report.renderParam.reportSessionId.name()));

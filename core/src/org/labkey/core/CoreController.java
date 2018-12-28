@@ -84,6 +84,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.pipeline.file.PathMapperImpl;
+import org.labkey.api.premium.PremiumService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
@@ -2148,6 +2149,10 @@ public class CoreController extends SpringActionController
                 {
                     // extra metadata for external engines
                     ExternalScriptEngineDefinition def = ((ExternalScriptEngineFactory)factory).getDefinition();
+
+                    //Skip remote engines if Premium module isn't available.   //TODO: should this be further qualified with engine type?
+                    if (def.isRemote() && !PremiumService.get().isRServeEnabled())
+                        continue;
 
                     record.put("rowId", def.getRowId());
                     if (def.getType() != null)

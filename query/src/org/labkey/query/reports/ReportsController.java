@@ -64,6 +64,8 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
+import org.labkey.api.premium.PremiumFeatureNotEnabledException;
+import org.labkey.api.premium.PremiumService;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -546,7 +548,7 @@ public class ReportsController extends SpringActionController
             // create a unique key for this session.  Note that a report session id can never
             // span sessions but does span multiple requests within a session
             //
-            if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
+            if (PremiumService.get().isRServeEnabled())
             {
                 reportSessionId = ReportUtil.createReportSessionId();
                 getViewContext().getSession().setAttribute(reportSessionId,
@@ -584,7 +586,7 @@ public class ReportsController extends SpringActionController
     {
         public ApiResponse execute(DeleteSessionForm form , BindException errors) throws Exception
         {
-            if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
+            if (PremiumService.get().isRServeEnabled())
             {
                 String reportSessionId = form.getReportSessionId();
 
@@ -753,7 +755,7 @@ public class ReportsController extends SpringActionController
             //
             // used a shared sesssion if specfied and the feature is turned on
             //
-            if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
+            if (PremiumService.get().isRServeEnabled())
             {
                 getViewContext().put(Report.renderParam.reportSessionId.name(), reportSessionId);
             }
@@ -772,7 +774,7 @@ public class ReportsController extends SpringActionController
             //
             // we must be using Rserve for this
             //
-            if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
+            if (PremiumService.get().isRServeEnabled())
             {
                 try
                 {
@@ -871,7 +873,7 @@ public class ReportsController extends SpringActionController
         {
             ArrayList<ReportSession> outputReportSessions = new ArrayList<>();
 
-            if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
+            if (PremiumService.get().isRServeEnabled())
             {
                 synchronized (RConnectionHolder.getReportSessions())
                 {
@@ -1364,15 +1366,23 @@ public class ReportsController extends SpringActionController
         {
             if (report.getDescriptor().isNew())
             {
-                ScriptEngine engine = report.getScriptEngine(context.getContainer());
-                if (engine != null)
+                try
                 {
-                    if (!ReportUtil.canCreateScript(context, engine.getFactory().getExtensions().get(0)))
-                        //TODO update the message text
-                        errors.add(new SimpleValidationError("Only users with the site Analyst permission are allowed to create script views."));
+                    ScriptEngine engine = report.getScriptEngine(context.getContainer());
+
+                    if (engine != null)
+                    {
+                        if (!ReportUtil.canCreateScript(context, engine.getFactory().getExtensions().get(0)))
+                            //TODO update the message text
+                            errors.add(new SimpleValidationError("Only users with the site Analyst permission are allowed to create script views."));
+                    }
+                    else
+                        errors.add(new SimpleValidationError("Unable to find a configured script engine for this report."));
                 }
-                else
-                    errors.add(new SimpleValidationError("Unable to find a configured script engine for this report."));
+                catch (PremiumFeatureNotEnabledException e)
+                {
+                    errors.add(new SimpleValidationError(e.getMessage()));
+                }
             }
             else
                 report.canEdit(context.getUser(), context.getContainer(), errors);

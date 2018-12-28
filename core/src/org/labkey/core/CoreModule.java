@@ -939,10 +939,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "Client-side Exception Logging To Server",
                 "Report unhandled JavaScript exceptions to the server log.",
                 false);
-        AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_RSERVE_REPORTING,
-                "Rserve Reports",
-                "Use an R Server for R script evaluation instead of running R from a command shell.",
-                false);
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_USER_FOLDERS,
                 "User Folders",
                 "Enable personal folders for users.",

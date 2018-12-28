@@ -28,6 +28,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="java.util.Arrays" %>
+<%@ page import="org.labkey.api.reports.RServeNotEnabledException" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -62,13 +63,31 @@
     if (null != mgr)
     {
         engineDefinitions.addAll(mgr.getEngineDefinitions(ExternalScriptEngineDefinition.Type.R, true));
-        currentEngine = mgr.getEngineByExtension(container, "r");
+        try
+        {
+            currentEngine = mgr.getEngineByExtension(container, "r");
+        }
+        catch(RServeNotEnabledException e)
+        {
+            //Swallow this exception and let the UI load.
+        }
     }
+
     String currentName = ((currentEngine != null) ? currentEngine.getFactory().getEngineName() : null);
     Container parentContainer = container.getParent();
     if (parentContainer != null)
     {
-        ScriptEngine parentEngine = mgr.getEngineByExtension(parentContainer, "r");
+        ScriptEngine parentEngine = null;
+
+        try
+        {
+            parentEngine = mgr.getEngineByExtension(parentContainer, "r");
+        }
+        catch(RServeNotEnabledException e)
+        {
+        //Swallow this exception and let the UI load.
+        }
+
         if (parentEngine != null)
         {
             String parentName = parentEngine.getFactory().getEngineName();

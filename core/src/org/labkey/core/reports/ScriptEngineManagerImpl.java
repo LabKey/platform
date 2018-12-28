@@ -36,12 +36,15 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.premium.PremiumFeatureNotEnabledException;
+import org.labkey.api.premium.PremiumService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.reports.RDockerScriptEngineFactory;
 import org.labkey.api.reports.RScriptEngineFactory;
+import org.labkey.api.reports.RServeNotEnabledException;
 import org.labkey.api.reports.RserveScriptEngineFactory;
 import org.labkey.api.rstudio.RStudioService;
 import org.labkey.api.script.RhinoScriptEngine;
@@ -53,6 +56,7 @@ import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ConfigurationException;
 
+import javax.management.relation.RelationServiceNotRegisteredException;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
@@ -64,6 +68,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /*
 * User: Karl Lum
@@ -169,7 +174,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
     }
 
     @Override
-    public ScriptEngine getEngineByExtension(Container container, String extension, boolean requestRemote, boolean requestDocker)
+    public ScriptEngine getEngineByExtension(Container container, String extension, boolean requestRemote, boolean requestDocker) throws PremiumFeatureNotEnabledException
     {
         ScriptEngine engine = super.getEngineByExtension(extension);
         assert engine == null || !engine.getClass().getSimpleName().equals("com.sun.script.javascript.RhinoScriptEngine") : "Should not use jdk bundled script engine";
@@ -205,7 +210,15 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
                 if (def.isDocker())
                     return new RDockerScriptEngineFactory(def).getScriptEngine();
                 else if (def.isRemote())
-                    return new RserveScriptEngineFactory(def).getScriptEngine();
+                {
+                    if (PremiumService.get().isRServeEnabled())
+                        return new RserveScriptEngineFactory(def).getScriptEngine();
+                    else
+                    {
+                        LOG.info(String.format("Remote R serve engine [%1$s] requested, but premium module not available/enabled.", def.getName() ));
+                        throw new RServeNotEnabledException(def);
+                    }
+                }
                 else
                     return new RScriptEngineFactory(def).getScriptEngine();
             }
@@ -283,7 +296,11 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
                     return def;
             }
 
-            ExternalScriptEngineDefinition def = definitions.stream().filter(d -> d.isDefault() && d.isDocker() == requestDocker && d.isRemote() == requestRemote).findFirst().orElse(null);
+            ExternalScriptEngineDefinition def = definitions.stream().filter(d ->
+                    d.isDefault()
+                            && d.isDocker() == requestDocker
+                            && d.isRemote() == requestRemote
+            ).findFirst().orElse(null);
             if (def != null)
                 return def;
 
@@ -456,7 +473,14 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Type"), type);
         filter.addCondition(FieldKey.fromParts("Enabled"), enabled);
-        return new ArrayList<>(new TableSelector(CoreSchema.getInstance().getTableInfoReportEngines(), filter, null).getCollection(ExternalScriptEngineDefinitionImpl.class));
+        List<ExternalScriptEngineDefinition> engines = new ArrayList<>(new TableSelector(CoreSchema.getInstance().getTableInfoReportEngines(), filter, null).getCollection(ExternalScriptEngineDefinitionImpl.class));
+
+        if (type == ExternalScriptEngineDefinition.Type.R)
+        {
+            engines = engines.stream().filter(e -> !e.isRemote() || PremiumService.get().isRServeEnabled()).collect(Collectors.toList());
+        }
+
+        return engines;
     }
 
     @Override
@@ -502,7 +526,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
                 isDocker = Boolean.valueOf(def.get(Props.docker.name()));
             try
             {
-                if (!isRemote || AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING) || isDocker)
+                if (!isRemote || PremiumService.get().isRServeEnabled() || isDocker)
                     engines.add(createDefinition(def, false));
             }
             catch (Exception e)

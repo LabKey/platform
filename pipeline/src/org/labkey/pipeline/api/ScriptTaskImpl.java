@@ -27,6 +27,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.WorkDirectory;
 import org.labkey.api.pipeline.cmd.TaskPath;
+import org.labkey.api.premium.PremiumService;
 import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
@@ -160,7 +161,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
             // since we allow both R and Rserve engines now, ask for Rserve if we are using the ScriptEngineManagerImpl and
             // Rserve has been enabled
             //
-            if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
+            if (PremiumService.get().isRServeEnabled())
             {
                 engine = mgr.getEngineByExtension(c, extension, true);
             }
