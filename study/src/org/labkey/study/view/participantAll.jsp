@@ -315,6 +315,8 @@
                 if (visConfig.queryConfig && visConfig.chartConfig) {
                     // add ptid filter to the chart queryConfig filterArray
                     var ptidColName = LABKEY.getModuleContext('study') ? LABKEY.getModuleContext('study').subject.columnName : 'ParticipantId';
+                    if (!visConfig.queryConfig.filterArray)
+                        visConfig.queryConfig.filterArray = [];
                     visConfig.queryConfig.filterArray.push({name: ptidColName, type: 'eq', value: <%=q(bean.getParticipantId())%>});
 
                     // explicitly set the chart height and width
