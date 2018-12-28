@@ -1994,7 +1994,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             clearCaches(vial.getContainer());
     }
 
-    public void deleteAllSampleData(Container c, Set<TableInfo> set)
+    public void deleteAllSampleData(Container c, Set<TableInfo> set, User user)
     {
         // UNDONE: use transaction?
         SimpleFilter containerFilter = SimpleFilter.createContainerFilter(c);
@@ -2032,9 +2032,26 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
         if (sampleSet != null)
         {
-            SimpleFilter materialFilter = new SimpleFilter(containerFilter);
-            materialFilter.addCondition(FieldKey.fromParts("CpasType"), sampleSet.getLSID());
-            Table.delete(tinfoMaterial, materialFilter);
+            // Check if any of the samples are referenced in an experiment run
+            SQLFragment sql = new SQLFragment("SELECT m.RowId FROM ");
+            sql.append(ExperimentService.get().getTinfoMaterial(), "m");
+            sql.append(" INNER JOIN ");
+            sql.append(ExperimentService.get().getTinfoMaterialInput(), "mi");
+            sql.append(" ON m.RowId = mi.MaterialId AND m.CpasType = ?");
+            sql.add(sampleSet.getLSID());
+
+            if (new SqlSelector(ExperimentService.get().getSchema(), sql).exists())
+            {
+                // If so, do the slow version of the delete that tears down runs
+                sampleSet.delete(user);
+            }
+            else
+            {
+                // If not, do the quick version that just kills the samples themselves in the exp.Material table
+                SimpleFilter materialFilter = new SimpleFilter(containerFilter);
+                materialFilter.addCondition(FieldKey.fromParts("CpasType"), sampleSet.getLSID());
+                Table.delete(tinfoMaterial, materialFilter);
+            }
         }
 
         // Views  // TODO when these views get removed remove this

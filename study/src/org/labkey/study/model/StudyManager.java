@@ -2986,7 +2986,7 @@ public class StudyManager
             //
             // samples
             //
-            SpecimenManager.getInstance().deleteAllSampleData(c, deletedTables);
+            SpecimenManager.getInstance().deleteAllSampleData(c, deletedTables, user);
 
             //
             // assay schedule
