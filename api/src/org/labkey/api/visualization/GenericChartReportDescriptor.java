@@ -293,6 +293,7 @@ public class GenericChartReportDescriptor extends VisualizationReportDescriptor
 
         JSONObject newQueryConfig = new JSONObject();
         newQueryConfig.put("maxRows", -1);
+        newQueryConfig.put("filterArray", new JSONArray());
         newQueryConfig.put("viewName", viewName);
         newQueryConfig.put("method", "POST");
         newQueryConfig.put("requiredVersion", 13.2);
