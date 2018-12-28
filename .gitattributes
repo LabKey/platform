@@ -1090,6 +1090,7 @@ api/src/org/labkey/api/pipeline/file/PathMapperImpl.java -text
 api/src/org/labkey/api/pipeline/view/SetupForm.java -text
 api/src/org/labkey/api/portal/ProjectUrls.java -text
 api/src/org/labkey/api/premium/AntiVirusService.java -text
+api/src/org/labkey/api/premium/PremiumFeatureNotEnabledException.java -text
 api/src/org/labkey/api/premium/PremiumService.java -text
 api/src/org/labkey/api/protein/ProteinService.java -text
 api/src/org/labkey/api/protein/ProteomicsModule.java -text
@@ -1252,6 +1253,7 @@ api/src/org/labkey/api/reports/RDockerScriptEngine.java -text
 api/src/org/labkey/api/reports/RDockerScriptEngineFactory.java -text
 api/src/org/labkey/api/reports/RScriptEngine.java -text
 api/src/org/labkey/api/reports/RScriptEngineFactory.java -text
+api/src/org/labkey/api/reports/RServeNotEnabledException.java -text
 api/src/org/labkey/api/reports/Report.java -text
 api/src/org/labkey/api/reports/ReportContentEmailManager.java -text
 api/src/org/labkey/api/reports/ReportService.java -text

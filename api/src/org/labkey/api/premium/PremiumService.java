@@ -51,6 +51,8 @@ public interface PremiumService
         ServiceRegistry.get().registerService(PremiumService.class, instance);
     }
 
+    boolean isRServeEnabled();
+
     interface AntiVirusProvider
     {
         @NotNull String getId();             // something unique e.g. className
@@ -81,5 +83,12 @@ public interface PremiumService
 
         @Override
         public void registerAntiVirusProvider(AntiVirusProvider avp) {}
+
+        @Override
+        public boolean isRServeEnabled()
+        {
+            return false;
+        }
     }
+
 }

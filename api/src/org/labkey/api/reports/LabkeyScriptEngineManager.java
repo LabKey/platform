@@ -17,6 +17,7 @@ package org.labkey.api.reports;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.premium.PremiumFeatureNotEnabledException;
 import org.labkey.api.security.User;
 
 import javax.script.ScriptEngine;
@@ -44,7 +45,7 @@ public interface LabkeyScriptEngineManager
 
     @Nullable
     @Deprecated
-    ScriptEngine getEngineByExtension(Container c, String extension, boolean requestRemote, boolean requestDocker);
+    ScriptEngine getEngineByExtension(Container c, String extension, boolean requestRemote, boolean requestDocker) throws PremiumFeatureNotEnabledException;
 
     List<ExternalScriptEngineDefinition> getScopedEngines(Container container);
     void setEngineScope(Container c, ExternalScriptEngineDefinition def);

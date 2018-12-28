@@ -40,7 +40,6 @@ public interface AppProps
     String EXPERIMENTAL_FEATURE = "experimentalFeature";
     String EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP = "javascriptMothership";
     String EXPERIMENTAL_JAVASCRIPT_SERVER = "javascriptErrorServerLogging";
-    String EXPERIMENTAL_RSERVE_REPORTING = "rserveReports";
     String EXPERIMENTAL_USER_FOLDERS = "userFolders";
     String EXPERIMENTAL_NO_GUESTS = "disableGuestAccount";
     String EXPERIMENTAL_BLOCKER = "blockMaliciousClients";
