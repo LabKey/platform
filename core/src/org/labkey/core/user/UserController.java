@@ -26,6 +26,7 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.QueryViewAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
@@ -48,6 +49,7 @@ import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UrlColumn;
 import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.exp.property.Domain;
@@ -1336,6 +1338,31 @@ public class UserController extends SpringActionController
                 return thisUser.getDisplayName(getCurrentUser()).compareToIgnoreCase(thatUser.getDisplayName(getCurrentUser()));
             else
                 return this.getUser().getName().compareToIgnoreCase(o.getUser().getName());
+        }
+    }
+
+    @RequiresLogin
+    public class GetUserPropsAction extends ReadOnlyApiAction<UserQueryForm>
+    {
+        @Override
+        public ApiResponse execute(UserQueryForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            UserSchema schema = form.getSchema();
+            if (schema == null)
+                throw new NotFoundException("Schema not found");
+
+            TableInfo table = schema.getTable(CoreQuerySchema.USERS_TABLE_NAME);
+            if (table == null)
+                throw new NotFoundException("Query not found");
+
+            Map<String, Object> props = new TableSelector(table).getMap(form.getUserId());
+            if (props != null)
+            {
+                response.put("success", true);
+                response.put("props", props);
+            }
+            return response;
         }
     }
 

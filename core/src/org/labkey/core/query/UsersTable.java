@@ -190,6 +190,8 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
             ColumnInfo nullColumn = addColumn(new NullColumnInfo(this, col.getName(), col.getJdbcType()));
             nullColumn.setReadOnly(true);
             nullColumn.setHidden(col.isHidden());
+            nullColumn.setNullable(col.isNullable());
+            nullColumn.setRequired(col.isRequired());
         }
     }
 
