@@ -161,7 +161,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -831,14 +830,16 @@ public class ExperimentServiceImpl implements ExperimentService
         return result;
     }
 
-    public List<ExpSampleSetImpl> getSampleSets(Container container, User user, boolean includeOtherContainers)
+    public List<ExpSampleSetImpl> getSampleSets(@NotNull Container container, @Nullable User user, boolean includeOtherContainers)
     {
-        SimpleFilter filter = createContainerFilter(container, user, includeOtherContainers);
-        List<MaterialSource> sources = new TableSelector(getTinfoMaterialSource(), filter, null).getArrayList(MaterialSource.class);
-        List<ExpSampleSetImpl> result = new ArrayList<>(sources.size());
-        for (MaterialSource source : sources)
+        List<String> containerIds = createContainerList(container, user, includeOtherContainers);
+        List<ExpSampleSetImpl> result = new ArrayList<>(10);
+        for (String containerId : containerIds)
         {
-            result.add(new ExpSampleSetImpl(source));
+            for (MaterialSource source : getMaterialSourceCache().get(containerId))
+            {
+                result.add(new ExpSampleSetImpl(source));
+            }
         }
         // Do the sort on the Java side to make sure it's always case-insensitive, even on Postgres
         Collections.sort(result);
@@ -1252,8 +1253,8 @@ public class ExperimentServiceImpl implements ExperimentService
         List<String> containerIds = createContainerList(c, user, includeOtherContainers);
         for (String containerId : containerIds)
         {
-            Collection<MaterialSource> sampleSetes = getMaterialSourceCache().get(containerId);
-            for (MaterialSource materialSource : sampleSetes)
+            Collection<MaterialSource> sampleSets = getMaterialSourceCache().get(containerId);
+            for (MaterialSource materialSource : sampleSets)
             {
                 if (predicate.test(materialSource))
                     return new ExpSampleSetImpl(materialSource);
