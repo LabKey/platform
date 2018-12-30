@@ -833,7 +833,9 @@ public class ExperimentServiceImpl implements ExperimentService
     public List<ExpSampleSetImpl> getSampleSets(@NotNull Container container, @Nullable User user, boolean includeOtherContainers)
     {
         List<String> containerIds = createContainerList(container, user, includeOtherContainers);
-        List<ExpSampleSetImpl> result = new ArrayList<>(10);
+
+        // Do the sort on the Java side to make sure it's always case-insensitive, even on Postgres
+        TreeSet<ExpSampleSetImpl> result = new TreeSet<>();
         for (String containerId : containerIds)
         {
             for (MaterialSource source : getMaterialSourceCache().get(containerId))
@@ -841,9 +843,8 @@ public class ExperimentServiceImpl implements ExperimentService
                 result.add(new ExpSampleSetImpl(source));
             }
         }
-        // Do the sort on the Java side to make sure it's always case-insensitive, even on Postgres
-        Collections.sort(result);
-        return Collections.unmodifiableList(result);
+
+        return List.copyOf(result);
     }
 
     public ExpExperimentImpl getExpExperiment(int rowid)
