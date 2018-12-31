@@ -3350,7 +3350,7 @@ if (!LABKEY.DataRegions) {
     var _showSelectMessage = function(region, msg) {
         if (region.showRecordSelectors) {
             if (region.totalRows && region.totalRows != region.selectedCount) {
-                msg += "&nbsp;<span class='labkey-button select-all'>Select All " + region.totalRows + " Rows</span>";
+                msg += "&nbsp;<span class='labkey-button select-all'>Select All Selectable Rows</span>";
             }
 
             msg += "&nbsp;" + "<span class='labkey-button select-none'>Select None</span>";
@@ -3751,9 +3751,12 @@ if (!LABKEY.DataRegions) {
             }
         });
 
-        // If all rows have been selected (but not all rows are visible), show selection message
-        if (region.totalRows && region.selectedCount == region.totalRows && !region.complete) {
-            _showSelectMessage(region, 'All <span class="labkey-strong">' + region.totalRows + '</span> rows selected.');
+        // If not all rows are visible and some rows are selected, show selection message
+        if (region.totalRows && 0 !== region.selectedCount && !region.complete) {
+            var msg = (region.selectedCount === region.totalRows) ?
+                        'All <span class="labkey-strong">' + region.totalRows + '</span> rows selected.' :
+                        'Selected <span class="labkey-strong">' + region.selectedCount + '</span> of ' + region.totalRows + ' rows.';
+            _showSelectMessage(region, msg);
         }
 
         // 10566: for javascript perf on IE stash the requires selection buttons

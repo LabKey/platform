@@ -293,8 +293,8 @@ public class DataRegionSelection
         while (rs.next())
         {
             ctx.setRow(factory.getRowMap(rs));
-            String value = rgn.getRecordSelectorValue(ctx);
-            selected.add(value);
+            if (rgn.isRecordSelectorEnabled(ctx))             // Don't select unselectables (#35513)
+                selected.add(rgn.getRecordSelectorValue(ctx));
         }
 
         return selected;
