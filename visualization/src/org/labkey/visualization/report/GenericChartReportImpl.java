@@ -124,7 +124,7 @@ public class GenericChartReportImpl extends GenericChartReport implements SvgThu
         setDescriptor(descriptor);
     }
 
-    public static GenericChartReportDescriptor getConvertedChartViewDescriptor(ChartReport report, ViewContext viewContext) throws IOException, ValidationException
+    private GenericChartReportDescriptor getConvertedChartViewDescriptor(ChartReport report, ViewContext viewContext) throws IOException, ValidationException
     {
         String newDescriptorType = GenericChartReportDescriptor.TYPE;
         String newReportType = GenericChartReport.TYPE;

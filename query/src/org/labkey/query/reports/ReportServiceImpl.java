@@ -61,6 +61,7 @@ import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -233,8 +234,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         ReportDescriptor descriptor = report.getDescriptor();
         if (!(descriptor instanceof ChartReportDescriptor))
             return createReportInstance(descriptor);
-        ChartReportDescriptor chartReportDescriptor = (ChartReportDescriptor) descriptor;
-        Report newReport = createReportInstance(chartReportDescriptor.getChartViewNewType());
+        Report newReport = createReportInstance(GenericChartReport.TYPE);
         try
         {
             if (newReport instanceof GenericChartReport)
@@ -249,6 +249,12 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
             return null;
         }
         return newReport;
+    }
+
+    @Override
+    public boolean shouldConvertLegacyChart(Report report)
+    {
+        return report instanceof ChartReport && AppProps.getInstance().isDevMode() && !AppProps.getInstance().isExperimentalFeatureEnabled(ReportService.EXPERIMENTAL_RENDER_DEPRECATED_CHART_VIEW);
     }
 
     private static TableInfo getTable()

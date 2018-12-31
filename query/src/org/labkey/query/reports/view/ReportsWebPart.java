@@ -56,9 +56,10 @@ public class ReportsWebPart extends WebPartView
         try
         {
             Report report = getReport(properties);
-            if (report instanceof ChartReport && AppProps.getInstance().isDevMode() && !AppProps.getInstance().isExperimentalFeatureEnabled(ReportService.EXPERIMENTAL_RENDER_DEPRECATED_CHART_VIEW))
+            ReportService reportService = ReportService.get();
+            if (reportService.shouldConvertLegacyChart(report))
             {
-                Report convertedReport = ReportService.get().createConvertedChartViewReportInstance(report, getViewContext());
+                Report convertedReport = reportService.createConvertedChartViewReportInstance(report, getViewContext());
                 if (convertedReport != null)
                     report = convertedReport;
             }
