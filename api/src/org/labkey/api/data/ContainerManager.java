@@ -330,15 +330,12 @@ public class ContainerManager
         return c;
     }
 
-    public static Container createContainerFromTemplate(Container parent, String name, String title, Container templateContainer, Set<String> dataTypes, User user) throws Exception
+    public static Container createContainerFromTemplate(Container parent, String name, String title, Container templateContainer, User user, FolderExportContext exportCtx) throws Exception
     {
         MemoryVirtualFile vf = new MemoryVirtualFile();
 
         // export objects from the source template folder
         FolderWriterImpl writer = new FolderWriterImpl();
-        FolderExportContext exportCtx = new FolderExportContext(user, templateContainer, dataTypes, "new",
-                false, PHI.NotPHI, false, false, false,
-                new StaticLoggerGetter(Logger.getLogger(FolderWriterImpl.class)));
         writer.write(templateContainer, exportCtx, vf);
 
         // create the new target container
