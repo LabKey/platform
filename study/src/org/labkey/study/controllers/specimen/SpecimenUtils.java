@@ -80,6 +80,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -815,7 +816,11 @@ public class SpecimenUtils
 
     public RequestedSpecimens getRequestableByVialRowIds(Set<String> rowIds)
     {
-        List<Vial> requestedSamples = getSpecimensFromRowIds(rowIds);
+        Set<Long> ids = new HashSet<>();
+        Arrays.stream(BaseStudyController.toLongArray(rowIds)).forEach(id -> {
+            ids.add(id);
+        });
+        List<Vial> requestedSamples = SpecimenManager.getInstance().getRequestableVials(getContainer(), getUser(), ids);
         return new RequestedSpecimens(requestedSamples);
     }
 

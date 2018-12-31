@@ -1450,6 +1450,13 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         return vials;
     }
 
+    public List<Vial> getRequestableVials(Container container, User user, Set<Long> vialRowIds)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addInClause(FieldKey.fromParts("RowId"), vialRowIds).addCondition(FieldKey.fromString("available"), true);
+        return getVials(container, user, filter);
+    }
+
     public static class SpecimenRequestException extends RuntimeException
     {
         public SpecimenRequestException()
