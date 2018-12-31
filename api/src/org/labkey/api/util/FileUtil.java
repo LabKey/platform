@@ -450,10 +450,18 @@ public class FileUtil
         if (null != uri)
             if (hasCloudScheme(uri))
                 return uri.toString().replaceFirst("/\\w+@s3", "/s3");      // Remove accessId portion if exists
-            else if ("file".equalsIgnoreCase(uri.getScheme()) && !StringUtils.startsWith(uri.getRawSchemeSpecificPart(), "///"))
-                return new File(uri).toPath().toUri().toString();           // File.toURI() can produce URI like "file:/Users/...." We want "file:///Users/..."
             else
-                return uri.toString();
+            {
+                try
+                {
+                    return URIUtil.normalizeUri(uri).toString();
+                }
+                catch (URISyntaxException e)
+                {
+                    LOG.debug("Error attempting to conform uri: " + e.getMessage());
+                    return uri.toString();
+                }
+            }
         else
             return null;
     }
@@ -1207,6 +1215,24 @@ quickScan:
             assertEquals(new File(ROOT, "test/path"), resolveFile(new File(ROOT, "test/path/file.ext/..")));
             assertEquals(new File(ROOT, "folder"), resolveFile(new File(ROOT, ".././../folder")));
             assertEquals(new File(ROOT, "b"), resolveFile(new File(ROOT, "folder/a/.././../b")));
+        }
+
+        @Test
+        public void testUriToString()
+        {
+            assertEquals("converted file:/// URI does not match expected string", "file:///data/myfile.txt", uriToString(URI.create("file:///data/myfile.txt")));
+            assertEquals("converted file:/ URI does not match expected string", "file:///data/myfile.txt", uriToString(URI.create("file:/data/myfile.txt")));
+        }
+
+        @Test
+        public void testNormalizeURI()
+        {
+            assertEquals("file:/// uri not as expected","file:///my/triple/file/path", uriToString(URI.create("file:///my/triple/file/path")));
+            assertEquals("file:/// uri with drive letter not as expected","file:///C:/my/triple/file/path", uriToString(URI.create("file:///C:/my/triple/file/path")));
+            assertEquals("file:/ uri not conformed to file:///","file:///my/single/file/path", uriToString(URI.create("file:/my/single/file/path")));
+            assertEquals("file:/ with drive letter not conformed to file:///","file:///C:/my/single/file/path", uriToString(URI.create("file:/C:/my/single/file/path")));
+            assertEquals("File uri with host not as expected", "file://localhost:8080/my/host/file/path", uriToString(URI.create("file://localhost:8080/my/host/file/path")));
+            assertEquals("Schemed URI not as expected","http://localhost:8080/my/triple/file/path?query=abcd#anchor", uriToString(URI.create("http://localhost:8080/my/triple/file/path?query=abcd#anchor")));
         }
     }
 }

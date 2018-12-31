@@ -15,6 +15,10 @@
  */
 package org.labkey.api.util;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.utils.URIBuilder;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -176,5 +180,27 @@ public class URIUtil
         if ("file".equals(uri.getScheme()))
             return new FileInputStream(new File(uri));
         return uri.toURL().openStream();
+    }
+
+    /**
+     * Normalizes URI and converges file:/ to file:///
+     * @param uri to normalize
+     * @return a new normalized uri
+     */
+    @Nullable
+    public static URI normalizeUri(URI uri) throws URISyntaxException
+    {
+        if (uri == null)
+            return null;
+
+        URI res = uri;
+        if ("file".equalsIgnoreCase(uri.getScheme())
+                && !StringUtils.startsWith(uri.getRawSchemeSpecificPart(), "///")
+                && StringUtils.isBlank(uri.getHost()))
+        {
+            //Conform file:/ to file:///
+            res = new URIBuilder(uri).setHost("").build();
+        }
+        return res.normalize();
     }
 }
