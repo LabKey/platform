@@ -6430,7 +6430,11 @@ public class AdminController extends SpringActionController
                             return false;
                         }
 
-                        c = ContainerManager.createContainerFromTemplate(parent, folderName, folderTitle, sourceContainer, PageFlowUtil.set(form.getTemplateWriterTypes()), getUser());
+                        FolderExportContext exportCtx = new FolderExportContext(getUser(), sourceContainer, PageFlowUtil.set(form.getTemplateWriterTypes()), "new",
+                                form.getTemplateIncludeSubfolders(), PHI.NotPHI, false, false, false,
+                                new StaticLoggerGetter(Logger.getLogger(FolderWriterImpl.class)));
+
+                        c = ContainerManager.createContainerFromTemplate(parent, folderName, folderTitle, sourceContainer, getUser(), exportCtx);
                     }
                     else
                     {
