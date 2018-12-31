@@ -186,6 +186,8 @@ public interface ReportService
      */
     Report createConvertedChartViewReportInstance(Report report, ViewContext viewContext);
 
+    boolean shouldConvertLegacyChart(Report report);
+
     interface DesignerInfo
     {
         /** the report type this builder is associated with */

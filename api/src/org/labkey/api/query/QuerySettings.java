@@ -540,9 +540,10 @@ public class QuerySettings
             if (getReportId() != null)
             {
                 Report report = getReportId().getReport(viewContext);
-                if (report instanceof ChartReport && AppProps.getInstance().isDevMode() && !AppProps.getInstance().isExperimentalFeatureEnabled(ReportService.EXPERIMENTAL_RENDER_DEPRECATED_CHART_VIEW))
+                ReportService reportService = ReportService.get();
+                if (reportService.shouldConvertLegacyChart(report))
                 {
-                    Report convertedReport = ReportService.get().createConvertedChartViewReportInstance(report, viewContext);
+                    Report convertedReport = reportService.createConvertedChartViewReportInstance(report, viewContext);
                     if (convertedReport != null)
                         report = convertedReport;
                 }

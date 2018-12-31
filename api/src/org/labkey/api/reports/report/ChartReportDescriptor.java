@@ -120,8 +120,4 @@ public class ChartReportDescriptor extends ReportDescriptor
         public String generateLabel(ViewContext context, ReportDescriptor descriptor, String itemName) throws Exception;
     }
 
-    public String getChartViewNewType()
-    {
-        return GenericChartReport.TYPE;
-    }
 }
