@@ -501,7 +501,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
                 _columns = map.values();
             }
 
-            boolean forceSort = _allowSort && (_offset != Table.NO_OFFSET || _maxRows != Table.ALL_ROWS);
+            boolean forceSort = _allowSort && (_forDisplay || _offset != Table.NO_OFFSET || _maxRows != Table.ALL_ROWS);
             long selectOffset;
 
             if (requiresManualScrolling())

@@ -494,7 +494,11 @@ public class RenderContext implements Map<String, Object>, Serializable
 
     protected Results selectForDisplay(TableInfo table, Collection<ColumnInfo> columns, Map<String, Object> parameters, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async) throws SQLException, IOException
     {
-        TableSelector selector = new TableSelector(table, columns, filter, sort).setNamedParameters(parameters).setMaxRows(maxRows).setOffset(offset);
+        TableSelector selector = new TableSelector(table, columns, filter, sort)
+                .setNamedParameters(parameters)
+                .setMaxRows(maxRows)
+                .setOffset(offset)
+                .setForDisplay(true);
 
         if (async)
         {
