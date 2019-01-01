@@ -253,11 +253,14 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
                         ColumnInfo col = getColumn(propColumn.getName());
                         if (col != null)
                         {
-                            if (col.getScale() != pd.getScale())
-                                LOG.warn("Scale doesn't match for column " + col.getName() + ": " + col.getScale() + " vs " + pd.getScale());
-                            pd.copyTo(col);
-                            if (!col.isHidden())
-                                defaultCols.add(FieldKey.fromParts(col.getName()));
+                            if (!(col instanceof NullColumnInfo))
+                            {
+                                if (col.getScale() != pd.getScale())
+                                    LOG.warn("Scale doesn't match for column " + col.getName() + ": " + col.getScale() + " vs " + pd.getScale());
+                                pd.copyTo(col);
+                                if (!col.isHidden())
+                                    defaultCols.add(FieldKey.fromParts(col.getName()));
+                            }
                         }
                     }
                     else if (getColumn(propColumn.getName()) == null)

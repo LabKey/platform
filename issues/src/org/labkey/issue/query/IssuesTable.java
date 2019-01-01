@@ -591,12 +591,16 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
                 return null;
 
             final Container c = getContainer();
-            final Map<String, Integer> colNameMap = DataIteratorUtil.createColumnNameMap(input);
 
             SimpleTranslator step0 = new SimpleTranslator(input, context);
             step0.selectAll();
 
-            // Ensure we have a listDefId column and it is of the right value
+            // Replace the issueDefId column with one which has the correct value
+            Map<String, Integer> nameMap = step0.getColumnNameMap();
+            if (nameMap.containsKey("issueDefId"))
+            {
+                step0.removeColumn(nameMap.get("issueDefId"));
+            }
             ColumnInfo issueDefCol = IssuesSchema.getInstance().getTableInfoIssues().getColumn("issueDefId");
             step0.addColumn(issueDefCol, new SimpleTranslator.ConstantColumn(_issueDef.getRowId()));
 
