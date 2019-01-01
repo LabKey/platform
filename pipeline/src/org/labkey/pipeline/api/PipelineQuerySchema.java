@@ -36,7 +36,7 @@ import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.AdminOperationsPermission;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.pipeline.query.TriggerConfigurationsTable;
 
 import java.util.ArrayList;
@@ -167,7 +167,7 @@ public class PipelineQuerySchema extends UserSchema
             table.setTitleColumn("Description");
             return table;
         }
-        else if (TRIGGER_CONFIGURATIONS_TABLE_NAME.equalsIgnoreCase(name) && getUser().hasRootPermission(AdminOperationsPermission.class))
+        else if (TRIGGER_CONFIGURATIONS_TABLE_NAME.equalsIgnoreCase(name) && getContainer().hasPermission(getUser(), AdminPermission.class))
         {
             return createTriggerConfigurationsTable();
         }
@@ -187,7 +187,7 @@ public class PipelineQuerySchema extends UserSchema
         names.add(JOB_TABLE_NAME);
 
         // Issue 32063
-        if (getUser().hasRootPermission(AdminOperationsPermission.class))
+        if (getContainer().hasPermission(getUser(), AdminPermission.class))
             names.add(TRIGGER_CONFIGURATIONS_TABLE_NAME);
 
         return names;

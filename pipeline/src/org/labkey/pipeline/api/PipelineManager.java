@@ -692,7 +692,7 @@ public class PipelineManager
         return false;
     }
 
-    public static void validateTriggerConfiguration(TriggerConfiguration config, Container container, Errors errors)
+    public static void validateTriggerConfiguration(TriggerConfiguration config, Container container, User user, Errors errors)
     {
         Integer rowId = config.getRowId();
         String name = config.getName();
@@ -751,19 +751,19 @@ public class PipelineManager
         }
 
         // validate that the configuration values parse as valid JSON
-        validateConfigJson(triggerType, config.getConfiguration(), pipelineId, isEnabled, errors);
+        validateConfigJson(triggerType, config.getConfiguration(), pipelineId, isEnabled, errors, container, user);
 
         Object customConfiguration = config.getCustomConfiguration();
         if (customConfiguration != null && !customConfiguration.toString().equals(""))
-            validateConfigJson(triggerType, customConfiguration, pipelineId, isEnabled, errors, true);
+            validateConfigJson(triggerType, customConfiguration, pipelineId, isEnabled, errors, true, container, user);
     }
 
-    private static void validateConfigJson(PipelineTriggerType triggerType, Object configuration,  String pipelineId, boolean isEnabled, Errors errors)
+    private static void validateConfigJson(PipelineTriggerType triggerType, Object configuration,  String pipelineId, boolean isEnabled, Errors errors, Container sourceContainer, User user)
     {
-        validateConfigJson(triggerType, configuration, pipelineId, isEnabled, errors, false);
+        validateConfigJson(triggerType, configuration, pipelineId, isEnabled, errors, false, sourceContainer, user);
     }
 
-    private static void validateConfigJson(PipelineTriggerType triggerType, Object configuration,  String pipelineId, boolean isEnabled, Errors errors, boolean jsonValidityOnly)
+    private static void validateConfigJson(PipelineTriggerType triggerType, Object configuration,  String pipelineId, boolean isEnabled, Errors errors, boolean jsonValidityOnly, Container sourceContainer, User user)
     {
         JSONObject json = null;
         if (configuration != null)
@@ -782,7 +782,7 @@ public class PipelineManager
         // give the PipelineTriggerType a chance to validate the configuration JSON object
         if (triggerType != null && !jsonValidityOnly)
         {
-            List<Pair<String, String>> configErrors = triggerType.validateConfiguration(pipelineId, isEnabled, json);
+            List<Pair<String, String>> configErrors = triggerType.validateConfiguration(pipelineId, isEnabled, json, sourceContainer, user);
             for (Pair<String, String> msg : configErrors)
                 errors.rejectValue(msg.first, null, msg.second);
         }

@@ -1520,7 +1520,7 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminOperationsPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class CreatePipelineTriggerAction extends SimpleViewAction<PipelineTriggerForm>
     {
         String _title = "Create Pipeline Trigger";
@@ -1545,13 +1545,13 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminOperationsPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class SavePipelineTriggerAction extends ApiAction<PipelineTriggerForm>
     {
         @Override
         public void validateForm(PipelineTriggerForm form, Errors errors)
         {
-            PipelineManager.validateTriggerConfiguration(form, getContainer(), errors);
+            PipelineManager.validateTriggerConfiguration(form, getContainer(), getUser(), errors);
         }
 
         @Override

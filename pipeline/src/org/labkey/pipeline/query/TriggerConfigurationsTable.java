@@ -45,7 +45,7 @@ import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.permissions.AdminOperationsPermission;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.StringExpression;
@@ -129,7 +129,7 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
     @Override
     public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
     {
-        return getContainer().hasPermission(user, AdminOperationsPermission.class);
+        return getContainer().hasPermission(user, AdminPermission.class);
     }
 
     @Override

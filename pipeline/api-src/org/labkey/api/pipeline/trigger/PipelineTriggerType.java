@@ -17,6 +17,8 @@ package org.labkey.api.pipeline.trigger;
 
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
+import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 
 import java.sql.ResultSet;
@@ -51,10 +53,12 @@ public interface PipelineTriggerType<C extends PipelineTriggerConfig>
      * @param pipelineId The pipelineId
      * @param isEnabled Whether or not the configuration is set to enabled.
      * @param json The configuration (JSON) object
+     * @param sourceContainer The container the triggered in configured in
+     * @param user The creator/editor of the trigger
      * @return Error messages why the configuration is invalid for the given trigger type. Default empty list.
      */
     @NotNull
-    default List<Pair<String, String>> validateConfiguration(String pipelineId, boolean isEnabled, JSONObject json)
+    default List<Pair<String, String>> validateConfiguration(String pipelineId, boolean isEnabled, JSONObject json, Container sourceContainer, User user)
     {
         return Collections.emptyList();
     }
