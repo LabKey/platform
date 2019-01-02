@@ -229,9 +229,14 @@ public class ExceptionUtil
         return !installing && AppProps.getInstance().isSelfReportExceptions();
     }
 
-    /**
-     * @param request may be null if this is coming from a background thread or init  */
+    /** @param request may be null if this is coming from a background thread or init  */
     public static String logExceptionToMothership(@Nullable HttpServletRequest request, Throwable ex)
+    {
+        return logExceptionToMothership(request, ex, true);
+    }
+
+    /** @param request may be null if this is coming from a background thread or init  */
+    public static String logExceptionToMothership(@Nullable HttpServletRequest request, Throwable ex, boolean writeToLog4J)
     {
         if (ViewServlet.isShuttingDown())
             return null;
@@ -263,10 +268,13 @@ public class ExceptionUtil
         }
         finally
         {
-            String message = "Exception detected";
-            if (null != errorCode)
-                message += " and logged to mothership with error code: " + errorCode;
-            LOG.error(message, ex);
+            if (writeToLog4J)
+            {
+                String message = "Exception detected";
+                if (null != errorCode)
+                    message += " and logged to mothership with error code: " + errorCode;
+                LOG.error(message, ex);
+            }
         }
 
         return errorCode;
@@ -283,7 +291,7 @@ public class ExceptionUtil
     }
 
     /** Figure out exactly what text for the stack trace and other details we should submit */
-    public static MothershipReport createReportFromThrowable(HttpServletRequest request, Throwable ex, String requestURL, MothershipReport.Target target, ExceptionReportingLevel level, @Nullable String errorCode)
+    public static MothershipReport createReportFromThrowable(@Nullable HttpServletRequest request, Throwable ex, String requestURL, MothershipReport.Target target, ExceptionReportingLevel level, @Nullable String errorCode)
     {
         if (!shouldSend(level, target.isLocal()))
             return null;
@@ -547,12 +555,12 @@ public class ExceptionUtil
     }
 
     // This is called by SpringActionController (to display unhandled exceptions) and called directly by AuthFilter.doFilter() (to display startup errors and bypass normal request handling)
-    public static ActionURL handleException(HttpServletRequest request, HttpServletResponse response, Throwable ex, @Nullable String message, boolean startupFailure)
+    public static ActionURL handleException(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, Throwable ex, @Nullable String message, boolean startupFailure)
     {
         return handleException(request, response, ex, message, startupFailure, SearchService.get(), LOG);
     }
 
-    static ActionURL handleException(HttpServletRequest request, HttpServletResponse response, Throwable ex, @Nullable String message, boolean startupFailure,
+    static ActionURL handleException(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, Throwable ex, @Nullable String message, boolean startupFailure,
         SearchService ss, Logger log)
     {
         try

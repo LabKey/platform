@@ -317,7 +317,7 @@ public class FileUtil
         if (!uri.isAbsolute())
             return null;
         else if (!FileUtil.hasCloudScheme(uri))
-            return getAbsoluteCaseSensitiveFile(new File(uri)).toURI().toString();
+            return getAbsoluteCaseSensitiveFile(new File(uri)).toPath().toUri().toString();    // Was:  return getAbsoluteCaseSensitiveFile(new File(uri)).toURI().toString(); // #36352
         else
             return getAbsolutePathWithoutAccessIdFromCloudUrl(container, uri);
     }

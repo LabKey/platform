@@ -57,6 +57,8 @@ public class URLDisplayColumn extends AbstractFileDisplayColumn
     private static final String POPUP_IMAGE_WIDTH = "popupImageWidth";
     private static final String POPUP_IMAGE_HEIGHT = "popupImageHeight";
 
+    private static final String UNSCALED = "auto";
+
     private MultiValuedMap<String, String> _properties;
     private String _thumbnailHeight;
     private String _popupHeight;
@@ -73,10 +75,10 @@ public class URLDisplayColumn extends AbstractFileDisplayColumn
             _popupWidth = _properties.get(POPUP_IMAGE_WIDTH).stream().findFirst().orElse(null);
 
             // if any of the sizes are blank, default to auto
-            if (_thumbnailHeight != null && StringUtils.isBlank(_thumbnailHeight)) _thumbnailHeight = "auto";
-            if (_thumbnailWidth != null && StringUtils.isBlank(_thumbnailWidth)) _thumbnailWidth = "auto";
-            if (_popupHeight != null && StringUtils.isBlank(_popupHeight)) _popupHeight = "auto";
-            if (_popupWidth != null && StringUtils.isBlank(_popupWidth)) _popupWidth = "auto";
+            if (_thumbnailHeight != null && StringUtils.isBlank(_thumbnailHeight)) _thumbnailHeight = UNSCALED;
+            if (_thumbnailWidth != null && StringUtils.isBlank(_thumbnailWidth)) _thumbnailWidth = UNSCALED;
+            if (_popupHeight != null && StringUtils.isBlank(_popupHeight)) _popupHeight = UNSCALED;
+            if (_popupWidth != null && StringUtils.isBlank(_popupWidth)) _popupWidth = UNSCALED;
         }
     }
 
@@ -156,7 +158,7 @@ public class URLDisplayColumn extends AbstractFileDisplayColumn
             if (_url != null || _fileIconUrl != null)
             {
                 StringBuilder sb = new StringBuilder();
-                boolean renderSize = (!"auto".equals(_thumbnailHeight)) && (!"auto".equals(_thumbnailWidth));
+                boolean renderSize = (!UNSCALED.equals(_thumbnailHeight)) && (!UNSCALED.equals(_thumbnailWidth));
 
                 String thumbnailUrl = _fileIconUrl != null ? ensureAbsoluteUrl(_ctx, _fileIconUrl) : ensureAbsoluteUrl(_ctx, _url);
                 sb.append("<img style=\"display:block; ");
@@ -164,12 +166,12 @@ public class URLDisplayColumn extends AbstractFileDisplayColumn
                 if (renderSize)
                 {
                     sb.append(_thumbnailWidth != null ? " width:" + _thumbnailWidth : " max-width:32px").append(";").
-                        append(_thumbnailHeight != null ? " height:" + _thumbnailHeight : " height:auto").append(";");
+                            append(_thumbnailHeight != null ? " height:" + _thumbnailHeight : " height:auto").append(";");
                 }
                 sb.append(" vertical-align:middle\"").
-                    append(" src=\"").append(PageFlowUtil.filter(thumbnailUrl)).append("\"").
-                    append(" title=\"").append(PageFlowUtil.filter(_displayName)).append("\"").
-                    append("/>");
+                        append(" src=\"").append(PageFlowUtil.filter(thumbnailUrl)).append("\"").
+                        append(" title=\"").append(PageFlowUtil.filter(_displayName)).append("\"").
+                        append("/>");
 
                 return sb.toString();
             }
@@ -185,7 +187,7 @@ public class URLDisplayColumn extends AbstractFileDisplayColumn
             if (_url != null || _fileIconUrl != null)
             {
                 StringBuilder sb = new StringBuilder();
-                boolean renderSize = (!"auto".equals(_popupHeight)) && (!"auto".equals(_popupWidth));
+                boolean renderSize = (!UNSCALED.equals(_popupHeight)) && (!UNSCALED.equals(_popupWidth));
 
                 String popupUrl = _popupIconUrl != null ? ensureAbsoluteUrl(_ctx, _popupIconUrl) : (_url != null ? ensureAbsoluteUrl(_ctx, _url) : null);
                 if (popupUrl != null)
@@ -194,11 +196,11 @@ public class URLDisplayColumn extends AbstractFileDisplayColumn
                     if (renderSize)
                     {
                         sb.append("style=\"").
-                            append(_popupWidth != null ? "width:" + _popupWidth : "max-width:300px").append(";").
-                            append(_popupHeight != null ? " height:" + _popupHeight : " height:auto").append("\"");
+                                append(_popupWidth != null ? "width:" + _popupWidth : "max-width:300px").append(";").
+                                append(_popupHeight != null ? " height:" + _popupHeight : " height:auto").append("\"");
                     }
                     sb.append(" src=\"").append(PageFlowUtil.filter(popupUrl)).
-                        append("\" />");
+                            append("\" />");
                 }
                 return sb.toString();
             }

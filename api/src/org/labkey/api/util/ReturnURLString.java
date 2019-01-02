@@ -17,11 +17,19 @@ package org.labkey.api.util;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ConvertHelper;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewServlet;
+
+import javax.servlet.http.HttpServletRequest;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
 
 
 /**
@@ -32,6 +40,11 @@ import org.labkey.api.view.ViewServlet;
  */
 public class ReturnURLString
 {
+    /** Name for experimental feature to control allowing open redirect behavior */
+    public static final String EXPERIMENTAL_ALLOW_OPEN_REDIRECTS = "AllowOpenRedirects";
+
+    private static final Logger LOG = Logger.getLogger(ReturnURLString.class);
+
     private final String _source;
 
     public static ReturnURLString EMPTY = new ReturnURLString("");
@@ -79,9 +92,60 @@ public class ReturnURLString
             }
         }
 
+        if (!isAllowableHost(s))
+        {
+            return null;
+        }
+
         return s;
     }
 
+    private static boolean isAllowableHost(String url)
+    {
+        // Issue 35986 - Disallow URLs that have a full host name for security reasons
+        try
+        {
+            URLHelper h = new URLHelper(url);
+            // We have a returnURL that includes a server host name
+            if (h.getHost() != null)
+            {
+                // Check if it matches the current server's preferred host name, per the base server URL setting
+                String allowedHost = null;
+                try
+                {
+                    allowedHost = new URL(AppProps.getInstance().getBaseServerUrl()).getHost();
+                }
+                catch (MalformedURLException ignored) {}
+
+                if (!h.getHost().equalsIgnoreCase(allowedHost))
+                {
+                    // Server host name that doesn't match, log and possibly reject based on config
+                    String logMessageDetails = "returnURL value: " + url;
+                    HttpServletRequest request = HttpView.currentRequest();
+                    if (request != null)
+                    {
+                        logMessageDetails += " from URL: " + request.getRequestURL() + " with referrer: " + request.getHeader("Referer");
+                    }
+
+                    if (!AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_ALLOW_OPEN_REDIRECTS))
+                    {
+                        LOG.warn("Rejected external host redirect " + logMessageDetails);
+                        ExceptionUtil.logExceptionToMothership(request, new IllegalArgumentException("Rejected open redirect URL: " + url), false);
+                        return false;
+                    }
+                    else
+                    {
+                        LOG.debug("Detected external host returnURL value, but allowing per experimental feature setting " + logMessageDetails);
+                    }
+                }
+            }
+        }
+        catch (URISyntaxException e)
+        {
+            return false;
+        }
+        return true;
+    }
 
     public boolean isEmpty()
     {

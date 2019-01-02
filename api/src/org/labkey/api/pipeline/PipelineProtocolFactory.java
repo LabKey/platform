@@ -18,6 +18,7 @@ package org.labkey.api.pipeline;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlOptions;
 import org.fhcrc.cpas.pipeline.protocol.xml.PipelineProtocolPropsDocument;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 
 import java.io.File;
@@ -115,13 +116,7 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
 
     public boolean isValidProtocolName(String name)
     {
-        for (int i = 0; i < name.length(); i++)
-        {
-            char ch = name.charAt(i);
-            if (!Character.isLetterOrDigit(ch) && ch != '_' && ch != ' ' && ch != '-')
-                return false;
-        }
-        return true;
+        return FileUtil.isLegalName(name);
     }
 
     public boolean exists(PipeRoot root, String name, boolean archived)

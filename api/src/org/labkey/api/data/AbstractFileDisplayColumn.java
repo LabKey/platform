@@ -59,18 +59,18 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
     protected abstract String getFileName(RenderContext ctx, Object value);
 
     protected abstract InputStream getFileContents(RenderContext ctx, Object value) throws FileNotFoundException;
-    
+
     protected void renderIconAndFilename(RenderContext ctx, Writer out, String filename, boolean link, boolean thumbnail) throws IOException
     {
-       renderIconAndFilename(ctx, out, filename, null, null, link, thumbnail);
+        renderIconAndFilename(ctx, out, filename, null, null, link, thumbnail);
     }
 
     protected boolean isImage(String filename)
     {
         return filename.toLowerCase().endsWith(".png")
-            || filename.toLowerCase().endsWith(".jpeg")
-            || filename.toLowerCase().endsWith(".jpg")
-            || filename.toLowerCase().endsWith(".gif");
+                || filename.toLowerCase().endsWith(".jpeg")
+                || filename.toLowerCase().endsWith(".jpg")
+                || filename.toLowerCase().endsWith(".gif");
     }
 
     protected void renderIconAndFilename(RenderContext ctx, Writer out, String filename, @Nullable String fileIconUrl, @Nullable String popupIconUrl, boolean link, boolean thumbnail) throws IOException
