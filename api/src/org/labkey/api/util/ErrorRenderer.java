@@ -64,7 +64,7 @@ public class ErrorRenderer
 
     public void renderStart(PrintWriter out)
     {
-        out.println("<table class=\"server-error\" cellpadding=4 style=\"width:100%; height:100%\"><tr><td style=\"background-color:#ffffff;\" valign=top align=left>");
+        out.println("<table class=\"server-error\" cellpadding=4 style=\"width:100%; height:100%\"><tr><td valign=top align=left>");
     }
 
     public void renderEnd(PrintWriter out)
