@@ -885,7 +885,7 @@ public class AssayManager implements AssayService
             Module miniassay = ModuleLoader.getInstance().getModule("miniassay");
 
             if (null != miniassay)
-                assertEquals("Assay providers from miniassay module", 1, PROVIDER_CACHE.getResourceMap(miniassay).size());
+                assertEquals("Assay providers from miniassay module", 2, PROVIDER_CACHE.getResourceMap(miniassay).size());
         }
     }
 }

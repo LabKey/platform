@@ -391,6 +391,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AdminConsole.addExperimentalFeatureFlag(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
                 "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false);
 
+        AdminConsole.addExperimentalFeatureFlag(ReturnURLString.EXPERIMENTAL_ALLOW_OPEN_REDIRECTS, "Allow Open Redirects",
+                "Accept all values for returnURL parameters, including those that refer to external web sites. This can lead to users trusting links that take them to malicious third-party sites", false);
+
         // test authentication provider implementations... dev mode only
         if (AppProps.getInstance().isDevMode())
         {

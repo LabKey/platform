@@ -22,6 +22,7 @@ import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ResultSetMetaDataWrapper;
 import org.labkey.api.data.RowTrackingResultSetWrapper;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.dialect.JdbcHelper;
@@ -338,12 +339,81 @@ public abstract class SasDialect extends SimpleSqlDialect
         }
     }
 
+    /**     /** SAS doesn't support transactions, so do a no-op transaction */
+    private static class SasTransaction implements DbScope.Transaction
+    {
+        private final boolean _shouldClose;
+        private final Connection _connection;
+
+        private SasTransaction(DbScope scope) throws SQLException
+        {
+            // Don't expect this ever be called for SAS with an active transaction, but useful for testing with other DB types
+            _shouldClose = !scope.isTransactionActive();
+            _connection = scope.getConnection();
+        }
+
+        @Override
+        @NotNull
+        public <T extends Runnable> T addCommitTask(@NotNull T runnable, @NotNull DbScope.CommitTaskOption firstOption, DbScope.CommitTaskOption... additionalOptions)
+        {
+            runnable.run();
+            return runnable;
+        }
+
+        @Override
+        public String getId()
+        {
+            return "-";
+        }
+
+        @Override
+        @NotNull
+        public Connection getConnection()
+        {
+            return _connection;
+        }
+
+        @Override
+        public void close()
+        {
+            if (_shouldClose)
+            {
+                try
+                {
+                    _connection.close();
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeSQLException(e);
+                }
+            }
+        }
+
+        @Override
+        public void commit()
+        {
+        }
+
+        @Override
+        public void commitAndKeepConnection()
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean isAborted()
+        {
+            return false;
+        }
+    }
+
 
     private static final TableResolver TABLE_RESOLVER = new StandardTableResolver() {
         @Override
         public JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope, @Nullable String schemaName, @Nullable String tableName) throws SQLException
         {
-            return new StandardJdbcMetaDataLocator(scope, schemaName, tableName)
+            // Issue 36340 - SAS doesn't support transactions, so use a no-op variant
+            return new StandardJdbcMetaDataLocator(scope, schemaName, tableName, new SasTransaction(scope))
             {
                 @Override
                 public String getCatalogName()
