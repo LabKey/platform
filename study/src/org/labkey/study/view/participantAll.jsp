@@ -690,7 +690,7 @@
         }
     }
 
-    if ((!AppProps.getInstance().isDevMode()) || AppProps.getInstance().isExperimentalFeatureEnabled(ReportService.EXPERIMENTAL_RENDER_DEPRECATED_CHART_VIEW))
+    if (AppProps.getInstance().isExperimentalFeatureEnabled(ReportService.EXPERIMENTAL_RENDER_DEPRECATED_CHART_VIEW))
     {
         for (Report report : legacyReports)
         {
