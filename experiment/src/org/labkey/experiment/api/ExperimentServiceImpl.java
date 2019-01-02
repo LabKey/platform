@@ -6732,7 +6732,15 @@ public class ExperimentServiceImpl implements ExperimentService
         prop.setDescription((String)obj.get("description"));
         if (!obj.isNull("dimension"))
             prop.setDimension((Boolean)obj.get("dimension"));
+        if (!obj.isNull("disableEditing"))
+            prop.setDisableEditing((Boolean)obj.get("disableEditing"));
+        if (!obj.isNull("excludeFromShifting"))
+            prop.setExcludeFromShifting((Boolean)obj.get("excludeFromShifting"));
+        if (!obj.isNull("facetingBehaviorType"))
+            prop.setFacetingBehaviorType(obj.getString("facetingBehaviorType"));
         prop.setFormat((String)obj.get("format"));
+        if (!obj.isNull("hidden"))
+            prop.setHidden((Boolean)obj.get("hidden"));
         prop.setImportAliases((String)obj.get("importAliases"));
         prop.setLabel((String)obj.get("label"));
         prop.setLookupContainer((String)obj.get("lookupContainer"));
@@ -6744,6 +6752,8 @@ public class ExperimentServiceImpl implements ExperimentService
             prop.setMvEnabled((Boolean)obj.get("mvEnabled"));
         prop.setName(obj.getString("name"));
         prop.setOntologyURI((String)obj.get("ontologyURI"));
+        if (!obj.isNull("phi"))
+            prop.setPHI((String)obj.get("phi"));
         if (!obj.isNull("propertyId"))
             prop.setPropertyId((Integer)obj.get("propertyId"));
         prop.setPropertyURI((String)obj.get("propertyURI"));
