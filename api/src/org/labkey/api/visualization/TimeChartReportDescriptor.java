@@ -83,17 +83,20 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
 
     private void convertSubjectPTIDs(JSONObject json, Map<String, String> alternateIdMap)
     {
-        JSONArray participantsFromJson = json.getJSONObject("subject").getJSONArray("values");
-        JSONArray transformedPTIDs = new JSONArray();
-
-            for (int i = 0; i < participantsFromJson.length(); i++)
+        JSONObject subjectJSON = json.getJSONObject("subject");
+        if (subjectJSON.has("values"))
+        {
+            JSONArray valuesJSON = subjectJSON.getJSONArray("values");
+            JSONArray transformedPTIDs = new JSONArray();
+            
+            for (int i = 0; i < valuesJSON.length(); i++)
             {
-                String altId = alternateIdMap.get(participantsFromJson.get(i));
-                if(altId != null)
-                    transformedPTIDs.put(altId);
+                if (alternateIdMap.containsKey(valuesJSON.getString(i)))
+                    transformedPTIDs.put(alternateIdMap.get(valuesJSON.getString(i)));
             }
 
-            json.getJSONObject("subject").put("values", transformedPTIDs);
+            subjectJSON.put("values", transformedPTIDs);
+        }
     }
 
     private void convertPTIDSInDimensions(JSONObject json, Map<String, String> alternateIdMap)
