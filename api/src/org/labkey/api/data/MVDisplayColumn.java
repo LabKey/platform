@@ -74,8 +74,8 @@ public class MVDisplayColumn extends DataColumn
 
             // If we have a raw value, include it in the popup
             String value = super.getFormattedValue(ctx);
-            if (value != null && !"".equals(value))
-                popupText += ("<p>The value as originally entered was: '" + value + "'.");
+            if (!"".equals(value))
+                popupText += ("<p>The value as originally entered was: '" + PageFlowUtil.filter(value) + "'.</p>");
 
             out.write("<font class=\"labkey-mv\">");
             out.write(PageFlowUtil.helpPopup("Missing Value Indicator: " + mvIndicator, popupText, true, h(mvIndicator)));

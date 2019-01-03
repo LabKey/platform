@@ -53,7 +53,7 @@ public class DataRegionSelection
     public static final String DATA_REGION_SELECTION_KEY = "dataRegionSelectionKey";
     private static final Object lock = new Object();
 
-    private static Set<String> getSet(ViewContext context, String key, boolean create)
+    private static Set<String> getSet(ViewContext context, @Nullable String key, boolean create)
     {
         if (key == null)
             key = getSelectionKeyFromRequest(context);
