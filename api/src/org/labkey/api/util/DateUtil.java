@@ -956,7 +956,17 @@ validNum:       {
         //return "d MMM yyyy HH:mm:ss";
         // MAB: I think this is better, shouldn't use text month in json format
         // strangely yyyy/MM/dd parses in more browsers than yyyy-MM-dd
-        return "yyyy/MM/dd HH:mm:ss";
+
+        // 1. added milliseconds (.SSS) to gap the discrepancy of milliseconds portion stored in database
+        // but not being used while checking for work during a remote ETL run as part of implementing Issue 35780.
+        // Without millisecond portion here, datetime comparision would show these datetimes as equals,
+        // ex: 2019/01/01 11:11:11.117 and 2019/01/01 11:11:11.399 - since milliseconds would be ignored, this would result in No Work.
+
+        // 2. Separately, adding .SSS to the existing string (yyyy/MM/dd HH:mm:ss) worked on Chrome (and MS Edge), but not on Firefox.
+        // Strangely, Firefox seem to adhere strictly to ECMA Specification of date string interchange format (i.e. date with
+        // hyphens instead of forward slashes) in this particular case with milliseconds. Hence had to modify the previous string from yyyy/MM/dd to yyyy-MM-dd.
+        // Chrome seem to behave as expected with this change (and so does MS Edge, but extensive testing has not been done on this browser).
+        return "yyyy-MM-dd HH:mm:ss.SSS";
     }
 
 
