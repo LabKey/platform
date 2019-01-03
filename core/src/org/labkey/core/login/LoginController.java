@@ -2110,6 +2110,7 @@ public class LoginController extends SpringActionController
     @SuppressWarnings("unused")
     @RequiresNoPermission
     @IgnoresTermsOfUse
+    @CSRF(CSRF.Method.NONE)
     public class VerifyTokenAction extends SimpleViewAction<TokenAuthenticationForm>
     {
         public ModelAndView getView(TokenAuthenticationForm form, BindException errors) throws Exception
