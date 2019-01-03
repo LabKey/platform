@@ -79,6 +79,7 @@
     DbSchema dbschema    = StudySchema.getInstance().getSchema();
     final JspWriter _out = out;
 
+    String outerDivId   = "outerDiv" + getRequestScopedUID();
     String divId        = "participantsDiv" + getRequestScopedUID();
     String listDivId    = "listDiv" + getRequestScopedUID();
     String groupsDivId  = "groupsDiv" + getRequestScopedUID();
@@ -93,9 +94,10 @@
     var first = true;
 
     var _urlTemplate = '<%= urlTemplate %>';
-    var _singularNoun = '<%= singularNoun %>';
-    var _pluralNoun = '<%= pluralNoun %>';
-    var _divId = '<%= divId %>';
+    var _singularNoun = <%= q(singularNoun) %>;
+    var _pluralNoun = <%= q(pluralNoun) %>;
+    var _divId = <%= q(divId) %>;
+    var _outerDivId = <%= q(outerDivId) %>;
 
     // filters
     var _filterSubstring;
@@ -274,18 +276,17 @@
         }
     %>];
     var _unenrolled = <%=unenrolledIndex%>;
-    <% int ptidsPerCol = Math.min(Math.max(20,groupMap.size()), Math.max(6, ptidMap.size()/6));%>
-    <% if (!bean.getWide()) {
-        ptidsPerCol = ptidMap.size()/2;
-    } %>
-    var _ptidPerCol = <%=ptidsPerCol%>;
     var _hasUnenrolledCohorts = <%=hasUnenrolledCohorts%>;
+
+    // set a default number of ptids per column, but we will calcualte this on render based on the webpart width
+    var MIN_PTIDS_PER_COL = 24, sumPtidLength = 0, avgPtidLength = 0;
 
     var h, i, ptid;
     for (i=0 ; i<_ptids.length ; i++)
     {
         ptid = _ptids[i];
         h = $h(ptid);
+        sumPtidLength += ptid.length;
         _ptids[i] = {
             index:i,
             ptid:ptid,
@@ -293,6 +294,7 @@
             urlParam: Ext4.Object.toQueryString({participantId: ptid})
         };
     }
+    avgPtidLength = _ptids.length > 0 ? sumPtidLength / _ptids.length : 0;
 
     function test(s, p)
     {
@@ -443,7 +445,7 @@
             cls : 'themed-panel iScroll',
             bodyStyle : 'overflow-x: hidden !important;',
             width : 260,
-            height : 350,
+            height : 500,
             autoScroll : true,
             normalWrap : true,
             allowAll  : true,
@@ -526,7 +528,7 @@
             target: ptidPanel,
             dynamic: false,
             minWidth: 260,
-            minHeight: 350,
+            minHeight: 500,
             listeners: {
                 resize: function(cmp, width) {
                     ptidPanel.getGroupPanel().setWidth(width - 10);
@@ -534,13 +536,6 @@
             }
         });
         <% } %>
-
-        function scrollHorizontal(evt) {
-            Ext4.get(<%=q(listDivId)%>).scroll((evt.getWheelDeltas().y > 0) ? 'r' : 'l', 20);
-            evt.stopEvent();
-        }
-
-        Ext4.get(<%=q(listDivId)%>).on(Ext4.supports.MouseWheel ? 'mousewheel' : 'DOMMouseScroll', scrollHorizontal);
     }
 
 
@@ -554,40 +549,52 @@
         }
         first = false;
 
-        var html = [];
-        html.push('<table><tr><td valign="top"><ul class="subjectlist">');
-        var count = 0;
+        // get the filtered ptid list
+        var filteredPtids = [];
         var showEnrolledText = _hasUnenrolledCohorts;
-
-        for (var subjectIndex = 0; subjectIndex < _ptids.length; subjectIndex++)
-        {
+        for (var subjectIndex = 0; subjectIndex < _ptids.length; subjectIndex++) {
             var p = _ptids[subjectIndex];
-            if ((!_filterSubstringMap || test(_filterSubstringMap,subjectIndex)) && (!_filterGroupMap || _filterGroupMap[p.ptid]))
-            {
+
+            if ((!_filterSubstringMap || test(_filterSubstringMap,subjectIndex)) && (!_filterGroupMap || _filterGroupMap[p.ptid])) {
                 // For the wide participant list, we have a _filterGroupMap we can use.  For the narrow participant list
                 // there is no group filter but we still only want to show enrolled participants so do the filter manually.
-                if (_isWide || isParticipantEnrolled(subjectIndex))
-                {
-                    if (++count > 1 && count % _ptidPerCol == 1)
-                        html.push('</ul></td><td valign="top"><ul class="subjectlist">');
-                    html.push('<li class="ptid" index=' + subjectIndex + ' ptid="' + p.html + '" style="white-space:nowrap;"><a href="' + _urlTemplate + p.urlParam + '">' + (LABKEY.demoMode?LABKEY.id(p.ptid):p.html) + '</a></li>\n');
+                if (_isWide || isParticipantEnrolled(subjectIndex)) {
+                    filteredPtids.push(p);
                 }
 
-                if (_isWide && showEnrolledText)
-                {
+                if (_isWide && showEnrolledText) {
                     showEnrolledText = isParticipantEnrolled(subjectIndex);
                 }
             }
         }
 
+        // determine the number of ptids per column in the html based on the filtered ptid set
+        var ptidsPerCol = getPtidsPerColumn(filteredPtids);
+
+        // update the ptid list html
+        var html = [];
+        html.push('<table><tr><td valign="top"><ul class="subjectlist">');
+        for (var subjectIndex = 0; subjectIndex < filteredPtids.length; subjectIndex++)  {
+            var p = filteredPtids[subjectIndex];
+
+            if (subjectIndex > 0 && subjectIndex % ptidsPerCol === 0) {
+                html.push('</ul></td><td valign="top"><ul class="subjectlist">');
+            }
+
+            html.push('<li class="ptid" index=' + subjectIndex + ' ptid="' + p.html + '" style="white-space:nowrap;">');
+            html.push('<a href="' + _urlTemplate + p.urlParam + '">' + (LABKEY.demoMode?LABKEY.id(p.ptid):p.html) + '</a>');
+            html.push('</li>\n');
+        }
         html.push('</ul></td></tr></table>');
-        html.push('<div style="clear:both;">');
-        var message = "";
+        Ext4.get(<%=q(listDivId)%>).update(html.join(''));
+
         // if we have no unenrolled cohorts in the study, then no need to call out that a participant belongs to an enrolled cohort
         // if the filter only includes enrolled participants, then use 'enrolled' to describe them
         // if the filter includes both enrolled and unenrolled cohorts, then don't use 'enrolled'
         // if there are no participants because they all belong to unenrolled cohorts, then say "no matching enrolled..."
+        var message = "";
         var enrolledText = showEnrolledText ? " enrolled " : " ";
+        var count = filteredPtids.length;
         if (count > 0)
         {
             if (_filterSubstringMap || _filterGroupMap || _hasUnenrolledCohorts)
@@ -601,9 +608,6 @@
             else
                 message = 'No matching' + enrolledText + _pluralNoun + '.';
         }
-        html.push('</div>');
-
-        Ext4.get(<%=q(listDivId)%>).update(html.join(''));
         Ext4.get(<%=q(divId + ".status")%>).update(message);
     }
 
@@ -648,6 +652,11 @@
         return _unenrolled < 0 || !testGroupPtid(_unenrolled,subjectIndex);
     }
 
+    function getPtidsPerColumn(ptidList) {
+        var renderWidth = Ext4.get(_outerDivId).getWidth() - 275;
+        var numColumns = Math.floor(renderWidth / (avgPtidLength * 9 + 15));
+        return <%=!bean.getWide()%> ? Math.ceil(ptidList.length / 2) : Math.max(MIN_PTIDS_PER_COL, Math.ceil(ptidList.length / numColumns));
+    }
 
     function render()
     {
@@ -708,7 +717,7 @@
         // we don't want ptidDiv to change height as it filters, so set height explicitly after first layout
         ptidDiv.setHeight(ptidDiv.getHeight());
 
-        // the groups panel starts with a height of 350, but make that bigger to match the ptid div
+        // the groups panel starts with a height of 500, but make that bigger to match the ptid div
         var groupsPanel = Ext4.ComponentQuery.query('participantfilter[id=<%=(groupsPanelId)%>]');
         if (groupsPanel.length == 1 && groupsPanel[0].getHeight() < ptidDiv.getHeight())
             groupsPanel[0].setHeight(ptidDiv.getHeight());
@@ -721,7 +730,7 @@
 Ext4.onReady(<%=viewObject%>.render, <%=viewObject%>);
 </script>
 
-<div style="">
+<div id=<%= q(outerDivId) %>>
     <table id=<%= q(divId) %> class="lk-participants-list-table">
         <tr>
             <% if (bean.getWide()) { %>
@@ -730,13 +739,12 @@ Ext4.onReady(<%=viewObject%>.render, <%=viewObject%>);
             </td>
             <% } %>
             <td style="padding-left: 10px;" valign=top class="iScroll">
-                <table><tr>
-                    <td><div style="" >Filter:&nbsp;<input id="<%=divId%>.filter" type="text" size="15"></div></td>
-                    <%--<td>&nbsp;<%if (hasCohorts){%><input type=checkbox>&nbsp;by&nbsp;cohort (NYI)<%}%></td>--%>
-                </tr></table>
-                <hr style="height:1px; border:0;">
-                <div><span id="<%=divId%>.status">Loading...</span></div>
-                <div style="overflow-x:auto; min-height:<%=Math.round(1.2*(ptidsPerCol+3))%>em;" id="<%= listDivId %>"></div>
+                <div>
+                    Filter:&nbsp;<input id="<%=divId%>.filter" type="text" size="15" style="margin: 0 10px 10px 0;">
+                    <%= !bean.getWide() ? "<br/>" : "" %>
+                    <span id="<%=divId%>.status" style="margin-bottom: 10px;">Loading...</span>
+                </div>
+                <div style="overflow-y:auto; height: 470px;" id="<%= listDivId %>"></div>
             </td>
         </tr>
     </table>
