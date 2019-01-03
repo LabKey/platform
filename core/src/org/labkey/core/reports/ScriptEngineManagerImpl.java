@@ -44,7 +44,7 @@ import org.labkey.api.reports.ExternalScriptEngineFactory;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.reports.RDockerScriptEngineFactory;
 import org.labkey.api.reports.RScriptEngineFactory;
-import org.labkey.api.reports.RServeNotEnabledException;
+import org.labkey.api.reports.RemoteRNotEnabledException;
 import org.labkey.api.reports.RserveScriptEngineFactory;
 import org.labkey.api.rstudio.RStudioService;
 import org.labkey.api.script.RhinoScriptEngine;
@@ -56,7 +56,6 @@ import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ConfigurationException;
 
-import javax.management.relation.RelationServiceNotRegisteredException;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
@@ -211,12 +210,12 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
                     return new RDockerScriptEngineFactory(def).getScriptEngine();
                 else if (def.isRemote())
                 {
-                    if (PremiumService.get().isRServeEnabled())
+                    if (PremiumService.get().isRemoteREnabled())
                         return new RserveScriptEngineFactory(def).getScriptEngine();
                     else
                     {
                         LOG.info(String.format("Remote R serve engine [%1$s] requested, but premium module not available/enabled.", def.getName() ));
-                        throw new RServeNotEnabledException(def);
+                        throw new RemoteRNotEnabledException(def);
                     }
                 }
                 else
@@ -477,7 +476,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
 
         if (type == ExternalScriptEngineDefinition.Type.R)
         {
-            engines = engines.stream().filter(e -> !e.isRemote() || PremiumService.get().isRServeEnabled()).collect(Collectors.toList());
+            engines = engines.stream().filter(e -> !e.isRemote() || PremiumService.get().isRemoteREnabled()).collect(Collectors.toList());
         }
 
         return engines;
@@ -526,7 +525,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
                 isDocker = Boolean.valueOf(def.get(Props.docker.name()));
             try
             {
-                if (!isRemote || PremiumService.get().isRServeEnabled() || isDocker)
+                if (!isRemote || PremiumService.get().isRemoteREnabled() || isDocker)
                     engines.add(createDefinition(def, false));
             }
             catch (Exception e)

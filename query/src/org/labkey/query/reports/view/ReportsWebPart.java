@@ -22,13 +22,11 @@ import org.labkey.api.premium.PremiumService;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.ChartReport;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.reports.report.view.RenderBackgroundRReportView;
 import org.labkey.api.reports.report.view.ReportUtil;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.*;
 
 import java.io.PrintWriter;
@@ -90,7 +88,7 @@ public class ReportsWebPart extends WebPartView
         if (properties.containsKey(Report.renderParam.showSection.name()))
             getViewContext().put(Report.renderParam.showSection.name(), properties.get(Report.renderParam.showSection.name()));
 
-        if (PremiumService.get().isRServeEnabled())
+        if (PremiumService.get().isRemoteREnabled())
         {
             if (properties.containsKey(Report.renderParam.reportSessionId.name()))
                 getViewContext().put(Report.renderParam.reportSessionId.name(), properties.get(Report.renderParam.reportSessionId.name()));

@@ -40,7 +40,7 @@
     }
 %>
 <%
-    boolean isRemoteEnabled = PremiumService.get().isRServeEnabled();
+    boolean isRemoteEnabled = PremiumService.get().isRemoteREnabled();
     boolean isRDockerAvailable = false;
     if (AppProps.getInstance().isExperimentalFeatureEnabled(RStudioService.R_DOCKER_SANDBOX))
     {

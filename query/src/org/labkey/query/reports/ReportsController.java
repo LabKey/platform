@@ -74,6 +74,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.RConnectionHolder;
+import org.labkey.api.reports.RemoteRNotEnabledException;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportContentEmailManager;
 import org.labkey.api.reports.ReportService;
@@ -119,7 +120,6 @@ import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.reports.CrosstabReport;
@@ -548,7 +548,7 @@ public class ReportsController extends SpringActionController
             // create a unique key for this session.  Note that a report session id can never
             // span sessions but does span multiple requests within a session
             //
-            if (PremiumService.get().isRServeEnabled())
+            if (PremiumService.get().isRemoteREnabled())
             {
                 reportSessionId = ReportUtil.createReportSessionId();
                 getViewContext().getSession().setAttribute(reportSessionId,
@@ -559,7 +559,7 @@ public class ReportsController extends SpringActionController
                 //
                 // consider: don't throw an exception
                 //
-                throw new ScriptException("Connecting to a remote R server is a Premium feature and requires the premium module be installed.");
+                throw new ScriptException(RemoteRNotEnabledException.BASE_MESSAGE);
             }
 
             return new ApiSimpleResponse(Report.renderParam.reportSessionId.name(), reportSessionId);
@@ -586,7 +586,7 @@ public class ReportsController extends SpringActionController
     {
         public ApiResponse execute(DeleteSessionForm form , BindException errors) throws Exception
         {
-            if (PremiumService.get().isRServeEnabled())
+            if (PremiumService.get().isRemoteREnabled())
             {
                 String reportSessionId = form.getReportSessionId();
 
@@ -615,7 +615,7 @@ public class ReportsController extends SpringActionController
             }
             else
             {
-                throw new ScriptException("Connecting to a remote R server is a Premium feature and requires the premium module be installed.");
+                throw new ScriptException(RemoteRNotEnabledException.BASE_MESSAGE);
             }
 
             return new ApiSimpleResponse("success", true);
@@ -755,7 +755,7 @@ public class ReportsController extends SpringActionController
             //
             // used a shared sesssion if specfied and the feature is turned on
             //
-            if (PremiumService.get().isRServeEnabled())
+            if (PremiumService.get().isRemoteREnabled())
             {
                 getViewContext().put(Report.renderParam.reportSessionId.name(), reportSessionId);
             }
@@ -774,7 +774,7 @@ public class ReportsController extends SpringActionController
             //
             // we must be using Rserve for this
             //
-            if (PremiumService.get().isRServeEnabled())
+            if (PremiumService.get().isRemoteREnabled())
             {
                 try
                 {
@@ -793,7 +793,7 @@ public class ReportsController extends SpringActionController
             }
             else
             {
-                throw new ScriptException("Connecting to a remote R server is a Premium feature and requires the premium module be installed.");
+                throw new ScriptException(RemoteRNotEnabledException.BASE_MESSAGE);
             }
 
             return scriptOutputs;
@@ -873,7 +873,7 @@ public class ReportsController extends SpringActionController
         {
             ArrayList<ReportSession> outputReportSessions = new ArrayList<>();
 
-            if (PremiumService.get().isRServeEnabled())
+            if (PremiumService.get().isRemoteREnabled())
             {
                 synchronized (RConnectionHolder.getReportSessions())
                 {
@@ -895,7 +895,7 @@ public class ReportsController extends SpringActionController
                 //
                 // consider: don't throw an exception
                 //
-                throw new ScriptException("Connecting to a remote R server is a Premium feature and requires the premium module be installed.");
+                throw new ScriptException(RemoteRNotEnabledException.BASE_MESSAGE);
             }
 
             ApiSimpleResponse response = new ApiSimpleResponse();

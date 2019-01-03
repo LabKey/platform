@@ -161,7 +161,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
             // since we allow both R and Rserve engines now, ask for Rserve if we are using the ScriptEngineManagerImpl and
             // Rserve has been enabled
             //
-            if (PremiumService.get().isRServeEnabled())
+            if (PremiumService.get().isRemoteREnabled())
             {
                 engine = mgr.getEngineByExtension(c, extension, true);
             }

@@ -2151,7 +2151,7 @@ public class CoreController extends SpringActionController
                     ExternalScriptEngineDefinition def = ((ExternalScriptEngineFactory)factory).getDefinition();
 
                     //Skip remote engines if Premium module isn't available.   //TODO: should this be further qualified with engine type?
-                    if (def.isRemote() && !PremiumService.get().isRServeEnabled())
+                    if (def.isRemote() && !PremiumService.get().isRemoteREnabled())
                         continue;
 
                     record.put("rowId", def.getRowId());
