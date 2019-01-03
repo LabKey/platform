@@ -559,7 +559,7 @@ public class ReportsController extends SpringActionController
                 //
                 // consider: don't throw an exception
                 //
-                throw new ScriptException("This feature requires that the 'Rserve Reports' experimental feature be turned on");
+                throw new ScriptException("Connecting to a remote R server is a Premium feature and requires the premium module be installed.");
             }
 
             return new ApiSimpleResponse(Report.renderParam.reportSessionId.name(), reportSessionId);
@@ -615,7 +615,7 @@ public class ReportsController extends SpringActionController
             }
             else
             {
-                throw new ScriptException("This feature requires that the 'Rserve Reports' experimental feature be turned on");
+                throw new ScriptException("Connecting to a remote R server is a Premium feature and requires the premium module be installed.");
             }
 
             return new ApiSimpleResponse("success", true);
@@ -793,7 +793,7 @@ public class ReportsController extends SpringActionController
             }
             else
             {
-                throw new ScriptException("Executing a function requires that the 'Rserve Reports' experimental feature be turned on");
+                throw new ScriptException("Connecting to a remote R server is a Premium feature and requires the premium module be installed.");
             }
 
             return scriptOutputs;
@@ -895,7 +895,7 @@ public class ReportsController extends SpringActionController
                 //
                 // consider: don't throw an exception
                 //
-                throw new ScriptException("This feature requires that the 'Rserve Reports' experimental feature be turned on");
+                throw new ScriptException("Connecting to a remote R server is a Premium feature and requires the premium module be installed.");
             }
 
             ApiSimpleResponse response = new ApiSimpleResponse();
