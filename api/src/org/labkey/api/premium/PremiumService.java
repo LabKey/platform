@@ -51,7 +51,7 @@ public interface PremiumService
         ServiceRegistry.get().registerService(PremiumService.class, instance);
     }
 
-    boolean isRServeEnabled();
+    boolean isRemoteREnabled();
 
     interface AntiVirusProvider
     {
@@ -85,7 +85,7 @@ public interface PremiumService
         public void registerAntiVirusProvider(AntiVirusProvider avp) {}
 
         @Override
-        public boolean isRServeEnabled()
+        public boolean isRemoteREnabled()
         {
             return false;
         }

@@ -1253,7 +1253,7 @@ api/src/org/labkey/api/reports/RDockerScriptEngine.java -text
 api/src/org/labkey/api/reports/RDockerScriptEngineFactory.java -text
 api/src/org/labkey/api/reports/RScriptEngine.java -text
 api/src/org/labkey/api/reports/RScriptEngineFactory.java -text
-api/src/org/labkey/api/reports/RServeNotEnabledException.java -text
+api/src/org/labkey/api/reports/RemoteRNotEnabledException.java -text
 api/src/org/labkey/api/reports/Report.java -text
 api/src/org/labkey/api/reports/ReportContentEmailManager.java -text
 api/src/org/labkey/api/reports/ReportService.java -text
