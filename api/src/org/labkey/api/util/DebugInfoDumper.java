@@ -32,6 +32,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.nio.file.StandardWatchEventKinds;
+import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Map;
@@ -233,9 +234,11 @@ public class DebugInfoDumper
     {
         log.debug("*********************************************");
         log.debug("Starting thread dump - " + LocalDateTime.now().toString());
-        log.debug("Heap usage at " +
-                FileUtils.byteCountToDisplaySize(ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getUsed()) + " from a total of " +
-                FileUtils.byteCountToDisplaySize(ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getMax()));
+        long used = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getUsed();
+        long max = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getMax();
+        log.debug("Heap usage at " + DecimalFormat.getPercentInstance().format(((double)used / (double)max)) + " - " +
+                FileUtils.byteCountToDisplaySize(used) + " from a max of " +
+                FileUtils.byteCountToDisplaySize(max) + " (" + DecimalFormat.getInstance().format(used) + " / " + DecimalFormat.getInstance().format(max) + " bytes)");
         log.debug("*********************************************");
         Map<Thread,StackTraceElement[]> threads = Thread.getAllStackTraces();
         for (Map.Entry<Thread, StackTraceElement[]> threadEntry : threads.entrySet())
