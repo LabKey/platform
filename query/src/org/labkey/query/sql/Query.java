@@ -156,6 +156,7 @@ public class Query
     private Map<String, TableType> _metadataTableMap = null;
     private QueryRelation _withFirstTerm = null;
     private boolean _parsingWith = false;
+    private boolean _allowDuplicateColumns = false;
 
     public Query(@NotNull QuerySchema schema)
     {
@@ -1013,6 +1014,16 @@ public class Query
     public void setMetadataTableMap(Map<String, TableType> metadataTableMap)
     {
         _metadataTableMap = metadataTableMap;
+    }
+
+    public void setAllowDuplicateColumns(boolean allow)
+    {
+        _allowDuplicateColumns = allow;
+    }
+
+    public boolean isAllowDuplicateColumns()
+    {
+        return _allowDuplicateColumns;
     }
 
     @Nullable

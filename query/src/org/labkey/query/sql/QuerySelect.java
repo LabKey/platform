@@ -440,7 +440,26 @@ groupByLoop:
             if (null == column._key)
                 column._key = new FieldKey(null,name);
             if (fieldKeys.containsKey(column._key))
-                parseError("Duplicate column '" + column.getName() + "'", column.getField());
+            {
+                if (_query.isAllowDuplicateColumns())
+                {
+                    // Fabricate a unique name for this duplicate column
+                    int i = 1;
+                    FieldKey parent = column._key.getParent();
+                    String n = column._key.getName();
+                    FieldKey uniqueKey;
+                    do
+                    {
+                        uniqueKey = new FieldKey(parent, n + "_" + i++);
+                    }
+                    while (fieldKeys.containsKey(uniqueKey));
+                    column._key = uniqueKey;
+                }
+                else
+                {
+                    parseError("Duplicate column '" + column.getName() + "'", column.getField());
+                }
+            }
             fieldKeys.put(column._key, column._key);
         }
         for (SelectColumn column : columnList)

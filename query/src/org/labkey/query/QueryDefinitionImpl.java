@@ -434,19 +434,20 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     public Query getQuery(@NotNull QuerySchema schema, List<QueryException> errors, Query parent, boolean includeMetadata)
     {
-        return getQuery(schema, errors, parent, includeMetadata, false);
+        return getQuery(schema, errors, parent, includeMetadata, false, false);
     }
     /*
      * I find it very strange that only the xml errors get added to the "errors" list, while
      * the parse errors remain in the getParseErrors() list
      */
-    public Query getQuery(@NotNull QuerySchema schema, List<QueryException> errors, Query parent, boolean includeMetadata, boolean skipSuggestedColumns)
+    public Query getQuery(@NotNull QuerySchema schema, List<QueryException> errors, Query parent, boolean includeMetadata, boolean skipSuggestedColumns, boolean allowDuplicateColumns)
     {
         Query query = new Query(schema, parent);
 
         query.setName(getSchemaName() + "." + getName());
         query.setContainerFilter(getContainerFilter());
         query.setMetadataTableMap(_metadataTableMap);
+        query.setAllowDuplicateColumns(allowDuplicateColumns);
         String sql = getSql();
         if (sql != null)
         {
@@ -513,13 +514,15 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     }
 
     @Nullable
+    @Override
     public TableInfo getTable(@NotNull UserSchema schema, @Nullable List<QueryException> errors, boolean includeMetadata)
     {
-        return getTable(schema, errors, includeMetadata, false);
+        return getTable(schema, errors, includeMetadata, false, false);
     }
 
     @Nullable
-    public TableInfo getTable(@NotNull UserSchema schema, @Nullable List<QueryException> errors, boolean includeMetadata, boolean skipSuggestedColumns)
+    @Override
+    public TableInfo getTable(@NotNull UserSchema schema, @Nullable List<QueryException> errors, boolean includeMetadata, boolean skipSuggestedColumns, boolean allowDuplicateColumns)
     {
         if (_useCache)
         {
@@ -537,7 +540,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                 TableInfo table = _cache.get(key);
                 if (table == null)
                 {
-                    table = createTable(schema, errors, includeMetadata, null, skipSuggestedColumns);
+                    table = createTable(schema, errors, includeMetadata, null, skipSuggestedColumns, allowDuplicateColumns);
 
                     if (null == table)
                         return null;
@@ -564,14 +567,14 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     @Nullable
     public TableInfo createTable(@NotNull UserSchema schema, @Nullable List<QueryException> errors, boolean includeMetadata, @Nullable Query query)
     {
-        return createTable(schema, errors, includeMetadata, query, false);
+        return createTable(schema, errors, includeMetadata, query, false, false);
     }
 
     /**
      * @param query a Query object to reuse, if available. Otherwise, a new one will be created behind the scenes
      */
     @Nullable
-    public TableInfo createTable(@NotNull UserSchema schema, @Nullable List<QueryException> errors, boolean includeMetadata, @Nullable Query query, boolean skipSuggestedColumns)
+    public TableInfo createTable(@NotNull UserSchema schema, @Nullable List<QueryException> errors, boolean includeMetadata, @Nullable Query query, boolean skipSuggestedColumns, boolean allowDuplicateColumns)
     {
         if (errors == null)
         {
@@ -579,7 +582,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         }
         if (query == null)
         {
-            query = getQuery(schema, errors, null, includeMetadata, skipSuggestedColumns);
+            query = getQuery(schema, errors, null, includeMetadata, skipSuggestedColumns, allowDuplicateColumns);
         }
         TableInfo ret = query.getTableInfo();
         if (null != ret)
