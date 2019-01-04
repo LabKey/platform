@@ -116,6 +116,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.FileSystemException;
+import java.nio.file.Files;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -363,6 +364,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
+    @Override
     public String escapeTerm(String term)
     {
         if (StringUtils.isEmpty(term))
@@ -381,6 +383,20 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
+    @Override
+    public void deleteIndex()
+    {
+        assert !_indexManager.isReal();
+
+        File indexDir = SearchPropertyManager.getIndexDirectory();
+
+        if (indexDir.exists())
+            FileUtil.deleteDir(indexDir);
+
+        clearLastIndexed();
+    }
+
+    @Override
     public void clearIndex()
     {
         boolean serviceStarted = _indexManager.isReal();

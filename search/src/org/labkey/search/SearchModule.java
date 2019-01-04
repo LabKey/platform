@@ -64,7 +64,7 @@ public class SearchModule extends DefaultModule
 
     public double getVersion()
     {
-        return 18.30;
+        return 18.31;
     }
 
     public boolean hasScripts()
@@ -130,37 +130,6 @@ public class SearchModule extends DefaultModule
             ss.addSearchCategory(UmlsController.umlsCategory);
             AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "full-text search", new ActionURL(SearchController.AdminAction.class, null));
 
-            // Update the version number below to force an upgrade of the index to the latest format. This is used when we upgrade Lucene (the indexing library) to a new version.
-            final boolean upgradeIndex = (!moduleContext.isNewInstall() && moduleContext.getOriginalVersion() < 18.30);
-
-            // Update the version number below to force a clear and rebuild of the index. This is used when we change our indexing content or methodology.
-            final boolean clearIndex = (!moduleContext.isNewInstall() && moduleContext.getOriginalVersion() < 17.21);
-
-            // don't upgrade or clear the index until all the modules are done starting up
-            ContextListener.addStartupListener(new StartupListener()
-            {
-                @Override
-                public String getName()
-                {
-                    return "Search Service";
-                }
-
-                public void moduleStartupComplete(ServletContext servletContext)
-                {
-                    if (upgradeIndex)
-                    {
-                        // Must call upgradeIndex() before we start the SearchService
-                        ss.upgradeIndex();
-                    }
-
-                    if (clearIndex)
-                    {
-                        // Legal to call clear() before we start the SearchService
-                        ss.clear();
-                    }
-                }
-            });
-
             CacheManager.addListener(() -> {
                 Logger.getLogger(SearchService.class).info("Purging SearchService queues");
                 ss.purgeQueues();
@@ -191,13 +160,13 @@ public class SearchModule extends DefaultModule
     @Override
     public void afterUpdate(ModuleContext moduleContext)
     {
-        // we want to clear the last indexed time on all documents so that failed attempts can be tried again
+        // After every upgrade, delete the index and clear the last indexed time on all documents to rebuild the entire index, #35674
         final StartupListener l = new StartupListener()
         {
             @Override
             public String getName()
             {
-                return "Search Service: clear indexes";
+                return "Search Service: delete index";
             }
 
             public void moduleStartupComplete(ServletContext servletContext)
@@ -205,7 +174,7 @@ public class SearchModule extends DefaultModule
                 SearchService ss = SearchService.get();
 
                 if (null != ss)
-                    ss.clearLastIndexed();
+                    ss.deleteIndex();
             }
         };
         ContextListener.addStartupListener(l);

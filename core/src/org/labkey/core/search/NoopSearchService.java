@@ -244,9 +244,14 @@ public class NoopSearchService implements SearchService
     }
 
     @Override
-    public @Nullable SearchHit find(String docId) throws IOException
+    public @Nullable SearchHit find(String docId)
     {
         return null;
+    }
+
+    @Override
+    public void deleteIndex()
+    {
     }
 
     @Override
