@@ -355,8 +355,12 @@ public interface SearchService
 
     void deleteContainer(String id);
 
-    void clear();                // delete index and reset lastIndexed values. must be callable before (and after) start() has been called.
+    void deleteIndex();          // delete the index directory and reset lastIndexed values. must be called before start() has been called.
+    void clear();                // clear index and reset lastIndexed values. must be callable before (and after) start() has been called.
+
+    @Deprecated // Not used... after testing deleteIndex(), should remove this and lucene-backward-codecs.jar
     void upgradeIndex();         // upgrade to latest format. this must be called before the SearchService is started.
+
     void clearLastIndexed();     // just reset lastIndexed values. must be callable before (and after) start() has been called.
     void maintenance();
 
