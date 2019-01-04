@@ -16,6 +16,7 @@
 package org.labkey.test.tests.study;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.simple.JSONObject;
@@ -23,7 +24,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.labkey.api.util.Pair;
 import org.labkey.remoteapi.CommandException;
 import org.labkey.remoteapi.CommandResponse;
 import org.labkey.remoteapi.Connection;
@@ -95,12 +95,12 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
         // verify dataset and specimen row counts on delete multiple visits page
         DeleteMultipleVisitsPage deleteMultipleVisitsPage = goToDeleteMultipleVisits();
         Map<String, Pair<Integer, Integer>> datasetVisitCounts = new HashMap<>();
-        datasetVisitCounts.put("1 week Post-V#1", new Pair<>(7, 119));
-        datasetVisitCounts.put("2 week Post-V#1", new Pair<>(33, 2));
-        datasetVisitCounts.put("411.0 - 491.0", new Pair<>(15, 0));
-        datasetVisitCounts.put("3 week Post-V#1", new Pair<>(6, 12));
-        datasetVisitCounts.put("4 week Post-V#1", new Pair<>(17, 50));
-        datasetVisitCounts.put("1 week Post-V#2", new Pair<>(3, 2));
+        datasetVisitCounts.put("1 week Post-V#1", Pair.of(7, 119));
+        datasetVisitCounts.put("2 week Post-V#1", Pair.of(33, 2));
+        datasetVisitCounts.put("411.0 - 491.0", Pair.of(15, 0));
+        datasetVisitCounts.put("3 week Post-V#1", Pair.of(6, 12));
+        datasetVisitCounts.put("4 week Post-V#1", Pair.of(17, 50));
+        datasetVisitCounts.put("1 week Post-V#2", Pair.of(3, 2));
         verifyDeleteVisitDataCounts(datasetVisitCounts);
 
         // verify error message for no visit selection

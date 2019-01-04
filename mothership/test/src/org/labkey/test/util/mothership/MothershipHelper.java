@@ -15,8 +15,8 @@
  */
 package org.labkey.test.util.mothership;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.util.Pair;
 import org.labkey.remoteapi.CommandException;
 import org.labkey.remoteapi.Connection;
 import org.labkey.remoteapi.PostCommand;
@@ -214,7 +214,7 @@ public class MothershipHelper
         List<Pair<TestActions.ExceptionActions, String>> actionsWithMessages = new ArrayList<>();
         for (TestActions.ExceptionActions action : actions)
         {
-            actionsWithMessages.add(new Pair<>(action, null));
+            actionsWithMessages.add(Pair.of(action, null));
         }
         return triggerExceptions(actionsWithMessages);
     }

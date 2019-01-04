@@ -15,12 +15,12 @@
  */
 package org.labkey.test.tests.mothership;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.labkey.api.util.Pair;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.Locators;
@@ -223,8 +223,8 @@ public class MothershipTest extends BaseWebDriverTest
     public void testCombiningSimilarExceptions()
     {
         List<Pair<ExceptionActions, String>> actions = new ArrayList<>();
-        actions.add(new Pair<>(ExceptionActions.multiException, "NPE"));
-        actions.add(new Pair<>(ExceptionActions.multiException, "NPE2"));
+        actions.add(Pair.of(ExceptionActions.multiException, "NPE"));
+        actions.add(Pair.of(ExceptionActions.multiException, "NPE2"));
 
         List<Integer> exceptionIds = _mothershipHelper.triggerExceptions(actions);
         assertEquals("Should group same exception type from same action", exceptionIds.get(0), exceptionIds.get(1));
@@ -234,8 +234,8 @@ public class MothershipTest extends BaseWebDriverTest
     public void testNotCombiningDifferentExceptionTypes()
     {
         List<Pair<ExceptionActions, String>> actions = new ArrayList<>();
-        actions.add(new Pair<>(ExceptionActions.multiException, "NPE"));
-        actions.add(new Pair<>(ExceptionActions.multiException, "ISE"));
+        actions.add(Pair.of(ExceptionActions.multiException, "NPE"));
+        actions.add(Pair.of(ExceptionActions.multiException, "ISE"));
 
         List<Integer> exceptionIds = _mothershipHelper.triggerExceptions(actions);
         assertNotEquals("Should not group different exception types", exceptionIds.get(0), exceptionIds.get(1));
