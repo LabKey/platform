@@ -110,16 +110,6 @@ abstract public class PipelineJob extends Job implements Serializable
         return Logger.getLogger(PipelineJob.class.getName() + ".." + clazz.getName());
     }
 
-    public boolean hasJacksonSerialization()
-    {
-        return true;
-    }
-
-    public static boolean isSerializedJson(String serialized)
-    {
-        return !StringUtils.startsWith(serialized, "<");
-    }
-
     public RecordedActionSet getActionSet()
     {
         return _actionSet;
@@ -1833,9 +1823,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public static String serializeJob(PipelineJob job, boolean ensureDeserialize)
     {
-        return job.hasJacksonSerialization() ?
-                PipelineJobService.get().getJobStore().serializeToJSON(job, ensureDeserialize) :
-                PipelineJobService.get().getJobStore().toXML(job);
+        return PipelineJobService.get().getJobStore().serializeToJSON(job, ensureDeserialize);
     }
 
     public static String getClassNameFromJson(String serialized)
@@ -1854,25 +1842,20 @@ abstract public class PipelineJob extends Job implements Serializable
     @Nullable
     public static PipelineJob deserializeJob(@NotNull String serialized)
     {
-        if (PipelineJob.isSerializedJson(serialized))
+        try
         {
-            try
-            {
-                String className = PipelineJob.getClassNameFromJson(serialized);
-                Object job = PipelineJobService.get().getJobStore().deserializeFromJSON(serialized, Class.forName(className));
-                if (job instanceof PipelineJob)
-                    return (PipelineJob) job;
+            String className = PipelineJob.getClassNameFromJson(serialized);
+            Object job = PipelineJobService.get().getJobStore().deserializeFromJSON(serialized, Class.forName(className));
+            if (job instanceof PipelineJob)
+                return (PipelineJob) job;
 
-                _log.error("Deserialized object not instance of PipelineJob: " + job.getClass().getName());
-            }
-            catch (ClassNotFoundException e)
-            {
-                _log.error("Deserialized class not found.", e);
-            }
-            return null;
+            _log.error("Deserialized object not instance of PipelineJob: " + job.getClass().getName());
         }
-
-        return PipelineJobService.get().getJobStore().fromXML(serialized);
+        catch (ClassNotFoundException e)
+        {
+            _log.error("Deserialized class not found.", e);
+        }
+        return null;
     }
 
     public static ObjectMapper createObjectMapper()

@@ -66,10 +66,6 @@ public interface PipelineStatusFile
 
     public interface JobStore
     {
-        String toXML(PipelineJob job);
-
-        PipelineJob fromXML(String xml);
-
         void storeJob(PipelineJob job) throws NoSuchJobException;
 
         PipelineJob getJob(String jobId);
