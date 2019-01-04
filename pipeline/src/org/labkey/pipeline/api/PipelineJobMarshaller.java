@@ -17,10 +17,9 @@ package org.labkey.pipeline.api;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.XppDriver;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.junit.Test;
@@ -38,15 +37,9 @@ import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.StringKeySerialization;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.SchemaKey;
-import org.labkey.api.security.impersonation.AbstractImpersonationContextFactory;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
-import org.labkey.pipeline.xstream.FileXStreamConverter;
-import org.labkey.pipeline.xstream.TaskIdXStreamConverter;
-import org.labkey.pipeline.xstream.URIXStreamConverter;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.File;
 import java.io.IOException;
@@ -58,7 +51,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * <code>PipelineJobMarshaller</code> handles saving a <code>PipelineJob</code> to XML,
@@ -70,47 +62,6 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
 {
-    private final AtomicReference<XStream> _xstream = new AtomicReference<>();
-
-    public final XStream getXStream()
-    {
-        XStream instance = _xstream.get();
-
-        if (instance == null)
-        {
-            try
-            {
-                instance = new XStream(new XppDriver());
-                instance.registerConverter(new TaskIdXStreamConverter());
-                instance.registerConverter(new FileXStreamConverter());
-                instance.registerConverter(new URIXStreamConverter());
-                // Don't need to remember HTTP session attributes in serialized jobs. They can be quite large.
-                // We do want to make sure that we keep tracking other impersonation details for auditing, etc
-                // This is set based on the declaring class for the field - see http://xstream.codehaus.org/javadoc/com/thoughtworks/xstream/XStream.html#omitField(java.lang.Class, java.lang.String)
-                instance.omitField(AbstractImpersonationContextFactory.class, "_adminSessionAttributes");
-                if (!_xstream.compareAndSet(null, instance))
-                    instance = _xstream.get();
-            }
-            catch (Exception e)
-            {
-                throw new IllegalStateException("Failed to initialize XStream for pipeline jobs.", e);
-            }
-        }
-
-        return instance;
-    }
-
-    public String toXML(PipelineJob job)
-    {
-        LOG.warn("Serializing XML: " + job.getDescription());
-        return getXStream().toXML(job);
-    }
-
-    public PipelineJob fromXML(String xml)
-    {
-        return (PipelineJob) getXStream().fromXML(xml);
-    }
-
     /* CONSIDER: create a separate interface? */
     public void storeJob(PipelineJob job) throws NoSuchJobException
     {

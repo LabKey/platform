@@ -1510,9 +1510,6 @@ pipeline/src/org/labkey/pipeline/status/escalateJobFailure.jsp -text
 pipeline/src/org/labkey/pipeline/trigger/PipelineTriggerManager.java -text
 pipeline/src/org/labkey/pipeline/trigger/PipelineTriggerRegistryImpl.java -text
 pipeline/src/org/labkey/pipeline/validators/PipelineSetupValidator.java -text
-pipeline/src/org/labkey/pipeline/xstream/FileXStreamConverter.java -text
-pipeline/src/org/labkey/pipeline/xstream/TaskIdXStreamConverter.java -text
-pipeline/src/org/labkey/pipeline/xstream/URIXStreamConverter.java -text
 pipeline/webapp/WEB-INF/pipeline/pipelineContext.xml -text
 pipeline/webapp/pipeline/ImportAdvancedOptions.css -text
 pipeline/webapp/pipeline/ImportAdvancedOptions.js -text

@@ -16,7 +16,6 @@
 
 package org.labkey.pipeline.api;
 
-import com.thoughtworks.xstream.converters.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -41,15 +40,6 @@ import java.util.concurrent.locks.ReentrantLock;
 public class PipelineJobStoreImpl extends PipelineJobMarshaller
 {
     private static Logger _log = Logger.getLogger(PipelineJobStoreImpl.class);
-
-    @Override
-    public PipelineJob fromXML(String xml)
-    {
-        PipelineJob job = super.fromXML(xml);
-        job.restoreQueue(PipelineService.get().getPipelineQueue());
-        job.restoreLocalDirectory();
-        return job;
-    }
 
     @Override
     public Object deserializeFromJSON(String json, Class<?> cls)
@@ -104,12 +94,6 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
             job.getLogger().debug("Database indicates active task ID is " + job.getActiveTaskId() + (sf.getActiveHostName() == null ? "" : ", assigned to host '" + sf.getActiveHostName() + "'"));
             job.getLogger().debug("Retry details: Old Job ID: " + oldJobId +
                     (StringUtils.equalsIgnoreCase(sf.getJobId(), job.getJobGUID()) ? "" : ", new Job ID: " + job.getJobGUID()));
-        }
-        catch (ConversionException e)
-        {
-            String msg = "Failed to restore the job checkpoint from the database: " + e.getMessage();
-            _log.warn(msg, e);
-            throw new IOException(msg, e);
         }
         catch (PipelineValidationException e)
         {
