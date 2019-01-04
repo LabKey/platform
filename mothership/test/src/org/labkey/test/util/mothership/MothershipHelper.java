@@ -226,7 +226,7 @@ public class MothershipHelper
         test.checkErrors();
         for (Pair<TestActions.ExceptionActions, String> action : actionsWithMessages)
         {
-            action.first.triggerException(action.second);
+            action.getLeft().triggerException(action.getRight());
             sleep(100); // Wait for mothership to pick up exception
             exceptionIds.add(getLatestStackTraceId());
         }

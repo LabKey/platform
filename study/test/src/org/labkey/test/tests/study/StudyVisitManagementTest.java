@@ -129,8 +129,8 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
         DeleteMultipleVisitsPage deleteMultipleVisitsPage = new DeleteMultipleVisitsPage(getDriver());
         for (Map.Entry<String, Pair<Integer, Integer>> countEntry : visitDataCounts.entrySet())
         {
-            assertEquals("Unexpected visit dataset row count", countEntry.getValue().first.intValue(), deleteMultipleVisitsPage.getVisitDatasetRowCount(countEntry.getKey()));
-            assertEquals("Unexpected visit specimen row count", countEntry.getValue().second.intValue(), deleteMultipleVisitsPage.getVisitSpecimenRowCount(countEntry.getKey()));
+            assertEquals("Unexpected visit dataset row count", countEntry.getValue().getLeft().intValue(), deleteMultipleVisitsPage.getVisitDatasetRowCount(countEntry.getKey()));
+            assertEquals("Unexpected visit specimen row count", countEntry.getValue().getRight().intValue(), deleteMultipleVisitsPage.getVisitSpecimenRowCount(countEntry.getKey()));
         }
     }
 
