@@ -15,7 +15,7 @@
  */
 package org.labkey.test.tests.study;
 
-import org.labkey.api.util.FileUtil;
+import org.apache.commons.io.FileUtils;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.WebTestHelper;
@@ -47,7 +47,7 @@ public class StudyCheckForReloadTest extends StudyBaseTest
         log("Copy files from \"unzip\" folder into parent folder");
         File fileRoot = TestFileUtils.getDefaultFileRoot(getProjectName() + "/" + getFolderName());
         File unzipDir = new File(fileRoot, "unzip");
-        FileUtil.copyDirectory(unzipDir.toPath(), fileRoot.toPath());
+        FileUtils.copyDirectory(unzipDir, fileRoot);
 
         log("Create studyload.txt file");
         File studyload = new File(fileRoot + "\\studyload.txt");
