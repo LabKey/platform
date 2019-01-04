@@ -89,7 +89,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
     private List<QExpr> _onExpressions;
 
     private Map<FieldKey, QueryRelation> _tables;
-    private List<FieldKey> _schemas = null;
+    private Map<FieldKey, QueryRelation> _qualifiedTables;
     // Don't forget to recurse passing container filter into subqueries.
     private List<QueryRelation> _subqueries = new ArrayList<>();
     private Map<FieldKey, RelationColumn> _declaredFields = new HashMap<>();
@@ -265,6 +265,7 @@ groupByLoop:
     {
         _columns = new LinkedHashMap<>();
         _tables = new HashMap<>();
+        _qualifiedTables = new HashMap<>();
 
         for (QTable qtable : _parsedTables.values())
         {
@@ -352,6 +353,10 @@ groupByLoop:
             String relationAlias = makeRelationName(relation.getAlias());
             relation.setAlias(relationAlias);
             _tables.put(qtable.getAlias(), relation);
+
+            // Remember schema-qualified key to resolve schema-qualified tables in declareFields()
+            if (null != key && null == qtable._alias && key.size() > 1)
+                _qualifiedTables.put(key, relation);
         }
 
         ArrayList<SelectColumn> columnList = new ArrayList<>();
@@ -803,39 +808,31 @@ groupByLoop:
         List<String> parts = declareKey.getParts();
         QueryRelation table = null;
         FieldKey tableKey = null;
-        FieldKey schemaKey = null;
         boolean qualified = true;
 
-        // Handle possible schema prefix, #36273
-        if (parts.size() >= 3)
-        {
-            FieldKey key = getSchema(declareKey);
-
-            if (null != key)
-            {
-                parts.subList(0, key.size()).clear();
-                schemaKey = key;
-            }
-        }
-
-        // Handle possible table prefix
+        // Handle possible table or schema-table prefix, #36273
         if (parts.size() >= 2)
         {
+            // Attempt to resolve a simple table prefix
             tableKey = new FieldKey(null, parts.get(0));
             table = getTable(tableKey);
-            if (table != null)
+
+            if (table == null)
             {
-                parts.remove(0);
-
-                if (null != schemaKey)
+                // Loop through schema-qualified table keys, attempting to resolve them
+                for (FieldKey key : _qualifiedTables.keySet())
                 {
-                    // Verify that specified schema matches the table's schema
-                    if (!FieldKey.decode(table.getSchema().getSchemaName()).equals(schemaKey))
-                        parseError("Schema and table mismatch: " + declareKey, location);
-
-                    tableKey = FieldKey.fromParts(schemaKey, tableKey);
+                    if (declareKey.startsWith(key))
+                    {
+                        table = _qualifiedTables.get(key);
+                        tableKey = key;
+                        break;
+                    }
                 }
             }
+
+            if (table != null)
+                parts.subList(0, tableKey.size()).clear();
         }
 
         if (null == table)
@@ -918,27 +915,6 @@ groupByLoop:
         if (!qualified)
             _declaredFields.put(declareKey, colParent);
         return colParent;
-    }
-
-
-    // Return this column's schema prefix, if one is specified
-    private @Nullable FieldKey getSchema(FieldKey declareKey)
-    {
-        // Initialize _schemas lazily, since most queries don't use schema-qualified column names
-        if (null == _schemas)
-        {
-            _schemas = _tables.values().stream()
-                .map(t->t.getSchema().getSchemaName())
-                .map(FieldKey::decode)
-                .distinct()
-                .collect(Collectors.toList());
-        }
-
-        for (FieldKey schemaKey : _schemas)
-            if (declareKey.startsWith(schemaKey))
-                return schemaKey;
-
-        return null;
     }
 
 
@@ -1317,8 +1293,6 @@ groupByLoop:
         declareFields();
         if (getParseErrors().size() != 0)
             return;
-
-//        SqlDialect dialect = getSqlDialect();
 
         CaseInsensitiveHashMap<SelectColumn> aliasSet = new CaseInsensitiveHashMap<>();
 
