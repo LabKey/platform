@@ -242,14 +242,21 @@ public class ModuleLoader implements Filter
 
     public void init(FilterConfig filterConfig)
     {
+        // terminateAfterStartup flag allows "headless" install/upgrade
+        boolean terminateAfterStartup = Boolean.valueOf(System.getProperty("terminateAfterStartup"));
         try
         {
-            doInit(filterConfig.getServletContext());
+            doInit(filterConfig.getServletContext(), terminateAfterStartup);
         }
         catch (Throwable t)
         {
             setStartupFailure(t);
             _log.error("Failure occurred during ModuleLoader init.", t);
+        }
+        finally
+        {
+            if (terminateAfterStartup)
+                System.exit(0);
         }
     }
 
@@ -293,7 +300,7 @@ public class ModuleLoader implements Filter
     }
 
     /** Full web-server initialization */
-    private void doInit(ServletContext servletCtx) throws Exception
+    private void doInit(ServletContext servletCtx, boolean terminateAfterStartup) throws Exception
     {
         _log.info(BANNER);
 
@@ -453,15 +460,11 @@ public class ModuleLoader implements Filter
             setUpgradeState(UpgradeState.UpgradeRequired);
 
         // terminateAfterStartup flag allows "headless" install/upgrade
-        boolean terminateAfterStartup = Boolean.valueOf(System.getProperty("terminateAfterStartup"));
         Execution execution = terminateAfterStartup ? Execution.Synchronous : Execution.Asynchronous;
 
         startNonCoreUpgradeAndStartup(User.getSearchUser(), execution, coreRequiredUpgrade);  // TODO: Change search user to system user
 
         _log.info("LabKey Server startup is complete; " + (Execution.Synchronous == execution ? "all modules have been upgraded and initialized" : "modules are being upgraded and initialized in the background"));
-
-        if (terminateAfterStartup)
-            System.exit(0);
     }
 
     // If in production mode then make sure this isn't a development build, #21567
