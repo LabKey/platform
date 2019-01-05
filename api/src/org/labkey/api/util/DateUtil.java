@@ -953,10 +953,6 @@ validNum:       {
 
     public static String getJsonDateTimeFormatString()
     {
-        //return "d MMM yyyy HH:mm:ss";
-        // MAB: I think this is better, shouldn't use text month in json format
-        // strangely yyyy/MM/dd parses in more browsers than yyyy-MM-dd
-
         // 1. added milliseconds (.SSS) to gap the discrepancy of milliseconds portion stored in database
         // but not being used while checking for work during a remote ETL run as part of implementing Issue 35780.
         // Without millisecond portion here, datetime comparision would show these datetimes as equals,
