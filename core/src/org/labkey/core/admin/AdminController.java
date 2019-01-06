@@ -2711,7 +2711,6 @@ public class AdminController extends SpringActionController
             html.append("<td class=\"labkey-column-header\">Clears</td>");
             html.append("<td class=\"labkey-column-header\">Miss Percentage</td>");
             html.append("<td class=\"labkey-column-header\">Clear</td></tr>");
-            html.append("<td class=\"labkey-column-header\">Clear</td>");
 
             long size = 0;
             long gets = 0;
