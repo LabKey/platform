@@ -17,6 +17,7 @@
 package org.labkey.api.attachments;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.CacheableWriter;
 import org.labkey.api.data.Container;
 
@@ -37,6 +38,16 @@ public class AttachmentCache
     private static Map<Container, CacheableWriter> _logoCache = new ConcurrentHashMap<>(100, 0.75f, 4);        // Site + project, so size to one per project
     private static Map<Container, CacheableWriter> _favIconCache = new ConcurrentHashMap<>(100, 0.75f, 4);     // Site + project, so size to one per project
     private static Map<String, CacheableWriter> _authLogoMap = new ConcurrentHashMap<>(5, 0.75f, 4);           // Site-wide
+
+    static
+    {
+        // Hook into cache clearing requests
+        CacheManager.addListener(() -> {
+            clearAuthLogoCache();
+            clearFavIconCache();
+            clearLogoCache();
+        });
+    }
 
     public static void clearLogoCache()
     {
