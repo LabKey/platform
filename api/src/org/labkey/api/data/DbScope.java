@@ -1759,9 +1759,10 @@ public class DbScope
                     {
                         // Run this now that we've been disassociated with a potentially trashed connection
                         CommitTaskOption.POSTROLLBACK.run(this);
-                        clearCommitTasks();
                     }
                 }
+
+                clearCommitTasks();
             }
             else
             {
@@ -1784,6 +1785,7 @@ public class DbScope
             {
                 _closesToIgnore = 0;
                 closeConnection();
+                clearCommitTasks();
                 throw createIllegalStateException("Missing expected call to close after prior commit",DbScope.this,_conn);
             }
 
@@ -1880,8 +1882,6 @@ public class DbScope
             {
                 LOG.error("Failed to close connection", e);
             }
-
-            clearCommitTasks();
         }
 
         public void increment(boolean releaseOnFinalCommit, List<Lock> extraLocks)
