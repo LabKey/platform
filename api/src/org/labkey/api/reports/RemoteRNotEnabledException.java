@@ -18,6 +18,6 @@ public class RemoteRNotEnabledException extends PremiumFeatureNotEnabledExceptio
 
     public RemoteRNotEnabledException(ExternalScriptEngineDefinition def)
     {
-        this(String.format("Remote R serve engine [%1$s] requested, but premium module not available/enabled.", def.getName()));
+        this(String.format("Remote R engine [%1$s] requested, but premium module not available/enabled.", def.getName()));
     }
 }
