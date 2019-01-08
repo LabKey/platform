@@ -2335,10 +2335,12 @@ Ext4.define('File.panel.Browser', {
 
         if (!config.selModel && !config.selType && this.allowSelection) {
             config.selModel = {
-                selType: 'checkboxmodel',
+                checkSelector: 'td.x4-grid-cell-row-checker',
                 mode: 'MULTI',
                 pruneRemoved: false // designated 'private' on Ext.selection.Model in Ext 4.1.0
             };
+            config.multiSelect = true;
+            config.selType = 'checkboxmodel';
         }
 
         Ext4.apply(config, {
