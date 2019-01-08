@@ -161,7 +161,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -170,6 +169,7 @@ import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
 import static org.labkey.api.data.CompareType.IN;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
+import static org.labkey.api.data.DbScope.CommitTaskOption.POSTROLLBACK;
 import static org.labkey.api.exp.OntologyManager.getTinfoObject;
 import static org.labkey.api.exp.query.ExpSchema.NestedSchemas.materials;
 
@@ -219,6 +219,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public void clearMaterialSourceCache(@Nullable Container c)
     {
+        LOG.debug("clearMaterialSourceCache: " + (c == null ? "all" : c.getPath()));
         if (c == null)
             materialSourceCache.clear();
         else
@@ -232,6 +233,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public void clearDataClassCache(@Nullable Container c)
     {
+        LOG.debug("clearDataClassCache: " + (c == null ? "all" : c.getPath()));
         if (c == null)
             dataClassCache.clear();
         else
@@ -4584,7 +4586,7 @@ public class ExperimentServiceImpl implements ExperimentService
             executor.execute("DELETE FROM " + getTinfoActiveMaterialSource() + " WHERE MaterialSourceLSID = ?", source.getLSID());
             executor.execute("DELETE FROM " + getTinfoMaterialSource() + " WHERE RowId = ?", rowId);
 
-            transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT);
+            transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
             transaction.commit();
         }
         SchemaKey samplesSchema = SchemaKey.fromParts(SamplesSchema.SCHEMA_NAME);
@@ -4594,7 +4596,7 @@ public class ExperimentServiceImpl implements ExperimentService
         QueryService.get().fireQueryDeleted(user, c, null, expMaterialsSchema, singleton(source.getName()));
 
         timer.stop();
-        LOG.info("Deleted SampleSet in " + timer.getDuration());
+        LOG.info("Deleted SampleSet '" + source.getName() + "' from '" + c.getPath() + "' in " + timer.getDuration());
     }
 
     /**
@@ -4653,8 +4655,8 @@ public class ExperimentServiceImpl implements ExperimentService
             executor.execute("UPDATE " + getTinfoProtocolInput() + " SET dataClassId = NULL WHERE dataClassId = ?", rowId);
             executor.execute("DELETE FROM " + getTinfoDataClass() + " WHERE RowId = ?", rowId);
 
+            transaction.addCommitTask(() -> clearDataClassCache(dcContainer), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
             transaction.commit();
-            clearDataClassCache(dcContainer);
         }
 
         SchemaKey expDataSchema = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, ExpSchema.NestedSchemas.data.toString());
@@ -6101,8 +6103,8 @@ public class ExperimentServiceImpl implements ExperimentService
             ss.save(u);
             DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
 
+            transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
             transaction.commit();
-            getMaterialSourceCache().clear();
         }
 
         return ss;
@@ -6184,8 +6186,8 @@ public class ExperimentServiceImpl implements ExperimentService
             impl.save(u);
             DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
 
+            tx.addCommitTask(() -> clearDataClassCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
             tx.commit();
-            clearDataClassCache(c);
         }
 
         return impl;
