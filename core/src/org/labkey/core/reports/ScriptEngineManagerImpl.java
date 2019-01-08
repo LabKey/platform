@@ -214,7 +214,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
                         return new RserveScriptEngineFactory(def).getScriptEngine();
                     else
                     {
-                        LOG.info(String.format("Remote R serve engine [%1$s] requested, but premium module not available/enabled.", def.getName() ));
+                        LOG.error(String.format("Remote R engine [%1$s] requested, but premium module not available/enabled.", def.getName()));
                         throw new RemoteRNotEnabledException(def);
                     }
                 }
