@@ -38,11 +38,6 @@ public class SimpleController extends SpringActionController implements SpringAc
 {
     public static final String BEGIN_VIEW_NAME = "begin";
 
-    public SimpleController()
-    {
-//        setActionResolver();
-    }
-
     public SimpleController(String controllerName)
     {
         setActionResolver(new HTMLFileActionResolver(controllerName));
