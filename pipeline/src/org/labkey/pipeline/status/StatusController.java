@@ -85,7 +85,6 @@ public class StatusController extends SpringActionController
 
     public StatusController()
     {
-        super();
         setActionResolver(_resolver);
     }
 

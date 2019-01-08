@@ -55,7 +55,6 @@ public class AuditController extends SpringActionController
 
     public AuditController()
     {
-        super();
         setActionResolver(_actionResolver);
     }
 

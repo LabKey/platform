@@ -174,7 +174,6 @@ public class AssayController extends SpringActionController
 
     public AssayController()
     {
-        super();
         setActionResolver(_resolver);
     }
 

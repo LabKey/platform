@@ -87,28 +87,23 @@ public class SequenceNumImportHelper
 
     public Callable<Object> getCallable(@NotNull final DataIterator it, @Nullable final Integer sequenceIndex, @Nullable final Integer dateIndex)
     {
-        return new Callable<Object>()
-        {
-            @Override
-            public Object call()
+        return () -> {
+            Object seq = null == sequenceIndex ? null : it.get(sequenceIndex);
+            Object d = null == dateIndex ? null : it.get(dateIndex);
+            Date date = null;
+            try
             {
-                Object seq = null==sequenceIndex ? null : it.get(sequenceIndex);
-                Object d = null==dateIndex ? null : it.get(dateIndex);
-                Date date = null;
-                try
-                {
-                    if (null == d || d instanceof Date)
-                        date = (Date)d;
-                    else
-                        date = new Date(DateUtil.parseDateTime(String.valueOf(d)));
-                }
-                catch (ConversionException x)
-                {
-                    // DataIterator will catch this an report an error, and we shouldn't usually be getting strings here
-                }
-                Double sequencenum = translateSequenceNum(seq, date);
-                return null==sequencenum ? seq : sequencenum;
+                if (null == d || d instanceof Date)
+                    date = (Date) d;
+                else
+                    date = new Date(DateUtil.parseDateTime(String.valueOf(d)));
             }
+            catch (ConversionException x)
+            {
+                // DataIterator will catch this and report an error, and we shouldn't usually be getting strings here
+            }
+            Double sequencenum = translateSequenceNum(seq, date);
+            return null == sequencenum ? seq : sequencenum;
         };
     }
 

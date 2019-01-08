@@ -72,7 +72,7 @@ import java.util.Set;
  */
 public class DemoController extends SpringActionController
 {
-    private final static DefaultActionResolver _actionResolver = new DefaultActionResolver(DemoController.class);
+    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(DemoController.class);
 
     public DemoController()
     {

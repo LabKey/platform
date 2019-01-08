@@ -353,7 +353,6 @@ public class ReportsController extends SpringActionController
 
     public ReportsController()
     {
-        super();
         setActionResolver(_actionResolver);
     }
 

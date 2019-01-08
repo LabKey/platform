@@ -45,7 +45,6 @@ public class UtilController extends SpringActionController
 
     public UtilController()
     {
-        super();
         setActionResolver(_actionResolver);
     }
 

@@ -139,9 +139,7 @@ import java.util.TreeSet;
  */
 public class ListController extends SpringActionController
 {
-    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(ListController.class,
-            ClearDefaultValuesAction.class
-            );
+    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(ListController.class, ClearDefaultValuesAction.class);
 
     public ListController()
     {

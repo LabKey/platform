@@ -158,12 +158,13 @@ public class IssuesController extends SpringActionController
     private static final Logger _log = Logger.getLogger(IssuesController.class);
     private static final String helpTopic = "issues";
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(
-            IssuesController.class,
-            IssueServiceAction.class,
-            GetRelatedFolder.class,
-            InsertIssueDefAction.class,
-            ValidateIssueDefNameAction.class,
-            DeleteIssueListAction.class);
+        IssuesController.class,
+        IssueServiceAction.class,
+        GetRelatedFolder.class,
+        InsertIssueDefAction.class,
+        ValidateIssueDefNameAction.class,
+        DeleteIssueListAction.class
+    );
 
     public IssuesController()
     {

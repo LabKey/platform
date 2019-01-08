@@ -127,7 +127,7 @@ import java.util.Set;
 
 public class PipelineController extends SpringActionController
 {
-    private static DefaultActionResolver _resolver = new DefaultActionResolver(PipelineController.class);
+    private static final DefaultActionResolver _resolver = new DefaultActionResolver(PipelineController.class);
 
     public enum Params { path, rootset, overrideRoot }
 
@@ -138,7 +138,6 @@ public class PipelineController extends SpringActionController
 
     public PipelineController()
     {
-        super();
         setActionResolver(_resolver);
     }
 

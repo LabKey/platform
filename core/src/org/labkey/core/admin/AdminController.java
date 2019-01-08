@@ -225,10 +225,11 @@ import static org.labkey.api.view.FolderManagement.addTab;
 public class AdminController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(
-            AdminController.class,
-            FilesSiteSettingsAction.class,
-            FileListAction.class,
-            ProjectSettingsAction.class);
+        AdminController.class,
+        FilesSiteSettingsAction.class,
+        FileListAction.class,
+        ProjectSettingsAction.class
+    );
 
     private static final Logger LOG = Logger.getLogger(AdminController.class);
     private static final Logger CLIENT_LOG = Logger.getLogger(LogAction.class);

@@ -208,14 +208,15 @@ public class SpecimenController extends BaseStudyController
 {
     private static final Logger _log = Logger.getLogger(SpecimenController.class);
 
-    private static DefaultActionResolver _actionResolver = new DefaultActionResolver(SpecimenController.class,
-            ShowUploadSpecimensAction.class,
-            ShowUploadSpecimensAction.ImportCompleteAction.class,
-            ShowGroupMembersAction.class,
-            ShowSearchAction.class,
-            AutoCompleteAction.class,
-            ParticipantCommentAction.SpecimenCommentInsertAction.class,
-            ParticipantCommentAction.SpecimenCommentUpdateAction.class
+    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(
+        SpecimenController.class,
+        ShowUploadSpecimensAction.class,
+        ShowUploadSpecimensAction.ImportCompleteAction.class,
+        ShowGroupMembersAction.class,
+        ShowSearchAction.class,
+        AutoCompleteAction.class,
+        ParticipantCommentAction.SpecimenCommentInsertAction.class,
+        ParticipantCommentAction.SpecimenCommentUpdateAction.class
     );
 
     public SpecimenController()

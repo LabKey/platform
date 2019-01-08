@@ -144,12 +144,10 @@ public class DesignerController extends SpringActionController
     private static final String PARTICIPANT_KEY = DesignerController.class + ".participants";
     private static final String SPECIMEN_KEY = DesignerController.class + ".specimens";
 
-    private static final DefaultActionResolver ACTION_RESOLVER =
-            new DefaultActionResolver(DesignerController.class);
+    private static final DefaultActionResolver ACTION_RESOLVER = new DefaultActionResolver(DesignerController.class);
 
     public DesignerController()
     {
-        super();
         setActionResolver(ACTION_RESOLVER);
     }
 

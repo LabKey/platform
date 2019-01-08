@@ -228,7 +228,6 @@ public class ProjectController extends SpringActionController
 
     public ProjectController()
     {
-        super();
         setActionResolver(_actionResolver);
     }
 

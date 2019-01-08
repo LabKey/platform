@@ -80,7 +80,7 @@ import java.util.TreeMap;
 
 public class TypesController extends SpringActionController
 {
-    static DefaultActionResolver _actionResolver = new DefaultActionResolver(TypesController.class);
+    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(TypesController.class);
 
     public TypesController()
     {

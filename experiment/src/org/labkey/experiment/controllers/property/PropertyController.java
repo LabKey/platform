@@ -102,7 +102,7 @@ import java.util.Optional;
 
 public class PropertyController extends SpringActionController
 {
-    private static DefaultActionResolver _actionResolver = new DefaultActionResolver(PropertyController.class);
+    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(PropertyController.class);
 
     public static final String UNRECOGNIZED_FILE_TYPE_ERROR = "Unrecognized file type. Please upload a .xls, .xlsx, .tsv, .csv or .txt file";
 

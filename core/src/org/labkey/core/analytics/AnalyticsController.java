@@ -37,7 +37,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 public class AnalyticsController extends SpringActionController
 {
-    private static DefaultActionResolver _actionResolver = new DefaultActionResolver(AnalyticsController.class);
+    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(AnalyticsController.class);
 
     public AnalyticsController()
     {

@@ -54,10 +54,11 @@ import java.util.Map;
 public class NotificationController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(NotificationController.class);
+
     public NotificationController()
-        {
-            setActionResolver(_actionResolver);
-        }
+    {
+        setActionResolver(_actionResolver);
+    }
 
     public static class NotificationForm extends ReturnUrlForm
     {

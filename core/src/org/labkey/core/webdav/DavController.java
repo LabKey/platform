@@ -157,6 +157,7 @@ import java.lang.reflect.Method;
 import java.net.SocketException;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -200,12 +201,12 @@ import static org.labkey.api.action.ApiJsonWriter.CONTENT_TYPE_JSON;
  */
 public class DavController extends SpringActionController
 {
+    private static final Logger _log = Logger.getLogger(DavController.class);
+    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(DavController.class);
+
     public static final String name = "_dav_";
     public static final String mimeSeparation = "<[[mime " + GUID.makeHash() + "_separator_]]>";
-    static final Charset utf8 = Charset.forName("UTF-8");
 
-    static Logger _log = Logger.getLogger(DavController.class);
-    static DefaultActionResolver _actionResolver = new DefaultActionResolver(DavController.class);
     static boolean _readOnly = false;
     static boolean _locking = true;
     static boolean _requiresLogin = false;
@@ -5097,17 +5098,17 @@ public class DavController extends SpringActionController
 
     void print(OutputStream stream, String s) throws IOException
     {
-        stream.write(s.getBytes(utf8));
+        stream.write(s.getBytes(StandardCharsets.UTF_8));
     }
 
 
     protected void copy(InputStream istream, Writer writer) throws IOException
     {
-        Reader reader = new InputStreamReader(istream, utf8);
+        Reader reader = new InputStreamReader(istream, StandardCharsets.UTF_8);
         try
         {
             assert track(reader);
-            char buffer[] = new char[8*1024];
+            char[] buffer = new char[8 * 1024];
             int len;
             while (-1 < (len = reader.read(buffer)))
                 writer.write(buffer, 0, len);

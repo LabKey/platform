@@ -86,12 +86,11 @@ import java.util.Set;
  */
 public class AnalysisController extends SpringActionController
 {
-    private static DefaultActionResolver _resolver = new DefaultActionResolver(AnalysisController.class);
     private static final Logger LOG = Logger.getLogger(AnalysisController.class);
+    private static final DefaultActionResolver _resolver = new DefaultActionResolver(AnalysisController.class);
 
     public AnalysisController()
     {
-        super();
         setActionResolver(_resolver);
     }
 

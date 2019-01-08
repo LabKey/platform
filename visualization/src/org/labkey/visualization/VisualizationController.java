@@ -236,7 +236,6 @@ public class VisualizationController extends SpringActionController
 
     public VisualizationController()
     {
-        super();
         setActionResolver(_actionResolver);
     }
 

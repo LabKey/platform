@@ -56,8 +56,7 @@ import java.util.List;
 @Marshal(Marshaller.Jackson)
 public class MiniProfilerController extends SpringActionController
 {
-    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(
-            MiniProfilerController.class);
+    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(MiniProfilerController.class);
 
     private static final Logger LOG = Logger.getLogger(MiniProfilerController.class);
 

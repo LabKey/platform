@@ -58,8 +58,7 @@ import java.util.Enumeration;
 @Marshal(Marshaller.Jackson)
 public class LoggerController extends SpringActionController
 {
-    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(
-            LoggerController.class);
+    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(LoggerController.class);
 
     private static final Logger LOG = Logger.getLogger(LoggerController.class);
 

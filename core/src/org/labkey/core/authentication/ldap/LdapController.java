@@ -47,7 +47,6 @@ public class LdapController extends SpringActionController
 
     public LdapController()
     {
-        super();
         setActionResolver(_actionResolver);
     }
 

@@ -69,7 +69,6 @@ public class PlateController extends SpringActionController
 
     public PlateController()
     {
-        super();
         setActionResolver(_actionResolver);
     }
 
