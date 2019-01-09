@@ -31,7 +31,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.WarningProvider;
 import org.labkey.api.view.template.Warnings;
 
-import javax.servlet.http.HttpSession;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.util.Map;
@@ -40,7 +39,6 @@ import static org.labkey.api.view.template.PageConfig.SESSION_WARNINGS_BANNER_KE
 
 public class CoreWarningProvider implements WarningProvider
 {
-
     public CoreWarningProvider()
     {
         AbstractImpersonationContextFactory.registerSessionAttributeToStash(SESSION_WARNINGS_BANNER_KEY);
@@ -94,15 +92,15 @@ public class CoreWarningProvider implements WarningProvider
     private void getHeapSizeWarnings(Warnings warnings)
     {
         //FIX: 9683
-        //show admins warning about inadequate heap size (<= 256Mb)
+        //show admins warning about inadequate heap size (<= 1GB)
         MemoryMXBean membean = ManagementFactory.getMemoryMXBean();
         long maxMem = membean.getHeapMemoryUsage().getMax();
 
-        if (maxMem > 0 && maxMem <= 256*1024*1024)
+        if (maxMem > 0 && maxMem < 1024*1024*1024)
         {
-            warnings.add("The maximum amount of heap memory allocated to LabKey Server is too low (256M or less). " +
+            warnings.add("The maximum amount of heap memory allocated to LabKey Server is too low (less than 1GB). " +
                     "LabKey recommends " +
-                    new HelpTopic("configWebappMemory").getSimpleLinkHtml("setting the maximum heap to at least one gigabyte (-Xmx1024M)")
+                    new HelpTopic("configWebappMemory").getSimpleLinkHtml("setting the maximum heap to at least 2 gigabytes (-Xmx2G) on test/evaluation servers and at least 4 gigabytes (-Xmx4G) on production servers")
                     + ".");
         }
     }
