@@ -42,9 +42,9 @@
     var MAX_FILE_INPUTS = <%= bean.getMaxFileInputs() %>;
     var PREFIX = "<%= h(AssayDataCollector.PRIMARY_FILE) %>";
 
-    // Keep a list of all of the files (new uploads and reuse candidates so that we can track down their
+    // Keep a list of all of the file groups (new uploads and reuse candidates) so that we can track down their
     // corresponding UI elements easily
-    var _files = [];
+    var _fileGroups = [];
 
     /**
      * Spins through all of the files and sees how many are active and will be used. We immediately remove
@@ -53,11 +53,19 @@
     function getActiveFileCount()
     {
         var count = 0;
-        for (var i = 0; i < _files.length; i++)
+        for (var i = 0; i < _fileGroups.length; i++)
         {
-            if (_files[i].active)
+            var fileGroup = _fileGroups[i];
+
+            if (fileGroup.active)
             {
-                count++;
+                if(fileGroup.fileInput && fileGroup.fileInput.files) {
+                    for (var j = 0; j < fileGroup.fileInput.files.length; j++) {
+                        count++;
+                    }
+                }
+                else if (fileGroup.reused)  // no file input fields in this case
+                    count++;  // but always one file, so add 1
             }
         }
         return count;
@@ -68,14 +76,14 @@
      */
     function initializeFileUploadInput()
     {
-        // Add an entry for all files that can be reused from a previous upload
+        // Add an entry for all file groups that can be reused from a previous upload
         <%
         PreviouslyUploadedDataCollector reuseDataCollector = new PreviouslyUploadedDataCollector(Collections.emptyMap(), PreviouslyUploadedDataCollector.Type.ReRun);
         for (Map.Entry<String, File> entry : bean.getReusableFiles().entrySet()) { %>
             addFileUploadInputRow(null, <%= PageFlowUtil.jsString(entry.getValue().getName())%>, <%= PageFlowUtil.jsString(reuseDataCollector.getHiddenFormElementHTML(getContainer(), entry.getKey(), entry.getValue()))%>);
         <% } %>
 
-        // Be sure that we always have at least one file in the list
+        // Be sure that we always have at least one file group in the list
         <% if (bean.getReusableFiles().isEmpty()) { %>
             addFileUploadInputRow();
         <% } %>
@@ -87,7 +95,7 @@
     function addFileUploadInputRow(btn, fileName, hiddenFormFields)
     {
         // if the add button was clicked and it was disabled, do nothing
-        if (btn && btn.className.indexOf("labkey-file-add-icon-disabled") != -1)
+        if (btn && btn.className.indexOf("labkey-file-add-icon-disabled") !== -1)
         {
             return;
         }
@@ -100,17 +108,17 @@
 
         var currentIndex = getActiveFileCount();
 
-        var file = {
+        var fileGroup = {
             active: true,
             reused: fileName != null
         };
-        _files.push(file);
+        _fileGroups.push(fileGroup);
 
         var tbl = document.getElementById("file-upload-tbl");
-        file.mainRow = tbl.insertRow(-1);
+        fileGroup.mainRow = tbl.insertRow(-1);
 
         // add a cell for the file upload input
-        var fileCell = file.mainRow.insertCell(0);
+        var fileCell = fileGroup.mainRow.insertCell(0);
         fileCell.style.whiteSpace = 'nowrap';
         fileCell.style.paddingTop = '3px';
 
@@ -119,17 +127,22 @@
         if (fileName)
         {
             fileCell.innerHTML = "<span>" + LABKEY.Utils.encodeHtml(fileName) + "</span>" + hiddenFormFields;
-            file.fileNameSpan = fileCell.children[0];
-            file.hidden1 = fileCell.children[1];
-            file.hidden2 = fileCell.children[2];
+            fileGroup.fileNameSpan = fileCell.children[0];
+            fileGroup.hidden1 = fileCell.children[1];
+            fileGroup.hidden2 = fileCell.children[2];
         }
         else
         {
-            fileCell.innerHTML = "<input type='file' size='40' name='" + name + "' />";
-            file.fileInput = fileCell.children[0];
-            file.fileInput.style.border = 'none';
-            file.fileInput.onchange = function() {
-                checkForDuplicateFileName(file);
+            // if the given assay type allows for multiple file uploads, allow multiselect in OS file picker (and allow drag-and-drop to this field)
+            // note that this allows for multiple files in one row (add/remove buttons make multiple rows)
+            if (MAX_FILE_INPUTS > 1)
+                fileCell.innerHTML = "<input type='file' size='40' name='" + name + "' multiple />";
+            else
+                fileCell.innerHTML = "<input type='file' size='40' name='" + name + "'/>";
+            fileGroup.fileInput = fileCell.children[0];
+            fileGroup.fileInput.style.border = 'none';
+            fileGroup.fileInput.onchange = function() {
+                checkForDuplicateFileName(fileGroup);
             };
         }
 
@@ -137,48 +150,50 @@
         if (MAX_FILE_INPUTS > 1)
         {
             // add a cell with a button for removing the given row
-            var removeCell = file.mainRow.insertCell(1);
+            var removeCell = fileGroup.mainRow.insertCell(1);
             removeCell.innerHTML = "<a class='labkey-file-remove-icon labkey-file-remove-icon-disabled'><span>&nbsp;</span></a>";
-            file.removeButtonAnchor = removeCell.children[0];
-            file.removeButtonAnchor.onclick = function() {
-                removeFileUploadInputRow(this, file);
+            fileGroup.removeButtonAnchor = removeCell.children[0];
+            fileGroup.removeButtonAnchor.onclick = function() {
+                removeFileUploadInputRow(this, fileGroup);
             };
 
             // add a cell with a button for adding another row
-            var addCell = file.mainRow.insertCell(2);
+            var addCell = fileGroup.mainRow.insertCell(2);
             addCell.innerHTML = "<a class='labkey-file-add-icon labkey-file-add-icon-disabled'><span>&nbsp;</span></a>";
-            file.addButtonAnchor = addCell.children[0];
-            file.addButtonAnchor.onclick = function() {
+            fileGroup.addButtonAnchor = addCell.children[0];
+            fileGroup.addButtonAnchor.onclick = function() {
                 addFileUploadInputRow(this);
             };
 
             toggleAddRemoveButtons();
         }
 
-        // add a cell to show the file name after selection
-        var fileNameCell = file.mainRow.insertCell(-1);
-        fileNameCell.width = "100%";
-        fileNameCell.innerHTML = '<div style="padding-left: 5px;"></div>';
-        file.fileNameLabel = fileNameCell.children[0];
+        // add cells to show the file name(s) after selection
+        fileGroup.fileNameLabels = [];
+        for (var i = 0; i < MAX_FILE_INPUTS; i++) {
+            var fileNameCell = fileGroup.mainRow.insertCell(-1);
+            fileNameCell.width = "100%";
+            fileNameCell.innerHTML = '<div style="padding-left: 5px;"></div>';
+            fileGroup.fileNameLabels[i] = fileNameCell.children[0];
+        }
 
         // add a new row for error messages, collapsed by default
-        file.errorRow = tbl.insertRow(-1);
-        var errorCell = file.errorRow.insertCell(-1);
+        fileGroup.errorRow = tbl.insertRow(-1);
+        var errorCell = fileGroup.errorRow.insertCell(-1);
         errorCell.colSpan = 20;
         errorCell.innerHTML = "<div class='labkey-error'></div>";
-        file.errorLabel = errorCell.children[0];
+        fileGroup.errorLabel = errorCell.children[0];
 
         reindexFileUploadInputRows();
     }
 
     /**
      * Remove the specified row from the file upload table
-     * @param index - the index of the row to be removed
      */
-    function removeFileUploadInputRow(btn, file)
+    function removeFileUploadInputRow(btn, fileGroup)
     {
         // if the remove button was clicked and it was disabled, do nothing
-        if (btn && btn.className.indexOf("labkey-file-remove-icon-disabled") != -1)
+        if (btn && btn.className.indexOf("labkey-file-remove-icon-disabled") !== -1)
         {
             return;
         }
@@ -189,43 +204,43 @@
             return;
         }
 
-        if (file.reused)
+        if (fileGroup.reused)
         {
-            // This is a reused file. Don't remove it, but strike it out and disable the form fields so they don't
-            // actually post their values, which means the file won't be used
-            file.fileNameSpan.style['textDecoration'] = 'line-through';
-            file.hidden1.disabled = true;
-            file.hidden2.disabled = true;
-            file.active = false;
+            // This is a reused file group. Don't remove it, but strike it out and disable the form fields so they don't
+            // actually post their values, which means the file group won't be used
+            fileGroup.fileNameSpan.style['textDecoration'] = 'line-through';
+            fileGroup.hidden1.disabled = true;
+            fileGroup.hidden2.disabled = true;
+            fileGroup.active = false;
         }
         else
         {
-            //delete the entire table row for the selected file
+            //delete the entire table row for the selected file group
             var tbl = document.getElementById("file-upload-tbl");
-            var rowIndex = file.mainRow.rowIndex;
+            var rowIndex = fileGroup.mainRow.rowIndex;
             tbl.deleteRow(rowIndex);
 
             // delete a second row for the (possibly empty) error message row
-            rowIndex = file.errorRow.rowIndex;
+            rowIndex = fileGroup.errorRow.rowIndex;
             tbl.deleteRow(rowIndex);
-            _files.remove(file);
+            _fileGroups.remove(fileGroup);
         }
 
         reindexFileUploadInputRows();
     }
 
     /**
-     *  Loops through the file input rows and reindexes them accordingly
+     *  Loops through the fileGroup input rows and reindexes them accordingly
      */
     function reindexFileUploadInputRows()
     {
         var index = 0;
-        for (var i = 0; i < _files.length; i++)
+        for (var i = 0; i < _fileGroups.length; i++)
         {
-            var file = _files[i];
-            if (file.fileInput)
+            var fileGroup = _fileGroups[i];
+            if (fileGroup.fileInput)
             {
-                file.fileInput.name = PREFIX + (index > 0 ? index : "");
+                fileGroup.fileInput.name = PREFIX + (index > 0 ? index : "");
                 index++;
             }
         }
@@ -239,27 +254,27 @@
      */
     function toggleAddRemoveButtons()
     {
-        for (var i = _files.length - 1; i >= 0; i--)
+        for (var i = _fileGroups.length - 1; i >= 0; i--)
         {
-            // disable the remove button if there is only one file left in use
-            var file = _files[i];
-            if (getActiveFileCount() <= 1 || !file.active)
+            // disable the remove button if there is only one file group left in use
+            var fileGroup = _fileGroups[i];
+            if (getActiveFileCount() <= 1 || !fileGroup.active)
             {
-                enableDisableButton('remove', file.removeButtonAnchor, false);
+                enableDisableButton('remove', fileGroup.removeButtonAnchor, false);
             }
             else
             {
-                enableDisableButton('remove', file.removeButtonAnchor, true);
+                enableDisableButton('remove', fileGroup.removeButtonAnchor, true);
             }
 
-            // only enable the add button that is on the last row (if the file input is available)
-            if (i == _files.length - 1 && getActiveFileCount() < MAX_FILE_INPUTS && (!file.fileInput || file.fileInput.value != ""))
+            // only enable the add button that is on the last row (if the file group input is available)
+            if (i === _fileGroups.length - 1 && getActiveFileCount() < MAX_FILE_INPUTS && (!fileGroup.fileInput || fileGroup.fileInput.value !== ""))
             {
-                enableDisableButton('add', file.addButtonAnchor, true);
+                enableDisableButton('add', fileGroup.addButtonAnchor, true);
             }
             else
             {
-                enableDisableButton('add', file.addButtonAnchor, false);
+                enableDisableButton('add', fileGroup.addButtonAnchor, false);
             }
         }
     }
@@ -286,55 +301,92 @@
     }
 
     /**
-     * Update the label cell with the selected file name
-     * @param file - the file record that was changed
+     * Update the label cell with the selected file name(s)
+     * @param fileGroup - the file group record that was changed
      */
-    function updateFileLabel(file)
+    function updateFileLabel(fileGroup)
     {
-        showPathname(file.fileInput, file.fileNameLabel);
+        var numberOfFiles = fileGroup.fileInput.files.length;
+        var fileName;
+
+        if (numberOfFiles === 0) {
+            // this is a little silly, but it's trying to avoid changing showPathname()
+            fileName = {};
+            fileName.value = '';
+            showPathname(fileName, fileGroup.fileNameLabels[0]);
+        }
+        else {
+            fileName = '';
+
+            for (var i = 0; i < fileGroup.fileInput.files.length; i++) {
+                fileName = fileGroup.fileInput.files[i].name;
+                // this is a little silly, but it's trying to avoid changing showPathname()
+                var fileNameWrapped = {};
+                fileNameWrapped.value = fileName;
+                showPathname(fileNameWrapped, fileGroup.fileNameLabels[i]);
+            }
+        }
     }
 
     /**
-     * Check if a file of the same name has already been uploaded to the server
+     * Check if any of the filenames in a file group has already been uploaded to the server
      */
-    function checkServerForDuplicateFileName(file)
+    function checkServerForDuplicateFileName(fileGroup)
     {
         // Fire off an AJAX request
         var duplicateCheckURL = LABKEY.ActionURL.buildURL("assay", "assayFileDuplicateCheck.api");
-        var fileName = file.fileInput.value;
-        if (!fileName || fileName == '')
+        var fileNames = [];
+        if (fileGroup && fileGroup.fileInput && fileGroup.fileInput.files) {
+            for (var i = 0; i < fileGroup.fileInput.files.length; i++) {
+                var fileName = fileGroup.fileInput.files[i].name;
+                if (fileName)
+                    fileNames.push(fileName);
+            }
+        }
+
+        if (!fileNames.length)
         {
-            Ext.get(file.errorLabel).update("");
+            Ext.get(fileGroup.errorLabel).update("");
             return;
         }
-        var slashIndex = Math.max(fileName.lastIndexOf("/"), fileName.lastIndexOf("\\"));
-        if (slashIndex != -1)
-        {
-            fileName = fileName.substring(slashIndex + 1);
+
+        for (var j = 0; j < fileNames.length; j++) {
+            var fileNameShort = fileNames[j];
+            var slashIndex = Math.max(fileNameShort.lastIndexOf("/"), fileNameShort.lastIndexOf("\\"));
+            if (slashIndex !== -1)
+            {
+                fileNameShort = fileNameShort.substring(slashIndex + 1);
+            }
+            fileNames[j] = fileNameShort;
         }
+
         Ext.Ajax.request({
             url: duplicateCheckURL,
-            jsonData: {fileName: fileName},
-            success: function(response, options)
+            jsonData: {fileNames: fileNames},
+            success: function(response)
             {
                 var jsonResponse = Ext.decode(response.responseText);
                 // Show or clear the warning
-                var element = Ext.get(file.errorLabel);
+                var element = Ext.get(fileGroup.errorLabel);
                 if (jsonResponse.duplicate)
                 {
-                    runNames = jsonResponse.runNames;
-                    response = "A file with name '" + Ext.util.Format.htmlEncode(fileName) + "' already exists.  ";
-                    if (runNames.length > 0)
-                    {
-                        response += "This file is associated with the Run ID(s): '" + Ext.util.Format.htmlEncode(runNames) + "'.  ";
+                    var runNamesPerFile = jsonResponse.runNamesPerFile;
+                    var newFileNames = jsonResponse.newFileNames;
+                    response = "Already existing files were found. They are: <br>";
+                    for (var i = 0; i < fileNames.length; i++) {
+                        if (newFileNames[i]) {
+                            response += "A file with name '" + Ext.util.Format.htmlEncode(fileNames[i]) + "' already exists.  ";
+                            if (runNamesPerFile.length > 0) {
+                                response += "This file is associated with the Run ID(s): '" + Ext.util.Format.htmlEncode(runNamesPerFile[i]) + "'.  ";
+                            }
+                            else {
+                                response += "This file is not associated with a run.  "
+                            }
+                            response += "If you continue, the renamed file '" + Ext.util.Format.htmlEncode(newFileNames[i]) +
+                                    "' will be used. To abort click Cancel. To use an alternate file name, " +
+                                    "change the file name on your computer and then reselect the file.<br>";
+                        }
                     }
-                    else
-                    {
-                        response += "This file is not associated with a run.  "
-                    }
-                    response += "If you continue, the renamed file '" + Ext.util.Format.htmlEncode(jsonResponse.newFileName) +
-                                "' will be used. To abort click Cancel. To use an alternate file name, " +
-                                "change the file name on your computer and then reselect the file.";
                     element.update(response);
                 }
                 else
@@ -347,40 +399,65 @@
     }
     
     /**
-     * Check if the selected file name is already in the list of selected files
+     * Check if the selected file group names are already in the list of selected files
      */
-    function checkForDuplicateFileName(file)
+    function checkForDuplicateFileName(fileGroup)
     {
-        checkServerForDuplicateFileName(file);
+        checkServerForDuplicateFileName(fileGroup);
 
-        // loop through the other selected files to see if they are all unique within the current set of files to be
-        // uploaded
-        var dupFound = false;
-        for (var i = 0; i < _files.length; i++)
-        {
-            // alert the user and remove the file input if the selected file has already been added to this run
-            var inputEl = _files[i].fileInput;
-            if (inputEl && file.fileInput != inputEl && file.fileInput.value == inputEl.value)
-            {
-                Ext.Msg.show({
-                   title:'Error',
-                   msg: 'A file with the same name has already been selected for this run. The duplicate file input will be removed.',
-                   buttons: Ext.Msg.OK,
-                   fn: function() {
-                       removeFileUploadInputRow(null, file);
-                   },
-                   icon: Ext.MessageBox.ERROR
-                });
+        var fileCount = getActiveFileCount();
+        var tooManyFiles = (getActiveFileCount() > MAX_FILE_INPUTS);
+        var duplicateFilenames = [];
 
-                dupFound = true;
-                break;
+        if (tooManyFiles) {
+            Ext.Msg.show({
+                title: 'Error',
+                msg: 'Too many files chosen for upload. Max is ' + MAX_FILE_INPUTS + ' file(s), but ' + fileCount + ' file(s) found.'
+                        + ' The entire input row containing this file will be removed.' ,
+                buttons: Ext.Msg.OK,
+                fn: function () {
+                    removeFileUploadInputRow(null, fileGroup);
+                },
+                icon: Ext.MessageBox.ERROR
+            });
+        }
+        else {
+            // loop through the other selected sets of files to see if all those files are unique within the current sets of files to be
+            // uploaded
+            var dupFound = false;
+            for (var i = 0; i < _fileGroups.length; i++) {
+                var inputEl = _fileGroups[i].fileInput;
+
+                if (inputEl && fileGroup.fileInput !== inputEl) {
+                    for (var j = 0; j < fileGroup.fileInput.files.length; j++) {
+                        for (var k = 0; k < inputEl.files.length; k++) {
+                            if (fileGroup.fileInput.files[j].name === inputEl.files[k].name) {
+                                duplicateFilenames.push(fileGroup.fileInput.files[j].name);
+                                dupFound = true;
+                            }
+                        }
+                    }
+                }
             }
         }
 
-        if (!dupFound)
-        {
+        // alert the user and remove the file group input if one of its files has already been added to this run
+        if (dupFound) {
+            Ext.Msg.show({
+                title: 'Error',
+                msg: 'File(s) with the same name(s) ("' + Ext.util.Format.htmlEncode(duplicateFilenames.join(", "))
+                        + '") have already been selected for this run. The entire input row containing these file(s) will be removed.',
+                buttons: Ext.Msg.OK,
+                fn: function () {
+                    removeFileUploadInputRow(null, fileGroup);
+                },
+                icon: Ext.MessageBox.ERROR
+            });
+        }
+
+        if (!tooManyFiles && !dupFound) {
             toggleAddRemoveButtons();
-            updateFileLabel(file);
+            updateFileLabel(fileGroup);
         }
     }
 

@@ -35,9 +35,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayDeque;
 import java.util.Date;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -217,27 +220,56 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         if (context.getRequest() instanceof MultipartHttpServletRequest)
         {
             MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest)context.getRequest();
-            Iterator<Map.Entry<String, MultipartFile>> iter = multipartRequest.getFileMap().entrySet().iterator();
+            Iterator<Map.Entry<String, List<MultipartFile>>> iter = multipartRequest.getMultiFileMap().entrySet().iterator();
             File dir = getFileTargetDir(context);
+            Deque<File> overflowFiles = new ArrayDeque<>();  // using a deque for easy removal of single elements
+            Set<String> unusedParameterNames = new HashSet<>(parameterNames);
             while (iter.hasNext())
             {
-                Map.Entry<String, MultipartFile> entry = iter.next();
+                Map.Entry<String, List<MultipartFile>> entry = iter.next();
                 if (parameterNames == null || parameterNames.contains(entry.getKey()))
                 {
-                    MultipartFile multipartFile = entry.getValue();
-                    String fileName = multipartFile.getOriginalFilename();
-                    if (!fileName.isEmpty() && !originalFileNames.add(fileName))
+                    List<MultipartFile> multipartFiles = entry.getValue();
+                    boolean isAfterFirstFile = false;
+                    for (MultipartFile multipartFile : multipartFiles)
                     {
-                        throw new ExperimentException("The file '" + fileName + " ' was uploaded twice - all files must be unique");
-                    }
-                    if (!multipartFile.isEmpty())
-                    {
-                        File file = findUniqueFileName(fileName, dir);
-                        multipartFile.transferTo(file);
-                        files.put(multipartFile.getName(), file);
+                        String fileName = multipartFile.getOriginalFilename();
+                        if (!fileName.isEmpty() && !originalFileNames.add(fileName))
+                        {
+                            throw new ExperimentException("The file '" + fileName + " ' was uploaded twice - all files must be unique");
+                        }
+                        if (!multipartFile.isEmpty())
+                        {
+                            File file = findUniqueFileName(fileName, dir);
+                            multipartFile.transferTo(file);
+                            if (!isAfterFirstFile)  // first file gets stored with multipartFile's name
+                            {
+                                files.put(multipartFile.getName(), file);
+                                isAfterFirstFile = true;
+                                unusedParameterNames.remove(multipartFile.getName());
+                            }
+                            else  // other files get stored in leftover keys later to store only one file per key (bit of a hack)
+                            {
+                                overflowFiles.add(file);
+                            }
+                        }
                     }
                 }
             }
+            // now process overflow files, if any
+            for (String unusedParameterName : unusedParameterNames)
+            {
+                if (overflowFiles.size() < 1)
+                    break;  // we're done
+                else
+                {
+                    files.put(unusedParameterName, overflowFiles.remove());
+                }
+            }
+
+            if (overflowFiles.size() > 0)  // too many files; shouldn't happen, but if it does, throw an error
+                throw new ExperimentException("Tried to save too many files: number of keys is " + parameterNames.size() +
+                        ", but " + overflowFiles.size() + " extra file(s) were found.");
         }
         return files;
     }
