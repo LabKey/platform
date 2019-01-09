@@ -25,6 +25,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.StringKeyCache;
+import org.labkey.api.data.ConnectionWrapper.Closer;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialect.DataSourceProperties;
 import org.labkey.api.data.dialect.SqlDialectManager;
@@ -83,6 +84,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -133,6 +135,7 @@ public class DbScope
     private final DbSchemaCache _schemaCache;
     private final SchemaTableInfoCache _tableCache;
     private final Map<Thread, List<TransactionImpl>> _transaction = new WeakHashMap<>();
+    private final Map<Thread, ConnectionHolder> _threadConnections = new WeakHashMap<>();
     private final LabKeyDataSourceProperties _labkeyProps;
     private final DataSourceProperties _dsProps;
 
@@ -551,7 +554,7 @@ public class DbScope
         // try/finally ensures that closeConnection() works even if setAutoCommit() throws 
         try
         {
-            conn = getPooledConnection(null);
+            conn = getPooledConnection(ConnectionType.Transaction, null);
 
             if (locks.length > 0 && locks[0] == AUTO_COMMIT_FAILURE_SIMULATOR)
             {
@@ -653,22 +656,129 @@ public class DbScope
     public Connection getConnection(@Nullable Logger log) throws SQLException
     {
         Transaction t = getCurrentTransaction();
+        final Connection conn;
 
         if (null == t)
-            return getPooledConnection(log);
+            conn = getSqlDialect().isPostgreSQL() ? getPooledConnection() : getCurrentConnection(log); // For now, don't share connections on PostgreSQL
         else
-            return t.getConnection();
+            conn = t.getConnection();
+
+        return conn;
     }
 
+    public enum ConnectionType
+    {
+        Pooled()
+        {
+            @Override
+            void close(DbScope scope, Connection conn, Closer closer) throws SQLException
+            {
+                closer.close();
+            }
+        },
+        Thread()
+        {
+            @Override
+            void close(DbScope scope, Connection conn, Closer closer) throws SQLException
+            {
+                if (scope.getConnectionHolder().release(conn))
+                {
+                    closer.close();
+                }
+            }
+        },
+        Transaction()
+        {
+            @Override
+            void close(DbScope scope, Connection conn, Closer closer) throws SQLException
+            {
+                closer.close();
+            }
+        };
 
-    /** Get a fresh connection directly from the pool... not part of the current transaction, etc. */
+        abstract void close(DbScope scope, Connection conn, Closer closer) throws SQLException;
+    }
+
+    private class ConnectionHolder
+    {
+        private int _refCount = 0;
+        private Connection _conn;
+
+        public ConnectionHolder()
+        {
+        }
+
+        public synchronized Connection get(@Nullable Logger log) throws SQLException
+        {
+            if (0 == _refCount)
+            {
+                _conn = getPooledConnection(ConnectionType.Thread, log);
+            }
+
+            _refCount++;
+
+            log(() -> 1 == _refCount ? "New connection [1]: " + _conn.toString() : "Existing connection [" + _refCount + "]: " + _conn.toString());
+            log(() -> _refCount > 2 ? "ConnectionHolder RefCount: " + _refCount : null);
+
+            return _conn;
+        }
+
+        public synchronized boolean release(Connection conn)
+        {
+            log(() -> 1 == _refCount ? "Releasing connection [1]: " + conn.toString() : "Attempting to decrease count of connection [" + _refCount + "]: " + conn.toString());
+
+            if (_conn != conn)
+                throw new IllegalStateException("Incorrect Connection: " + conn + " vs. " + _conn);
+
+            if (_refCount <= 0)
+                throw new IllegalStateException("Reference count is too low (" + _refCount + ") for " + _conn);
+
+            _refCount--;
+
+            if (0 == _refCount)
+            {
+                _conn = null;
+            }
+
+            return 0 == _refCount;
+        }
+    }
+
+    private void log(Supplier<String> supplier)
+    {
+        if (LOG.isDebugEnabled())
+        {
+            String message = supplier.get();
+
+            if (null != message)
+                LOG.debug(message);
+        }
+    }
+
+    private ConnectionHolder getConnectionHolder()
+    {
+        Thread thread = getEffectiveThread();
+
+        // Synchronize just long enough to get a ConnectionHolder into the map
+        synchronized (_threadConnections)
+        {
+            return _threadConnections.computeIfAbsent(thread, t->new ConnectionHolder());
+        }
+    }
+
+    private Connection getCurrentConnection(@Nullable Logger log) throws SQLException
+    {
+        return getConnectionHolder().get(log);
+    }
+
+    /** Get a fresh connection directly from the pool... not part of the current transaction, not shared with the thread, etc. */
     @JsonIgnore
     public Connection getPooledConnection() throws SQLException
     {
-        return getPooledConnection(null);
+        return getPooledConnection(ConnectionType.Pooled, null);
     }
 
-
+    /** Create a new connection that completely bypasses the connection pool. */
     @JsonIgnore
     public Connection getUnpooledConnection() throws SQLException
     {
@@ -827,7 +937,7 @@ public class DbScope
 
     private static final int spidUnknown = -1;
 
-    protected ConnectionWrapper getPooledConnection(@Nullable Logger log) throws SQLException
+    protected ConnectionWrapper getPooledConnection(ConnectionType type, @Nullable Logger log) throws SQLException
     {
         Connection conn;
 
@@ -862,7 +972,7 @@ public class DbScope
             _initializedConnections.put(delegate, spid == null ? spidUnknown : spid);
         }
 
-        return new ConnectionWrapper(conn, this, spid, log);
+        return new ConnectionWrapper(conn, this, spid, type, log);
     }
 
     public void releaseConnection(Connection conn)
@@ -1352,7 +1462,7 @@ public class DbScope
      * an async thread to participate in the same transaction as the original HTTP request processing thread, for
      * example
      * @param asyncThread the thread that should use the database connections of the current thread
-     * @return an AutoCloseable that will stops sharing the database connection with the other thread
+     * @return an AutoCloseable that will stop sharing the database connection with the other thread
      */
     public static ConnectionSharingCloseable shareConnections(final Thread asyncThread)
     {

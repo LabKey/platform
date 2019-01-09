@@ -23,6 +23,7 @@ import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
+import org.labkey.api.data.ConnectionWrapper.Closer;
 import org.labkey.api.data.Selector.ForEachBlock;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.ConfigurationException;
@@ -1051,7 +1052,6 @@ public abstract class PostgreSql91Dialect extends SqlDialect
      */
     private String getResizeColumnStatement(TableChange change)
     {
-        List<String> statements = new ArrayList<>();
         StringBuilder sb = new StringBuilder();
         String comma = "";
 
@@ -1722,12 +1722,14 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     }
 
     @Override
-    public void configureToDisableJdbcCaching(Connection connection, DbScope scope, SQLFragment sql) throws SQLException
+    public Closer configureToDisableJdbcCaching(Connection connection, DbScope scope, SQLFragment sql) throws SQLException
     {
+        Closer ret = super.configureToDisableJdbcCaching(connection, scope, sql);
+
         // Only fiddle with the Connection settings if we're fairly certain that it's a read-only statement (starting
         // with SELECT) and we're not inside of a transaction, so we won't mess up any state the caller is relying on.
-
-        // !scope.isTransactionActive() is apparently not sufficient for a few isolated cases, like DbSequenceManager test. TODO: Figure out this discrepancy
+        // Also, now that connections are reused within a thread, setAutoCommit(false) may have already been called on
+        // this connection; check so we don't call setAutoCommit(false) again (that will throw).
         if (Table.isSelect(sql.getSQL()) && !scope.isTransactionActive() && connection.getAutoCommit())
         {
             try
@@ -1738,6 +1740,8 @@ public abstract class PostgreSql91Dialect extends SqlDialect
                 // See http://stackoverflow.com/questions/1468036/java-jdbc-ignores-setfetchsize
                 connection.setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED);
                 connection.setAutoCommit(false);
+
+                ret = () -> connection.setAutoCommit(true);
             }
             catch (SQLException e)
             {
@@ -1746,11 +1750,8 @@ public abstract class PostgreSql91Dialect extends SqlDialect
                 throw e;
             }
         }
-        else
-        {
-            if (Table.isSelect(sql.getSQL()) && !scope.isTransactionActive() && !connection.getAutoCommit())
-                throw new IllegalStateException("A database connection is in a bad state: it's not in a transaction but auto-commit is false. This could indicate a configuration problem with the database connection pool.");
-        }
+
+        return ret;
     }
 
 

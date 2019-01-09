@@ -25,6 +25,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
+import org.labkey.api.data.ConnectionWrapper.Closer;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.AliasManager;
@@ -307,9 +308,10 @@ public abstract class SqlDialect
         return null;
     }
 
-    public void configureToDisableJdbcCaching(Connection connection, DbScope scope, SQLFragment sql) throws SQLException
+    public Closer configureToDisableJdbcCaching(Connection connection, DbScope scope, SQLFragment sql) throws SQLException
     {
         // No-op by default
+        return () -> {};
     }
 
     /**

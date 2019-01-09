@@ -30,6 +30,7 @@ import org.labkey.api.cache.TransactionCache;
 import org.labkey.api.util.Filter;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Set;
 
 /**
@@ -393,20 +394,29 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
             }
 
             @Override
-            protected ConnectionWrapper getPooledConnection(Logger log)
+            protected ConnectionWrapper getPooledConnection(ConnectionType type, Logger log)
             {
-                return new ConnectionWrapper(null, null, null, log)
+                return new ConnectionWrapper(null, null, null, type, log)
                 {
+                    @Override
                     public void setAutoCommit(boolean autoCommit)
                     {
                     }
 
+                    @Override
                     public void commit()
                     {
                     }
 
+                    @Override
                     public void rollback()
                     {
+                    }
+
+                    @Override  // MyScope's isTransactionActive() override doesn't play nice with ConnectionType validation... so just call close directly
+                    public void close() throws SQLException
+                    {
+                        realClose();
                     }
                 };
             }

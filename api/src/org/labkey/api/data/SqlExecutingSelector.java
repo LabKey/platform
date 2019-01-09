@@ -341,7 +341,12 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
                 {
                     DbScope scope = getScope();
                     conn = getConnection();
-                    scope.getSqlDialect().configureToDisableJdbcCaching(conn, scope, _sql);
+
+                    if (conn instanceof ConnectionWrapper)
+                    {
+                        // Ask the ConnectionWrapper to tweak connection settings, if needed
+                        ((ConnectionWrapper) conn).configureToDisableJdbcCaching(_sql);
+                    }
 
                     try
                     {

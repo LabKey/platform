@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.DbScope.ConnectionType;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.StatementWrapper;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
@@ -53,6 +54,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Wrapper over another JDBC Connection object that provides logging for errors and some tracking of usage.
@@ -61,25 +63,26 @@ import java.util.concurrent.Executor;
  */
 public class ConnectionWrapper implements java.sql.Connection
 {
+    private static final Logger LOG = Logger.getLogger(ConnectionWrapper.class);
+    private static final Map<ConnectionWrapper, Pair<Thread, Throwable>> _openConnections = Collections.synchronizedMap(new IdentityHashMap<>());
+    private static final Set<ConnectionWrapper> _loggedLeaks = new HashSet<>();
+    private static final Logger _logDefault = Logger.getLogger(ConnectionWrapper.class);
+    private static final boolean _explicitLogger = _logDefault.getLevel() != null || _logDefault.getParent() != null  && _logDefault.getParent().getName().equals("org.labkey.api.data");
+    private static final AtomicLong COUNTER = new AtomicLong(0);
+
     private final Connection _connection;
     private final DbScope _scope;
     private final Integer _spid;
+    private final ConnectionType _type;
     private final java.util.Date _allocationTime = new java.util.Date();
     private final String _allocatingThreadName;
     private final Set<String> _referencingThreadNames = Collections.synchronizedSet(new TreeSet<>());
-
-    private final static Logger LOG = Logger.getLogger(ConnectionWrapper.class);
-
-    private static final Map<ConnectionWrapper, Pair<Thread,Throwable>> _openConnections = Collections.synchronizedMap(new IdentityHashMap<>());
-
-    private static final Set<ConnectionWrapper> _loggedLeaks = new HashSet<>();
-
-    private static Logger _logDefault = Logger.getLogger(ConnectionWrapper.class);
-    private static boolean _explicitLogger = _logDefault.getLevel() != null || _logDefault.getParent() != null  && _logDefault.getParent().getName().equals("org.labkey.api.data");
-
     private final @NotNull Logger _log;
+    private final long _count;
 
-    /** Remember the first SQLException that happened on this connection, as it may have leave the connection in a bad state */
+    private volatile @NotNull Closer _runOnClose = () -> {};
+
+    /** Remember the first SQLException that happened on this connection, as it may have left the connection in a bad state */
     private SQLException _originalSqlException;
 
     /** Remember code that closed the Transaction but didn't commit - it may be faulty if it doesn't signal the failure back to the caller */
@@ -90,11 +93,13 @@ public class ConnectionWrapper implements java.sql.Connection
 
     private volatile boolean _allowClose = true;
 
-    public ConnectionWrapper(Connection conn, DbScope scope, Integer spid, @Nullable Logger log)
+    public ConnectionWrapper(Connection conn, DbScope scope, Integer spid, ConnectionType type, @Nullable Logger log)
     {
         _connection = conn;
         _scope = scope;
         _spid = spid;
+        _type = type;
+        _count = COUNTER.incrementAndGet(); // For ease of tracking connections, assign each a unique, incrementing ID
 
         MemTracker.getInstance().put(this);
         _allocatingThreadName = Thread.currentThread().getName();
@@ -322,8 +327,18 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
+    public interface Closer
+    {
+        void close() throws SQLException;
+    }
+
     @Override
     public void close() throws SQLException
+    {
+        _type.close(_scope, this, this::realClose);
+    }
+
+    protected void realClose() throws SQLException
     {
         _openConnections.remove(this);
         _loggedLeaks.remove(this);
@@ -359,6 +374,7 @@ public class ConnectionWrapper implements java.sql.Connection
 
             try
             {
+                _runOnClose.close();
                 _connection.close();
             }
             catch (SQLException e)
@@ -818,7 +834,7 @@ public class ConnectionWrapper implements java.sql.Connection
     @Override
     public String toString()
     {
-        return "Connection wrapper for SPID " + _spid + ", originally allocated to thread " + _allocatingThreadName + " at " + DateFormat.getInstance().format(_allocationTime) + ", real connection: " + System.identityHashCode(_connection) + " - " + _connection.getClass() + (_referencingThreadNames.size() > 1 ? (", accessed by threads: " + _referencingThreadNames) : "");
+        return "Connection wrapper " + _count + " for SPID " + _spid + ", originally allocated to thread " + _allocatingThreadName + " at " + DateFormat.getInstance().format(_allocationTime) + ", real connection: " + System.identityHashCode(_connection) + " - " + _connection.getClass() + (_referencingThreadNames.size() > 1 ? (", accessed by threads: " + _referencingThreadNames) : "");
     }
 
 
@@ -832,10 +848,17 @@ public class ConnectionWrapper implements java.sql.Connection
     protected void finalize() throws Throwable
     {
         if (!isClosed())
+        {
             LOG.error("Connection was not closed! " + toString());
+            realClose();
+        }
 
         super.finalize();
-        close();
+    }
+
+    public void configureToDisableJdbcCaching(SQLFragment sql) throws SQLException
+    {
+        _runOnClose = _scope.getSqlDialect().configureToDisableJdbcCaching(this, _scope, sql);
     }
 
     @Override
