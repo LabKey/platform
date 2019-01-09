@@ -19,6 +19,7 @@ package org.labkey.study.controllers.assay;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.AbstractFileUploadAction;
 import org.labkey.api.action.ApiAction;
@@ -672,33 +673,39 @@ public class AssayController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class AssayFileDuplicateCheckAction extends ApiAction<SimpleApiJsonForm>
+    public class AssayFileDuplicateCheckAction extends MutatingApiAction<SimpleApiJsonForm>
     {
         @Override
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
         {
             boolean duplicate = false;   // if there is a filename conflict, set to true
-            String newFileName = null;   // if there is a filename conflict, this alternate filename will be used.
-            List<String> runNames = new ArrayList<>();
-            AssayFileWriter writer = new AssayFileWriter();
+            List<String> newFileNames = new ArrayList<>();   // if there is a filename conflict, this alternate filename (or filenames) will be used.
+            List<List<String>> runNamesPerFile = new ArrayList<>();
             try
             {
-                File targetDirectory = writer.ensureUploadDirectory(getContainer());
-                String fileName = form.getJsonObject() == null ? null : form.getJsonObject().getString("fileName");
-                if (fileName != null)
+                File targetDirectory = AssayFileWriter.ensureUploadDirectory(getContainer());
+                JSONArray fileNames = form.getJsonObject() == null ? null : form.getJsonObject().getJSONArray("fileNames");
+                if (fileNames != null && fileNames.length() > 0)
                 {
-                    File f = new File(targetDirectory, fileName);
-                    if (f.exists())
+                    for (int i = 0; i < fileNames.length(); i++)
                     {
-                        duplicate = true;
-                        File newFile = AssayFileWriter.findUniqueFileName(fileName, targetDirectory);
-                        newFileName = newFile.getName();
-                        ExpData expData = ExperimentService.get().getExpDataByURL(f, null); 
-                        if (expData != null)
+                        String fileName = (String)fileNames.get(i);
+                        File f = new File(targetDirectory, fileName);
+                        if (f.exists())
                         {
-                            for (ExpRun targetRun : expData.getTargetRuns())
+                            duplicate = true;
+                            File newFile = AssayFileWriter.findUniqueFileName(fileName, targetDirectory);
+                            newFileNames.add(i, newFile.getName());  // will infer duplication by whether an element exists at that position or not
+                            ExpData expData = ExperimentService.get().getExpDataByURL(f, null);
+                            if (expData != null)
                             {
-                                runNames.add(targetRun.getName());
+                                List<String> runNames = new ArrayList<>();
+                                for (ExpRun targetRun : expData.getTargetRuns())
+                                {
+                                    runNames.add(targetRun.getName());
+                                }
+
+                                runNamesPerFile.add(i, runNames);
                             }
                         }
                     }
@@ -710,8 +717,8 @@ public class AssayController extends SpringActionController
             }
             Map<String,Object> map = new HashMap<>();
             map.put("duplicate", duplicate);
-            map.put("newFileName", newFileName);
-            map.put("runNames", runNames);
+            map.put("newFileNames", newFileNames);
+            map.put("runNamesPerFile", runNamesPerFile);
             return new ApiSimpleResponse(map);
         }
     }
