@@ -2844,7 +2844,8 @@ public class WikiController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors)
         {
             Container c = getContainer();
-            MultiValuedMap<Wiki, String> mmap = new ArrayListValuedHashMap<>();
+            MultiValuedMap<Wiki, String> pagesWithInvalidLinks = new ArrayListValuedHashMap<>();
+            MultiValuedMap<Wiki, String> pagesAndReferences = new ArrayListValuedHashMap<>();
             Map<Wiki, Collection<String>> unusedAttachments = new TreeMap<>(Comparator.comparing(Wiki::getName, String.CASE_INSENSITIVE_ORDER));
             Set<WikiTree> trees = WikiSelectManager.getWikiTrees(c);
             WikiManager mgr = getWikiManager();
@@ -2867,14 +2868,23 @@ public class WikiController extends SpringActionController
                     if (name.startsWith("#"))
                     {
                         if (!html.getAnchors().contains(name))
-                            mmap.put(wiki, name);
+                            pagesWithInvalidLinks.put(wiki, name);
                     }
                     else
                     {
                         if (attachmentNames.contains(name))
+                        {
                             orphanedAttachments.remove(name);
+                        }
                         else
-                            mmap.put(wiki, name);
+                        {
+                            Wiki target = WikiSelectManager.getWiki(c, name);
+
+                            if (null == target)
+                                pagesWithInvalidLinks.put(wiki, name);
+                            else
+                                pagesAndReferences.put(target, wiki.getName());
+                        }
                     }
                 }
 
@@ -2885,9 +2895,9 @@ public class WikiController extends SpringActionController
             }
 
             StringBuilder html = new StringBuilder();
-            html.append(renderTable(c, mmap, "Pages with invalid links", false));
+            html.append(renderTable(c, pagesWithInvalidLinks, "Pages with invalid links", false));
             html.append(renderUnusedAttachments(c, unusedAttachments));
-            html.append(renderTable(c, mmap, "Pages with valid links", true));
+            html.append(renderTable(c, pagesAndReferences, "Back links (i.e., pages with a list of all referencing pages)", true));
 
             return new HtmlView(html.toString());
         }
@@ -2926,7 +2936,7 @@ public class WikiController extends SpringActionController
             return html;
         }
 
-        private StringBuilder renderTable(Container c, MultiValuedMap<Wiki, String> mmap, String title, boolean validWiki)
+        private StringBuilder renderTable(Container c, MultiValuedMap<Wiki, String> mmap, String title, boolean linkToNames)
         {
             StringBuilder html = new StringBuilder();
             Set<Wiki> wikis = new TreeSet<>((o1, o2) -> o1.getName().compareToIgnoreCase(o2.getName()));
@@ -2936,19 +2946,15 @@ public class WikiController extends SpringActionController
             for (Wiki wiki : wikis)
             {
                 StringBuilder linksHtml = new StringBuilder();
-                Collection<String> names = mmap.get(wiki);
+                List<String> names = new ArrayList<>(mmap.get(wiki));
+                names.sort(String.CASE_INSENSITIVE_ORDER);
                 String sep = "";
 
                 for (String name : names)
                 {
-                    Wiki page = WikiSelectManager.getWiki(c, name);
-
-                    if (null == page ^ validWiki)
-                    {
-                        linksHtml.append(sep);
-                        linksHtml.append(name);
-                        sep = ", ";
-                    }
+                    linksHtml.append(sep);
+                    linksHtml.append(linkToNames ? getSimpleLink(name, getPageURL(c, name)) : PageFlowUtil.filter(name));
+                    sep = ", ";
                 }
 
                 if (0 == linksHtml.length())
