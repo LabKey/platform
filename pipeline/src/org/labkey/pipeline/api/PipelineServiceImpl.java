@@ -421,6 +421,17 @@ public class PipelineServiceImpl implements PipelineService
     }
 
     @Override
+    public void setPipelineJobStatusFilePath(PipelineJob job, Path otherFile)
+    {
+        PipelineStatusFileImpl sf = PipelineStatusManager.getStatusFile(job.getContainer(), job.getLogFilePath());
+        if (sf != null)
+        {
+            sf.setFilePath(otherFile.toString());
+            PipelineStatusManager.updateStatusFile(sf);
+        }
+    }
+
+    @Override
     public void setPipelineProperty(Container container, String name, String value)
     {
         PipelineManager.setPipelineProperty(container, name, value);
