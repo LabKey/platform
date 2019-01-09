@@ -143,6 +143,9 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
      */
     void setPipelineJobStatus(PipelineJob job, PipelineJob.TaskStatus status) throws PipelineJobException;
 
+    /** Update the path to the log file for this job */
+    void setPipelineJobStatusFilePath(PipelineJob job, Path otherFile);
+
     void setPipelineProperty(Container container, String name, String value);
 
     String getPipelineProperty(Container container, String name);
