@@ -48,15 +48,23 @@ public class ModuleDataExchangeHandler extends TsvDataExchangeHandler
         {
             Set<File> result = new HashSet<>();
 
+            boolean isFirstFile = false;
             for (ExpData expData : run.getDataInputs().keySet())
             {
-                // the original uploaded path
-                pw.append(TsvDataExchangeHandler.Props.runDataUploadedFile.name());
-                pw.append('\t');
+                if (isFirstFile)
+                {
+                    // the original uploaded path(s)
+                    pw.append(TsvDataExchangeHandler.Props.runDataUploadedFile.name());
+                    pw.append('\t');
+                    isFirstFile = false;
+                }
+                else
+                    pw.append(';');
                 File file = expData.getFile();
-                pw.println(file.getAbsolutePath());
+                pw.append(file.getAbsolutePath());
                 result.add(file);
             }
+            pw.println();
 
             DataType dataType = context.getProvider().getDataType();
             if (dataType == null)
