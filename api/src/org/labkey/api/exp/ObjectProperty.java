@@ -16,16 +16,16 @@
 
 package org.labkey.api.exp;
 
+import org.apache.commons.beanutils.ConvertUtils;
+import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.Container;
-import org.labkey.api.attachments.AttachmentFile;
-import org.apache.commons.beanutils.ConvertUtils;
 import org.labkey.api.data.MvUtil;
 
+import java.io.File;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
-import java.util.Collections;
-import java.io.File;
 
 /**
  * A single object-property-value triple.
@@ -191,12 +191,12 @@ public class ObjectProperty extends OntologyManager.PropertyRow
                     this.floatValue = (Double) ConvertUtils.convert(value.toString(), Double.class);
                 break;
             case BOOLEAN:
-                boolean boolValue = false;
+                Boolean boolValue = null;
                 if (value instanceof Boolean)
                     boolValue = (Boolean)value;
                 else if (null != value)
                     boolValue = (Boolean) ConvertUtils.convert(value.toString(), Boolean.class);
-                this.floatValue = boolValue ? 1.0 : 0.0;
+                this.floatValue = boolValue == Boolean.TRUE ? 1.0 : 0.0;
                 break;
             case RESOURCE:
                 if (value instanceof Identifiable)
