@@ -315,7 +315,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
             List<AssayDataCollector> dataCollectors = provider.getDataCollectors(null, _uploadContext);
             assertEquals(2, dataCollectors.size());
             assertEquals(TextAreaDataCollector.class, dataCollectors.get(0).getClass());
-            assertEquals(FileUploadDataCollector.class, dataCollectors.get(2).getClass());
+            assertEquals(FileUploadDataCollector.class, dataCollectors.get(1).getClass());
         }
 
         @Test
