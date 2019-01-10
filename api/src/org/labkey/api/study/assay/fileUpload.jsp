@@ -65,7 +65,22 @@
                     }
                 }
                 else if (fileGroup.reused)  // no file input fields in this case
-                    count++;  // but always one file, so add 1
+                    count++;  // but always one file and it's active, so add 1
+            }
+        }
+        return count;
+    }
+
+    function getActiveFileGroupCount()
+    {
+        var count = 0;
+        for (var i = 0; i < _fileGroups.length; i++)
+        {
+            var fileGroup = _fileGroups[i];
+
+            if (fileGroup.active)
+            {
+                count++;
             }
         }
         return count;
@@ -100,13 +115,13 @@
             return;
         }
 
-        // return without adding row if we have already reached the max
+        // return without adding row if we have already reached the max number of files
         if (getActiveFileCount() >= MAX_FILE_INPUTS)
         {
             return;
         }
 
-        var currentIndex = getActiveFileCount();
+        var currentIndex = getActiveFileGroupCount();
 
         var fileGroup = {
             active: true,
@@ -199,7 +214,7 @@
         }
 
         // don't allow removal of the last file upload row
-        if (getActiveFileCount() <= 1)
+        if (getActiveFileGroupCount() <= 1)
         {
             return;
         }
@@ -258,7 +273,7 @@
         {
             // disable the remove button if there is only one file group left in use
             var fileGroup = _fileGroups[i];
-            if (getActiveFileCount() <= 1 || !fileGroup.active)
+            if (getActiveFileGroupCount() <= 1 || !fileGroup.active)
             {
                 enableDisableButton('remove', fileGroup.removeButtonAnchor, false);
             }
@@ -268,7 +283,7 @@
             }
 
             // only enable the add button that is on the last row (if the file group input is available)
-            if (i === _fileGroups.length - 1 && getActiveFileCount() < MAX_FILE_INPUTS && (!fileGroup.fileInput || fileGroup.fileInput.value !== ""))
+            if (i === _fileGroups.length - 1 && getActiveFileCount() < MAX_FILE_INPUTS && (!fileGroup.fileInput || fileGroup.fileInput.value !== " "))
             {
                 enableDisableButton('add', fileGroup.addButtonAnchor, true);
             }
