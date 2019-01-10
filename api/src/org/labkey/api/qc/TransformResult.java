@@ -35,7 +35,7 @@ public interface TransformResult
 
     Map<DomainProperty, String> getBatchProperties();
 
-    File getUploadedFile();
+    List<File> getUploadedFiles();
 
     String getAssayId();
 
@@ -66,7 +66,7 @@ public interface TransformResult
 
     /**
      * Get transform script output files.  These files are collected from the transform scripts operating directory and
-     * include stdout and stderr piped to file. The output data file, indicated by runDataUploadedFile in the run
+     * include stdout and stderr piped to file. The output data files, indicated by runDataUploadedFile in the run
      * properties file, will also be included.
      *
      * @return      List of files gathered

@@ -70,6 +70,7 @@ import java.sql.Types;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -77,6 +78,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
@@ -228,6 +230,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         if (dataType == null)
             dataType = TsvDataHandler.RELATED_TRANSFORM_FILE_DATA_TYPE;
 
+        boolean isFirstFile = true;
         for (File data : dataFiles)
         {
             ExpData expData = ExperimentService.get().createData(context.getContainer(), dataType, data.getName());
@@ -236,11 +239,17 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             ExperimentDataHandler handler = expData.findDataHandler();
             if (handler instanceof ValidationDataHandler)
             {
-                // original data file
-                pw.append(Props.runDataUploadedFile.name());
-                pw.append('\t');
+                // original data file(s)
+                if (isFirstFile)
+                {
+                    pw.append(Props.runDataUploadedFile.name());
+                    pw.append('\t');
+                    isFirstFile = false;
+                }
+                else
+                    pw.append(';');
+
                 pw.append(data.getAbsolutePath());
-                pw.println();
                 _filesToIgnore.add(data);
 
                 // for the data map sent to validation or transform scripts, we want to attempt type conversion, but if it fails, return
@@ -271,6 +280,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 }
             }
         }
+        pw.println();
 
         File dir = AssayFileWriter.ensureUploadDirectory(context.getContainer());
 
@@ -309,15 +319,16 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     {
         assert (!transformResult.getTransformedData().isEmpty());
 
-        // the original uploaded data file
+        // the original uploaded data file(s)
         pw.append(Props.runDataUploadedFile.name());
         pw.append('\t');
-        File originalFile = transformResult.getUploadedFile();
-        pw.append(originalFile.getAbsolutePath());
+        List<File> originalFiles = transformResult.getUploadedFiles();
+        String originalFilesString = originalFiles.stream().map(File::getAbsolutePath).collect(Collectors.joining(";"));
+        pw.append(originalFilesString);
         pw.println();
 
         Set<File> result = new HashSet<>();
-        result.add(originalFile);
+        result.addAll(originalFiles);
 
         AssayFileWriter.ensureUploadDirectory(context.getContainer());
         for (Map.Entry<ExpData, List<Map<String, Object>>> entry : transformResult.getTransformedData().entrySet())
@@ -335,7 +346,8 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             pw.append(data.getLSIDNamespacePrefix());
 
             // Include an additional column for the location of a transformed data file that a transform script may create.
-            File transformedData = AssayFileWriter.createFile(context.getProtocol(), originalFile.getParentFile(), "tsv");
+            // Get directory from first input file found
+            File transformedData = AssayFileWriter.createFile(context.getProtocol(), originalFiles.get(0).getParentFile(), "tsv");
             pw.append('\t');
             pw.append(transformedData.getAbsolutePath());
 
@@ -497,7 +509,8 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         else if(null != warning || (null != maxSeverity && maxSeverity.equals(errLevel.ERROR.name())))
         {
             //Erase files from working directory
-            FileUtils.deleteQuietly(result.getUploadedFile());
+            for (File file : result.getUploadedFiles())
+                FileUtils.deleteQuietly(file);
             for(File file : files) {
                 FileUtils.deleteQuietly(file);
             }
@@ -805,7 +818,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 List<Map<String, Object>> maps = parseRunInfo(runInfo);
                 Map<String, File> transformedData = new HashMap<>();
                 File transformedRunProps = null;
-                File runDataUploadedFile = null;
+                List<File> runDataUploadedFiles = new ArrayList<>();
                 Map<String, String> transformedProps = null;
                 String transErrorFile = null;
 
@@ -827,34 +840,38 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                     }
                     else if (String.valueOf(row.get("name")).equalsIgnoreCase(Props.runDataUploadedFile.name()))
                     {
-                        runDataUploadedFile = new File(row.get("value").toString());
+                        List<String> filePaths = Arrays.asList(row.get("value").toString().split(";"));
+                        runDataUploadedFiles.addAll(filePaths.stream().map(File::new).collect(Collectors.toList()));
                     }
                 }
 
                 List<File> tempOutputFiles = new ArrayList<>();
 
                 // Issue 35262: assay with transform script fails when using assay-importRun.api and dataRows
-                // The runDataUploadedFile will be null when importing via LABKEY.Assay.importRun() and using dataRows (instead of a file)
-                if (runDataUploadedFile != null)
+                // The runDataUploadedFile will be null when importing via LABKEY.Assay.importRun() and using dataRows (instead of a file or file(s))
+                if (!runDataUploadedFiles.isEmpty())
                 {
-                    tempOutputFiles.add(runDataUploadedFile);
-                    setWorkingDirectory(context, new File(runDataUploadedFile.getParentFile().getAbsolutePath()));
+                    tempOutputFiles.addAll(runDataUploadedFiles);
+                    // Since there could be many input files, we'll use the parent directory of the first file we found as the working directory
+                    setWorkingDirectory(context, new File(runDataUploadedFiles.get(0).getParentFile().getAbsolutePath()));
                 }
 
                 // Loop through all of the files that are left after running the transform script
                 for (File file : runInfo.getParentFile().listFiles())
                 {
-                    if (!isIgnorableOutput(file) && runDataUploadedFile != null)
+                    if (!isIgnorableOutput(file) && !runDataUploadedFiles.isEmpty())
                     {
-                        int extensionIndex = runDataUploadedFile.getName().lastIndexOf(".");
-                        String baseName = extensionIndex >= 0 ? runDataUploadedFile.getName().substring(0, extensionIndex) : runDataUploadedFile.getName();
+                        // Since there could be many uploaded data files, we'll just use the base name of the first one we found
+                        File firstFile = runDataUploadedFiles.get(0);
+                        int extensionIndex = firstFile.getName().lastIndexOf(".");
+                        String baseName = extensionIndex >= 0 ? firstFile.getName().substring(0, extensionIndex) : firstFile.getName();
 
                         // Figure out a unique file name
                         File targetFile;
                         int index = 0;
                         do
                         {
-                            targetFile = new File(runDataUploadedFile.getParentFile(), baseName + (index == 0 ? "" : ("-" + index)) + "." + file.getName());
+                            targetFile = new File(firstFile.getParentFile(), baseName + (index == 0 ? "" : ("-" + index)) + "." + file.getName());
                             index++;
                         }
                         while (targetFile.exists());
@@ -896,7 +913,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                         File workingDir = getWorkingDirectory(context);
                         if (workingDir == null)
                         {
-                            // If we don't have a runDataUploadFile, check the transformed data path is under the pipeline root.
+                            // If we don't have runDataUploadedFile, check the transformed data path is under the pipeline root.
                             // If the transformed data is under the pipeline root, don't move it and use it as is.
                             if (pipeRoot == null || !pipeRoot.isUnderRoot(file))
                                 throw new ValidationException("Working directory not found. Either runDataUploadedFile property from runProperties.tsv must be present or the transformed data path must be under the pipeline root directory.");
@@ -984,8 +1001,8 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                     if (transformedProps.containsKey(Props.runComments.name()))
                         result.setComments(transformedProps.get(Props.runComments.name()));
                 }
-                if (runDataUploadedFile != null)
-                    result.setUploadedFile(runDataUploadedFile);
+                if (!runDataUploadedFiles.isEmpty())
+                    result.setUploadedFiles(runDataUploadedFiles);
 
                 // Don't offer up input or other files as "outputs" of the script
                 tempOutputFiles.removeAll(_filesToIgnore);

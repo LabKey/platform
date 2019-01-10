@@ -34,7 +34,7 @@ public class DefaultTransformResult implements TransformResult
     private Map<ExpData, List<Map<String, Object>>> _dataMap = Collections.emptyMap();
     private Map<DomainProperty, String> _batchProperties = Collections.emptyMap();
     private Map<DomainProperty, String> _runProperties = Collections.emptyMap();
-    private File _uploadedFile;
+    private List<File> _uploadedFiles;
     private String _assayId;
     private String _comments;
     private String _warnings;
@@ -74,7 +74,7 @@ public class DefaultTransformResult implements TransformResult
         _dataMap = mergeResult.getTransformedData();
         _batchProperties = mergeResult.getBatchProperties();
         _runProperties = mergeResult.getRunProperties();
-        _uploadedFile = mergeResult.getUploadedFile();
+        _uploadedFiles = mergeResult.getUploadedFiles();
         _warnings = mergeResult.getWarnings();
         _files = mergeResult.getFiles();
         _assayId = null;
@@ -105,14 +105,14 @@ public class DefaultTransformResult implements TransformResult
         _runProperties = runProperties;
     }
 
-    public File getUploadedFile()
+    public List<File> getUploadedFiles()
     {
-        return _uploadedFile;
+        return _uploadedFiles;
     }
 
-    public void setUploadedFile(File uploadedFile)
+    public void setUploadedFiles(List<File> uploadedFiles)
     {
-        _uploadedFile = uploadedFile;
+        _uploadedFiles = uploadedFiles;
     }
 
     public static TransformResult createEmptyResult()
