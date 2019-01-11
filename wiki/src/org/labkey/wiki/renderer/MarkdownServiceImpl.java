@@ -75,6 +75,7 @@ public class MarkdownServiceImpl implements MarkdownService
         Object html = invocable.invokeMethod(mdCompiled, "render", mdText);
         if (null == html)
             return null;
-        return html.toString();
+        // #32468 include selector so we can have markdown-specific styling namespace
+        return "<div class=\"lk-markdown-container\">" + html.toString() + "</div>";
     }
 }

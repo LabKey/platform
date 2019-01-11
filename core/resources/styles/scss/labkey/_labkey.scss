@@ -491,12 +491,39 @@ table.wiki-table {
   border-collapse: collapse;
 }
 
-table.wiki-table td, table.wiki-table th
-{
+table.wiki-table td, table.wiki-table th {
   margin: 0;
   padding: 4px;
   border-width: 1px 1px 0 0;
   text-align: left;
+}
+
+table.wiki-table th {
+  font-weight: bold;
+}
+
+
+.lk-markdown-container { //Wraps markdown content to provide a namespace for CSS
+  table, td, th {
+    border: solid #e5e5e5;
+  }
+
+  table {
+    border-width: 0 0 1px 1px;
+    border-spacing: 0;
+    border-collapse: collapse;
+  }
+
+  td, th {
+    margin: 0;
+    padding: 4px;
+    border-width: 1px 1px 0 0;
+    text-align: left;
+  }
+
+  th {
+    font-weight: bold;
+  }
 }
 
 .lk-wiki-msgbox {
@@ -922,16 +949,13 @@ table.labkey-manage-display
     padding-top: 5px; padding-bottom:5px;
   }
 
-  > pre {
+  pre { //36031
+    padding-left: 0.25in;
+    border: 1px solid #CCCCCC;
     padding-top: 19px;
   }
 
-  > pre { //36031
-    padding-left: 0.25in;
-    border: 1px solid #CCCCCC;
-  }
-
-  > pre, code {
+  pre, code {
     background-color: #EEEEEE;
     color: #2020BE;
     font-family: $lk-font-family-code;
