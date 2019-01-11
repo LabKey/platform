@@ -324,22 +324,21 @@
         var numberOfFiles = fileGroup.fileInput.files.length;
         var fileName;
 
-        if (numberOfFiles === 0) {
+        // update all slots that have filenames which exist
+        for (var i = 0; i < fileGroup.fileInput.files.length; i++) {
+            fileName = fileGroup.fileInput.files[i].name;
+            // this is a little silly, but it's trying to avoid changing showPathname()
+            var fileNameWrapped = {};
+            fileNameWrapped.value = fileName;
+            showPathname(fileNameWrapped, fileGroup.fileNameLabels[i]);
+        }
+
+        // set all other filename elements to empty
+        for (var j = (MAX_FILE_INPUTS - 1); j >= numberOfFiles; j--) {
             // this is a little silly, but it's trying to avoid changing showPathname()
             fileName = {};
             fileName.value = '';
-            showPathname(fileName, fileGroup.fileNameLabels[0]);
-        }
-        else {
-            fileName = '';
-
-            for (var i = 0; i < fileGroup.fileInput.files.length; i++) {
-                fileName = fileGroup.fileInput.files[i].name;
-                // this is a little silly, but it's trying to avoid changing showPathname()
-                var fileNameWrapped = {};
-                fileNameWrapped.value = fileName;
-                showPathname(fileNameWrapped, fileGroup.fileNameLabels[i]);
-            }
+            showPathname(fileName, fileGroup.fileNameLabels[j]);
         }
     }
 
