@@ -25,6 +25,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.PageFlowUtil;
@@ -94,6 +95,16 @@ public class SampleSetWebPart extends QueryView
 
     public static void populateButtonBar(ViewContext model, ButtonBar bb, boolean detailsView)
     {
+        ActionURL urlInsert = new ActionURL(ExperimentController.CreateSampleSetAction.class, model.getContainer());
+        urlInsert.addParameter(ActionURL.Param.returnUrl, model.getActionURL().toString());
+
+        ActionButton createNewButton = new ActionButton(ExperimentController.CreateSampleSetAction.class, "Create New Sample Set");
+        createNewButton.setDisplayPermission(InsertPermission.class);
+        createNewButton.setIconCls("plus");
+        createNewButton.setURL(urlInsert);
+
+        bb.add(createNewButton);
+
         ActionButton deleteButton = new ActionButton(ExperimentController.DeleteMaterialSourceAction.class, "Delete", DataRegion.MODE_GRID, ActionButton.Action.GET);
         deleteButton.setDisplayPermission(DeletePermission.class);
         ActionURL deleteURL = new ActionURL(ExperimentController.DeleteMaterialSourceAction.class, model.getContainer());

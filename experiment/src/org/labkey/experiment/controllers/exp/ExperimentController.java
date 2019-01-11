@@ -72,10 +72,12 @@ import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.query.ExpDataProtocolInputTable;
 import org.labkey.api.exp.query.ExpInputTable;
 import org.labkey.api.exp.query.ExpMaterialProtocolInputTable;
+import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineRootContainerTree;
@@ -3389,6 +3391,84 @@ public class ExperimentController extends SpringActionController
         public MaterialSourceForm()
         {
             super(MaterialSource.class, ExperimentService.get().getTinfoMaterialSource());
+        }
+    }
+
+    @RequiresPermission(InsertPermission.class)
+    public class CreateSampleSetAction extends FormViewAction<CreateSampleSetForm>
+    {
+        ActionURL _successUrl;
+
+        @Override
+        public void validateCommand(CreateSampleSetForm form, Errors errors)
+        {
+            if (StringUtils.isEmpty(form.getName()))
+                errors.reject(ERROR_MSG, "You must supply a name for the sample set");
+        }
+
+        @Override
+        public ModelAndView getView(CreateSampleSetForm form, boolean reshow, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/experiment/createSampleSet.jsp", form, errors);
+        }
+
+        @Override
+        public boolean handlePost(CreateSampleSetForm form, BindException errors) throws Exception
+        {
+            List<GWTPropertyDescriptor> properties = new ArrayList<>();
+
+            GWTPropertyDescriptor descriptor = new GWTPropertyDescriptor();
+            descriptor.setName(ExpMaterialTable.Column.Name.name());
+            properties.add(descriptor);
+            ExpSampleSet sampleSet = ExperimentService.get().createSampleSet(
+                    getContainer(), getUser(), form.getName(), null,
+                    properties, Collections.emptyList(), -1, -1, -1, -1, form.getNameExpression(),
+                    null
+            );
+
+            Domain domain = sampleSet.getType();
+            DomainKind kind = domain.getDomainKind();
+            _successUrl = kind.urlEditDefinition(domain, getViewContext());
+
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(CreateSampleSetForm form)
+        {
+            return _successUrl;
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Create Sample Set");
+        }
+    }
+
+    public static class CreateSampleSetForm
+    {
+        private String name;
+        private String nameExpression;
+
+        public String getName()
+        {
+            return name;
+        }
+
+        public void setName(String name)
+        {
+            this.name = name;
+        }
+
+        public String getNameExpression()
+        {
+            return nameExpression;
+        }
+
+        public void setNameExpression(String nameExpression)
+        {
+            this.nameExpression = nameExpression;
         }
     }
 

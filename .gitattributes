@@ -1021,6 +1021,7 @@ experiment/src/org/labkey/experiment/controllers/property/DomainForm.java -text
 experiment/src/org/labkey/experiment/controllers/property/GWTDomainMixin.java -text
 experiment/src/org/labkey/experiment/controllers/property/PropertyController.java -text
 experiment/src/org/labkey/experiment/controllers/property/templateUpdate.jsp -text
+experiment/src/org/labkey/experiment/createSampleSet.jsp -text
 experiment/src/org/labkey/experiment/customizeRunWebPart.jsp -text
 experiment/src/org/labkey/experiment/defaults/DefaultValueServiceImpl.java -text
 experiment/src/org/labkey/experiment/deriveSamplesChooseTarget.jsp -text
