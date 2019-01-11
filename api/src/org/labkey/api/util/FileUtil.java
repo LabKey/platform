@@ -368,6 +368,11 @@ public class FileUtil
 
     public static URI createUri(String str)
     {
+        return createUri(str, true);
+    }
+
+    public static URI createUri(String str, boolean isEncoded)
+    {
         str = str.replace("\\", "/");
         if (str.matches("^[A-z]:/.*"))
             return new File(str).toURI();
@@ -377,7 +382,10 @@ public class FileUtil
             str2 = "file://" + str;
 
         LOG.debug("CreateUri from: " + str + " [" + Thread.currentThread().getStackTrace()[2].toString() + "]");
-        str2 = str2.replace(" ", "%20"); // Spaces in paths make URI unhappy
+        if (isEncoded)
+            str2 = str2.replace(" ", "%20"); // Spaces in paths make URI unhappy
+        else
+            str2 = encodeForURL(str2);
         try
         {
             return new URI(str2);
@@ -433,8 +441,13 @@ public class FileUtil
 
     public static Path stringToPath(Container container, String str)
     {
+        return stringToPath(container, str, true);
+    }
+
+    public static Path stringToPath(Container container, String str, boolean isEncoded)
+    {
         if (!FileUtil.hasCloudScheme(str))
-            return new File(createUri(str)).toPath();
+            return new File(createUri(str, isEncoded)).toPath();
         else
             return CloudStoreService.get().getPathFromUrl(container, decodeSpaces(str));
     }
@@ -731,6 +744,27 @@ quickScan:
         return list;
     }
 
+
+    private static String encodeForURL(String str) 
+    {
+        // str is unencoded; we need certain special chars encoded for it to become a URL
+        // % & # @ ~ {} []
+        StringBuilder res = new StringBuilder();
+        for (int i = 0; i < str.length(); i++) {
+            if ('%' == str.charAt(i)) res.append("%25");
+            else if ('#' == str.charAt(i)) res.append("%23");
+            else if ('&' == str.charAt(i)) res.append("%26");
+            else if ('@' == str.charAt(i)) res.append("%40");
+            else if ('~' == str.charAt(i)) res.append("%7E");
+            else if ('{' == str.charAt(i)) res.append("%7B");
+            else if ('}' == str.charAt(i)) res.append("%7D");
+            else if ('[' == str.charAt(i)) res.append("%5B");
+            else if (']' == str.charAt(i)) res.append("%5D");
+            else if (' ' == str.charAt(i)) res.append("%20");   // space also
+            else res.append(str.charAt(i));
+        }
+        return res.toString();
+    }
 
     static boolean startsWith(String s, char ch)
     {

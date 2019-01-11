@@ -42,6 +42,7 @@
 
     ActionURL projConfig = urlProvider(AdminUrls.class).getProjectSettingsFileURL(c);
     int height = null == bean.getHeight() ? 350 : bean.getHeight();
+    boolean isCloudPath = bean.isCloudRootPath() || (bean.isAtFilesRootPath() && FileContentService.get().isCloudRoot(c));
 
     if (!bean.isEnabled())
     {
@@ -51,7 +52,7 @@
     }
     else if (!bean.isRootValid(c))
     {
-        if (bean.isCloudRootPath() || (bean.isAtFilesRootPath() && FileContentService.get().isCloudRoot(c)))
+        if (isCloudPath)
         {
 %>
     <span class="labkey-error">
@@ -101,6 +102,7 @@
             showDetails: <%=bean.isShowDetails()%>,
             expandUpload: <%=bean.isExpandFileUpload()%>,
             isPipelineRoot: <%=bean.isPipelineRoot()%>,
+            isCloudPath: <%=isCloudPath%>,
             adminUser: <%=c.hasPermission(getUser(), AdminPermission.class)%>,
             statePrefix: <%=q(bean.getStatePrefix())%>,
             actions: buttonActions,

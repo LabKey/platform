@@ -68,6 +68,7 @@ import javax.script.ScriptException;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -359,10 +360,10 @@ public class RReport extends ExternalScriptEngineReport
         if (!isRStudio)
         {
             // Root path to resolve system files in reports
-            File root = FileContentService.get().getFileRoot(context.getContainer(), FileContentService.ContentType.files);
+            Path root = FileContentService.get().getFileRootPath(context.getContainer(), FileContentService.ContentType.files);
             if (root != null)
             {
-                labkey.append("labkey.file.root <- \"").append(root.getPath().replaceAll("\\\\", "/")).append("\"\n");
+                labkey.append("labkey.file.root <- \"").append(FileUtil.getAbsolutePath(root).replaceAll("\\\\", "/")).append("\"\n");
             }
             else
             {
@@ -370,10 +371,10 @@ public class RReport extends ExternalScriptEngineReport
             }
 
             // Root path to resolve pipeline files in reports
-            root = FileContentService.get().getFileRoot(context.getContainer(), FileContentService.ContentType.pipeline);
+            root = FileContentService.get().getFileRootPath(context.getContainer(), FileContentService.ContentType.pipeline);
             if (root != null)
             {
-                labkey.append("labkey.pipeline.root <- \"").append(root.getPath().replaceAll("\\\\", "/")).append("\"\n");
+                labkey.append("labkey.pipeline.root <- \"").append(FileUtil.getAbsolutePath(root).replaceAll("\\\\", "/")).append("\"\n");
             }
             else
             {

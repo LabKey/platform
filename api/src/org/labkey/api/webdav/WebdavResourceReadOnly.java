@@ -306,7 +306,7 @@ public class WebdavResourceReadOnly implements WebdavResource
     }
 
     @Override
-    public boolean createCollection(User user)
+    public boolean createCollection(User user) throws DavException
     {
         return false;
     }

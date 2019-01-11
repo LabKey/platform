@@ -83,6 +83,14 @@ public interface CloudStoreService
         }
     }
 
+    class ServiceException extends RuntimeException
+    {
+        public ServiceException(String message, Throwable t)
+        {
+            super(message, t);
+        }
+    }
+
     /**
      * Returns a list of blob store provider (id, name) pairs.
      */

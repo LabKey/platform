@@ -214,8 +214,8 @@ public class Path implements Serializable, Comparable, Iterable<String>
 
     public boolean contains(String name)
     {
-        for (String p : _path)
-            if (p.equals(name))
+        for (int i=0 ; i<_length ; i++)
+            if (_path[i].equals(name))
                 return true;
         return false;
     }
