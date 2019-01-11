@@ -110,7 +110,7 @@ public class FileSystemAttachmentParent implements AttachmentDirectory
             }
             else
             {
-                dir = FileUtil.stringToPath(getContainer(), path);
+                dir = FileUtil.stringToPath(getContainer(), path, false);       // path not encoded
             }
 
             if (_contentType != null && !svc.isCloudRoot(c))    // don't need @files in cloud

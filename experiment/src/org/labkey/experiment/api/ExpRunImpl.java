@@ -235,7 +235,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         if (_object.getFilePathRoot() == null || FileUtil.hasCloudScheme(_object.getFilePathRoot()))
             return null;
         else
-            return new File(FileUtil.createUri(_object.getFilePathRoot()));
+            return new File(FileUtil.createUri(_object.getFilePathRoot(), false));
     }
 
     @Override
@@ -254,7 +254,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         else if (FileUtil.hasCloudScheme(_object.getFilePathRoot()))
             return CloudStoreService.get().getPathFromUrl(getContainer(), _object.getFilePathRoot());
         else
-            return new File(FileUtil.createUri(_object.getFilePathRoot())).toPath();
+            return new File(FileUtil.createUri(_object.getFilePathRoot(), false)).toPath();
     }
 
     @Override

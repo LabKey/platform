@@ -72,6 +72,10 @@
             Ext4.each(File.system.Webdav.rootOptions, function (root) {
                 // Handle when deployed to the root context path or an explicit context path like /labkey
                 var prefix = LABKEY.contextPath === '' ? '' : (LABKEY.contextPath + "/");
+                if (rootPath.indexOf('/') === 0 && prefix.indexOf('/') !== 0)
+                {
+                    prefix = '/' + prefix;
+                }
                 if (rootPath.indexOf(prefix + root + "/") === 0)
                 {
                     url = prefix + root;

@@ -752,6 +752,10 @@ public class DavController extends SpringActionController
                     getResponse().sendError(dex.getStatus(), dex.getMessage());
                     ExceptionUtil.logExceptionToMothership(request, ex);
                 }
+                catch (CloudStoreService.ServiceException ex)
+                {
+                    throw new DavException(WebdavStatus.SC_SERVICE_UNAVAILABLE, ex.getMessage(), ex.getCause());
+                }
             }
             catch (UnauthorizedException uex)
             {
@@ -1608,7 +1612,7 @@ public class DavController extends SpringActionController
                     }
                 }
             }
-            catch (IOException|DavException|ConfigurationException x)
+            catch (IOException|DavException|ConfigurationException|CloudStoreService.ServiceException x)
             {
                 throw x;
             }

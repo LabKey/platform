@@ -125,7 +125,7 @@ Ext4.define('File.panel.Upload', {
                     if (!LABKEY.Utils.endsWith(parentFolderUri, '/'))
                         parentFolderUri = parentFolderUri + '/';
 
-                    var suppressDirConflictError = (-1 != parentFolderUri.indexOf('%40cloud') || -1 != parentFolderUri.indexOf('@cloud'));
+                    var suppressDirConflictError = this.uploadPanel.isCloudPath;
                     this.uploadPanel.fileSystem.createDirectory({
                         path : this.uploadPanel.fileSystem.encodeForURL(parentFolderUri + file.name),
                         suppressDirConflictError: suppressDirConflictError
@@ -138,7 +138,8 @@ Ext4.define('File.panel.Upload', {
                 // Filter out folder drag-drop on unsupported browsers (Firefox)
                 // See: https://github.com/enyo/dropzone/issues/528
                 if ( (!file.type && file.size == 0 && file.fullPath == undefined)) {
-                    done("Drag-and-drop upload of folders is not supported by your browser. Please consider using Google Chrome or an external WebDAV client.");
+                    // Note: we test for string "Drag-and-drop upload" below
+                    done("Drag-and-drop upload of folders is not supported by your browser. Please upgrade to a current version or consider using an external WebDAV client.");
                     return;
                 }
 
@@ -242,10 +243,12 @@ Ext4.define('File.panel.Upload', {
 
                     if (response && !response.success)
                     {
-                        if (response.status == 208)
+                        if (response.status === 208)
                         {
                             // File exists - mark the file as an error so the user isn't presented with the "Edit Properties" dialog
                             file.status = Dropzone.ERROR;
+                            file.errorText = 'Already exists';
+                            file.code = response.status;
                             Ext4.Msg.show({
                                 title : "File Conflict:",
                                 msg : "There is already a file named " + file.name + ' in this location. Would you like to replace it?',
@@ -262,12 +265,15 @@ Ext4.define('File.panel.Upload', {
                                 scope : this
                             });
                         }
-                        else if (response.status == 401 || response.status == 403)
+                        else if (response.status === 401 || response.status === 403)
                         {
                             file.status = Dropzone.ERROR;
+                            file.errorText = 'Unauthorized';
+                            file.code = response.status;
+                            file.message = "You do not have privileges to upload." + (LABKEY.user.isGuest ? " Verify that you are signed in appropriately." : "");
                             Ext4.Msg.show({
                                 title: "Unauthorized",
-                                msg: "You do not have privileges to upload." + (LABKEY.user.isGuest ? " Verify that you are signed in appropriately." : ""),
+                                msg: file.message,
                                 cls : 'data-window',
                                 icon: Ext4.Msg.ERROR,
                                 buttons: Ext4.Msg.OK
@@ -276,6 +282,9 @@ Ext4.define('File.panel.Upload', {
                         else
                         {
                             file.status = Dropzone.ERROR;
+                            file.errorText = 'Code: ' + response.status;
+                            file.code = response.status;
+                            file.message = response.exception;
                             var xhr = evt.target;
                             this.emit('error', file, response.exception, xhr);
                         }
@@ -288,25 +297,45 @@ Ext4.define('File.panel.Upload', {
 
                 this.on('error', function (file, message, xhr) {
                     var title = 'Error';
+                    var code = null;
                     // NOTE: we do not get a xhr response from labkey/_webdav
-                    if (xhr != undefined && xhr.readyState == 4)
+                    if (xhr !== undefined && xhr.readyState === 4)
                     {
                         // here we should be able to provide a more meaningful message
-                        if (xhr.status == 0 && xhr.statusText == "" && xhr.responseText == "" )
+                        if (xhr.status === 0 && xhr.statusText === "" && xhr.responseText === "")
                         {
-                            title = "Not Supported";
-                            message = "Drag-and-drop upload of folders is not supported by your browser. Please consider using Google Chrome or an external WebDAV client.";
+                            title = "Locked/Connection";
+                            message = "The file could not be uploaded. The file may be locked or the connection to the server may have been interrupted. Please try again, and if the problem persists, check the file, your firewall, proxy server, and antivirus web protection settings.";
                         }
-                        else if (xhr.status == 200)
+                        else if (xhr.status === 200)
                         {
-                            title = "Unauthorized";
-                            message = message || "You do not have privileges to upload." + (LABKEY.user.isGuest ? " Verify that you are signed in appropriately." : "")
+                            if (xhr.responseText)
+                            {
+                                var resp = Ext4.JSON.decode(xhr.responseText);
+                                code = resp.status;
+                                if (resp.status === 503)
+                                    title = "Connection";
+                                else
+                                    title = "Unauthorized/Connection";
+                            }
+                            else {
+                                title = "Unauthorized/Connection";
+                            }
+                            message = message || "You do not have privileges to upload." + (LABKEY.user.isGuest ? " Verify that you are signed in appropriately." : " Or the connection to the server may have been interrupted.")
                         }
+                    }
+                    else if (xhr === undefined && message && -1 !== message.indexOf("Drag-and-drop upload"))
+                    {
+                        title = "Drag-and-drop upload";
                     }
 
                     file.status = Dropzone.ERROR;
-                    this.uploadPanel.statusText.setText('Error uploading ' + file.name + (message ? (': ' + message) : ''));
-                    this.uploadPanel.showErrorMsg(title, message);
+                    file.errorText = title;
+                    file.code = code;
+                    file.message = 'Error uploading ' +
+                            (file.fullPath ? file.fullPath : file.name) + (message ? (': ' + message) : '');
+                    this.uploadPanel.statusText.setText(file.message);
+                    this.uploadPanel.showErrorMsg(title, file.message);
                 });
 
                 //this.on('complete', function (file) {
@@ -322,19 +351,88 @@ Ext4.define('File.panel.Upload', {
                     this.uploadPanel.setBusy(false);
                     getMaskElement(this.uploadPanel).unmask();
 
+                    var countErrorFiles = 0;
                     var errorFiles = [];
                     var fileRecords = [];
+                    var file0 = null;
+                    var dragDropError = false;
+                    var firstMessage = null;
+
                     for (var i = 0; i < this.files.length; i++) {
                         var file = this.files[i];
-                        if (file.status == Dropzone.SUCCESS) {
-                            fileRecords.push({data: {name:file.name, id:file.uri, href:file.uri}});
-                        } else if (file.status == Dropzone.ERROR) {
-                            errorFiles.push(file);
+                        if (file.status === Dropzone.SUCCESS) {
+                            fileRecords.push({data: {name: file.name, id: file.uri, href: file.uri}});
+                        }
+                        else if (file.status === Dropzone.ERROR) {
+                            if (file.errorText === 'Drag-and-drop upload') {
+                                dragDropError = true;
+                            }
+                            else {
+                                if (!firstMessage) {
+                                    firstMessage = file.message;
+                                }
+                                if (countErrorFiles % 2 === 0) {       // even
+                                    file0 = file;
+                                }
+                                else {
+                                    errorFiles.push({
+                                        name0: file0.fullPath ? file0.fullPath : file0.name,
+                                        text0: file0.errorText,
+                                        code0: file0.code,
+                                        name1: file.fullPath ? file.fullPath : file.name,
+                                        text1: file.errorText,
+                                        code1: file.code
+                                    });
+                                    file0 = null;
+                                }
+                                countErrorFiles += 1;
+                            }
                         }
                     }
+                    if (file0) {
+                        errorFiles.push({
+                            name0: file0.fullPath ? file0.fullPath : file.name,
+                            text0: file0.errorText,
+                            code0: file0.code,
+                            name1: '',
+                            text1: '',
+                            code1: ''
+                        });   // last if number is odd
+                    }
 
-                    if (fileRecords.length && errorFiles.length == 0) {
-                        this.uploadPanel.fireEvent('transfercomplete', {fileRecords : fileRecords});
+                    if (!dragDropError && countErrorFiles > 1) {
+                        var data = {
+                            numErrors: countErrorFiles,
+                            total: this.files.length,
+                            files: errorFiles,
+                            message: firstMessage
+                        };
+                        var tpl = Ext4.create('Ext.XTemplate',
+                                '<div>',
+                                '<p style="font-size:medium">{numErrors} of {total} files failed to upload.</p>',
+                                '<p style="width: 700px;">Possible reason: {message}</p>',
+                                '<table class="table-xtab-report">',
+                                    '<tr><th>File</th><th>Reason</th><th>Status</th><th>&nbsp;</th><th>File</th><th>Reason</th><th>Status</th></tr>',
+                                    '<tpl for="files">',
+                                        '<tr><td>{name0:htmlEncode}</td><td>{text0:htmlEncode}</td><td>{code0:htmlEncode}</td><td>&nbsp;</td><td>{name1:htmlEncode}</td><td>{text1:htmlEncode}</td><td>{code1:htmlEncode}</td></tr>',
+                                    '</tpl>',
+                                '</table>',
+                                '</div>');
+                        Ext4.Msg.alert({
+                            title: 'Upload Failure',
+                            msg: tpl.apply(data),
+                            maxHeight: 2000,
+                            maxWidth: 1200,
+                            buttons: Ext4.MessageBox.OK,
+                            scope: this,
+                            fn: function(btn, text) {
+                                this.uploadPanel.fireEvent('transfercomplete', {fileRecords: fileRecords});
+                            }
+                        });
+
+                    }
+                    else {
+                        this.uploadPanel.fireEvent('transfercomplete', {fileRecords: fileRecords});
                     }
 
                     this.removeAllFiles();
@@ -372,7 +470,7 @@ Ext4.define('File.panel.Upload', {
 
         var uploadsContainer = Ext4.create('Ext.container.Container', {
             layout: this.narrowLayout ? 'vbox' : 'hbox',
-            height: this.narrowLayout ? 80 : 60,
+            height: this.narrowLayout ? 60 : 30,
             items: [this.narrowLayout ? narrowUploadsPanel : uploadsPanel]
         });
 
@@ -399,13 +497,13 @@ Ext4.define('File.panel.Upload', {
 
         var btnContainer = Ext4.create('Ext.container.Container', {
             layout: 'hbox',
-            height: 60,
+            height: 30,
             items: [helpBtn, closeBtn]
         });
 
         var outerContainer = Ext4.create('Ext.container.Container', {
             layout: {type: 'hbox', align: 'stretch'},
-            height: this.narrowLayout ? 90 : 60,
+            height: this.narrowLayout ? 60 : 30,
             // the flex box here eats up all the middle real estate to kick the btnContainer all the way right
             items: [uploadsContainer, {xtype: 'box', flex: 1}, btnContainer]
         });
@@ -425,8 +523,8 @@ Ext4.define('File.panel.Upload', {
             name  : 'description',
             fieldLabel : 'Description',
             labelAlign : 'right',
-            width : 382,
-            margin: '5 0 0 0',
+            width : 300,
+            margin: '2 0 0 0',
             disabled : true
         });
 
@@ -436,12 +534,12 @@ Ext4.define('File.panel.Upload', {
             cls: this.bodyCls,
             items  : [{
                 xtype: 'container',
-                width: 525,
+                width: 900,
                 layout: 'hbox',
                 items: [{
                     xtype: 'filefield',
                     name : 'file',
-                    width: 452,
+                    width: 350,
                     fieldLabel: 'Choose a File',
                     labelAlign: 'right',
                     buttonText: 'Browse',
@@ -455,16 +553,20 @@ Ext4.define('File.panel.Upload', {
                         },
                         scope : this
                     }
-                },{
+                },
+                this.descriptionField,
+                {
                     xtype: 'button',
                     id: uploadId,
                     text: 'Upload',
-                    cls: 'upload-button',
+                    margin: '0 0 0 5',
                     disabled: true,
                     handler: this.submitFileUploadForm,
                     scope : this
-                }]
-            }, this.descriptionField]
+                },
+                { xtype: 'label', text: 'Or drag/drop files below.', margin: '4 0 0 10'}],
+            },
+            ]
         });
 
         return this.singleUpload;
@@ -480,7 +582,7 @@ Ext4.define('File.panel.Upload', {
 
         var html;
         if (window.Dropzone && window.Dropzone.isBrowserSupported()) {
-            html = "To upload, drag files " + (Ext4.isChrome ? "and folders " : "") +
+            html = "To upload, drag files " + (!Ext4.isIE ? "and folders " : "") +
                     "from your desktop onto this file browser.";
         }
         else {
@@ -515,7 +617,7 @@ Ext4.define('File.panel.Upload', {
         var url = this.getCurrentWebdavURL();
 
         var msg = [
-            'To upload files from your desktop to LabKey Server, drag-and-drop them onto the file area.',
+            'To upload files from your computer, you can drag-and-drop them onto the file listing.',
             '<p>',
             'You can also use ',
             LABKEY.Utils.getSimpleLinkHtml('webdav', 'WebDAV'),

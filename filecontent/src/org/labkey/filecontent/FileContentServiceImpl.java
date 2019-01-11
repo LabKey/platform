@@ -368,7 +368,7 @@ public class FileContentServiceImpl implements FileContentService
         if (isCloudFileRoot(fileRootPath))
             return CloudStoreService.get().getPath(c, getCloudRootName(fileRootPath), new org.labkey.api.util.Path(""));
 
-        return FileUtil.stringToPath(c, fileRootPath);
+        return FileUtil.stringToPath(c, fileRootPath, false);       // fileRootPath is unencoded
     }
 
     private boolean isCloudFileRoot(String fileRootPseudoPath)
@@ -434,7 +434,7 @@ public class FileContentServiceImpl implements FileContentService
         String absolutePath = null;
         if (strPath != null)
         {
-            URI uri = FileUtil.createUri(strPath);
+            URI uri = FileUtil.createUri(strPath, false);      // strPath is unencoded
             if (FileUtil.hasCloudScheme(uri))
                 absolutePath = FileUtil.getAbsolutePath(c, uri);
             else

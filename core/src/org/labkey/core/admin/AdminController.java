@@ -5148,7 +5148,7 @@ public class AdminController extends SpringActionController
                         if (form.isFolderSetup() && !sourceInfos.isEmpty())
                         {
                             // File root was set to cloud storage, remove folder created
-                            Path fromPath = FileUtil.stringToPath(sourceInfos.get(0).first, sourceInfos.get(0).second);
+                            Path fromPath = FileUtil.stringToPath(sourceInfos.get(0).first, sourceInfos.get(0).second);    // sourceInfos paths should be encoded
                             if (FileContentService.FILES_LINK.equals(FileUtil.getFileName(fromPath)))
                             {
                                 try
@@ -5176,7 +5176,7 @@ public class AdminController extends SpringActionController
                 String root = StringUtils.trimToNull(form.getFolderRootPath());
                 if (root != null)
                 {
-                    URI uri = FileUtil.createUri(root);
+                    URI uri = FileUtil.createUri(root, false);          // root is unencoded
                     Path path = FileUtil.getPath(ctx.getContainer(), uri);
                     if (null == path || !Files.exists(path))
                     {

@@ -2480,6 +2480,7 @@ Ext4.define('File.panel.Browser', {
             cls : 'upload-files-panel',
             hidden : !this.expandUpload,
             fileSystem : this.fileSystem,
+            isCloudPath : this.isCloudPath,
             style: 'border-bottom: 1px solid #b4b4b4;',
             narrowLayout: this.useNarrowUpload,
             listeners : {

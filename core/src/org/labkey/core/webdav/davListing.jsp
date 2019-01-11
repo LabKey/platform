@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.webdav.WebdavResource" %>
 <%@ page import="org.labkey.core.webdav.DavController" %>
 <%@ page import="org.labkey.api.premium.PremiumService" %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -34,6 +35,9 @@
     DavController.ListPage listpage = (DavController.ListPage) HttpView.currentModel();
     WebdavResource resource = listpage.resource;
     AppProps app = AppProps.getInstance();
+    String contextPath = request.getContextPath();
+    if (StringUtils.isBlank(contextPath))
+        contextPath = "/";
 %>
 <script type="text/javascript">
 
@@ -74,7 +78,7 @@
 
         // Don't encode rootPath or rootOffset
         var fileSystem = Ext4.create('File.system.Webdav', {
-            rootPath: <%=q(Path.parse(request.getContextPath()).append(listpage.root).toString())%>,
+            rootPath: <%=q(Path.parse(contextPath).append(listpage.root).toString())%>,
             rootOffset: <%=q(relativePath.toString("/","/"))%>,
             rootName: <%=q(app.getServerName())%>
         });

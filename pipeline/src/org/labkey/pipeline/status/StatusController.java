@@ -339,7 +339,7 @@ public class StatusController extends SpringActionController
                 String strPath = _statusFile.getFilePath();
                 if (null != strPath)
                 {
-                    Path path = FileUtil.stringToPath(c, strPath);
+                    Path path = FileUtil.stringToPath(c, strPath, false);
                     if (Files.exists(path))
                     {
                         try

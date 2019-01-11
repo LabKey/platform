@@ -161,6 +161,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -4747,9 +4748,12 @@ public class ExperimentServiceImpl implements ExperimentService
             runMaterialMap.put(mat.getRowId(), mat);
             ExpProtocolApplication sourceApplication = mat.getSourceApplication();
             Integer srcAppId = sourceApplication == null ? null : sourceApplication.getRowId();
-            assert protStepMap.containsKey(srcAppId);
-            protStepMap.get(srcAppId).getOutputMaterials().add(mat);
-            mat.markAsPopulated(protStepMap.get(srcAppId));
+            ExpProtocolApplicationImpl protApp = resolveProtApp(expRun, protStepMap, srcAppId);
+            if (protApp != null)
+            {
+                protApp.getOutputMaterials().add(mat);
+                mat.markAsPopulated(protApp);
+            }
         }
 
         List<ExpDataImpl> datas = ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), filt, sort).getArrayList(Data.class));
@@ -4759,9 +4763,12 @@ public class ExperimentServiceImpl implements ExperimentService
         {
             runDataMap.put(dat.getRowId(), dat);
             Integer srcAppId = dat.getDataObject().getSourceApplicationId();
-            assert protStepMap.containsKey(srcAppId);
-            protStepMap.get(srcAppId).getOutputDatas().add(dat);
-            dat.markAsPopulated(protStepMap.get(srcAppId));
+            ExpProtocolApplicationImpl protApp = resolveProtApp(expRun, protStepMap, srcAppId);
+            if (protApp != null)
+            {
+                protApp.getOutputDatas().add(dat);
+                dat.markAsPopulated(protApp);
+            }
         }
 
         // get the set of starting materials, which do not belong to the run
@@ -4944,6 +4951,25 @@ public class ExperimentServiceImpl implements ExperimentService
         }
 
         return expRun;
+    }
+
+    @Nullable
+    private ExpProtocolApplicationImpl resolveProtApp(ExpRunImpl expRun, Map<Integer, ExpProtocolApplicationImpl> protStepMap, Integer srcAppId)
+    {
+        ExpProtocolApplicationImpl protApp = protStepMap.get(srcAppId);
+        if (protApp == null)
+        {
+            LOG.warn("Could not find cached protocol application " + srcAppId + " when populating run " + expRun.getRowId() + " in " + expRun.getContainer().getPath() + ", attempting to fetch");
+            if (srcAppId != null)
+            {
+                protApp = getExpProtocolApplication(srcAppId);
+            }
+        }
+        if (protApp == null)
+        {
+            throw new IllegalStateException("Could not find protocol application " + srcAppId + " when populating run " + expRun.getRowId() + " in " + expRun.getContainer().getPath());
+        }
+        return protApp;
     }
 
 
