@@ -93,6 +93,19 @@ public interface QueryUpdateService
     List<Map<String,Object>> getRows(User user, Container container, List<Map<String,Object>> keys)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException;
 
+    /**
+     * Inserts or merges the given values into the source table of this query.
+     * The operation to be performed and import behavior is configured by the <code>context</code> parameter.
+     *
+     * @param user The current user.
+     * @param container The container in which the data should exist.
+     * @param context The context controls the insert or merge behavior.
+     * @param rows The row values provided using a DataIterator.
+     * @param extraScriptContext Optional additional bindings to set in the script's context when firing batch triggers.
+     *                           passed through from client code (depending on scope of request)
+     * @return The number of affected rows
+     * @throws SQLException Thrown if there was an error communicating with the database.
+     */
     int loadRows(User user, Container container, DataIteratorBuilder rows,
                        DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext) throws SQLException;
 
