@@ -56,7 +56,7 @@ public interface MarkdownService
         {
             MarkdownService markdownService = MarkdownService.get();
             String testMdText = "# This is a H1 header";
-            String expectedHtmlText = "<h1>This is a H1 header</h1>\n";
+            String expectedHtmlText = "<div class=\"lk-markdown-container\"><h1>This is a H1 header</h1>\n</div>";
             String htmlText = markdownService.toHtml(testMdText);
             assertEquals("The MarkdownService failed to correctly translate markdown of heading 1 text to html.", expectedHtmlText, htmlText);
         }
@@ -69,7 +69,7 @@ public interface MarkdownService
         {
             MarkdownService markdownService = MarkdownService.get();
             String testMdText = "**This is bold text**";
-            String expectedHtmlText = "<p><strong>This is bold text</strong></p>\n";
+            String expectedHtmlText = "<div class=\"lk-markdown-container\"><p><strong>This is bold text</strong></p>\n</div>";
             String htmlText = markdownService.toHtml(testMdText);
             assertEquals("The MarkdownService failed to correctly translate markdown of bold text to html.", expectedHtmlText, htmlText);
         }
@@ -208,7 +208,8 @@ public interface MarkdownService
                     "[link with title](http://nodeca.github.io/pica/demo/ \"title text!\")\n" +
                     "\n" +
                     "Autoconverted link https://github.com/nodeca/pica (enable linkify to see)\n";
-            String expectedHtmlText = "<hr>\n" +
+            String expectedHtmlText = "<div class=\"lk-markdown-container\">" +
+                    "<hr>\n" +
                     "<ul>\n" +
                     "<li><strong><a href=\"https://nodeca.github.io/pica/demo/\">pica</a></strong> - high quality and fast image<br>\n" +
                     "resize in browser.</li>\n" +
@@ -350,7 +351,8 @@ public interface MarkdownService
                     "<h2>Links</h2>\n" +
                     "<p><a href=\"http://dev.nodeca.com\">link text</a></p>\n" +
                     "<p><a href=\"http://nodeca.github.io/pica/demo/\" title=\"title text!\">link with title</a></p>\n" +
-                    "<p>Autoconverted link <a href=\"https://github.com/nodeca/pica\">https://github.com/nodeca/pica</a> (enable linkify to see)</p>\n";
+                    "<p>Autoconverted link <a href=\"https://github.com/nodeca/pica\">https://github.com/nodeca/pica</a> (enable linkify to see)</p>\n" +
+                    "</div>";
             String htmlText = markdownService.toHtml(testMdText);
             assertTrue("The MarkdownService failed to correctly translate complex markdown text to html.", expectedHtmlText.equals(htmlText));
         }
