@@ -13,6 +13,7 @@ dependencies {
                 // This library causes interference with slf4j logger calls (method not found errors)
                 exclude group: "org.slf4j", module: "jcl104-over-slf4j"
             }
+    external "com.thoughtworks.xstream:xstream:${xstreamVersion}"
     // The following are all dependencies of the mule-module-builders, but since we use a version that is not readily available
     // externally, the pom file that is generated does not work (creates a stack overflow), so we declare these separately
     // If we ever update the version to use something more standard, I hope that these can go away.
