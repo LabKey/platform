@@ -327,6 +327,7 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
 
     String getPublicName();
 
+    /** @return The public (queryable) schema name in SchemaKey encoding. */
     String getPublicSchemaName();
 
     // Most datasets do not have a container column

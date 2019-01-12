@@ -66,7 +66,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
     private boolean _public = true;
 
-    protected SchemaType _userSchema;
+    @NotNull protected SchemaType _userSchema;
 
     private final @NotNull TableRules _rules;
 
@@ -563,7 +563,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
     public Container getContainer()
     {
-        return _userSchema == null ? null : _userSchema.getContainer();
+        return _userSchema.getContainer();
     }
 
     public boolean needsContainerClauseAdded()
@@ -593,15 +593,17 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         return _rootTable.getNamedParameters();
     }
 
+    /** Set the SchemaKey encoded name for this schema. */
     public void setPublicSchemaName(String schemaName)
     {
+        assert !SchemaKey.needsEncoding(schemaName) : "schema name must be in SchemaKey encoding: " + schemaName;
         _publicSchemaName = schemaName;
     }
 
     @Override
     public String getPublicSchemaName()
     {
-        return _publicSchemaName == null ? super.getPublicSchemaName() : _publicSchemaName;
+        return _publicSchemaName == null ? getUserSchema().getSchemaName() : _publicSchemaName;
     }
 
     /** For FilteredTable, we should always have a UserSchema (it's a @NotNull constructor argument */
@@ -624,6 +626,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         Map<String, Pair<IndexType, List<ColumnInfo>>> indices = table.getUniqueIndices();
         return getStringPairMap(indices);
     }
+
     @NotNull
     @Override
     public Map<String, Pair<IndexType, List<ColumnInfo>>> getAllIndices()

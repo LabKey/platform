@@ -18,6 +18,7 @@ package org.labkey.api.data;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.Pair;
 
@@ -147,8 +148,10 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
         return _schemaName == null ? super.getPublicSchemaName() : _schemaName;
     }
 
+    /** Set the SchemaKey encoded name for this schema. */
     public void setPublicSchemaName(@Nullable String schemaName)
     {
+        assert !SchemaKey.needsEncoding(schemaName) : "schema name must encoded: " + schemaName;
         _schemaName = schemaName;
     }
 

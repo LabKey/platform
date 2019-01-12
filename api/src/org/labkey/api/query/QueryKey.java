@@ -108,28 +108,67 @@ import java.util.Objects;
 
     static public String encodePart(String str)
     {
-        str = StringUtils.replace(str, "$", "$D");
-        str = StringUtils.replace(str, "/", "$S");
-        str = StringUtils.replace(str, "&", "$A");
-        str = StringUtils.replace(str, "}", "$B");
-        str = StringUtils.replace(str, "~", "$T");
-        str = StringUtils.replace(str, ",", "$C");
-        str = StringUtils.replace(str, ".", "$P");
-        return str;
+        return StringUtils.replaceEach(str, ILLEGAL, REPLACEMENT);
     }
 
     static public String decodePart(String str)
     {
-        str = StringUtils.replace(str, "$P", ".");
-        str = StringUtils.replace(str, "$C", ",");
-        str = StringUtils.replace(str, "$T", "~");
-        str = StringUtils.replace(str, "$B", "}");
-        str = StringUtils.replace(str, "$A", "&");
-        str = StringUtils.replace(str, "$S", "/");
-        str = StringUtils.replace(str, "$D", "$");
-
-        return str;
+        return StringUtils.replaceEach(str, REPLACEMENT, ILLEGAL);
     }
+
+    private static final String[] ILLEGAL = {"$", "/", "&", "}", "~", ",", "."};
+    private static final String[] REPLACEMENT = {"$D", "$S", "$A", "$B", "$T", "$C", "$P"};
+
+    /**
+     * Check for invalid characters in a <code>divider</code> delimited string.
+     * WARNING: Don't use this method to check if a string is encoded or not since
+     * it is impossible to do so reliably. The best we can do is check for
+     * invalid characters and check if a dollar-replacement character is present.
+     * For example, the string "My$Stuff" may or may not be encoded -- this algorithm
+     * will indicate that doesn't need encoding since '$S' is already encoded.
+     */
+    static protected boolean needsEncoding(String str, String divider)
+    {
+        if (str == null)
+            return false;
+
+        String[] encodedParts = StringUtils.splitPreserveAllTokens(str, divider);
+        for (String encodedPart : encodedParts)
+        {
+            // check for one of the illegal characters but handle '$' separately
+            for (int i = 0; i < encodedPart.length(); i++)
+            {
+                char c = encodedPart.charAt(i);
+                if (c == '$')
+                {
+                    // check for a "$" at the end without a replacement character
+                    if (i == encodedPart.length()-1)
+                        return true;
+
+                    // check the next character is a valid replacement character,
+                    // otherwise it's a bare '$' that needs encoding
+                    String replacement = encodedPart.substring(i, i+2);
+                    if (!contains(REPLACEMENT, replacement))
+                        return true;
+                    i++;
+                }
+                else if (contains(ILLEGAL, String.valueOf(c)))
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
+    static protected boolean contains(String[] strs, String s)
+    {
+        for (int i = 0; i < strs.length; i++)
+            if (strs[i].equals(s))
+                return true;
+
+        return false;
+    }
+
 
     final QueryKey<T> _parent;
     final String _name;
@@ -207,7 +246,7 @@ import java.util.Objects;
 
     /**
      * generate a URL encoded string representing this field key
-     * may be parsed by FieldKey.parse()
+     * may be parsed by FieldKey.decode()
      */
     public String encode()
     {

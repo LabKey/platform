@@ -464,12 +464,6 @@ public class SimpleUserSchema extends UserSchema
             return null;
         }
 
-        @Override
-        public String getPublicSchemaName()
-        {
-            return _userSchema.getName();
-        }
-
     /*** UpdateableTableInfo ****/
 
         @Override

@@ -73,6 +73,9 @@ public interface ExpTable<C extends Enum> extends ContainerFilterable, TableInfo
 
     void setDomain(Domain domain);
 
-    /** Allows experiment-based tables to be exposed in other schemas, such as samples sets being exposed in the "samples" schema */
+    /**
+     * Set the SchemaKey encoded name for this schema.
+     * Allows experiment-based tables to be exposed in other schemas, such as samples sets being exposed in the "samples" schema.
+     */
     void setPublicSchemaName(String schemaName);
 }

@@ -90,6 +90,10 @@ public class SchemaKey extends QueryKey<SchemaKey>
         return QueryKey.fromParts(FACTORY, parts);
     }
 
+    static public boolean needsEncoding(String str)
+    {
+        return QueryKey.needsEncoding(str, DIVIDER);
+    }
 
 
     public SchemaKey(SchemaKey parent, @NotNull String name)
@@ -215,6 +219,17 @@ public class SchemaKey extends QueryKey<SchemaKey>
             assertTrue(SchemaKey.fromParts("a","b").compareTo(fromParts("z")) > 0);
 
             assertEquals(SchemaKey.fromParts("assay", "Viral Loads", "Viral Loads").toString(), "assay.Viral Loads.Viral Loads");
+        }
+
+        @Test
+        public void testNeedsEncoding()
+        {
+            assertFalse("No encoding needed", needsEncoding("assay.General.MrYuck"));
+            assertTrue("Need to encode /", needsEncoding("assay.General.Mr/Yuck"));
+            assertTrue("$Y is not an valid replacement", needsEncoding("assay.General.Mr$Yuck"));
+            assertFalse("$D is a valid replacement", needsEncoding("assay.General.Mr$Duck"));
+            assertTrue("$ not followed by a valid replacement char", needsEncoding("assay.General.MrYuck$"));
+            assertFalse("$D is a valid replacement, we are likely encoded", needsEncoding("assay.General.MrYuck$D"));
         }
     }
 }

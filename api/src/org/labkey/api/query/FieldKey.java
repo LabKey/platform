@@ -127,6 +127,11 @@ public class FieldKey extends QueryKey<FieldKey>
         return key;
     }
 
+    static public boolean needsEncoding(String str)
+    {
+        return QueryKey.needsEncoding(str, DIVIDER);
+    }
+
 
     public FieldKey(@Nullable FieldKey parent, @NotNull String name)
     {

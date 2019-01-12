@@ -1153,10 +1153,12 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         return getName();
     }
 
-    // XXX: Change to SchemaKey
+    /** @return a SchemaKey encoded name for this schema. */
     public String getPublicSchemaName()
     {
-        return getSchema().getName();
+        // Prefer the UserSchema's name.  Assume the DbSchema name doesn't need encoding
+        UserSchema schema = getUserSchema();
+        return schema != null ? schema.getSchemaName() : getSchema().getName();
     }
 
     public boolean needsContainerClauseAdded()

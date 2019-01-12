@@ -287,7 +287,7 @@ public class ReportingWriter
             if (isPublic)
             {
                 queryName = lookupTable.getPublicName();
-                schemaName = SchemaKey.decode(lookupTable.getPublicSchemaName());
+                schemaName = SchemaKey.fromString(lookupTable.getPublicSchemaName());
             }
             else
             {
