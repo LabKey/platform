@@ -17,12 +17,19 @@
 package org.labkey.study.assay.query;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.UnionContainerFilter;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
-import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssaySchema;
@@ -30,7 +37,8 @@ import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.controllers.assay.AssayController;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * User: brittp
@@ -124,9 +132,4 @@ public class AssayListTable extends FilteredTable<AssaySchemaImpl>
         super.setContainerFilter(filter);
     }
 
-    @Override
-    public String getPublicSchemaName()
-    {
-        return AssaySchema.NAME;
-    }
 }

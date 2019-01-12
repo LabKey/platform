@@ -447,11 +447,6 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
         return _list.getName();
     }
 
-    public String getPublicSchemaName()
-    {
-        return ListQuerySchema.NAME;
-    }
-
     @Override
     public QueryUpdateService getUpdateService()
     {

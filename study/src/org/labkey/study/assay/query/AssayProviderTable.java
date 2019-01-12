@@ -77,11 +77,4 @@ public class AssayProviderTable extends VirtualTable<AssaySchema>
         return sql;
     }
 
-
-
-    @Override
-    public String getPublicSchemaName()
-    {
-        return AssaySchema.NAME;
-    }
 }
