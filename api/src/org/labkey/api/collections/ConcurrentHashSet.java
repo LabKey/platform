@@ -37,6 +37,6 @@ public class ConcurrentHashSet<E> extends SetFromMap<E>
 {
     public ConcurrentHashSet()
     {
-        super(new ConcurrentHashMap<E, Boolean>());
+        super(new ConcurrentHashMap<>());
     }
 }

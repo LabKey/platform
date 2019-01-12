@@ -54,7 +54,7 @@ public class DirectoryResource extends AbstractResourceCollection
     private final File _dir;
     private final Pair<Resolver, Path> _cacheKey;
 
-    private final CacheLoader<Pair<Resolver, Path>, Map<String, Resource>> _loader = new CacheLoader<Pair<Resolver, Path>, Map<String, Resource>>()
+    private final CacheLoader<Pair<Resolver, Path>, Map<String, Resource>> _loader = new CacheLoader<>()
     {
         @Override
         public Map<String, Resource> load(Pair<Resolver, Path> key, @Nullable Object argument)
