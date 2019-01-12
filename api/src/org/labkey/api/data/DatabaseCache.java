@@ -413,10 +413,10 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
                     {
                     }
 
-                    @Override  // MyScope's isTransactionActive() override doesn't play nice with ConnectionType validation... so just call close directly
+                    @Override  // MyScope's isTransactionActive() override doesn't play nice with ConnectionType validation... so just call internalClose directly
                     public void close() throws SQLException
                     {
-                        realClose();
+                        internalClose();
                     }
                 };
             }

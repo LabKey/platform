@@ -335,10 +335,25 @@ public class ConnectionWrapper implements java.sql.Connection
     @Override
     public void close() throws SQLException
     {
+        DbScope.Transaction t;
+
+        if (_type != ConnectionType.Pooled && null != (t = _scope.getCurrentTransaction()))
+        {
+            assert t.getConnection() == this : "Attempting to close a different connection from the one associated with this thread: " + this + " vs " + t.getConnection(); //Should release same conn we handed out
+        }
+        else
+        {
+            internalClose();
+        }
+    }
+
+    /** Used by Transaction.close() and other internal DB classes that need to bypass transaction handling **/
+    void internalClose() throws SQLException
+    {
         _type.close(_scope, this, this::realClose);
     }
 
-    protected void realClose() throws SQLException
+    private void realClose() throws SQLException
     {
         _openConnections.remove(this);
         _loggedLeaks.remove(this);

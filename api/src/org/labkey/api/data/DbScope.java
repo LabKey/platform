@@ -975,24 +975,16 @@ public class DbScope
         return new ConnectionWrapper(conn, this, spid, type, log);
     }
 
+    /** Identical to conn.close() and try-with-resources on Connection, except it logs SQLException instead of throwing **/
     public void releaseConnection(Connection conn)
     {
-        Transaction t = getCurrentTransaction();
-
-        if (null != t)
+        try
         {
-            assert t.getConnection() == conn : "Attempting to close a different connection from the one associated with this thread: " + conn + " vs " + t.getConnection(); //Should release same conn we handed out
+            conn.close();
         }
-        else
+        catch (SQLException e)
         {
-            try
-            {
-                conn.close();
-            }
-            catch (SQLException e)
-            {
-                LOG.warn("error releasing connection: " + e.getMessage(), e);
-            }
+            LOG.warn("Error releasing connection", e);
         }
     }
 
@@ -1689,7 +1681,7 @@ public class DbScope
     }
 
     /** A dummy object for swap-in usage when no transaction is actually desired */
-    public static final DbScope.Transaction NO_OP_TRANSACTION = new DbScope.Transaction()
+    public static final Transaction NO_OP_TRANSACTION = new Transaction()
     {
         @Override
         @NotNull
@@ -1825,7 +1817,7 @@ public class DbScope
         }
 
         @NotNull
-        public Connection getConnection()
+        public ConnectionWrapper getConnection()
         {
             return _conn;
         }
@@ -1906,11 +1898,20 @@ public class DbScope
                 {
                     try
                     {
-                        try (Connection conn = getConnection())
+                        // Can't use try-with-resources here because we need to bypass ConnectionWrapper.close() transaction handling
+                        ConnectionWrapper conn = null;
+
+                        try
                         {
+                            conn = getConnection();
                             CommitTaskOption.PRECOMMIT.run(this);
                             conn.commit();
                             conn.setAutoCommit(true);
+                        }
+                        finally
+                        {
+                            if (null != conn)
+                                conn.internalClose();
                         }
 
                         popCurrentTransaction();
@@ -1982,11 +1983,11 @@ public class DbScope
         private void closeConnection()
         {
             _aborted = true;
-            Connection conn = getConnection();
+            ConnectionWrapper conn = getConnection();
 
             try
             {
-                conn.close();
+                conn.internalClose();
             }
             catch (SQLException e)
             {
@@ -2061,19 +2062,12 @@ public class DbScope
             for (DbScope scope : getDbScopes())
             {
                 SqlDialect dialect = scope.getSqlDialect();
-                Connection conn = null;
 
-                try
+                try (Connection conn = scope.getConnection())
                 {
-                    conn = scope.getConnection();
                     SqlExecutor executor = new SqlExecutor(scope, conn).setLogLevel(Level.OFF);  // We're about to generate a lot of SQLExceptions
                     dialect.testDialectKeywords(executor);
                     dialect.testKeywordCandidates(executor);
-                }
-                finally
-                {
-                    if (null != conn)
-                        scope.releaseConnection(conn);
                 }
             }
         }
@@ -2571,6 +2565,30 @@ public class DbScope
             }
 
             assert bkgException[0] instanceof DeadlockLoserDataAccessException || fgException instanceof DeadlockLoserDataAccessException;
+        }
+
+        @Test
+        public void testTryWithResources() throws SQLException
+        {
+            try (Transaction t = DbScope.getLabKeyScope().ensureTransaction())
+            {
+                Connection c = t.getConnection();
+                assertFalse(c.isClosed());
+
+                try (Transaction t2 = DbScope.getLabKeyScope().ensureTransaction())
+                {
+                    try (Connection c2 = t2.getConnection())
+                    {
+                        assertSame(c, c2);
+                        c2.getMetaData().getDatabaseProductName();
+                    }
+                    assertFalse(c.isClosed());
+                    t2.commit();
+                    assertFalse(c.isClosed());
+                }
+                t.commit();
+                assertTrue(c.isClosed());
+            }
         }
     }
 }
