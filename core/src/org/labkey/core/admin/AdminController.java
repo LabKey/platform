@@ -911,14 +911,14 @@ public class AdminController extends SpringActionController
             addCreditsViews(views, modules, "jars.txt", "JAR", "webapp", null, Module::getJarFilenames, jarRegEx, errorSource);
 
             Module core = ModuleLoader.getInstance().getCoreModule();
-            addCreditsViews(views, Collections.singletonList(core), "tomcat_jars.txt", "Tomcat JAR", "/build/staging/tomcat-lib directory", null, m->getTomcatJars(), jarRegEx, errorSource);
+            addCreditsViews(views, Collections.singletonList(core), "tomcat_jars.txt", "Tomcat JAR", "/build/staging/tomcat-lib directory", "JAR Files Installed in the <tomcat>/lib Directory", m->getTomcatJars(), jarRegEx, errorSource);
 
             addCreditsViews(views, modules, "scripts.txt", "Script, Icon and Font", errorSource);
             addCreditsViews(views, modules, "source.txt", "Java Source Code", errorSource);
             addCreditsViews(views, modules, "executables.txt", "Executable", errorSource);
 
-            if (AppProps.getInstance().isDevMode() || MothershipReport.usedInstaller())
-                addCreditsViews(views, modules, "installer.txt", "Executable", null, "the Graphical Windows Installer for ", null, null, errorSource);
+            if (AppProps.getInstance().isDevMode()) // || TODO: Check for running Virtual Box image
+                addCreditsViews(views, modules, "vm.txt", "Executable", null, "Executable Files Distributed with the Virtual Machine Image", null, null, errorSource);
 
             if (errorSource.length() > 0)
             {
@@ -947,7 +947,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    private void addCreditsViews(VBox views, List<Module> modules, String creditsFile, String fileType, @Nullable String foundWhere, @Nullable String descriptionPrefix, @Nullable Function<Module, Collection<String>> filenameProvider, @Nullable String wikiSourceSearchPattern, @NotNull StringBuilder errorSource) throws IOException
+    private void addCreditsViews(VBox views, List<Module> modules, String creditsFile, String fileType, @Nullable String foundWhere, @Nullable String customTitle, @Nullable Function<Module, Collection<String>> filenameProvider, @Nullable String wikiSourceSearchPattern, @NotNull StringBuilder errorSource) throws IOException
     {
         for (Module module : modules)
         {
@@ -960,7 +960,9 @@ public class AdminController extends SpringActionController
 
             if (null != wikiSource || !filenames.isEmpty())
             {
-                CreditsView credits = new CreditsView(creditsFile, wikiSource, filenames, fileType, foundWhere, (null != descriptionPrefix ? descriptionPrefix : "") + "the " + module.getName() + " Module", wikiSourceSearchPattern);
+                String component = "the " + module.getName() + " Module";
+                String title = (null == customTitle ? fileType + " Files Distributed with " + component : customTitle);
+                CreditsView credits = new CreditsView(creditsFile, wikiSource, filenames, fileType, foundWhere, component, title, wikiSourceSearchPattern);
                 views.addView(credits);
                 errorSource.append(credits.getErrors());
             }
@@ -977,9 +979,9 @@ public class AdminController extends SpringActionController
         private String _html;
         private String _errors = "";
 
-        CreditsView(String creditsFilename, @Nullable String wikiSource, @NotNull Collection<String> filenames, String fileType, String foundWhere, String component, String wikiSourceSearchPattern)
+        CreditsView(String creditsFilename, @Nullable String wikiSource, @NotNull Collection<String> filenames, String fileType, String foundWhere, String component, String title, String wikiSourceSearchPattern)
         {
-            super(fileType + " Files Distributed with " + (null == component ? "LabKey" : component));
+            super(title);
 
             _component = StringUtils.trimToEmpty(component);
 

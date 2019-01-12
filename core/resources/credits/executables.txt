@@ -1,6 +1,3 @@
-The following executable files are distributed and installed with the LabKey Server Graphical Windows Installer.
-They are also shipped in the zip download used for manual Windows installations.
-
 {table}
 Filename|Component|Version|Source|License|LabKey Dev|Purpose
 dot.exe\\freetype6.dll\\jpeg.dll\\png.dll\\z.dll|{link:Graphviz|http://www.graphviz.org/}|2.2.1|{link:AT&T Research|http://www.graphviz.org/}|{link:Common Public|http://www.graphviz.org/License.php}|jeckels|Renders trees of objects
