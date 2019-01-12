@@ -288,9 +288,8 @@ public class DataClassSearchTest extends BaseWebDriverTest
         deleteRowsCommand.addRow(deletedRow);
         deleteRowsCommand.execute(connection, getCurrentContainerPath());
 
-        // commented out due to intermittently failing on TeamCity
-        // TODO: now uncommented, monitor this test (see issue #26116)
-        testSearchAfterModifyingDomain();
+        // commented out due to intermittently failing on TeamCity, see issue #26116
+        //testSearchAfterModifyingDomain();
     }
 
     private void testSearchAfterModifyingDomain() throws Exception
@@ -333,8 +332,8 @@ public class DataClassSearchTest extends BaseWebDriverTest
         JSONObject secondDomainRowJson = new JSONObject();
         secondDomainRowJson.put("rowId", dataClassRowIds[1]);
         secondDomainRowJson.put("sodaFlavor", "ginger ale");
-        secondDomainRowJson.put("foodColor", "yellow");
-        secondDomainRowJson.put("sequence", "ein \nzwei \ndrei");
+        secondDomainRowJson.put("foodColor", "yellow");  // doesn't work right currently, see issue #26116
+        secondDomainRowJson.put("sequence", "ein \nzwei \ndrei");  // doesn't work right currently, see issue #26116
         domainRowsJson.add(secondDomainRowJson);
         domainJson.put("rows", domainRowsJson);
         saveRowsCommand.setJsonObject(domainJson);
@@ -360,7 +359,7 @@ public class DataClassSearchTest extends BaseWebDriverTest
         deleteRowsCommand.execute(connection, getCurrentContainerPath());
 
         _searchHelper.enqueueSearchItem(DATA_CLASS_2_NAME);  // this and remaining search items should no longer be found, as data classes were removed
-        _searchHelper.enqueueSearchItem("yellow");  // keep an eye on these and surrounding tests, see issue #26116
+        _searchHelper.enqueueSearchItem("yellow");
         _searchHelper.enqueueSearchItem("ein \nzwei \ndrei");
         _searchHelper.verifySearchResults("/" + getProjectName(), false);
         _searchHelper.clearSearchQueue();
