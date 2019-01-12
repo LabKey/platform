@@ -66,9 +66,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.BrowserDeveloperPermission;
-import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.TrustedPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.test.TestWhen;
@@ -156,7 +154,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.SocketException;
 import java.net.URISyntaxException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
@@ -181,7 +178,6 @@ import java.util.TimeZone;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -427,17 +423,16 @@ public class DavController extends SpringActionController
     }
 
 
-    class WebdavResponse
+    private class WebdavResponse
     {
-        HttpServletResponse response;
-        
-        WebdavStatus _status = null;
-        String _message = null;
-        boolean _sendError = false;
+        private HttpServletResponse _response;
+        private WebdavStatus _status = null;
+        private String _message = null;
+        private boolean _sendError = false;
 
         WebdavResponse(HttpServletResponse response)
         {
-            this.response = response;
+            _response = response;
         }
 
         WebdavStatus sendError(WebdavStatus status)
@@ -465,7 +460,7 @@ public class DavController extends SpringActionController
             try
             {
                 if (null == StringUtils.trimToNull(message))
-                    response.sendError(status.code);
+                    _response.sendError(status.code);
                 else
                 {
                     String accept = StringUtils.join(getRequest().getHeader("Accept"), "," , getRequest().getParameter("Accept"));
@@ -481,19 +476,19 @@ public class DavController extends SpringActionController
                                 "post".equals(getViewContext().getActionURL().getAction()) &&
                                 getRequest() instanceof MultipartHttpServletRequest)
                         {
-                            response.setHeader("Content-Type", "text/html");
-                            response.getWriter().write("<html><body><textarea>" + o.toString() + "</textarea></body></html>");
+                            _response.setHeader("Content-Type", "text/html");
+                            _response.getWriter().write("<html><body><textarea>" + o.toString() + "</textarea></body></html>");
                         }
                         else
                         {
-                            response.setHeader("Content-Type", CONTENT_TYPE_JSON);
-                            response.getWriter().write(o.toString());
-                            response.setStatus(HttpServletResponse.SC_OK);
+                            _response.setHeader("Content-Type", CONTENT_TYPE_JSON);
+                            _response.getWriter().write(o.toString());
+                            _response.setStatus(HttpServletResponse.SC_OK);
                         }
                     }
                     else
                     {
-                        response.sendError(status.code, message);
+                        _response.sendError(status.code, message);
                     }
                 }
                 _status = status;
@@ -514,7 +509,7 @@ public class DavController extends SpringActionController
             assert _status == null || (200 <= _status.code && _status.code < 300);
             try
             {
-                response.setStatus(status.code);
+                _response.setStatus(status.code);
             }
             catch (Exception x)
             {
@@ -536,100 +531,100 @@ public class DavController extends SpringActionController
 
         void setPublicStatic(int days)
         {
-            ResponseHelper.setPublicStatic(response, days);
+            ResponseHelper.setPublicStatic(_response, days);
         }
 
         void setContentEncoding(String value)
         {
-            response.setHeader("Content-Encoding", value);
-            response.addHeader("Vary", "Accept-Encoding");
+            _response.setHeader("Content-Encoding", value);
+            _response.addHeader("Vary", "Accept-Encoding");
         }
 
         void setCacheForUserOnly()
         {
-            ResponseHelper.setPrivate(response);
+            ResponseHelper.setPrivate(_response);
         }
 
         void setContentDisposition(String value)
         {
-            response.setHeader("Content-Disposition", value);
+            _response.setHeader("Content-Disposition", value);
         }
 
         void  setContentType(String contentType)
         {
-            response.setContentType(contentType);
+            _response.setContentType(contentType);
         }
 
         void setContentLength(long contentLength)
         {
             if (contentLength < Integer.MAX_VALUE)
             {
-                response.setContentLength((int)contentLength);
+                _response.setContentLength((int)contentLength);
             }
             else
             {
                 // Set the content-length as String to be able to use a long
-                response.setHeader("content-length", "" + contentLength);
+                _response.setHeader("content-length", "" + contentLength);
             }
         }
 
         void setContentRange(long fileLength)
         {
-            response.addHeader("Content-Range", "bytes */" + fileLength);
+            _response.addHeader("Content-Range", "bytes */" + fileLength);
         }
 
         void addContentRange(Range range)
         {
-            response.addHeader("Content-Range", "bytes "+ range.start + "-" + range.end + "/" + range.length);
+            _response.addHeader("Content-Range", "bytes "+ range.start + "-" + range.end + "/" + range.length);
         }
 
 
         void setEntityTag(String etag)
         {
-            response.setHeader("ETag", etag);
+            _response.setHeader("ETag", etag);
         }
 
         void setLastModified(long d)
         {
-            response.setHeader("Last-Modified", getHttpDateFormat(d));
+            _response.setHeader("Last-Modified", getHttpDateFormat(d));
         }
 
         void addLockToken(String lockToken)
         {
-            response.addHeader("Lock-Token", "<opaquelocktoken:" + lockToken + ">");
+            _response.addHeader("Lock-Token", "<opaquelocktoken:" + lockToken + ">");
         }
 
         void setMethodsAllowed(CharSequence methods)
         {
-            response.addHeader("Allow", methods.toString());
+            _response.addHeader("Allow", methods.toString());
         }
 
         void addOptionsHeaders()
         {
-            response.addHeader("DAV", "1,2");
-            response.addHeader("MS-Author-Via", "DAV");
+            _response.addHeader("DAV", "1,2");
+            _response.addHeader("MS-Author-Via", "DAV");
         }
 
         void setRealm(String realm)
         {
-            response.setHeader("WWW-Authenticate", "Basic realm=\"" + realm  + "\"");
+            _response.setHeader("WWW-Authenticate", "Basic realm=\"" + realm  + "\"");
         }
 
         void setLocation(String value)
         {
-            response.setHeader("Location", value);
+            _response.setHeader("Location", value);
         }
 
         ServletOutputStream getOutputStream() throws IOException
         {
-            return response.getOutputStream();
+            return _response.getOutputStream();
         }
         
         StringBuilder sbLogResponse = new StringBuilder();
 
         Writer getWriter() throws IOException
         {
-            Writer responseWriter = response.getWriter();
+            Writer responseWriter = _response.getWriter();
             assert track(responseWriter);
 
             if (!_log.isDebugEnabled())
@@ -652,19 +647,19 @@ public class DavController extends SpringActionController
                 }
 
                 @Override
-                public void write(char cbuf[]) throws IOException
+                public void write(@NotNull char[] cbuf) throws IOException
                 {
                     super.write(cbuf);
                     sbLogResponse.append(cbuf);
                 }
 
                 @Override
-                public void write(String str) throws IOException
+                public void write(@NotNull String str) throws IOException
                 {
                     write(str, 0, str.length());
                 }
 
-                public void write(char cbuf[], int off, int len) throws IOException
+                public void write(char[] cbuf, int off, int len) throws IOException
                 {
                     super.write(cbuf,off,len);
                     sbLogResponse.append(cbuf,off,len);
@@ -1183,7 +1178,7 @@ public class DavController extends SpringActionController
 
             try
             {
-                CSRFUtil.validate(getRequest(), getResponse().response);
+                CSRFUtil.validate(getRequest(), getResponse()._response);
             }
             catch (CSRFException ex)
             {
