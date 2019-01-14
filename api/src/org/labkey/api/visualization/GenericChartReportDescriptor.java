@@ -221,14 +221,17 @@ public class GenericChartReportDescriptor extends VisualizationReportDescriptor
         List<DisplayColumn> displayColumns = queryView.getDisplayColumns();
         DisplayColumn xCol = null;
         List<DisplayColumn> yCols = new ArrayList<>();
+        String caseInsensitiveXColName = xColName.toLowerCase();
+        List<String> caseInsensitiveYColNames = new ArrayList<>();
+        yColNames.forEach(y -> caseInsensitiveYColNames.add(y.toLowerCase()));
         for (DisplayColumn col : displayColumns)
         {
             if (col.getColumnInfo() == null)
                 continue;
-            String colFieldKey = col.getColumnInfo().getJdbcRsName();
-            if (colFieldKey.equals(xColName))
+            String colFieldKey = col.getColumnInfo().getJdbcRsName().toLowerCase();
+            if (colFieldKey.equals(caseInsensitiveXColName))
                 xCol = col;
-            else if (yColNames.contains(colFieldKey))
+            else if (caseInsensitiveYColNames.contains(colFieldKey))
                 yCols.add(col);
         }
 
