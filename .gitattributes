@@ -1726,6 +1726,10 @@ api/src/org/labkey/api/study/reports/Crosstab.java -text
 api/src/org/labkey/api/study/reports/CrosstabReport.java -text
 api/src/org/labkey/api/study/reports/CrosstabReportDescriptor.java -text
 api/src/org/labkey/api/study/reports/CrosstabView.java -text
+api/src/org/labkey/api/study/security/SecurityEscalationAuditProvider.java -text
+api/src/org/labkey/api/study/security/SecurityEscalator.java -text
+api/src/org/labkey/api/study/security/StudySecurityEscalationAuditProvider.java -text
+api/src/org/labkey/api/study/security/StudySecurityEscalator.java -text
 api/src/org/labkey/api/survey/SurveyService.java -text
 api/src/org/labkey/api/survey/SurveyUrls.java -text
 api/src/org/labkey/api/survey/model/Survey.java -text
