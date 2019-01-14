@@ -25,6 +25,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.AuthorRole;
 import org.labkey.api.security.roles.OwnerRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
@@ -57,7 +58,7 @@ public class BaseWikiPermissions
     protected Set<Role> getContextualRoles(Wiki wiki)
     {
         Set<Role> roles = new HashSet<>();
-        if (userIsCreator(wiki))
+        if (userIsCreator(wiki) && userIsAuthor())
             roles.add(RoleManager.getRole(OwnerRole.class));
         return roles;
     }
@@ -91,5 +92,11 @@ public class BaseWikiPermissions
     {
         // Guest is never considered a wiki "creator", #28955
         return !_user.isGuest() && wiki.getCreatedBy() == _user.getUserId();
+    }
+
+    public boolean userIsAuthor()
+    {
+        // 31077
+        return !_user.isGuest() && _user.getContextualRoles(_policy).contains(RoleManager.getRole(AuthorRole.class));
     }
 }
