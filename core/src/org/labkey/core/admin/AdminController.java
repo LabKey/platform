@@ -917,9 +917,6 @@ public class AdminController extends SpringActionController
             addCreditsViews(views, modules, "source.txt", "Java Source Code", errorSource);
             addCreditsViews(views, modules, "executables.txt", "Executable", errorSource);
 
-            if (AppProps.getInstance().isDevMode()) // || TODO: Check for running Virtual Box image
-                addCreditsViews(views, modules, "vm.txt", "Executable", null, "Executable Files Distributed with the Virtual Machine Image", null, null, errorSource);
-
             if (errorSource.length() > 0)
             {
                 WikiService wikiService = WikiService.get();
