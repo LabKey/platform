@@ -280,7 +280,8 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 }
             }
         }
-        pw.println();
+        if (!isFirstFile)  // processed at least one file
+            pw.println();
 
         File dir = AssayFileWriter.ensureUploadDirectory(context.getContainer());
 
