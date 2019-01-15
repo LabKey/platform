@@ -347,14 +347,34 @@
      */
     function checkServerForDuplicateFileName(fileGroup)
     {
-        // Fire off an AJAX request
-        var duplicateCheckURL = LABKEY.ActionURL.buildURL("assay", "assayFileDuplicateCheck.api");
         var fileNames = [];
         if (fileGroup && fileGroup.fileInput && fileGroup.fileInput.files) {
             for (var i = 0; i < fileGroup.fileInput.files.length; i++) {
-                var fileName = fileGroup.fileInput.files[i].name;
+                var file = fileGroup.fileInput.files[i];
+                var fileName = file.name;
                 if (fileName)
                     fileNames.push(fileName);
+
+                // We'll show an error for directories, because they cause us to have strange errors after upload.
+                // Sadly, true cross-browser detection of directories in the FileList API is terrible.
+                // You can't rely on sizes (especially on Macs) or on types (this is derived from any detected
+                // extension, even if it's not a real extension).
+                // webkitGetAsEntry is not currently supported by Safari or Internet Explorer.
+                // The only way left, then, is to attempt reading each entry and assume errors are probably directories.
+                // See https://stackoverflow.com/q/8856628 for more details.
+
+                var reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onerror = (function (fileName) {  // failure, probably directory
+                    return function (event) {
+                        Ext.Msg.show({
+                            title: 'Error',
+                            msg: 'One or more directories (or unreadable files) were selected for upload, including "' + fileName + '". Directory submission is not supported. Please remove them before submitting.' ,
+                            buttons: Ext.Msg.OK,
+                            icon: Ext.MessageBox.ERROR
+                        });
+                    }
+                })(fileName);
             }
         }
 
@@ -373,6 +393,9 @@
             }
             fileNames[j] = fileNameShort;
         }
+
+        // Fire off an AJAX request
+        var duplicateCheckURL = LABKEY.ActionURL.buildURL("assay", "assayFileDuplicateCheck.api");
 
         Ext.Ajax.request({
             url: duplicateCheckURL,
