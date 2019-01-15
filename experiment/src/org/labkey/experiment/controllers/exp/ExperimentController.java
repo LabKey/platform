@@ -560,6 +560,52 @@ public class ExperimentController extends SpringActionController
                     bar.add(getDeriveSamplesButton());
                 }
 
+                @Override
+                public ActionButton createInsertMenuButton(ActionURL overrideInsertUrl, ActionURL overrideImportUrl)
+                {
+                    MenuButton button = new MenuButton("Insert");
+                    button.setTooltip(getInsertButtonText(INSERT_DATA_TEXT));
+                    button.setIconCls("plus");
+                    boolean hasInsertNewOption = false;
+                    boolean hasImportDataOption = false;
+
+                    if (showInsertNewButton())
+                    {
+                        ActionURL urlInsert = overrideInsertUrl == null ? urlFor(QueryAction.insertQueryRow) : overrideInsertUrl;
+                        if (urlInsert != null)
+                        {
+                            NavTree insertNew = new NavTree(getInsertButtonText(getInsertButtonText(INSERT_ROW_TEXT)), urlInsert);
+                            insertNew.setId(getBaseMenuId() + ":Insert:InsertNew");
+                            button.addMenuItem(insertNew);
+                            hasInsertNewOption = true;
+                        }
+                    }
+
+                    if (showImportDataButton())
+                    {
+                        ActionURL urlImport = overrideImportUrl == null ? urlFor(QueryAction.importData) : overrideImportUrl;
+                        if (urlImport != null && urlImport != AbstractTableInfo.LINK_DISABLER_ACTION_URL)
+                        {
+                            NavTree importData = new NavTree(getInsertButtonText(IMPORT_BULK_DATA_TEXT), urlImport);
+                            importData.setId(getBaseMenuId() + ":Insert:Import");
+                            button.addMenuItem(importData);
+                            hasImportDataOption = true;
+                        }
+                        // Adding simplified import option until such time as we can replace the import option altogether
+                        // TODO remove and update call to setImportURL in ExpMaterialTableImpl when the time is right.
+                        ActionURL urlSimpleImport = new ActionURL("query", "import", getContainer());
+                        urlSimpleImport.addParameter("query.queryName", _source.getName());
+                        urlSimpleImport.addParameter("schemaName", "exp.materials");
+
+                        NavTree importData = new NavTree(getInsertButtonText("Simple bulk data import"), urlSimpleImport);
+                        importData.setId(getBaseMenuId() + ":Insert:SimpleImport");
+                        button.addMenuItem(importData);
+                    }
+
+                    return hasInsertNewOption &&  hasImportDataOption? button : hasInsertNewOption ? createInsertButton() : hasImportDataOption ? createImportButton() : null;
+
+                }
+
             };
             queryView.setTitle("Sample Set Contents");
 
