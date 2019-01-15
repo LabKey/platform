@@ -697,16 +697,21 @@ public class AssayController extends SpringActionController
                             File newFile = AssayFileWriter.findUniqueFileName(fileName, targetDirectory);
                             newFileNames.add(i, newFile.getName());  // will infer duplication by whether an element exists at that position or not
                             ExpData expData = ExperimentService.get().getExpDataByURL(f, null);
+                            List<String> runNames = new ArrayList<>();
                             if (expData != null)
                             {
-                                List<String> runNames = new ArrayList<>();
                                 for (ExpRun targetRun : expData.getTargetRuns())
                                 {
                                     runNames.add(targetRun.getName());
                                 }
-
-                                runNamesPerFile.add(i, runNames);
                             }
+                            runNamesPerFile.add(i, runNames);
+                        }
+                        else
+                        {
+                            // fill in empty items anyway so lengths of lists are correct
+                            newFileNames.add("");
+                            runNamesPerFile.add(new ArrayList<>());
                         }
                     }
                 }
