@@ -48,7 +48,7 @@ public class ModuleDataExchangeHandler extends TsvDataExchangeHandler
         {
             Set<File> result = new HashSet<>();
 
-            boolean isFirstFile = false;
+            boolean isFirstFile = true;
             for (ExpData expData : run.getDataInputs().keySet())
             {
                 if (isFirstFile)
@@ -64,7 +64,8 @@ public class ModuleDataExchangeHandler extends TsvDataExchangeHandler
                 pw.append(file.getAbsolutePath());
                 result.add(file);
             }
-            pw.println();
+            if (!isFirstFile)  // processed at least one file
+                pw.println();
 
             DataType dataType = context.getProvider().getDataType();
             if (dataType == null)
