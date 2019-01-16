@@ -409,8 +409,10 @@ public class PropertyServiceImpl implements PropertyService
         List<ConditionalFormat> formats = ConditionalFormat.convertFromXML(xProp.getConditionalFormats());
         prop.setConditionalFormats(formats);
 
-        prop.setMeasure(xProp.getMeasure());
-        prop.setDimension(xProp.getDimension());
+        if (null != xProp.xgetMeasure())
+            prop.setMeasure(xProp.getMeasure());
+        if (null != xProp.xgetDimension())
+            prop.setDimension(xProp.getDimension());
         prop.setRecommendedVariable(xProp.getRecommendedVariable());
 
         return prop;
