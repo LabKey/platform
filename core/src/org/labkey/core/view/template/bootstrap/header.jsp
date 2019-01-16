@@ -37,6 +37,7 @@
 <%@ page import="org.labkey.core.view.template.bootstrap.PageTemplate" %>
 <%@ page import="org.labkey.api.search.SearchUtils" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -162,9 +163,10 @@
             </li>
 <% } %>
 
-<% if (user != null && user.isImpersonated()) { %>
+<% if (user != null && user.isImpersonated()) {
+    ActionURL stopUrl = urlProvider(LoginUrls.class).getStopImpersonatingURL(c, user.getImpersonationContext().getReturnURL()); %>
             <li>
-                <a href="<%=h(urlProvider(LoginUrls.class).getStopImpersonatingURL(c, user.getImpersonationContext().getReturnURL()))%>" class="btn btn-primary">Stop impersonating</a>
+                <a href="javascript:{}" onclick="<%=h(PageFlowUtil.postOnClickJavaScript(stopUrl))%>" class="btn btn-primary">Stop impersonating</a>
             </li>
 <% } %>
 

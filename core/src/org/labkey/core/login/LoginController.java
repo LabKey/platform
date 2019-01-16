@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.RedirectAction;
@@ -49,8 +50,8 @@ import org.labkey.api.security.AuthenticationManager.AuthenticationStatus;
 import org.labkey.api.security.AuthenticationManager.LinkFactory;
 import org.labkey.api.security.AuthenticationManager.LoginReturnProperties;
 import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
-import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.SecurityManager.UserManagementException;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.WikiTermsOfUseProvider.TermsOfUseType;
@@ -77,7 +78,6 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
-import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
@@ -244,10 +244,12 @@ public class LoginController extends SpringActionController
 
         public ActionURL getStopImpersonatingURL(Container c, @Nullable URLHelper returnURL)
         {
+            ActionURL url = new ActionURL(StopImpersonatingAction.class, c);
+
             if (null != returnURL)
-                return getLogoutURL(c, returnURL);
-            else
-                return getLogoutURL(c);
+                url.addReturnURL(returnURL);
+
+            return url;
         }
 
         public ActionURL getAgreeToTermsURL(Container c, URLHelper returnURL)
@@ -379,10 +381,7 @@ public class LoginController extends SpringActionController
 
     public static boolean deauthenticate(User user, ViewContext context)
     {
-        if (user.isImpersonated())
-            SecurityManager.stopImpersonating(context.getRequest(), user.getImpersonationContext().getFactory());
-        else
-            SecurityManager.logoutUser(context.getRequest(), user);
+        SecurityManager.logoutUser(context.getRequest(), user);
 
         return true;
     }
@@ -1323,22 +1322,51 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
-    public class LogoutAction extends RedirectAction<ReturnUrlForm>
+    public class LogoutAction extends FormHandlerAction<ReturnUrlForm>
     {
         @Override
-        public void checkPermissions() throws UnauthorizedException
+        public void validateCommand(ReturnUrlForm target, Errors errors)
         {
-            // Override allows logout from any folder, even when impersonating within a project
         }
 
+        @Override
+        public boolean handlePost(ReturnUrlForm returnUrlForm, BindException errors) throws Exception
+        {
+            return deauthenticate(getUser(), getViewContext());
+        }
+
+        @Override
         public URLHelper getSuccessURL(ReturnUrlForm form)
         {
             return form.getReturnURLHelper(AuthenticationManager.getWelcomeURL());
         }
+    }
 
-        public boolean doAction(ReturnUrlForm form, BindException errors)
+
+    @RequiresNoPermission
+    @IgnoresTermsOfUse
+    @AllowedDuringUpgrade
+    public class StopImpersonatingAction extends FormHandlerAction<ReturnUrlForm>
+    {
+        @Override
+        public void validateCommand(ReturnUrlForm form, Errors errors)
         {
-            return deauthenticate(getUser(), getViewContext());
+            if (!getUser().isImpersonated())
+                errors.reject(ERROR_MSG, "Error: You are not impersonating!");
+        }
+
+        @Override
+        public boolean handlePost(ReturnUrlForm form, BindException errors) throws Exception
+        {
+            SecurityManager.stopImpersonating(getViewContext().getRequest(), getUser().getImpersonationContext().getFactory());
+
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(ReturnUrlForm form)
+        {
+            return form.getReturnURLHelper(AuthenticationManager.getWelcomeURL());
         }
     }
 
