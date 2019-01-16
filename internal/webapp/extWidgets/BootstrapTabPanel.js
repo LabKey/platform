@@ -12,7 +12,7 @@ Ext4.namespace('LABKEY.ext4');
  * @param {String} [config.title] A title to display above the tab panel.
  * @param {String} [config.description] A description to display above the tab panel.
  * @param {String} config.items Array of tab panel items. Each item must have a title and an array of Ext4 items. Use active: true for the initial active tab.
- * @param {String} [config.tabPadding] Padding to apply to each tab content div. Defaults to '10px 10px 0 0'.
+ * @param {String} [config.tabPadding] Padding to apply to each tab content div. Defaults to '0px 10px 0 0'.
  * @param {String} [config.usePills] True to use pills instead of tabs. Defaults to false.
  * @param {String} [config.stacked] True to stack the tabs/pills vertically. Defaults to false.
  * @param {String} [config.justified] True to horizontally justify the tabs/pills. Defaults to false.
@@ -69,7 +69,7 @@ Ext4.define("LABKEY.ext4.BootstrapTabPanel", {
 
     title: null, // title to be shown above the tab panel
     description: null, // description text to be shown above the tab panel
-    tabPadding: '10px 10px 0 0', // default per tab padding
+    tabPadding: '0px 10px 0 0', // default per tab padding
     items: null, // array of tab element items
     tabTokenPrefix: 'tab=',
     updateHistory: true,
@@ -130,15 +130,19 @@ Ext4.define("LABKEY.ext4.BootstrapTabPanel", {
             navCls += sep + 'nav-justified';
         }
 
+        var tabBgClass = 'nav-bg ' + (this.usePills ? 'nav-pills-bg' : 'nav-tabs-bg');
+
         this.tpl = [
-            '<div' + (this.listId ? ' id=' + this.listId : '') + '>',
+            '<div' + (this.listId ? ' id=' + this.listId : '') + ' style="margin-top: 10px;">',
                 this.title ? '<h3>' + LABKEY.Utils.encodeHtml(this.title) + '</h3>' : '',
                 this.description ? '<p>' + LABKEY.Utils.encodeHtml(this.description) + '</p>' : '',
+                '<div class="' + tabBgClass + '">',
                 '<ul class="' + navCls + '">',
                     '<tpl for=".">',
                         '<li class="{tabCls}"><a id="{tabId}" data-toggle="' + (this.usePills ? 'pill' : 'tab') + '" href="#{id}">{title}</a></li>',
                     '</tpl>',
                 '</ul>',
+                '</div>',
                 '<div class="tab-content">',
                     '<tpl for=".">',
                         '<div id="{id}" class="tab-pane {tabCls}"></div>',

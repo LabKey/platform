@@ -113,7 +113,7 @@ public class ExcelColumn extends RenderColumn
         _dc.setRequiresHtmlFiltering(false);
         _formatters = formatters;
         _workbook = workbook;
-        setSimpleType(dc);
+
         if (dc.getExcelFormatString() != null)
         {
             setFormatString(dc.getExcelFormatString());
@@ -129,6 +129,7 @@ public class ExcelColumn extends RenderColumn
             setName(dc.getColumnInfo().getName());
         }
         setCaption(dc.getCaptionExpr());
+        setSimpleType(dc);  //call this last so that setName() has already been called
     }
 
     public DisplayColumn getDisplayColumn()
