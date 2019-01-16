@@ -213,7 +213,7 @@ LABKEY.Query = new function(impl, $) {
     }
 
     var QUERY_COLUMNS_CACHE = {}; // cache of columns by schema|query|view
-    function loadQueryColumns(select, schemaName, queryName, viewName, filterFn, initValue, isRequired, includeBlankOption) {
+    function loadQueryColumns(select, schemaName, queryName, viewName, filterFn, initValue, isRequired, includeBlankOption, sortFn) {
         loadingSelect(select);
 
         if (viewName === undefined || viewName === null)
@@ -221,11 +221,11 @@ LABKEY.Query = new function(impl, $) {
 
         var queryKey = schemaName + '|' + queryName + "|" + viewName;
         if (LABKEY.Utils.isArray(QUERY_COLUMNS_CACHE[queryKey])) {
-            populateColumnsWithFilterFn(select, QUERY_COLUMNS_CACHE[queryKey], filterFn, initValue, isRequired, includeBlankOption);
+            populateColumnsWithFilterFn(select, QUERY_COLUMNS_CACHE[queryKey], filterFn, initValue, isRequired, includeBlankOption, sortFn);
             LABKEY.Utils.signalWebDriverTest("queryColumnsLoaded"); // used for test
         }
         else if (QUERY_COLUMNS_CACHE[queryKey] === 'loading') {
-            setTimeout(loadQueryColumns, 500, select, schemaName, queryName, viewName, filterFn, initValue, isRequired, includeBlankOption);
+            setTimeout(loadQueryColumns, 500, select, schemaName, queryName, viewName, filterFn, initValue, isRequired, includeBlankOption, sortFn);
         }
         else {
             QUERY_COLUMNS_CACHE[queryKey] = 'loading';
@@ -247,14 +247,14 @@ LABKEY.Query = new function(impl, $) {
                         QUERY_COLUMNS_CACHE[queryKey] = queryView.fields.sort(sortObjectArrayByTitle);
                     }
 
-                    populateColumnsWithFilterFn(select, QUERY_COLUMNS_CACHE[queryKey], filterFn, initValue, isRequired, includeBlankOption);
+                    populateColumnsWithFilterFn(select, QUERY_COLUMNS_CACHE[queryKey], filterFn, initValue, isRequired, includeBlankOption, sortFn);
                     LABKEY.Utils.signalWebDriverTest("queryColumnsLoaded"); // used for test
                 }
             });
         }
     }
 
-    function populateColumnsWithFilterFn(select, origFields, filterFn, initValue, isRequired, includeBlankOption) {
+    function populateColumnsWithFilterFn(select, origFields, filterFn, initValue, isRequired, includeBlankOption, sortFn) {
         var fields = [];
         $.each(origFields, function(i, field) {
             var includeField = true;
@@ -275,6 +275,10 @@ LABKEY.Query = new function(impl, $) {
         });
 
         if (fields.length > 0) {
+            // allow for a sort function to be called to order fields
+            if (sortFn && LABKEY.Utils.isFunction(sortFn)) {
+                fields.sort(sortFn);
+            }
             populateSelect(select, fields, 'name', 'caption', initValue, isRequired, includeBlankOption);
         }
         else {
@@ -427,7 +431,7 @@ LABKEY.Query = new function(impl, $) {
             return;
         }
 
-        loadQueryColumns(COLUMN_SELECT, config.schemaName, config.queryName, config.viewName, config.filterFn, config.initValue, config.isRequired, config.includeBlankOption);
+        loadQueryColumns(COLUMN_SELECT, config.schemaName, config.queryName, config.viewName, config.filterFn, config.initValue, config.isRequired, config.includeBlankOption, config.sortFn);
     };
 
     impl.queryViewSelectInput = function(config) {

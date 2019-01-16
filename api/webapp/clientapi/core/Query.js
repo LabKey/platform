@@ -3237,6 +3237,7 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
  * @param {String} config.queryName the name of the query. Required.
  * @param {String} config.initValue the initial value to try and set the &lt;select&gt; element value after it loads. Optional.
  * @param {String} config.filterFn a function to call to filter the column set (ex. by data type). Optional.
+ * @param {String} config.sortFn a function to call to sort the column set. Optional.
  */
 
 /**
