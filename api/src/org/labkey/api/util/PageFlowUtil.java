@@ -1245,6 +1245,26 @@ public class PageFlowUtil
         return sb.toString();
     }
 
+    /**
+     *  Returns an onClick handler that posts to the specified url, provided a CSRF token. Use with ButtonBuilder to create
+     *  a button that posts or NavTree to create a menu item that posts. TODO: Integrate this into ButtonBuilder and/or
+     *  NavTree as an option (e.g., setPost(true)).
+     */
+    public static String postOnClickJavaScript(ActionURL url)
+    {
+        return "var form = document.createElement('form');\n" +
+            "form.setAttribute('method', 'post');\n" +
+            "form.setAttribute('action', " + PageFlowUtil.qh(url.getLocalURIString()) + ");\n" +
+            "var input = document.createElement(\"input\");\n" +
+            "input.type = \"hidden\";\n" +
+            "input.name = \"" + CSRFUtil.csrfName + "\";\n" +
+            "input.value = LABKEY.CSRF;\n" +
+            "form.appendChild(input);\n" +
+            "form.style.display = 'hidden';\n" +
+            "document.body.appendChild(form)\n" +
+            "form.submit();";
+    }
+
     public static Button.ButtonBuilder button(String text)
     {
         return new Button.ButtonBuilder(text);
