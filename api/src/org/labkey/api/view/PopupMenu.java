@@ -109,7 +109,6 @@ public class PopupMenu extends DisplayElement
     public void render(Writer out) throws IOException
     {
         renderMenuButton(out);
-        renderMenuScript(out);
     }
 
     public void renderMenuButton(Writer out) throws IOException
@@ -193,12 +192,6 @@ public class PopupMenu extends DisplayElement
             throw new RuntimeException(e);
         }
         out.append("</ul></div>");
-    }
-
-    @Deprecated
-    public void renderMenuScript(Writer out)
-    {
-        /* No longer used after 17.3 UI update -- consider removal */
     }
 
     public Align getAlign()

@@ -58,9 +58,7 @@ public class MenuButton extends ActionButton
         if (!BooleanUtils.toBoolean((String)ctx.get(getCaption() + "MenuRendered")))
         {
             ctx.put(getCaption() + "MenuRendered", "true");
-            popupMenu.renderMenuScript(out);
         }
-
     }
 
     public void addSeparator()
