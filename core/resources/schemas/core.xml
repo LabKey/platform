@@ -694,6 +694,7 @@
     <columns>
       <column columnName="EngineId"/>
       <column columnName="Container"/>
+      <column columnName="EngineContext"/>
     </columns>
   </table>
   <table tableName="PrincipalRelations" tableDbType="TABLE">
