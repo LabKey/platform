@@ -83,7 +83,7 @@ public class PageConfig
 
     public static final String SESSION_WARNINGS_BANNER_KEY = "PAGE_CONFIG$SESSION_WARNINGS_BANNER_KEY";
 
-    private static final Collection<String> STATIC_ADMIN_WARNINGS = getStaticAdminWarnings();
+    public static final Collection<String> STATIC_ADMIN_WARNINGS = getStaticAdminWarnings();
 
     private Template _template = Template.Home;
     private String _title;
@@ -434,18 +434,20 @@ public class PageConfig
             "    })(jQuery);\n" +
             "</script>\n";
 
-    private void appendDismissableMessageHtml(ViewContext viewContext, List<String> warnings, StringBuilder html)
+    public static void appendDismissableMessageHtml(ViewContext viewContext, List<String> warnings, StringBuilder html)
     {
-        html.append("<div class=\"lk-dismissable-warn\">");
+        html.append("<div class=\"alert alert-warning alert-dismissable\">")
+            .append("<a href=\"#\" class=\"close lk-dismissable-warn-close\" data-dismiss=\"alert\" aria-label=\"dismiss\" title=\"dismiss\">×</a>")
+            .append("<div class=\"lk-dismissable-warn\">");
         appendMessageContent(warnings, html);
         html.append("</div>");
-
         CoreUrls coreUrls = urlProvider(CoreUrls.class);
         if (coreUrls != null)
         {
             String dismissURL = coreUrls.getDismissCoreWarningActionURL(viewContext).toString();
             html.append(String.format(DISMISSAL_SCRIPT_FORMAT, PageFlowUtil.jsString(dismissURL)));
         }
+        html.append("</div>");
     }
 
     // For now, gives a central place to render messaging
@@ -474,6 +476,9 @@ public class PageConfig
             appendMessageContent(warningMessages, messages);
             messages.append("</div>");
         }
+
+        // Keep an empty div for re-addition of dismissable messages onto the page
+        messages.append("<div class=\"lk-dismissable-alert-ct\">");
         if (context != null && context.getRequest() != null)
         {
             HttpSession session = context.getRequest().getSession(true);
@@ -481,14 +486,18 @@ public class PageConfig
             if (session.getAttribute(SESSION_WARNINGS_BANNER_KEY) == null)
                 session.setAttribute(SESSION_WARNINGS_BANNER_KEY, true);
 
-            if ((boolean) session.getAttribute(SESSION_WARNINGS_BANNER_KEY) && !dismissibleWarningMessages.isEmpty())
+            // If the sesstion attribute has explicitly been set to false & there are no more warnings, remove it
+            else if (!(boolean) session.getAttribute(SESSION_WARNINGS_BANNER_KEY) && dismissibleWarningMessages.isEmpty())
+                session.removeAttribute(SESSION_WARNINGS_BANNER_KEY);
+
+            if (session.getAttribute(SESSION_WARNINGS_BANNER_KEY) != null &&
+                    (boolean) session.getAttribute(SESSION_WARNINGS_BANNER_KEY) &&
+                    !dismissibleWarningMessages.isEmpty())
             {
-                messages.append("<div class=\"alert alert-warning alert-dismissable\">");
-                messages.append("<a href=\"#\" class=\"close lk-dismissable-warn-close\" data-dismiss=\"alert\" aria-label=\"dismiss\" title=\"dismiss\">×</a>");
                 appendDismissableMessageHtml(context, dismissibleWarningMessages, messages);
-                messages.append("</div>");
             }
         }
+        messages.append("</div>");
 
         // Display a <noscript> warning message
         messages.append("<noscript>");
@@ -498,7 +507,7 @@ public class PageConfig
         return messages.toString();
     }
 
-    private void appendMessageContent(List<String> messages, StringBuilder html)
+    public static void appendMessageContent(List<String> messages, StringBuilder html)
     {
         if (!messages.isEmpty())
         {

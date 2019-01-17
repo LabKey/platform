@@ -43,4 +43,6 @@ public interface CoreUrls extends UrlProvider
     ActionURL getPermissionsURL(@NotNull Container c);
 
     ActionURL getDismissCoreWarningActionURL(ViewContext context);
+
+    ActionURL getDisplayCoreWarningActionURL(ViewContext context);
 }
