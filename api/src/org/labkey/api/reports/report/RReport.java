@@ -130,7 +130,7 @@ public class RReport extends ExternalScriptEngineReport
             // was defined in
             srcContainer = ContainerManager.getForId(getContainerId()) != null ? ContainerManager.getForId(getContainerId()) : c;
         }
-        return mgr.getEngineByExtension(srcContainer, "r", requestRemote(), true);
+        return mgr.getEngineByExtension(srcContainer, "r", LabkeyScriptEngineManager.EngineContext.report);
     }
 
     @Nullable
@@ -181,6 +181,9 @@ public class RReport extends ExternalScriptEngineReport
         ReportService.get().saveReport(context, this.getDescriptor().getReportKey(), this);
     }
 
+    // legacy method used to provide rserve hints from module based reports, note this property was never exposed
+    // in the UI
+    @Deprecated
     private boolean requestRemote()
     {
         Map<String, String> requestedEngineProperties = getDescriptor().getScriptEngineProperties();

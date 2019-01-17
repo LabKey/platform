@@ -22,34 +22,42 @@ import org.labkey.api.security.User;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
-import java.util.ArrayList;
 import java.util.List;
 
 public interface LabkeyScriptEngineManager
 {
+    // represents the context in which a script engine is being invoked
+    enum EngineContext
+    {
+        report,                 // basic report rendering
+        pipeline                // pipeline job or transform script
+    }
     ScriptEngine getEngineByName(String name);
     List<ScriptEngineFactory> getEngineFactories();
+
     /**
      * Return a script engine appropriate for the specified extension.
      */
     @Nullable
-    ScriptEngine getEngineByExtension(Container c, String extension);
+    ScriptEngine getEngineByExtension(Container c, String extension) throws PremiumFeatureNotEnabledException;
 
     /**
-     * Return a script engine appropriate for the specified extension.
-     * @param requestRemote R reports can pass a hint if they can run using a remote engine (Rserve). If there
-     *                      is a remote engine available it will be returned over a local engine.
+     * Return a script engine appropriate for the specified extension and for a specific engine context. Folder and
+     * project level mappings can be set for specific engine configurations and contexts.
      */
     @Nullable
-    ScriptEngine getEngineByExtension(Container c, String extension, boolean requestRemote);
+    ScriptEngine getEngineByExtension(Container c, String extension, EngineContext context) throws PremiumFeatureNotEnabledException;
 
+    /**
+     * Returns an engine (if any) that is scoped to a specific folder or project level. If there is no specific override then
+     * null is returned.
+     * @param includeProject look in both the folder and project
+     */
     @Nullable
-    @Deprecated
-    ScriptEngine getEngineByExtension(Container c, String extension, boolean requestRemote, boolean requestDocker) throws PremiumFeatureNotEnabledException;
+    ExternalScriptEngineDefinition getScopedEngine(Container container, String extension, EngineContext context, boolean includeProject);
 
-    List<ExternalScriptEngineDefinition> getScopedEngines(Container container);
-    void setEngineScope(Container c, ExternalScriptEngineDefinition def);
-    void removeEngineScope(Container c, ExternalScriptEngineDefinition def);
+    void setEngineScope(Container c, ExternalScriptEngineDefinition def, EngineContext context);
+    void removeEngineScope(Container c, ExternalScriptEngineDefinition def, EngineContext context);
 
     void deleteDefinition(User user, ExternalScriptEngineDefinition def);
     ExternalScriptEngineDefinition saveDefinition(User user, ExternalScriptEngineDefinition def);
