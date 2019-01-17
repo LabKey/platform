@@ -834,28 +834,21 @@ public class UserController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class ShowUserPreferencesAction extends RedirectAction<Object>
     {
-        ActionURL _successUrl;
-
         @Override
         public URLHelper getSuccessURL(Object form)
-        {
-            return _successUrl;
-        }
-
-        @Override
-        public boolean doAction(Object form, BindException errors)
         {
             String domainURI = UsersDomainKind.getDomainURI(CoreQuerySchema.NAME, CoreQuerySchema.USERS_TABLE_NAME, UsersDomainKind.getDomainContainer(), getUser());
             Domain domain = PropertyService.get().getDomain(UsersDomainKind.getDomainContainer(), domainURI);
 
+            ActionURL successUrl = null;
+
             if (domain != null)
             {
-                _successUrl = domain.getDomainKind().urlEditDefinition(domain, getViewContext());
-                _successUrl.addReturnURL(getViewContext().getActionURL());
-
-                return true;
+                successUrl = domain.getDomainKind().urlEditDefinition(domain, getViewContext());
+                successUrl.addReturnURL(getViewContext().getActionURL());
             }
-            return false;
+
+            return successUrl;
         }
     }
 

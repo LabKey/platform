@@ -2203,7 +2203,7 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public boolean doAction(TokenAuthenticationForm form, BindException errors) throws Exception
+        public boolean doAction(TokenAuthenticationForm form, BindException errors)
         {
             if (null != form.getLabkeyToken())
                 TokenAuthenticationManager.get().invalidateKey(form.getLabkeyToken());

@@ -5889,16 +5889,8 @@ public class QueryController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class QueryExportAuditRedirectAction extends RedirectAction<QueryExportAuditForm>
     {
-        private ActionURL _url;
-
         @Override
         public URLHelper getSuccessURL(QueryExportAuditForm form)
-        {
-            return _url;
-        }
-
-        @Override
-        public boolean doAction(QueryExportAuditForm form, BindException errors)
         {
             UserSchema auditSchema = QueryService.get().getUserSchema(getUser(), getContainer(), AbstractAuditTypeProvider.QUERY_SCHEMA_NAME);
             TableInfo queryExportAuditTable = auditSchema.getTable(QueryExportAuditProvider.QUERY_AUDIT_EVENT);
@@ -5935,8 +5927,7 @@ public class QueryController extends SpringActionController
             if (url.getParameter(QueryParam.queryName) == null && url.getParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName) == null)
                 url.addParameter(QueryParam.queryName, queryName);
 
-            _url = url;
-            return true;
+            return url;
         }
 
         @Override

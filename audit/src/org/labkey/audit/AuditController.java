@@ -74,12 +74,6 @@ public class AuditController extends SpringActionController
             else
                 return PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(getContainer(), "auditLog");
         }
-
-        @Override
-        public boolean doAction(Object o, BindException errors)
-        {
-            return true;
-        }
     }
 
     @ActionNames("showAuditLog")

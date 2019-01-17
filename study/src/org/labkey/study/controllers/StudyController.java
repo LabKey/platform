@@ -6510,22 +6510,8 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(ReadPermission.class)
     public class DatasetDetailRedirectAction extends RedirectAction<DatasetDetailRedirectForm>
     {
-        private ActionURL _url;
-
         @Override
         public URLHelper getSuccessURL(DatasetDetailRedirectForm form)
-        {
-            return _url;
-        }
-
-        @Override
-        public boolean doAction(DatasetDetailRedirectForm datasetDetailRedirectForm, BindException errors)
-        {
-            return true;
-        }
-
-        @Override
-        public void validateCommand(DatasetDetailRedirectForm form, Errors errors)
         {
             StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
             if (study == null)
@@ -6559,12 +6545,15 @@ public class StudyController extends BaseStudyController
 
             QueryDefinition queryDef = QueryService.get().createQueryDefForTable(schema, dataset.getName());
             assert queryDef != null : "Dataset was found but couldn't get a corresponding TableInfo";
-            _url = queryDef.urlFor(QueryAction.detailsQueryRow, getContainer(), Collections.singletonMap("lsid", (Object)form.getLsid()));
+
+            ActionURL url = queryDef.urlFor(QueryAction.detailsQueryRow, getContainer(), Collections.singletonMap("lsid", form.getLsid()));
             String referrer = getViewContext().getRequest().getHeader("Referer");
             if (referrer != null)
             {
-                _url.addParameter(ActionURL.Param.returnUrl, referrer);
+                url.addParameter(ActionURL.Param.returnUrl, referrer);
             }
+
+            return url;
         }
     }
 

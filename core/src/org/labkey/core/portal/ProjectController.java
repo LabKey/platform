@@ -412,16 +412,8 @@ public class ProjectController extends SpringActionController
     @RequiresNoPermission
     public class FileBrowserAction extends org.labkey.api.action.RedirectAction
     {
-        ActionURL _redirect;
-
         @Override
         public URLHelper getSuccessURL(Object o)
-        {
-            return _redirect;
-        }
-
-        @Override
-        public boolean doAction(Object o, BindException errors)
         {
             String p = StringUtils.trimToEmpty(getViewContext().getRequest().getParameter("path"));
             Path path = Path.decode(p);
@@ -432,21 +424,24 @@ public class ProjectController extends SpringActionController
             if (path.startsWith(webdavPath))
                 path = webdavPath.relativize(path);
 
+            ActionURL redirect;
+
             if (path.startsWith(pipeline))
             {
                 path = pipeline.relativize(path);
-                _redirect = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(c).addParameter("path", path.encode());
+                redirect = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(c).addParameter("path", path.encode());
             }
             else if (path.startsWith(files))
             {
                 path = files.relativize(path);
-                _redirect = PageFlowUtil.urlProvider(FileUrls.class).urlBegin(c).addParameter("path", path.encode());
+                redirect = PageFlowUtil.urlProvider(FileUrls.class).urlBegin(c).addParameter("path", path.encode());
             }
             else
             {
                 throw new NotFoundException();
             }
-            return true;
+
+            return redirect;
         }
     }
 
