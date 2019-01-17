@@ -73,10 +73,4 @@ public class ReimportRedirectAction extends RedirectAction<ProtocolIdForm>
         url.addParameter("reRunId", runIdString);
         return url;
     }
-
-    @Override
-    public boolean doAction(ProtocolIdForm protocolIdForm, BindException errors)
-    {
-        return true;
-    }
 }

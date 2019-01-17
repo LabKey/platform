@@ -72,7 +72,7 @@ public abstract class RedirectAction<FORM> extends BaseViewAction<FORM>
             if (null != s)
                 throw new RedirectException(s);
             Logger.getLogger(this.getClass()).warn("NULL redirect URL in action " + this.getClass().getName(), new NullPointerException());
-            errors.reject(ERROR_MSG, "Sorry, I seems to have lost my way and don't know where to go!");
+            errors.reject(ERROR_MSG, "Sorry, I seem to have lost my way and don't know where to go!");
         }
 
         return getErrorView(form, errors);
@@ -84,9 +84,14 @@ public abstract class RedirectAction<FORM> extends BaseViewAction<FORM>
         return "doAction";
     }
 
+    // TODO: Pass in errors for failure cases?
     public abstract URLHelper getSuccessURL(FORM form);
 
-    public abstract boolean doAction(FORM form, BindException errors) throws Exception;
+    @Deprecated // TODO: We want to migrate most RedirectActions to FormHandlerAction and eliminate this method. See #36532.
+    public boolean doAction(FORM form, BindException errors) throws Exception
+    {
+        return true;
+    }
 
     public BindException bindParameters(PropertyValues m) throws Exception
     {

@@ -65,9 +65,4 @@ public class ShowSelectedRunsAction extends RedirectAction<ShowSelectedRunsActio
             url.addParameter("containerFilterName", form.getContainerFilterName());
         return url;
     }
-
-    public boolean doAction(ShowSelectedForm form, BindException errors)
-    {
-        return true;
-    }
 }
