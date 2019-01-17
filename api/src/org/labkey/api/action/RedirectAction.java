@@ -81,7 +81,7 @@ public abstract class RedirectAction<FORM> extends BaseViewAction<FORM>
 
     protected String getCommandClassMethodName()
     {
-        return "doAction";
+        return "getSuccessURL";
     }
 
     // TODO: Pass in errors for failure cases?
