@@ -47,25 +47,16 @@ public class ModuleDataExchangeHandler extends TsvDataExchangeHandler
         if (data != null)
         {
             Set<File> result = new HashSet<>();
-
-            boolean isFirstFile = true;
+            String sep = "";
+            pw.append(TsvDataExchangeHandler.Props.runDataUploadedFile.name()).append('\t');
             for (ExpData expData : run.getDataInputs().keySet())
             {
-                if (isFirstFile)
-                {
-                    // the original uploaded path(s)
-                    pw.append(TsvDataExchangeHandler.Props.runDataUploadedFile.name());
-                    pw.append('\t');
-                    isFirstFile = false;
-                }
-                else
-                    pw.append(';');
                 File file = expData.getFile();
-                pw.append(file.getAbsolutePath());
+                pw.append(sep).append(file.getAbsolutePath());
+                sep = ";";
                 result.add(file);
             }
-            if (!isFirstFile)  // processed at least one file
-                pw.println();
+            pw.println();
 
             DataType dataType = context.getProvider().getDataType();
             if (dataType == null)
