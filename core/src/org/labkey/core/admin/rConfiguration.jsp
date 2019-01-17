@@ -15,21 +15,19 @@
      * limitations under the License.
      */
 %>
+<%@ page import="org.jetbrains.annotations.Nullable" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.reports.ExternalScriptEngineDefinition" %>
 <%@ page import="org.labkey.api.reports.LabkeyScriptEngineManager" %>
+<%@ page import="org.labkey.api.reports.RemoteRNotEnabledException" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
-<%@ page import="org.labkey.core.admin.AdminController.RConfigForm" %>
 <%@ page import="javax.script.ScriptEngine" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="java.util.Arrays" %>
-<%@ page import="org.labkey.api.reports.RemoteRNotEnabledException" %>
-<%@ page import="org.labkey.api.data.Container" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -37,93 +35,89 @@
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("internal/jQuery");
-        dependencies.add("Ext4");
     }
 %>
 <%
-    JspView<RConfigForm> me = (JspView<RConfigForm>) HttpView.currentView();
-    RConfigForm form = me.getModelBean();
+    JspView<AdminController.RConfigForm> me = (JspView<AdminController.RConfigForm>) HttpView.currentView();
+    AdminController.RConfigForm form = me.getModelBean();
     Container container = getContainer();
-    ActionURL postURL = new ActionURL(AdminController.RConfigurationAction.class, container);
-
     LabkeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
-    List<ExternalScriptEngineDefinition> engineDefinitions = new ArrayList<>();
+    List<ExternalScriptEngineDefinition> engineDefinitions = new ArrayList<>(mgr.getEngineDefinitions(ExternalScriptEngineDefinition.Type.R, true));
 
-    boolean isFolderScoped = false;
-    for (ExternalScriptEngineDefinition def : mgr.getScopedEngines(container))
+    boolean isFolderScoped = form.getOverrideDefault() || (mgr.getScopedEngine(container, "r", LabkeyScriptEngineManager.EngineContext.report, false) != null);
+    if (!isFolderScoped)
     {
-        if (def.isEnabled() && Arrays.asList(def.getExtensions()).contains("r"))
-        {
-            isFolderScoped = true;
-            break;
-        }
+        isFolderScoped = (mgr.getScopedEngine(container, "r", LabkeyScriptEngineManager.EngineContext.pipeline, false) != null);
     }
 
-    ScriptEngine currentEngine = null;
-    if (null != mgr)
+    // specific engine context overrides
+    String currentReportEngine = getScopedEngineName(form.getReportEngine(), container, LabkeyScriptEngineManager.EngineContext.report);
+    String currentPipelineEngine = getScopedEngineName(form.getPipelineEngine(), container, LabkeyScriptEngineManager.EngineContext.pipeline);
+
+    Container parentContainer = container.getParent();
+    if (parentContainer != null)
     {
-        engineDefinitions.addAll(mgr.getEngineDefinitions(ExternalScriptEngineDefinition.Type.R, true));
+        ScriptEngine parentReportEngine = null;
+        ScriptEngine parentPipelineEngine = null;
+
         try
         {
-            currentEngine = mgr.getEngineByExtension(container, "r");
+            parentReportEngine = mgr.getEngineByExtension(parentContainer, "r", LabkeyScriptEngineManager.EngineContext.report);
+            parentPipelineEngine = mgr.getEngineByExtension(parentContainer, "r", LabkeyScriptEngineManager.EngineContext.pipeline);
         }
         catch(RemoteRNotEnabledException e)
         {
             //Swallow this exception and let the UI load.
         }
-    }
 
-    String currentName = ((currentEngine != null) ? currentEngine.getFactory().getEngineName() : null);
-    Container parentContainer = container.getParent();
-    if (parentContainer != null)
-    {
-        ScriptEngine parentEngine = null;
-
-        try
+        if (parentReportEngine != null && parentPipelineEngine != null)
         {
-            parentEngine = mgr.getEngineByExtension(parentContainer, "r");
-        }
-        catch(RemoteRNotEnabledException e)
-        {
-        //Swallow this exception and let the UI load.
-        }
-
-        if (parentEngine != null)
-        {
-            String parentName = parentEngine.getFactory().getEngineName();
+            String parentReportLabel = String.format("Reports : %s", parentReportEngine.getFactory().getEngineName());
+            String parentPipelineLabel = String.format("Pipeline Jobs : %s", parentPipelineEngine.getFactory().getEngineName());
 
 %>
+<labkey:errors/>
 <h4>Available R Configurations</h4>
 <hr/>
 <div style="max-width: 768px; margin-bottom: 20px">
     Overriding the default R configuration defined at the Site level or in a parent folder allows R reports to be
     run under a different R configuration in this folder and in child folders.
 </div>
-<labkey:form id="configForm" action="<%=postURL%>" method="POST">
-<div style="max-width: 600px">
+<labkey:form id="configForm" method="POST">
+<div style="max-width: 750px">
     <div class="row" style="height: 25px;">
-        <div class="col-xs-5">
+        <div class="col-md-4">
             Use parent R configuration:
         </div>
-        <div id="parentConfig" class="col-xs-7">
-            <labkey:radio name="overrideDefault" value="parent" currentValue="parent"/><%=h(parentName)%>
+        <div id="parentConfig" class="col-md-1">
+            <labkey:radio name="overrideDefault" value="parent" currentValue="parent"/>
+        </div>
+        <div id="parentConfigLabel" class="col-md-7 form-inline">
+            <%=h(parentReportLabel)%><br><%=h(parentPipelineLabel)%><p>
         </div>
     </div>
     <div class="row" style="height: 30px;">
-        <div class="col-xs-5">
+        <div class="col-md-4">
             <label for="overrideDefault">Use folder level R Configuration</label>
         </div>
-        <div class="col-xs-7 form-inline">
+        <div class="col-md-1 form-inline">
             <labkey:radio name="overrideDefault" value="override" currentValue="parent"/>
-            <labkey:select name="engineRowId">
-                <option disabled <%= selected(!isFolderScoped) %> value="">
+        </div>
+        <div class="col-md-2 form-inline">
+            <label class="control-label">Reports
+                <i class="fa fa-question-circle context-icon" data-container="body" data-tt="tooltip" data-placement="top" title="" data-original-title="The engine that will be used to run R reports in this folder"></i>
+            </label>
+        </div>
+        <div class="col-md-5 form-inline">
+            <labkey:select name="reportEngine">
+                <option disabled <%= selected(!isFolderScoped || (currentReportEngine == null))%> value="">
                     Select a configuration...
                 </option>
             <%
                 for (ExternalScriptEngineDefinition def : engineDefinitions)
                 {
             %>
-                    <option <%= selected(isFolderScoped && currentName.equals(def.getName())) %> value="<%=h(def.getRowId())%>">
+                    <option <%= selected(def.getName().equals(currentReportEngine)) %> value="<%=h(def.getRowId())%>">
                         <%=h(def.getName())%>
                     </option>
             <%
@@ -131,6 +125,34 @@
             %>
             </labkey:select>
 
+        </div>
+    </div>
+    <div class="row" style="height: 30px;">
+        <div class="col-md-4">
+        </div>
+        <div class="col-md-1 form-inline">
+        </div>
+        <div class="col-md-2 form-inline">
+            <label class="control-label">Pipeline Jobs
+                <i class="fa fa-question-circle context-icon" data-container="body" data-tt="tooltip" data-placement="top" title="" data-original-title="The engine that will be used to run R scripts in pipeline jobs and transform scripts"></i>
+            </label>
+        </div>
+        <div class="col-md-5 form-inline">
+            <labkey:select name="pipelineEngine">
+                <option disabled <%= selected(!isFolderScoped || (currentPipelineEngine == null)) %> value="">
+                    Select a configuration...
+                </option>
+                <%
+                    for (ExternalScriptEngineDefinition def : engineDefinitions)
+                    {
+                %>
+                <option <%= selected(def.getName().equals(currentPipelineEngine)) %> value="<%=h(def.getRowId())%>">
+                    <%=h(def.getName())%>
+                </option>
+                <%
+                    }
+                %>
+            </labkey:select>
         </div>
     </div>
     <div class="row" id="rButtonGroup" style="margin-left: 0">
@@ -143,44 +165,40 @@
 
 <script type="text/javascript">
 (function($) {
-    var initialOverride = "<%=h(parentName)%>";
     var useParent = $("input[name='overrideDefault'][value='parent']");
     var overrideParent = $("input[name='overrideDefault'][value='override']");
-    var engineSelect = $("select[name='engineRowId']");
+    var reportEngineSelect = $("select[name='reportEngine']");
+    var pipelineEngineSelect = $("select[name='pipelineEngine']");
     var saveBtn = $("#saveBtn");
 
     window.onload = function() {
-        if (<%=parentName.equals(currentName) && !isFolderScoped%>) {
+        if (<%=!isFolderScoped%>) {
             useParent.prop("checked", true);
-            engineSelect.prop("disabled", true);
+            reportEngineSelect.prop("disabled", true);
+            pipelineEngineSelect.prop("disabled", true);
         }
         else {
             overrideParent.prop("checked", true);
-            initialOverride = engineSelect.find(":selected").text();
         }
     };
 
     useParent.click(function() {
-        engineSelect.prop("disabled", true);
-        setSaveDisableStatus();
+        reportEngineSelect.prop("disabled", true);
+        pipelineEngineSelect.prop("disabled", true);
+        setDirty();
     });
 
     overrideParent.click(function() {
-        engineSelect.prop("disabled", false);
-        setSaveDisableStatus();
+        reportEngineSelect.prop("disabled", false);
+        pipelineEngineSelect.prop("disabled", false);
+        setDirty();
     });
 
-    engineSelect.change(setSaveDisableStatus);
+    reportEngineSelect.change(setDirty);
+    pipelineEngineSelect.change(setDirty);
 
-    // enables/disables the "Save" button if current state differs/matches the initial state respectively
-    function setSaveDisableStatus() {
-        if (((initialOverride == "<%=h(parentName)%>") && useParent.prop("checked")) ||
-                ((initialOverride == engineSelect.find(":selected").text()) && overrideParent.prop("checked")) ||
-                ((engineSelect.find(":selected").text().trim() == "Select a configuration...") && overrideParent.prop("checked"))) {
-            saveBtn.addClass("labkey-disabled-button");
-        } else {
-            saveBtn.removeClass("labkey-disabled-button");
-        }
+    function setDirty() {
+        saveBtn.removeClass("labkey-disabled-button");
     }
 
     saveBtn.click(function() {
@@ -228,7 +246,7 @@
             <%
             }
         }
-        else // override not allwed at root
+        else // override not allowed at root
         {
             %>
             <h4>R Configuration override not allowed</h4>
@@ -241,6 +259,36 @@
         }
 %>
 
+<%!
+    // helper to return the name of the currently configured engine
+    @Nullable
+    String getScopedEngineName(Integer reshowId, Container container, LabkeyScriptEngineManager.EngineContext context)
+    {
+        try
+        {
+            LabkeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+            ExternalScriptEngineDefinition engine;
+            if (reshowId != null)
+            {
+                // form reshow
+                engine = mgr.getEngineDefinition(reshowId, ExternalScriptEngineDefinition.Type.R);
+                if (engine != null)
+                    return engine.getName();
+            }
+            else
+            {
+                engine = mgr.getScopedEngine(container, "r", context, false);
+                if (engine != null)
+                    return engine.getName();
+            }
+        }
+        catch(RemoteRNotEnabledException e)
+        {
+            //Swallow this exception and let the UI load.
+        }
+        return null;
+    }
+%>
 
 
 

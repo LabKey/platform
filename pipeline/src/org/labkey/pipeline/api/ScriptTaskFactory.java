@@ -188,7 +188,7 @@ public class ScriptTaskFactory extends SimpleTaskFactory
         {
             // this will effectively return any engine registered which can run this extension, since
             // scoping is not yet important
-            engine = mgr.getEngineByExtension(ContainerManager.getSharedContainer(), interpreter);
+            engine = mgr.getEngineByExtension(ContainerManager.getSharedContainer(), interpreter, LabkeyScriptEngineManager.EngineContext.pipeline);
         }
         if (engine == null)
             throw new IllegalArgumentException("Script engine not found: " + interpreter);

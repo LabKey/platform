@@ -40,7 +40,11 @@ import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.NetworkDriveProps;
 import org.labkey.api.settings.WriteableAppProps;
+import org.labkey.core.reports.ExternalScriptEngineDefinitionImpl;
 import org.labkey.core.reports.ScriptEngineManagerImpl;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.labkey.core.reports.ScriptEngineManagerImpl.SCRIPT_ENGINE_MAP;
 
@@ -218,4 +222,36 @@ public class CoreUpgradeCode implements UpgradeCode
         new SqlExecutor(CoreSchema.getInstance().getSchema())
                 .execute("DELETE FROM core.roleassignments WHERE role = 'org.labkey.api.security.roles.DeveloperRole'");
     }
+
+    /**
+     * Invoked from 18.33-18.34 to update script engine configurations so choose a site default when more than one is present (sandboxed vs non sandboxed)
+     */
+    @SuppressWarnings({"UnusedDeclaration"})
+    public void migrateSiteDefaultEngines(final ModuleContext context)
+    {
+        if (!context.isNewInstall())
+        {
+            LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+            if (svc instanceof ScriptEngineManagerImpl)
+            {
+                List<ExternalScriptEngineDefinition> rDefs = svc.getEngineDefinitions(ExternalScriptEngineDefinition.Type.R);
+                if (rDefs == null || rDefs.size() <= 1)
+                    return;
+                List<ExternalScriptEngineDefinition> siteDefaultRDefs = rDefs.stream().filter(ExternalScriptEngineDefinition::isDefault).collect(Collectors.toList());
+                if (siteDefaultRDefs.size() <= 1)
+                    return;
+
+                // prior to 18.34, up to 2 site defaults are allowed: one for sandboxed and one for non sandboxed. Going forward, a single site default will be allowed.
+                ExternalScriptEngineDefinition sandboxedSiteDefaultRDef = siteDefaultRDefs.stream().filter(ExternalScriptEngineDefinition::isSandboxed).findFirst().orElse(null);
+                if (sandboxedSiteDefaultRDef != null)
+                {
+                    ExternalScriptEngineDefinitionImpl newDef = (ExternalScriptEngineDefinitionImpl) sandboxedSiteDefaultRDef;
+                    newDef.setDefault(false);
+                    newDef.updateConfiguration(); // update config json
+                    svc.saveDefinition(context.getUpgradeUser(), newDef);
+                }
+            }
+        }
+    }
+
 }

@@ -46,12 +46,10 @@ import org.labkey.api.reports.RDockerScriptEngineFactory;
 import org.labkey.api.reports.RScriptEngineFactory;
 import org.labkey.api.reports.RemoteRNotEnabledException;
 import org.labkey.api.reports.RserveScriptEngineFactory;
-import org.labkey.api.rstudio.RStudioService;
 import org.labkey.api.script.RhinoScriptEngine;
 import org.labkey.api.script.ScriptService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ConfigurationException;
@@ -66,7 +64,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 /*
@@ -161,19 +158,13 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
     }
 
     @Override
-    public @Nullable ScriptEngine getEngineByExtension(Container c, String extension)
+    public @Nullable ScriptEngine getEngineByExtension(Container container, String extension) throws PremiumFeatureNotEnabledException
     {
-        return getEngineByExtension(c, extension, false, false);
+        return getEngineByExtension(container, extension, EngineContext.report);
     }
 
     @Override
-    public @Nullable ScriptEngine getEngineByExtension(Container c, String extension, boolean requestRemote)
-    {
-        return getEngineByExtension(c, extension,  requestRemote, false);
-    }
-
-    @Override
-    public ScriptEngine getEngineByExtension(Container container, String extension, boolean requestRemote, boolean requestDocker) throws PremiumFeatureNotEnabledException
+    public @Nullable ScriptEngine getEngineByExtension(Container container, String extension, EngineContext context) throws PremiumFeatureNotEnabledException
     {
         ScriptEngine engine = super.getEngineByExtension(extension);
         assert engine == null || !engine.getClass().getSimpleName().equals("com.sun.script.javascript.RhinoScriptEngine") : "Should not use jdk bundled script engine";
@@ -198,10 +189,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
                 return isFactoryEnabled(engine.getFactory()) ? engine : null;
         }
 
-        if (!AppProps.getInstance().isExperimentalFeatureEnabled(RStudioService.R_DOCKER_SANDBOX))
-            requestDocker = false;
-
-        ExternalScriptEngineDefinition def = getEngine(container, extension, requestRemote, requestDocker);
+        ExternalScriptEngineDefinition def = getEngine(container, extension, context);
         if (def != null)
         {
             if (def.getType().equals(ExternalScriptEngineDefinition.Type.R))
@@ -227,118 +215,75 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
         return null;
     }
 
-    /**
-     * Returns the engine definition for a particular folder scope. We will search for a engine at the folder level
-     * followed by the project level and finally for the default engine at the site level.
-     */
-    private ExternalScriptEngineDefinition getEngine(Container container, String extension, boolean requestRemote, boolean requestDocker)
+    // Locates any specific engines scoped at either the container or project level for an engine context
+    @Nullable
+    public ExternalScriptEngineDefinition getScopedEngine(Container container, String extension, EngineContext context, boolean includeProject)
     {
-        ExternalScriptEngineDefinition engine = null;
-        for (ExternalScriptEngineDefinition def : getScopedEngines(container))
+        // look for a folder level override
+        for (ExternalScriptEngineDefinition def : getScopedEngines(container, context))
         {
             if (def.isEnabled() && Arrays.asList(def.getExtensions()).contains(extension))
             {
-                engine = def;
-                break;
+                return def;
             }
         }
 
-        // check project level scoping
-        if (engine == null && !container.isProject())
+        // check project level override
+        if (includeProject && !container.isProject())
         {
-            for (ExternalScriptEngineDefinition def : getScopedEngines(container.getProject()))
+            for (ExternalScriptEngineDefinition def : getScopedEngines(container.getProject(), context))
             {
                 if (def.isEnabled() && Arrays.asList(def.getExtensions()).contains(extension))
                 {
-                    engine = def;
-                    break;
+                    return def;
                 }
             }
-        }
-
-        if (engine != null && (!requestRemote || engine.isRemote()))
-            return engine;
-
-        // look through all the registered engines at the site level
-        List<ExternalScriptEngineDefinition> definitions = new ArrayList<>();
-        List<ExternalScriptEngineDefinition> dockerDefinitions = new ArrayList<>();
-        List<ExternalScriptEngineDefinition> remoteDefinitions = new ArrayList<>();
-        for (ExternalScriptEngineDefinition def : getEngineDefinitions())
-        {
-            if (Arrays.asList(def.getExtensions()).contains(extension) && def.isEnabled())
-            {
-                definitions.add(def);
-                if (def.isDocker())
-                    dockerDefinitions.add(def);
-                if (def.isRemote())
-                    remoteDefinitions.add(def);
-            }
-        }
-
-        if (!definitions.isEmpty())
-        {
-            // if there is only one, assume this is the default (this code can go away after the UI piece is finished)
-            if (definitions.size() == 1)
-                return definitions.get(0);
-
-            if (requestDocker && AppProps.getInstance().isExperimentalFeatureEnabled(RStudioService.R_DOCKER_SANDBOX) && dockerDefinitions.size() > 0)
-            {
-                ExternalScriptEngineDefinition def = chooseOneEngineDef(dockerDefinitions);
-                if (def != null)
-                    return def;
-            }
-
-            if (requestRemote)
-            {
-                ExternalScriptEngineDefinition def = chooseOneEngineDef(remoteDefinitions);
-                if (def != null)
-                    return def;
-            }
-
-            ExternalScriptEngineDefinition def = definitions.stream().filter(d ->
-                    d.isDefault()
-                            && d.isDocker() == requestDocker
-                            && d.isRemote() == requestRemote
-            ).findFirst().orElse(null);
-            if (def != null)
-                return def;
-
-            def = definitions.stream().filter(d -> d.isDocker() == requestDocker && d.isRemote() == requestRemote).findFirst().orElse(null);
-            if (def != null)
-                return def;
-
-            return chooseOneEngineDef(definitions);
         }
         return null;
     }
 
-    private ExternalScriptEngineDefinition chooseOneEngineDef(List<ExternalScriptEngineDefinition> definitions)
+    /**
+     * Returns the engine definition for a particular folder scope. We will search for a engine at the folder level
+     * followed by the project level and finally for the default engine at the site level.
+     */
+    private ExternalScriptEngineDefinition getEngine(Container container, String extension, EngineContext context)
     {
-        if (definitions.size() == 1)
-            return definitions.get(0);
-        else
+        ExternalScriptEngineDefinition engine = getScopedEngine(container, extension, context, true);
+
+        if (engine != null)
+            return engine;
+
+        // return the configured site level default
+        for (ExternalScriptEngineDefinition def : getEngineDefinitions())
         {
-            // more than one registered docker engine, choose the one marked as the site default
-            return definitions.stream().filter(ExternalScriptEngineDefinition::isDefault).findFirst().orElse(null);
+            if (Arrays.asList(def.getExtensions()).contains(extension) && def.isEnabled())
+            {
+                if (def.isDefault())
+                    return def;
+            }
         }
+        return null;
     }
 
     @Override
-    public void setEngineScope(Container container, ExternalScriptEngineDefinition def)
+    public void setEngineScope(Container container, ExternalScriptEngineDefinition def, EngineContext context)
     {
         if (def.getRowId() != null)
         {
             SQLFragment sql = new SQLFragment("SELECT EngineId FROM ")
                     .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
-                    .append(" WHERE Container = ?").add(container);
+                    .append(" WHERE Container = ? AND EngineContext = ?")
+                    .add(container)
+                    .add(context);
 
-            if(!new SqlSelector(CoreSchema.getInstance().getSchema(), sql).exists())
+            if (!new SqlSelector(CoreSchema.getInstance().getSchema(), sql).exists())
             {
                 SQLFragment insert = new SQLFragment("INSERT INTO ")
                         .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
-                        .append(" (EngineId, Container) VALUES(?,?)")
+                        .append(" (EngineId, Container, EngineContext) VALUES(?,?,?)")
                         .add(def.getRowId())
-                        .add(container);
+                        .add(container)
+                        .add(context);
 
                 new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(insert);
             }
@@ -346,8 +291,11 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
             {
                 SQLFragment update = new SQLFragment("UPDATE ")
                         .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
-                        .append(" SET engineId = ? ").add(def.getRowId())
-                        .append(" WHERE container = ? ").add(container);
+                        .append(" SET EngineId = ? ")
+                        .append(" WHERE Container = ? AND EngineContext = ?")
+                        .add(def.getRowId())
+                        .add(container)
+                        .add(context);
 
                 new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(update);
             }
@@ -355,11 +303,13 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
     }
 
     @Override
-    public void removeEngineScope(Container container, ExternalScriptEngineDefinition def)
+    public void removeEngineScope(Container container, ExternalScriptEngineDefinition def, EngineContext context)
     {
         SQLFragment sql = new SQLFragment("DELETE FROM ")
                 .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
-                .append(" WHERE container = ? ").add(container);
+                .append(" WHERE Container = ? AND EngineContext = ?")
+                .add(container)
+                .add(context);
 
         new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(sql);
     }
@@ -367,15 +317,16 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
     /**
      * Returns the list of engines scoped to the specified container
      */
-    public List<ExternalScriptEngineDefinition> getScopedEngines(Container container)
+    public List<ExternalScriptEngineDefinition> getScopedEngines(Container container, EngineContext context)
     {
         SimpleFilter.createContainerFilter(container);
         SQLFragment sql = new SQLFragment("SELECT * FROM ")
                 .append(CoreSchema.getInstance().getTableInfoReportEngines(), "")
                 .append(" WHERE RowId IN (SELECT EngineId FROM ")
                 .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
-                .append(" WHERE Container = ?)")
-                .add(container);
+                .append(" WHERE Container = ? AND EngineContext = ?)")
+                .add(container)
+                .add(context);
 
         return new ArrayList<>(new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getCollection(ExternalScriptEngineDefinitionImpl.class));
     }

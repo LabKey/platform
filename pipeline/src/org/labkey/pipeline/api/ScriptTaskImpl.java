@@ -157,20 +157,8 @@ public class ScriptTaskImpl extends CommandTaskImpl
         ScriptEngine engine = mgr.getEngineByName(extension);
         if (engine == null)
         {
-            //
-            // since we allow both R and Rserve engines now, ask for Rserve if we are using the ScriptEngineManagerImpl and
-            // Rserve has been enabled
-            //
-            if (PremiumService.get().isRemoteREnabled())
-            {
-                engine = mgr.getEngineByExtension(c, extension, true);
-            }
-            else
-            {
-                engine = mgr.getEngineByExtension(c, extension);
-            }
+            engine = mgr.getEngineByExtension(c, extension, LabkeyScriptEngineManager.EngineContext.pipeline);
         }
-
         return engine;
     }
 

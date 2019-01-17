@@ -41,7 +41,7 @@
 %>
 <%
     boolean isRemoteEnabled = PremiumService.get().isRemoteREnabled();
-    boolean isRDockerAvailable = false;
+    boolean isRDockerAvailable = true;
     if (AppProps.getInstance().isExperimentalFeatureEnabled(RStudioService.R_DOCKER_SANDBOX))
     {
         DockerService ds = DockerService.get();
@@ -71,7 +71,7 @@
     var R_ENGINE_NAME = 'R Scripting Engine';
     var REMOTE_R_ENGINE_NAME = 'Remote R Scripting Engine';
     var R_DOCKER_ENGINE_NAME = 'R Docker Scripting Engine';
-    var defaultR, defaultSandboxedR, countR = 0, countSandboxedR = 0;
+    var defaultR, countR = 0;
 
     var DockerImageFields = {
         imageName: {label: 'Docker Image Name', defaultVal: 'labkey/rsandbox', description: "Enter the Docker image name to use for R. Default is &apos;labkey/rsandbox&apos;, which includes Rlabkey."},
@@ -306,15 +306,15 @@
                         external: true,
                         outputFileName: <%= q(ExternalScriptEngine.SCRIPT_NAME_REPLACEMENT + ".Rout") %>,
                         enabled: true,
-                        'default': !defaultSandboxedR,
+                        'default': !defaultR,
                         docker: true,
                         sandboxed: true,
                         remote: true,
                         languageName:'R',
                         type : <%=q(ExternalScriptEngineDefinition.Type.R.name())%>
                     };
-                    if (countSandboxedR > 0 && !defaultSandboxedR) {
-                        Ext4.Msg.confirm('Site default missing', "None of the existing sandboxed R engine(s) has been set as 'Site Default'. A site default must be specified in order to add additional sandboxed R engines.  Continue?", function (btn, text) {
+                    if (countR > 0 && !defaultR) {
+                        Ext4.Msg.confirm('Site default missing', "None of the existing R engine(s) has been set as 'Site Default'. A site default must be specified in order to add additional R engines.  Continue?", function (btn, text) {
                             if (btn == 'yes')
                                 editRecord(button, grid, record);
                         });
@@ -362,24 +362,15 @@
                 rDockerEngineItem.enable();
         <%  } %>
                 perlEngineItem.enable();
-                defaultSandboxedR = null;
                 defaultR = null;
-                countSandboxedR = 0;
                 countR = 0;
                 for (var i in records) {
                     if (records[i].data) {
                         var data = records[i].data;
                         if (data.extensions == R_EXTENSIONS)  {
-                            if (data.sandboxed) {
-                                if (data.default)
-                                    defaultSandboxedR = records[i].data;
-                                countSandboxedR++;
-                            }
-                            else {
-                                if (data.default)
-                                    defaultR = records[i].data;
-                                countR++;
-                            }
+                            if (data.default)
+                                defaultR = records[i].data;
+                            countR++;
                         }
 
                         if (records[i].data.extensions == PERL_EXTENSIONS)
@@ -468,16 +459,10 @@
             return false;
         }
 
-        if (record.default) {
+        if (record.default && countR > 1) {
             // deletion of site default engine is not allowed, unless there is only one engine present
-            if (record.sandboxed && countSandboxedR > 1) {
-                Ext4.Msg.alert("Delete Engine Configuration", "The site default sandboxed R engine cannot be deleted. Please choose another engine as the sandboxed site default prior to deleting this configuration.");
-                return false;
-            }
-            else if (!record.sandboxed && countR > 1) {
-                Ext4.Msg.alert("Delete Engine Configuration", "The site default R engine cannot be deleted. Please choose another engine as the site default prior to deleting this configuration.");
-                return false;
-            }
+            Ext4.Msg.alert("Delete Engine Configuration", "The site default R engine cannot be deleted. Please choose another engine as the site default prior to deleting this configuration.");
+            return false;
         }
 
         params.push("rowId=" + record.rowId);
@@ -815,32 +800,20 @@
                 return false;
             }
 
-            if (!values.default && ((defaultSandboxedR && (rowId === defaultSandboxedR.rowId)) || (defaultR && (rowId === defaultR.rowId)))) {
+            if (!values.default && (defaultR && (rowId === defaultR.rowId))) {
                 Ext4.Msg.alert("Engine Definition", "This engine is used as the site default. To change the site default, select another engine to use as the default.");
                 return false;
             }
 
             var confirmChange;
-            if (values.sandboxed) {
-                if (defaultSandboxedR) {
-                    if (values.default && rowId !== defaultSandboxedR.rowId)
-                        confirmChange = "Are you sure you want to set '" + values.name + "' as the default site wide sandboxed R engine? The current default is '" + defaultSandboxedR.name + "'."
-                }
-                else if (!values.default){
-                    Ext4.Msg.alert('Engine Definition', 'Site default sandboxed R engine missing. You must specify one R engine to be the site default.');
-                    return false;
+            if (defaultR) {
+                if (values.default && rowId !== defaultR.rowId) {
+                    confirmChange = "Are you sure you want to set '" + values.name + "' as the default site wide R engine? The current default is '" + defaultR.name + "'."
                 }
             }
-            else if (!values.sandboxed) {
-                if (defaultR) {
-                    if (values.default && rowId !== defaultR.rowId) {
-                        confirmChange = "Are you sure you want to set '" + values.name + "' as the default site wide R engine? The current default is '" + defaultR.name + "'."
-                    }
-                }
-                else if (!values.default) {
-                    Ext4.Msg.alert('Engine Definition', 'Site default R engine missing. You must specify one R engine to be the site default.');
-                    return false;
-                }
+            else if (!values.default) {
+                Ext4.Msg.alert('Engine Definition', 'Site default R engine missing. You must specify one R engine to be the site default.');
+                return false;
             }
             if (confirmChange && !confirm(confirmChange))
                 return;

@@ -2254,7 +2254,7 @@ public class CoreController extends SpringActionController
                 List<ExternalScriptEngineDefinition> rDefs = svc.getEngineDefinitions(ExternalScriptEngineDefinition.Type.R);
                 for (ExternalScriptEngineDefinition rDef : rDefs)
                 {
-                    if ((!rDef.getName().equals(def.getName())) && (rDef.isSandboxed() == def.isSandboxed() && rDef.isDefault()))
+                    if ((!rDef.getName().equals(def.getName())) && rDef.isDefault())
                     {
                         ExternalScriptEngineDefinitionImpl newDef = (ExternalScriptEngineDefinitionImpl) rDef;
                         newDef.setDefault(false);

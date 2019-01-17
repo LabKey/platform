@@ -161,7 +161,6 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.mail.MessagingException;
-import javax.script.ScriptEngine;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.beans.Introspector;
@@ -3994,18 +3993,28 @@ public class AdminController extends SpringActionController
 
     public static class RConfigForm
     {
-        int _engineRowId;
-        boolean _overrideDefault;
-        ScriptEngine _parentEngine;
+        private Integer _reportEngine;
+        private Integer _pipelineEngine;
+        private boolean _overrideDefault;
 
-        public int getEngineRowId()
+        public Integer getReportEngine()
         {
-            return _engineRowId;
+            return _reportEngine;
         }
 
-        public void setEngineRowId(int engineRowId)
+        public void setReportEngine(Integer reportEngine)
         {
-            _engineRowId = engineRowId;
+            _reportEngine = reportEngine;
+        }
+
+        public Integer getPipelineEngine()
+        {
+            return _pipelineEngine;
+        }
+
+        public void setPipelineEngine(Integer pipelineEngine)
+        {
+            _pipelineEngine = pipelineEngine;
         }
 
         public boolean getOverrideDefault()
@@ -4017,33 +4026,26 @@ public class AdminController extends SpringActionController
         {
             _overrideDefault = ((overrideDefault.equals("override")) ? true : false);
         }
-
-        public ScriptEngine getParentEngine()
-        {
-            return _parentEngine;
-        }
-
-        public void setParentEngine(ScriptEngine parentEngine)
-        {
-            _parentEngine = parentEngine;
-        }
     }
 
     @RequiresPermission(AdminPermission.class)
     public class RConfigurationAction extends FolderManagementViewPostAction<RConfigForm>
     {
         @Override
-        protected HttpView getTabView(RConfigForm rConfigForm, BindException errors) throws Exception
+        protected HttpView getTabView(RConfigForm form, BindException errors) throws Exception
         {
-            return new JspView<>("/org/labkey/core/admin/rConfiguration.jsp", rConfigForm, errors);
+            return new JspView<>("/org/labkey/core/admin/rConfiguration.jsp", form, errors);
         }
 
         @Override
-        public void validateCommand(RConfigForm rConfigForm, Errors errors)
+        public void validateCommand(RConfigForm form, Errors errors)
         {
-            if (rConfigForm.getEngineRowId() < 0)
+            if (form.getOverrideDefault())
             {
-                errors.reject("Must have a valid R Engine identifier");
+                if (form.getReportEngine() == null)
+                    errors.reject(ERROR_MSG, "Please select a valid report engine configuration");
+                if (form.getPipelineEngine() == null)
+                    errors.reject(ERROR_MSG, "Please select a valid pipeline engine configuration");
             }
         }
 
@@ -4059,19 +4061,27 @@ public class AdminController extends SpringActionController
             LabkeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
             if (null != mgr)
             {
-                ExternalScriptEngineDefinition def = mgr.getEngineDefinition(rConfigForm.getEngineRowId(), ExternalScriptEngineDefinition.Type.R);
                 if (rConfigForm.getOverrideDefault())
                 {
-                    mgr.setEngineScope(getContainer(), def);
+                    ExternalScriptEngineDefinition reportEngine = mgr.getEngineDefinition(rConfigForm.getReportEngine(), ExternalScriptEngineDefinition.Type.R);
+                    ExternalScriptEngineDefinition pipelineEngine = mgr.getEngineDefinition(rConfigForm.getPipelineEngine(), ExternalScriptEngineDefinition.Type.R);
+
+                    mgr.setEngineScope(getContainer(), reportEngine, LabkeyScriptEngineManager.EngineContext.report);
+                    mgr.setEngineScope(getContainer(), pipelineEngine, LabkeyScriptEngineManager.EngineContext.pipeline);
                 }
                 else
                 {
-                    mgr.removeEngineScope(getContainer(), def);
-                }
+                    // need to clear the current scope (if any)
+                    ExternalScriptEngineDefinition reportEngine = mgr.getScopedEngine(getContainer(), "r", LabkeyScriptEngineManager.EngineContext.report, false);
+                    ExternalScriptEngineDefinition pipelineEngine = mgr.getScopedEngine(getContainer(), "r", LabkeyScriptEngineManager.EngineContext.pipeline, false);
 
+                    if (reportEngine != null)
+                        mgr.removeEngineScope(getContainer(), reportEngine, LabkeyScriptEngineManager.EngineContext.report);
+                    if (pipelineEngine != null)
+                        mgr.removeEngineScope(getContainer(), pipelineEngine, LabkeyScriptEngineManager.EngineContext.pipeline);
+                }
                 return true;
             }
-
             return false;
         }
     }
