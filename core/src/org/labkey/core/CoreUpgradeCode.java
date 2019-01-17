@@ -232,7 +232,7 @@ public class CoreUpgradeCode implements UpgradeCode
         if (!context.isNewInstall())
         {
             LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
-            if (svc instanceof ScriptEngineManagerImpl)
+            if (svc != null)
             {
                 List<ExternalScriptEngineDefinition> rDefs = svc.getEngineDefinitions(ExternalScriptEngineDefinition.Type.R);
                 if (rDefs == null || rDefs.size() <= 1)
@@ -243,7 +243,7 @@ public class CoreUpgradeCode implements UpgradeCode
 
                 // prior to 18.34, up to 2 site defaults are allowed: one for sandboxed and one for non sandboxed. Going forward, a single site default will be allowed.
                 ExternalScriptEngineDefinition sandboxedSiteDefaultRDef = siteDefaultRDefs.stream().filter(ExternalScriptEngineDefinition::isSandboxed).findFirst().orElse(null);
-                if (sandboxedSiteDefaultRDef != null)
+                if (sandboxedSiteDefaultRDef instanceof ExternalScriptEngineDefinitionImpl)
                 {
                     ExternalScriptEngineDefinitionImpl newDef = (ExternalScriptEngineDefinitionImpl) sandboxedSiteDefaultRDef;
                     newDef.setDefault(false);
@@ -253,5 +253,4 @@ public class CoreUpgradeCode implements UpgradeCode
             }
         }
     }
-
 }
