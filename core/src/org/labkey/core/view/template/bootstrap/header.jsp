@@ -37,6 +37,8 @@
 <%@ page import="org.labkey.core.view.template.bootstrap.PageTemplate" %>
 <%@ page import="org.labkey.api.search.SearchUtils" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
+<%@ page import="static org.labkey.api.view.template.PageConfig.SESSION_WARNINGS_BANNER_KEY" %>
+<%@ page import="org.labkey.api.admin.CoreUrls" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -119,6 +121,37 @@
                     </li>
                 </ul>
             </li>
+<% } %>
+<%
+    HttpSession httpSession = getViewContext().getRequest().getSession();
+    if (httpSession.getAttribute(SESSION_WARNINGS_BANNER_KEY) != null && !(boolean) httpSession.getAttribute(SESSION_WARNINGS_BANNER_KEY)) {
+        CoreUrls coreUrls = PageFlowUtil.urlProvider(CoreUrls.class);
+    %>
+        <li class="dropdown dropdown-rollup" id="headerWarningIcon">
+            <a href="#" class="" id="headerWarningLink" data-tt="tooltip" data-placement="bottom" title data-original-title="Click to show important notification.">
+                <i class="fa fa-exclamation-circle warning"></i>
+            </a>
+        </li>
+        <% if (coreUrls != null) {
+            String displayUrl = coreUrls.getDisplayCoreWarningActionURL(getViewContext()).toString();
+        %>
+        <script type="text/javascript">
+            +function($){
+                $('#headerWarningLink').on('click', function () {
+                    LABKEY.Ajax.request({
+                        url: <%=q(displayUrl)%>,
+                        method: 'POST',
+                        success: function(xhr) {
+                            var resp = JSON.parse(xhr.responseText);
+                            $('.lk-dismissable-alert-ct').html(resp['dismissableCoreWarningsHtml']);
+                            $('#headerWarningIcon').hide();
+                        },
+                        failure: LABKEY.Utils.displayAjaxErrorResponse
+                    });
+                })
+            }(jQuery)
+        </script>
+        <%}%>
 <% } %>
 <% if (optionsMenu != null && optionsMenu.hasChildren()) { %>
             <li class="dropdown dropdown-rollup" id="headerAdminDropdown">

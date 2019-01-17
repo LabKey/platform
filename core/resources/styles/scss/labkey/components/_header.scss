@@ -176,6 +176,9 @@
           color: $lk-page-header-icon-hover-color;
         }
       }
+      & > a > i.fa.warning {
+        color: $lk-page-header-warning-color;
+      }
     }
 
     .dropdown-menu {

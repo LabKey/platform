@@ -142,6 +142,9 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.view.template.WarningService;
+import org.labkey.api.view.template.Warnings;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.writer.FileSystemFile;
@@ -178,6 +181,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -272,6 +276,12 @@ public class CoreController extends SpringActionController
         public ActionURL getDismissCoreWarningActionURL(ViewContext viewContext)
         {
             return new ActionURL(CoreController.DismissCoreWarningsAction.class, viewContext.getContainer());
+        }
+
+        @Override
+        public ActionURL getDisplayCoreWarningActionURL(ViewContext viewContext)
+        {
+            return new ActionURL(CoreController.DisplayCoreWarningsAction.class, viewContext.getContainer());
         }
     }
 
@@ -2268,7 +2278,7 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresNoPermission
-    public class DismissCoreWarningsAction extends ApiAction
+    public class DismissCoreWarningsAction extends MutatingApiAction
     {
         @Override
         public Object execute(Object o, BindException errors)
@@ -2276,6 +2286,37 @@ public class CoreController extends SpringActionController
             HttpSession session = getViewContext().getRequest().getSession(true);
             session.setAttribute(SESSION_WARNINGS_BANNER_KEY, false);
             return success();
+        }
+    }
+
+    @RequiresNoPermission
+    public class DisplayCoreWarningsAction extends MutatingApiAction
+    {
+        @Override
+        public ApiResponse execute(Object o, BindException errors)
+        {
+            // Reset Session Attribute so warnings will display on next pageload
+            HttpSession session = getViewContext().getRequest().getSession(true);
+            session.setAttribute(SESSION_WARNINGS_BANNER_KEY, true);
+
+            // Collect all dismissable warnings from server
+            List<String> dismissibleWarningMessages = new LinkedList<>();
+            Warnings dismissibleWarnings = Warnings.of(dismissibleWarningMessages);
+            WarningService.get().forEachProvider(p->p.addDismissibleWarnings(dismissibleWarnings, getViewContext()));
+
+            JSONObject json = new JSONObject();
+            json.put("success", true);
+
+            if (!dismissibleWarningMessages.isEmpty())
+            {
+                // Prepare warnings content for optional client-side consumption
+                StringBuilder warningsHtml = new StringBuilder();
+                PageConfig.appendDismissableMessageHtml(getViewContext(), dismissibleWarningMessages, warningsHtml);
+
+                json.put("dismissableCoreWarningsHtml", warningsHtml.toString());
+            }
+
+            return new ApiSimpleResponse(json);
         }
     }
 
