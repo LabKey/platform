@@ -230,7 +230,8 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         if (dataType == null)
             dataType = TsvDataHandler.RELATED_TRANSFORM_FILE_DATA_TYPE;
 
-        boolean isFirstFile = true;
+        String sep = "";
+        pw.append(Props.runDataUploadedFile.name()).append('\t');
         for (File data : dataFiles)
         {
             ExpData expData = ExperimentService.get().createData(context.getContainer(), dataType, data.getName());
@@ -239,17 +240,8 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             ExperimentDataHandler handler = expData.findDataHandler();
             if (handler instanceof ValidationDataHandler)
             {
-                // original data file(s)
-                if (isFirstFile)
-                {
-                    pw.append(Props.runDataUploadedFile.name());
-                    pw.append('\t');
-                    isFirstFile = false;
-                }
-                else
-                    pw.append(';');
-
-                pw.append(data.getAbsolutePath());
+                pw.append(sep).append(data.getAbsolutePath());
+                sep = ";";
                 _filesToIgnore.add(data);
 
                 // for the data map sent to validation or transform scripts, we want to attempt type conversion, but if it fails, return
@@ -280,8 +272,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 }
             }
         }
-        if (!isFirstFile)  // processed at least one file
-            pw.println();
+        pw.println();
 
         File dir = AssayFileWriter.ensureUploadDirectory(context.getContainer());
 

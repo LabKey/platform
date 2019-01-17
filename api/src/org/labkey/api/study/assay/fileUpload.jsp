@@ -53,19 +53,17 @@
     function getActiveFileCount()
     {
         var count = 0;
-        for (var i = 0; i < _fileGroups.length; i++)
-        {
+        for (var i = 0; i < _fileGroups.length; i++) {
             var fileGroup = _fileGroups[i];
 
-            if (fileGroup.active)
-            {
-                if(fileGroup.fileInput && fileGroup.fileInput.files) {
-                    for (var j = 0; j < fileGroup.fileInput.files.length; j++) {
-                        count++;
-                    }
+            if (fileGroup.active) {
+                if (fileGroup.fileInput && fileGroup.fileInput.files) {
+                    count += fileGroup.fileInput.files.length;
                 }
-                else if (fileGroup.reused)  // no file input fields in this case
-                    count++;  // but always one file and it's active, so add 1
+                else if (fileGroup.reused) {
+                    // no file input fields in this case but always one file and it's active, so add 1
+                    count++;
+                }
             }
         }
         return count;
@@ -74,12 +72,9 @@
     function getActiveFileGroupCount()
     {
         var count = 0;
-        for (var i = 0; i < _fileGroups.length; i++)
-        {
+        for (var i = 0; i < _fileGroups.length; i++) {
             var fileGroup = _fileGroups[i];
-
-            if (fileGroup.active)
-            {
+            if (fileGroup.active) {
                 count++;
             }
         }
@@ -269,26 +264,21 @@
      */
     function toggleAddRemoveButtons()
     {
-        for (var i = _fileGroups.length - 1; i >= 0; i--)
-        {
+        for (var i = _fileGroups.length - 1; i >= 0; i--) {
             // disable the remove button if there is only one file group left in use
             var fileGroup = _fileGroups[i];
-            if (getActiveFileGroupCount() <= 1 || !fileGroup.active)
-            {
+            if (getActiveFileGroupCount() <= 1 || !fileGroup.active) {
                 enableDisableButton('remove', fileGroup.removeButtonAnchor, false);
             }
-            else
-            {
+            else {
                 enableDisableButton('remove', fileGroup.removeButtonAnchor, true);
             }
 
             // only enable the add button that is on the last row (if the file group input is available)
-            if (i === _fileGroups.length - 1 && getActiveFileCount() < MAX_FILE_INPUTS && (!fileGroup.fileInput || fileGroup.fileInput.value !== " "))
-            {
+            if (i === _fileGroups.length - 1 && getActiveFileGroupCount() < MAX_FILE_INPUTS) {
                 enableDisableButton('add', fileGroup.addButtonAnchor, true);
             }
-            else
-            {
+            else {
                 enableDisableButton('add', fileGroup.addButtonAnchor, false);
             }
         }
@@ -325,19 +315,17 @@
         var fileName;
 
         // update all slots that have filenames which exist
-        for (var i = 0; i < fileGroup.fileInput.files.length; i++) {
+        for (var i = 0; i < numberOfFiles; i++) {
             fileName = fileGroup.fileInput.files[i].name;
             // this is a little silly, but it's trying to avoid changing showPathname()
-            var fileNameWrapped = {};
-            fileNameWrapped.value = fileName;
+            var fileNameWrapped = {value: fileName};
             showPathname(fileNameWrapped, fileGroup.fileNameLabels[i]);
         }
 
         // set all other filename elements to empty
         for (var j = (MAX_FILE_INPUTS - 1); j >= numberOfFiles; j--) {
             // this is a little silly, but it's trying to avoid changing showPathname()
-            fileName = {};
-            fileName.value = '';
+            fileName = {value: ''};
             showPathname(fileName, fileGroup.fileNameLabels[j]);
         }
     }
@@ -369,9 +357,13 @@
                     return function (event) {
                         Ext.Msg.show({
                             title: 'Error',
-                            msg: 'One or more directories (or unreadable files) were selected for upload, including "' + fileName + '". Directory submission is not supported. Please remove them before submitting.' ,
+                            msg: 'One or more directories (or unreadable files) were selected for upload, including "'
+                                + fileName + '". Directory submission is not supported. The entire input row will be removed.' ,
                             buttons: Ext.Msg.OK,
-                            icon: Ext.MessageBox.ERROR
+                            icon: Ext.MessageBox.ERROR,
+                            fn: function () {
+                                removeFileUploadInputRow(null, fileGroup);
+                            }
                         });
                     }
                 })(fileName);
@@ -394,11 +386,8 @@
             fileNames[j] = fileNameShort;
         }
 
-        // Fire off an AJAX request
-        var duplicateCheckURL = LABKEY.ActionURL.buildURL("assay", "assayFileDuplicateCheck.api");
-
         Ext.Ajax.request({
-            url: duplicateCheckURL,
+            url: LABKEY.ActionURL.buildURL("assay", "assayFileDuplicateCheck.api"),
             jsonData: {fileNames: fileNames},
             success: function(response)
             {
@@ -452,15 +441,14 @@
                 msg: 'Too many files chosen for upload. Max is ' + MAX_FILE_INPUTS + ' file(s), but ' + fileCount + ' file(s) found.'
                         + ' The entire input row containing this file will be removed.' ,
                 buttons: Ext.Msg.OK,
+                icon: Ext.MessageBox.ERROR,
                 fn: function () {
                     removeFileUploadInputRow(null, fileGroup);
-                },
-                icon: Ext.MessageBox.ERROR
+                }
             });
         }
         else {
-            // loop through the other selected sets of files to see if all those files are unique within the current sets of files to be
-            // uploaded
+            // loop through the other selected sets of files to see if all those files are unique within the current sets of files to be uploaded
             var dupFound = false;
             for (var i = 0; i < _fileGroups.length; i++) {
                 var inputEl = _fileGroups[i].fileInput;
@@ -482,13 +470,13 @@
         if (dupFound) {
             Ext.Msg.show({
                 title: 'Error',
-                msg: 'File(s) with the same name(s) ("' + Ext.util.Format.htmlEncode(duplicateFilenames.join(", "))
-                        + '") have already been selected for this run. The entire input row containing these file(s) will be removed.',
+                msg: 'A file with the same name ("' + Ext.util.Format.htmlEncode(duplicateFilenames.join(", "))
+                        + '") has already been selected for this run. The entire input row containing these file(s) will be removed.',
                 buttons: Ext.Msg.OK,
+                icon: Ext.MessageBox.ERROR,
                 fn: function () {
                     removeFileUploadInputRow(null, fileGroup);
-                },
-                icon: Ext.MessageBox.ERROR
+                }
             });
         }
 
