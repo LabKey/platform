@@ -25,8 +25,6 @@ import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
-import org.springframework.validation.BindException;
-import org.springframework.validation.Errors;
 
 import java.util.Set;
 
