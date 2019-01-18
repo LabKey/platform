@@ -3478,6 +3478,8 @@ public class ExperimentController extends SpringActionController
             Domain domain = sampleSet.getType();
             DomainKind kind = domain.getDomainKind();
             _successUrl = kind.urlEditDefinition(domain, getViewContext());
+            URLHelper returnUrl = getViewContext().getActionURL().getReturnURL();
+            _successUrl.addReturnURL(Objects.requireNonNullElseGet(returnUrl, () -> getContainer().getStartURL(getUser())));
 
             return true;
         }

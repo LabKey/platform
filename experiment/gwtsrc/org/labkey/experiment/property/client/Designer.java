@@ -170,7 +170,10 @@ public class Designer implements EntryPoint, Saveable<GWTDomain>
 
         public void onClick(Widget sender)
         {
-            cancel();
+            if (null == _returnURL || _returnURL.length() == 0)
+                cancel();
+            else
+                navigate(_returnURL);
         }
     }
 
