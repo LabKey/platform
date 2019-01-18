@@ -52,4 +52,10 @@ public class IssueUserListener implements UserListener
     public void propertyChange(PropertyChangeEvent evt)
     {
     }
+
+    @Override
+    public void userPropertiesUpdated(int userid)
+    {
+        IssueManager.uncache(); // Might change assigned to lists (e.g., display name, see #9611)
+    }
 }
