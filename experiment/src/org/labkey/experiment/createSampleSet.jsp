@@ -9,45 +9,20 @@
     String returnUrl = getViewContext().getActionURL().getParameter("returnUrl");
 %>
 
-<style type="text/css">
-    .form-item {
-        padding: 5px 0 0 30px;
-    }
-    .form-item input {
-        padding: 3px;
-    }
-    .form-item select {
-        width: 360px;
-        padding: 3px;
-    }
-    .form-longinput {
-        width: 350px;
-    }
-    .form-label {
-        width: 135px;
-        display: inline-block;
-    }
-</style>
-
-
 <labkey:errors />
-<labkey:form action="" method="POST">
-
-    <div class="form-item">
-        <div class="form-label" title="Name of the sample set (required)"><label for="name">Name *:</label></div>
-        <input type="text" id="name" name="name" value="<%=h(bean.getName() == null ? "" : bean.getName())%>">
-    </div>
-
-    <div class="form-item">
-        <div class="form-label" title="Name expression to use for generating unique sample ids"><label for="nameExpression">Name Expression:</label></div>
-        <input type="text" id="nameExpression" name="nameExpression" class="form-longinput" value="<%=h(bean.getNameExpression() == null ? "" : bean.getNameExpression())%>">
-    </div>
+<labkey:form action="" method="POST" layout="horizontal">
+    <labkey:input
+        id="name" name="name" label="Name" value="<%=h(bean.getName())%>"
+        contextContent="Name of the sample set (required)." forceSmallContext="true" size="60"
+    />
+    <labkey:input
+        id="nameExpression" name="nameExpression" label="Name Expression" value="<%=h(bean.getNameExpression())%>"
+        placeholder="\${DataInputs:first:defaultValue('S')}-\${now:date}-\${batchRandomId}"
+        contextContent="Name expression to use for generating unique sample ids." forceSmallContext="true" size="60"
+    />
     <br/>
-
-    <div class="form-buttons">
-        <%=button("Create").submit(true)%>
-        <%=button("Cancel").href(returnUrl)%>
-    </div>
+    <%=button("Create").submit(true)%>
+    <%=button("Cancel").href(returnUrl)%>
 </labkey:form>
 
 

@@ -214,7 +214,7 @@
                    value="<%=h(NameFormatChoice.NameExpression.toString())%>"
                    <%=checked(NameFormatChoice.NameExpression.equals(form.getNameFormatEnum()))%> >
             Expression:
-            <input type="text" id="nameExpression" name="nameExpression" size="70" maxLength="200" value="<%=h(form.getNameExpression())%>"  placeholder="e.g, \${DataInputs:first:defaultValue('S')}-\${now:date}-\${batchRandomId}" />
+            <input type="text" id="nameExpression" name="nameExpression" size="70" maxLength="200" value="<%=h(form.getNameExpression())%>"  placeholder="\${DataInputs:first:defaultValue('S')}-\${now:date}-\${batchRandomId}" />
             <br/>
             <input type="radio" id="nameFormat_idColumns" name="nameFormat"
                    value="<%=h(NameFormatChoice.IdColumns.toString())%>"
