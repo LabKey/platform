@@ -154,7 +154,7 @@ LABKEY.Query = new function(impl, $) {
             var text = textProperty ? option[textProperty] : option;
             if (duplicates[text] !== undefined)
                 text = value;
-            var selected = initialValue && value === initialValue;
+            var selected = initialValue != undefined && value === initialValue;
             if (selected)
                 validInitialValue = true;
             select.append($('<option>', { value: value,  text: text,  selected: selected}));
