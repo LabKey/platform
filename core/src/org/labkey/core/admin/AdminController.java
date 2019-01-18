@@ -4061,24 +4061,28 @@ public class AdminController extends SpringActionController
             LabkeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
             if (null != mgr)
             {
-                if (rConfigForm.getOverrideDefault())
+                try (DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
                 {
-                    ExternalScriptEngineDefinition reportEngine = mgr.getEngineDefinition(rConfigForm.getReportEngine(), ExternalScriptEngineDefinition.Type.R);
-                    ExternalScriptEngineDefinition pipelineEngine = mgr.getEngineDefinition(rConfigForm.getPipelineEngine(), ExternalScriptEngineDefinition.Type.R);
+                    if (rConfigForm.getOverrideDefault())
+                    {
+                        ExternalScriptEngineDefinition reportEngine = mgr.getEngineDefinition(rConfigForm.getReportEngine(), ExternalScriptEngineDefinition.Type.R);
+                        ExternalScriptEngineDefinition pipelineEngine = mgr.getEngineDefinition(rConfigForm.getPipelineEngine(), ExternalScriptEngineDefinition.Type.R);
 
-                    mgr.setEngineScope(getContainer(), reportEngine, LabkeyScriptEngineManager.EngineContext.report);
-                    mgr.setEngineScope(getContainer(), pipelineEngine, LabkeyScriptEngineManager.EngineContext.pipeline);
-                }
-                else
-                {
-                    // need to clear the current scope (if any)
-                    ExternalScriptEngineDefinition reportEngine = mgr.getScopedEngine(getContainer(), "r", LabkeyScriptEngineManager.EngineContext.report, false);
-                    ExternalScriptEngineDefinition pipelineEngine = mgr.getScopedEngine(getContainer(), "r", LabkeyScriptEngineManager.EngineContext.pipeline, false);
+                        mgr.setEngineScope(getContainer(), reportEngine, LabkeyScriptEngineManager.EngineContext.report);
+                        mgr.setEngineScope(getContainer(), pipelineEngine, LabkeyScriptEngineManager.EngineContext.pipeline);
+                    }
+                    else
+                    {
+                        // need to clear the current scope (if any)
+                        ExternalScriptEngineDefinition reportEngine = mgr.getScopedEngine(getContainer(), "r", LabkeyScriptEngineManager.EngineContext.report, false);
+                        ExternalScriptEngineDefinition pipelineEngine = mgr.getScopedEngine(getContainer(), "r", LabkeyScriptEngineManager.EngineContext.pipeline, false);
 
-                    if (reportEngine != null)
-                        mgr.removeEngineScope(getContainer(), reportEngine, LabkeyScriptEngineManager.EngineContext.report);
-                    if (pipelineEngine != null)
-                        mgr.removeEngineScope(getContainer(), pipelineEngine, LabkeyScriptEngineManager.EngineContext.pipeline);
+                        if (reportEngine != null)
+                            mgr.removeEngineScope(getContainer(), reportEngine, LabkeyScriptEngineManager.EngineContext.report);
+                        if (pipelineEngine != null)
+                            mgr.removeEngineScope(getContainer(), pipelineEngine, LabkeyScriptEngineManager.EngineContext.pipeline);
+                    }
+                    transaction.commit();
                 }
                 return true;
             }

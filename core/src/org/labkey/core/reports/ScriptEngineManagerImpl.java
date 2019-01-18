@@ -254,15 +254,19 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
             return engine;
 
         // return the configured site level default
+        ExternalScriptEngineDefinition defaultEngine = null;
         for (ExternalScriptEngineDefinition def : getEngineDefinitions())
         {
             if (Arrays.asList(def.getExtensions()).contains(extension) && def.isEnabled())
             {
                 if (def.isDefault())
                     return def;
+                else if (defaultEngine == null)
+                    defaultEngine = def;
             }
         }
-        return null;
+
+        return defaultEngine;
     }
 
     @Override

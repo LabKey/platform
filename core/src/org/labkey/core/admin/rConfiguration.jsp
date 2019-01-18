@@ -76,6 +76,12 @@
             String parentPipelineLabel = String.format("Pipeline Jobs : %s", parentPipelineEngine.getFactory().getEngineName());
 
 %>
+<style type="text/css">
+    div.engine-row {
+        padding-bottom: 5px;
+    }
+</style>
+
 <labkey:errors/>
 <h4>Available R Configurations</h4>
 <hr/>
@@ -85,7 +91,7 @@
 </div>
 <labkey:form id="configForm" method="POST">
 <div style="max-width: 750px">
-    <div class="row" style="height: 25px;">
+    <div class="row engine-row">
         <div class="col-md-4">
             Use parent R configuration:
         </div>
@@ -96,7 +102,7 @@
             <%=h(parentReportLabel)%><br><%=h(parentPipelineLabel)%><p>
         </div>
     </div>
-    <div class="row" style="height: 30px;">
+    <div class="row engine-row">
         <div class="col-md-4">
             <label for="overrideDefault">Use folder level R Configuration</label>
         </div>
@@ -127,7 +133,7 @@
 
         </div>
     </div>
-    <div class="row" style="height: 30px;">
+    <div class="row engine-row">
         <div class="col-md-4">
         </div>
         <div class="col-md-1 form-inline">
@@ -203,6 +209,15 @@
 
     saveBtn.click(function() {
         if (!saveBtn.hasClass("labkey-disabled-button")) {
+
+            // validation
+            if ($("input[name='overrideDefault']:checked").val() === 'override'){
+
+                if (($("select[name='reportEngine']").val() == null) || ($("select[name='pipelineEngine']").val() == null)){
+                    LABKEY.Utils.alert("Update failed", "For folder level configurations, you must specify an engine for running both reports and pipeline jobs (they can be the same engine).");
+                    return;
+                }
+            }
             LABKEY.Utils.modal("Override Default R Configuration", null, submitForm, null);
         }
     });
