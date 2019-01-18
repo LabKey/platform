@@ -109,7 +109,7 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
         // Ideally, this would be in afterUpdate(), but announcements runs the wiki sql scripts and is dependent on
         // wiki module, so no dice.
         populateHomeProjectWebpartsWithStartupProps();
-        if (moduleContext.isNewInstall())
+        if (ModuleLoader.getInstance().isNewInstall())
             bootstrap(moduleContext);
 
         SearchService ss = SearchService.get();
@@ -160,16 +160,19 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
         Container supportContainer = ContainerManager.createDefaultSupportContainer();
         Container homeContainer = ContainerManager.getHomeContainer();
         Container sharedContainer = ContainerManager.getSharedContainer();
+        String defaultPageName = "default";
 
         FolderType collaborationType = new CollaborationFolderType(Collections.emptyList());
         homeContainer.setFolderType(collaborationType, moduleContext.getUpgradeUser());
         supportContainer.setFolderType(collaborationType, moduleContext.getUpgradeUser());
         sharedContainer.setFolderType(collaborationType, moduleContext.getUpgradeUser());
 
-        String defaultPageName = "default";
-        loadWikiContent(homeContainer, moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey Server", "/org/labkey/wiki/welcomeWiki.txt", WikiRendererType.HTML);
-        loadWikiContent(supportContainer,  moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey Support", "/org/labkey/wiki/supportWiki.txt", WikiRendererType.HTML);
-        loadWikiContent(sharedContainer,  moduleContext.getUpgradeUser(), defaultPageName, "Shared Resources", "/org/labkey/wiki/sharedWiki.txt", WikiRendererType.HTML);
+        if(moduleContext.isNewInstall())
+        {
+            loadWikiContent(homeContainer, moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey Server", "/org/labkey/wiki/welcomeWiki.txt", WikiRendererType.HTML);
+            loadWikiContent(supportContainer, moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey Support", "/org/labkey/wiki/supportWiki.txt", WikiRendererType.HTML);
+            loadWikiContent(sharedContainer, moduleContext.getUpgradeUser(), defaultPageName, "Shared Resources", "/org/labkey/wiki/sharedWiki.txt", WikiRendererType.HTML);
+        }
 
         Map<String, String> wikiProps = new HashMap<>();
         wikiProps.put("webPartContainer", supportContainer.getId());
