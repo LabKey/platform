@@ -72,14 +72,7 @@ public class CommentsTable extends FilteredTable<IssuesQuerySchema>
                 return IssuesSchema.getInstance().getTableInfoIssues();
             }
         });
-        issueIdColumn.setDisplayColumnFactory(new DisplayColumnFactory()
-        {
-            @Override
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
-            {
-                return new IssueIdDisplayColumn(colInfo,getContainer(), getUserSchema().getUser());
-            }
-        });
+        issueIdColumn.setDisplayColumnFactory(colInfo -> new IssueIdDisplayColumn(colInfo,getContainer(), getUserSchema().getUser()));
         addColumn(issueIdColumn);
 
         ColumnInfo createdBy = wrapColumn(_rootTable.getColumn("CreatedBy"));
