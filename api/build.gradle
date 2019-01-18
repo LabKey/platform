@@ -135,7 +135,7 @@ dependencies {
   // the following two libraries are required for compilation but we don't want extra ones in the classpath, so we exclude
   // them from external dependencies in favor of the versions in the tomcat directory (FIXME seems somewhat sketchy...)
   compile "javax.servlet:servlet-api:${servletApiVersion}"
-  compile "com.sun.mail:javax.mail:${javaxMailVersion}"
+  compile "com.sun.mail:jakarta.mail:${javaMailVersion}"
 
   external("com.fasterxml.jackson.datatype:jackson-datatype-json-org:${jacksonVersion}") {
       // exclude this because it gets in the way of our own JSON object implementations from server/api
@@ -156,7 +156,7 @@ dependencies {
   webappCompile files(project.tasks.jar)
   webappCompile "com.google.code.kaptcha:kaptcha:${kaptchaVersion}"
   webappCompile "org.springframework:spring-context:${springVersion}"
-  webappCompile "com.sun.mail:javax.mail:${javaxMailVersion}"
+  webappCompile "com.sun.mail:jakarta.mail:${javaMailVersion}"
   BuildUtils.addLabKeyDependency(project: project, config: "webappCompile", depProjectPath: ":server:modules:core")
   BuildUtils.addLabKeyDependency(project: project, config: "webappCompile", depProjectPath: ":server:internal")
 }
