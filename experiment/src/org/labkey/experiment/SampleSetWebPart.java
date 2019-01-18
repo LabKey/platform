@@ -98,11 +98,10 @@ public class SampleSetWebPart extends QueryView
         ActionURL urlInsert = new ActionURL(ExperimentController.CreateSampleSetAction.class, model.getContainer());
         urlInsert.addParameter(ActionURL.Param.returnUrl, model.getActionURL().toString());
 
-        ActionButton createNewButton = new ActionButton(ExperimentController.CreateSampleSetAction.class, "Create New Sample Set");
+        ActionButton createNewButton = new ActionButton(ExperimentController.CreateSampleSetAction.class, "Create New Sample Set", DataRegion.MODE_GRID, ActionButton.Action.LINK);
         createNewButton.setDisplayPermission(InsertPermission.class);
         createNewButton.setIconCls("plus");
         createNewButton.setURL(urlInsert);
-
         bb.add(createNewButton);
 
         ActionButton deleteButton = new ActionButton(ExperimentController.DeleteMaterialSourceAction.class, "Delete", DataRegion.MODE_GRID, ActionButton.Action.GET);
