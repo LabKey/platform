@@ -1959,7 +1959,7 @@ abstract public class PipelineJob extends Job implements Serializable
         {
             if (null == job1._logFile || null == job2._logFile)
                 errors.add("_logFile");
-            else if (!job1._logFile.getAbsolutePath().equalsIgnoreCase(job2._logFile.getAbsolutePath()))
+            else if (!FileUtil.getAbsoluteCaseSensitiveFile(job1._logFile).getAbsolutePath().equalsIgnoreCase(FileUtil.getAbsoluteCaseSensitiveFile(job2._logFile).getAbsolutePath()))
                 errors.add("_logFile");
         }
         if (!PropertyUtil.nullSafeEquals(job1._logFilePathName, job2._logFilePathName))
