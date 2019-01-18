@@ -3449,7 +3449,9 @@ public class ExperimentController extends SpringActionController
         public void validateCommand(CreateSampleSetForm form, Errors errors)
         {
             if (StringUtils.isEmpty(form.getName()))
-                errors.reject(ERROR_MSG, "You must supply a name for the sample set");
+                errors.reject(ERROR_MSG, "You must supply a name for the sample set.");
+            if (ExperimentService.get().getSampleSet(getContainer(), getUser(), form.getName()) != null )
+                errors.reject(ERROR_MSG, "A sample set with that name already exists.");
         }
 
         @Override
@@ -3466,6 +3468,7 @@ public class ExperimentController extends SpringActionController
             GWTPropertyDescriptor descriptor = new GWTPropertyDescriptor();
             descriptor.setName(ExpMaterialTable.Column.Name.name());
             properties.add(descriptor);
+
             ExpSampleSet sampleSet = ExperimentService.get().createSampleSet(
                     getContainer(), getUser(), form.getName(), null,
                     properties, Collections.emptyList(), -1, -1, -1, -1, form.getNameExpression(),
@@ -3554,7 +3557,7 @@ public class ExperimentController extends SpringActionController
                 // TODO: how to get this FormattedError into the validate command?
                 if (!form.isImportMoreSamples() && null != _ss)
                 {
-                    errors.addError(new FormattedError("A sample set with that name already exists.  If you would like to import samples that set, go here:  " +
+                    errors.addError(new FormattedError("A sample set with that name already exists.  If you would like to import samples to that set, go here:  " +
                             "<a href=" + getViewContext().getActionURL() + "name=" + form.getName() + "&importMoreSamples=true>Import More Samples</a>"));
                 }
 
