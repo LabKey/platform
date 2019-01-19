@@ -740,9 +740,9 @@ Ext4.onReady(<%=viewObject%>.render, <%=viewObject%>);
             <% } %>
             <td style="padding-left: 10px;" valign=top class="iScroll">
                 <div>
-                    Filter:&nbsp;<input id="<%=divId%>.filter" type="text" size="15" style="margin: 0 10px 10px 0;">
+                    Filter:&nbsp;<input id="<%=divId%>.filter" name="filter" type="text" size="15" style="margin: 0 10px 10px 0;">
                     <%= !bean.getWide() ? "<br/>" : "" %>
-                    <span id="<%=divId%>.status" style="margin-bottom: 10px;">Loading...</span>
+                    <span id="<%=divId%>.status" name="status" style="margin-bottom: 10px;">Loading...</span>
                 </div>
                 <div style="overflow-y:auto; height: 470px;" id="<%= listDivId %>"></div>
             </td>

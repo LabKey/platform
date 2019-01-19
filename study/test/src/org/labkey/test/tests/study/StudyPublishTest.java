@@ -330,7 +330,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         _ext4Helper.deselectAllParticipantFilter();
         waitForText("No matching");
         _ext4Helper.selectAllParticipantFilter();
-        waitForElement(Locator.id("participantsDiv1.status").withText("Found "+ptids.length+" mice of "+ptids.length+"."));
+        waitForElement(Locator.css(".lk-participants-list-table [name=status]").withText("Found "+ptids.length+" mice of "+ptids.length+"."));
         if (alternateIDs)
             assertTextNotPresent(ptids);
         else
