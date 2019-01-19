@@ -4,7 +4,7 @@ apply plugin: 'java'
 apply plugin: 'org.labkey.javaModule'
 
 dependencies {
-   BuildUtils.addLabKeyDependency(project: project, config: "compile", depProjectPath: ":server:api")
+   BuildUtils.addLabKeyDependency(project: project, config: "compile", depProjectPath: BuildUtils.getApiProjectPath(project.gradle))
    compile 'org.apache.tomcat:jsp-api'
    compile 'org.apache.tomcat:jasper'
    compile  "org.labkey:labkey-client-api:${labkeyVersion}"
