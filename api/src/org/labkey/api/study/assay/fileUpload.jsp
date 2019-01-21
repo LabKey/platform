@@ -208,10 +208,10 @@
             return;
         }
 
-        // don't allow removal of the last file upload row
+        // if this is last remaining file row, replace with an empty row (existing row will be removed later)
         if (getActiveFileGroupCount() <= 1)
         {
-            return;
+            addFileUploadInputRow();
         }
 
         if (fileGroup.reused)
@@ -275,7 +275,9 @@
             }
 
             // only enable the add button that is on the last row (if the file group input is available)
-            if (i === _fileGroups.length - 1 && getActiveFileGroupCount() < MAX_FILE_INPUTS) {
+            if (i === _fileGroups.length - 1 && getActiveFileCount() < MAX_FILE_INPUTS &&
+                    (!fileGroup.fileInput || fileGroup.fileInput.value !== ""))  // don't allow multiple empty lines at end
+            {
                 enableDisableButton('add', fileGroup.addButtonAnchor, true);
             }
             else {
