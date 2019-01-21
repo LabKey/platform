@@ -33,8 +33,19 @@
 %>
 <style type="text/css">
     <%-- Style Guide Only CSS --%>
-    .lk-sg-section { display: none; }
-    .lk-sg-example { margin-bottom: 10px; }
+    .lk-sg-section {
+        display: none;
+    }
+    .lk-sg-example {
+        margin-bottom: 10px;
+    }
+    .lk-sg-guide {
+        width: auto;
+        padding: 8px 12px;
+        border-left: 4px solid #3b98d4;
+        background-color: #f8f8f8;
+        color: #555555;
+    }
 </style>
 <div class="hidden-xs hidden-sm col-md-3 col-lg-3">
     <div id="lk-sg-nav" class="list-group">
@@ -44,13 +55,16 @@
         <a href="#type" class="list-group-item">Typography</a>
         <a href="#buttons" class="list-group-item">Buttons</a>
         <a href="#forms" class="list-group-item">Forms</a>
+        <a href="#icons" class="list-group-item">Iconography</a>
+        <a href="#errors" class="list-group-item">Error Messaging</a>
+        <a href="#success" class="list-group-item">Success States</a>
         <a href="#ext3" class="list-group-item">ExtJS 3</a>
         <a href="#ext4" class="list-group-item">ExtJS 4</a>
     </div>
 </div>
 <div class="col-xs-12 col-sm-12 col-md-9 col-lg-9">
     <labkey:panel id="type" className="lk-sg-section">
-        <h1 class="labkey-page-section-header">Typography</h1>
+        <h1 class="labkey-page-section-header">LabKey Server type hierarchy</h1>
         <table>
             <tbody>
                 <tr><td><h1>h1. LabKey Heading</h1></td></tr>
@@ -71,6 +85,30 @@
             </tbody>
         </table>
     </labkey:panel>
+    <labkey:panel id="type" className="lk-sg-section">
+        <h1 class="labkey-page-section-header">Biologics & Sample Management type hierarchy</h1>
+        <table>
+            <tbody>
+            <tr><td><h1>h1. LabKey Heading</h1></td></tr>
+            <tr><td><h2>h2. LabKey Heading</h2></td></tr>
+            <tr><td><h3>h3. LabKey Heading</h3></td></tr>
+            <tr><td><h4>h4. LabKey Heading</h4></td></tr>
+            <tr><td><h5>h5. LabKey Heading</h5></td></tr>
+            <tr><td><h6>h6. LabKey Heading</h6></td></tr>
+            </tbody>
+        </table>
+        <h3>Elements</h3>
+        <p>Different types of elements</p>
+        <table class="table">
+            <tbody>
+            <tr><td><strong>strong. Display some text.</strong></td></tr>
+            <tr><td><p>p. Display some text.</p></td></tr>
+            <tr><td><em>em. Display some text.</em></td></tr>
+            </tbody>
+        </table>
+
+    </labkey:panel>
+
     <%--<div class="dropdown">--%>
         <%--<button id="dLabel" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">--%>
             <%--JavaScript Working!--%>
@@ -111,6 +149,38 @@
             </table>
         </div>
     </div>
+    <labkey:panel id="overview" className="lk-sg-section">
+        <h1 class="labkey-page-section-header">Overview</h1>
+        <table>
+            <tbody>
+            <tr><td><h3>What is the LabKey style guide?</h3></td></tr>
+            <tr><td><p>This guide exists to aid us in driving towards consistent use of patterns, layout,
+                and language within LabKey products. In it, you will find examples of styles, as well as some
+                simple do's and don'ts around usage of certain elements.
+                While these recommendations exist to make choices in development
+                easier and more consistent, they should not be viewed as concrete. We should continue to evaluate what works
+                for us and what does not, and iterate on what is needed to improve.
+            </p></td></tr>
+            <tr><td><h3>Feedback</h3></td></tr>
+            <tr><td><p>We want this guide to help you by making it easier to make decisions on styling and content. Have a question or
+                want to provide feedback? Help us improve by sending your feedback to <a href="mailto:matty@labkey.com">
+                    Matt Y</a>or the <a href="mailto:uxtriage@labkey.com">UX Triage team.</a></p></td></tr>
+            </tbody>
+        </table>
+    </labkey:panel>
+    <labkey:panel id ="overview" className="lk-sg-section">
+        <h1 class="labkey-page-section-header">LabKey Design Principles</h1>
+        <table>
+        <tbody>
+        <tr><td><h3>We believe that LabKey design should:</h3></td></tr>
+        <tr><td><h5>Speak for itself and provide clear calls to action</h5></td></tr>
+        <tr><td><h5>Provide immediate value by clearly demonstrating how our product can help our users with their task</h5></td></tr>
+        <tr><td><h5>Be inviting and approachable to users of all experience levels</h5></td></tr>
+        <tr><td><h5>Convey expertise through aligning with scientific conventions</h5></td></tr>
+        </tbody>
+        </table>
+    </labkey:panel>
+
     <labkey:panel id="buttons" className="lk-sg-section">
         <h1 class="labkey-page-section-header">Buttons</h1>
         <p>labkey-button buttons using &lt;a&gt;, &lt;button&gt;, or &lt;input&gt; element.</p>
@@ -191,6 +261,27 @@
                 <button type="button" class="labkey-button">Middle</button>
                 <button type="button" class="labkey-button">Right</button>
             </div>
+        </div>
+        <p>Button group with single primary action</p>
+        <div class="lk-sg-example">
+            <div class="btn-group" role="group" aria-label="Basic Example">
+                <button type="button" class="btn btn-primary">Left</button>
+                <button type="button" class="labkey-button">Middle</button>
+                <button type="button" class="labkey-button">Right</button>
+            </div>
+        </div>
+    </labkey:panel>
+    <labkey:panel id="buttons" className="lk-sg-section">
+        <h1 class="labkey-page-section-header">Usage</h1>
+        <div class="lk-sg-guide">
+            <h4>Do:</h4>
+            <li>For button groupings, place your primary action (EG, Save) on the left. Secondary actions (EG, Cancel) should go on the right.</li>
+            <li>Use a primary action color for buttons that proceed to the next step. For example, in wizards.</li>
+            <li>Use descriptive text for what the button does and should do. The button should have text that is appropriate for and specific to the task.</li>
+            <li>Provide appropriate padding between buttons in groups.</li>
+            <h4>Don't:</h4>
+            <li>Use multiple buttons of the same color in a group that are not default action buttons. There should be only one primary action per group. </li>
+            <li>Apply equal visual weight to secondary/destructive action buttons. They should be visually distinct.</li>
         </div>
     </labkey:panel>
     <labkey:panel id="forms" className="lk-sg-section">
@@ -308,6 +399,57 @@
                     </tr>
                 </table>
             </form>
+        </div>
+    </labkey:panel>
+    <labkey:panel id="icons" className="lk-sg-section">
+        <h1 class="labkey-page-section-header">Using Iconography</h1>
+        <p>Icons are both powerful and potentially confusing in displaying information. Try to limit their usage to already established conventions. If in doubt, ask! </p>
+    </labkey:panel>
+    <labkey:panel id="icons" className="lk-sg-section">
+        <h1 class="labkey-page-section-header">Usage</h1>
+        <div class="lk-sg-guide">
+            <h4>Do:</h4>
+            <li>Consider pairing icons with text. Icons with text are more usable than icons alone</li>
+            <h4>Don't:</h4>
+            <li>Add a new icon or icon usage without first examining if there is already one in use that serves that function</li>
+        </div>
+    </labkey:panel>
+    <labkey:panel id="errors" className="lk-sg-section">
+        <h1 class="labkey-page-section-header">Error Messaging</h1>
+        <p>When possible, we should strive for smart error prevention. In the case that we are unable to prevent users
+        from reaching an error state, follow the usage guidelines below to help users get back to a functional state
+        as quickly as possible</p>
+    </labkey:panel>
+    <labkey:panel id="errors" className="lk-sg-section">
+        <h1 class="labkey-page-section-header">Usage</h1>
+        <div class="lk-sg-guide">
+            <h4>Do:</h4>
+            <li>Exercise consistency in language and tone.</li>
+            <li>Offer help on how the user can solve their problem in the error message, or via microcopy when form fields don’t validate.</li>
+            <h4>Don't:</h4>
+            <li>Blame the user.</li>
+            <li>Use overly technical terms or programming errors. Messaging should be human readable, so as to help with recovery and to be informative.</li>
+            <li>Have a mismatch between the language in the message and the function. Ensure that the message refers to the same terms that the user sees in the UI.</li>
+            <li>Highlight the field name that failed. Leave it to form validation to indicate to the user what needs to be addressed. Too many indicators can be overwhelming!</li>
+        </div>
+    </labkey:panel>
+    <labkey:panel id="success" className="lk-sg-section">
+        <h1 class="labkey-page-section-header">Successful Actions and Confirmation</h1>
+        <p>A success state refers to the time after user has completed an action. Try to communicate to the user what the system is doing or that they have just accomplished. For example, when a user chooses to
+        save a setting, use a banner informing them their setting change was successful so they are not left guessing if the change occurred or not.</p>
+    </labkey:panel>
+    <labkey:panel id="success" className="lk-sg-section">
+        <h1 class="labkey-page-section-header">Usage</h1>
+        <div class="lk-sg-guide">
+            <h4>Do:</h4>
+            <li>Exercise consistency in language and tone.</li>
+            <li>Re-state to the user important actions that been accomplished through the use of banners, text, and iconography.</li>
+            <li>Let the user know what they should do next. For example, consider providing a link to view the item they just created.</li>
+            <li>Allow success banners to be dismissed</li>
+            <h4>Don't:</h4>
+            <li>Use overly technical terms or programming errors. Messaging should be human readable, so as to help with recovery and to be informative.</li>
+            <li>Have a mismatch between the language in the message and the function. Ensure that the message refers to the same terms that the user sees in the UI.</li>
+            <li>Allow success states to time out before a user can read or acknowledge them if they provide crucial information</li>
         </div>
     </labkey:panel>
     <labkey:panel id="ext3" className="lk-sg-section">
