@@ -446,6 +446,10 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
             StudyViewsImporter viewsImporter = new StudyViewsImporter();
             viewsImporter.process(importContext, studyDir, errors);
 
+            // view categories
+            ViewCategoryImporter categoryImporter = new ViewCategoryImporter();
+            categoryImporter.process(importContext, studyDir, errors);
+
             if (errors.hasErrors())
                 throw new RuntimeException("Error importing study objects : " + errors.getMessage());
         }
