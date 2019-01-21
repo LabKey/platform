@@ -79,6 +79,8 @@ import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchUrls;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -429,7 +431,7 @@ public class IssuesController extends SpringActionController
             page.setIssue(_issue);
             page.setCustomColumnConfiguration(getColumnConfiguration());
             //pass user's update perms to jsp page to determine whether to show notify list
-            page.setUserHasUpdatePermissions(hasUpdatePermission(getUser(), _issue));
+            page.setUserHasUpdatePermissions(hasUpdatePermission(getUser(), _issue, getContainer()));
             page.setUserHasAdminPermissions(hasAdminPermission(getUser(), _issue));
             page.setMoveDestinations(IssueManager.getMoveDestinationContainers(getContainer(), getUser(), getIssueListDef().getName()).size() != 0);
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
@@ -885,7 +887,7 @@ public class IssuesController extends SpringActionController
             issue.setProperties(form.getTypedColumns());
 
             Issue prevIssue = (Issue)form.getOldValues();
-            requiresUpdatePermission(user, issue);
+            requiresUpdatePermission(user, issue, getContainer());
             ActionURL detailsUrl;
 
             // check for no op
@@ -1164,9 +1166,9 @@ public class IssuesController extends SpringActionController
         /**
          * Throw an exception if user does not have permission to update issue
          */
-        protected void requiresUpdatePermission(User user, Issue issue)
+        protected void requiresUpdatePermission(User user, Issue issue, Container c)
         {
-            if (!hasUpdatePermission(user, issue))
+            if (!hasUpdatePermission(user, issue, c))
             {
                 throw new UnauthorizedException();
             }
@@ -1175,10 +1177,25 @@ public class IssuesController extends SpringActionController
         /**
          * Does this user have permission to update this issue?
          */
-        protected boolean hasUpdatePermission(User user, Issue issue)
+        protected boolean hasUpdatePermission(User user, Issue issue, Container c)
         {
-            return getContainer().hasPermission(user, UpdatePermission.class,
-                    (issue.getCreatedBy() == user.getUserId() ? RoleManager.roleSet(OwnerRole.class) : null));
+            return getContainer().hasPermission(user, UpdatePermission.class, getContextualRoles(user, issue, c));
+        }
+
+        private Set<Role> getContextualRoles(User user, Issue issue, Container c)
+        {
+            Set<Role> roles = new HashSet<>();
+            SecurityPolicy policy = SecurityPolicyManager.getPolicy(c);
+
+            //36525
+            if (issue.getCreatedBy() == user.getUserId() &&
+                    policy.hasPermission("issues", user, ReadPermission.class) &&
+                    policy.hasPermission("issues", user, InsertPermission.class))
+            {
+                roles.add(RoleManager.getRole(OwnerRole.class));
+            }
+
+            return roles;
         }
 
         protected boolean hasAdminPermission(User user, Issue issue)
@@ -1446,7 +1463,7 @@ public class IssuesController extends SpringActionController
 
             Issue prevIssue = _issue.clone();
             User user = getUser();
-            requiresUpdatePermission(user, _issue);
+            requiresUpdatePermission(user, _issue, getContainer());
 
             _issue.beforeUpdate(getContainer());
             beforeReshow(reshow, form, _issue, getIssueListDef());
@@ -1491,7 +1508,7 @@ public class IssuesController extends SpringActionController
 
             Issue prevIssue = _issue.clone();
             User user = getUser();
-            requiresUpdatePermission(user, _issue);
+            requiresUpdatePermission(user, _issue, getContainer());
 
             _issue.beforeResolve(getContainer(), user);
 
@@ -1543,7 +1560,7 @@ public class IssuesController extends SpringActionController
 
             Issue prevIssue = _issue.clone();
             User user = getUser();
-            requiresUpdatePermission(user, _issue);
+            requiresUpdatePermission(user, _issue, getContainer());
 
             _issue.close(user);
             beforeReshow(reshow, form, _issue, getIssueListDef());
@@ -1589,7 +1606,7 @@ public class IssuesController extends SpringActionController
             Issue prevIssue = _issue.clone();
 
             User user = getUser();
-            requiresUpdatePermission(user, _issue);
+            requiresUpdatePermission(user, _issue, getContainer());
 
             _issue.beforeReOpen(getContainer(), true);
             _issue.open(getContainer(), user);
