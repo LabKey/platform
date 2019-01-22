@@ -18,7 +18,7 @@
     />
     <labkey:input
         id="nameExpression" name="nameExpression" label="Name Expression" value="<%=h(bean.getNameExpression())%>"
-        placeholder="S-\${now:date}-\${batchRandomId}-\${randomeId}"
+        placeholder="S-\${now:date}-\${batchRandomId}-\${randomId}"
         contextContent="<%= text(helpText) %>" size="60"
     />
     <br/>
