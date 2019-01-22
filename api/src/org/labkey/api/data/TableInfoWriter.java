@@ -184,6 +184,12 @@ public class TableInfoWriter
                     fkXml.setFkDbSchema(tinfoPublicSchemaName);
                     fkXml.setFkTable(tinfoPublicName);
                     fkXml.setFkColumnName(fk.getLookupColumnName());
+
+                    if (null != fk.getInsertFilter())
+                        fkXml.setFkLookupInsertFilter(fk.getInsertFilter());
+
+                    if (null != fk.getUpdateFilter())
+                        fkXml.setFkLookupUpdateFilter(fk.getUpdateFilter());
                 }
             }
         }

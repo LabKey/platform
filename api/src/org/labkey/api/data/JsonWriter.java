@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -26,6 +27,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.util.ExtUtil;
+import org.labkey.data.xml.LookupFilterType;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -361,10 +363,31 @@ public class JsonWriter
                     lookupInfo.put("junctionLookup", junctionLookup);
             }
 
+            if (null != fk.getInsertFilter())
+            {
+                lookupInfo.put("insertFilter", makeLookupFilter(fk.getInsertFilter()));
+            }
+
+            if (null != fk.getUpdateFilter())
+            {
+                lookupInfo.put("updateFilter", makeLookupFilter(fk.getUpdateFilter()));
+            }
+
             return lookupInfo;
         }
 
         return null;
+    }
+
+    private static JSONObject makeLookupFilter(LookupFilterType lookupFilter)
+    {
+        JSONObject filter = new JSONObject();
+        filter.put("columnName", lookupFilter.getColumnName());
+        if (null != lookupFilter.getOperator())                                  // Operator must be specified in valid lookup filter, but be safe
+            filter.put("operator", lookupFilter.getOperator().toString());
+        if (StringUtils.isNotBlank(lookupFilter.getValue()))
+            filter.put("value", lookupFilter.getValue());
+        return filter;
     }
 
     public static Map<String,Object> getColModel(DisplayColumn dc)

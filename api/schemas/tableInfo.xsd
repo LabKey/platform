@@ -890,6 +890,22 @@
                                 </xs:documentation>
 							</xs:annotation>
 						</xs:element>
+						<xs:element name="fkLookupInsertFilter" type="dat:LookupFilterType" minOccurs="0" maxOccurs="1">
+							<xs:annotation>
+								<xs:documentation>
+                                    A filter to be applied to target table results, which populate the selection list for this column,
+                                    when inserting a row into this table. If not specified, no filter is applied.
+                                </xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name="fkLookupUpdateFilter" type="dat:LookupFilterType" minOccurs="0" maxOccurs="1">
+							<xs:annotation>
+								<xs:documentation>
+                                    A filter to be applied to target table results, which populate the selection list for this column,
+                                    when updating a row in this table. If not specified, no filter is applied.
+                                </xs:documentation>
+							</xs:annotation>
+						</xs:element>
 					</xs:all>
 				</xs:complexType>
 			</xs:element>
@@ -1089,6 +1105,24 @@
 
     <xs:complexType name="ConditionalFormatFilterType">
         <xs:attribute name="operator" type="cv:operatorType">
+            <xs:annotation>
+                <xs:documentation>The type of filter for this clause</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="value" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>The string representation for the value. Not required for unary operators, such as isblank</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="LookupFilterType">
+        <xs:attribute name="columnName" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>The column to filter on for this clause</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="operator" type="cv:operatorType" use="required">
             <xs:annotation>
                 <xs:documentation>The type of filter for this clause</xs:documentation>
             </xs:annotation>

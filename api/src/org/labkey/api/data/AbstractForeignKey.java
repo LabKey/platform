@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.Pair;
+import org.labkey.data.xml.LookupFilterType;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -41,6 +42,9 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
     protected String _tableName;
     protected String _columnName;
     protected String _displayColumnName;
+
+    private LookupFilterType _insertFilter = null;
+    private LookupFilterType _updateFilter = null;
 
     // Set of additional FieldKeys that query should select to make the join successful.
     private Set<FieldKey> _suggestedFields;
@@ -112,6 +116,32 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
         return _displayColumnName;
     }
 
+    @Override
+    @Nullable
+    public LookupFilterType getInsertFilter()
+    {
+        return _insertFilter;
+    }
+
+    @Override
+    public void setInsertFilter(LookupFilterType insertFilter)
+    {
+        _insertFilter = insertFilter;
+    }
+
+    @Override
+    @Nullable
+    public LookupFilterType getUpdateFilter()
+    {
+        return _updateFilter;
+    }
+
+    @Override
+    public void setUpdateFilter(LookupFilterType updateFilter)
+    {
+        _updateFilter = updateFilter;
+    }
+
     private boolean _initNames = false;
 
     protected void initTableAndColumnNames()
@@ -163,7 +193,9 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
         if (lookupTable == null)
             return new NamedObjectList();
 
-        return lookupTable.getSelectList(getLookupColumnName());
+        LookupFilterType filter = (DataRegion.MODE_INSERT == ctx.getMode() && null != getInsertFilter()) ? getInsertFilter() :
+                                  (DataRegion.MODE_UPDATE == ctx.getMode() && null != getUpdateFilter()) ? getUpdateFilter() : null;
+        return lookupTable.getSelectList(getLookupColumnName(), filter);
     }
 
 

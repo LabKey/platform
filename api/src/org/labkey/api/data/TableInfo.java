@@ -40,6 +40,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.data.xml.LookupFilterType;
 import org.labkey.data.xml.TableType;
 
 import java.util.Collection;
@@ -182,6 +183,12 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
 
     /** Get select list for named (hopefully unique!) column to title column. */
     NamedObjectList getSelectList(String columnName);
+
+    /** Get select list for named (hopefully unique!) column to title column, including filter on table. */
+    default NamedObjectList getSelectList(String columnName, @Nullable LookupFilterType filter)
+    {
+        return getSelectList(columnName);
+    }
 
     ColumnInfo getColumn(@NotNull String colName);
 

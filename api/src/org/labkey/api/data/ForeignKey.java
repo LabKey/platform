@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.StringExpression;
+import org.labkey.data.xml.LookupFilterType;
 
 import java.util.Map;
 import java.util.Set;
@@ -106,6 +107,39 @@ public interface ForeignKey
      */
     @Nullable
     Set<FieldKey> getSuggestedColumns();
+
+    /**
+     * @return A lookup filter for insert context
+     */
+    @Nullable
+    default LookupFilterType getInsertFilter()
+    {
+        return null;
+    }
+
+    /**
+     * @param insertFilter lookup filter for insert context
+     */
+    default void setInsertFilter(LookupFilterType insertFilter)
+    {
+    }
+
+    /**
+     * @return  A lookup filter for update context
+     */
+    @Nullable
+    default LookupFilterType getUpdateFilter()
+    {
+        return null;
+    }
+
+    /**
+     * @param updateFilter lookup filter for update context
+     */
+    default void setUpdateFilter(LookupFilterType updateFilter)
+    {
+    }
+
 
     /**
      * Return true if this ForeignKey could be imported by alternate key value, meaning a unique display value or similar

@@ -16,11 +16,13 @@
 
 package org.labkey.api.data;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlCursor;
+import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -71,6 +73,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.data.xml.AuditType;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.ImportTemplateType;
+import org.labkey.data.xml.LookupFilterType;
 import org.labkey.data.xml.PositionTypeEnum;
 import org.labkey.data.xml.PropertiesType;
 import org.labkey.data.xml.TableCustomizerType;
@@ -295,21 +298,29 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         if (pkColumns.size() != 1)
             return new NamedObjectList();
 
-        return getSelectList(pkColumns.get(0));
+        return getSelectList(pkColumns.get(0), null);
     }
 
 
+    @Override
     public NamedObjectList getSelectList(String columnName)
+    {
+        return getSelectList(columnName, null);
+    }
+
+
+    @Override
+    public NamedObjectList getSelectList(String columnName, @Nullable LookupFilterType lookupFilterType)
     {
         if (columnName == null)
             return getSelectList();
-        
+
         ColumnInfo column = getColumn(columnName);
-        return getSelectList(column);
+        return getSelectList(column, lookupFilterType);
     }
 
 
-    public NamedObjectList getSelectList(ColumnInfo firstColumn)
+    public NamedObjectList getSelectList(ColumnInfo firstColumn, @Nullable LookupFilterType lookupFilterType)
     {
         final NamedObjectList ret = new NamedObjectList();
         if (firstColumn == null)
@@ -331,9 +342,54 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             titleIndex = 2;
         }
 
+        SimpleFilter filter = null;
+        if (null != lookupFilterType && null != lookupFilterType.getOperator() && StringUtils.isNotBlank(lookupFilterType.getColumnName()))
+        {
+            filter = new SimpleFilter();
+            CompareType compareType = CompareType.getByURLKey(lookupFilterType.getOperator().toString());
+            if (compareType != null)
+            {
+                FieldKey fieldKey = FieldKey.fromString(lookupFilterType.getColumnName());
+                ColumnInfo filterColumn = getColumn(fieldKey);
+                if (null != filterColumn)
+                {
+                    try
+                    {
+                        Object value = null;
+                        if (compareType.isDataValueRequired())
+                        {
+                            if (null == compareType.getValueSeparator())
+                            {
+                                value = filterColumn.getJdbcType().convert(lookupFilterType.getValue());    // convert single value from string
+                            }
+                            else
+                            {
+                                List<Object> values = new ArrayList<>();
+                                for (String str : lookupFilterType.getValue().split(compareType.getValueSeparator()))
+                                {
+                                    values.add(filterColumn.getJdbcType().convert(str));               // convert each value from string
+                                }
+                                value = values;
+                            }
+                        }
+
+                        filter.addClause(compareType.createFilterClause(fieldKey, value));
+                    }
+                    catch (ConversionException e)
+                    {
+                        LOG.warn("Could not construct lookup filter: ", e);
+                    }
+                }
+            }
+            else
+            {
+                LOG.warn("Could not find CompareType for " + lookupFilterType.getOperator().toString() + ", ignoring");
+            }
+        }
+
         Sort sort = new Sort();
         sort.insertSortColumn(titleColumn.getFieldKey(), titleColumn.getSortDirection());
-        new TableSelector(this, cols, null, sort).forEach(rs -> ret.put(new SimpleNamedObject(rs.getString(1), rs.getString(titleIndex))));
+        new TableSelector(this, cols, filter, sort).forEach(rs -> ret.put(new SimpleNamedObject(rs.getString(1), rs.getString(titleIndex))));
 
         return ret;
     }
@@ -839,7 +895,8 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         
         if (xbColumn.getFk() != null)
         {
-            ForeignKey qfk = makeForeignKey(schema, xbColumn.getFk());
+            ColumnType.Fk columnFk = xbColumn.getFk();
+            ForeignKey qfk = makeForeignKey(schema, columnFk);
             if (qfk == null)
             {
                 //noinspection ThrowableInstanceNeverThrown
@@ -849,6 +906,13 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                 qpe.add(new MetadataParseWarning("Schema " + xbColumn.getFk().getFkDbSchema() + " not found, in foreign key definition: " + msgColumnName));
                 return;
             }
+
+            if (columnFk.isSetFkLookupInsertFilter())
+                qfk.setInsertFilter(columnFk.getFkLookupInsertFilter());
+
+            if (columnFk.isSetFkLookupUpdateFilter())
+                qfk.setUpdateFilter(columnFk.getFkLookupUpdateFilter());
+
             column.setFk(qfk);
         }
     }
