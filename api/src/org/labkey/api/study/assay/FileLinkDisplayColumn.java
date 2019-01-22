@@ -16,6 +16,7 @@
 
 package org.labkey.api.study.assay;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.CoreUrls;
@@ -211,10 +212,10 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
     @Override
     protected String getFileName(RenderContext ctx, Object value)
     {
-        String result = value == null ? null : value.toString();
-        if (value instanceof String)
+        String result = value == null ? null : StringUtils.trimToNull(value.toString());
+        if (result != null)
         {
-            File f = FileUtil.getAbsoluteCaseSensitiveFile(new File(value.toString()));
+            File f = FileUtil.getAbsoluteCaseSensitiveFile(new File(result));
             NetworkDrive.ensureDrive(f.getPath());
             result = relativize(f, FileContentService.get().getFileRoot(_container, FileContentService.ContentType.files));
             if (result == null)
@@ -251,9 +252,10 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
     protected InputStream getFileContents(RenderContext ctx, Object ignore) throws FileNotFoundException
     {
         Object value = getValue(ctx);
-        if (value != null)
+        String s = value == null ? null : StringUtils.trimToNull(value.toString());
+        if (s != null)
         {
-            File f = new File(value.toString());
+            File f = new File(s);
             if (f.isFile())
                 return new FileInputStream(f);
         }
@@ -264,9 +266,9 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
     protected void renderIconAndFilename(RenderContext ctx, Writer out, String filename, boolean link, boolean thumbnail) throws IOException
     {
         Object value = getValue(ctx);
-        if (value != null)
+        String s = value == null ? null : StringUtils.trimToNull(value.toString());
+        if (s != null)
         {
-            String s = value.toString();
             File f;
             if (s.startsWith("file:"))
                 f = new File(URI.create(s));

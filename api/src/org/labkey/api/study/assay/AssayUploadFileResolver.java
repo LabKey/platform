@@ -15,6 +15,7 @@
  */
 package org.labkey.api.study.assay;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.PropertyType;
@@ -48,10 +49,17 @@ public class AssayUploadFileResolver
             File fileToResolve = null;
 
             if (o instanceof File)
-                fileToResolve = (File)o;
+            {
+                fileToResolve = (File) o;
+            }
             else if (o instanceof String)
             {
-                fileToResolve = new File(o.toString());
+                // Issue 36502: Do not resolve blank string as a file name
+                String s = StringUtils.trimToNull((String)o);
+                if (s == null)
+                    return null;
+
+                fileToResolve = new File(s);
             }
 
             if (fileToResolve != null)

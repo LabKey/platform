@@ -747,14 +747,27 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     valueMissing = false;
                 }
 
-                File resolvedFile = AssayUploadFileResolver.resolve(o, container, pd);
-                if (resolvedFile != null)
+                // If the column is a file link or attachment, resolve the value to a File object
+                String uri = pd.getType().getTypeURI();
+                if (uri.equals(PropertyType.FILE_LINK.getTypeUri()) || uri.equals(PropertyType.ATTACHMENT.getTypeUri()))
                 {
-                    o = resolvedFile;
-
-                    // File column values are stored as the absolute resolved path
-                    map.put(pd.getName(), o);
-                    iter.set(map);
+                    if ("".equals(o))
+                    {
+                        // Issue 36502: If the original input was an empty value, set it to null so we won't store an empty string in the database
+                        o = null;
+                        map.put(pd.getName(), null);
+                    }
+                    else
+                    {
+                        // File column values are stored as the absolute resolved path
+                        File resolvedFile = AssayUploadFileResolver.resolve(o, container, pd);
+                        if (resolvedFile != null)
+                        {
+                            o = resolvedFile;
+                            map.put(pd.getName(), o);
+                            iter.set(map);
+                        }
+                    }
                 }
 
                 // If we have a String value for a lookup column, attempt to use the table's unique indices or display value to convert the String into the lookup value
