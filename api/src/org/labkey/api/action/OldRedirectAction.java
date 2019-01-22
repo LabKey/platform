@@ -35,13 +35,13 @@ import static org.labkey.api.action.SpringActionController.ERROR_MSG;
  * User: adamr
  * Date: September 19, 2007
  */
-public abstract class RedirectAction<FORM> extends BaseViewAction<FORM>
+public abstract class OldRedirectAction<FORM> extends BaseViewAction<FORM>
 {
-    public RedirectAction()
+    public OldRedirectAction()
     {
     }
 
-    public RedirectAction(Class<? extends FORM> commandClass)
+    public OldRedirectAction(Class<? extends FORM> commandClass)
     {
         super(commandClass);
     }
@@ -88,7 +88,7 @@ public abstract class RedirectAction<FORM> extends BaseViewAction<FORM>
     public abstract URLHelper getSuccessURL(FORM form);
 
     @Deprecated // TODO: We want to migrate most RedirectActions to FormHandlerAction and eliminate this method. See #36532.
-    final public boolean doAction(FORM form, BindException errors) throws Exception
+    public boolean doAction(FORM form, BindException errors) throws Exception
     {
         return true;
     }

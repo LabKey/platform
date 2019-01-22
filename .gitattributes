@@ -220,6 +220,7 @@ api/src/org/labkey/api/action/Marshaller.java -text
 api/src/org/labkey/api/action/MutatingApiAction.java -text
 api/src/org/labkey/api/action/NavTrailAction.java -text
 api/src/org/labkey/api/action/NullSafeBindException.java -text
+api/src/org/labkey/api/action/OldRedirectAction.java -text
 api/src/org/labkey/api/action/PermissionCheckable.java -text
 api/src/org/labkey/api/action/PermissionCheckableAction.java -text
 api/src/org/labkey/api/action/QueryViewAction.java -text
