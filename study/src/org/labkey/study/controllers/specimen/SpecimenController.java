@@ -89,6 +89,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
+import org.labkey.api.util.Button;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
@@ -1036,10 +1037,11 @@ public class SpecimenController extends BaseStudyController
 
                     ActionURL importActionURL = new ActionURL(ImportVialIdsAction.class, getContainer());
                     importActionURL.addParameter("id", specimenRequest.getRowId());
-                    ActionButton importButton = new ActionButton(importActionURL, "Upload Specimen Ids");
-                    importButton.setActionType(ActionButton.Action.GET);
+                    Button importButton = new Button.ButtonBuilder("Upload Specimen Ids")
+                            .href(importActionURL)
+                            .submit(false)
+                            .build();
                     buttons.add(importButton);
-
                     buttons.add(deleteButton);
                 }
                 _specimenQueryView.setButtons(buttons);
