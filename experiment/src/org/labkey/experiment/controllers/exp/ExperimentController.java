@@ -3450,8 +3450,17 @@ public class ExperimentController extends SpringActionController
         {
             if (StringUtils.isEmpty(form.getName()))
                 errors.reject(ERROR_MSG, "You must supply a name for the sample set.");
-            if (ExperimentService.get().getSampleSet(getContainer(), getUser(), form.getName()) != null )
-                errors.reject(ERROR_MSG, "A sample set with that name already exists.");
+            else
+            {
+                int nameMax = ExperimentService.get().getTinfoMaterialSource().getColumn("Name").getScale();
+                if (form.getName().length() > nameMax)
+                    errors.reject(ERROR_MSG, "Value for Name field may not exceed " + nameMax + " characters.");
+                else if (ExperimentService.get().getSampleSet(getContainer(), getUser(), form.getName()) != null)
+                    errors.reject(ERROR_MSG, "A sample set with that name already exists.");
+            }
+            int nameExpMax = ExperimentService.get().getTinfoMaterialSource().getColumn("NameExpression").getScale();
+            if (!StringUtils.isEmpty(form.getNameExpression()) && form.getNameExpression().length() > nameExpMax)
+                errors.reject(ERROR_MSG, "Value for Name Expression field may not exceed " + nameExpMax + " characters.");
         }
 
         @Override
