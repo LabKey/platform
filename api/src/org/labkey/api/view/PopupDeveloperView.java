@@ -16,6 +16,7 @@
 package org.labkey.api.view;
 
 import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.admin.CoreUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.QueryUrls;
 import org.labkey.api.rstudio.RStudioService;
@@ -53,6 +54,8 @@ public class PopupDeveloperView extends PopupMenuView
 
         if (!container.isRoot())
             items.add(new NavTree("Schema Browser", PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(container)));
+
+        items.add(new NavTree("UI Style Guide", PageFlowUtil.urlProvider(CoreUrls.class).getStyleGuideURL(container)));
 
         if (context.getUser().hasRootPermission(PlatformDeveloperPermission.class))
         {
