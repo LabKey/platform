@@ -7,18 +7,19 @@
     JspView<ExperimentController.CreateSampleSetForm> view = (JspView<ExperimentController.CreateSampleSetForm>) HttpView.currentView();
     ExperimentController.CreateSampleSetForm bean = view.getModelBean();
     String returnUrl = getViewContext().getActionURL().getParameter("returnUrl");
+    String helpText = "Used for generating unique sample IDs (" + helpLink("sampleIDs#expression", "more info") + ")";
 %>
 
 <labkey:errors />
 <labkey:form action="" method="POST" layout="horizontal">
     <labkey:input
         id="name" name="name" label="Name" value="<%=h(bean.getName())%>"
-        contextContent="Name of the sample set (required)." forceSmallContext="true" size="60"
+        contextContent="Name of sample set (required)." size="60"
     />
     <labkey:input
         id="nameExpression" name="nameExpression" label="Name Expression" value="<%=h(bean.getNameExpression())%>"
-        placeholder="\${DataInputs:first:defaultValue('S')}-\${now:date}-\${batchRandomId}"
-        contextContent="Name expression to use for generating unique sample ids." forceSmallContext="true" size="60"
+        placeholder="S-\${now:date}-\${batchRandomId}-\${randomeId}"
+        contextContent="<%= text(helpText) %>" size="60"
     />
     <br/>
     <%=button("Create").submit(true)%>
