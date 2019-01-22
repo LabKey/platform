@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
+import org.apache.xmlbeans.XmlValidationError;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractTableInfo;
@@ -363,7 +364,12 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             }
             for (XmlError xmle : xmlErrors)
             {
-                errors.add(new MetadataParseException(xmle.getMessage(), null, xmle.getLine(), xmle.getColumn()));
+                String message = (xmle instanceof XmlValidationError && null != ((XmlValidationError)xmle).getOffendingQName()) ?
+                        "Metadata validation error with '" + ((XmlValidationError)xmle).getOffendingQName().getLocalPart() + "'" :
+                        "Metadata validation error";
+                if (-1 != xmle.getLine())
+                    message += " [Line " + xmle.getLine() + "]";
+                errors.add(new MetadataParseException(message));
             }
         }
 

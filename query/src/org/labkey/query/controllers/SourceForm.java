@@ -84,4 +84,17 @@ public class SourceForm extends ViewForm
     {
         return this;
     }
+
+    private static String DEFAULT_METADATA_TEXT =
+            "<tables xmlns=\"http://labkey.org/data/xml\">\n" +
+            "  <table tableName=\"%s\" tableDbType=\"NOT_IN_DB\">\n" +
+            "    <columns>\n" +
+            "    </columns>\n" +
+            "  </table>\n" +
+            "</tables>\n";
+
+    public String getDefaultMetadataText()
+    {
+        return String.format(DEFAULT_METADATA_TEXT, getQueryName());
+    }
 }

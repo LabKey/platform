@@ -25,9 +25,9 @@ import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
+import org.apache.xmlbeans.XmlValidationError;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -106,6 +106,7 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.PrintWriters;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.data.xml.ColumnType;
+import org.labkey.data.xml.LookupFilterType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
@@ -957,6 +958,8 @@ public class QueryController extends SpringActionController
                 {
                     form.ff_queryText = _queryDef.getSql();
                     form.ff_metadataText = _queryDef.getMetadataXml();
+                    if (null == form.ff_metadataText)
+                        form.ff_metadataText = form.getDefaultMetadataText();
                 }
 
                 for (QueryException qpe : _queryDef.getParseErrors(_baseSchema))
@@ -1024,7 +1027,7 @@ public class QueryController extends SpringActionController
                 throw new NotFoundException("Schema not found: " + _form.getSchemaKey().toDisplayString());
 
             XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
-            List<XmlError> xmlErrors = new ArrayList<>();
+            List<XmlValidationError> xmlErrors = new ArrayList<>();
             options.setErrorListener(xmlErrors);
             try
             {
@@ -1034,17 +1037,16 @@ public class QueryController extends SpringActionController
                     TablesDocument tablesDoc = TablesDocument.Factory.parse(target.ff_metadataText, options);
                     if (tablesDoc != null)
                     {
+                        tablesDoc.validate(options);
                         TablesType tablesType = tablesDoc.getTables();
                         if(tablesType != null)
                         {
-                            TableType[] tableArray = tablesType.getTableArray();
-                            if (tableArray.length > 0)
+                            for (TableType tableType : tablesType.getTableArray())
                             {
-                                TableType firstTable = tableArray[0];
-                                if(firstTable != null)
+                                if (null != tableType)
                                 {
-                                    TableType.Columns tableColumns = firstTable.getColumns();
-                                    if(tableColumns != null)
+                                    TableType.Columns tableColumns = tableType.getColumns();
+                                    if (null != tableColumns)
                                     {
                                         ColumnType[] tableColumnArray = tableColumns.getColumnArray();
                                         for (ColumnType column : tableColumnArray)
@@ -1052,6 +1054,13 @@ public class QueryController extends SpringActionController
                                             if (column.isSetPhi() || column.isSetProtected())
                                             {
                                                 throw new IllegalArgumentException("PHI/protected metadata must not be set here.");
+                                            }
+
+                                            ColumnType.Fk fk = column.getFk();
+                                            if (null != fk)
+                                            {
+                                                validateLookupFilter(fk.getFkLookupInsertFilter(), "Lookup Insert Filter", errors);
+                                                validateLookupFilter(fk.getFkLookupUpdateFilter(), "Lookup Update Filter", errors);
                                             }
                                         }
                                     }
@@ -1066,8 +1075,42 @@ public class QueryController extends SpringActionController
             {
                 throw new RuntimeValidationException(e);
             }
+
+            for (XmlValidationError xmle : xmlErrors)
+            {
+                String message = (null != xmle.getOffendingQName()) ?
+                        "Metadata validation error with '" + xmle.getOffendingQName().getLocalPart() + "'" :
+                        "Metadata validation error";
+                errors.reject(ERROR_MSG, message);
+            }
         }
 
+        private void validateLookupFilter(@Nullable LookupFilterType lookupFilterType, String displayStr, Errors errors)
+        {
+            if (null != lookupFilterType)
+            {
+                if (StringUtils.isBlank(lookupFilterType.getColumnName()))
+                    errors.reject(ERROR_MSG, displayStr + " requires columnName");
+
+                if (null == lookupFilterType.getOperator())
+                {
+                    errors.reject(ERROR_MSG, displayStr + " requires operator");
+                }
+                else
+                {
+                    CompareType compareType = CompareType.getByURLKey(lookupFilterType.getOperator().toString());
+                    if (null == compareType)
+                    {
+                        errors.reject(ERROR_MSG, displayStr + " operator is invalid");
+                    }
+                    else
+                    {
+                        if (compareType.isDataValueRequired() && null == lookupFilterType.getValue())
+                            errors.reject(ERROR_MSG, displayStr + " operation requires a value but none is specified");
+                    }
+                }
+            }
+        }
 
         @Override
         public ApiResponse execute(SourceForm form, BindException errors)

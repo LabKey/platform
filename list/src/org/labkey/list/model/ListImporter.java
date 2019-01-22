@@ -40,7 +40,12 @@ import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
@@ -508,6 +513,16 @@ public class ListImporter
                     throw new ImportException("Error creating list \"" + name + "\": " + e.getMessage());
                 }
             }
+
+            /* TODO:  FK LookupInsertFilter (1/21/19): if we decide to set metadata string here, do something like this and extract from tableType info that is not represented elsewhere
+            QuerySchema querySchema = DefaultSchema.get(user, c, "Lists");
+            QueryDefinition queryDef = QueryService.get().getQueryDef(user, c, "Lists", name);
+            if (null == queryDef)
+                queryDef = ((UserSchema)querySchema).getQueryDefForTable(name);
+            String metadataXml = queryDef.getMetadataXml();
+            if (null == metadataXml)
+                queryDef.setMetadataXml(null);
+            */
         }
     }
 

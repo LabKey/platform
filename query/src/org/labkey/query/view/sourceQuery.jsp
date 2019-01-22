@@ -145,7 +145,14 @@
 
         var afterSave = function(qep, saved, json) {
             if (saved) {
-                setStatus(json && json.parseErrors ? 'Saved with parse errors' : 'Saved', true);
+                if (json && json.parseErrors) {
+                    var msg1 = 'Saved with parse errors: ';
+                    for (var i = 0; i < json.parseErrors.length; i++)
+                        msg1 += "; " + json.parseErrors[i].msg;
+                    setStatus(msg1, true);
+                }
+                else
+                    setStatus('Saved', true);
             }
             else {
                 var msg = 'Failed to Save';
