@@ -48,15 +48,18 @@ public class ModuleDataExchangeHandler extends TsvDataExchangeHandler
         {
             Set<File> result = new HashSet<>();
             String sep = "";
-            pw.append(TsvDataExchangeHandler.Props.runDataUploadedFile.name()).append('\t');
-            for (ExpData expData : run.getDataInputs().keySet())
+            Set<ExpData> expDatas = run.getDataInputs().keySet();
+            if (!expDatas.isEmpty())  // this makes sure not to print this property unless we're sure we'll print a value, or the test parser will complain later
+                pw.append(TsvDataExchangeHandler.Props.runDataUploadedFile.name()).append('\t');
+            for (ExpData expData : expDatas)
             {
                 File file = expData.getFile();
                 pw.append(sep).append(file.getAbsolutePath());
                 sep = ";";
                 result.add(file);
             }
-            pw.println();
+            if (!expDatas.isEmpty())  // this avoids printing empty lines, which the test parser will complain about later
+                pw.println();
 
             DataType dataType = context.getProvider().getDataType();
             if (dataType == null)
