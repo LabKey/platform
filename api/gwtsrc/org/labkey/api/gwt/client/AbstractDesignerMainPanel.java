@@ -67,9 +67,9 @@ public abstract class AbstractDesignerMainPanel extends VerticalPanel
 
         setAllowSave(dirty);
 
-        TestUtil.signalWebDriver("designerDirty", String.valueOf(dirty));
-
         _dirty = dirty;
+
+        TestUtil.signalWebDriver("designerDirty", String.valueOf(dirty));
     }
 
     public boolean isDirty()
