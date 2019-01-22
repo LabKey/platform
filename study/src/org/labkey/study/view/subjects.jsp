@@ -581,7 +581,7 @@
                 html.push('</ul></td><td valign="top"><ul class="subjectlist">');
             }
 
-            html.push('<li class="ptid" index=' + subjectIndex + ' ptid="' + p.html + '" style="white-space:nowrap;">');
+            html.push('<li class="ptid" index=' + p.index + ' ptid="' + p.html + '" style="white-space:nowrap;">');
             html.push('<a href="' + _urlTemplate + p.urlParam + '">' + (LABKEY.demoMode?LABKEY.id(p.ptid):p.html) + '</a>');
             html.push('</li>\n');
         }
