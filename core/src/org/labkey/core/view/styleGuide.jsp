@@ -106,49 +106,7 @@
             <tr><td><em>em. Display some text.</em></td></tr>
             </tbody>
         </table>
-
     </labkey:panel>
-
-    <%--<div class="dropdown">--%>
-        <%--<button id="dLabel" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">--%>
-            <%--JavaScript Working!--%>
-            <%--<span class="caret"></span>--%>
-        <%--</button>--%>
-        <%--<ul class="dropdown-menu" aria-labelledby="dLabel">--%>
-            <%--<li><a href="#">Action</a></li>--%>
-            <%--<li><a href="#">Action 2</a></li>--%>
-            <%--<li><a href="#">Action 3</a></li>--%>
-            <%--<li><a href="#">Action 4</a></li>--%>
-        <%--</ul>--%>
-    <%--</div>--%>
-    <div class="lk-sg-section">
-        <h2 class="labkey-page-section-header">Typography</h2>
-        <h3>Headings</h3>
-        <p>Displays all the headers</p>
-        <div class="lk-sg-example lk-sg-example-typography">
-            <table class="table">
-                <tbody>
-                <tr><td><h1>h1. LabKey Heading</h1></td></tr>
-                <tr><td><h2>h2. LabKey Heading</h2></td></tr>
-                <tr><td><h3>h3. LabKey Heading</h3></td></tr>
-                <tr><td><h4>h4. LabKey Heading</h4></td></tr>
-                <tr><td><h5>h5. LabKey Heading</h5></td></tr>
-                <tr><td><h6>h6. LabKey Heading</h6></td></tr>
-                </tbody>
-            </table>
-        </div>
-        <h3>Elements</h3>
-        <p>Different types of elements</p>
-        <div class="lk-sg-example lk-sg-example-typography">
-            <table class="table">
-                <tbody>
-                <tr><td><strong>strong. Display some text.</strong></td></tr>
-                <tr><td><p>p. Display some text.</p></td></tr>
-                <tr><td><em>em. Display some text.</em></td></tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
     <labkey:panel id="overview" className="lk-sg-section">
         <h1 class="labkey-page-section-header">Overview</h1>
         <table>
@@ -709,7 +667,7 @@
 <script type="text/javascript">
     +function($) {
 
-        var defaultRoute = "type";
+        var defaultRoute = "overview";
 
         function loadRoute(hash) {
             if (!hash || hash === '#') {

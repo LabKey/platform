@@ -1641,7 +1641,7 @@ LABKEY.vis.TimeChartHelper = new function() {
 
         // For time charts, we allow multiple plots to be displayed by participant, group, or measure/dimension
         var plotConfigsArr = generatePlotConfigs(chartConfig, responseData, seriesList, applyClipRect, queryConfig.maxCharts, queryConfig.subjectColumnName);
-        for (var configIndex = plotConfigsArr.length - 1; configIndex >= 0; configIndex--)
+        for (var configIndex = 0; configIndex < plotConfigsArr.length; configIndex++)
         {
             var clipRect = plotConfigsArr[configIndex].applyClipRect;
             var series = plotConfigsArr[configIndex].series;

@@ -24,7 +24,7 @@ Ext4.define('LABKEY.vis.TimeChartScriptPanel', {
             "            containerPath: \"{{containerPath}}\",\n" +
             "            nounSingular: \"{{studyNounSingular}}\",\n" +
             "            subjectColumnName: \"{{studyNounColumnName}}\",\n" +
-            "            //Uncomment any of the properties below to override the deafult value from the TimeChartHelper\n" +
+            "            //Uncomment any of the properties below to override the default value from the TimeChartHelper\n" +
             "            // dataLimit: 10000,\n" +
             "            // maxCharts: 20,\n" +
             "            // defaultMultiChartHeight: 380,\n" +
