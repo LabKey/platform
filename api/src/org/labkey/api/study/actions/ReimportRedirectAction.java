@@ -25,6 +25,7 @@ import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
+import org.springframework.validation.Errors;
 
 import java.util.Set;
 
@@ -36,7 +37,7 @@ import java.util.Set;
 public class ReimportRedirectAction extends RedirectAction<ProtocolIdForm>
 {
     @Override
-    public URLHelper getSuccessURL(ProtocolIdForm form)
+    public URLHelper getURL(ProtocolIdForm form, Errors errors)
     {
         Set<String> selectedRunIds = DataRegionSelection.getSelected(getViewContext(), true);
         if (selectedRunIds.isEmpty())

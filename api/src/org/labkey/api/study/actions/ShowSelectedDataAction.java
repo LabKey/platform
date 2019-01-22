@@ -24,7 +24,6 @@ import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
-import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
 import java.util.Set;
@@ -52,7 +51,7 @@ public class ShowSelectedDataAction extends RedirectAction<ShowSelectedDataActio
     }
 
 
-    public ActionURL getSuccessURL(ShowSelectedForm form)
+    public ActionURL getURL(ShowSelectedForm form, Errors errors)
     {
         Set<String> selection = DataRegionSelection.getSelected(getViewContext(), true);
         int[] selectedIds = PageFlowUtil.toInts(selection);

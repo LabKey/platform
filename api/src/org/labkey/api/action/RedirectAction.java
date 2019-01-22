@@ -17,6 +17,7 @@
 package org.labkey.api.action;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.template.PageConfig;
@@ -29,8 +30,8 @@ import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
 
 /**
- * Base class for action that never want to serve up a regular HTTP response page, and always
- * want to redirect the client to a different URL, typically after performing some work.
+ * Base class for action that always redirects the client to a different URL.
+ * TODO: Reconcile with SimpleRedirectAction?
  *
  * User: adamr
  * Date: September 19, 2007
@@ -48,31 +49,37 @@ public abstract class RedirectAction<FORM> extends BaseViewAction<FORM>
 
     public final ModelAndView handleRequest() throws Exception
     {
-        FORM form = null;
-        BindException errors = null;
+        FORM form;
+        BindException errors;
         if (null != getCommandClass())
         {
             errors = bindParameters(getPropertyValues());
             form = (FORM)errors.getTarget();
         }
-        boolean success = errors == null || !errors.hasErrors();
+        else
+        {
+            // If the action has not specified a generic form then just new up a BindException
+            form = (FORM)new Object();
+            errors = new NullSafeBindException(form, getCommandName());
+        }
+        boolean success = !errors.hasErrors();
 
         if (success && null != form)
-            validate(form, errors);
-        success = errors == null || !errors.hasErrors();
-
-        if (success)
         {
-            success = doAction(form, errors);
+            validate(form, errors);
+            success = !errors.hasErrors();
         }
 
         if (success)
         {
-            URLHelper s = getSuccessURL(form);
+            URLHelper s = getURL(form, errors);
             if (null != s)
                 throw new RedirectException(s);
-            Logger.getLogger(this.getClass()).warn("NULL redirect URL in action " + this.getClass().getName(), new NullPointerException());
-            errors.reject(ERROR_MSG, "Sorry, I seem to have lost my way and don't know where to go!");
+            if (!errors.hasErrors())
+            {
+                Logger.getLogger(this.getClass()).warn("NULL redirect URL with no error in " + this.getClass().getName(), new NullPointerException());
+                errors.reject(ERROR_MSG, "Sorry, I seem to have lost my way and don't know where to go!");
+            }
         }
 
         return getErrorView(form, errors);
@@ -81,17 +88,10 @@ public abstract class RedirectAction<FORM> extends BaseViewAction<FORM>
 
     protected String getCommandClassMethodName()
     {
-        return "getSuccessURL";
+        return "getURL";
     }
 
-    // TODO: Pass in errors for failure cases?
-    public abstract URLHelper getSuccessURL(FORM form);
-
-    @Deprecated // TODO: We want to migrate most RedirectActions to FormHandlerAction and eliminate this method. See #36532.
-    final public boolean doAction(FORM form, BindException errors) throws Exception
-    {
-        return true;
-    }
+    public abstract @Nullable URLHelper getURL(FORM form, Errors errors);
 
     public BindException bindParameters(PropertyValues m) throws Exception
     {
@@ -114,5 +114,17 @@ public abstract class RedirectAction<FORM> extends BaseViewAction<FORM>
     {
         getPageConfig().setTemplate(PageConfig.Template.Dialog);
         return new SimpleErrorView(errors);
+    }
+
+    // TODO: Delete both these methods, after changes have propagated into all SVN branches (Feb, 2019)
+
+    final public URLHelper getSuccessURL(FORM form)
+    {
+        throw new IllegalStateException("Should not implement or call this method");
+    }
+
+    final public boolean doAction(FORM form, BindException errors)
+    {
+        throw new IllegalStateException("Should not implement or call this method");
     }
 }

@@ -29,7 +29,7 @@ import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
 
 /**
- * Base class for action that never want to serve up a regular HTTP response page, and always
+ * Base class for actions that never want to serve up a regular HTTP response page, and always
  * want to redirect the client to a different URL, typically after performing some work.
  *
  * User: adamr
