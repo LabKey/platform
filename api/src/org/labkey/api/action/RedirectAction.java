@@ -88,7 +88,7 @@ public abstract class RedirectAction<FORM> extends BaseViewAction<FORM>
     public abstract URLHelper getSuccessURL(FORM form);
 
     @Deprecated // TODO: We want to migrate most RedirectActions to FormHandlerAction and eliminate this method. See #36532.
-    public boolean doAction(FORM form, BindException errors) throws Exception
+    final public boolean doAction(FORM form, BindException errors) throws Exception
     {
         return true;
     }
