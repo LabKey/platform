@@ -63,7 +63,6 @@ public class StudySimpleExportTest extends StudyBaseTest
     public static final String NOTIFICATION_EMAIL = "specimen-test@simpleexport.test";
     private final String FOLDER_SCOPE = "folder";
     private final String PROJECT_SCOPE = "project";
-    private static final String LINE_PLOT_MV_1 = "1211221231291331351427678808284868890ExampleBoxPlotSystolicBloodPressurexxx/DiastolicBloodPressure/xxx";
 
     @Override
     protected BrowserType bestBrowser()
@@ -346,8 +345,17 @@ public class StudySimpleExportTest extends StudyBaseTest
         log("Asserting if map is present");
         waitForText("Example Box Plot");
         assertTextPresent("Systolic Blood Pressure xxx/", "Diastolic Blood Pressure /xxx");
-        assertSVG(LINE_PLOT_MV_1);
-
+        String BOX_PLOT_SVG = "121\n122\n123\n129\n133\n135\n142\n"
+                + "76\n78\n80\n82\n84\n86\n88\n90\n"
+                + "Example Box Plot\nSystolic Blood Pressure xxx/\nDiastolic Blood Pressure /xxx\n"
+                + "121: Min: 78 Max: 78 Q1: 78 Q2: 78 Q3: 78\n"
+                + "122: Min: 76 Max: 80 Q1: 77 Q2: 78 Q3: 79\n"
+                + "123: Min: 76 Max: 76 Q1: 76 Q2: 76 Q3: 76\n"
+                + "129: Min: 76 Max: 87 Q1: 78.75 Q2: 81.5 Q3: 84.25\n"
+                + "133: Min: 79 Max: 85 Q1: 80.5 Q2: 82 Q3: 83.5\n"
+                + "135: Min: 85 Max: 85 Q1: 85 Q2: 85 Q3: 85\n"
+                + "142: Min: 90 Max: 90 Q1: 90 Q2: 90 Q3: 90";
+        assertSVG(BOX_PLOT_SVG);
     }
 
     @Test
