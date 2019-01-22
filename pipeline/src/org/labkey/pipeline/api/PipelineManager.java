@@ -55,6 +55,7 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.trigger.TriggerConfiguration;
 import org.labkey.api.util.ConfigurationException;
@@ -358,8 +359,16 @@ public class PipelineManager
 
             if (notifyOwner && !StringUtils.isEmpty(statusFile.getEmail()))
             {
-                sb.append(statusFile.getEmail());
-                sb.append(';');
+                try
+                {
+                    ValidEmail ve = new ValidEmail(statusFile.getEmail());
+                    sb.append(ve.getEmailAddress());
+                    sb.append(';');
+                }
+                catch (ValidEmail.InvalidEmailException e)
+                {
+                    _log.warn("Pipeline job status file uses an invalid email: " + statusFile.getEmail() + ". RowId: " + statusFile.getRowId());
+                }
             }
 
             if (!StringUtils.isEmpty(notifyUsers))
