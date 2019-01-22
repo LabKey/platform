@@ -48,14 +48,13 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
+import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -385,8 +384,12 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         {
             Object value = entry.getValue();
             if (value instanceof Date)
+            {
                 // issue: 35002 - normalize Date values to avoid Timestamp/Date toString differences
-                stringMap.put(entry.getKey(), DateUtil.formatDate(c, (Date)value));
+                // issue: 36472 - use iso format to show date-time values
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+                stringMap.put(entry.getKey(), formatter.format((Date) value));
+            }
             else
                 stringMap.put(entry.getKey(), value == null ? null : value.toString());
         }
