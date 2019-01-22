@@ -283,6 +283,12 @@ public class CoreController extends SpringActionController
         {
             return new ActionURL(CoreController.DisplayCoreWarningsAction.class, viewContext.getContainer());
         }
+
+        @Override
+        public ActionURL getStyleGuideURL(@NotNull Container container)
+        {
+            return new ActionURL(CoreController.StyleGuideAction.class, container);
+        }
     }
 
     abstract class BaseStylesheetAction extends ExportAction
