@@ -835,7 +835,7 @@ public class UserController extends SpringActionController
     public class ShowUserPreferencesAction extends RedirectAction<Object>
     {
         @Override
-        public URLHelper getSuccessURL(Object form)
+        public URLHelper getURL(Object form, Errors errors)
         {
             String domainURI = UsersDomainKind.getDomainURI(CoreQuerySchema.NAME, CoreQuerySchema.USERS_TABLE_NAME, UsersDomainKind.getDomainContainer(), getUser());
             Domain domain = PropertyService.get().getDomain(UsersDomainKind.getDomainContainer(), domainURI);

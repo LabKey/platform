@@ -6507,7 +6507,7 @@ public class StudyController extends BaseStudyController
     public class DatasetDetailRedirectAction extends RedirectAction<DatasetDetailRedirectForm>
     {
         @Override
-        public URLHelper getSuccessURL(DatasetDetailRedirectForm form)
+        public URLHelper getURL(DatasetDetailRedirectForm form, Errors errors)
         {
             StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
             if (study == null)

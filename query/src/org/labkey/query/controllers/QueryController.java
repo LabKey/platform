@@ -5933,7 +5933,7 @@ public class QueryController extends SpringActionController
     public class QueryExportAuditRedirectAction extends RedirectAction<QueryExportAuditForm>
     {
         @Override
-        public URLHelper getSuccessURL(QueryExportAuditForm form)
+        public URLHelper getURL(QueryExportAuditForm form, Errors errors)
         {
             UserSchema auditSchema = QueryService.get().getUserSchema(getUser(), getContainer(), AbstractAuditTypeProvider.QUERY_SCHEMA_NAME);
             TableInfo queryExportAuditTable = auditSchema.getTable(QueryExportAuditProvider.QUERY_AUDIT_EVENT);

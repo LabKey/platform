@@ -413,7 +413,7 @@ public class ProjectController extends SpringActionController
     public class FileBrowserAction extends org.labkey.api.action.RedirectAction
     {
         @Override
-        public URLHelper getSuccessURL(Object o)
+        public URLHelper getURL(Object o, Errors errors)
         {
             String p = StringUtils.trimToEmpty(getViewContext().getRequest().getParameter("path"));
             Path path = Path.decode(p);

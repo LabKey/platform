@@ -39,6 +39,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.admin.AdminUrls;
+import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.BindException;
 
@@ -67,7 +68,7 @@ public class AuditController extends SpringActionController
     public class BeginAction extends RedirectAction
     {
         @Override
-        public URLHelper getSuccessURL(Object o)
+        public URLHelper getURL(Object o, Errors errors)
         {
             if (getContainer() != null && getContainer().isRoot())
                 return new ActionURL(ShowAuditLogAction.class, getContainer());
