@@ -231,7 +231,10 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             dataType = TsvDataHandler.RELATED_TRANSFORM_FILE_DATA_TYPE;
 
         String sep = "";
-        pw.append(Props.runDataUploadedFile.name()).append('\t');
+        if (!dataFiles.isEmpty())  // this makes sure not to print this property unless we're sure we'll print a value, or the test parser will complain later
+        {
+            pw.append(Props.runDataUploadedFile.name()).append('\t');
+        }
         for (File data : dataFiles)
         {
             ExpData expData = ExperimentService.get().createData(context.getContainer(), dataType, data.getName());
@@ -272,7 +275,8 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 }
             }
         }
-        pw.println();
+        if (!dataFiles.isEmpty())  // this avoids printing empty lines, which the test parser will complain about later
+            pw.println();
 
         File dir = AssayFileWriter.ensureUploadDirectory(context.getContainer());
 
