@@ -31,6 +31,7 @@ import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.OldRedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -59,7 +60,6 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
@@ -1754,7 +1754,7 @@ public class ProjectController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class TogglePageAdminModeAction extends org.labkey.api.action.RedirectAction<ReturnUrlForm>
+    public class TogglePageAdminModeAction extends OldRedirectAction<ReturnUrlForm>
     {
         @Override
         public boolean doAction(ReturnUrlForm form, BindException errors)

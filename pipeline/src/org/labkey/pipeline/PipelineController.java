@@ -29,7 +29,7 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.RedirectAction;
+import org.labkey.api.action.OldRedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleRedirectAction;
@@ -662,7 +662,7 @@ public class PipelineController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class UpdateRootPermissionsAction extends RedirectAction<PermissionForm>
+    public class UpdateRootPermissionsAction extends OldRedirectAction<PermissionForm>
     {
         public ActionURL getSuccessURL(PermissionForm permissionForm)
         {

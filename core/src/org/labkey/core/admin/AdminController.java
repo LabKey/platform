@@ -7422,7 +7422,7 @@ public class AdminController extends SpringActionController
 
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class ValidateDomainsAction extends RedirectAction
+    public class ValidateDomainsAction extends OldRedirectAction
     {
         @Override
         public URLHelper getSuccessURL(Object o)

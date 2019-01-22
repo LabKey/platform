@@ -30,8 +30,8 @@ import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.HasViewContext;
+import org.labkey.api.action.OldRedirectAction;
 import org.labkey.api.action.QueryViewAction;
-import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
@@ -837,13 +837,13 @@ public class SpecimenController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class HandleAddRequestSamplesAction extends RedirectAction<AddToSampleRequestForm>
+    public class HandleAddRequestSamplesAction extends OldRedirectAction<AddToSampleRequestForm>
     {
         public boolean doAction(AddToSampleRequestForm addToSampleRequestForm, BindException errors) throws Exception
         {
             SpecimenRequest request = SpecimenManager.getInstance().getRequest(getContainer(), addToSampleRequestForm.getId());
             requiresEditRequestPermissions(request);
-            long ids[];
+            long[] ids;
             if (addToSampleRequestForm.getSpecimenIds() != null && addToSampleRequestForm.getSpecimenIds().length() > 0)
                 ids = toLongArray(addToSampleRequestForm.getSpecimenIds().split(","));
             else
@@ -2167,7 +2167,7 @@ public class SpecimenController extends BaseStudyController
     }
 
     @RequiresPermission(ManageRequestsPermission.class)
-    public class DeleteRequirementAction extends RedirectAction<RequirementForm>
+    public class DeleteRequirementAction extends OldRedirectAction<RequirementForm>
     {
         public boolean doAction(RequirementForm form, BindException errors) throws Exception
         {
@@ -2190,7 +2190,7 @@ public class SpecimenController extends BaseStudyController
 
 
     @RequiresPermission(ManageRequestRequirementsPermission.class)
-    public class DeleteDefaultRequirementAction extends RedirectAction<IdForm>
+    public class DeleteDefaultRequirementAction extends OldRedirectAction<IdForm>
     {
         public boolean doAction(IdForm form, BindException errors) throws Exception
         {
@@ -2213,7 +2213,7 @@ public class SpecimenController extends BaseStudyController
     }
 
     @RequiresPermission(ManageRequestsPermission.class)
-    public class DeleteMissingRequestSpecimensAction extends RedirectAction<IdForm>
+    public class DeleteMissingRequestSpecimensAction extends OldRedirectAction<IdForm>
     {
         public boolean doAction(IdForm form, BindException errors)
         {
@@ -2695,7 +2695,7 @@ public class SpecimenController extends BaseStudyController
     }
 
     @RequiresPermission(RequestSpecimensPermission.class)
-    public class SubmitRequestAction extends RedirectAction<IdForm>
+    public class SubmitRequestAction extends OldRedirectAction<IdForm>
     {
         public boolean doAction(IdForm form, BindException errors) throws Exception
         {
@@ -2754,7 +2754,7 @@ public class SpecimenController extends BaseStudyController
     }
 
     @RequiresPermission(RequestSpecimensPermission.class)
-    public class DeleteRequestAction extends RedirectAction<IdForm>
+    public class DeleteRequestAction extends OldRedirectAction<IdForm>
     {
         public boolean doAction(IdForm form, BindException errors) throws Exception
         {
@@ -3666,7 +3666,7 @@ public class SpecimenController extends BaseStudyController
     }
 
     @RequiresPermission(SetSpecimenCommentsPermission.class)
-    public class ClearCommentsAction extends RedirectAction<UpdateSpecimenCommentsForm>
+    public class ClearCommentsAction extends OldRedirectAction<UpdateSpecimenCommentsForm>
     {
         public ActionURL getSuccessURL(UpdateSpecimenCommentsForm updateSpecimenCommentsForm)
         {
@@ -4529,7 +4529,7 @@ public class SpecimenController extends BaseStudyController
     }
 
     @RequiresPermission(ManageRequestStatusesPermission.class)
-    public class DeleteActorAction extends RedirectAction<IdForm>
+    public class DeleteActorAction extends OldRedirectAction<IdForm>
     {
         public ActionURL getSuccessURL(IdForm idForm)
         {
@@ -4547,7 +4547,7 @@ public class SpecimenController extends BaseStudyController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class DeleteStatusAction extends RedirectAction<IdForm>
+    public class DeleteStatusAction extends OldRedirectAction<IdForm>
     {
         public ActionURL getSuccessURL(IdForm idForm)
         {
@@ -4575,7 +4575,7 @@ public class SpecimenController extends BaseStudyController
     }
 
     @RequiresPermission(ManageNewRequestFormPermission.class)
-    public class HandleUpdateRequestInputsAction extends RedirectAction<ManageRequestInputsForm>
+    public class HandleUpdateRequestInputsAction extends OldRedirectAction<ManageRequestInputsForm>
     {
         public ActionURL getSuccessURL(ManageRequestInputsForm manageRequestInputsForm)
         {

@@ -40,6 +40,7 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.OldRedirectAction;
 import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleErrorView;
@@ -286,7 +287,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
     @RequiresPermission(DeletePermission.class)
-    public class DeleteThreadsAction extends RedirectAction
+    public class DeleteThreadsAction extends OldRedirectAction
     {
         public boolean doAction(Object o, BindException errors)
         {
@@ -1558,7 +1559,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)  // TODO: Seems to be unused... delete?
-    public class SetDefaultEmailOptionsAction extends RedirectAction<EmailDefaultSettingsForm>
+    public class SetDefaultEmailOptionsAction extends OldRedirectAction<EmailDefaultSettingsForm>
     {
         public boolean doAction(EmailDefaultSettingsForm form, BindException errors)
         {
@@ -2735,7 +2736,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
     @RequiresLogin @RequiresPermission(ReadPermission.class)
-    public class SubscribeThreadAction extends RedirectAction<SubscriptionBean>
+    public class SubscribeThreadAction extends OldRedirectAction<SubscriptionBean>
     {
         @Override
         public URLHelper getSuccessURL(SubscriptionBean subscriptionBean)

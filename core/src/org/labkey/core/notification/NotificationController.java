@@ -15,11 +15,10 @@
  */
 package org.labkey.core.notification;
 
-import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.RedirectAction;
+import org.labkey.api.action.OldRedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -36,7 +35,6 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.springframework.validation.BindException;
@@ -77,7 +75,7 @@ public class NotificationController extends SpringActionController
 
     // redirect to target URL and mark notification as read
     @RequiresLogin
-    public static class GotoAction extends RedirectAction<NotificationForm>
+    public static class GotoAction extends OldRedirectAction<NotificationForm>
     {
         @Override
         public URLHelper getSuccessURL(NotificationForm form)

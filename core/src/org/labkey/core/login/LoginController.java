@@ -25,7 +25,7 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.RedirectAction;
+import org.labkey.api.action.OldRedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -2191,7 +2191,7 @@ public class LoginController extends SpringActionController
 
     @SuppressWarnings("unused")
     @RequiresNoPermission
-    public class InvalidateTokenAction extends RedirectAction<TokenAuthenticationForm>
+    public class InvalidateTokenAction extends OldRedirectAction<TokenAuthenticationForm>
     {
         @Override
         public URLHelper getSuccessURL(TokenAuthenticationForm form)
@@ -2255,7 +2255,7 @@ public class LoginController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class SetAuthenticationParameterAction extends RedirectAction<AuthParameterForm>
+    public class SetAuthenticationParameterAction extends OldRedirectAction<AuthParameterForm>
     {
         @Override
         public URLHelper getSuccessURL(AuthParameterForm form)
@@ -2298,7 +2298,7 @@ public class LoginController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class EnableAction extends RedirectAction<ProviderForm>
+    public class EnableAction extends OldRedirectAction<ProviderForm>
     {
         public ActionURL getSuccessURL(ProviderForm form)
         {
@@ -2313,7 +2313,7 @@ public class LoginController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class DisableAction extends RedirectAction<ProviderForm>
+    public class DisableAction extends OldRedirectAction<ProviderForm>
     {
         public ActionURL getSuccessURL(ProviderForm form)
         {
