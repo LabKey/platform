@@ -50,8 +50,6 @@
 <div class="hidden-xs hidden-sm col-md-3 col-lg-3">
     <div id="lk-sg-nav" class="list-group">
         <a href="#overview" class="list-group-item">Overview</a>
-        <a href="#scaffolding" class="list-group-item">Scaffolding</a>
-        <a href="#layout" class="list-group-item">Layout</a>
         <a href="#type" class="list-group-item">Typography</a>
         <a href="#buttons" class="list-group-item">Buttons</a>
         <a href="#forms" class="list-group-item">Forms</a>
