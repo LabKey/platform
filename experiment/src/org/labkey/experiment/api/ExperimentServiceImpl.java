@@ -161,7 +161,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -6060,6 +6059,8 @@ public class ExperimentServiceImpl implements ExperimentService
         for (int i = 0; i < properties.size(); i++)
         {
             GWTPropertyDescriptor pd = properties.get(i);
+            if (pd == null)
+                throw new ExperimentException("null property: " + i);
             String propertyName = pd.getName().toLowerCase();
 
             if (ExpMaterialTable.Column.Name.name().equalsIgnoreCase(propertyName))
