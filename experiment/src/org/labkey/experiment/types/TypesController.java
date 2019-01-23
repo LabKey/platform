@@ -35,6 +35,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.iterator.BeanIterator;
 import org.labkey.api.iterator.CloseableIterator;
@@ -239,32 +240,58 @@ public class TypesController extends SpringActionController
     }
     
 
+    public static class TypesForm
+    {
+        private String _domainKind;
+
+        public String getDomainKind()
+        {
+            return _domainKind;
+        }
+
+        public void setDomainKind(String domainKind)
+        {
+            _domainKind = domainKind;
+        }
+    }
+
     @RequiresPermission(AdminPermission.class)
-    public static class TypesAction extends SimpleViewAction
+    public static class TypesAction extends SimpleViewAction<TypesForm>
     {
         @SuppressWarnings({"UnusedDeclaration"}) // Constructed via reflection
         public TypesAction(){}
 
         public TypesAction(ViewContext c){setViewContext(c);}
 
-        public ModelAndView getView(Object o, BindException errors)
+        public ModelAndView getView(TypesForm form, BindException errors)
         {
             Container container = getContainer();
             Collection<? extends Domain> types = PropertyService.get().getDomains(container, getUser(), true);
             TypeBean bean = new TypeBean();
+            bean.domainKind = form.getDomainKind();
             Container shared = ContainerManager.getSharedContainer();
 
             getContainer().getContainersFor(ContainerType.DataType.domainDefinitions);
             Container project = !container.isProject() ? container.getProject() : null;
             for (Domain t : types)
             {
-                if (null == t.getContainer() || t.getContainer().equals(shared))
-                    bean.globals.put(t.getName(), t);
-                else if (project != null && t.getContainer().equals(project))
-                    bean.project.put(t.getName(), t);
-                else
-                    bean.locals.put(t.getName(), t);
+                DomainKind kind = t.getDomainKind();
+                if (kind != null)
+                    bean.domainKinds.put(kind.getKindName(), kind);
+
+                if (bean.domainKind == null || (kind != null && bean.domainKind.equals(kind.getKindName())))
+                {
+                    if (null == t.getContainer() || t.getContainer().equals(shared))
+                        bean.globals.put(t.getName(), t);
+                    else if (project != null && t.getContainer().equals(project))
+                        bean.project.put(t.getName(), t);
+                    else
+                        bean.locals.put(t.getName(), t);
+                }
             }
+
+            if (bean.domainKind != null && !bean.domainKinds.containsKey(bean.domainKind))
+                throw new NotFoundException("Domain kind not found: " + bean.domainKind);
 
             return new JspView<>("/org/labkey/experiment/types/types.jsp", bean);
         }
@@ -283,6 +310,8 @@ public class TypesController extends SpringActionController
         public TreeMap<String, Domain> locals = new TreeMap<>();
         public TreeMap<String, Domain> globals = new TreeMap<>();
         public TreeMap<String, Domain> project = new TreeMap<>();
+        public TreeMap<String, DomainKind> domainKinds = new TreeMap<>();
+        public String domainKind = null;
     }
 
 

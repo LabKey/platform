@@ -431,6 +431,9 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
 
     public String toString()
     {
-        return "ProtocolApplication, LSID: " + getLSID() + (getRun() == null ? null : ( ", run: " + getRun().getLSID()));  
+        return "ProtocolApplication: " +
+                "Name: " + getName() +
+                ", Sequence: " + getActionSequence() +
+                ", LSID: " + getLSID() + (getRun() == null ? null : ( ", run: " + getRun().getLSID()));
     }
 }

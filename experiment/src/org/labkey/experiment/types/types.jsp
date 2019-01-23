@@ -16,17 +16,23 @@
  */
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%@ page import="org.labkey.api.exp.DomainDescriptor"%>
+<%@ page import="org.labkey.api.exp.property.Domain"%>
+<%@ page import="org.labkey.api.exp.property.DomainKind" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.experiment.types.TypesController.TypeBean" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.experiment.types.TypesController" %>
-<%@ page import="org.labkey.api.exp.property.Domain" %>
-<%@ page import="org.labkey.api.exp.property.DomainKind" %>
+<%@ page import="org.labkey.experiment.types.TypesController.TypeBean" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     TypeBean bean = (TypeBean)getModelBean();
 %>
+
+<b>Domain Kinds:</b>
+<form method="GET" action="experiment-types-types.view">
+    <labkey:select label="Domain Kinds" name="domainKind" onChange="this.form.submit();">
+        <labkey:options value="<%=h(bean.domainKind)%>" set="<%=bean.domainKinds.keySet()%>"/>
+    </labkey:select>
+</form>
 
 <h3>local types</h3>
 <table>
@@ -40,6 +46,7 @@
             ActionURL showData = kind.urlShowData(type, getViewContext());
             ActionURL editType = kind.urlEditDefinition(type, getViewContext());
             %>
+    <td><small><%=h(kind.getKindName())%></small></td>
     <td><% if (showData != null) { %> <labkey:link text="view data" href="<%=showData%>"/><% } %></td>
     <td><% if (editType != null) { %> <labkey:link text="edit type" href="<%=editType%>"/><% } %></td>
             <%
@@ -61,6 +68,7 @@
                 ActionURL showData = kind.urlShowData(type, getViewContext());
                 ActionURL editType = kind.urlEditDefinition(type, getViewContext());
         %>
+        <td><small><%=h(kind.getKindName())%></small></td>
         <td><% if (showData != null) { %> <labkey:link text="view data" href="<%=showData%>"/><% } %></td>
         <td><% if (editType != null) { %> <labkey:link text="edit type" href="<%=editType%>"/><% } %></td>
         <%
@@ -82,6 +90,7 @@
                 ActionURL showData = kind.urlShowData(type, getViewContext());
                 ActionURL editType = kind.urlEditDefinition(type, getViewContext());
         %>
+        <td><small><%=h(kind.getKindName())%></small></td>
         <td><% if (showData != null) { %> <labkey:link text="view data" href="<%=showData%>"/><% } %></td>
         <td><% if (editType != null) { %> <labkey:link text="edit type" href="<%=editType%>"/><% } %></td>
         <%
