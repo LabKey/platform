@@ -24,12 +24,12 @@ import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyC;
-import org.labkey.test.components.ext4.Checkbox;
 import org.labkey.test.components.studydesigner.ManageAssaySchedulePage;
 import org.labkey.test.components.studydesigner.ManageStudyProductsPage;
 import org.labkey.test.components.studydesigner.ManageTreatmentsPage;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
+import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.PortalHelper;
 import org.labkey.test.util.StudyHelper;
@@ -163,8 +163,8 @@ public class StudyDataspaceTest extends StudyBaseTest
         clickFolder(FOLDER_STUDY5);
         goToFolderManagement(); //todo: refactor to use page class (folderExportPage?)
         clickAndWait(Locator.linkWithText("Export"));
-        new Checkbox(Locator.tagWithText("label", "Assay Schedule").precedingSibling("input").waitForElement(getDriver(), WAIT_FOR_JAVASCRIPT)).uncheck();
-        new Checkbox(Locator.tagWithText("label", "Treatment Data").precedingSibling("input").findElement(getDriver())).uncheck();
+        _ext4Helper.uncheckCheckbox(Ext4Helper.Locators.checkbox(this, "Assay Schedule"));
+        _ext4Helper.uncheckCheckbox(Ext4Helper.Locators.checkbox(this, "Treatment Data"));
         checkRadioButton(Locator.tagWithClass("table", "export-location").index(0));
         clickButton("Export");
 
@@ -206,7 +206,7 @@ public class StudyDataspaceTest extends StudyBaseTest
         goToModule("Query");
         viewQueryData("study", "Product");
         DataRegionTable productTable = new DataRegionTable("query", this);
-        Assert.assertTrue("Product row count incorrect.", productTable.getDataRowCount() == expectedRowCount);
+        Assert.assertEquals("Product row count incorrect.", expectedRowCount, productTable.getDataRowCount());
         verifyInsertButtonsExist(canInsert);
         verifyRecordContainerLocation(true, folderName);
         verifyRecordLabels("Label", expectedValues);
@@ -222,7 +222,7 @@ public class StudyDataspaceTest extends StudyBaseTest
         goToModule("Query");
         viewQueryData("study", "Treatment");
         DataRegionTable treatmentTable = new DataRegionTable("query", this);
-        Assert.assertTrue("Treatment row count incorrect.", treatmentTable.getDataRowCount() == expectedRowCount);
+        Assert.assertEquals("Treatment row count incorrect.", expectedRowCount, treatmentTable.getDataRowCount());
         verifyInsertButtonsExist(canInsert);
         verifyRecordContainerLocation(false, folderName);
         verifyRecordLabels("Label", expectedValues);
@@ -238,7 +238,7 @@ public class StudyDataspaceTest extends StudyBaseTest
         goToModule("Query");
         viewQueryData("study", "AssaySpecimen");
         DataRegionTable assaySpecimenTable = new DataRegionTable("query", this);
-        Assert.assertTrue("Assay specimen row count incorrect.", assaySpecimenTable.getDataRowCount() == expectedRowCount);
+        Assert.assertEquals("Assay specimen row count incorrect.", expectedRowCount, assaySpecimenTable.getDataRowCount());
         verifyInsertButtonsExist(canInsert);
         verifyRecordLabels("Assay Name", expectedValues);
 
@@ -285,7 +285,7 @@ public class StudyDataspaceTest extends StudyBaseTest
         viewQueryData("study", "Lab Results");
 
         DataRegionTable labResultsTable = new DataRegionTable("query", this);
-        Assert.assertTrue("Lab Results row count incorrect.", labResultsTable.getDataRowCount() == expectedRowCount);
+        Assert.assertEquals("Lab Results row count incorrect.", expectedRowCount, labResultsTable.getDataRowCount());
 
         if (rowValueMap != null)
         {
