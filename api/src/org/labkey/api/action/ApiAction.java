@@ -12,10 +12,4 @@ public abstract class ApiAction<FORM> extends ReadOnlyApiAction<FORM>
     {
         super();
     }
-
-    @Deprecated
-    public ApiAction(Class<? extends FORM> formClass)
-    {
-        super(formClass);
-    }
 }

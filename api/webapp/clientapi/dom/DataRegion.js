@@ -4192,6 +4192,7 @@ if (!LABKEY.DataRegions) {
                 { 'key': config.selectionKey });
 
         LABKEY.Ajax.request({
+            method: 'POST',
             url: url,
             success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
             failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
