@@ -218,6 +218,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
+
 /**
  * User: jeckels
  * Date: Dec 13, 2007
@@ -1063,8 +1065,6 @@ public class ExperimentController extends SpringActionController
             {
                 dataClass.delete(getUser());
             }
-            String selectionKey = deleteForm.getDataRegionSelectionKey();
-            DataRegionSelection.clearAll(getViewContext(), selectionKey);
         }
 
         public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors)
@@ -2808,7 +2808,7 @@ public class ExperimentController extends SpringActionController
 
         protected void deleteObjects(DeleteForm deleteForm)
         {
-            ExperimentServiceImpl.get().deleteExperimentRunsByRowIds(getContainer(), getUser(), deleteForm.getIds(true));
+            ExperimentServiceImpl.get().deleteExperimentRunsByRowIds(getContainer(), getUser(), deleteForm.getIds(false));
         }
     }
 
@@ -2863,6 +2863,8 @@ public class ExperimentController extends SpringActionController
             {
                 try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
                 {
+                    tx.addCommitTask(deleteForm::clearSelected, POSTCOMMIT);
+
                     deleteObjects(deleteForm);
                     tx.commit();
                 }
@@ -2953,7 +2955,7 @@ public class ExperimentController extends SpringActionController
 
         protected void deleteObjects(DeleteForm deleteForm)
         {
-            for (ExpProtocol protocol : getProtocols(deleteForm, true))
+            for (ExpProtocol protocol : getProtocols(deleteForm, false))
             {
                 protocol.delete(getUser());
             }
@@ -2977,12 +2979,12 @@ public class ExperimentController extends SpringActionController
 
         protected void deleteObjects(DeleteForm deleteForm)
         {
-            ExperimentServiceImpl.get().deleteMaterialByRowIds(getUser(), getContainer(), deleteForm.getIds(true));
+            ExperimentServiceImpl.get().deleteMaterialByRowIds(getUser(), getContainer(), deleteForm.getIds(false));
         }
 
         public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors)
         {
-            List<ExpMaterial> materials = getMaterials(deleteForm, false);
+            List<ExpMaterial> materials = getMaterials(deleteForm);
             List<ExpRun> runs = getRuns(materials);
             return new ConfirmDeleteView("Sample", ShowMaterialAction.class, materials, deleteForm, runs);
         }
@@ -2991,18 +2993,14 @@ public class ExperimentController extends SpringActionController
         {
             // We don't actually delete runs that use the materials - we just disconnect the material from the run
             // In some cases (such as flow) this is required. In others, it's not as sensible
-            List<ExpRun> runsToDelete = new ArrayList<>();
             List<? extends ExpRun> runArray = ExperimentService.get().getRunsUsingMaterials(materials);
-            for (ExpRun run : ExperimentService.get().runsDeletedWithInput(runArray))
-                runsToDelete.add(run);
-
-            return runsToDelete;
+            return new ArrayList<>(ExperimentService.get().runsDeletedWithInput(runArray));
         }
 
-        private List<ExpMaterial> getMaterials(DeleteForm deleteForm, boolean clear)
+        private List<ExpMaterial> getMaterials(DeleteForm deleteForm)
         {
             List<ExpMaterial> materials = new ArrayList<>();
-            for (int materialId : deleteForm.getIds(clear))
+            for (int materialId : deleteForm.getIds(false))
             {
                 ExpMaterial material = ExperimentService.get().getExpMaterial(materialId);
                 if (material != null)
@@ -3032,7 +3030,7 @@ public class ExperimentController extends SpringActionController
 
         protected void deleteObjects(DeleteForm deleteForm) throws Exception
         {
-            List<ExpData> datas = getDatas(deleteForm, true);
+            List<ExpData> datas = getDatas(deleteForm, false);
 
             for (ExpRun run : getRuns(datas))
             {
@@ -3095,12 +3093,8 @@ public class ExperimentController extends SpringActionController
 
         private List<ExpRun> getRuns(List<ExpData> datas)
         {
-            List<ExpRun> runsToDelete = new ArrayList<>();
             List<? extends ExpRun> runArray = ExperimentService.get().getRunsUsingDatas(datas);
-            for (ExpRun run : ExperimentService.get().runsDeletedWithInput(runArray))
-                runsToDelete.add(run);
-
-            return runsToDelete;
+            return new ArrayList<>(ExperimentService.get().runsDeletedWithInput(runArray));
         }
 
         private List<ExpData> getDatas(DeleteForm deleteForm, boolean clear)
@@ -3210,11 +3204,6 @@ public class ExperimentController extends SpringActionController
             for (ExpSampleSet source : sampleSets)
             {
                 source.delete(getUser());
-            }
-            String selectionKey = deleteForm.getDataRegionSelectionKey();
-            if (selectionKey != null)
-            {
-                DataRegionSelection.clearAll(getViewContext(), selectionKey);
             }
         }
 
