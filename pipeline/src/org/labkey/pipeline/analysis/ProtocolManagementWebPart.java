@@ -44,6 +44,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -126,6 +127,9 @@ public class ProtocolManagementWebPart extends GridView
     {
         // Implementing a fixed sort order here -> taskPipeline description, archived status, protocol name
         PipeRoot root = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
+        if (root == null)
+            return Collections.emptyList();
+
         List<Protocol> protocols = new ArrayList<>();
 
         PipelineJobService.get().getTaskPipelines(getViewContext().getContainer(), FileAnalysisTaskPipeline.class).stream()
