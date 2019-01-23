@@ -127,13 +127,13 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     }
 
 
-    public BindException bindParameters(PropertyValues params)
+    public @NotNull BindException bindParameters(PropertyValues params)
     {
         return doBindParameters(params);
     }
 
 
-    protected BindException doBindParameters(PropertyValues params)
+    protected @NotNull BindException doBindParameters(PropertyValues params)
     {
         assert _bindState == BindState.UNBOUND;
         _initParameters = params;

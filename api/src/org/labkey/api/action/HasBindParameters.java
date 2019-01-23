@@ -15,10 +15,11 @@
  */
 package org.labkey.api.action;
 
+import org.jetbrains.annotations.NotNull;
 import org.springframework.validation.BindException;
 import org.springframework.beans.PropertyValues;
 
 public interface HasBindParameters
 {
-    public BindException bindParameters(PropertyValues m);
+    @NotNull BindException bindParameters(PropertyValues m);
 }

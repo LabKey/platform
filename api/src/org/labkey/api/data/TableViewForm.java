@@ -771,7 +771,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
     }
 
 
-    public BindException bindParameters(PropertyValues params)
+    public @NotNull BindException bindParameters(PropertyValues params)
     {
         /*
          * Checkboxes are weird. If set to FALSE they don't post

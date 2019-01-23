@@ -19,6 +19,7 @@ package org.labkey.api.study.actions;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.HasBindParameters;
@@ -92,7 +93,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         }
 
         @Override
-        public BindException bindParameters(PropertyValues pvs)
+        public @NotNull BindException bindParameters(PropertyValues pvs)
         {
             // springBindParameters() almost works as-is, except for trimming leading/trailing '\t' chars
             // consider hooking spring's built-in converter for String[]? maybe use json encoding see ConvertType.parseParams()

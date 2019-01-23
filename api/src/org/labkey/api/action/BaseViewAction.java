@@ -22,6 +22,7 @@ import org.apache.commons.beanutils.DynaBean;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.data.Container;
@@ -105,8 +106,6 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
                 if (types.length < 1)
                     continue;
                 Class typeCurrent = types[0];
-                if (Object.class.equals(typeCurrent))
-                    continue;
                 assert null == getCommandClass() || typeCurrent.equals(getCommandClass());
 
                 // Using templated classes to extend a base action can lead to multiple
@@ -124,7 +123,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
     protected abstract String getCommandClassMethodName();
 
 
-    protected BaseViewAction(Class<? extends FORM> commandClass)
+    protected BaseViewAction(@NotNull Class<? extends FORM> commandClass)
     {
         setCommandClass(commandClass);
     }
@@ -260,7 +259,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
     }
 
 
-    protected FORM getCommand(HttpServletRequest request) throws Exception
+    protected @NotNull FORM getCommand(HttpServletRequest request) throws Exception
     {
         if (getCommandClass() == null)
         {
@@ -275,7 +274,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
     }
 
 
-    protected FORM getCommand() throws Exception
+    protected @NotNull FORM getCommand() throws Exception
     {
         return getCommand(getViewContext().getRequest());
     }
@@ -287,13 +286,13 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
     // don't assume parameters always come from a request, use PropertyValues interface
     //
 
-    public BindException defaultBindParameters(FORM form, PropertyValues params)
+    public @NotNull BindException defaultBindParameters(FORM form, PropertyValues params)
     {
         return defaultBindParameters(form, getCommandName(), params);
     }
 
 
-    public static BindException defaultBindParameters(Object form, String commandName, PropertyValues params)
+    public static @NotNull BindException defaultBindParameters(Object form, String commandName, PropertyValues params)
     {
         /* check for do-it-myself forms */
         if (form instanceof HasBindParameters)
@@ -326,7 +325,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
     }
 
 
-    public static BindException springBindParameters(Object command, String commandName, PropertyValues params)
+    public static @NotNull BindException springBindParameters(Object command, String commandName, PropertyValues params)
     {
         ServletRequestDataBinder binder = new ServletRequestDataBinder(command, commandName);
         ConvertHelper.getPropertyEditorRegistrar().registerCustomEditors(binder);
@@ -400,7 +399,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
      * This binder doesn't have much to offer over the standard spring data binding except that it will
      * handle DynaBeans.
      */
-    public static BindException simpleBindParameters(Object command, String commandName, PropertyValues params)
+    public static @NotNull BindException simpleBindParameters(Object command, String commandName, PropertyValues params)
     {
         //params = _fixupPropertyMap(params);
 
@@ -646,12 +645,12 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         return _commandClass;
     }
 
-    public void setCommandClass(Class commandClass)
+    public void setCommandClass(@NotNull Class commandClass)
     {
         _commandClass = commandClass;
     }
 
-    protected final Object createCommand()
+    protected final @NotNull Object createCommand()
     {
         return BeanUtils.instantiateClass(getCommandClass());
     }

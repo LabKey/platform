@@ -17,6 +17,7 @@
 package org.labkey.api.action;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.RedirectException;
@@ -93,7 +94,7 @@ public abstract class RedirectAction<FORM> extends BaseViewAction<FORM>
 
     public abstract @Nullable URLHelper getURL(FORM form, Errors errors);
 
-    public BindException bindParameters(PropertyValues m) throws Exception
+    public @NotNull BindException bindParameters(PropertyValues m) throws Exception
     {
         return defaultBindParameters(getCommand(), m);
     }
