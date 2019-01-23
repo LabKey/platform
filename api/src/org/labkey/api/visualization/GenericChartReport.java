@@ -24,6 +24,7 @@ import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.ContainerUser;
 
 import java.io.IOException;
 
@@ -341,5 +342,5 @@ public abstract class GenericChartReport extends AbstractReport
         }
     }
 
-    public abstract void setChartViewDescriptor(ChartReport report, ViewContext viewContext) throws IOException, ValidationException;
+    public abstract void setChartViewDescriptor(ChartReport report, ContainerUser context) throws IOException, ValidationException;
 }

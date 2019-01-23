@@ -369,13 +369,16 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
 
     public void initProperties()
     {
-        if (getReportId() != null )
+        if (getReportId() != null)
         {
             try
             {
                 // now initialize the property manager props
-                for (Pair<DomainProperty, Object> pair : ReportPropsManager.get().getProperties(getEntityId(), lookupContainer()))
-                    _mapReportProps.put(pair.getKey().getName(), pair.getValue());
+                if (lookupContainer() != null)
+                {
+                    for (Pair<DomainProperty, Object> pair : ReportPropsManager.get().getProperties(getEntityId(), lookupContainer()))
+                        _mapReportProps.put(pair.getKey().getName(), pair.getValue());
+                }
             }
             catch (Exception e)
             {

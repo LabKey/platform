@@ -22,8 +22,12 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.query.CustomView;
 import org.labkey.api.query.QueryChangeListener;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -35,6 +39,7 @@ import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.ContainerUser;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -190,35 +195,35 @@ public class GenericChartReportDescriptor extends VisualizationReportDescriptor
         return newJson.toString();
     }
 
-    public void updateChartViewJsonConfig(ViewContext viewContext) throws ValidationException
+    public void updateChartViewJsonConfig(ContainerUser context) throws ValidationException
     {
-        setJSON(getChartViewJSON(viewContext));
+        setJSON(getChartViewJSON(context));
     }
 
-    public String getChartViewJSON(ViewContext viewContext) throws ValidationException
+    private String getChartViewJSON(ContainerUser context) throws ValidationException
     {
         String schemaName = getProperty(ReportDescriptor.Prop.schemaName);
         String queryName = getProperty(ReportDescriptor.Prop.queryName);
         String viewName = getProperty(ReportDescriptor.Prop.viewName);
-        String dataRegionName = getProperty(ReportDescriptor.Prop.dataRegionName);
         String plotName = getReportName();
         boolean isLogX = BooleanUtils.toBoolean(getProperty(ChartReportDescriptor.Prop.isLogX));
         boolean isLogY = BooleanUtils.toBoolean(getProperty(ChartReportDescriptor.Prop.isLogY));
         String xColName = getProperty(ChartReportDescriptor.Prop.columnXName);
         String[] ys = getColumnYName();
         List<String> yColNames = Arrays.asList(ys);
-        int width = NumberUtils.toInt(getProperty(ChartReportDescriptor.Prop.width), 640);
-        int height = NumberUtils.toInt(getProperty(ChartReportDescriptor.Prop.height), 400);
+        int width = NumberUtils.toInt(getProperty(ChartReportDescriptor.Prop.width), -1);
+        int height = NumberUtils.toInt(getProperty(ChartReportDescriptor.Prop.height), -1);
 
         boolean isMultiYAxis = BooleanUtils.toBoolean(getProperty(ChartReportDescriptor.Prop.showMultipleYAxis));
         boolean showMultiPlot = BooleanUtils.toBoolean(getProperty(ChartReportDescriptor.Prop.showMultipleCharts));
         boolean showLines = BooleanUtils.toBoolean(getProperty(ChartReportDescriptor.Prop.showLines));
         //isVerticalOrientation not supported in new chart
 
-        QueryView queryView = getSourceQueryView(viewContext, schemaName, queryName, viewName, dataRegionName);
-
         JSONObject measures = new JSONObject();
-        List<DisplayColumn> displayColumns = queryView.getDisplayColumns();
+
+        // get the display columns for the table representing this report
+        List<DisplayColumn> displayColumns = getDisplayColumns(context, schemaName, queryName, viewName);
+
         DisplayColumn xCol = null;
         List<DisplayColumn> yCols = new ArrayList<>();
         String caseInsensitiveXColName = xColName.toLowerCase();
@@ -287,9 +292,17 @@ public class GenericChartReportDescriptor extends VisualizationReportDescriptor
         labels.put("main", plotName);
         newChartConfig.put("labels", labels);
 
-        newChartConfig.put("renderType", showLines ? "line_plot" : "scatter_plot");
-        newChartConfig.put("width", width);
-        newChartConfig.put("height", height);
+        // need to set the renderType both on the JSON and property
+        String renderType = showLines ? "line_plot" : "scatter_plot";
+        newChartConfig.put("renderType", renderType);
+        setProperty(Prop.renderType, renderType);
+
+        // don't set an explicit width or height if one has either not been specified or if
+        // it were the legacy default (640 x 200)
+        if (width != -1 && width != 640)
+            newChartConfig.put("width", width);
+        if (height != -1 && height != 200)
+            newChartConfig.put("height", height);
 
         JSONObject newJson = new JSONObject();
         newJson.put("chartConfig", newChartConfig);
@@ -304,7 +317,7 @@ public class GenericChartReportDescriptor extends VisualizationReportDescriptor
         newQueryConfig.put("queryLabel", queryName);
         newQueryConfig.put("schemaName", schemaName);
         JSONArray colArray = new JSONArray();
-        queryView.getDisplayColumns().forEach(col -> {
+        displayColumns.forEach(col -> {
             if (col.getColumnInfo() != null)
                 colArray.put(col.getColumnInfo().getFieldKey());
         });
@@ -367,4 +380,40 @@ public class GenericChartReportDescriptor extends VisualizationReportDescriptor
         return queryView;
     }
 
+    private List<DisplayColumn> getDisplayColumns(ContainerUser context, String schemaName, String queryName, String viewName) throws ValidationException
+    {
+        UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), schemaName);
+        if (schema == null)
+        {
+            throw new ValidationException("Invalid schema name: " + schemaName + ". ");
+        }
+        QueryDefinition queryDefinition = schema.getQueryDef(queryName);
+        if (queryDefinition == null)
+            queryDefinition = QueryService.get().createQueryDefForTable(schema, queryName);
+
+        if (queryDefinition != null)
+        {
+            List<QueryException> errors = new ArrayList<>();
+            TableInfo tableInfo = queryDefinition.getTable(schema, errors, true);
+            if (errors.isEmpty())
+            {
+                CustomView customView = QueryService.get().getCustomView(context.getUser(), context.getContainer(), null, schemaName, queryName, viewName);
+                return queryDefinition.getDisplayColumns(customView, tableInfo);
+            }
+            else
+            {
+                StringBuilder sb = new StringBuilder();
+                String delim = "";
+
+                for (QueryException error : errors)
+                {
+                    sb.append(delim).append(error.getMessage());
+                    delim = "\n";
+                }
+                throw new ValidationException("Unable to get table or query: " + sb.toString());
+            }
+        }
+        else
+            throw new ValidationException("Unable to get a query definition for table : " + queryName);
+    }
 }

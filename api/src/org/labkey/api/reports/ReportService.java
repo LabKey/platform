@@ -180,11 +180,13 @@ public interface ReportService
     boolean tryValidateReportPermissions(ContainerUser context, Report report, List<ValidationError> errors);
 
     /**
-     * Convert legacy chart view report to new JS report
+     * Convert legacy chart view report to new JS report, this method (and all related conversion code) can be deleted
+     * in version : 21.2
      * @param report
      * @return
      */
-    Report createConvertedChartViewReportInstance(Report report, ViewContext viewContext);
+    @Deprecated
+    Report createConvertedChartViewReportInstance(Report report, ContainerUser context);
 
     boolean shouldConvertLegacyChart(Report report);
 
