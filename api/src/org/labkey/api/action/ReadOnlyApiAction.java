@@ -50,7 +50,7 @@ import java.net.SocketTimeoutException;
 import java.util.Map;
 
 /**
- * NOTE: Even if your action is read-only, consider extending MutableApiAction anyway if it does not need to support GET,
+ * NOTE: Even if your action is read-only, consider extending MutatingApiAction anyway if it does not need to support GET,
  * and most API actions _do_not_ need to support GET, because they are called from code.
  *
  * NOTE: Despite the name this does not enforce ReadOnly-ness, it is only a marker of intent.
@@ -60,11 +60,12 @@ import java.util.Map;
  */
 public abstract class ReadOnlyApiAction<FORM> extends BaseViewAction<FORM>
 {
+    private final Marshaller _marshaller;
+
     private ApiResponseWriter.Format _reqFormat = null;
     private ApiResponseWriter.Format _respFormat = ApiResponseWriter.Format.JSON;
     private String _contentTypeOverride = null;
     private double _requestedApiVersion = -1;
-    private Marshaller _marshaller = null;
     private ObjectMapper _mapper;
 
     protected enum CommonParameters
@@ -271,7 +272,7 @@ public abstract class ReadOnlyApiAction<FORM> extends BaseViewAction<FORM>
     @NotNull
     protected Pair<FORM, BindException> populateForm() throws Exception
     {
-        try (Timing t = MiniProfiler.step("bind"))
+        try (Timing ignored = MiniProfiler.step("bind"))
         {
             String contentType = getViewContext().getRequest().getContentType();
             if (null != contentType)
@@ -302,16 +303,10 @@ public abstract class ReadOnlyApiAction<FORM> extends BaseViewAction<FORM>
     @NotNull
     protected Pair<FORM, BindException> defaultPopulateForm() throws Exception
     {
-        BindException errors = null;
-        FORM form = null;
-
         saveRequestedApiVersion(getViewContext().getRequest(), null);
 
-        if (null != getCommandClass())
-        {
-            errors = defaultBindParameters(getCommand(), getPropertyValues());
-            form = (FORM)errors.getTarget();
-        }
+        BindException errors = defaultBindParameters(getCommand(), getPropertyValues());
+        FORM form = (FORM)errors.getTarget();
 
         return Pair.of(form, errors);
     }
@@ -328,11 +323,8 @@ public abstract class ReadOnlyApiAction<FORM> extends BaseViewAction<FORM>
         try
         {
             Class c = getCommandClass();
-            if (c != null)
-            {
-                ObjectReader reader = getObjectReader(c);
-                form = reader.readValue(getViewContext().getRequest().getInputStream());
-            }
+            ObjectReader reader = getObjectReader(c);
+            form = reader.readValue(getViewContext().getRequest().getInputStream());
             errors = new NullSafeBindException(form != null ? form : new Object(), "form");
         }
         catch (SocketTimeoutException x)

@@ -48,18 +48,13 @@ public abstract class OldRedirectAction<FORM> extends BaseViewAction<FORM>
 
     public final ModelAndView handleRequest() throws Exception
     {
-        FORM form = null;
-        BindException errors = null;
-        if (null != getCommandClass())
-        {
-            errors = bindParameters(getPropertyValues());
-            form = (FORM)errors.getTarget();
-        }
-        boolean success = errors == null || !errors.hasErrors();
+        BindException errors = bindParameters(getPropertyValues());
+        FORM form = (FORM)errors.getTarget();
+        boolean success = !errors.hasErrors();
 
         if (success && null != form)
             validate(form, errors);
-        success = errors == null || !errors.hasErrors();
+        success = !errors.hasErrors();
 
         if (success)
         {

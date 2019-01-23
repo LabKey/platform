@@ -53,16 +53,11 @@ public abstract class SimpleViewAction<FORM> extends BaseViewAction<FORM> implem
         BindException errors;
         try (Timing ignored = MiniProfiler.step("bind"))
         {
-            if (null == getCommandClass())
-                errors = new NullSafeBindException(new Object(), "command");
-            else
-            {
-                // GET parameters have already been validated in ViewServlet
-                PropertyValues pvs = getPropertyValues();
-                if (!"GET".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
-                    validateUnicodePropertyValues(pvs);
-                errors = bindParameters(pvs);
-            }
+            // GET parameters have already been validated in ViewServlet
+            PropertyValues pvs = getPropertyValues();
+            if (!"GET".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
+                validateUnicodePropertyValues(pvs);
+            errors = bindParameters(pvs);
         }
 
         FORM form;

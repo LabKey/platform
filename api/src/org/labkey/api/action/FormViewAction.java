@@ -63,18 +63,8 @@ public abstract class FormViewAction<FORM> extends BaseViewAction<FORM> implemen
         BindException errors;
         try (Timing ignored = MiniProfiler.step("bind"))
         {
-            if (null != getCommandClass())
-            {
-                errors = bindParameters(getPropertyValues());
-                form = (FORM)errors.getTarget();
-            }
-            else
-            {
-                // If the action has not specified a generic form, we should not hand them
-                // a null BindException -- just new one up
-                form = (FORM)new Object();
-                errors = new NullSafeBindException(form, getCommandName());
-            }
+            errors = bindParameters(getPropertyValues());
+            form = (FORM)errors.getTarget();
         }
 
         return handleRequest(form, errors);

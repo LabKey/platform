@@ -42,6 +42,7 @@ public abstract class FormApiAction<FORM> extends ExtFormAction<FORM> implements
     {
     }
 
+    @Deprecated // Not used - delete?
     protected FormApiAction(Class<? extends FORM> formClass)
     {
         super(formClass);
@@ -58,14 +59,9 @@ public abstract class FormApiAction<FORM> extends ExtFormAction<FORM> implements
     @Override
     protected ModelAndView handleGet() throws Exception
     {
-        FORM form = null;
-        BindException errors = null;
-        if (null == getCommandClass())
-            errors = new NullSafeBindException(new Object(), "command");
-        else
-            errors = bindParameters(getPropertyValues());
+        BindException errors = bindParameters(getPropertyValues());
+        FORM form = (FORM)errors.getTarget();
 
-        form = (FORM)errors.getTarget();
         validate(form, errors);
 
         ModelAndView v;

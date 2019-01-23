@@ -50,19 +50,8 @@ public abstract class RedirectAction<FORM> extends BaseViewAction<FORM>
 
     public final ModelAndView handleRequest() throws Exception
     {
-        FORM form;
-        BindException errors;
-        if (null != getCommandClass())
-        {
-            errors = bindParameters(getPropertyValues());
-            form = (FORM)errors.getTarget();
-        }
-        else
-        {
-            // If the action has not specified a generic form then just new up a BindException
-            form = (FORM)new Object();
-            errors = new NullSafeBindException(form, getCommandName());
-        }
+        BindException errors = bindParameters(getPropertyValues());
+        FORM form = (FORM)errors.getTarget();
         boolean success = !errors.hasErrors();
 
         if (success && null != form)

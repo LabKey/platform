@@ -69,20 +69,14 @@ public abstract class ConfirmAction<FORM> extends BaseViewAction
     {
         ViewContext context = HttpView.currentContext();
 
-        FORM form = null;
-        BindException errors = null;
+        BindException errors = bindParameters(getPropertyValues());
+        FORM form = (FORM)errors.getTarget();
 
-        if (null != getCommandClass())
-        {
-            errors = bindParameters(getPropertyValues());
-            form = (FORM)errors.getTarget();
-        }
-
-        boolean success = errors == null || !errors.hasErrors();
+        boolean success = !errors.hasErrors();
 
         if (success && null != form)
             validate(form, errors);
-        success = errors == null || !errors.hasErrors();
+        success = !errors.hasErrors();
 
         if (success)
         {

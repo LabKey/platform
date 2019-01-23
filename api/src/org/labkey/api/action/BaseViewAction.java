@@ -106,7 +106,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
                 if (types.length < 1)
                     continue;
                 Class typeCurrent = types[0];
-                assert null == getCommandClass() || typeCurrent.equals(getCommandClass());
+                assert null == _commandClass || typeCurrent.equals(_commandClass);
 
                 // Using templated classes to extend a base action can lead to multiple
                 // versions of a method with acceptable types, so take the most extended
@@ -261,10 +261,6 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
 
     protected @NotNull FORM getCommand(HttpServletRequest request) throws Exception
     {
-        if (getCommandClass() == null)
-        {
-            return (FORM)new Object();
-        }
         FORM command = (FORM) createCommand();
 
         if (command instanceof HasViewContext)
@@ -640,8 +636,10 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         return _debug;
     }
 
-    public Class getCommandClass()
+    public @NotNull Class getCommandClass()
     {
+        if (null == _commandClass)
+            throw new IllegalStateException("NULL _commandClass in " + getClass().getName());
         return _commandClass;
     }
 
