@@ -229,7 +229,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
 
     @Nullable
     @Override
-    public Report createConvertedChartViewReportInstance(Report report, ViewContext viewContext)
+    public Report createConvertedChartViewReportInstance(Report report, ContainerUser context)
     {
         ReportDescriptor descriptor = report.getDescriptor();
         if (!(descriptor instanceof ChartReportDescriptor))
@@ -240,7 +240,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
             if (newReport instanceof GenericChartReport)
             {
                 GenericChartReport chartReport = (GenericChartReport) newReport;
-                chartReport.setChartViewDescriptor((ChartReport) report, viewContext);
+                chartReport.setChartViewDescriptor((ChartReport) report, context);
             }
         }
         catch (IOException | ValidationException e)
@@ -809,6 +809,16 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
                 }
             }
 
+            // if we are importing legacy ChartReports, convert them to the newer GenericChartReport
+            if (report instanceof ChartReport)
+            {
+                report.getDescriptor().setContainer(ctx.getContainer().getId());
+                Report convertedReport = ReportService.get().createConvertedChartViewReportInstance(report, new DefaultContainerUser(ctx.getContainer(), ctx.getUser()));
+                if (convertedReport != null)
+                {
+                    descriptor = convertedReport.getDescriptor();
+                }
+            }
             int rowId = _saveReport(ctx.getUser(), ctx.getContainer(), key, descriptor).getRowId();
             descriptor.setReportId(new DbReportIdentifier(rowId));
 

@@ -1549,6 +1549,7 @@ query/resources/schemas/dbscripts/postgresql/obsolete/query-14.20-14.30.sql -tex
 query/resources/schemas/dbscripts/postgresql/obsolete/query-17.20-17.21.sql -text
 query/resources/schemas/dbscripts/postgresql/query-0.00-14.30.sql -text
 query/resources/schemas/dbscripts/postgresql/query-17.20-17.30.sql -text
+query/resources/schemas/dbscripts/postgresql/query-18.30-18.31.sql -text
 query/resources/schemas/dbscripts/sqlserver/obsolete/query-0.00-12.10.sql -text
 query/resources/schemas/dbscripts/sqlserver/obsolete/query-0.00-12.30.sql -text
 query/resources/schemas/dbscripts/sqlserver/obsolete/query-0.00-13.10.sql -text
@@ -1560,6 +1561,7 @@ query/resources/schemas/dbscripts/sqlserver/obsolete/query-14.20-14.30.sql -text
 query/resources/schemas/dbscripts/sqlserver/obsolete/query-17.20-17.21.sql -text
 query/resources/schemas/dbscripts/sqlserver/query-0.00-14.30.sql -text
 query/resources/schemas/dbscripts/sqlserver/query-17.20-17.30.sql -text
+query/resources/schemas/dbscripts/sqlserver/query-18.30-18.31.sql -text
 query/resources/schemas/query.xml -text
 query/resources/views/QWPDemo.html -text
 query/resources/views/QWPDemo.view.xml -text
@@ -1612,6 +1614,7 @@ query/src/org/labkey/query/QueryModule.java -text
 query/src/org/labkey/query/QueryServiceImpl.java -text
 query/src/org/labkey/query/QuerySnapshotDefImpl.java -text
 query/src/org/labkey/query/QuerySnapshotQueryChangeListener.java -text
+query/src/org/labkey/query/QueryUpgradeCode.java -text
 query/src/org/labkey/query/QueryWebdavProvider.java -text
 query/src/org/labkey/query/QueryWriter.java -text
 query/src/org/labkey/query/TableQueryDefinition.java -text

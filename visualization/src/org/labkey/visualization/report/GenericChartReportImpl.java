@@ -103,11 +103,13 @@ public class GenericChartReportImpl extends GenericChartReport implements SvgThu
             Report origReport = ReportService.get().getReport(context.getContainer(), getReportId().getRowId());
             String origJson = origReport != null  ? origReport.getDescriptor().getProperty(ReportDescriptor.Prop.json) : null;
 
-            JSONObject origChartConfig = new JSONObject(origJson).getJSONObject("chartConfig");
-            JSONObject newChartConfig = new JSONObject(newJson).getJSONObject("chartConfig");
-            return newChartConfig != null && !newChartConfig.equals(origChartConfig);
+            if (origJson != null)
+            {
+                JSONObject origChartConfig = new JSONObject(origJson).getJSONObject("chartConfig");
+                JSONObject newChartConfig = new JSONObject(newJson).getJSONObject("chartConfig");
+                return newChartConfig != null && !newChartConfig.equals(origChartConfig);
+            }
         }
-
         return false;
     }
 
@@ -118,13 +120,13 @@ public class GenericChartReportImpl extends GenericChartReport implements SvgThu
     }
 
     @Override
-    public void setChartViewDescriptor(ChartReport report, ViewContext viewContext) throws IOException, ValidationException
+    public void setChartViewDescriptor(ChartReport report, ContainerUser context) throws IOException, ValidationException
     {
-        GenericChartReportDescriptor descriptor = getConvertedChartViewDescriptor(report, viewContext);
+        GenericChartReportDescriptor descriptor = getConvertedChartViewDescriptor(report, context);
         setDescriptor(descriptor);
     }
 
-    private GenericChartReportDescriptor getConvertedChartViewDescriptor(ChartReport report, ViewContext viewContext) throws IOException, ValidationException
+    private GenericChartReportDescriptor getConvertedChartViewDescriptor(ChartReport report, ContainerUser context) throws IOException, ValidationException
     {
         String newDescriptorType = GenericChartReportDescriptor.TYPE;
         String newReportType = GenericChartReport.TYPE;
@@ -159,7 +161,7 @@ public class GenericChartReportImpl extends GenericChartReport implements SvgThu
         }
         if (!(descriptor instanceof GenericChartReportDescriptor))
             return null;
-        ((GenericChartReportDescriptor) descriptor).updateChartViewJsonConfig(viewContext);
+        ((GenericChartReportDescriptor) descriptor).updateChartViewJsonConfig(context);
         return (GenericChartReportDescriptor) descriptor;
     }
 

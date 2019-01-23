@@ -17,6 +17,7 @@
 package org.labkey.query;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.audit.AuditLogService;
@@ -26,6 +27,7 @@ import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.message.digest.DailyMessageDigest;
@@ -148,7 +150,7 @@ public class QueryModule extends DefaultModule
 
     public double getVersion()
     {
-        return 18.30;
+        return 18.31;
     }
 
     protected void init()
@@ -390,5 +392,11 @@ public class QueryModule extends DefaultModule
         json.put("hasEditQueriesPermission", hasEditQueriesPermission);
 
         return json;
+    }
+
+    @Override
+    public @Nullable UpgradeCode getUpgradeCode()
+    {
+        return new QueryUpgradeCode();
     }
 }
