@@ -6172,7 +6172,7 @@ public class QueryController extends SpringActionController
             _schemas = schemas;
         }
 
-        public BindException bindParameters(PropertyValues values)
+        public @NotNull BindException bindParameters(PropertyValues values)
         {
             BindException errors = new NullSafeBindException(this, "form");
 

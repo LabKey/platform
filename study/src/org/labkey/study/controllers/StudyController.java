@@ -1528,7 +1528,7 @@ public class StudyController extends BaseStudyController
     public class ManageStudyPropertiesAction extends FormApiAction<TableViewForm>
     {
         @Override
-        protected TableViewForm getCommand(HttpServletRequest request)
+        protected @NotNull TableViewForm getCommand(HttpServletRequest request)
         {
             User user = getUser();
             UserSchema schema = QueryService.get().getUserSchema(user, getContainer(), SchemaKey.fromParts(StudyQuerySchema.SCHEMA_NAME));

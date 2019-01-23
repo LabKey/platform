@@ -1286,7 +1286,7 @@ public class AssayController extends SpringActionController
     public class SetResultFlagAction extends MutatingApiAction<SetResultFlagForm>
     {
         @Override
-        protected SetResultFlagForm getCommand(HttpServletRequest request)
+        protected @NotNull SetResultFlagForm getCommand(HttpServletRequest request)
         {
             return new SetResultFlagForm();
         }

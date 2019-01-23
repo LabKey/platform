@@ -18,6 +18,7 @@ package org.labkey.study.query;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.BaseViewAction;
@@ -578,7 +579,7 @@ public class DatasetQueryView extends StudyQueryView
         private int _datasetId;
         private int _visitRowId;
 
-        public BindException bindParameters(PropertyValues params)
+        public @NotNull BindException bindParameters(PropertyValues params)
         {
             return BaseViewAction.springBindParameters(this, "form", params);
         }

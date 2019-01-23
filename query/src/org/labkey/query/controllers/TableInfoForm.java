@@ -16,6 +16,7 @@
 
 package org.labkey.query.controllers;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.data.TableInfo;
@@ -38,7 +39,7 @@ public class TableInfoForm extends QueryForm
     {
     }
 
-    protected BindException doBindParameters(PropertyValues in)
+    protected @NotNull BindException doBindParameters(PropertyValues in)
     {
         BindException errors = super.doBindParameters(in);
 
