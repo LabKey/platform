@@ -187,7 +187,7 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
     /** Get select list for named (hopefully unique!) column to title column, including filter on table. */
     default NamedObjectList getSelectList(String columnName, @Nullable LookupFilterType filter)
     {
-        return getSelectList(columnName);
+        return getSelectList(columnName);       // If not overridden; ignore filter
     }
 
     ColumnInfo getColumn(@NotNull String colName);

@@ -1117,6 +1117,9 @@
     </xs:complexType>
 
     <xs:complexType name="LookupFilterType">
+        <xs:annotation>
+            <xs:documentation>Supported for Query metadata</xs:documentation>
+        </xs:annotation>
         <xs:attribute name="columnName" type="xs:string" use="required">
             <xs:annotation>
                 <xs:documentation>The column to filter on for this clause</xs:documentation>

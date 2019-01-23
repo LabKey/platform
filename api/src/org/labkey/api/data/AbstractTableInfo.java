@@ -347,10 +347,10 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         {
             filter = new SimpleFilter();
             CompareType compareType = CompareType.getByURLKey(lookupFilterType.getOperator().toString());
+            FieldKey fieldKey = FieldKey.fromString(lookupFilterType.getColumnName());
+            ColumnInfo filterColumn = getColumn(fieldKey);
             if (compareType != null)
             {
-                FieldKey fieldKey = FieldKey.fromString(lookupFilterType.getColumnName());
-                ColumnInfo filterColumn = getColumn(fieldKey);
                 if (null != filterColumn)
                 {
                     try
@@ -377,13 +377,17 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                     }
                     catch (ConversionException e)
                     {
-                        LOG.warn("Could not construct lookup filter: ", e);
+                        LOG.warn("Could not construct lookup filter: " + makeLookupFilterMessage(lookupFilterType), e);
                     }
+                }
+                else
+                {
+                    LOG.warn("Lookup filter column not found: " + makeLookupFilterMessage(lookupFilterType));
                 }
             }
             else
             {
-                LOG.warn("Could not find CompareType for " + lookupFilterType.getOperator().toString() + ", ignoring");
+                LOG.warn("Could not find CompareType: " + makeLookupFilterMessage(lookupFilterType));
             }
         }
 
@@ -392,6 +396,13 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         new TableSelector(this, cols, filter, sort).forEach(rs -> ret.put(new SimpleNamedObject(rs.getString(1), rs.getString(titleIndex))));
 
         return ret;
+    }
+
+    private String makeLookupFilterMessage(LookupFilterType lookupFilterType)
+    {
+        String containerPath = null != getUserSchema() ? getUserSchema().getContainer().getPath() : null;
+        return "\"" + getPublicSchemaName() + "." + getPublicName() + "." + lookupFilterType.getColumnName() + "\" '" +
+                lookupFilterType.getOperator().toString() + "' [" + (null != containerPath ? containerPath : "<unknown folder>") + "]";
     }
 
     public List<ColumnInfo> getUserEditableColumns()
