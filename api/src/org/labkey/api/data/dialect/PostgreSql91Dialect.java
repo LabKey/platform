@@ -1407,7 +1407,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         //rs = conn.getMetaData().getFunctions(dbName, tempSchemaName, "%");
 
         new SqlSelector(coreSchema, "SELECT proname AS SPECIFIC_NAME, CAST(proargtypes AS VARCHAR) FROM pg_proc WHERE pronamespace=(select oid from pg_namespace where nspname = ?)", DbSchema.getTemp().getName()).forEach(
-            new ForEachBlock<ResultSet>()
+            new ForEachBlock<>()
             {
                 private Map<String, String> _types = null;
 
@@ -1734,11 +1734,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         {
             try
             {
-                // We could also consider using Statement.setFetchSize() instead of relying on the transaction isolation,
-                // but there's not a compelling reason to switch since we'd need to do it on a per-statement level
-                // and we still have to set the connection to be non-auto commit.
-                // See http://stackoverflow.com/questions/1468036/java-jdbc-ignores-setfetchsize
-                connection.setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED);
+                // Used in conjunction with stmt.setFetchSize() to force uncached ResultSets
                 connection.setAutoCommit(false);
 
                 ret = () -> connection.setAutoCommit(true);
@@ -1754,6 +1750,13 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         return ret;
     }
 
+
+    @Override
+    public void configureToDisableJdbcCaching(Statement stmt) throws SQLException
+    {
+        super.configureToDisableJdbcCaching(stmt);
+        stmt.setFetchSize(1000);
+    }
 
     @Override
     public SQLFragment getISOFormat(SQLFragment date)

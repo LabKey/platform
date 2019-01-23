@@ -76,6 +76,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.RandomAccess;
 import java.util.Set;
@@ -616,11 +617,7 @@ public class DbScope
         synchronized (_sharedConnections)
         {
             Thread result = _sharedConnections.get(Thread.currentThread());
-            if (result == null)
-            {
-                return Thread.currentThread();
-            }
-            return result;
+            return Objects.requireNonNullElseGet(result, Thread::currentThread);
         }
     }
 
@@ -659,7 +656,7 @@ public class DbScope
         final Connection conn;
 
         if (null == t)
-            conn = getSqlDialect().isPostgreSQL() ? getPooledConnection() : getCurrentConnection(log); // For now, don't share connections on PostgreSQL
+            conn = getCurrentConnection(log);
         else
             conn = t.getConnection();
 
@@ -766,6 +763,7 @@ public class DbScope
         }
     }
 
+    // Get the connection associated with this thread
     private Connection getCurrentConnection(@Nullable Logger log) throws SQLException
     {
         return getConnectionHolder().get(log);

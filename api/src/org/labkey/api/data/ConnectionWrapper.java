@@ -876,6 +876,11 @@ public class ConnectionWrapper implements java.sql.Connection
         _runOnClose = _scope.getSqlDialect().configureToDisableJdbcCaching(this, _scope, sql);
     }
 
+    public void configureToDisableJdbcCaching(Statement stmt) throws SQLException
+    {
+        _scope.getSqlDialect().configureToDisableJdbcCaching(stmt);
+    }
+
     @Override
     public <T> T unwrap(Class<T> iface)
     {

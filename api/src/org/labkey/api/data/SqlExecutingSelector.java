@@ -342,11 +342,12 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
                     DbScope scope = getScope();
                     conn = getConnection();
 
-                    if (conn instanceof ConnectionWrapper)
-                    {
-                        // Ask the ConnectionWrapper to tweak connection settings, if needed
-                        ((ConnectionWrapper) conn).configureToDisableJdbcCaching(_sql);
-                    }
+//  #34406: Don't tweak connection settings on PostgreSQL for now. Get coverage on PostgreSQL connection sharing.
+//                    if (conn instanceof ConnectionWrapper)
+//                    {
+//                        // Ask the ConnectionWrapper to tweak connection settings, if needed
+//                        ((ConnectionWrapper) conn).configureToDisableJdbcCaching(_sql);
+//                    }
 
                     try
                     {
@@ -436,14 +437,14 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
 
             if (null == parameters || parameters.isEmpty())
             {
-                Statement statement = conn.createStatement(scrollable ? ResultSet.TYPE_SCROLL_INSENSITIVE : ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-                initializeStatement(statement, asyncRequest, statementMaxRows);
-                rs = statement.executeQuery(sql);
+                Statement stmt = conn.createStatement(scrollable ? ResultSet.TYPE_SCROLL_INSENSITIVE : ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+                initializeStatement(conn, stmt, asyncRequest, statementMaxRows);
+                rs = stmt.executeQuery(sql);
             }
             else
             {
                 PreparedStatement stmt = conn.prepareStatement(sql, scrollable ? ResultSet.TYPE_SCROLL_INSENSITIVE : ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-                initializeStatement(stmt, asyncRequest, statementMaxRows);
+                initializeStatement(conn, stmt, asyncRequest, statementMaxRows);
 
                 try (Parameter.ParameterList jdbcParameters = new Parameter.ParameterList())
                 {
@@ -461,23 +462,28 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
             return rs;
         }
 
-        private void initializeStatement(Statement statement, @Nullable AsyncQueryRequest asyncRequest, @Nullable Integer statementMaxRows) throws SQLException
+        private void initializeStatement(Connection conn, Statement stmt, @Nullable AsyncQueryRequest asyncRequest, @Nullable Integer statementMaxRows) throws SQLException
         {
             // Don't set max rows if null or special ALL_ROWS value (we're assuming statement.getMaxRows() defaults to 0, though this isn't actually documented...)
             if (null != statementMaxRows && Table.ALL_ROWS != statementMaxRows)
             {
-                statement.setMaxRows(statementMaxRows == Table.NO_ROWS ? 1 : statementMaxRows);
+                stmt.setMaxRows(statementMaxRows == Table.NO_ROWS ? 1 : statementMaxRows);
+            }
+
+            if (conn instanceof ConnectionWrapper)
+            {
+                ((ConnectionWrapper) conn).configureToDisableJdbcCaching(stmt);
             }
 
             if (asyncRequest != null)
             {
-                asyncRequest.setStatement(statement);
+                asyncRequest.setStatement(stmt);
 
                 // If this is a background request then push the original stack trace into the statement wrapper so it gets
                 // logged and stored in the query profiler.
-                if (statement instanceof StatementWrapper)
+                if (stmt instanceof StatementWrapper)
                 {
-                    StatementWrapper sw = (StatementWrapper)statement;
+                    StatementWrapper sw = (StatementWrapper)stmt;
                     sw.setStackTrace(asyncRequest.getCreationStackTrace());
                     sw.setRequestThread(true);      // AsyncRequests aren't really background threads; treat them as request threads.
                     sw.setQueryLogging(getQueryLogging());
@@ -485,9 +491,9 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
             }
             else
             {
-                if (statement instanceof StatementWrapper)
+                if (stmt instanceof StatementWrapper)
                 {
-                    StatementWrapper sw = (StatementWrapper)statement;
+                    StatementWrapper sw = (StatementWrapper)stmt;
                     sw.setQueryLogging(getQueryLogging());
                 }
             }
