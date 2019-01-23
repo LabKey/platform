@@ -124,12 +124,7 @@ public class DataRegionSelection
      */
     public static @NotNull Set<Integer> getSelectedIntegers(ViewContext context, boolean clearSelection)
     {
-        Set<Integer> result = new LinkedHashSet<>();
-
-        for (String s : getSelected(context, null, false, clearSelection))
-            result.add(Integer.parseInt(s));
-
-        return result;
+        return asInts(getSelected(context, null, false, clearSelection));
     }
 
     public static String getSelectionKeyFromRequest(ViewContext context)
@@ -174,6 +169,23 @@ public class DataRegionSelection
             }
         }
         return Collections.unmodifiableSet(result);
+    }
+
+    /**
+     * Get the selected items from the request parameters (the current page of a data region) and session state as integers.
+     */
+    public static @NotNull Set<Integer> getSelectedIntegers(ViewContext context, @Nullable String key, boolean mergeSession, boolean clearSession)
+    {
+        return asInts(getSelected(context, key, mergeSession, clearSession));
+    }
+
+    private static @NotNull Set<Integer> asInts(Set<String> ids)
+    {
+        Set<Integer> result = new LinkedHashSet<>();
+        for (String s : ids)
+            result.add(Integer.parseInt(s));
+
+        return result;
     }
 
     /**

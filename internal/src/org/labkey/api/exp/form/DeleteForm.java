@@ -37,7 +37,7 @@ public class DeleteForm extends ProtocolIdForm implements DataRegionSelection.Da
         {
             return singleton(_singleObjectRowId);
         }
-        return DataRegionSelection.getSelectedIntegers(getViewContext(), clear);
+        return DataRegionSelection.getSelectedIntegers(getViewContext(), getDataRegionSelectionKey(), true, clear);
     }
 
     public Integer getSingleObjectRowId()
@@ -68,5 +68,10 @@ public class DeleteForm extends ProtocolIdForm implements DataRegionSelection.Da
     public void setDataRegionSelectionKey(String dataRegionSelectionKey)
     {
         _dataRegionSelectionKey = dataRegionSelectionKey;
+    }
+
+    public void clearSelected()
+    {
+        DataRegionSelection.clearAll(getViewContext(), getDataRegionSelectionKey());
     }
 }
