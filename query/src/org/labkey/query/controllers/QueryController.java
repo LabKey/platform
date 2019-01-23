@@ -5136,13 +5136,8 @@ public class QueryController extends SpringActionController
     @ActionNames("clearSelected, selectNone")
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
-    public static class SelectNoneAction extends ApiAction<SelectForm>
+    public static class SelectNoneAction extends MutatingApiAction<SelectForm>
     {
-        public SelectNoneAction()
-        {
-            super(SelectForm.class);
-        }
-
         public ApiResponse execute(final SelectForm form, BindException errors)
         {
             DataRegionSelection.clearAll(getViewContext(), form.getKey());
@@ -5186,13 +5181,8 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public static class GetSelectedAction extends ApiAction<SelectForm>
+    public static class GetSelectedAction extends ReadOnlyApiAction<SelectForm>
     {
-        public GetSelectedAction()
-        {
-            super(SelectForm.class);
-        }
-
         public ApiResponse execute(final SelectForm form, BindException errors)
         {
             Set<String> selected = DataRegionSelection.getSelected(getViewContext(), form.getKey(), true, false);
@@ -5202,13 +5192,8 @@ public class QueryController extends SpringActionController
 
     @ActionNames("setSelected, setCheck")
     @RequiresPermission(ReadPermission.class)
-    public static class SetCheckAction extends ApiAction<SetCheckForm>
+    public static class SetCheckAction extends MutatingApiAction<SetCheckForm>
     {
-        public SetCheckAction()
-        {
-            super(SetCheckForm.class);
-        }
-
         public ApiResponse execute(final SetCheckForm form, BindException errors)
         {
             String[] ids = form.getId(getViewContext().getRequest());
