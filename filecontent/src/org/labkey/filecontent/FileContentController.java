@@ -823,7 +823,11 @@ public class FileContentController extends SpringActionController
         {
             FileContentService svc = FileContentService.get();
             String uri = svc.getDomainURI(getContainer());
-            OntologyManager.ensureDomainDescriptor(uri, FileContentServiceImpl.PROPERTIES_DOMAIN, getContainer());
+            // TODO consider moving ignoreSqlUpdates() into ensureDomainDescriptor()
+            try (var ignore = SpringActionController.ignoreSqlUpdates())
+            {
+                OntologyManager.ensureDomainDescriptor(uri, FileContentServiceImpl.PROPERTIES_DOMAIN, getContainer());
+            }
             Map<String, String> properties = new HashMap<>();
 
             properties.put("typeURI", uri);

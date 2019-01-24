@@ -22,6 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.AttachmentService.DuplicateFilenameException;
@@ -848,7 +849,10 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             notYetSubmittedStatus.setSpecimensLocked(true);
             notYetSubmittedStatus.setLabel("Not Yet Submitted");
             notYetSubmittedStatus.setSortOrder(-1);
-            Table.insert(user, _requestStatusHelper.getTableInfo(), notYetSubmittedStatus);
+            try (var ignore = SpringActionController.ignoreSqlUpdates())
+            {
+                Table.insert(user, _requestStatusHelper.getTableInfo(), notYetSubmittedStatus);
+            }
             statuses = _requestStatusHelper.get(c, "SortOrder");
         }
         return statuses;

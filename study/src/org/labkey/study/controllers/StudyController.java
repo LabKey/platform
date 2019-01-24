@@ -4707,10 +4707,18 @@ public class StudyController extends BaseStudyController
         }
     }
 
+
     @RequiresPermission(AdminPermission.class)
-    public class DeleteDatasetAction extends SimpleViewAction<IdForm>
+    public class DeleteDatasetAction extends FormHandlerAction<IdForm>
     {
-        public ModelAndView getView(IdForm form, BindException errors)
+        @Override
+        public void validateCommand(IdForm target, Errors errors)
+        {
+
+        }
+
+        @Override
+        public boolean handlePost(IdForm form, BindException errors) throws Exception
         {
             Study study = getStudyRedirectIfNull(getContainer());
 
@@ -4721,7 +4729,7 @@ public class StudyController extends BaseStudyController
                 errors.reject(ERROR_MSG, "Can't delete this dataset: " + ds.getName());
 
             if (errors.hasErrors())
-                return new SimpleErrorView(errors);
+                return false;
 
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
             try (DbScope.Transaction transaction = scope.ensureTransaction())
@@ -4732,16 +4740,16 @@ public class StudyController extends BaseStudyController
             }
 
             StudyManager.getInstance().getVisitManager((StudyImpl)study).updateParticipantVisits(getUser(), Collections.emptySet());
+            return true;
+        }
 
-
+        @Override
+        public URLHelper getSuccessURL(IdForm idForm)
+        {
             throw new RedirectException(new ActionURL(ManageTypesAction.class, getContainer()));
         }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
     }
+
 
     private static final String DEFAULT_PARTICIPANT_VIEW_SOURCE =
             "<div id=\"participantData\">Loading...</div>\n" +
@@ -4919,7 +4927,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class QuickCreateStudyAction extends ApiAction<SimpleApiJsonForm>
+    public class QuickCreateStudyAction extends MutatingApiAction<SimpleApiJsonForm>
     {
         public ApiResponse execute(SimpleApiJsonForm simpleApiJsonForm, BindException errors) throws Exception
         {
@@ -7054,7 +7062,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class BrowseStudyScheduleAction extends ApiAction<BrowseStudyForm>
+    public class BrowseStudyScheduleAction extends MutatingApiAction<BrowseStudyForm>
     {
         @Override
         public ApiResponse execute(BrowseStudyForm browseDataForm, BindException errors) throws Exception
@@ -7093,7 +7101,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetStudyTimepointsAction extends ApiAction<BrowseStudyForm>
+    public class GetStudyTimepointsAction extends MutatingApiAction<BrowseStudyForm>
     {
         @Override
         public ApiResponse execute(BrowseStudyForm browseDataForm, BindException errors)
@@ -7489,7 +7497,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class ChangeAlternateIdsAction extends ApiAction<ChangeAlternateIdsForm>
+    public class ChangeAlternateIdsAction extends MutatingApiAction<ChangeAlternateIdsForm>
     {
         @Override
         public ApiResponse execute(ChangeAlternateIdsForm form, BindException errors)
@@ -7546,7 +7554,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class MapAliasIdsAction extends ApiAction<MapAliasIdsForm>
+    public class MapAliasIdsAction extends MutatingApiAction<MapAliasIdsForm>
     {
         @Override
         public ApiResponse execute(MapAliasIdsForm form, BindException errors)
@@ -7919,7 +7927,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class TestMasterPatientProviderAction extends ApiAction<MasterPatientProviderSettings>
+    public class TestMasterPatientProviderAction extends MutatingApiAction<MasterPatientProviderSettings>
     {
         @Override
         public void validateForm(MasterPatientProviderSettings form, Errors errors)

@@ -47,7 +47,7 @@
 
     final Study study = StudyManager.getInstance().getStudy(getContainer());
     final Dataset dsDef = StudyManager.getInstance().getDatasetDefinitionByName(study, bean.getSnapshotName());
-    ActionURL deleteSnapshotURL = new ActionURL(StudyController.DeleteDatasetAction.class, getContainer());
+    ActionURL deleteSnapshotURL = new ActionURL(StudyController.DeleteDatasetAction.class, getContainer()).addParameter("id", dsDef.getDatasetId());
 %>
 
 <%  if (def != null) { %>
@@ -61,18 +61,21 @@
 </table>
 <%  } %>
 
-<labkey:form action="" method="post" onsubmit="return confirm('Updating will replace all existing data with a new set of data. Continue?');">
+<labkey:form action="" method="POST">
     <input type="hidden" name="updateSnapshot" value="true">
     <table>
         <tr><td>&nbsp;</td></tr>
         <tr>
-            <td><%= button("Update Snapshot").submit(true) %></td>
+            <td><%= button("Update Snapshot").submit(true)
+                .onClick("this.form.action='';return confirm('Updating will replace all existing data with a new set of data. Continue?');")
+            %></td>
 <%      if (def != null && dsDef != null) { %>
             <td><%= button(historyLabel).href(context.cloneActionURL().replaceParameter("showHistory", String.valueOf(!showHistory))) %></td>
             <td><%= button(datasetLabel).href(context.cloneActionURL().replaceParameter("showDataset", String.valueOf(!showDataset))) %></td>
             <td><%= button("Delete Snapshot")
-                    .href(deleteSnapshotURL.addParameter("id", dsDef.getDatasetId()))
-                    .onClick("return confirm('Are you sure you want to delete this snapshot?  All related data will also be deleted.')") %></td>
+                    .href(deleteSnapshotURL)
+                    .submit(true)
+                    .onClick("this.form.action='"+deleteSnapshotURL+"'; return confirm('Are you sure you want to delete this snapshot?  All related data will also be deleted.')") %></td>
 <%      } %>
         </tr>
     </table>

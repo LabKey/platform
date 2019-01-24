@@ -2461,7 +2461,7 @@ public class WikiController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class AttachFilesAction extends ApiAction<AttachFilesForm>
+    public class AttachFilesAction extends MutatingApiAction<AttachFilesForm>
     {
         @SuppressWarnings({"UnusedDeclaration"})
         public AttachFilesAction()

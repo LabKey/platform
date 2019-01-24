@@ -16,6 +16,7 @@
 package org.labkey.study.query;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -127,7 +128,7 @@ public class StudyPropertiesTable extends BaseStudyTable
         {
             _domain = PropertyService.get().createDomain(c, domainURI, StudyImpl.DOMAIN_INFO.getDomainName());
 
-            try
+            try (var ig = SpringActionController.ignoreSqlUpdates())
             {
                 // Don't save the domain if we're in the root. We want to allow cross-folder queries of this table from the
                 // root, but we won't show any custom properties in this case, since they're defined in each project. #20090

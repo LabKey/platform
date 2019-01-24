@@ -3777,86 +3777,89 @@ public class AdminController extends SpringActionController
     {
         public ModelAndView getView(DataCheckForm form, BindException errors)
         {
-            ActionURL currentUrl = getViewContext().cloneActionURL();
-            String fixRequested = currentUrl.getParameter("_fix");
-            StringBuilder contentBuilder = new StringBuilder();
-
-            if (null != fixRequested)
+            try (var ignore=SpringActionController.ignoreSqlUpdates())
             {
-                String sqlcheck=null;
-                if (fixRequested.equalsIgnoreCase("container"))
-                       sqlcheck = DbSchema.checkAllContainerCols(getUser(), true);
-                if (fixRequested.equalsIgnoreCase("descriptor"))
-                       sqlcheck = OntologyManager.doProjectColumnCheck(true);
-                contentBuilder.append(sqlcheck);
-            }
-            else
-            {
-                LOG.info("Starting database check"); // Debugging test timeout
-                LOG.info("Checking container column references"); // Debugging test timeout
-                contentBuilder.append("\n<br/><br/>Checking Container Column References...");
-                String strTemp = DbSchema.checkAllContainerCols(getUser(), false);
-                if (strTemp.length() > 0)
+                ActionURL currentUrl = getViewContext().cloneActionURL();
+                String fixRequested = currentUrl.getParameter("_fix");
+                StringBuilder contentBuilder = new StringBuilder();
+
+                if (null != fixRequested)
                 {
-                    contentBuilder.append(strTemp);
-                    currentUrl = getViewContext().cloneActionURL();
-                    currentUrl.addParameter("_fix", "container");
-                    contentBuilder.append("<br/><br/>&nbsp;&nbsp;&nbsp;&nbsp; click <a href=\"");
-                    contentBuilder.append(currentUrl.getEncodedLocalURIString());
-                    contentBuilder.append("\" >here</a> to attempt recovery .");
+                    String sqlcheck = null;
+                    if (fixRequested.equalsIgnoreCase("container"))
+                        sqlcheck = DbSchema.checkAllContainerCols(getUser(), true);
+                    if (fixRequested.equalsIgnoreCase("descriptor"))
+                        sqlcheck = OntologyManager.doProjectColumnCheck(true);
+                    contentBuilder.append(sqlcheck);
                 }
-
-                LOG.info("Checking PropertyDescriptor and DomainDescriptor consistency"); // Debugging test timeout
-                contentBuilder.append("\n<br/><br/>Checking PropertyDescriptor and DomainDescriptor consistency...");
-                strTemp = OntologyManager.doProjectColumnCheck(false);
-                if (strTemp.length() > 0)
+                else
                 {
-                    contentBuilder.append(strTemp);
-                    currentUrl = getViewContext().cloneActionURL();
-                    currentUrl.addParameter("_fix", "descriptor");
-                    contentBuilder.append("<br/><br/>&nbsp;&nbsp;&nbsp;&nbsp; click <a href=\"");
-                    contentBuilder.append(currentUrl);
-                    contentBuilder.append("\" >here</a> to attempt recovery .");
-                }
-
-                LOG.info("Checking Schema consistency with tableXML"); // Debugging test timeout
-                contentBuilder.append("\n<br/><br/>Checking Schema consistency with tableXML...");
-                Set<DbSchema> schemas = DbSchema.getAllSchemasToTest();
-
-                for (DbSchema schema : schemas)
-                {
-                    String sOut = TableXmlUtils.compareXmlToMetaData(schema, false, false, true).getResultsString();
-                    if (null!=sOut)
+                    LOG.info("Starting database check"); // Debugging test timeout
+                    LOG.info("Checking container column references"); // Debugging test timeout
+                    contentBuilder.append("\n<br/><br/>Checking Container Column References...");
+                    String strTemp = DbSchema.checkAllContainerCols(getUser(), false);
+                    if (strTemp.length() > 0)
                     {
-                        LOG.info("Inconsistency in Schema " + schema.getDisplayName()); // Debugging test timeout
-                        contentBuilder.append("<br/>&nbsp;&nbsp;&nbsp;&nbsp;ERROR: Inconsistency in Schema ");
-                        contentBuilder.append(schema.getDisplayName());
-                        contentBuilder.append("<br/>");
-                        contentBuilder.append(sOut);
+                        contentBuilder.append(strTemp);
+                        currentUrl = getViewContext().cloneActionURL();
+                        currentUrl.addParameter("_fix", "container");
+                        contentBuilder.append("<br/><br/>&nbsp;&nbsp;&nbsp;&nbsp; click <a href=\"");
+                        contentBuilder.append(currentUrl.getEncodedLocalURIString());
+                        contentBuilder.append("\" >here</a> to attempt recovery .");
                     }
-                }
 
-                LOG.info("Checking consistency of provisioned storage"); // Debugging test timeout                
-                contentBuilder.append("\n<br/><br/>Checking Consistency of Provisioned Storage...\n");
-                StorageProvisioner.ProvisioningReport pr = StorageProvisioner.getProvisioningReport();
-                contentBuilder.append(String.format("%d domains use Storage Provisioner", pr.getProvisionedDomains().size()));
-                for (StorageProvisioner.ProvisioningReport.DomainReport dr : pr.getProvisionedDomains())
-                {
-                    for (String error : dr.getErrors())
+                    LOG.info("Checking PropertyDescriptor and DomainDescriptor consistency"); // Debugging test timeout
+                    contentBuilder.append("\n<br/><br/>Checking PropertyDescriptor and DomainDescriptor consistency...");
+                    strTemp = OntologyManager.doProjectColumnCheck(false);
+                    if (strTemp.length() > 0)
+                    {
+                        contentBuilder.append(strTemp);
+                        currentUrl = getViewContext().cloneActionURL();
+                        currentUrl.addParameter("_fix", "descriptor");
+                        contentBuilder.append("<br/><br/>&nbsp;&nbsp;&nbsp;&nbsp; click <a href=\"");
+                        contentBuilder.append(currentUrl);
+                        contentBuilder.append("\" >here</a> to attempt recovery .");
+                    }
+
+                    LOG.info("Checking Schema consistency with tableXML"); // Debugging test timeout
+                    contentBuilder.append("\n<br/><br/>Checking Schema consistency with tableXML...");
+                    Set<DbSchema> schemas = DbSchema.getAllSchemasToTest();
+
+                    for (DbSchema schema : schemas)
+                    {
+                        String sOut = TableXmlUtils.compareXmlToMetaData(schema, false, false, true).getResultsString();
+                        if (null != sOut)
+                        {
+                            LOG.info("Inconsistency in Schema " + schema.getDisplayName()); // Debugging test timeout
+                            contentBuilder.append("<br/>&nbsp;&nbsp;&nbsp;&nbsp;ERROR: Inconsistency in Schema ");
+                            contentBuilder.append(schema.getDisplayName());
+                            contentBuilder.append("<br/>");
+                            contentBuilder.append(sOut);
+                        }
+                    }
+
+                    LOG.info("Checking consistency of provisioned storage"); // Debugging test timeout
+                    contentBuilder.append("\n<br/><br/>Checking Consistency of Provisioned Storage...\n");
+                    StorageProvisioner.ProvisioningReport pr = StorageProvisioner.getProvisioningReport();
+                    contentBuilder.append(String.format("%d domains use Storage Provisioner", pr.getProvisionedDomains().size()));
+                    for (StorageProvisioner.ProvisioningReport.DomainReport dr : pr.getProvisionedDomains())
+                    {
+                        for (String error : dr.getErrors())
+                        {
+                            contentBuilder.append("<div class=\"warning\">").append(error).append("</div>");
+                        }
+                    }
+                    for (String error : pr.getGlobalErrors())
                     {
                         contentBuilder.append("<div class=\"warning\">").append(error).append("</div>");
                     }
-                }
-                for (String error : pr.getGlobalErrors())
-                {
-                    contentBuilder.append("<div class=\"warning\">").append(error).append("</div>");
+
+                    LOG.info("Database check complete"); // Debugging test timeout
+                    contentBuilder.append("\n<br/><br/>Database Consistency checker complete");
                 }
 
-                LOG.info("Database check complete"); // Debugging test timeout
-                contentBuilder.append("\n<br/><br/>Database Consistency checker complete");
+                return new HtmlView("<table class=\"DataRegion\"><tr><td>" + contentBuilder.toString() + "</td></tr></table>");
             }
-
-            return new HtmlView("<table class=\"DataRegion\"><tr><td>" + contentBuilder.toString() + "</td></tr></table>");
         }
 
         public NavTree appendNavTrail(NavTree root)

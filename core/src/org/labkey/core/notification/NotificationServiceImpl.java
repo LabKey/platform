@@ -22,6 +22,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.notification.Notification;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.data.CompareType;
@@ -291,11 +292,14 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
     @Override
     public int removeNotifications(Container container, @Nullable String objectId, @NotNull List<String> types, int notifyUserId)
     {
-        SimpleFilter filter = getNotificationUpdateFilter(container, objectId, types, notifyUserId);
-        int ret = Table.delete(getTable(), filter);
-        if (ret > 0)
-            NotificationEndpoint.sendEvent(notifyUserId, NotificationService.class);
-        return ret;
+        try (var ignore = SpringActionController.ignoreSqlUpdates())
+        {
+            SimpleFilter filter = getNotificationUpdateFilter(container, objectId, types, notifyUserId);
+            int ret = Table.delete(getTable(), filter);
+            if (ret > 0)
+                NotificationEndpoint.sendEvent(notifyUserId, NotificationService.class);
+            return ret;
+        }
     }
 
     @Override

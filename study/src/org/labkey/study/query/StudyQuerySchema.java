@@ -19,6 +19,7 @@ package org.labkey.study.query;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -728,8 +729,11 @@ public class StudyQuerySchema extends UserSchema
         if (PRODUCT_TABLE_NAME.equalsIgnoreCase(name))
         {
             StudyProductDomainKind domainKind = new StudyProductDomainKind();
-            Domain domain = domainKind.ensureDomain(getContainer(), getUser(), PRODUCT_TABLE_NAME);
-
+            Domain domain;
+            try (var ignore= SpringActionController.ignoreSqlUpdates())
+            {
+                domain = domainKind.ensureDomain(getContainer(), getUser(), PRODUCT_TABLE_NAME);
+            }
             return StudyProductTable.create(domain, this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
         }
         if (PRODUCT_ANTIGEN_TABLE_NAME.equalsIgnoreCase(name))

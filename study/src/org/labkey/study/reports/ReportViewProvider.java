@@ -19,6 +19,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
@@ -86,13 +87,16 @@ public class ReportViewProvider implements DataViewProvider
         Container c = context.getContainer();
         User user = context.getUser();
 
-        ReportPropsManager.get().ensureProperty(c, user, "status", "Status", PropertyType.STRING);
-        ReportPropsManager.get().ensureProperty(c, user, "author", "Author", PropertyType.INTEGER);
-        ReportPropsManager.get().ensureProperty(c, user, "refreshDate", "RefreshDate", PropertyType.DATE_TIME);
-        ReportPropsManager.get().ensureProperty(c, user, "thumbnailType", "ThumbnailType", PropertyType.STRING);
-        ReportPropsManager.get().ensureProperty(c, user, "thumbnailRevision", "ThumbnailRevision", PropertyType.INTEGER);
-        ReportPropsManager.get().ensureProperty(c, user, "iconType", "IconType", PropertyType.STRING);
-        ReportPropsManager.get().ensureProperty(c, user, "iconRevision", "IconRevision", PropertyType.INTEGER);
+        try (var cl = SpringActionController.ignoreSqlUpdates())
+        {
+            ReportPropsManager.get().ensureProperty(c, user, "status", "Status", PropertyType.STRING);
+            ReportPropsManager.get().ensureProperty(c, user, "author", "Author", PropertyType.INTEGER);
+            ReportPropsManager.get().ensureProperty(c, user, "refreshDate", "RefreshDate", PropertyType.DATE_TIME);
+            ReportPropsManager.get().ensureProperty(c, user, "thumbnailType", "ThumbnailType", PropertyType.STRING);
+            ReportPropsManager.get().ensureProperty(c, user, "thumbnailRevision", "ThumbnailRevision", PropertyType.INTEGER);
+            ReportPropsManager.get().ensureProperty(c, user, "iconType", "IconType", PropertyType.STRING);
+            ReportPropsManager.get().ensureProperty(c, user, "iconRevision", "IconRevision", PropertyType.INTEGER);
+        }
     }
 
     @Override

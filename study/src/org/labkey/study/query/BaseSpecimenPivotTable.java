@@ -16,6 +16,7 @@
 package org.labkey.study.query;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -236,11 +237,15 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
         SpecimenTypeSummary summary = SpecimenManager.getInstance().getSpecimenTypeSummary(container, getUserSchema().getUser());
         List<? extends SpecimenTypeSummary.TypeCount> primaryTypes = summary.getPrimaryTypes();
 
-        for (SpecimenTypeSummary.TypeCount type : primaryTypes)
+        // TODO (MAB) I don't know what this is doing, but it writes to the database
+        try (var ignore=SpringActionController.ignoreSqlUpdates())
         {
-            if (type.getId() != null)
+            for (SpecimenTypeSummary.TypeCount type : primaryTypes)
             {
-                legalMap.putName(type.getLabel());
+                if (type.getId() != null)
+                {
+                    legalMap.putName(type.getLabel());
+                }
             }
         }
 

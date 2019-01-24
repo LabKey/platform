@@ -115,7 +115,10 @@ if (permissions.contains(AdminPermission.class))
     {
         ActionURL deleteDatasetURL = new ActionURL(StudyController.DeleteDatasetAction.class, c);
         deleteDatasetURL.addParameter("id", dataset.getDatasetId());
-        buttons.add(button("Delete Dataset").href(deleteDatasetURL).onClick("return confirm('Are you sure you want to delete this dataset?  All related data and visitmap entries will also be deleted.')"));
+        buttons.add(button("Delete Dataset")
+            .submit(true)
+            .href(deleteDatasetURL)
+            .onClick("this.form.action='" + deleteDatasetURL + "'; return confirm('Are you sure you want to delete this dataset?  All related data and visitmap entries will also be deleted.')"));
     }
     if (user.hasRootAdminPermission() || dataset.canWrite(user))
     {
@@ -140,11 +143,13 @@ if (permissions.contains(UpdatePermission.class) && !isDatasetInherited)
         buttons.add(button("Link or Define Dataset").href("#").onClick("showLinkDialog();"));
     }
 }
-%><br/><%
+%><br/>
+<labkey:form method="POST" action=""><%
 for (Button.ButtonBuilder bb : buttons)
 {
     %><%= bb %> <%
 }
+%></labkey:form><%
 if (!pipelineSet)
 {
     include(new StudyController.RequirePipelineView(study, false, (BindException) request.getAttribute("errors")), out);

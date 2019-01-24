@@ -18,15 +18,14 @@ package org.labkey.audit;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
-import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -102,7 +101,7 @@ public class AuditLogImpl implements AuditLogService, StartupListener
 
     private <K extends AuditTypeEvent> K _addEvent(User user, K event)
     {
-        try
+        try (var cl = SpringActionController.ignoreSqlUpdates())
         {
             assert event.getContainer() != null : "Container cannot be null";
 
