@@ -376,7 +376,9 @@ public class ChildStudyDefinition
             publishOptions.add("Use Alternate Participant IDs");
         if (isShiftDates())
             publishOptions.add("Shift Participant Dates");
-        publishOptions.add("Include Columns At This PHI Level And Higher: " + getExportPhiLevel().name());
+        PHI phi = getExportPhiLevel();
+        String phiDescription = "Include Columns At This PHI Level" + (PHI.NotPHI == phi ? ": " : " And Lower: ") + phi.name();
+        publishOptions.add(phiDescription);
         if (isMaskClinic())
             publishOptions.add("Mask Clinic Names");
         return publishOptions.toArray(new String[publishOptions.size()]);
