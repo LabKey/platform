@@ -38,16 +38,6 @@ public abstract class FormApiAction<FORM> extends ExtFormAction<FORM> implements
 {
     protected boolean _print = false;
 
-    protected FormApiAction()
-    {
-    }
-
-    @Deprecated // Not used - delete?
-    protected FormApiAction(Class<? extends FORM> formClass)
-    {
-        super(formClass);
-    }
-
     @Override
     public void checkPermissions() throws UnauthorizedException
     {

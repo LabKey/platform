@@ -15,9 +15,6 @@
  */
 package org.labkey.api.action;
 
-import org.springframework.web.servlet.ModelAndView;
-
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 /**
@@ -29,15 +26,6 @@ import java.io.IOException;
  */
 public abstract class ExtFormAction<FORM> extends MutatingApiAction<FORM>
 {
-    public ExtFormAction()
-    {
-    }
-
-    public ExtFormAction(Class<? extends FORM> formClass)
-    {
-        super(formClass);
-    }
-
     public ApiResponseWriter createResponseWriter() throws IOException
     {
         return new ExtFormResponseWriter(getViewContext().getRequest(), getViewContext().getResponse(), getContentTypeOverride());

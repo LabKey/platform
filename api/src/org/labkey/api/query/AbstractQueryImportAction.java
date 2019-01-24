@@ -90,11 +90,6 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         public boolean acceptZeroResults;  //0 changes will show the update message/redirect, instead of an error
     }
 
-    protected AbstractQueryImportAction(Class<? extends FORM> formClass)
-    {
-        super(formClass);
-    }
-
     // Caller can import into table, using TableInfo or into simpler List of Objects, using ColumnDescriptors
     protected TableInfo _target;
     protected QueryUpdateService _updateService;
@@ -453,6 +448,12 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         }
     }
 
+
+    @Override
+    protected String getCommandClassMethodName()
+    {
+        return "getView"; // getView() is abstract, so needs to be implemented in subclasses (unlike initRequest())
+    }
 
     protected void initRequest(FORM form) throws ServletException
     {

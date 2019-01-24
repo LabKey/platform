@@ -28,15 +28,6 @@ import javax.servlet.http.HttpServletResponse;
  */
 public abstract class MutatingApiAction<FORM> extends ReadOnlyApiAction<FORM>
 {
-    public MutatingApiAction()
-    {
-    }
-
-    public MutatingApiAction(Class<? extends FORM> formClass)
-    {
-        super(formClass);
-    }
-
     @Override
     protected ModelAndView handleGet() throws Exception
     {

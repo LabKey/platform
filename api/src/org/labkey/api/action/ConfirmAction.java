@@ -34,7 +34,7 @@ import org.labkey.api.util.URLHelper;
  * User: matthewb
  * Date: May 17, 2007
  */
-public abstract class ConfirmAction<FORM> extends BaseViewAction
+public abstract class ConfirmAction<FORM> extends BaseViewAction<FORM>
 {
     protected ConfirmAction()
     {
