@@ -395,23 +395,28 @@ public class GenericChartReportDescriptor extends VisualizationReportDescriptor
         {
             List<QueryException> errors = new ArrayList<>();
             TableInfo tableInfo = queryDefinition.getTable(schema, errors, true);
-            if (errors.isEmpty())
+            if (tableInfo != null)
             {
-                CustomView customView = QueryService.get().getCustomView(context.getUser(), context.getContainer(), null, schemaName, queryName, viewName);
-                return queryDefinition.getDisplayColumns(customView, tableInfo);
+                if (errors.isEmpty())
+                {
+                    CustomView customView = QueryService.get().getCustomView(context.getUser(), context.getContainer(), null, schemaName, queryName, viewName);
+                    return queryDefinition.getDisplayColumns(customView, tableInfo);
+                }
+                else
+                {
+                    StringBuilder sb = new StringBuilder();
+                    String delim = "";
+
+                    for (QueryException error : errors)
+                    {
+                        sb.append(delim).append(error.getMessage());
+                        delim = "\n";
+                    }
+                    throw new ValidationException("Unable to get table or query: " + sb.toString());
+                }
             }
             else
-            {
-                StringBuilder sb = new StringBuilder();
-                String delim = "";
-
-                for (QueryException error : errors)
-                {
-                    sb.append(delim).append(error.getMessage());
-                    delim = "\n";
-                }
-                throw new ValidationException("Unable to get table or query: " + sb.toString());
-            }
+                throw new ValidationException("Unable to create the source table: " + queryName + " it may no longer exist, or you don't have access to it.");
         }
         else
             throw new ValidationException("Unable to get a query definition for table : " + queryName);
