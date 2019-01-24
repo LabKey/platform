@@ -15,16 +15,16 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%@ page import="org.labkey.demo.DemoController" %>
 <%@ page import="org.labkey.demo.DemoController.BindActionBean" %>
 <%@ page import="org.springframework.validation.BindException" %>
 <%@ page import="org.springframework.validation.Errors" %>
 <%@ page import="org.springframework.validation.FieldError" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.demo.DemoController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<form method=post>
+<labkey:form method="post">
 <%
     BindActionBean form = (BindActionBean)getModelBean();
     Errors errors = getErrors("form");
@@ -63,14 +63,14 @@
         %><tr><td>listString[1]</td><td><input name="listString[1]" value="<%=h(_get(form.getListString(),1))%>"></td><td><%=h(getMessage(errors.getFieldError("listString[1]")))%></td></tr><%
         %><tr><td>listString[2]</td><td><input name="listString[2]" value="<%=h(_get(form.getListString(),2))%>"></td><td><%=h(getMessage(errors.getFieldError("listString[2]")))%></td></tr><%
 
-    for (int i = 0; i < Math.max(form.getListBean().size(), 3); i++)
-    {
-        DemoController.SubBean bean = (DemoController.SubBean) _get(form.getListBean(), i);
-        %><tr><td colspan=3><b>bean <%=i%></b></td></tr><%
-        %><tr><td>listBean[<%=i%>].s</td><td><input name="listBean[<%=i%>].s" value="<%=h(null==bean?null:bean.getS())%>"></td><td><%=h(getMessage(errors.getFieldError("listBean["+i+"].s")))%></td></tr><%
-        %><tr><td>listBean[<%=i%>].x</td><td><input name="listBean[<%=i%>].x" value="<%=h(null==bean?null:bean.getX())%>"></td><td><%=h(getMessage(errors.getFieldError("listBean["+i+"].x")))%></td></tr><%
-        %><tr><td>listBean[<%=i%>].y</td><td><input name="listBean[<%=i%>].y" value="<%=h(null==bean?null:bean.getY())%>"></td><td><%=h(getMessage(errors.getFieldError("listBean["+i+"].y")))%></td></tr><%
-    }
+        for (int i = 0; i < Math.max(form.getListBean().size(), 3); i++)
+        {
+            DemoController.SubBean bean = (DemoController.SubBean) _get(form.getListBean(), i);
+            %><tr><td colspan=3><b>bean <%=i%></b></td></tr><%
+            %><tr><td>listBean[<%=i%>].s</td><td><input name="listBean[<%=i%>].s" value="<%=h(null==bean?null:bean.getS())%>"></td><td><%=h(getMessage(errors.getFieldError("listBean["+i+"].s")))%></td></tr><%
+            %><tr><td>listBean[<%=i%>].x</td><td><input name="listBean[<%=i%>].x" value="<%=h(null==bean?null:bean.getX())%>"></td><td><%=h(getMessage(errors.getFieldError("listBean["+i+"].x")))%></td></tr><%
+            %><tr><td>listBean[<%=i%>].y</td><td><input name="listBean[<%=i%>].y" value="<%=h(null==bean?null:bean.getY())%>"></td><td><%=h(getMessage(errors.getFieldError("listBean["+i+"].y")))%></td></tr><%
+        }
 
         %><tr><td colspan=3><b>these don't work</b></td></tr><%
         %><tr><td>indexString[0]</td><td><input name="indexString[0]" value="<%=h(form.getIndexString(0))%>"></td><td><%=h(getMessage(errors.getFieldError("indexString[0]")))%></td></tr><%
@@ -100,7 +100,6 @@
     }
 %>
 <input type=submit>
-</form>
 
 <hr>
 <b>All errors</b><br><%
@@ -109,6 +108,7 @@ for (ObjectError e : errors.getAllErrors())
     %><%=(e instanceof FieldError)?((FieldError)e).getField()+": ":""%><%=h(getMessage(e))%><br><%
 }
 %>
+</labkey:form>
 <%!
     Object _get(List l, int i)
     {

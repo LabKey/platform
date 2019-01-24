@@ -58,7 +58,6 @@ import org.springframework.validation.ObjectError;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -638,11 +637,6 @@ public class DemoController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class BindAction extends SimpleViewAction<BindActionBean>
     {
-        public BindAction()
-        {
-            super(BindActionBean.class);
-        }
-
         public ModelAndView handleRequest() throws Exception
         {
             // if no values were posted, use test parameters
@@ -720,6 +714,4 @@ public class DemoController extends SpringActionController
             return json;
         }
     }
-
-
 }
