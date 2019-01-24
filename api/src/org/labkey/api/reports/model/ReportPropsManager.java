@@ -18,6 +18,7 @@ package org.labkey.api.reports.model;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -185,7 +186,7 @@ public class ReportPropsManager extends ContainerManager.AbstractContainerListen
     private Domain getDomain(Container container)
     {
         String uri = getDomainURI(container);
-        try
+        try (var ignore = SpringActionController.ignoreSqlUpdates())
         {
             DomainDescriptor dd = OntologyManager.ensureDomainDescriptor(uri, PROPERTIES_DOMAIN, container);
             return PropertyService.get().getDomain(dd.getDomainId());

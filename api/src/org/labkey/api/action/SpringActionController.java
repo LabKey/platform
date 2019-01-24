@@ -86,6 +86,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
 import static org.labkey.api.view.template.PageConfig.Template.Dialog;
 
 /**
@@ -385,6 +387,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
             {
                 throw new NotFoundException("Unable to find action '" + url.getAction() + "' to handle request in controller '" + url.getController() + "'");
             }
+            setActionForThread(controller);
 
             if (!(controller instanceof PermissionCheckable))
                 throw new IllegalStateException("All actions must implement PermissionCheckable. " + controller.getClass().getName() + " should extend PermissionCheckableAction or one of its subclasses.");
@@ -503,6 +506,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         finally
         {
             afterAction(throwable);
+            clearActionForThread(controller);
 
             if (null != controller)
                 _actionResolver.addTime(controller, System.currentTimeMillis() - startTime);
@@ -1110,5 +1114,104 @@ public abstract class SpringActionController implements Controller, HasViewConte
         boolean apiClass = action instanceof ApiAction;
         boolean r = StringUtils.equals(request.getHeader("User-Agent"),"Rlabkey");
         return throwUnauthorized || xmlhttp || json || apiClass || r;
+    }
+
+    // helpers for debug checks related to Action
+    private static final ThreadLocal<ArrayList<Class>> currentAction = new ThreadLocal<>() {
+        @Override
+        protected ArrayList<Class> initialValue()
+        {
+            return new ArrayList<>();
+        }
+    };
+    private static final ThreadLocal<Boolean> ignoreUpdates = new ThreadLocal<>() {
+        @Override
+        protected Boolean initialValue()
+        {
+            return FALSE;
+        }
+    };
+    public static void setActionForThread(Controller c)
+    {
+        if (null != c)
+            setActionForThread(c.getClass());
+    }
+    public static void setActionForThread(Class c)
+    {
+        boolean enableasserts = false;
+        assert true == (enableasserts = true);
+        if (enableasserts && AppProps.getInstance().isDevMode())
+        {
+            currentAction.get().add(c);
+        }
+    }
+    public static void clearActionForThread(Controller c)
+    {
+        if (null != c)
+            clearActionForThread(c.getClass());
+    }
+    public static void clearActionForThread(Class c)
+    {
+        boolean enableasserts = false;
+        assert true == (enableasserts = true);
+        if (enableasserts && AppProps.getInstance().isDevMode())
+        {
+            ArrayList<Class> list = currentAction.get();
+            assert !list.isEmpty();
+            assert list.get(list.size()-1) == c;
+            list.remove(list.size() - 1);
+        }
+    }
+    @Nullable
+    public static Class getActionForThread()
+    {
+        boolean enableasserts = false;
+        assert true == (enableasserts = true);
+        if (enableasserts && AppProps.getInstance().isDevMode())
+        {
+            ArrayList<Class> list = currentAction.get();
+            if (!list.isEmpty())
+                return list.get(list.size()-1);
+        }
+        return null;
+    }
+    public static void executingMutatingSql(String sql)
+    {
+        boolean enableasserts = false;
+        //noinspection AssertWithSideEffects
+        assert enableasserts = true;
+        if (!enableasserts)
+            return;
+        if (ignoreUpdates.get())
+            return;
+        Class c = getActionForThread();
+        if (null == c)
+            return;
+        ViewContext vc = HttpView.getRootContext();
+        boolean readonly = false;
+        if (null != vc && "GET".equals(vc.getRequest().getMethod()))
+            readonly = true;
+        if (ReadOnlyApiAction.class.isAssignableFrom(c) && !MutatingApiAction.class.isAssignableFrom(c))
+            readonly = true;
+
+        if ("org.labkey.core.security.SecurityController$AdminResetPasswordAction".equals(c.getName()))
+            return; // 36296
+        if (c.getName().contains("JunitController"))
+            return;
+
+        if (readonly)
+            _log.warn("MUTATING SQL executed as part of handling action: " + (null==vc?"":vc.getRequest().getMethod()) + " " + c.getName() + "\n" + sql, new Throwable());
+    }
+    public interface _AutoCloseable extends AutoCloseable
+    {
+        @Override
+        void close();
+    }
+    /** use this AutoCloseable to mark a section of code as allowing UPDATES even withing an read-only action (e.g. for auditing) */
+    public static _AutoCloseable ignoreSqlUpdates()
+    {
+        final Boolean prevValue = ignoreUpdates.get();
+        ignoreUpdates.set(TRUE);
+        return () -> ignoreUpdates.set(prevValue);
     }
 }

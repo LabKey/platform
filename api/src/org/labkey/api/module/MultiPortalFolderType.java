@@ -18,6 +18,7 @@ package org.labkey.api.module;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -25,7 +26,6 @@ import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.QueryUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -263,8 +263,15 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         }
     }
 
-
     private void migrateLegacyPortalPage(Container container)
+    {
+        try (var ig = SpringActionController.ignoreSqlUpdates())
+        {
+            _migrateLegacyPortalPage(container);
+        }
+    }
+
+    private void _migrateLegacyPortalPage(Container container)
     {
         List<Portal.WebPart> legacyPortalParts = new ArrayList<>(Portal.getParts(container));
         if (!legacyPortalParts.isEmpty())

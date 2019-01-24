@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.OneBasedList;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
@@ -56,9 +57,14 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
+
+import static org.apache.commons.lang3.StringUtils.contains;
+import static org.apache.commons.lang3.StringUtils.startsWith;
+import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
 public class StatementWrapper implements Statement, PreparedStatement, CallableStatement
 {
@@ -2616,6 +2622,16 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         long elapsed = System.currentTimeMillis() - _msStart;
         boolean isAssertEnabled = false;
         assert isAssertEnabled = true;
+
+        if (isAssertEnabled && AppProps.getInstance().isDevMode())
+        {
+            // TODO use SqlScanner
+            String firstLine = Arrays.stream(sql.split("\n")).map(s -> trimToEmpty(s)).filter(s -> !startsWith(s,"--")).findFirst().orElse("").toUpperCase();
+            if (contains(firstLine,"INSERT ") || contains(firstLine, "UPDATE ") || contains(firstLine, "DELETE "))
+            {
+                SpringActionController.executingMutatingSql(sql);
+            }
+        }
 
         // Make a copy of the parameters list (it gets modified below) and switch to zero-based list (_parameters is a one-based list)
         List<Object> zeroBasedList;
