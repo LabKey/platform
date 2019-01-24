@@ -1284,7 +1284,7 @@ public class QueryController extends SpringActionController
             try
             {
                 if (null != _queryView)
-                ti = _queryView.getTable();
+                    ti = _queryView.getTable();
             }
             catch (QueryParseException x)
             {
@@ -1428,7 +1428,8 @@ public class QueryController extends SpringActionController
                 ActionURL url = new ActionURL(RawTableMetaDataAction.class, getContainer());
                 url.addParameter("schemaName", _schemaName);
                 String tableLink = url.getEncodedLocalURIString() + "&query.queryName=";
-                tablesView = new ResultSetView(CachedResultSets.create(selector.getResultSet(), true, Table.ALL_ROWS), "Tables", 3, tableLink) {
+                tablesView = new ResultSetView(CachedResultSets.create(selector.getResultSet(), true, Table.ALL_ROWS), "Tables", 3, tableLink)
+                {
                     @Override
                     protected boolean shouldLink(ResultSet rs) throws SQLException
                     {
@@ -1792,8 +1793,8 @@ public class QueryController extends SpringActionController
                 url.setAction(ExcelWebQueryAction.class);
             }
             getViewContext().getResponse().setContentType("text/x-ms-iqy");
-            String filename =  FileUtil.makeFileNameWithTimestamp(form.getQueryName(), "iqy");
-            getViewContext().getResponse().setHeader("Content-disposition", "attachment; filename=\"" + filename +"\"");
+            String filename = FileUtil.makeFileNameWithTimestamp(form.getQueryName(), "iqy");
+            getViewContext().getResponse().setHeader("Content-disposition", "attachment; filename=\"" + filename + "\"");
             PrintWriter writer = getViewContext().getResponse().getWriter();
             writer.println("WEB");
             writer.println("1");
@@ -2450,7 +2451,7 @@ public class QueryController extends SpringActionController
             return bind;
         }
 
-        Map<String,Object> insertedRow = null;
+        Map<String, Object> insertedRow = null;
 
         public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors)
         {
@@ -2461,7 +2462,7 @@ public class QueryController extends SpringActionController
 
         public boolean handlePost(QueryUpdateForm tableForm, BindException errors)
         {
-            List<Map<String,Object>> list = doInsertUpdate(tableForm, errors, true);
+            List<Map<String, Object>> list = doInsertUpdate(tableForm, errors, true);
             if (null != list && list.size() == 1)
                 insertedRow = list.get(0);
             return 0 == errors.getErrorCount();
@@ -2484,7 +2485,7 @@ public class QueryController extends SpringActionController
             if (StringUtils.isBlank(str))
                 str = form.getReturnUrl();
 
-            if (StringUtils.equals(str,"details.view"))
+            if (StringUtils.equals(str, "details.view"))
             {
                 if (null == insertedRow)
                     return super.getSuccessURL(form);
@@ -3272,11 +3273,6 @@ public class QueryController extends SpringActionController
     {
         private QueryForm _form;
 
-        public ImportAction()
-        {
-            super(QueryForm.class);
-        }
-
         @Override
         protected void initRequest(QueryForm form) throws ServletException
         {
@@ -3575,11 +3571,11 @@ public class QueryController extends SpringActionController
             {
                 rows = json.getJSONArray(PROP_ROWS);
                 if (rows.length() < 1)
-                    throw new IllegalArgumentException("No '"+PROP_ROWS+"' array supplied!");
+                    throw new IllegalArgumentException("No '" + PROP_ROWS + "' array supplied!");
             }
             catch (JSONException x)
             {
-                throw new IllegalArgumentException("No '"+PROP_ROWS+"' array supplied!");
+                throw new IllegalArgumentException("No '" + PROP_ROWS + "' array supplied!");
             }
 
             String schemaName = json.getString(PROP_SCHEMA_NAME);
@@ -3931,8 +3927,8 @@ public class QueryController extends SpringActionController
 
         public ModelAndView getView(QueryForm form, BindException errors)
         {
-           setHelpTopic(new HelpTopic("externalSchemas"));
-           return new JspView<>("/org/labkey/query/view/admin.jsp", form, errors);
+            setHelpTopic(new HelpTopic("externalSchemas"));
+            return new JspView<>("/org/labkey/query/view/admin.jsp", form, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)

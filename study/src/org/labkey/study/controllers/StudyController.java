@@ -2439,14 +2439,9 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(InsertPermission.class)
     public class ImportAction extends AbstractQueryImportAction<ImportDatasetForm>
     {
-        ImportDatasetForm _form = null;
-        StudyImpl _study = null;
-        DatasetDefinition _def = null;
-
-        public ImportAction()
-        {
-            super(ImportDatasetForm.class);
-        }
+        private ImportDatasetForm _form = null;
+        private StudyImpl _study = null;
+        private DatasetDefinition _def = null;
 
         @Override
         protected void initRequest(ImportDatasetForm form) throws ServletException
@@ -7746,11 +7741,6 @@ public class StudyController extends BaseStudyController
         private Study _study;
         private int _requestId = -1;
 
-        public ImportAlternateIdMappingAction()
-        {
-            super(IdForm.class);
-        }
-
         @Override
         protected void initRequest(IdForm form) throws ServletException
         {
@@ -7767,6 +7757,7 @@ public class StudyController extends BaseStudyController
             setSuccessMessageSuffix("uploaded");
         }
 
+        @Override
         public ModelAndView getView(IdForm form, BindException errors) throws Exception
         {
             _study = getStudyThrowIfNull();
@@ -7788,6 +7779,7 @@ public class StudyController extends BaseStudyController
             return StudyManager.getInstance().setImportedAlternateParticipantIds(_study, dl, errors);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             root.addChild("Upload " + _study.getSubjectNounSingular() + " Mapping");

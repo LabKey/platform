@@ -5416,11 +5416,6 @@ public class SpecimenController extends BaseStudyController
     {
         private int _requestId = -1;
 
-        public ImportVialIdsAction()
-        {
-            super(IdForm.class);
-        }
-
         @Override
         protected void initRequest(IdForm form) throws ServletException
         {

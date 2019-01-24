@@ -747,11 +747,6 @@ public class ListController extends SpringActionController
     {
         private ListDefinition _list;
 
-        public UploadListItemsAction()
-        {
-            super(ListDefinitionForm.class);
-        }
-        
         @Override
         protected void initRequest(ListDefinitionForm form) throws ServletException
         {
@@ -759,6 +754,7 @@ public class ListController extends SpringActionController
             setTarget(_list.getTable(getUser(), getContainer()));
         }
 
+        @Override
         public ModelAndView getView(ListDefinitionForm form, BindException errors) throws Exception
         {
             initRequest(form);
@@ -780,6 +776,7 @@ public class ListController extends SpringActionController
                 errors.reject(SpringActionController.ERROR_MSG, "This list does not allow uploading data");
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return appendListNavTrail(root, _list, "Import Data");
