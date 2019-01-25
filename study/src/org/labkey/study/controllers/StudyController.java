@@ -92,9 +92,7 @@ import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.report.AbstractReportIdentifier;
 import org.labkey.api.reports.report.ChartQueryReport;
-import org.labkey.api.reports.report.ChartReportDescriptor;
 import org.labkey.api.reports.report.QueryReport;
-import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.search.SearchService;
@@ -6040,6 +6038,11 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    /**
+     * We don't need to render this report as of 19.1 but we need to be able to register and instance of it so
+     * it can be converted to a javascript report. This class can be deleted in the 21.2 release.
+     */
+    @Deprecated
     public static class StudyChartReport extends ChartQueryReport
     {
         public static final String TYPE = "Study.chartReport";
@@ -6047,51 +6050,6 @@ public class StudyController extends BaseStudyController
         public String getType()
         {
             return TYPE;
-        }
-
-        private TableInfo getTable(ViewContext context, ReportDescriptor descriptor)
-        {
-            final int datasetId = Integer.parseInt(descriptor.getProperty(DatasetDefinition.DATASETKEY));
-            final Study study = StudyManager.getInstance().getStudy(context.getContainer());
-            Dataset def = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
-
-            return def.getTableInfo(context.getUser());
-        }
-
-        public Results generateResults(ViewContext context, boolean allowAsyncQuery) throws Exception
-        {
-            ReportDescriptor descriptor = getDescriptor();
-            final String participantId = descriptor.getProperty("participantId");
-            final TableInfo tableInfo = getTable(context, descriptor);
-            DataRegion dr = new DataRegion();
-            dr.setTable(tableInfo);
-
-            SimpleFilter filter = new SimpleFilter();
-            filter.addCondition(StudyService.get().getSubjectColumnName(context.getContainer()), participantId, CompareType.EQUAL);
-
-            RenderContext ctx = new RenderContext(context);
-            ctx.setContainer(context.getContainer());
-            ctx.setBaseFilter(filter);
-
-            if (null == dr.getResultSet(ctx))
-                return null;
-            return new ResultsImpl(ctx);
-        }
-
-        public ChartReportDescriptor.LegendItemLabelGenerator getLegendItemLabelGenerator()
-        {
-            return new ChartReportDescriptor.LegendItemLabelGenerator() {
-                public String generateLabel(ViewContext context, ReportDescriptor descriptor, String itemName)
-                {
-                    TableInfo table = getTable(context, descriptor);
-                    if (table != null)
-                    {
-                        ColumnInfo info = table.getColumn(itemName);
-                        return info != null ? info.getLabel() : itemName;
-                    }
-                    return itemName;
-                }
-            };
         }
     }
 

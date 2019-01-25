@@ -251,12 +251,6 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         return newReport;
     }
 
-    @Override
-    public boolean shouldConvertLegacyChart(Report report)
-    {
-        return report instanceof ChartReport && !AppProps.getInstance().isExperimentalFeatureEnabled(ReportService.EXPERIMENTAL_RENDER_DEPRECATED_CHART_VIEW);
-    }
-
     private static TableInfo getTable()
     {
         return CoreSchema.getInstance().getTableInfoReport();

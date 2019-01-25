@@ -26,13 +26,11 @@ import org.labkey.api.reports.ExternalScriptEngineFactory;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.ExternalScriptEngineReport;
 import org.labkey.api.reports.report.InternalScriptEngineReport;
 import org.labkey.api.reports.report.JavaScriptReport;
 import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.RReport;
-import org.labkey.api.reports.report.view.ChartDesignerBean;
 import org.labkey.api.reports.report.view.DefaultReportUIProvider;
 import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.reports.report.view.ReportUtil;
@@ -40,9 +38,6 @@ import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewContext;
 import org.labkey.query.reports.AttachmentReport;
@@ -68,7 +63,6 @@ public class ReportUIProvider extends DefaultReportUIProvider
     static
     {
         _typeToIconMap.put(RReport.TYPE, "/reports/r_logo.svg");
-        _typeToIconMap.put(ChartQueryReport.TYPE, "/reports/chart.gif");
         _typeToIconMap.put(JavaScriptReport.TYPE, "/reports/js.png");
         _typeToIconMap.put(AttachmentReport.TYPE, "/reports/attachment.png");
         _typeToIconMap.put(LinkReport.TYPE, "/reports/external-link.png");
@@ -76,7 +70,6 @@ public class ReportUIProvider extends DefaultReportUIProvider
 
         // font icons - some report image icons dont have corresponding font icon replacements yet
 //      _typeToIconClsMap.put(RReport.TYPE, "/reports/r_logo.svg");
-        _typeToIconClsMap.put(ChartQueryReport.TYPE, "fa fa-area-chart");
 //      _typeToIconClsMap.put(JavaScriptReport.TYPE, "/reports/js.png");
         _typeToIconClsMap.put(AttachmentReport.TYPE, "fa fa-paperclip");
         _typeToIconClsMap.put(LinkReport.TYPE, "fa fa-external-link-square");
@@ -134,29 +127,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
     public List<ReportService.DesignerInfo> getDesignerInfo(ViewContext context, QuerySettings settings)
     {
         List<ReportService.DesignerInfo> designers = new ArrayList<>();
-
-        ChartDesignerBean chartBean = new ChartDesignerBean(settings);
-        chartBean.setReportType(ChartQueryReport.TYPE);
-
         URLHelper returnUrl = settings.getReturnURLHelper(context.getActionURL());
-        chartBean.setRedirectUrl(returnUrl.getLocalURIString());
-
-        StudyService svc = StudyService.get();
-        Study study = null;
-        if (svc != null)
-        {
-            study = svc.getStudy(context.getContainer());
-        }
-
-        if (study == null)
-        {
-            if (AppProps.getInstance().isExperimentalFeatureEnabled(ReportService.EXPERIMENTAL_DEPRECATED_CHART_VIEW))
-            {
-                // Study registers its own 'Chart View'
-                designers.add(new DesignerInfoImpl(ChartQueryReport.TYPE, "Chart View (deprecated)", "XY and Time Charts",
-                        ReportUtil.getChartDesignerURL(context, chartBean), _getIconPath(ChartQueryReport.TYPE), ReportService.DesignerType.VISUALIZATION, _getIconCls(ChartQueryReport.TYPE)));
-            }
-        }
 
         if (ReportUtil.canCreateScript(context, "r") && RReport.isEnabled())
         {

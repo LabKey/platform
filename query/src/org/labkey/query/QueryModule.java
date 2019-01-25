@@ -51,7 +51,6 @@ import org.labkey.api.query.SimpleTableDomainKind;
 import org.labkey.api.query.URLExportScriptFactory;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.chart.ChartRendererFactory;
 import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.ChartReportDescriptor;
 import org.labkey.api.reports.report.ExternalScriptEngineReport;
@@ -114,8 +113,6 @@ import org.labkey.query.reports.ReportWriter;
 import org.labkey.query.reports.ReportsController;
 import org.labkey.query.reports.ReportsPipelineProvider;
 import org.labkey.query.reports.ReportsWebPartFactory;
-import org.labkey.query.reports.chart.TimeSeriesRenderer;
-import org.labkey.query.reports.chart.XYChartRenderer;
 import org.labkey.query.reports.getdata.AggregateQueryDataTransform;
 import org.labkey.query.reports.getdata.FilterClauseBuilder;
 import org.labkey.query.reports.view.ReportAndDatasetChangeDigestEmailTemplate;
@@ -187,8 +184,6 @@ public class QueryModule extends DefaultModule
         ReportService.get().addGlobalItemFilterType(JavaScriptReport.TYPE);
         ReportService.get().addGlobalItemFilterType(QuerySnapshotService.TYPE);
 
-        ChartRendererFactory.get().addChartRenderer(XYChartRenderer.getInstance());
-        ChartRendererFactory.get().addChartRenderer(TimeSeriesRenderer.getInstance());
         ReportService.get().registerDescriptor(new ReportDescriptor());
         ReportService.get().registerDescriptor(new ChartReportDescriptor());
         ReportService.get().registerDescriptor(new QueryReportDescriptor());
@@ -218,15 +213,6 @@ public class QueryModule extends DefaultModule
 
         AdminConsole.addExperimentalFeatureFlag(QueryView.EXPERIMENTAL_GENERIC_DETAILS_URL, "Generic [details] link in grids/queries",
                 "This feature will turn on generating a generic [details] URL link in most grids.", false);
-
-        AdminConsole.addExperimentalFeatureFlag(ReportService.EXPERIMENTAL_DEPRECATED_CHART_VIEW, "Show deprecated Create Chart View menu item",
-                "This feature will unhide the \"Create Chart View (deprecated)\" menu item on grids. This charting feature has " +
-                        "been superseded by \"Create Chart,\" which provides a wizard for creating modern, JavaScript-based charts. We strongly " +
-                        "recommend creating new charts using the newer wizard; the older chart designer will soon be removed and older charts " +
-                        "migrated to the new approach, if possible.",
-                false);
-
-        AdminConsole.addExperimentalFeatureFlag(ReportService.EXPERIMENTAL_RENDER_DEPRECATED_CHART_VIEW, "Use JFree for chart views", "Show deprecated JFree chart display for deprecated chart view, instead of its converted JavaScript-based view.", false);
     }
 
 

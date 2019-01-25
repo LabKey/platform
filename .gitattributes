@@ -1533,8 +1533,6 @@ query/gwtsrc/org/labkey/query/metadata/client/MetadataServiceAsync.java -text
 query/gwtsrc/org/labkey/query/metadata/client/MetadataUnavailableException.java -text
 query/gwtsrc/org/labkey/query/metadata/client/TablePropertiesEditor.java -text
 query/gwtsrc/org/labkey/query/metadata/client/WrappedColumnItem.java -text
-query/gwtsrc/org/labkey/reports/designer/ChartDesigner.gwt.xml -text
-query/gwtsrc/org/labkey/reports/designer/client/ChartDesigner.java -text
 query/module.properties -text
 query/resources/credits/jars.txt -text
 query/resources/olap/junit.xml -text
@@ -1708,10 +1706,6 @@ query/src/org/labkey/query/reports/ReportWriter.java -text
 query/src/org/labkey/query/reports/ReportsController.java -text
 query/src/org/labkey/query/reports/ReportsPipelineProvider.java -text
 query/src/org/labkey/query/reports/ReportsWebPartFactory.java -text
-query/src/org/labkey/query/reports/chart/AbstractChartRenderer.java -text
-query/src/org/labkey/query/reports/chart/ChartServiceImpl.java -text
-query/src/org/labkey/query/reports/chart/TimeSeriesRenderer.java -text
-query/src/org/labkey/query/reports/chart/XYChartRenderer.java -text
 query/src/org/labkey/query/reports/getdata/AbstractBaseQueryReportDataSource.java -text
 query/src/org/labkey/query/reports/getdata/AbstractQueryReportDataSource.java -text
 query/src/org/labkey/query/reports/getdata/AbstractQueryReportDataTransform.java -text
@@ -1885,7 +1879,6 @@ query/webapp/reports/ScriptReportPanel.css -text
 query/webapp/reports/ScriptReportPanel.js -text
 query/webapp/reports/advanced.png -text
 query/webapp/reports/attachment.png -text
-query/webapp/reports/chart.gif -text
 query/webapp/reports/crosstab.png -text
 query/webapp/reports/details.png -text
 query/webapp/reports/external-link.png -text
@@ -2015,10 +2008,6 @@ study/gwtsrc/gwt/client/org/labkey/specimen/client/SpecimenException.java -text
 study/gwtsrc/gwt/client/org/labkey/specimen/client/SpecimenService.java -text
 study/gwtsrc/gwt/client/org/labkey/specimen/client/SpecimenServiceAsync.java -text
 study/gwtsrc/gwt/client/org/labkey/study/StudyApplication.java -text
-study/gwtsrc/gwt/client/org/labkey/study/chart/client/StudyChartDesigner.java -text
-study/gwtsrc/gwt/client/org/labkey/study/chart/client/StudyChartService.java -text
-study/gwtsrc/gwt/client/org/labkey/study/chart/client/StudyChartServiceAsync.java -text
-study/gwtsrc/gwt/client/org/labkey/study/chart/client/model/GWTPair.java -text
 study/gwtsrc/gwt/client/org/labkey/study/dataset/client/DatasetImporter.java -text
 study/gwtsrc/gwt/client/org/labkey/study/dataset/client/DatasetService.java -text
 study/gwtsrc/gwt/client/org/labkey/study/dataset/client/DatasetServiceAsync.java -text
@@ -2282,7 +2271,6 @@ study/src/org/labkey/study/controllers/assay/actions/SaveAssayBatchAction.java -
 study/src/org/labkey/study/controllers/designer/DesignerController.java -text
 study/src/org/labkey/study/controllers/plate/PlateController.java -text
 study/src/org/labkey/study/controllers/reports/ReportsController.java -text
-study/src/org/labkey/study/controllers/reports/StudyChartServiceImpl.java -text
 study/src/org/labkey/study/controllers/reports/StudyManageReportsBean.java -text
 study/src/org/labkey/study/controllers/security/SecurityController.java -text
 study/src/org/labkey/study/controllers/specimen/AutoCompleteAction.java -text
@@ -2595,10 +2583,9 @@ study/src/org/labkey/study/query/studydesign/StudyTreatmentProductDomainKind.jav
 study/src/org/labkey/study/query/studydesign/StudyTreatmentProductTable.java -text
 study/src/org/labkey/study/query/studydesign/StudyTreatmentTable.java -text
 study/src/org/labkey/study/query/studydesign/StudyTreatmentVisitMapTable.java -text
-study/src/org/labkey/study/reports/AbstractReportView.java -text
 study/src/org/labkey/study/reports/AssayProgressReport.java -text
 study/src/org/labkey/study/reports/BaseStudyView.java -text
-study/src/org/labkey/study/reports/ChartReportView.java -text
+study/src/org/labkey/study/reports/DatasetChartReport.java -text
 study/src/org/labkey/study/reports/DefaultAssayProgressSource.java -text
 study/src/org/labkey/study/reports/ExportExcelReport.java -text
 study/src/org/labkey/study/reports/ExternalReport.java -text
@@ -2613,7 +2600,6 @@ study/src/org/labkey/study/reports/StudyCrosstabReport.java -text
 study/src/org/labkey/study/reports/StudyQueryReport.java -text
 study/src/org/labkey/study/reports/StudyRReport.java -text
 study/src/org/labkey/study/reports/StudyReportUIProvider.java -text
-study/src/org/labkey/study/reports/StudyRunChartReportView.java -text
 study/src/org/labkey/study/reports/configureExportExcel.jsp -text
 study/src/org/labkey/study/reports/participantThumbnail.gif -text
 study/src/org/labkey/study/requirements/DefaultActor.java -text
@@ -2720,7 +2706,6 @@ study/src/org/labkey/study/view/customizeAssayDetailsWebPart.jsp -text
 study/src/org/labkey/study/view/customizeParticipantView.jsp -text
 study/src/org/labkey/study/view/customizeParticipantWebPart.jsp -text
 study/src/org/labkey/study/view/customizeStudyList.jsp -text
-study/src/org/labkey/study/view/datasetCharts.jsp -text
 study/src/org/labkey/study/view/datasetDetails.jsp -text
 study/src/org/labkey/study/view/datasetDisplayOrder.jsp -text
 study/src/org/labkey/study/view/datasetInfo.jsp -text

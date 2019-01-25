@@ -16,20 +16,18 @@
 
 package org.labkey.study.reports;
 
-import org.labkey.api.query.QueryParam;
 import org.labkey.api.reports.report.ChartQueryReport;
-import org.labkey.api.reports.report.ReportDescriptor;
-import org.labkey.api.reports.report.view.ReportQueryView;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.ActionURL;
-import org.labkey.study.model.DatasetDefinition;
-import org.labkey.study.controllers.StudyController;
 
 /**
  * User: Karl Lum
  * Date: Apr 24, 2007
  */
+
+/**
+ * We don't need to render this report as of 19.1 but we need to be able to register and instance of it so
+ * it can be converted to a javascript report. This class can be deleted in the 21.2 release.
+ */
+@Deprecated
 public class StudyChartQueryReport extends ChartQueryReport
 {
     public static final String TYPE = "Study.chartQueryReport";
@@ -37,35 +35,5 @@ public class StudyChartQueryReport extends ChartQueryReport
     public String getType()
     {
         return TYPE;
-    }
-
-    public HttpView renderDataView(ViewContext context)
-    {
-        return createQueryView(context, getDescriptor());
-    }
-
-    protected ReportQueryView createQueryView(ViewContext context, ReportDescriptor descriptor)
-    {
-        final String queryName = descriptor.getProperty(QueryParam.queryName.toString());
-        final String viewName = descriptor.getProperty(QueryParam.viewName.toString());
-
-        return ReportQueryViewFactory.get().generateQueryView(context, descriptor, queryName, viewName);
-    }
-
-    public ActionURL getRunReportURL(ViewContext context)
-    {
-        String datasetId = getDescriptor().getProperty(DatasetDefinition.DATASETKEY);
-        if (datasetId != null)
-        {
-            return new ActionURL(StudyController.DatasetReportAction.class, context.getContainer()).
-                        addParameter(DatasetDefinition.DATASETKEY, datasetId).
-                        addParameter(StudyController.DATASET_REPORT_ID_PARAMETER_NAME, getDescriptor().getReportId().toString());
-        }
-        return super.getRunReportURL(context);
-    }
-
-    public HttpView getRunReportView(ViewContext context)
-    {
-        return new StudyRunChartReportView(this);
     }
 }

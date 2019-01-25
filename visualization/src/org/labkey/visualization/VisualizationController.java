@@ -1028,16 +1028,6 @@ public class VisualizationController extends SpringActionController
                 return;
             }
 
-            ReportService reportService = ReportService.get();
-            if (reportService.shouldConvertLegacyChart(report))
-            {
-                Report convertedReport = reportService.createConvertedChartViewReportInstance(report, getViewContext());
-                if (convertedReport != null)
-                {
-                    report = convertedReport;
-                }
-            }
-
             descriptor = report.getDescriptor();
             if (!(descriptor instanceof VisualizationReportDescriptor))
             {

@@ -154,7 +154,7 @@ import org.labkey.study.query.studydesign.StudyProductDomainKind;
 import org.labkey.study.query.studydesign.StudyTreatmentDomainKind;
 import org.labkey.study.query.studydesign.StudyTreatmentProductDomainKind;
 import org.labkey.study.reports.AssayProgressReport;
-import org.labkey.study.reports.ChartReportView;
+import org.labkey.study.reports.DatasetChartReport;
 import org.labkey.study.reports.ExportExcelReport;
 import org.labkey.study.reports.ExternalReport;
 import org.labkey.study.reports.ParticipantReport;
@@ -409,10 +409,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         ReportService.get().registerReport(new StudyController.StudyChartReport());
         ReportService.get().registerReport(new StudyQueryReport());
-        ReportService.get().registerReport(new ChartReportView.DatasetChartReport());
+        ReportService.get().registerReport(new DatasetChartReport());
         ReportService.get().registerReport(new ExternalReport());
         ReportService.get().registerReport(new ExportExcelReport());
-        ReportService.get().registerReport(new ChartReportView());
         ReportService.get().registerReport(new StudyChartQueryReport());
         ReportService.get().registerReport(new CrosstabReport());
         ReportService.get().registerReport(new StudyCrosstabReport());
@@ -420,7 +419,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         ReportService.get().registerReport(new ParticipantReport());
         ReportService.get().registerReport(new AssayProgressReport());
 
-        ReportService.get().registerDescriptor(new ChartReportView.ChartReportViewDescriptor());
         ReportService.get().registerDescriptor(new CrosstabReportDescriptor());
         ReportService.get().registerDescriptor(new ParticipantReportDescriptor());
 

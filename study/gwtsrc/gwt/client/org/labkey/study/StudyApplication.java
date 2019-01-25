@@ -46,7 +46,6 @@ public class StudyApplication implements EntryPoint
             MODULES.add(new AssayDesigner());
             MODULES.add(new AssayImporter());
             MODULES.add(new TemplateDesigner());
-            MODULES.add(new StudyChartDesigner());
             MODULES.add(new DatasetImporter());
             MODULES.add(new DatasetDesigner());
             MODULES.add(new SpecimenDesigner());
@@ -122,23 +121,6 @@ public class StudyApplication implements EntryPoint
         EntryPoint getEntryPoint()
         {
             return new gwt.client.org.labkey.plate.designer.client.TemplateDesigner();
-        }
-    }
-
-    public static class StudyChartDesigner extends GWTModule
-    {
-        public StudyChartDesigner()
-        {
-            super("gwt.client.org.labkey.study.chart.client.StudyChartDesigner");
-        }
-
-        public void onSuccess()
-        {
-            new gwt.client.org.labkey.study.chart.client.StudyChartDesigner().onModuleLoad();
-        }
-        EntryPoint getEntryPoint()
-        {
-            return new gwt.client.org.labkey.study.chart.client.StudyChartDesigner();
         }
     }
 
@@ -245,10 +227,6 @@ public class StudyApplication implements EntryPoint
         else if ("TemplateDesigner".equalsIgnoreCase(moduleName))
         {
             GWT.runAsync(new TemplateDesigner());
-        }
-        else if ("StudyChartDesigner".equalsIgnoreCase(moduleName))
-        {
-            GWT.runAsync(new StudyChartDesigner());
         }
         else if ("DatasetImporter".equalsIgnoreCase(moduleName))
         {

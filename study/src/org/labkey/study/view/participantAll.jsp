@@ -33,6 +33,7 @@
 <%@ page import="org.labkey.api.query.QueryService" %>
 <%@ page import="org.labkey.api.reports.Report" %>
 <%@ page import="org.labkey.api.reports.ReportService" %>
+<%@ page import="org.labkey.api.reports.report.ChartReport" %>
 <%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
 <%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
 <%@ page import="org.labkey.api.security.User" %>
@@ -74,10 +75,6 @@
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.TreeMap" %>
 <%@ page import="java.util.TreeSet" %>
-<%@ page import="org.labkey.api.reports.report.ChartReport" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
-<%@ page import="org.labkey.api.reports.report.view.ChartDesignerBean" %>
-<%@ page import="org.labkey.study.reports.StudyChartQueryReport" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -104,17 +101,6 @@
         currentUrl = getActionURL().getLocalURIString();
 
     ActionURL oldChartDesignerURL = null;
-    if (AppProps.getInstance().isExperimentalFeatureEnabled(ReportService.EXPERIMENTAL_DEPRECATED_CHART_VIEW))
-    {
-        ChartDesignerBean chartBean = new ChartDesignerBean();
-        chartBean.setReportType(StudyChartQueryReport.TYPE);
-        chartBean.setSchemaName(querySchema.getSchemaName());
-        oldChartDesignerURL = ReportUtil.getChartDesignerURL(context, chartBean);
-        oldChartDesignerURL.setAction(ReportsController.DesignChartAction.class);
-        oldChartDesignerURL.addParameter("returnUrl", currentUrl);
-        oldChartDesignerURL.addParameter("isParticipantChart", "true");
-        oldChartDesignerURL.addParameter("participantId", bean.getParticipantId());
-    }
 
     StudyManager manager = StudyManager.getInstance();
     StudyImpl study = manager.getStudy(getContainer());
@@ -690,82 +676,33 @@
         }
     }
 
-    if (AppProps.getInstance().isExperimentalFeatureEnabled(ReportService.EXPERIMENTAL_RENDER_DEPRECATED_CHART_VIEW))
+    for (Report report : legacyReports)
     {
-        for (Report report : legacyReports)
-        {
-%>
-            <tr style="<%=text(expanded ? "" : "display:none")%>">
-                <td colspan="<%=totalSeqKeyCount%>">
-                    <img src="<%=h(ReportUtil.getPlotChartURL(context, report).addParameter("participantId", bean.getParticipantId()).toString())%>">
-<%
-                        if (updateAccess)
-                        {
-                            String reportId = report.getDescriptor().getProperty("reportId");
-                            if (ptidLegacyReportIds.contains(reportId))
-                            {
-%>
-                                <br/>
-                                <a class="labkey-text-link" href="<%=new ActionURL(ReportsController.DeleteReportAction.class, study.getContainer()).addParameter(ReportDescriptor.Prop.redirectUrl.name(), currentUrl).addParameter(ReportDescriptor.Prop.reportId.name(), report.getDescriptor().getReportId().toString())%>">Remove Chart</a>
-                                <%
-                            }
-                            else
-                            {
-                                %>
-                                <br/>
-                    <a class="labkey-text-link labkey-ptid-remove" onclick="LABKEY.ParticipantViewRemoveChart('<%=h(reportId)%>', true)">Remove Chart</a>
-                                <%
-                            }
-
-                      }
-                %>
-                </td>
-            </tr>
-<%
-        }
-
-    }
-    else
-    {
-        for (Report report : legacyReports)
-        {
-            ReportDescriptor reportDescriptor = report.getDescriptor();
-            legacyReportIds.add(reportDescriptor.getProperty("reportId"));
-            reportsToRender.put(reportDescriptor.getProperty("reportId"), reportDescriptor.getProperty("reportName"));
-        }
+        ReportDescriptor reportDescriptor = report.getDescriptor();
+        legacyReportIds.add(reportDescriptor.getProperty("reportId"));
+        reportsToRender.put(reportDescriptor.getProperty("reportId"), reportDescriptor.getProperty("reportName"));
     }
 
-    if (updateAccess && null != oldChartDesignerURL)
+    for (Report report : datasetReports)
     {
-%>
-    <tr style="<%=text(expanded ? "" : "display:none")%>">
-        <td colspan="<%=totalSeqKeyCount+1%>"
-            class="labkey-alternate-row"><%=textLink("add chart view", oldChartDesignerURL.replaceParameter("queryName", dataset.getName()).replaceParameter("datasetId", String.valueOf(datasetId)))%>
-        </td>
-    </tr>
-    <%
-        }
+        ReportDescriptor reportDescriptor = report.getDescriptor();
 
-     for (Report report : datasetReports)
-        {
-            ReportDescriptor reportDescriptor = report.getDescriptor();
+        // for now we only want to include generic charts and time charts
+        if (!(report instanceof GenericChartReport || report instanceof TimeChartReport))
+            continue;
 
-            // for now we only want to include generic charts and time charts
-            if (!(report instanceof GenericChartReport || report instanceof TimeChartReport))
-                continue;
+        // only include shared reports for a given dataset
+        if (!reportDescriptor.isShared())
+            continue;
 
-            // only include shared reports for a given dataset
-            if (!reportDescriptor.isShared())
-                continue;
-
-            String reportId = reportDescriptor.getProperty("reportId");
-            String name = reportDescriptor.getProperty("reportName");
-            boolean showInParticipantView = "true".equalsIgnoreCase(reportDescriptor.getProperty("showInParticipantView"));
-            if (showInParticipantView)
-                reportsToRender.put(reportId, name);
-            else
-                reportIdWithNames.put(reportId, name);
-        }
+        String reportId = reportDescriptor.getProperty("reportId");
+        String name = reportDescriptor.getProperty("reportName");
+        boolean showInParticipantView = "true".equalsIgnoreCase(reportDescriptor.getProperty("showInParticipantView"));
+        if (showInParticipantView)
+            reportsToRender.put(reportId, name);
+        else
+            reportIdWithNames.put(reportId, name);
+    }
 %>
         <tr style="<%=text(expanded ? "" : "display:none")%>">
             <td colspan="<%=totalSeqKeyCount+1%>">

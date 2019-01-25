@@ -53,16 +53,7 @@ public class ReportsWebPart extends WebPartView
 
         try
         {
-            Report report = getReport(properties);
-            ReportService reportService = ReportService.get();
-            if (reportService.shouldConvertLegacyChart(report))
-            {
-                Report convertedReport = reportService.createConvertedChartViewReportInstance(report, getViewContext());
-                if (convertedReport != null)
-                    report = convertedReport;
-            }
-
-            _report = report;
+            _report = getReport(properties);
             if (null != _report)
             {
                 setTitleHref(_report.getRunReportURL(context));

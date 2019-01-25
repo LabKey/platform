@@ -15,20 +15,17 @@
  */
 package org.labkey.study.reports;
 
-import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.ReportDescriptor;
-import org.labkey.api.reports.report.view.ChartDesignerBean;
 import org.labkey.api.reports.report.view.DefaultReportUIProvider;
 import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.util.URLHelper;
@@ -37,7 +34,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.visualization.TimeChartReport;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.reports.ReportsController;
-import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyManager;
 
 import java.util.ArrayList;
@@ -58,9 +54,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
     static
     {
         _typeToIconMap.put(StudyRReport.TYPE, "/reports/r_logo.svg");
-        _typeToIconMap.put(ChartReportView.TYPE, "/reports/chart.gif");
         _typeToIconMap.put(StudyQueryReport.TYPE, "/reports/grid.gif");
-        _typeToIconMap.put(StudyChartQueryReport.TYPE, "/reports/chart.gif");
         _typeToIconMap.put(ExportExcelReport.TYPE, "/reports/xls.gif");
         _typeToIconMap.put(ExternalReport.TYPE, "/reports/advanced.png");
         _typeToIconMap.put(ParticipantReport.TYPE, "/reports/participantReport.png");
@@ -70,9 +64,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
 
         // font icons - some report image icons dont have corresponding font icon replacements yet
 //      _typeToIconClsMap.put(StudyRReport.TYPE, "/reports/r_logo.svg");
-        _typeToIconClsMap.put(ChartReportView.TYPE, "fa fa-area-chart");
         _typeToIconClsMap.put(StudyQueryReport.TYPE, "fa fa-table");
-        _typeToIconClsMap.put(StudyChartQueryReport.TYPE, "fa fa-area-chart");
         _typeToIconClsMap.put(ExportExcelReport.TYPE, "fa fa-file-excel-o");
         _typeToIconClsMap.put(ExternalReport.TYPE, "fa fa-cogs");
         _typeToIconClsMap.put(ParticipantReport.TYPE, "fa fa-clipboard");
@@ -84,8 +76,6 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
     private static final ReportService.ItemFilter _filter = (type, label) -> {
         if (ReportService.get().getGlobalItemFilterTypes().contains(type)) return true;
         if (StudyCrosstabReport.TYPE.equals(type)) return true;
-        if (StudyChartQueryReport.TYPE.equals(type)) return true;
-        if (ChartReportView.TYPE.equals(type)) return true;
         if (StudyRReport.TYPE.equals(type)) return true;
         if (ExternalReport.TYPE.equals(type)) return true;
         if (StudyQueryReport.TYPE.equals(type)) return true;
@@ -162,17 +152,6 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
             // crosstab report
             crossTabURL.addParameter(ReportDescriptor.Prop.reportType, StudyCrosstabReport.TYPE);
             designers.add(new DesignerInfoImpl(StudyCrosstabReport.TYPE, "Crosstab Report", null, crossTabURL, _getIconPath(StudyCrosstabReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(StudyCrosstabReport.TYPE)));
-
-            if (AppProps.getInstance().isExperimentalFeatureEnabled(ReportService.EXPERIMENTAL_DEPRECATED_CHART_VIEW))
-            {
-                // chart designer
-                ChartDesignerBean chartBean = new ChartDesignerBean(settings);
-                chartBean.setReportType(StudyChartQueryReport.TYPE);
-                ActionURL url = ReportUtil.getChartDesignerURL(context, chartBean);
-                url.addParameter(DatasetDefinition.DATASETKEY, NumberUtils.toInt(context.getActionURL().getParameter(DatasetDefinition.DATASETKEY), 0));
-                url.setAction(ReportsController.DesignChartAction.class);
-                designers.add(new DesignerInfoImpl(StudyChartQueryReport.TYPE, "Chart View (deprecated)", null, url, _getIconPath(StudyChartQueryReport.TYPE), ReportService.DesignerType.VISUALIZATION, _getIconCls(StudyChartQueryReport.TYPE)));
-            }
 
             // r report
             if (ReportUtil.canCreateScript(context, "r") && RReport.isEnabled())

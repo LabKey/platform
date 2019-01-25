@@ -32,7 +32,6 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReturnUrlForm;
@@ -57,7 +56,6 @@ import org.labkey.api.data.views.DataViewInfo;
 import org.labkey.api.data.views.DataViewProvider;
 import org.labkey.api.data.views.DataViewProvider.EditInfo.ThumbnailType;
 import org.labkey.api.data.views.DataViewService;
-import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.digest.ReportAndDatasetChangeDigestProvider;
 import org.labkey.api.pipeline.PipeRoot;
@@ -66,11 +64,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.premium.PremiumFeatureNotEnabledException;
 import org.labkey.api.premium.PremiumService;
-import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SimpleValidationError;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.RConnectionHolder;
@@ -87,7 +81,6 @@ import org.labkey.api.reports.model.ViewInfo;
 import org.labkey.api.reports.permissions.ShareReportPermission;
 import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.AbstractReportIdentifier;
-import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.ChartReport;
 import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.RReport;
@@ -102,7 +95,6 @@ import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.reports.report.view.AjaxScriptReportView;
 import org.labkey.api.reports.report.view.AjaxScriptReportView.Mode;
-import org.labkey.api.reports.report.view.ChartDesignerBean;
 import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.reports.report.view.RenderBackgroundRReportView;
 import org.labkey.api.reports.report.view.ReportDesignBean;
@@ -137,7 +129,6 @@ import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.GWTView;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpRedirectView;
 import org.labkey.api.view.HttpView;
@@ -155,7 +146,6 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.query.DataViewsWebPartFactory;
 import org.labkey.query.persist.QueryManager;
-import org.labkey.query.reports.chart.ChartServiceImpl;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -166,7 +156,6 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
@@ -229,11 +218,6 @@ public class ReportsController extends SpringActionController
             return new ActionURL(AjaxSaveScriptReportAction.class, c);
         }
 
-        public ActionURL urlDesignChart(Container c)
-        {
-            return new ActionURL(DesignChartAction.class, c);
-        }
-
         @Override
         public ActionURL urlViewScriptReport(Container c)
         {
@@ -264,11 +248,6 @@ public class ReportsController extends SpringActionController
         public ActionURL urlManageViews(Container c)
         {
             return new ActionURL(ManageViewsAction.class, c);
-        }
-
-        public ActionURL urlPlotChart(Container c)
-        {
-            return new ActionURL(PlotChartAction.class, c);
         }
 
         public ActionURL urlDeleteReport(Container c)
@@ -355,145 +334,6 @@ public class ReportsController extends SpringActionController
     {
         setActionResolver(_actionResolver);
     }
-
-    @RequiresPermission(ReadPermission.class)
-    @Action(ActionType.SelectData.class)
-    public class DesignChartAction extends SimpleViewAction<ChartDesignerBean>
-    {
-        public ModelAndView getView(ChartDesignerBean form, BindException errors)
-        {
-            Map<String, String> props = new HashMap<>();
-            for (Pair<String, String> param : form.getParameters())
-            {
-                props.put(param.getKey(), param.getValue());
-            }
-            props.put("isAdmin", String.valueOf(getContainer().hasPermission(getUser(), AdminPermission.class)));
-            props.put("isGuest", String.valueOf(getUser().isGuest()));
-            HttpView view = new GWTView("org.labkey.reports.designer.ChartDesigner", props);
-            return new VBox(view);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Create Chart View");
-        }
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    @Action(ActionType.SelectData.class)
-    public class ChartServiceAction extends GWTServiceAction
-    {
-        protected BaseRemoteService createService()
-        {
-            return new ChartServiceImpl(getViewContext());
-        }
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    @Action(ActionType.SelectData.class)
-    public class PlotChartAction extends SimpleViewAction<ChartDesignerBean>
-    {
-        public ModelAndView getView(ChartDesignerBean form, BindException errors) throws Exception
-        {
-            final ViewContext context = getViewContext();
-            Report report = null;
-
-            if (null != form.getReportId())
-                report = form.getReportId().getReport(context);
-
-            if (report == null)
-            {
-                List<String> reportIds = context.getList("reportId");
-                if (reportIds != null && !reportIds.isEmpty())
-                    report = ReportService.get().getReport(getContainer(), NumberUtils.toInt(reportIds.get(0)));
-            }
-
-            if (report == null)
-            {
-                report = ReportService.get().createFromQueryString(context.getActionURL().getQueryString());
-                if (report != null)
-                {
-                    // set the container in case we need to get a securable resource for the report descriptor
-                    if (report.getDescriptor().lookupContainer() == null)
-                        report.getDescriptor().setContainer(getContainer().getId());
-                }
-            }
-
-            if (report instanceof Report.ImageReport)
-                ((Report.ImageReport)report).renderImage(context);
-            else if (report != null)
-                throw new RuntimeException("Report must implement Report.ImageReport to use the plot chart action");
-            
-            return null;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class PlotChartApiAction extends ApiAction<ChartDesignerBean>
-    {
-        public ApiResponse execute(ChartDesignerBean form, BindException errors) throws Exception
-        {
-            verifyBean(form);
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            Report report = form.getReport(getViewContext());
-            if (report != null)
-            {
-                ActionURL url;
-                if (null != report.getDescriptor().getReportId())
-                    url = ReportUtil.getPlotChartURL(getViewContext(), report);
-                else
-                {
-                    url = new ActionURL(PlotChartAction.class, getContainer());
-                    for (Pair<String, String> param : form.getParameters())
-                    {
-                        url.addParameter(param.getKey(), param.getValue());
-                    }
-                }
-                response.put("imageURL", url.getLocalURIString());
-
-                if (report instanceof Report.ImageMapGenerator && !StringUtils.isEmpty(form.getImageMapName()))
-                {
-                    String map = ((Report.ImageMapGenerator)report).generateImageMap(getViewContext(), form.getImageMapName(),
-                            form.getImageMapCallback(), form.getImageMapCallbackColumns());
-                    response.put("imageMap", map);
-                }
-                return response;
-            }
-            throw new ServletException("Unable to render the specified chart");
-        }
-
-        private ChartDesignerBean verifyBean(ChartDesignerBean form)
-        {
-            // a saved report
-            if (null != form.getReportId())
-                return form;
-
-            UserSchema schema = (UserSchema) DefaultSchema.get(getUser(), getContainer()).getSchema(form.getSchemaName());
-            if (schema != null)
-            {
-                QuerySettings settings = schema.getSettings(getViewContext(), form.getDataRegionName());
-                QueryView view = schema.createView(getViewContext(), settings);
-                if (view.getTable() == null)
-                    throw new IllegalArgumentException("the specified query name: '" + form.getQueryName() + "' does not exist");
-            }
-            else
-                throw new IllegalArgumentException("the specified schema: '" + form.getSchemaName() + "' does not exist");
-
-            if (form.getReportType() == null)
-            {
-                // need to find a better way to handle this, if they are querying a study schema they have
-                // to use a study report type in order to get study security in their chart.
-                form.setReportType("study".equals(form.getSchemaName()) ? "Study.chartQueryReport" : ChartQueryReport.TYPE);
-            }
-            return form;
-        }
-    }
-
 
     @RequiresPermission(ReadPermission.class)
     public class DeleteReportAction extends SimpleViewAction
@@ -1117,22 +957,12 @@ public class ReportsController extends SpringActionController
         {
             _report = null;
 
-            Report report = null;
             if (null != form.getReportId())
-                report = form.getReportId().getReport(getViewContext());
+                _report = form.getReportId().getReport(getViewContext());
 
-            if (null == report)
+            if (null == _report)
                 return new HtmlView("<span class=\"labkey-error\">Invalid report identifier, unable to create report.</span>");
 
-            ReportService reportService = ReportService.get();
-            if (reportService.shouldConvertLegacyChart(report))
-            {
-                Report convertedReport = reportService.createConvertedChartViewReportInstance(report, getViewContext());
-                if (convertedReport != null)
-                    report = convertedReport;
-            }
-
-            _report = report;
             HttpView ret = null;
             try
             {
@@ -2586,30 +2416,6 @@ public class ReportsController extends SpringActionController
                 }
             }
             return response;
-        }
-    }
-
-    protected static class PlotView extends WebPartView
-    {
-        private Report _report;
-
-        public PlotView(Report report)
-        {
-            super(FrameType.NONE);
-            _report = report;
-        }
-
-        @Override
-        protected void renderView(Object model, PrintWriter out)
-        {
-            if (_report instanceof ChartReport)
-            {
-                ActionURL url = getViewContext().cloneActionURL();
-                url.setAction(PlotChartAction.class);
-                url.addParameter("reportId", _report.getDescriptor().getReportId().toString());
-
-                out.write("<img src='" + url + "'>");
-            }
         }
     }
 

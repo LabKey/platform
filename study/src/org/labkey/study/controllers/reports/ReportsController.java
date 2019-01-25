@@ -16,7 +16,6 @@
 
 package org.labkey.study.controllers.reports;
 
-import gwt.client.org.labkey.study.chart.client.StudyChartDesigner;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.Nullable;
@@ -30,7 +29,6 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -40,7 +38,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.views.DataViewInfo;
 import org.labkey.api.data.views.DataViewService;
-import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryParam;
@@ -55,7 +52,6 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportUrls;
-import org.labkey.api.reports.report.view.ChartDesignerBean;
 import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.reports.report.view.ReportDesignBean;
 import org.labkey.api.reports.report.view.ReportUtil;
@@ -76,7 +72,6 @@ import org.labkey.api.study.reports.CrosstabReportDescriptor;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
@@ -107,7 +102,6 @@ import org.labkey.study.reports.ExternalReport;
 import org.labkey.study.reports.ParticipantReport;
 import org.labkey.study.reports.ReportManager;
 import org.labkey.study.reports.ReportViewProvider;
-import org.labkey.study.view.StudyGWTView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -1223,55 +1217,6 @@ public class ReportsController extends BaseStudyController
         public String getFilterParam(){return _filterParam;}
         public void setViewName(String viewName){_viewName = viewName;}
         public String getViewName(){return _viewName;}
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class DesignChartAction extends SimpleViewAction<ChartDesignerBean>
-    {
-        int _datasetId = 0;
-        public ModelAndView getView(ChartDesignerBean form, BindException errors)
-        {
-            ViewContext context = getViewContext();
-            if (StringUtils.isEmpty(form.getSchemaName()))
-                form.setSchemaName("study");
-            UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), form.getSchemaName());
-            if (null == schema)
-            {
-                throw new NotFoundException("schema not found");
-            }
-
-            Map<String, String> props = new HashMap<>();
-            for (Pair<String, String> param : form.getParameters())
-                props.put(param.getKey(), param.getValue());
-
-            props.put("isAdmin", String.valueOf(getContainer().hasPermission(getUser(), AdminPermission.class)));
-            props.put("isGuest", String.valueOf(getUser().isGuest()));
-            props.put("isParticipantChart", getViewContext().getActionURL().getParameter("isParticipantChart"));
-            props.put("subjectNounSingular", StudyService.get().getSubjectNounSingular(getContainer()));
-            props.put("participantId", getViewContext().getActionURL().getParameter("participantId"));
-
-            _datasetId = NumberUtils.toInt((String) getViewContext().get(DatasetDefinition.DATASETKEY));
-            Dataset def = StudyManager.getInstance().getDatasetDefinition(BaseStudyController.getStudyRedirectIfNull(getContainer()), _datasetId);
-            if (def != null)
-                props.put("datasetId", String.valueOf(_datasetId));
-
-            HttpView view = new StudyGWTView(StudyChartDesigner.class, props);
-            return new VBox(view);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return _appendNavTrail(root, "Create Chart View", _datasetId, 0);
-        }
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class ChartServiceAction extends GWTServiceAction
-    {
-        protected BaseRemoteService createService()
-        {
-            return new StudyChartServiceImpl(getViewContext());
-        }
     }
 
     @RequiresPermission(ReadPermission.class)
