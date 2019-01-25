@@ -3177,68 +3177,64 @@ public class SecurityManager
         return c.hasPermission(user, SeeFilePathsPermission.class) || user.hasRootPermission(SeeFilePathsPermission.class);
     }
 
-    public static void adminRotatePassword(String rawEmail, BindException errors, Container c, User user)
+    public static void adminRotatePassword(ValidEmail email, BindException errors, Container c, User user)
     {
+        adminRotatePassword(email, errors, c, user, "");
+    }
+
+    public static void adminRotatePassword(ValidEmail email, BindException errors, Container c, User user, String mailErrorText)
+    {
+        // We let admins create passwords (i.e., entries in the logins table) if they don't already exist.
+        // This addresses SSO and LDAP scenarios, see #10374.
+        boolean loginExists = SecurityManager.loginExists(email);
+        String pastVerb = loginExists ? "reset" : "created";
+        String infinitiveVerb = loginExists ? "reset" : "create";
+
         try
         {
-            ValidEmail email = new ValidEmail(rawEmail);
+            String verification;
 
-            // We let admins create passwords (i.e., entries in the logins table) if they don't already exist.
-            // This addresses SSO and LDAP scenarios, see #10374.
-            boolean loginExists = SecurityManager.loginExists(email);
-            String pastVerb = loginExists ? "reset" : "created";
-            String infinitiveVerb = loginExists ? "reset" : "create";
+            if (loginExists)
+            {
+                // Create a placeholder password that's impossible to guess and a separate email
+                // verification key that gets emailed.
+                verification = SecurityManager.createTempPassword();
+                SecurityManager.setPassword(email, SecurityManager.createTempPassword());
+                SecurityManager.setVerification(email, verification);
+            }
+            else
+            {
+                verification = SecurityManager.createLogin(email);
+            }
 
             try
             {
-                String verification;
+                ActionURL verificationURL = SecurityManager.createVerificationURL(c, email, verification, null);
+                SecurityManager.sendEmail(c, user, SecurityManager.getResetMessage(false), email.getEmailAddress(), verificationURL);
 
-                if (loginExists)
+                if (!user.getEmail().equals(email.getEmailAddress()))
                 {
-                    // Create a placeholder password that's impossible to guess and a separate email
-                    // verification key that gets emailed.
-                    verification = SecurityManager.createTempPassword();
-                    SecurityManager.setPassword(email, SecurityManager.createTempPassword());
-                    SecurityManager.setVerification(email, verification);
+                    SecurityMessage msg = SecurityManager.getResetMessage(true);
+                    msg.setTo(email.getEmailAddress());
+                    SecurityManager.sendEmail(c, user, msg, user.getEmail(), verificationURL);
                 }
-                else
-                {
-                    verification = SecurityManager.createLogin(email);
-                }
-
-                try
-                {
-                    ActionURL verificationURL = SecurityManager.createVerificationURL(c, email, verification, null);
-                    SecurityManager.sendEmail(c, user, SecurityManager.getResetMessage(false), email.getEmailAddress(), verificationURL);
-
-                    if (!user.getEmail().equals(email.getEmailAddress()))
-                    {
-                        SecurityMessage msg = SecurityManager.getResetMessage(true);
-                        msg.setTo(email.getEmailAddress());
-                        SecurityManager.sendEmail(c, user, msg, user.getEmail(), verificationURL);
-                    }
-                    UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " " + pastVerb + " the password.");
-                }
-                catch (ConfigurationException | MessagingException e)
-                {
-                    errors.addError(new LabKeyError(new Exception("Failed to send email due to: " + e.getMessage(), e)));
-                    UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " " + pastVerb + " the password, but sending the email failed.");
-                }
+                UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " " + pastVerb + " the password.");
             }
-            catch (SecurityManager.UserManagementException e)
+            catch (ConfigurationException | MessagingException e)
             {
-
-                errors.addError(new LabKeyError(new Exception("Failed to reset password due to: " + e.getMessage(), e)));
-                UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " attempted to " + infinitiveVerb + " the password, but the " + infinitiveVerb + " failed: " + e.getMessage());
+                String message = "Failed to send email due to: " + e.getMessage();
+                if (StringUtils.isNotBlank(mailErrorText))
+                    message += '\n' + mailErrorText;
+                errors.addError(new LabKeyError(new Exception(message, e)));
+                UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " " + pastVerb + " the password, but sending the email failed.");
             }
         }
-        catch (ValidEmail.InvalidEmailException e)
+        catch (SecurityManager.UserManagementException e)
         {
-            //Should be caught in api validation
-            errors.addError(new LabKeyError(new Exception("Invalid email address." + e.getMessage(), e)));
+            errors.addError(new LabKeyError(new Exception("Failed to reset password due to: " + e.getMessage(), e)));
+            UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " attempted to " + infinitiveVerb + " the password, but the " + infinitiveVerb + " failed: " + e.getMessage());
         }
     }
-
 
     public static void populateUserGroupsWithStartupProps()
     {
