@@ -51,8 +51,6 @@ import java.util.List;
 public interface ReportService
 {
     String LINK_REPORT_TYPE = "ReportService.linkReport";
-    String EXPERIMENTAL_DEPRECATED_CHART_VIEW = "ExperimentalDeprecatedChartView";
-    String EXPERIMENTAL_RENDER_DEPRECATED_CHART_VIEW = "ExperimentalRenderDeprecatedChartView";
 
     static ReportService get()
     {
@@ -187,8 +185,6 @@ public interface ReportService
      */
     @Deprecated
     Report createConvertedChartViewReportInstance(Report report, ContainerUser context);
-
-    boolean shouldConvertLegacyChart(Report report);
 
     interface DesignerInfo
     {

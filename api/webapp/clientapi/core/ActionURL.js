@@ -231,34 +231,29 @@ LABKEY.ActionURL = new function()
          * with the same name. (Defaults to no parameters)
 		* @example Examples:
 
-1. Build the URL for the 'plotChartAPI' action in the 'reports' controller within 
-the current container:
-
-	var url = LABKEY.ActionURL.buildURL("reports", "plotChartApi");
-
-2.  Build the URL for the 'getWebPart' action in the 'reports' controller within 
+1.  Build the URL for the 'getWebPart' action in the 'reports' controller within
 the current container:
 
 	var url = LABKEY.ActionURL.buildURL("project", "getWebPart");
 
-3.  Build the URL for the 'updateRows' action in the 'query' controller within
+2.  Build the URL for the 'updateRows' action in the 'query' controller within
 the container "My Project/My Folder":
 
 	var url = LABKEY.ActionURL.buildURL("query", "updateRows",
 	    "My Project/My Folder");
 
-4.  Navigate the browser to the study controller's begin action in the current
+3.  Navigate the browser to the study controller's begin action in the current
 container:
 
     window.location = LABKEY.ActionURL.buildURL("study", "begin");
 
-5.  Navigate the browser to the study controller's begin action in the folder
+4.  Navigate the browser to the study controller's begin action in the folder
 "/myproject/mystudyfolder":
          
     window.location = LABKEY.ActionURL.buildURL("study", "begin",
         "/myproject/mystudyfolder");
 
-6.  Navigate to the list controller's insert action, passing a returnUrl parameter
+5.  Navigate to the list controller's insert action, passing a returnUrl parameter
 that points back to the current page:
          
     window.location = LABKEY.ActionURL.buildURL("list", "insert",

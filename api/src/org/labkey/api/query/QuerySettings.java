@@ -539,15 +539,7 @@ public class QuerySettings
         try {
             if (getReportId() != null)
             {
-                Report report = getReportId().getReport(viewContext);
-                ReportService reportService = ReportService.get();
-                if (reportService.shouldConvertLegacyChart(report))
-                {
-                    Report convertedReport = reportService.createConvertedChartViewReportInstance(report, viewContext);
-                    if (convertedReport != null)
-                        report = convertedReport;
-                }
-                return report;
+                return getReportId().getReport(viewContext);
             }
         }
         catch (Exception e)

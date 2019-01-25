@@ -28,6 +28,8 @@ import java.util.Objects;
  * User: Karl Lum
  * Date: Oct 5, 2006
  */
+
+@Deprecated // can delete in release 21.2
 public class ChartReportDescriptor extends ReportDescriptor
 {
     public static final String CHART_XY = "1";
@@ -109,15 +111,4 @@ public class ChartReportDescriptor extends ReportDescriptor
         }
         return true;
     }
-
-    public interface LegendItemLabelGenerator
-    {
-        /**
-         * Generates a label to display in the legend for the specified item (column name)
-         * @param itemName the name of the column.
-         * @return the name to display in the legend
-         */
-        public String generateLabel(ViewContext context, ReportDescriptor descriptor, String itemName) throws Exception;
-    }
-
 }

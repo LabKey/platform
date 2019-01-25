@@ -105,16 +105,6 @@ public class ReportUtil
 {
     public static final String FORWARD_URL = "forwardUrl";
 
-    public static ActionURL getChartDesignerURL(ViewContext context, ChartDesignerBean bean)
-    {
-        ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlDesignChart(context.getContainer());
-
-        for (Pair<String, String> param : bean.getParameters())
-            url.addParameter(param.getKey(), param.getValue());
-
-        return url;
-    }
-
     @Deprecated // use getScriptReportDesignerURL instead
     public static ActionURL getRReportDesignerURL(ViewContext context, ScriptReportBean bean)
     {
@@ -156,30 +146,6 @@ public class ReportUtil
         if (bean.getReportId() != null)
             url.replaceParameter(ReportDescriptor.Prop.reportId, bean.getReportId().toString());
 
-        return url;
-    }
-
-    public static ActionURL getPlotChartURL(ViewContext context, Report report)
-    {
-        ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlPlotChart(context.getContainer());
-
-        if (report instanceof Report.ImageReport)
-        {
-            ActionURL filterUrl = RenderContext.getSortFilterURLHelper(context);
-            ReportIdentifier id = report.getDescriptor().getReportId();
-            if (id != null)
-                url.addParameter(ReportDescriptor.Prop.reportId, report.getDescriptor().getReportId().toString());
-            for (Pair<String, String> param : filterUrl.getParameters())
-            {
-                if (!param.getKey().equals(ReportDescriptor.Prop.reportId.name()))
-                    url.addParameter(param.getKey(), param.getValue());
-            }
-        }
-        else
-        {
-            throw new IllegalArgumentException("Report must implement Report.ImageReport to use the plot chart action");
-        }
-        
         return url;
     }
 

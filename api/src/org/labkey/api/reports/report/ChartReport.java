@@ -36,11 +36,6 @@ public abstract class ChartReport extends AbstractReport implements Report.Resul
         return "Chart View";
     }
 
-    public ChartReportDescriptor.LegendItemLabelGenerator getLegendItemLabelGenerator()
-    {
-        return null;
-    }
-
     public Results generateResults(ViewContext context, boolean allowAsyncQuery) throws Exception
     {
         return null;

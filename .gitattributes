@@ -15,9 +15,6 @@ api/gwtsrc/org/labkey/api/gwt/client/assay/SampleChooserUtils.java -text
 api/gwtsrc/org/labkey/api/gwt/client/assay/model/GWTBatch.java -text
 api/gwtsrc/org/labkey/api/gwt/client/assay/model/GWTProtocol.java -text
 api/gwtsrc/org/labkey/api/gwt/client/assay/model/GWTRun.java -text
-api/gwtsrc/org/labkey/api/gwt/client/model/GWTChart.java -text
-api/gwtsrc/org/labkey/api/gwt/client/model/GWTChartColumn.java -text
-api/gwtsrc/org/labkey/api/gwt/client/model/GWTChartRenderer.java -text
 api/gwtsrc/org/labkey/api/gwt/client/model/GWTComparisonGroup.java -text
 api/gwtsrc/org/labkey/api/gwt/client/model/GWTComparisonMember.java -text
 api/gwtsrc/org/labkey/api/gwt/client/model/GWTComparisonResult.java -text
@@ -41,8 +38,6 @@ api/gwtsrc/org/labkey/api/gwt/client/ui/BoundTextAreaBox.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/BoundTextBox.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/BoundWidget.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/CachingLookupService.java -text
-api/gwtsrc/org/labkey/api/gwt/client/ui/ChartService.java -text
-api/gwtsrc/org/labkey/api/gwt/client/ui/ChartServiceAsync.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/ConceptPicker.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/DirtyCallback.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/DomainProvider.java -text
@@ -110,10 +105,6 @@ api/gwtsrc/org/labkey/api/gwt/client/ui/property/URLItem.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/property/ValidatorDialog.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/property/ValidatorItem.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/property/VisibilityItem.java -text
-api/gwtsrc/org/labkey/api/gwt/client/ui/reports/AbstractChartPanel.java -text
-api/gwtsrc/org/labkey/api/gwt/client/ui/reports/ChartAxisOptionsPanel.java -text
-api/gwtsrc/org/labkey/api/gwt/client/ui/reports/ChartMeasurementsPanel.java -text
-api/gwtsrc/org/labkey/api/gwt/client/ui/reports/ChartPreviewPanel.java -text
 api/gwtsrc/org/labkey/api/gwt/client/util/BooleanProperty.java -text
 api/gwtsrc/org/labkey/api/gwt/client/util/ColorGenerator.java -text
 api/gwtsrc/org/labkey/api/gwt/client/util/DateProperty.java -text
@@ -1261,10 +1252,6 @@ api/src/org/labkey/api/reports/ReportService.java -text
 api/src/org/labkey/api/reports/RserveScriptEngine.java -text
 api/src/org/labkey/api/reports/RserveScriptEngineFactory.java -text
 api/src/org/labkey/api/reports/actions/ReportForm.java -text
-api/src/org/labkey/api/reports/chart/ChartRenderInfo.java -text
-api/src/org/labkey/api/reports/chart/ChartRenderer.java -text
-api/src/org/labkey/api/reports/chart/ChartRendererFactory.java -text
-api/src/org/labkey/api/reports/chart/RenderInfo.java -text
 api/src/org/labkey/api/reports/model/DataViewEditForm.java -text
 api/src/org/labkey/api/reports/model/NotificationInfo.java -text
 api/src/org/labkey/api/reports/model/ReportPropsManager.java -text
@@ -1339,7 +1326,6 @@ api/src/org/labkey/api/reports/report/r/view/TextOutput.java -text
 api/src/org/labkey/api/reports/report/r/view/TsvOutput.java -text
 api/src/org/labkey/api/reports/report/view/AjaxRunScriptReportView.java -text
 api/src/org/labkey/api/reports/report/view/AjaxScriptReportView.java -text
-api/src/org/labkey/api/reports/report/view/ChartDesignerBean.java -text
 api/src/org/labkey/api/reports/report/view/DefaultReportUIProvider.java -text
 api/src/org/labkey/api/reports/report/view/RReportBean.java -text
 api/src/org/labkey/api/reports/report/view/RenderBackgroundRReportView.java -text
@@ -2034,7 +2020,6 @@ api/webapp/clientapi/core/Specimen.js -text
 api/webapp/clientapi/core/Utils.js -text
 api/webapp/clientapi/core/Visualization.js -text
 api/webapp/clientapi/dom/Assay.js -text
-api/webapp/clientapi/dom/Chart.js -text
 api/webapp/clientapi/dom/DataRegion.js -text
 api/webapp/clientapi/dom/Form.js -text
 api/webapp/clientapi/dom/GetData.js -text
