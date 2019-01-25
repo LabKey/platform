@@ -25,6 +25,7 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiVersion;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.FormApiAction;
+import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
@@ -2105,8 +2106,16 @@ public class SecurityApiActions
         @Override
         public ApiSimpleResponse execute(SecurityController.EmailForm form, BindException errors)
         {
-            //TODO: should combine this with SecurityController.AdminResetPasswordAction, but need to simplify returned view
-            SecurityManager.adminRotatePassword(form.getEmail(), errors, getContainer(), getUser());
+            try
+            {
+                ValidEmail email = new ValidEmail(form.getEmail());
+                SecurityManager.adminRotatePassword(email, errors, getContainer(), getUser());
+            }
+            catch (ValidEmail.InvalidEmailException e)
+            {
+                //Should be caught in api validation
+                errors.addError(new LabKeyError(new Exception("Invalid email address." + e.getMessage(), e)));
+            }
 
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("success", !errors.hasErrors());

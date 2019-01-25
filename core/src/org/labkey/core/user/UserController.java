@@ -1577,15 +1577,6 @@ public class UserController extends SpringActionController
                     ActionButton reset = new ActionButton(resetURL, loginExists ? "Reset Password" : "Create Password");
                     reset.setActionType(ActionButton.Action.LINK);
 
-                    String message;
-
-                    if (loginExists)
-                        message = "You are about to clear the user's current password, send the user a reset password email, and force the user to pick a new password to access the site.";
-                    else
-                        message = "You are about to send the user a reset password email, letting the user pick a password to access the site.";
-
-                    reset.setScript("return confirm(" + PageFlowUtil.jsString(message) + ");", true);
-
                     bb.add(reset);
                 }
 
