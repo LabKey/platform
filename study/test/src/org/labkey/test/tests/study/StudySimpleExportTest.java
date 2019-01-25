@@ -48,6 +48,7 @@ import java.util.ResourceBundle;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 
 /**
@@ -344,6 +345,18 @@ public class StudySimpleExportTest extends StudyBaseTest
 
         log("Asserting if map is present");
         waitForText("Example Box Plot");
+
+        // Get index of the svg plot we are interested in.
+        int svgCount = Locator.css("div:not(.thumbnail) > svg").findElements(getDriver()).size();
+        int index = 0;
+        for(; index < svgCount; index++)
+        {
+            if(getSVGText(index).contains("Example Box Plot"))
+                break;
+        }
+
+        assertNotEquals("Did not find a plot with the expected title.", index, svgCount);
+
         assertTextPresent("Systolic Blood Pressure xxx/", "Diastolic Blood Pressure /xxx");
         String BOX_PLOT_SVG = "121\n122\n123\n129\n133\n135\n142\n"
                 + "76\n78\n80\n82\n84\n86\n88\n90\n"
@@ -355,7 +368,7 @@ public class StudySimpleExportTest extends StudyBaseTest
                 + "133: Min: 79 Max: 85 Q1: 80.5 Q2: 82 Q3: 83.5\n"
                 + "135: Min: 85 Max: 85 Q1: 85 Q2: 85 Q3: 85\n"
                 + "142: Min: 90 Max: 90 Q1: 90 Q2: 90 Q3: 90";
-        assertSVG(BOX_PLOT_SVG);
+        assertSVG(BOX_PLOT_SVG, index);
     }
 
     @Test
