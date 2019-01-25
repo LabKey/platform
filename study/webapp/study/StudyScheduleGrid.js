@@ -539,7 +539,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
     getData : function(handler, scope) {
         Ext4.Ajax.request({
             url     : LABKEY.ActionURL.buildURL('study', 'browseStudySchedule.api'),
-            method  : 'GET',
+            method  : 'POST',
             success : function(response){
                 if (handler)
                 {
@@ -548,7 +548,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
                 }
             },
             failure : function(e){
-                Ext4.Msg.alert('Failure');
+                Ext4.Msg.alert('Failure', Ext4.decode(e.responseText).exception);
             },
             scope   : this
         });
