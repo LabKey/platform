@@ -79,13 +79,6 @@ public abstract class ReadOnlyApiAction<FORM> extends BaseViewAction<FORM>
         _marshaller = findMarshaller();
     }
 
-    public ReadOnlyApiAction(Class<? extends FORM> formClass)
-    {
-        super(formClass);
-        setUnauthorizedType(UnauthorizedException.Type.sendBasicAuth);
-        _marshaller = findMarshaller();
-    }
-
     protected final Marshaller findMarshaller()
     {
         Marshal marshal = getClass().getAnnotation(Marshal.class);

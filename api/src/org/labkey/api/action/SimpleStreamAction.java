@@ -30,15 +30,6 @@ import java.io.PrintWriter;
  */
 public abstract class SimpleStreamAction<FORM> extends SimpleViewAction<FORM>
 {
-    protected SimpleStreamAction()
-    {
-    }
-
-    protected SimpleStreamAction(Class<? extends FORM> formClass)
-    {
-        super(formClass);
-    }
-
     /**
      * Make sure input form type is connected.
      */

@@ -37,15 +37,6 @@ import static org.labkey.api.action.SpringActionController.ERROR_MSG;
  */
 public abstract class OldRedirectAction<FORM> extends BaseViewAction<FORM>
 {
-    public OldRedirectAction()
-    {
-    }
-
-    public OldRedirectAction(Class<? extends FORM> commandClass)
-    {
-        super(commandClass);
-    }
-
     public final ModelAndView handleRequest() throws Exception
     {
         BindException errors = bindParameters(getPropertyValues());

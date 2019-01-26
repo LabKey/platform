@@ -36,15 +36,6 @@ import org.labkey.api.util.URLHelper;
  */
 public abstract class ConfirmAction<FORM> extends BaseViewAction<FORM>
 {
-    protected ConfirmAction()
-    {
-    }
-
-    protected ConfirmAction(Class<FORM> commandClass)
-    {
-        super(commandClass);
-    }
-
     public String getConfirmText()
     {
         return "OK";
@@ -95,7 +86,7 @@ public abstract class ConfirmAction<FORM> extends BaseViewAction<FORM>
             else
             {
                 ModelAndView confirmView = getConfirmView(form, errors);
-                JspView<ConfirmAction> confirmWrapper = new JspView<ConfirmAction>("/org/labkey/api/action/confirmWrapper.jsp", this);
+                JspView<ConfirmAction> confirmWrapper = new JspView<>("/org/labkey/api/action/confirmWrapper.jsp", this);
                 confirmWrapper.setBody(confirmView);
                 getPageConfig().setTemplate(PageConfig.Template.Dialog);
                 return confirmWrapper;
