@@ -17,6 +17,7 @@ package org.labkey.api.reports.report.view;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
@@ -30,6 +31,7 @@ import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.reports.report.view.AjaxScriptReportView.Mode;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.writer.ContainerUser;
 
@@ -145,6 +147,13 @@ public class ScriptReportBean extends ReportDesignBean
             report = report.clone();
             ReportDescriptor descriptor = report.getDescriptor();
 
+            if (!(descriptor instanceof ScriptReportDescriptor))
+            {
+                if (HttpView.hasCurrentView())
+                    Logger.getLogger(ScriptReport.class).error("Bad report descriptor for request: " + HttpView.getContextURL());
+                throw new IllegalStateException("Expected ScriptReportDescriptor, but was: " + descriptor.getClass().getName() + " from " + report.getType());
+            }
+
             if (getScript() != null)
                 descriptor.setProperty(ScriptReportDescriptor.Prop.script, getScript());
 
@@ -170,8 +179,6 @@ public class ScriptReportBean extends ReportDesignBean
 
             if (isUseGetDataApi() != null)
                 descriptor.setProperty(ScriptReportDescriptor.Prop.useGetDataApi, isUseGetDataApi());
-
-            assert descriptor instanceof ScriptReportDescriptor;
 
             ((ScriptReportDescriptor)descriptor).setIncludedReports(_includedReports);
 
