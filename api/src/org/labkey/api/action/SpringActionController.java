@@ -85,6 +85,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
@@ -1200,8 +1202,15 @@ public abstract class SpringActionController implements Controller, HasViewConte
             return;
 
         if (readonly)
-            _log.warn("MUTATING SQL executed as part of handling action: " + (null==vc?"":vc.getRequest().getMethod()) + " " + c.getName() + "\n" + sql, new Throwable());
+        {
+            boolean verbose = _log.isDebugEnabled() || mutatingActionsWarned.add(c.getName());
+            _log.warn("MUTATING SQL executed as part of handling action: " +
+                    (null==vc ? "" : vc.getRequest().getMethod()) + " " +
+                    c.getName() + (verbose ? ("\n" + sql) : ""),
+                    verbose ? new Throwable() : null);
+        }
     }
+    private static final Set<String> mutatingActionsWarned = new CopyOnWriteArraySet<>();
     public interface _AutoCloseable extends AutoCloseable
     {
         @Override
