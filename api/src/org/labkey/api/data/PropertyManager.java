@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
@@ -491,6 +492,8 @@ public class PropertyManager
                     // This is true even if we'd thought it was new, or had a value for "set" coming in; another thread may have
                     // changed this state prior to this thread's call to save().
                     _set = existingMap.getSet();
+                    // Updating an existing property map invokes a stored procedure that StatementWrapper doesn't recognize as mutating SQL.
+                    SpringActionController.executingMutatingSql("UPDATE to an existing PropertyMap");
                 }
 
                 // delete removed properties
