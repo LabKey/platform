@@ -4081,11 +4081,6 @@ public class QueryController extends SpringActionController
 
     private abstract class BaseDeleteSchemaAction<F extends AbstractExternalSchemaForm<T>, T extends AbstractExternalSchemaDef> extends ConfirmAction<F>
     {
-        protected BaseDeleteSchemaAction(Class<F> commandClass)
-        {
-            super(commandClass);
-        }
-
         public String getConfirmText()
         {
             return "Delete";
@@ -4103,7 +4098,13 @@ public class QueryController extends SpringActionController
             return true;
         }
 
-        protected abstract void delete(F form);
+        @Override
+        protected String getCommandClassMethodName()
+        {
+            return "delete";
+        }
+
+        public abstract void delete(F form);
 
         public void validateCommand(F form, Errors errors)
         {
@@ -4118,12 +4119,7 @@ public class QueryController extends SpringActionController
     @RequiresPermission(AdminOperationsPermission.class)
     public class DeleteLinkedSchemaAction extends BaseDeleteSchemaAction<LinkedSchemaForm, LinkedSchemaDef>
     {
-        public DeleteLinkedSchemaAction()
-        {
-            super(LinkedSchemaForm.class);
-        }
-
-        protected void delete(LinkedSchemaForm form)
+        public void delete(LinkedSchemaForm form)
         {
             form.refreshFromDb();
             QueryManager.get().delete(form.getBean());
@@ -4133,12 +4129,7 @@ public class QueryController extends SpringActionController
     @RequiresPermission(AdminOperationsPermission.class)
     public class DeleteExternalSchemaAction extends BaseDeleteSchemaAction<ExternalSchemaForm, ExternalSchemaDef>
     {
-        public DeleteExternalSchemaAction()
-        {
-            super(ExternalSchemaForm.class);
-        }
-
-        protected void delete(ExternalSchemaForm form)
+        public void delete(ExternalSchemaForm form)
         {
             form.refreshFromDb();
             QueryManager.get().delete(form.getBean());

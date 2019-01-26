@@ -50,7 +50,6 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.mail.Address;
 import javax.mail.Message;
 import javax.mail.internet.InternetAddress;
-import javax.servlet.ServletException;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
