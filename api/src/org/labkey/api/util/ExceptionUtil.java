@@ -526,7 +526,10 @@ public class ExceptionUtil
             {
                 return true;
             }
-            if (ex.getClass().equals(IllegalStateException.class) && "Cannot create a session after the response has been committed".equals(ex.getMessage()))
+            if (ex.getClass().equals(IllegalStateException.class) &&
+                    ("Cannot create a session after the response has been committed".equals(ex.getMessage()) ||
+                        "Cannot call sendError() after the response has been committed".equals(ex.getMessage())))
+
             {
                 return true;
             }
