@@ -1472,11 +1472,6 @@ public class Portal
         return webPartNames;
     }
 
-    public static int purge()
-    {
-        return ContainerUtil.purgeTable(getTableInfoPortalWebParts(), "PageId");
-    }
-
     public static WebPartView getWebPartViewSafe(@NotNull WebPartFactory factory, @NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         WebPartView view;

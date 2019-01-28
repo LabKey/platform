@@ -29,6 +29,12 @@ import org.labkey.api.data.TableInfo;
  */
 public class ContainerUtil
 {
+    /**
+     * Deletes all orphaned rows in a table, i.e., rows associated with a Container that no longer exists.
+     * @param tinfo TableInfo of the target table
+     * @param key Name of the Container column in this table. If null, column name is assumed to be "Container".
+     * @return Number of rows deleted
+     */
     public static int purgeTable(TableInfo tinfo, String key)
     {
         assert tinfo.getTableType() != DatabaseTableType.NOT_IN_DB;
@@ -43,6 +49,13 @@ public class ContainerUtil
     }
 
 
+    /**
+     * Deletes all rows in a table associated with the specified Container
+     * @param tinfo TableInfo of the target table
+     * @param c Container whose rows should be deleted
+     * @param key Name of the Container column in this table. If null, column name is assumed to be "Container".
+     * @return Number of rows deleted
+     */
     public static int purgeTable(TableInfo tinfo, Container c, @Nullable String key)
     {
         assert tinfo.getTableType() != DatabaseTableType.NOT_IN_DB;
@@ -51,6 +64,6 @@ public class ContainerUtil
             key = "Container";
 
         String delete = "DELETE FROM " + tinfo + " WHERE " + key + " = ?";
-        return new SqlExecutor(tinfo.getSchema()).execute(delete, c.getId());
+        return new SqlExecutor(tinfo.getSchema()).execute(delete, c);
     }
 }
