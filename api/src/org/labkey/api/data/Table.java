@@ -718,7 +718,7 @@ public class Table
         if (comma.length() == 0)
         {
             // NO COLUMNS TO INSERT
-            throw new IllegalArgumentException("Table.insert called with no column data. table=" + table + " object=" + String.valueOf(fieldsIn));
+            throw new IllegalArgumentException("Table.insert called with no column data. table=" + table + " object=" + fieldsIn);
         }
 
         insertSQL.append("INSERT INTO ");
@@ -1083,7 +1083,7 @@ public class Table
             logEntry.append("\n    ").append(line);
 
         for (int i = 0; null != parameters && i < parameters.length; i++)
-            logEntry.append("\n    ?[").append(i + 1).append("] ").append(String.valueOf(parameters[i]));
+            logEntry.append("\n    ?[").append(i + 1).append("] ").append(parameters[i]);
 
         logEntry.append("\n");
         _appendTableStackTrace(logEntry, 5);
