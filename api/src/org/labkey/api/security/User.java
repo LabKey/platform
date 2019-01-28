@@ -240,7 +240,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     }
 
     /**
-     * Does the user have the permission of the Site Administrator? This is NOT a check for AdminPermission.
+     * Does the user have the permission of the Site Administrator at the root container? This is NOT a check for AdminPermission.
      * @return boolean
      */
     public boolean hasSiteAdminPermission()
@@ -259,7 +259,17 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     }
 
     /**
+     * Does the user have the permission of the Application Administrator at the root container? This is NOT a check for AdminPermission.
+     * @return boolean
+     */
+    public boolean hasApplicationAdminPermission()
+    {
+        return isAllowedGlobalRoles() && hasRootPermission(SiteAdminPermission.class);
+    }
+
+    /**
      * Is the user assigned to the ApplicationAdminRole at the root container? This is NOT a check for AdminPermission.
+     * NOTE: most callers should use hasApplicationAdminPermission() instead; only use this if you care specifically about the role itself
      * @return boolean
      */
     public boolean isApplicationAdmin()
@@ -271,15 +281,19 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         SecurityPolicy rootContainerPolicy = ContainerManager.getRoot().getPolicy();
         List<Role> rootAssignedRoles = rootContainerPolicy.getAssignedRoles(this);
         rootAssignedRoles.addAll(rootContainerPolicy.getRoles(getGroups()));
-        return rootAssignedRoles.contains(RoleManager.getRole(ApplicationAdminRole.class));  // TODO: convert to code below later
-        //return doesAnyRoleHaveAppAdminPermission(rootAssignedRoles);
+        return rootAssignedRoles.contains(RoleManager.getRole(ApplicationAdminRole.class));
     }
 
+    public boolean hasApplicationAdminPermissionForPolicy(SecurityPolicy policy)
+    {
+        return doesAnyRoleHaveAppAdminPermission(policy.getEffectiveRoles(this, false));
+    }
+
+    // NOTE: most callers should use hasApplicationAdminPermissionForPolicy() instead; only use this if you care specifically about the role itself
     public boolean hasApplicationAdminForPolicy(SecurityPolicy policy)
     {
-        Set<Role> assignedRoles = policy.getEffectiveRoles(this, false);  // TODO: convert to code below later
-        return assignedRoles.contains(RoleManager.getRole(ApplicationAdminRole.class));  // TODO: convert to code below later
-        //return doesAnyRoleHaveAppAdminPermission(policy.getEffectiveRoles(this, false));
+        Set<Role> assignedRoles = policy.getEffectiveRoles(this, false);
+        return assignedRoles.contains(RoleManager.getRole(ApplicationAdminRole.class));
     }
 
     private boolean doesAnyRoleHaveAppAdminPermission(Collection<Role> roles)
