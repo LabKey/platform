@@ -37,6 +37,7 @@ abstract public class ScriptReportDescriptor extends ReportDescriptor
         sourceTabVisible,
         knitrFormat,
         useGetDataApi,
+        rmarkdownOutputOptions, /* pandoc only */
         useDefaultOutputFormat /* pandoc only */
     }
 

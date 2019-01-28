@@ -18,6 +18,7 @@ package org.labkey.api.reports;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.RReportDescriptor;
+import org.springframework.util.StringUtils;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
@@ -37,6 +38,8 @@ public class RScriptEngine extends ExternalScriptEngine
     public static final String KNITR_FORMAT = "r.script.engine.knitrFormat";
     public static final String KNITR_OUTPUT = "r.script.engine.knitrOutput";
     public static final String PANDOC_USE_DEFAULT_OUTPUT_FORMAT = "r.script.engine.pandocUseDefaultOutputFormat";
+    public static final String PANDOC_OUTPUT_OPTIONS_LIST = "r.script.engine.pandocUseCustomOutputOptions";
+    public static final String PANDOC_DEFAULT_OUTPUT_OPTIONS_LIST = "keep_md=TRUE, self_contained=FALSE, fig_caption=TRUE, theme=NULL, css=NULL, smart=TRUE, highlight=\"default\"";
 
     // script engine properties that report can request
     public static final String PROP_REMOTE = "remote";
@@ -149,6 +152,16 @@ public class RScriptEngine extends ExternalScriptEngine
         return (Boolean)JdbcType.BOOLEAN.convert(v);
     }
 
+    protected String getPandocOutputOptionsList(ScriptContext context)
+    {
+        Bindings bindings = context.getBindings(ScriptContext.ENGINE_SCOPE);
+
+        Object v = bindings.get(PANDOC_OUTPUT_OPTIONS_LIST);
+        if (null == v)
+            return null;
+        return (String) v;
+    }
+
     protected String getInputFilename(File inputScript)
     {
         return inputScript.getAbsolutePath().replaceAll("\\\\", "/");
@@ -240,8 +253,10 @@ public class RScriptEngine extends ExternalScriptEngine
                 }
                 else
                 {
-                    sb.append("output_options=list(keep_md=TRUE, self_contained=FALSE, fig_caption=TRUE, " +
-                            "theme=NULL, css=NULL, smart=TRUE, highlight=\"default\"), ");
+                    String outputOptions = getPandocOutputOptionsList(context);
+                    sb.append("output_options=list(")
+                            .append(StringUtils.isEmpty(outputOptions) ? PANDOC_DEFAULT_OUTPUT_OPTIONS_LIST : outputOptions)
+                            .append("), ");
                 }
             }
             else

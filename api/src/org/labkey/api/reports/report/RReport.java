@@ -281,6 +281,12 @@ public class RReport extends ExternalScriptEngineReport
         return (Boolean)JdbcType.BOOLEAN.convert(value);
     }
 
+    public String getRmarkdownOutputOptions()
+    {
+        ReportDescriptor d = getDescriptor();
+        return d.getProperty(ScriptReportDescriptor.Prop.rmarkdownOutputOptions);
+    }
+
     public String getKnitrBeginChunk()
     {
         if (getKnitrFormat() == RReportDescriptor.KnitrFormat.Html)
@@ -693,6 +699,7 @@ public class RReport extends ExternalScriptEngineReport
                 Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
                 bindings.put(RScriptEngine.KNITR_FORMAT, getKnitrFormat());
                 bindings.put(RScriptEngine.PANDOC_USE_DEFAULT_OUTPUT_FORMAT, isUseDefaultOutputOptions());
+                bindings.put(RScriptEngine.PANDOC_OUTPUT_OPTIONS_LIST, getRmarkdownOutputOptions());
 
                 Object output = runScript(engine, context, outputSubst, inputDataTsv, inputParameters);
 

@@ -41,6 +41,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
+import static org.labkey.api.reports.RScriptEngine.PANDOC_DEFAULT_OUTPUT_OPTIONS_LIST;
+
 /*
 * User: Karl Lum
 * Date: Dec 29, 2008
@@ -61,6 +63,7 @@ public class ScriptReportBean extends ReportDesignBean
     private String _thumbnailType;
     private String _knitrFormat;
     private Boolean _useDefaultOutputFormat = null; // pandoc only
+    private String _rmarkdownOutputOptions = null; // pandoc only
     private Boolean _useGetDataApi;
     private LinkedHashSet<ClientDependency> _clientDependencies;
     private String _scriptDependencies;
@@ -176,6 +179,7 @@ public class ScriptReportBean extends ReportDesignBean
                 descriptor.setProperty(ScriptReportDescriptor.Prop.knitrFormat, getKnitrFormat());
 
             descriptor.setProperty(ScriptReportDescriptor.Prop.useDefaultOutputFormat, isUseDefaultOutputFormat());
+            descriptor.setProperty(ScriptReportDescriptor.Prop.rmarkdownOutputOptions, getRmarkdownOutputOptions());
 
             if (isUseGetDataApi() != null)
                 descriptor.setProperty(ScriptReportDescriptor.Prop.useGetDataApi, isUseGetDataApi());
@@ -209,6 +213,9 @@ public class ScriptReportBean extends ReportDesignBean
             list.add(new Pair<>(ScriptReportDescriptor.Prop.includedReports.toString(), report));
 
         list.add(new Pair<>(ScriptReportDescriptor.Prop.useDefaultOutputFormat.toString(), isUseDefaultOutputFormat()?"true":"false"));
+        if (getRmarkdownOutputOptions() != null)
+            list.add(new Pair<>(ScriptReportDescriptor.Prop.rmarkdownOutputOptions.toString(), getRmarkdownOutputOptions()));
+
 
         return list;
     }
@@ -227,6 +234,7 @@ public class ScriptReportBean extends ReportDesignBean
         setKnitrFormat(descriptor.getProperty(ScriptReportDescriptor.Prop.knitrFormat));
         String v = descriptor.getProperty(ScriptReportDescriptor.Prop.useDefaultOutputFormat);
         setUseDefaultOutputFormat(null==v ? true : (Boolean)JdbcType.BOOLEAN.convert(v));
+        setRmarkdownOutputOptions(descriptor.getProperty(ScriptReportDescriptor.Prop.rmarkdownOutputOptions));
 
         if (descriptor.getProperty(ScriptReportDescriptor.Prop.useGetDataApi) != null && descriptor.getProperty(ScriptReportDescriptor.Prop.useGetDataApi).equals("true"))
         {
@@ -376,5 +384,17 @@ public class ScriptReportBean extends ReportDesignBean
     public void setUseGetDataApi(Boolean useGetDataApi)
     {
         _useGetDataApi = useGetDataApi;
+    }
+
+    public String getRmarkdownOutputOptions()
+    {
+        if (!isUseDefaultOutputFormat())
+            return StringUtils.isEmpty(_rmarkdownOutputOptions) ? PANDOC_DEFAULT_OUTPUT_OPTIONS_LIST : _rmarkdownOutputOptions;
+        return null;
+    }
+
+    public void setRmarkdownOutputOptions(String rmarkdownOutputOptions)
+    {
+        _rmarkdownOutputOptions = rmarkdownOutputOptions;
     }
 }

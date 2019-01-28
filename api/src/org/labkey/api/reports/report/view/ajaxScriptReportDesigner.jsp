@@ -136,6 +136,7 @@
     reportConfig.put("knitrOptions", report instanceof RReport);
     reportConfig.put("knitrFormat", knitrFormat);
     reportConfig.put("useDefaultOutputFormat", bean.isUseDefaultOutputFormat());
+    reportConfig.put("rmarkdownOutputOptions", bean.getRmarkdownOutputOptions());
     reportConfig.put("scriptDependencies", bean.getScriptDependencies());
 
     reportConfig.put("javascriptOptions", report instanceof JavaScriptReport);
