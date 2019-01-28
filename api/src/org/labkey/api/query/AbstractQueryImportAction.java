@@ -104,6 +104,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     protected boolean _importIdentity = false;
     protected boolean _importLookupByAlternateKey = false;
     protected boolean _acceptZeroResults = false;     //0 returned results are OK
+    protected QueryUpdateService.InsertOption _insertOption= QueryUpdateService.InsertOption.INSERT;
 
     protected void setTarget(TableInfo t) throws ServletException
     {
@@ -485,7 +486,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         if (_target != null)
         {
             DataIteratorContext context = new DataIteratorContext(errors);
-            context.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
+            context.setInsertOption(_insertOption);
             context.setAllowImportLookupByAlternateKey(_importLookupByAlternateKey);
             if (_importIdentity)
             {
