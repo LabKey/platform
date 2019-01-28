@@ -314,9 +314,64 @@
         return collection;
     }
 
+    function getImportOptions()
+    {
+        <%
+        if (bean.showImportOptions) {
+        %>
+            return [{
+                xtype: 'radiogroup',
+                itemId: 'insertOption',
+                fieldLabel: 'Import Options',
+                preventMark: true,
+                listeners: {
+                    render: function(el) {
+                        Ext.QuickTips.register({
+                            target: el.label,
+                            title: 'Import options',
+                            text: '<ul>' +
+                                    '<li>The "Insert" option will insert new records and error if there are any input rows corresponding to existing records in the database.</li> ' +
+                                    '<li>The "Insert and Update" option will insert all new records and update the data for rows corresponding to existing records in the database.</li>' +
+                                  '</ul><br/>',
+                            width: 400,
+                            dismissDelay: 15000 // Hide after 10 seconds hover
+                        });
+                    }
+                },
+                columns: 1,
+                defaults: {
+                    xtype: 'radio',
+                    name: 'insertOption',
+                    style: "margin-left: 2px"
+                },
+                items: [
+                    {
+                        boxLabel: 'Insert',
+                        inputValue: 'IMPORT',
+                        id: 'insertId',
+                        checked: true
+                    },
+                    {
+                        boxLabel: 'Insert and Update',
+                        inputValue: 'MERGE',
+                        id: 'upsertId'
+                    }
+                ]
+            }];
+        <%
+        }
+        else {
+        %>
+            return [];
+        <%
+        }
+        %>
+    }
+
 
     function onReady(bean)
     {
+        Ext.QuickTips.init();
         importTsvForm = new Ext.form.FormPanel({
             fileUpload : false,
             labelWidth: 100, // label settings here cascade unless overridden
@@ -327,7 +382,7 @@
             minWidth:600,
             timeout: Ext.Ajax.timeout,
 
-            items: [
+            items: getImportOptions().concat([
                 <%=text(extraFormFields)%>
                 {
                     xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF
@@ -368,7 +423,7 @@
                     checked: false,
                     inputValue: "true"
                 }
-            ],
+            ]),
             buttonAlign:'left',
             buttons: [{
                 text: 'Submit', handler:submitFormTsv
@@ -405,7 +460,7 @@
             defaultType: 'textfield',
             timeout: Ext.Ajax.timeout,
 
-            items: [
+            items: getImportOptions().concat([
                     <%=text(extraFormFields)%>
                     {
                         xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF
@@ -419,7 +474,7 @@
                         inputValue: "true",
                         hideLabel: true
                     }
-            ],
+            ]),
 
             buttonAlign:'left',
             buttons: [{

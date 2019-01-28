@@ -71,6 +71,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     private boolean _bindDataRegionName = true;
     private boolean _bindViewName = true;
     private BindState _bindState = BindState.UNBOUND;
+    private QueryUpdateService.InsertOption _insertOption = QueryUpdateService.InsertOption.IMPORT;
 
     private enum BindState { UNBOUND, BINDING, BOUND }
 
@@ -404,5 +405,15 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     public void setQueryViewActionURL(String queryViewActionURL)
     {
         _queryViewActionURL = queryViewActionURL;
+    }
+
+    public QueryUpdateService.InsertOption getInsertOption()
+    {
+        return _insertOption;
+    }
+
+    public void setInsertOption(QueryUpdateService.InsertOption insertOption)
+    {
+        _insertOption = insertOption;
     }
 }

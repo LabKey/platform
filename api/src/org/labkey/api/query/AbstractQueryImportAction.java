@@ -84,6 +84,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         public List<Pair<String, String>> urlExcelTemplates = null;
         public String importMessage = null;
         public String successMessageSuffix = null;
+        public boolean showImportOptions = false;
         public boolean hideTsvCsvCombo = false;
         // extra EXT config to inject into the form
         public JSONArray extraFields = null;
@@ -160,6 +161,11 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     
     public ModelAndView getDefaultImportView(FORM form, JSONArray extraFields, BindException errors)
     {
+       return getDefaultImportView(form, false, extraFields, errors);
+    }
+
+    public ModelAndView getDefaultImportView(FORM form, boolean showImportOptions, JSONArray extraFields, BindException errors)
+    {
         ActionURL url = getViewContext().getActionURL();
         User user = getUser();
         Container c = getContainer();
@@ -167,6 +173,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         validatePermission(user, errors);
         ImportViewBean bean = new ImportViewBean();
 
+        bean.showImportOptions = showImportOptions;
         bean.urlReturn = StringUtils.trimToNull(url.getParameter(ActionURL.Param.returnUrl));
         bean.urlCancel = StringUtils.trimToNull(url.getParameter(ActionURL.Param.cancelUrl));
         bean.hideTsvCsvCombo = _hideTsvCsvCombo;
