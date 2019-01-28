@@ -340,7 +340,7 @@ public class AnnouncementsController extends SpringActionController
             return new ConfirmDeleteView(ann, getWhat(), getSettings(getContainer()));
         }
 
-        public URLHelper getSuccessURL(AnnouncementDeleteForm form)
+        public @NotNull URLHelper getSuccessURL(AnnouncementDeleteForm form)
         {
             return form.getReturnURLHelper(new ActionURL(BeginAction.class, getContainer()));
         }
@@ -1104,7 +1104,6 @@ public class AnnouncementsController extends SpringActionController
             bean.statusSelect = getStatusSelect(settings, (String)form.get("status"));
 
             User u = form.getUser() == null ? getViewContext().getUser() : form.getUser();
-            //noinspection RedundantCast -- IntelliJ inspection is wrong; this String cast is actually required
             bean.memberList = getMemberList(u, c, latestPost, (String) (reshow ? form.get("memberList") : null));
             bean.currentRendererType = currentRendererType;
             bean.renderers = WikiRendererType.values();
@@ -1557,23 +1556,6 @@ public class AnnouncementsController extends SpringActionController
         return emailOption;
     }
 
-    @RequiresPermission(AdminPermission.class)  // TODO: Seems to be unused... delete?
-    public class SetDefaultEmailOptionsAction extends OldRedirectAction<EmailDefaultSettingsForm>
-    {
-        public boolean doAction(EmailDefaultSettingsForm form, BindException errors)
-        {
-            //save the default settings
-            AnnouncementManager.saveDefaultEmailOption(getContainer(), form.getDefaultEmailOption());
-
-            return true;
-        }
-
-        public ActionURL getSuccessURL(EmailDefaultSettingsForm form)
-        {
-            return getAdminEmailURL(getContainer(), form.getReturnURLHelper(null));
-        }
-    }
-
     @RequiresPermission(AdminPermission.class)
     public class SetEmailDefaultAction extends MutatingApiAction<AbstractConfigTypeProvider.EmailConfigFormImpl>
     {
@@ -1929,32 +1911,6 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    public static class EmailDefaultSettingsForm extends ReturnUrlForm
-    {
-        private int _defaultEmailOption;
-        private int _defaultEmailFormat;
-
-        public int getDefaultEmailFormat()
-        {
-            return _defaultEmailFormat;
-        }
-
-        public void setDefaultEmailFormat(int defaultEmailFormat)
-        {
-            _defaultEmailFormat = defaultEmailFormat;
-        }
-
-        public int getDefaultEmailOption()
-        {
-            return _defaultEmailOption;
-        }
-
-        public void setDefaultEmailOption(int defaultEmailOption)
-        {
-            _defaultEmailOption = defaultEmailOption;
-        }
-    }
-
     public static class EmailOptionsForm extends ViewForm
     {
         private int _emailPreference = EmailOption.MESSAGES_NONE.getValue();
@@ -2087,29 +2043,6 @@ public class AnnouncementsController extends SpringActionController
         public void setResetFolderDefault(boolean resetFolderDefault)
         {
             _resetFolderDefault = resetFolderDefault;
-        }
-    }
-
-    // TODO: Appears to be unused... delete?
-    public static class AnnouncementEmailDefaults extends JspView<AnnouncementEmailDefaults.EmailDefaultsBean>
-    {
-        public AnnouncementEmailDefaults(Container c, URLHelper returnURL)
-        {
-            super("/org/labkey/announcements/announcementEmailDefaults.jsp", new EmailDefaultsBean(c, returnURL));
-        }
-
-        public static class EmailDefaultsBean
-        {
-            public List<MessageConfigService.NotificationOption> emailOptionsList;
-            public int defaultEmailOption;
-            public URLHelper returnURL;
-
-            private EmailDefaultsBean(Container c, URLHelper returnURL)
-            {
-                emailOptionsList = Arrays.asList(AnnouncementManager.getEmailOptions());
-                defaultEmailOption = AnnouncementManager.getDefaultEmailOption(c);
-                this.returnURL = returnURL;
-            }
         }
     }
 
