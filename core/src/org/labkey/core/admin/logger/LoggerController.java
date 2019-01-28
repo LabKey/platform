@@ -21,11 +21,11 @@ import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleResponse;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
@@ -174,7 +174,7 @@ public class LoggerController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class ListAction extends ApiAction<ListFilter>
+    public class ListAction extends ReadOnlyApiAction<ListFilter>
     {
         @Override
         public SimpleResponse<Collection<LoggerLevel>> execute(ListFilter filter, BindException errors)

@@ -15,8 +15,8 @@
  */
 package org.labkey.issue.actions;
 
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.RequiresPermission;
@@ -35,7 +35,7 @@ import java.util.Map;
  * Created by klum on 5/20/2016.
  */
 @RequiresPermission(ReadPermission.class)
-public class GetRelatedFolder extends ApiAction<IssuesController.IssuesForm>
+public class GetRelatedFolder extends ReadOnlyApiAction<IssuesController.IssuesForm>
 {
     @Override
     public Object execute(IssuesController.IssuesForm form, BindException errors)
@@ -44,7 +44,7 @@ public class GetRelatedFolder extends ApiAction<IssuesController.IssuesForm>
         LinkedList<Map<String, String>> containers = new LinkedList<>();
 
         // exclude current container
-        IssueManager.getIssueListDefs(null).stream().forEach(def -> {
+        IssueManager.getIssueListDefs(null).forEach(def -> {
             Container c = ContainerManager.getForId(def.getContainerId());
             if (c.hasPermission(getUser(), InsertPermission.class))
             {

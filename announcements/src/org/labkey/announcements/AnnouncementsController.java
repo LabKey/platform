@@ -34,14 +34,13 @@ import org.labkey.announcements.model.NormalMessageBoardPermissions;
 import org.labkey.announcements.model.Permissions;
 import org.labkey.announcements.model.SecureMessageBoardPermissions;
 import org.labkey.announcements.query.AnnouncementSchema;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.OldRedirectAction;
-import org.labkey.api.action.RedirectAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleRedirectAction;
@@ -979,7 +978,7 @@ public class AnnouncementsController extends SpringActionController
 
 
     @RequiresPermission(InsertPermission.class)
-    public class CompleteUserAction extends ApiAction<AjaxCompletionForm>
+    public class CompleteUserAction extends ReadOnlyApiAction<AjaxCompletionForm>
     {
         @Override
         public ApiResponse execute(AjaxCompletionForm form, BindException errors)
@@ -1576,7 +1575,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class SetEmailDefault extends ApiAction<AbstractConfigTypeProvider.EmailConfigFormImpl>
+    public class SetEmailDefaultAction extends MutatingApiAction<AbstractConfigTypeProvider.EmailConfigFormImpl>
     {
         @Override
         public ApiResponse execute(AbstractConfigTypeProvider.EmailConfigFormImpl form, BindException errors)
@@ -1668,7 +1667,7 @@ public class AnnouncementsController extends SpringActionController
      * Action to populate an Ext store with email notification options for admin settings
      */
     @RequiresPermission(AdminPermission.class)
-    public class GetEmailOptions extends ApiAction<NotifyOptionsForm>
+    public class GetEmailOptions extends ReadOnlyApiAction<NotifyOptionsForm>
     {
         @Override
         public ApiResponse execute(NotifyOptionsForm form, BindException errors)

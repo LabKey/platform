@@ -29,8 +29,6 @@ import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
-import java.util.Set;
-
 public class AnnouncementEmailConfig extends AbstractConfigTypeProvider
 {
     public static final String TYPE = "messages";
@@ -50,7 +48,7 @@ public class AnnouncementEmailConfig extends AbstractConfigTypeProvider
     @Override
     protected ActionURL getSetDefaultPrefURL(Container c)
     {
-        return new ActionURL(AnnouncementsController.SetEmailDefault.class, c);
+        return new ActionURL(AnnouncementsController.SetEmailDefaultAction.class, c);
     }
 
     @Override
@@ -92,5 +90,4 @@ public class AnnouncementEmailConfig extends AbstractConfigTypeProvider
         }
         return false;
     }
-
 }

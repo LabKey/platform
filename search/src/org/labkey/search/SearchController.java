@@ -21,12 +21,12 @@ import org.apache.http.HttpStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -49,7 +49,6 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
@@ -573,7 +572,7 @@ public class SearchController extends SpringActionController
 
 
     @RequiresPermission(ReadPermission.class)
-    public class JsonAction extends ApiAction<SearchForm>
+    public class JsonAction extends ReadOnlyApiAction<SearchForm>
     {
         @Override
         public ApiResponse execute(SearchForm form, BindException errors)

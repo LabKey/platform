@@ -21,13 +21,13 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.ExtFormAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -53,20 +53,11 @@ import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
-import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.AnalystPermission;
-import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.TrustedPermission;
-import org.labkey.api.security.roles.PlatformDeveloperRole;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContainerTreeSelected;
@@ -1894,7 +1885,7 @@ public class WikiController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetPagesAction extends ApiAction<ContainerForm>
+    public class GetPagesAction extends ReadOnlyApiAction<ContainerForm>
     {
         public ApiResponse execute(ContainerForm form, BindException errors)
         {
@@ -2577,7 +2568,7 @@ public class WikiController extends SpringActionController
     }
 
     @RequiresNoPermission
-    public class TransformWikiAction extends ApiAction<TransformWikiForm>
+    public class TransformWikiAction extends MutatingApiAction<TransformWikiForm>
     {
         public ApiResponse execute(TransformWikiForm form, BindException errors) throws Exception
         {
@@ -2642,7 +2633,7 @@ public class WikiController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetWikiTocAction extends ApiAction<GetWikiTocForm>
+    public class GetWikiTocAction extends ReadOnlyApiAction<GetWikiTocForm>
     {
         public ApiResponse execute(GetWikiTocForm form, BindException errors)
         {

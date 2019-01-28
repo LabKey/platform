@@ -16,9 +16,9 @@
 package org.labkey.issue.actions;
 
 import org.apache.commons.lang3.StringUtils;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -30,7 +30,7 @@ import org.springframework.validation.BindException;
  * Created by klum on 5/26/2016.
  */
 @RequiresPermission(ReadPermission.class)
-public class ValidateIssueDefNameAction extends ApiAction<ValidateIssueDefNameAction.IssueDefForm>
+public class ValidateIssueDefNameAction extends ReadOnlyApiAction<ValidateIssueDefNameAction.IssueDefForm>
 {
     @Override
     public ApiResponse execute(IssueDefForm form, BindException errors)

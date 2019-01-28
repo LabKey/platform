@@ -18,9 +18,9 @@ package org.labkey.demo;
 
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.FormArrayList;
 import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ActionButton;
@@ -697,7 +697,7 @@ public class DemoController extends SpringActionController
 
 
     @RequiresPermission(InsertPermission.class)
-    public class ConvertXlsToJsonAction extends ApiAction
+    public class ConvertXlsToJsonAction extends ReadOnlyApiAction
     {
         @Override
         public Object execute(Object o, BindException errors)
