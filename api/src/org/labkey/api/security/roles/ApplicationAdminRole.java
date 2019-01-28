@@ -28,6 +28,7 @@ import java.util.Collection;
 public class ApplicationAdminRole extends AbstractRootContainerRole
 {
     static Collection<Class<? extends Permission>> PERMISSIONS = Arrays.asList(
+        ApplicationAdminPermission.class,
         AdminReadPermission.class,
         EnableRestrictedModules.class,
         UserManagementPermission.class

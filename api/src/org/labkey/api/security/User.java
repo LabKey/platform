@@ -28,11 +28,13 @@ import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.security.impersonation.NotImpersonatingContext;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.AnalystPermission;
+import org.labkey.api.security.permissions.ApplicationAdminPermission;
 import org.labkey.api.security.permissions.BrowserDeveloperPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
+import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.security.permissions.TrustedPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.ApplicationAdminRole;
@@ -47,6 +49,7 @@ import org.labkey.api.view.ActionURL;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -230,14 +233,24 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         return _displayName;
     }
 
-    @Deprecated //should use isInSiteAdminGroup(), hasRootAdminPermission(), or hasRootPermission(...) instead
+    @Deprecated //should probably use hasSiteAdminPermission(), hasRootAdminPermission(), or hasRootPermission(...) instead
     public boolean isSiteAdmin()
     {
         return isAllowedGlobalRoles() && isInGroup(Group.groupAdministrators);
     }
 
     /**
+     * Does the user have the permission of the Site Administrator? This is NOT a check for AdminPermission.
+     * @return boolean
+     */
+    public boolean hasSiteAdminPermission()
+    {
+        return isAllowedGlobalRoles() && hasRootPermission(SiteAdminPermission.class);
+    }
+
+    /**
      * Is the user a Site Administrator? This is NOT a check for AdminPermission.
+     * NOTE: most callers should use hasSiteAdminPermission() instead; only use this if you care specifically about the role itself
      * @return boolean
      */
     public boolean isInSiteAdminGroup()
@@ -258,13 +271,25 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         SecurityPolicy rootContainerPolicy = ContainerManager.getRoot().getPolicy();
         List<Role> rootAssignedRoles = rootContainerPolicy.getAssignedRoles(this);
         rootAssignedRoles.addAll(rootContainerPolicy.getRoles(getGroups()));
-        return rootAssignedRoles.contains(RoleManager.getRole(ApplicationAdminRole.class));
+        return rootAssignedRoles.contains(RoleManager.getRole(ApplicationAdminRole.class));  // TODO: convert to code below later
+        //return doesAnyRoleHaveAppAdminPermission(rootAssignedRoles);
     }
 
     public boolean hasApplicationAdminForPolicy(SecurityPolicy policy)
     {
-        Set<Role> assignedRoles = policy.getEffectiveRoles(this, false);
-        return assignedRoles.contains(RoleManager.getRole(ApplicationAdminRole.class));
+        Set<Role> assignedRoles = policy.getEffectiveRoles(this, false);  // TODO: convert to code below later
+        return assignedRoles.contains(RoleManager.getRole(ApplicationAdminRole.class));  // TODO: convert to code below later
+        //return doesAnyRoleHaveAppAdminPermission(policy.getEffectiveRoles(this, false));
+    }
+
+    private boolean doesAnyRoleHaveAppAdminPermission(Collection<Role> roles)
+    {
+        for (Role role : roles)
+        {
+            if (role.getPermissions().contains(ApplicationAdminPermission.class))
+                return true;
+        }
+        return false;
     }
 
     // Note: site administrators are always developers; see GroupManager.computeAllGroups().

@@ -28,6 +28,7 @@ import java.util.Collection;
 public class SiteAdminRole extends AbstractRootContainerRole
 {
     private static final Collection<Class<? extends Permission>> PERMISSIONS = Arrays.asList(
+        SiteAdminPermission.class,
         AdminOperationsPermission.class,
         AnalystPermission.class,
         BrowserDeveloperPermission.class,
