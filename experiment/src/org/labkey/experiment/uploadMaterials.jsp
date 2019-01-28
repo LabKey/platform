@@ -166,7 +166,7 @@
     <tr id="sampleSetData">
         <td class="labkey-form-label">Sample Set Data</td>
         <td>
-            Sample set uploads must formatted as tab separated values (TSV).<br>
+            Sample set uploads must be formatted as tab-separated values (TSV).<br>
             The first row should contain column names; subsequent rows should contain the data.<br>
             Copy/paste from Microsoft Excel works well. <% if (sampleSet != null) { %><%=textLink("Download an Excel template workbook", templateURL)%><% } %><br>
             <% if (!form.isImportMoreSamples()) { %>
