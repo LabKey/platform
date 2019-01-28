@@ -26,7 +26,6 @@ import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.AdminReadPermission;
-import org.labkey.api.security.permissions.AnalystPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.menu.FolderAdminMenu;
 import org.labkey.api.view.menu.ProjectAdminMenu;
@@ -151,7 +150,8 @@ public class PopupAdminView extends PopupMenuView
             {
                 String pageAdminTxt = PageFlowUtil.isPageAdminMode(context) ? "Exit Page Admin Mode" : "Page Admin Mode";
                 ActionURL pageAdminUrl = PageFlowUtil.urlProvider(ProjectUrls.class).getTogglePageAdminModeURL(c, context.getActionURL());
-                NavTree pageAdmin = new NavTree(pageAdminTxt, pageAdminUrl);
+                NavTree pageAdmin = new NavTree(pageAdminTxt);
+                pageAdmin.setScript(PageFlowUtil.postOnClickJavaScript(pageAdminUrl));
                 navTree.addChild(pageAdmin);
             }
 
