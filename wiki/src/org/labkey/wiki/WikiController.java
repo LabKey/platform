@@ -1609,22 +1609,6 @@ public class WikiController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
-    public class PurgeAction extends SimpleViewAction
-    {
-        public ModelAndView getView(Object o, BindException errors)
-        {
-            int rows = getWikiManager().purge();
-            return new HtmlView("deleted " + rows + " pages<br>");
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-    }
-
-
     public static class WikiManageForm
     {
         private String _originalName;

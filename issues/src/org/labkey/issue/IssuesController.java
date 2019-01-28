@@ -1889,26 +1889,6 @@ public class IssuesController extends SpringActionController
     }
 
 
-    @RequiresPermission(AdminPermission.class)
-    public class PurgeAction extends SimpleViewAction
-    {
-        public ModelAndView getView(Object o, BindException errors)
-        {
-            if (!getUser().hasRootAdminPermission())   // GLOBAL
-            {
-                throw new UnauthorizedException();
-            }
-            String message = IssueManager.purge();
-            return new HtmlView(message);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-    }
-
-
     @RequiresPermission(ReadPermission.class)
     public class JumpToIssueAction extends SimpleViewAction
     {

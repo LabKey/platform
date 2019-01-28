@@ -885,34 +885,6 @@ public class IssueManager
     }
 
 
-    public static String purge()
-    {
-        String message = "";
-
-        try (DbScope.Transaction transaction = _issuesSchema.getSchema().getScope().ensureTransaction())
-        {
-            String subQuery = String.format("SELECT IssueId FROM %s WHERE Container NOT IN (SELECT EntityId FROM core.Containers)", _issuesSchema.getTableInfoIssues());
-
-            String deleteComments = String.format("DELETE FROM %s WHERE IssueId IN (%s)", _issuesSchema.getTableInfoComments(), subQuery);
-            int commentsDeleted = new SqlExecutor(_issuesSchema.getSchema()).execute(deleteComments);
-
-            String deleteOrphanedComments =
-                    "DELETE FROM " + _issuesSchema.getTableInfoComments() + " WHERE IssueId NOT IN (SELECT IssueId FROM " + _issuesSchema.getTableInfoIssues() + ")";
-            commentsDeleted += new SqlExecutor(_issuesSchema.getSchema()).execute(deleteOrphanedComments);
-
-            // NOTE: this is ugly...
-            String deleteRelatedIssues = String.format("DELETE FROM %s WHERE IssueId IN (%s) OR RelatedIssueId IN (%s)", _issuesSchema.getTableInfoRelatedIssues(), subQuery, subQuery);
-            int relatedIssuesDeleted = new SqlExecutor(_issuesSchema.getSchema()).execute(deleteRelatedIssues);
-
-            int issuesDeleted = ContainerUtil.purgeTable(_issuesSchema.getTableInfoIssues(), null);
-            transaction.commit();
-
-            message = String.format("deleted %d issues<br>\ndeleted %d comments<br>\ndeleted %d relatedIssues", issuesDeleted, commentsDeleted, relatedIssuesDeleted);
-        }
-
-        return message;
-    }
-
     /**
      *
      * @param container

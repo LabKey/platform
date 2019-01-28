@@ -922,21 +922,6 @@ public class ProjectController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin()
-    public class PurgeAction extends SimpleViewAction
-    {
-        public ModelAndView getView(Object o, BindException errors)
-        {
-            int rows = Portal.purge();
-            return new HtmlView("deleted " + rows + " portlets<br>");
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-    }
-
     //
     // FORMS
     //

@@ -1436,22 +1436,6 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
-    public class PurgeAction extends SimpleViewAction
-    {
-        public ModelAndView getView(Object o, BindException errors)
-        {
-            int rows = ContainerUtil.purgeTable(_comm.getTableInfoAnnouncements(), null);
-            return new HtmlView("deleted " + rows + " pages<br>");
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-    }
-
-
     public static ActionURL getEmailPreferencesURL(Container c, @Nullable URLHelper srcUrl, String srcIdentifier)
     {
         ActionURL result = new ActionURL(EmailPreferencesAction.class, c);

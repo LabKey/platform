@@ -408,12 +408,6 @@ public class WikiManager implements WikiService
     }
 
 
-    public int purge()
-    {
-        return ContainerUtil.purgeTable(comm.getTableInfoPages(), null);
-    }
-
-
     public FormattedHtml formatWiki(Container c, Wiki wiki, WikiVersion wikiversion)
     {
         String hrefPrefix = wiki.getWikiURL(WikiController.PageAction.class, "").toString();
