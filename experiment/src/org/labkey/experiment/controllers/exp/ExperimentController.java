@@ -3538,6 +3538,7 @@ public class ExperimentController extends SpringActionController
         public void validateForm(QueryForm queryForm, Errors errors)
         {
             _form = queryForm;
+            _insertOption = queryForm.getInsertOption();
             super.validateForm(queryForm, errors);
             if (queryForm.getQueryName() == null)
                 errors.reject(ERROR_MSG, "Sample set name is required");
@@ -3571,48 +3572,6 @@ public class ExperimentController extends SpringActionController
         {
             initRequest(form);
             return getDefaultImportView(form, true,null, errors);
-        }
-
-        @Override
-        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors) throws IOException
-        {
-            if (_form == null)
-                return super.importData(dl, file, originalName, errors);
-
-            if (_target != null)
-            {
-                DataIteratorContext context = new DataIteratorContext(errors);
-                context.setInsertOption(_form.getInsertOption());
-                context.setAllowImportLookupByAlternateKey(_importLookupByAlternateKey);
-                if (_importIdentity)
-                {
-                    context.setInsertOption(QueryUpdateService.InsertOption.IMPORT_IDENTITY);
-                    context.setSupportAutoIncrementKey(true);
-                }
-
-                try (DbScope.Transaction transaction = _target.getSchema().getScope().ensureTransaction())
-                {
-                    int count = _updateService.loadRows(getUser(), getContainer(), dl, context, new HashMap<>());
-                    if (errors.hasErrors())
-                        return 0;
-                    transaction.commit();
-                    return count;
-                }
-                catch (SQLException x)
-                {
-                    boolean isConstraint = RuntimeSQLException.isConstraintException(x);
-                    if (isConstraint)
-                        errors.addRowError(new ValidationException(x.getMessage()));
-                    else
-                        throw new RuntimeSQLException(x);
-                }
-            }
-            else
-            {
-                errors.addRowError(new ValidationException("Table not specified"));
-            }
-
-            return 0;
         }
 
 
