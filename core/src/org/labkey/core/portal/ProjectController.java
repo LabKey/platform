@@ -28,10 +28,10 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiVersion;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.ExportAction;
+import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.OldRedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -1739,10 +1739,15 @@ public class ProjectController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class TogglePageAdminModeAction extends OldRedirectAction<ReturnUrlForm>
+    public class TogglePageAdminModeAction extends FormHandlerAction<ReturnUrlForm>
     {
         @Override
-        public boolean doAction(ReturnUrlForm form, BindException errors)
+        public void validateCommand(ReturnUrlForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(ReturnUrlForm returnUrlForm, BindException errors) throws Exception
         {
             HttpSession session = getViewContext().getSession();
             if (session != null)

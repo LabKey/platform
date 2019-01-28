@@ -203,10 +203,11 @@
             </li>
 <% } %>
 
-<% if (PageFlowUtil.isPageAdminMode(getViewContext())) { %>
+<% if (PageFlowUtil.isPageAdminMode(getViewContext())) {
+    ActionURL exitUrl = urlProvider(ProjectUrls.class).getTogglePageAdminModeURL(c, getActionURL()); %>
             <li>&nbsp;</li> <!--spacer, for the case of both impersonating and page admin mode-->
             <li>
-                <a href="<%=h(urlProvider(ProjectUrls.class).getTogglePageAdminModeURL(c, getActionURL()))%>" class="btn btn-primary">Exit Admin Mode</a>
+                <a href="javascript:{}" onclick="<%=h(PageFlowUtil.postOnClickJavaScript(exitUrl))%>" class="btn btn-primary">Exit Admin Mode</a>
             </li>
 <% } %>
         </ul>
