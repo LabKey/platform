@@ -325,7 +325,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
     private ModelAndView handleBadRequestException(HttpServletRequest request, HttpServletResponse response, Controller controller, BadRequestException x) throws Exception
    {
        // TODO: we are assuming that all ApiActions respond with JSON and all !ApiAction respond HTML.  Would be better to be explicit.
-       boolean jsonResponse = controller instanceof ApiAction;
+       boolean jsonResponse = controller instanceof ReadOnlyApiAction;
        boolean textResponse = controller instanceof ExportAction;
        boolean htmlWrappedJson = !"XMLHttpRequest".equals(request.getHeader("X-Requested-With" )); // might be hidden form post (e.g. Ext)
 
@@ -1113,7 +1113,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         boolean throwUnauthorized = StringUtils.equals("UNAUTHORIZED",request.getHeader("X-ONUNAUTHORIZED"));
         boolean xmlhttp = StringUtils.equals("XMLHttpRequest", request.getHeader("x-requested-with"));
         boolean json = StringUtils.startsWith(request.getHeader("Content-Type"), "application/json");
-        boolean apiClass = action instanceof ApiAction;
+        boolean apiClass = action instanceof ReadOnlyApiAction;
         boolean r = StringUtils.equals(request.getHeader("User-Agent"),"Rlabkey");
         return throwUnauthorized || xmlhttp || json || apiClass || r;
     }
