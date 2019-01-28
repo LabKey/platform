@@ -157,7 +157,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
 
         if (form && form.isValid())
         {
-            data = form.getValues();
+            data = this.getScriptFormValues(form);
             this.prevFormValues = form.getValues(true);
         }
 
@@ -171,6 +171,12 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
         this.prevViewURL = viewURL;
 
         return {parameters : data};
+    },
+
+    getScriptFormValues: function(form) {
+        var values = form.getValues();
+        values.useDefaultOutputFormat = values.useCustomOutputFormat === 'true' ? 'false' : 'true';
+        return values;
     },
 
     createDataPanel : function() {
@@ -379,15 +385,48 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                         inputValue : 'Markdown',
                         boxLabel : 'Markdown&nbsp;' +
                                 '<span data-qtip="Use knitr to process markdown source"><i class="fa fa-question-circle-o"></i></span>',
-                        checked : this.reportConfig.knitrFormat == 'Markdown'},
-                    {name : 'useDefaultOutputFormat',
+                        checked : this.reportConfig.knitrFormat == 'Markdown',
+                        listeners : {
+                            scope: this,
+                            change: function(cb, value) {
+                                this.down('checkbox[name=useCustomOutputFormat]').setDisabled(!value);
+                            }
+                        }
+                    },
+                    {name : 'useCustomOutputFormat',
                         xtype : 'checkbox',
                         inputValue : 'true',
-                        boxLabel : 'Use default output_format options (experimental, leave this checked)&nbsp;' +
-                        '<span data-qtip="html_document_base(keep_md=TRUE, self_contained=FALSE, fig_caption=TRUE, theme=NULL, css=NULL, smart=TRUE, highlight=&quot;default&quot;)"><i class="fa fa-question-circle-o"></i></span>',
-                        checked : this.reportConfig.useDefaultOutputFormat !== false},
+                        margin : '5 0 0 20',
+                        boxLabel : 'Use advanced rmarkdown output_options (pandoc only) &nbsp;' +
+                        '<span data-qtip="If unchecked, rmarkdown will use default output format: html_document_base(keep_md=TRUE, self_contained=FALSE, fig_caption=TRUE, theme=NULL, css=NULL, smart=TRUE, highlight=&quot;default&quot;). Enable to use customized output_options."><i class="fa fa-question-circle-o"></i></span>',
+                        checked : this.reportConfig.useDefaultOutputFormat === null || this.reportConfig.useDefaultOutputFormat === false,
+                        disabled: this.reportConfig.knitrFormat !== 'Markdown',
+                        listeners : {
+                            scope: this,
+                            change: function(cb, value) {
+                                this.down('hidden[name=useDefaultOutputFormat]').setValue(!value);
+                                this.down('textarea[name=rmarkdownOutputOptions]').setDisabled(!value);
+                            },
+                            disable: function() {
+                                this.down('textarea[name=rmarkdownOutputOptions]').setDisabled(true);
+                            },
+                            enable: function() {
+                                this.down('textarea[name=rmarkdownOutputOptions]').setDisabled(false);
+                            }
+                        }
+                    },
+                    {name : 'useDefaultOutputFormat', xtype : 'hidden', value: this.reportConfig.useDefaultOutputFormat !== false ? 'true' : 'false'},
                     // checkbox requires SpringActionController.FIELD_MARKER=='@' to handle 'clear' correctly
-                    {name : '@useDefaultOutputFormat', xtype : 'hidden'},
+                    {name : '@useCustomOutputFormat', xtype : 'hidden'},
+                    { name : 'rmarkdownOutputOptions',
+                        xtype : 'textarea',
+                        value : this.reportConfig.rmarkdownOutputOptions,
+                        margin : '5 0 0 20',
+                        grow : true,
+                        width : 450,
+                        disabled: this.reportConfig.useDefaultOutputFormat !== false || this.reportConfig.knitrFormat !== 'Markdown',
+                        hideLabel : true
+                    },
                     { xtype : 'label',
                       html : 'Dependencies&nbsp;' +
                               '<span data-qtip="Add a semi-colon delimited list of javascript, CSS, or library dependencies here."><i class="fa fa-question-circle-o"></i></span>'},
@@ -648,7 +687,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
 
         if (form && form.isValid())
         {
-            var data = form.getValues();
+            var data = this.getScriptFormValues(form);
 
             if (!isSaveAs && this.reportConfig.reportId) {
                 data.reportId = this.reportConfig.reportId;

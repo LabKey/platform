@@ -245,7 +245,7 @@ public class StudyReload
                 LOG.info("Handling " + c.getPath());
 
                 // issue 15681: if there is a folder archive instead of a study archive, see if the folder.xml exists to point to the study root dir
-                if (studyXml != null && !studyXml.exists())
+                if (studyXml == null || !studyXml.exists())
                 {
                     File folderXml = root.resolvePath("folder.xml");
                     if (folderXml.exists())
