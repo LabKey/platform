@@ -362,7 +362,10 @@ public class SampleSetUpdateService extends AbstractQueryUpdateService
     @Override
     public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext) throws SQLException
     {
-        return importRows(user, container, rows, context.getErrors(), context.getConfigParameters(), extraScriptContext);
+        if (context.getInsertOption() == InsertOption.MERGE)
+            return mergeRows(user, container, rows, context.getErrors(), context.getConfigParameters(), extraScriptContext);
+        else
+            return importRows(user, container, rows, context.getErrors(), context.getConfigParameters(), extraScriptContext);
     }
 
 

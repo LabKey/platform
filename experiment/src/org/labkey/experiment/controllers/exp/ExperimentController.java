@@ -33,6 +33,7 @@ import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
+import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.exp.AbstractParameter;
 import org.labkey.api.exp.DuplicateMaterialException;
 import org.labkey.api.exp.ExperimentDataHandler;
@@ -84,12 +85,15 @@ import org.labkey.api.pipeline.PipelineRootContainerTree;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
+import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateForm;
@@ -125,6 +129,7 @@ import org.labkey.api.study.assay.AssayFileWriter;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.ImageUtil;
@@ -186,6 +191,7 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.imageio.ImageIO;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
 import java.awt.image.BufferedImage;
 import java.io.BufferedOutputStream;
@@ -595,7 +601,7 @@ public class ExperimentController extends SpringActionController
                         }
                         // Adding simplified import option until such time as we can replace the import option altogether
                         // TODO remove and update call to setImportURL in ExpMaterialTableImpl when the time is right.
-                        ActionURL urlSimpleImport = new ActionURL("query", "import", getContainer());
+                        ActionURL urlSimpleImport = new ActionURL("experiment", "importSamples", getContainer());
                         urlSimpleImport.addParameter("query.queryName", _source.getName());
                         urlSimpleImport.addParameter("schemaName", "exp.materials");
 
@@ -3518,6 +3524,106 @@ public class ExperimentController extends SpringActionController
         public void setNameExpression(String nameExpression)
         {
             this.nameExpression = nameExpression;
+        }
+    }
+
+    @RequiresPermission(InsertPermission.class)
+    public class ImportSamplesAction extends AbstractQueryImportAction<QueryForm>
+    {
+        private QueryForm _form;
+        private ExpSampleSetImpl _sampleSet;
+
+
+        @Override
+        public void validateForm(QueryForm queryForm, Errors errors)
+        {
+            _form = queryForm;
+            super.validateForm(queryForm, errors);
+            if (queryForm.getQueryName() == null)
+                errors.reject(ERROR_MSG, "Sample set name is required");
+            else
+            {
+                _sampleSet = ExperimentServiceImpl.get().getSampleSet(getContainer(), getUser(), queryForm.getQueryName());
+                if (_sampleSet == null)
+                {
+                    errors.reject(ERROR_MSG, "Sample set '" + queryForm.getQueryName() + " not found.");
+                }
+            }
+        }
+
+        @Override
+        protected void initRequest(QueryForm form) throws ServletException
+        {
+            QueryDefinition query = form.getQueryDef();
+            if (query != null)
+            {
+                List<QueryException> qpe = new ArrayList<>();
+                TableInfo t = query.getTable(form.getSchema(), qpe, true);
+                if (!qpe.isEmpty())
+                    throw qpe.get(0);
+                if (null != t)
+                    setTarget(t);
+            }
+        }
+
+        @Override
+        public ModelAndView getView(QueryForm form, BindException errors) throws Exception
+        {
+            initRequest(form);
+            return getDefaultImportView(form, true,null, errors);
+        }
+
+        @Override
+        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors) throws IOException
+        {
+            if (_form == null)
+                return super.importData(dl, file, originalName, errors);
+
+            if (_target != null)
+            {
+                DataIteratorContext context = new DataIteratorContext(errors);
+                context.setInsertOption(_form.getInsertOption());
+                context.setAllowImportLookupByAlternateKey(_importLookupByAlternateKey);
+                if (_importIdentity)
+                {
+                    context.setInsertOption(QueryUpdateService.InsertOption.IMPORT_IDENTITY);
+                    context.setSupportAutoIncrementKey(true);
+                }
+
+                try (DbScope.Transaction transaction = _target.getSchema().getScope().ensureTransaction())
+                {
+                    int count = _updateService.loadRows(getUser(), getContainer(), dl, context, new HashMap<>());
+                    if (errors.hasErrors())
+                        return 0;
+                    transaction.commit();
+                    return count;
+                }
+                catch (SQLException x)
+                {
+                    boolean isConstraint = RuntimeSQLException.isConstraintException(x);
+                    if (isConstraint)
+                        errors.addRowError(new ValidationException(x.getMessage()));
+                    else
+                        throw new RuntimeSQLException(x);
+                }
+            }
+            else
+            {
+                errors.addRowError(new ValidationException("Table not specified"));
+            }
+
+            return 0;
+        }
+
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root.addChild("Sample Sets", ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer()));
+            if (_form.getQueryName() != null)
+                root.addChild(_form.getQueryName(), _form.urlFor(QueryAction.executeQuery));
+            root.addChild("Import Data");
+            return root;
         }
     }
 
