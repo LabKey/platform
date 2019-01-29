@@ -203,12 +203,14 @@ public class MothershipReport implements Runnable
         {
             try
             {
-                return new URI(AppProps.getInstance().getBaseServerUrl()).getHost();
+                String baseServerUrl = AppProps.getInstance().getBaseServerUrl();
+                if (baseServerUrl != null)
+                {
+                    return new URI(baseServerUrl).getHost();
+                }
             }
-            catch (URISyntaxException e)
-            {
-                return "localhost";
-            }
+            catch (URISyntaxException ignored) {}
+            return "localhost";
         }
     }
 
