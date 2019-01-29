@@ -16,6 +16,7 @@
  */
 %>
 <%@ page import="org.apache.commons.lang3.BooleanUtils" %>
+<%@ page import="org.labkey.api.query.QueryDefinition" %>
 <%@ page import="org.labkey.api.query.QueryService" %>
 <%@ page import="org.labkey.api.query.snapshot.QuerySnapshotDefinition" %>
 <%@ page import="org.labkey.api.query.snapshot.QuerySnapshotForm" %>
@@ -27,7 +28,6 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.api.query.QueryDefinition" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -47,7 +47,6 @@
 
     final Study study = StudyManager.getInstance().getStudy(getContainer());
     final Dataset dsDef = StudyManager.getInstance().getDatasetDefinitionByName(study, bean.getSnapshotName());
-    ActionURL deleteSnapshotURL = new ActionURL(StudyController.DeleteDatasetAction.class, getContainer()).addParameter("id", dsDef.getDatasetId());
 %>
 
 <%  if (def != null) { %>
@@ -69,7 +68,9 @@
             <td><%= button("Update Snapshot").submit(true)
                 .onClick("this.form.action='';return confirm('Updating will replace all existing data with a new set of data. Continue?');")
             %></td>
-<%      if (def != null && dsDef != null) { %>
+<%      if (def != null && dsDef != null) {
+            ActionURL deleteSnapshotURL = new ActionURL(StudyController.DeleteDatasetAction.class, getContainer()).addParameter("id", dsDef.getDatasetId());
+%>
             <td><%= button(historyLabel).href(context.cloneActionURL().replaceParameter("showHistory", String.valueOf(!showHistory))) %></td>
             <td><%= button(datasetLabel).href(context.cloneActionURL().replaceParameter("showDataset", String.valueOf(!showDataset))) %></td>
             <td><%= button("Delete Snapshot")
