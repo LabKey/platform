@@ -1736,8 +1736,12 @@ public abstract class PostgreSql91Dialect extends SqlDialect
             {
                 // Used in conjunction with stmt.setFetchSize() to force uncached ResultSets
                 connection.setAutoCommit(false);
+                Closer previous = ret;
 
-                ret = () -> connection.setAutoCommit(true);
+                ret = () -> {
+                    previous.close();
+                    connection.setAutoCommit(true);
+                };
             }
             catch (SQLException e)
             {
