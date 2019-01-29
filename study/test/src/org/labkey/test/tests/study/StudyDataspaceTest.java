@@ -164,6 +164,7 @@ public class StudyDataspaceTest extends StudyBaseTest
         goToFolderManagement(); //todo: refactor to use page class (folderExportPage?)
         clickAndWait(Locator.linkWithText("Export"));
 
+        scrollIntoView(Ext4Helper.Locators.checkbox(this, "Assay Schedule"));
         int tries = 1;
         while(_ext4Helper.isChecked(Ext4Helper.Locators.checkbox(this, "Assay Schedule")) && tries <= 5)
         {
@@ -175,6 +176,7 @@ public class StudyDataspaceTest extends StudyBaseTest
         if(_ext4Helper.isChecked(Ext4Helper.Locators.checkbox(this, "Assay Schedule")))
             Assert.fail("Did not remove the Assay Schedule form the export (uncheck failed).");
 
+        scrollIntoView(Ext4Helper.Locators.checkbox(this, "Treatment Data"));
         tries = 1;
         while(_ext4Helper.isChecked(Ext4Helper.Locators.checkbox(this, "Treatment Data")) && tries <= 5)
         {
