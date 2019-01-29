@@ -25,6 +25,7 @@ import org.json.JSONObject;
 import org.labkey.api.admin.CoreUrls;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
@@ -38,6 +39,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpSession;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -83,7 +85,7 @@ public class PageConfig
 
     public static final String SESSION_WARNINGS_BANNER_KEY = "PAGE_CONFIG$SESSION_WARNINGS_BANNER_KEY";
 
-    public static final Collection<String> STATIC_ADMIN_WARNINGS = getStaticAdminWarnings();
+    private static Collection<String> STATIC_ADMIN_WARNINGS;
 
     private Template _template = Template.Home;
     private String _title;
@@ -403,15 +405,25 @@ public class PageConfig
         _resources.add(resource);
     }
 
-    // Check warning conditions that will never change while the server is running. This will be called once per server
-    // session; no need to test on every request.
+    // Check warning conditions that will never change after the server has started up. This will be called
+    // once per server session; no need to test on every request.
     private static Collection<String> getStaticAdminWarnings()
     {
+        if (STATIC_ADMIN_WARNINGS != null)
+        {
+            return STATIC_ADMIN_WARNINGS;
+        }
+
         List<String> messages = new LinkedList<>();
-
         Warnings warnings = Warnings.of(messages);
-        WarningService.get().forEachProvider(p->p.addStaticWarnings(warnings));
+        WarningService.get().forEachProvider(p -> p.addStaticWarnings(warnings));
 
+        messages = Collections.unmodifiableList(messages);
+        if (ModuleLoader.getInstance().isStartupComplete())
+        {
+            // We should have our full list of warnings at this point, so safe to cache them
+            STATIC_ADMIN_WARNINGS = messages;
+        }
         return messages;
     }
 
@@ -458,7 +470,7 @@ public class PageConfig
         User user = context.getUser();
 
         if (null != user && user.isInSiteAdminGroup())
-            warningMessages.addAll(STATIC_ADMIN_WARNINGS);
+            warningMessages.addAll(getStaticAdminWarnings());
 
         Warnings warnings = Warnings.of(warningMessages);
         WarningService.get().forEachProvider(p->p.addWarnings(warnings, context));
