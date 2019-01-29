@@ -291,17 +291,6 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     // don't have to implement if you override getFromSql(String alias)
     abstract protected SQLFragment getFromSQL();
 
-
-    public NamedObjectList getSelectList()
-    {
-        List<ColumnInfo> pkColumns = getPkColumns();
-        if (pkColumns.size() != 1)
-            return new NamedObjectList();
-
-        return getSelectList(pkColumns.get(0), null);
-    }
-
-
     @Override
     public NamedObjectList getSelectList(String columnName)
     {
@@ -313,7 +302,13 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     public NamedObjectList getSelectList(String columnName, @Nullable LookupFilterType lookupFilterType)
     {
         if (columnName == null)
-            return getSelectList();
+        {
+            List<ColumnInfo> pkColumns = getPkColumns();
+            if (pkColumns.size() != 1)
+                return new NamedObjectList();
+            else
+                return getSelectList(pkColumns.get(0), null);
+        }
 
         ColumnInfo column = getColumn(columnName);
         return getSelectList(column, lookupFilterType);

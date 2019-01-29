@@ -178,9 +178,6 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
 
     DatabaseTableType getTableType();
 
-    /** Get select list for primary column to title column. */
-    NamedObjectList getSelectList();
-
     /** Get select list for named (hopefully unique!) column to title column. */
     NamedObjectList getSelectList(String columnName);
 

@@ -334,7 +334,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     public NamedObjectList getSelectList(String columnName)
     {
         if (columnName == null)
-            return getSelectList();
+            return getSelectList(getPkColumnNames());
 
         ColumnInfo column = getColumn(columnName);
         if (column == null /*|| column.isKeyField()*/)
@@ -342,13 +342,6 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
 
         return getSelectList(Collections.singletonList(column.getName()));
     }
-
-
-    public NamedObjectList getSelectList()
-    {
-        return getSelectList(getPkColumnNames());
-    }
-
 
     private NamedObjectList getSelectList(List<String> columnNames)
     {
