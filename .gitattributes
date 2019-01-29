@@ -1063,6 +1063,7 @@ experiment/src/org/labkey/experiment/xar/XarExpander.java -text
 experiment/src/org/labkey/experiment/xar/XarExportSelection.java -text
 experiment/test/sampledata/sampleSet.tsv -text
 experiment/test/sampledata/sampleSet.xlsx -text
+experiment/test/sampledata/simpleSampleSet.xls -text
 experiment/webapp/Experiment/ExperimentRunNotFound.gif -text
 experiment/webapp/Experiment/QCFlagToggle.css -text
 experiment/webapp/Experiment/QCFlagToggleWindow.js -text
