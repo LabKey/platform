@@ -5403,7 +5403,6 @@ public class ExperimentController extends SpringActionController
                     throw new IllegalStateException();
 
                 Map<Enum, Object> configParams = new HashMap<>();
-                configParams.put(SampleSetUpdateService.Options.AddUniqueSuffixForDuplicateNames, true);
                 // Skip derivation during insert -- DeriveAction will call ExperimentService.get().derive() after samples are inserted
                 configParams.put(SampleSetUpdateService.Options.SkipDerivation, true);
 

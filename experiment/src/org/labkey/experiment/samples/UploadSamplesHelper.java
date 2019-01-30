@@ -356,8 +356,8 @@ public class UploadSamplesHelper
 
             timer.setPhase(Phase.sampleNames);
             _sampleSet.createSampleNames(maps, null, null, null,
-                    _form.getInsertUpdateChoiceEnum() == InsertUpdateChoice.insertIgnore,
-                    _form.isAddUniqueSuffixForDuplicateNames());
+                    _form.getInsertUpdateChoiceEnum() == InsertUpdateChoice.insertIgnore
+            );
 
             Set<String> reusedMaterialLSIDs = Collections.emptySet();
             if (!createdSampleSet)

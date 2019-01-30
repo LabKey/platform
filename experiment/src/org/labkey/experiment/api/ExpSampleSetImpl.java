@@ -300,8 +300,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
                                   @Nullable StringExpressionFactory.FieldKeyStringExpression expr,
                                   @Nullable Set<ExpData> parentDatas,
                                   @Nullable Set<ExpMaterial> parentSamples,
-                                  boolean skipDuplicates,
-                                  boolean addUniqueSuffixForDuplicates)
+                                  boolean skipDuplicates)
             throws ExperimentException
     {
         NameGenerator nameGen;
@@ -319,7 +318,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
 
         try
         {
-            nameGen.generateNames(maps, parentDatas, parentSamples, skipDuplicates, addUniqueSuffixForDuplicates, true);
+            nameGen.generateNames(maps, parentDatas, parentSamples, skipDuplicates, true);
         }
         catch (NameGenerator.DuplicateNameException dup)
         {

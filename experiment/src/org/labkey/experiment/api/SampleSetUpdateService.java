@@ -62,7 +62,6 @@ public class SampleSetUpdateService extends AbstractQueryUpdateService
     private ExpSampleSetImpl _ss;
 
     public enum Options {
-        AddUniqueSuffixForDuplicateNames,
         SkipDerivation
     }
 
@@ -96,7 +95,7 @@ public class SampleSetUpdateService extends AbstractQueryUpdateService
         return null;
     }
 
-    private List<ExpMaterial> insertOrUpdate(InsertUpdateChoice insertUpdate, User user, Container container, List<Map<String, Object>> originalRows, boolean addUniqueSuffix, boolean skipDerivation)
+    private List<ExpMaterial> insertOrUpdate(InsertUpdateChoice insertUpdate, User user, Container container, List<Map<String, Object>> originalRows, boolean skipDerivation)
             throws QueryUpdateServiceException, ValidationException
     {
         if (_ss == null)
@@ -113,8 +112,6 @@ public class SampleSetUpdateService extends AbstractQueryUpdateService
         form.setInsertUpdateChoice(insertUpdate.name());
         form.setCreateNewSampleSet(false);
         form.setCreateNewColumnsOnExistingSampleSet(false);
-        if (addUniqueSuffix)
-            form.setAddUniqueSuffixForDuplicateNames(true);
         if (skipDerivation)
             form.setSkipDerivation(true);
 
@@ -247,17 +244,14 @@ public class SampleSetUpdateService extends AbstractQueryUpdateService
     {
         try
         {
-            boolean addUniqueSuffix = false;
             boolean skipDerivation = false;
             if (configParameters != null)
             {
-                if (configParameters.containsKey(Options.AddUniqueSuffixForDuplicateNames))
-                    addUniqueSuffix = true;
                 if (configParameters.containsKey(Options.SkipDerivation))
                     skipDerivation = true;
             }
 
-            List<ExpMaterial> materials = insertOrUpdate(InsertUpdateChoice.insertOnly, user, container, rows, addUniqueSuffix, skipDerivation);
+            List<ExpMaterial> materials = insertOrUpdate(InsertUpdateChoice.insertOnly, user, container, rows, skipDerivation);
             List<Map<String, Object>> result = new ArrayList<>(materials.size());
             for (ExpMaterial material : materials)
             {
@@ -283,7 +277,7 @@ public class SampleSetUpdateService extends AbstractQueryUpdateService
         List<Map<String, Object>> maps = iterator.stream().collect(Collectors.toList());
         try
         {
-            return insertOrUpdate(InsertUpdateChoice.insertOrUpdate, user, container, maps, false, false).size();
+            return insertOrUpdate(InsertUpdateChoice.insertOrUpdate, user, container, maps, false).size();
         }
         catch (ValidationException vex)
         {
@@ -313,7 +307,7 @@ public class SampleSetUpdateService extends AbstractQueryUpdateService
     {
         try
         {
-            List<ExpMaterial> materials = insertOrUpdate(InsertUpdateChoice.updateOnly, user, container, rows, false, false);
+            List<ExpMaterial> materials = insertOrUpdate(InsertUpdateChoice.updateOnly, user, container, rows, false);
             List<Map<String, Object>> result = new ArrayList<>(materials.size());
             for (ExpMaterial material : materials)
             {

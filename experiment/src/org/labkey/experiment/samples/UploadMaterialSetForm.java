@@ -46,7 +46,6 @@ public class UploadMaterialSetForm extends ViewForm
     private int parentColumn = -1;
     private InsertUpdateChoice insertUpdateChoice = InsertUpdateChoice.insertOnly;
     private Integer rowId;
-    private boolean addUniqueSuffixForDuplicateNames = false;
     private boolean skipDerivation = false;
     private boolean mergeDerivations = true;
 
@@ -141,16 +140,6 @@ public class UploadMaterialSetForm extends ViewForm
     public void setCreateNewColumnsOnExistingSampleSet(boolean createNewColumnsOnExistingSampleSet)
     {
         this.createNewColumnsOnExistingSampleSet = createNewColumnsOnExistingSampleSet;
-    }
-
-    public boolean isAddUniqueSuffixForDuplicateNames()
-    {
-        return addUniqueSuffixForDuplicateNames;
-    }
-
-    public void setAddUniqueSuffixForDuplicateNames(boolean addUniqueSuffixForDuplicateNames)
-    {
-        this.addUniqueSuffixForDuplicateNames = addUniqueSuffixForDuplicateNames;
     }
 
     public boolean isSkipDerivation()
