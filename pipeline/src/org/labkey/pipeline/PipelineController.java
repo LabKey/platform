@@ -1739,7 +1739,7 @@ public class PipelineController extends SpringActionController
         public void testActionPermissions()
         {
             User user = TestContext.get().getUser();
-            assertTrue(user.isInSiteAdminGroup());
+            assertTrue(user.hasSiteAdminPermission());
 
             PipelineController controller = new PipelineController();
 

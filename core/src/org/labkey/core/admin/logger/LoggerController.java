@@ -278,7 +278,7 @@ public class LoggerController extends SpringActionController
         public void testActionPermissions()
         {
             User user = TestContext.get().getUser();
-            assertTrue(user.isInSiteAdminGroup());
+            assertTrue(user.hasSiteAdminPermission());
 
             LoggerController controller = new LoggerController();
 

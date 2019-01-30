@@ -500,7 +500,7 @@ public class UserController extends SpringActionController
 
             return null != formUser
                 && formUserId != curUser.getUserId() // don't let a user activate/deactivate themselves
-                && (curUser.isInSiteAdminGroup() || !formUser.isInSiteAdminGroup()); // don't let non-site admin deactivate a site admin
+                && (curUser.hasSiteAdminPermission() || !formUser.hasSiteAdminPermission()); // don't let non-site admin deactivate a site admin
         }
 
         public ActionURL getSuccessURL(UserIdForm form)
@@ -597,7 +597,7 @@ public class UserController extends SpringActionController
 
             return null != formUser
                 && formUserId != curUser.getUserId() // don't let a user delete themselves
-                && (curUser.isInSiteAdminGroup() || !formUser.isInSiteAdminGroup()); // don't let non-site admin delete a site admin
+                && (curUser.hasSiteAdminPermission() || !formUser.hasSiteAdminPermission()); // don't let non-site admin delete a site admin
         }
 
         public ActionURL getSuccessURL(UserIdForm userIdForm)
@@ -994,7 +994,7 @@ public class UserController extends SpringActionController
                 throw new NotFoundException("User not found :" + userId);
 
             // don't let non-site admin edit details of site admin account
-            if (user.isInSiteAdminGroup() && !getUser().isInSiteAdminGroup())
+            if (user.hasSiteAdminPermission() && !getUser().hasSiteAdminPermission())
                 throw new UnauthorizedException("Can not edit details for a Site Admin user");
 
             String userEmailAddress = user.getEmail();
@@ -1500,7 +1500,7 @@ public class UserController extends SpringActionController
             boolean isProjectAdminOrBetter = isUserManager || isProjectAdmin();
 
             // don't let a non-site admin manage certain parts of a site-admin's account
-            boolean canManageDetailsUser = user.isInSiteAdminGroup() || !detailsUser.isInSiteAdminGroup();
+            boolean canManageDetailsUser = user.hasSiteAdminPermission() || !detailsUser.hasSiteAdminPermission();
 
             ValidEmail detailsEmail = null;
             boolean loginExists = false;
@@ -1762,7 +1762,7 @@ public class UserController extends SpringActionController
 
                     // don't let non-site admin reset password of site admin
                     User formUser = UserManager.getUser(_urlUserId);
-                    if (formUser != null && !user.isInSiteAdminGroup() && formUser.isInSiteAdminGroup())
+                    if (formUser != null && !user.hasSiteAdminPermission() && formUser.hasSiteAdminPermission())
                         throw new UnauthorizedException("Can not reset password for a Site Admin user");
 
                     // update email in database
@@ -1943,7 +1943,7 @@ public class UserController extends SpringActionController
                     throw new IllegalStateException("Unknown user for change email POST.");
 
                 // don't let non-site admin reset password of site admin
-                if (!getUser().isInSiteAdminGroup() && user.isInSiteAdminGroup())
+                if (!getUser().hasSiteAdminPermission() && user.hasSiteAdminPermission())
                     throw new UnauthorizedException("Can not reset password for a Site Admin user");
 
                 // use "ADMIN" as verification token for debugging, but should never be checked/used
@@ -2827,7 +2827,7 @@ public class UserController extends SpringActionController
         public void testActionPermissions()
         {
             User user = TestContext.get().getUser();
-            assertTrue(user.isInSiteAdminGroup());
+            assertTrue(user.hasSiteAdminPermission());
 
             UserController controller = new UserController();
 

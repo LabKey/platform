@@ -35,7 +35,7 @@
     or Oracle relational database available for viewing, querying, and editing via LabKey Server.
 </p>
 <%
-    if (getUser().isInSiteAdminGroup())
+    if (getUser().hasSiteAdminPermission())
     {
 %>
 <p>

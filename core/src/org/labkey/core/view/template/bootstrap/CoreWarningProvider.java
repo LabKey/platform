@@ -64,7 +64,7 @@ public class CoreWarningProvider implements WarningProvider
         if (context != null && context.getRequest() != null)
         {
             User user = context.getUser();
-            if (null != user && user.isInSiteAdminGroup())
+            if (null != user && user.hasSiteAdminPermission())
             {
                 getUserRequestedAdminOnlyModeWarnings(warnings);
 

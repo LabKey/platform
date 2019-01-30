@@ -267,13 +267,13 @@ public class SecurityController extends SpringActionController
 
     private static void ensureGroupUserAccess(Group group, User user)
     {
-        if (!user.isInSiteAdminGroup() && group.isSystemGroup())
+        if (!user.hasSiteAdminPermission() && group.isSystemGroup())
             throw new UnauthorizedException();
     }
 
     private static void ensureGroupUserAccess(String group, User user)
     {
-        if (!user.isInSiteAdminGroup() && group != null && (
+        if (!user.hasSiteAdminPermission() && group != null && (
             group.equalsIgnoreCase("Administrators") || group.equalsIgnoreCase("Users") ||
             group.equalsIgnoreCase("Guests") || group.equalsIgnoreCase("Developers")
         ))
@@ -612,7 +612,7 @@ public class SecurityController extends SpringActionController
             if (null == _group)
                 throw new RedirectException(new ActionURL(PermissionsAction.class, container));
 
-            if (_group.isSystemGroup() && !getUser().isInSiteAdminGroup())
+            if (_group.isSystemGroup() && !getUser().hasSiteAdminPermission())
                 throw new UnauthorizedException("Can not update members of system group: " + _group.getName());
 
             List<String> messages = new ArrayList<>();
@@ -1667,8 +1667,8 @@ public class SecurityController extends SpringActionController
 
                 // don't let non-site admin reset password of site admin
                 User formUser = UserManager.getUser(email);
-                if (formUser != null && !getUser().isInSiteAdminGroup() && formUser.isInSiteAdminGroup())
-                    errors.reject("Permission denied: not  authorized to reset password for a Site Admin user.");
+                if (formUser != null && !getUser().hasSiteAdminPermission() && formUser.hasSiteAdminPermission())
+                    errors.reject("Permission denied: not authorized to reset password for a Site Admin user.");
 
             }
             catch (ValidEmail.InvalidEmailException e)
@@ -2031,7 +2031,7 @@ public class SecurityController extends SpringActionController
         public void testActionPermissions()
         {
             User user = TestContext.get().getUser();
-            assertTrue(user.isInSiteAdminGroup());
+            assertTrue(user.hasSiteAdminPermission());
 
             SecurityController controller = new SecurityController();
 

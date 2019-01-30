@@ -58,16 +58,16 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.roles.FolderAdminRole;
-import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
@@ -768,13 +768,16 @@ public class SecurityApiActions
                 if (!savedAssignments.contains(r))
                     changedRoles.add(r.getRole());
 
-            if (container.isRoot() && !user.isInSiteAdminGroup())
+            if (container.isRoot() && !user.hasSiteAdminPermission())
             {
-                // AppAdmin cannot change assignments to SiteAdminRole or PlatformDeveloperRole
-                if (changedRoles.contains(RoleManager.getRole(SiteAdminRole.class)))
-                    errors.reject(ERROR_MSG, "You do not have permission to modify the Site Admin role");
-                if (changedRoles.contains(RoleManager.getRole(PlatformDeveloperRole.class)))
-                    errors.reject(ERROR_MSG, "You do not have permission to modify the Platform Developer role");
+                for (Role changedRole : changedRoles)
+                {
+                    // AppAdmin cannot change assignments to roles with SiteAdminPermission or PlatformDeveloperPermission
+                    if (changedRole.getPermissions().contains(SiteAdminPermission.class))
+                        errors.reject(ERROR_MSG, "You do not have permission to modify the Site Admin role or permission");
+                    if (changedRole.getPermissions().contains(PlatformDeveloperPermission.class))
+                        errors.reject(ERROR_MSG, "You do not have permission to modify the Platform Developer role or permission");
+                }
             }
 
             //if root container permissions update, check for app admin removal
@@ -1292,7 +1295,7 @@ public class SecurityApiActions
                 throw new UnauthorizedException("You do not have permission to modify site-wide groups.");
             }
 
-            if (_group.isSystemGroup() && !getUser().isInSiteAdminGroup())
+            if (_group.isSystemGroup() && !getUser().hasSiteAdminPermission())
             {
                 throw new UnauthorizedException("Can not update members of system group: " + _group.getName());
             }
@@ -1946,7 +1949,7 @@ public class SecurityApiActions
         {
             Group group = getGroup(form);
 
-            if (group != null && group.isSystemGroup() && !getUser().isInSiteAdminGroup())
+            if (group != null && group.isSystemGroup() && !getUser().hasSiteAdminPermission())
                 throw new UnauthorizedException("Can not update members of system group: " + group.getName());
 
             for (int id : form.getPrincipalIds())
@@ -1973,7 +1976,7 @@ public class SecurityApiActions
         {
             Group group = getGroup(form);
 
-            if (group != null && group.isSystemGroup() && !getUser().isInSiteAdminGroup())
+            if (group != null && group.isSystemGroup() && !getUser().hasSiteAdminPermission())
                 throw new UnauthorizedException("Can not update members of system group: " + group.getName());
 
             //ensure there will still be someone in the admin group
@@ -2058,7 +2061,7 @@ public class SecurityApiActions
                 throw new IllegalArgumentException(null != msg ? msg : "Error creating new user account.");
 
             // Allow tests to create users that immediately register as having "logged in"
-            if (getViewContext().getUser().isInSiteAdminGroup() && form.isSkipFirstLogin())
+            if (getViewContext().getUser().hasSiteAdminPermission() && form.isSkipFirstLogin())
             {
                 user.setLastLogin(new Date());
                 UserManager.updateLogin(user);
@@ -2094,7 +2097,7 @@ public class SecurityApiActions
                 User formUser = UserManager.getUser(email);
                 if (null == formUser)
                     errors.rejectValue("email", ERROR_MSG, "User not found");
-                else if (!getUser().isInSiteAdminGroup() && formUser.isInSiteAdminGroup())
+                else if (!getUser().hasSiteAdminPermission() && formUser.hasSiteAdminPermission())
                     errors.rejectValue("Email", "Can not reset password for a Site Admin user");
             }
             catch (InvalidEmailException e)
@@ -2171,7 +2174,7 @@ public class SecurityApiActions
         public void testActionPermissions()
         {
             User user = TestContext.get().getUser();
-            assertTrue(user.isInSiteAdminGroup());
+            assertTrue(user.hasSiteAdminPermission());
 
             // @RequiresPermission(ReadPermission.class)
             assertForReadPermission(user,

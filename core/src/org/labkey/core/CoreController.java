@@ -2344,7 +2344,7 @@ public class CoreController extends SpringActionController
         public void testActionPermissions()
         {
             User user = TestContext.get().getUser();
-            assertTrue(user.isInSiteAdminGroup());
+            assertTrue(user.hasSiteAdminPermission());
 
             CoreController controller = new CoreController();
 

@@ -6443,7 +6443,7 @@ public class QueryController extends SpringActionController
         public void testActionPermissions()
         {
             User user = TestContext.get().getUser();
-            assertTrue(user.isInSiteAdminGroup());
+            assertTrue(user.hasSiteAdminPermission());
 
             QueryController controller = new QueryController();
 

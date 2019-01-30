@@ -1320,7 +1320,7 @@ public class SqlScriptController extends SpringActionController
         public void testActionPermissions()
         {
             User user = TestContext.get().getUser();
-            assertTrue(user.isInSiteAdminGroup());
+            assertTrue(user.hasSiteAdminPermission());
 
             SqlScriptController controller = new SqlScriptController();
 

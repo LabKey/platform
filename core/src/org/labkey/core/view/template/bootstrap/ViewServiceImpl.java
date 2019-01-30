@@ -476,7 +476,7 @@ public class ViewServiceImpl implements ViewService
                 nMenu.addChild(config._customize);
             }
 
-            if (config._webpart != null && context.getUser().isInSiteAdminGroup())
+            if (config._webpart != null && context.getUser().hasSiteAdminPermission())
             {
                 Portal.WebPart webPart = config._webpart;
                 String permissionString = null;

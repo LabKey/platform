@@ -496,7 +496,7 @@ public class LinkedSchema extends ExternalSchema
             _sourceContainer = sourceContainer;
 
             // Site admins can inherently read any container
-            _inherentRoles = realUser.isInSiteAdminGroup() ? Collections.singleton(RoleManager.getRole(ReaderRole.class)) : Collections.emptySet();
+            _inherentRoles = realUser.hasSiteAdminPermission() ? Collections.singleton(RoleManager.getRole(ReaderRole.class)) : Collections.emptySet();
         }
 
         @Override

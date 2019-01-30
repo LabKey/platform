@@ -645,7 +645,7 @@ public class AdminController extends SpringActionController
 
         public ModelAndView getView(ReturnUrlForm form, BindException errors)
         {
-            if (!getUser().isInSiteAdminGroup())
+            if (!getUser().hasSiteAdminPermission())
             {
                 getViewContext().getResponse().setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             }
@@ -9065,7 +9065,7 @@ public class AdminController extends SpringActionController
         public void testActionPermissions()
         {
             User user = TestContext.get().getUser();
-            assertTrue(user.isInSiteAdminGroup());
+            assertTrue(user.hasSiteAdminPermission());
 
             AdminController controller = new AdminController();
 

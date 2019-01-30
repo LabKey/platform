@@ -63,7 +63,7 @@
     boolean apiKeys = AppProps.getInstance().isAllowApiKeys();
     boolean sessionKeys = AppProps.getInstance().isAllowSessionKeys();
 
-    if (getUser().isInSiteAdminGroup())
+    if (getUser().hasSiteAdminPermission())
     {
         if (!apiKeys && !sessionKeys)
         {

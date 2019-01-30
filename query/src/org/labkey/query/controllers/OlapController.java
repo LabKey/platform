@@ -1549,7 +1549,7 @@ public class OlapController extends SpringActionController
         public void testActionPermissions()
         {
             User user = TestContext.get().getUser();
-            assertTrue(user.isInSiteAdminGroup());
+            assertTrue(user.hasSiteAdminPermission());
 
             OlapController controller = new OlapController();
 

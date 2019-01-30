@@ -124,7 +124,6 @@ import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
@@ -736,7 +735,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         // Other containers inherit permissions from root; admins get all permissions, users & guests none
         Role noPermsRole = RoleManager.getRole(NoPermissionsRole.class);
-        Role siteAdminRole = RoleManager.getRole(SiteAdminRole.class);
         Role readerRole = RoleManager.getRole(ReaderRole.class);
         Role devRole = RoleManager.getRole(PlatformDeveloperRole.class);
 

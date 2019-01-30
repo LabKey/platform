@@ -1189,7 +1189,7 @@ public class StatusController extends SpringActionController
         public void testActionPermissions()
         {
             User user = TestContext.get().getUser();
-            assertTrue(user.isInSiteAdminGroup());
+            assertTrue(user.hasSiteAdminPermission());
 
             StatusController controller = new StatusController();
 

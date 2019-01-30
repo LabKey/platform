@@ -96,7 +96,7 @@ public class FilesSiteSettingsAction extends AbstractFileSiteSettingsAction<File
         public void testActionPermissions()
         {
             User user = TestContext.get().getUser();
-            assertTrue(user.isInSiteAdminGroup());
+            assertTrue(user.hasSiteAdminPermission());
 
             // @AdminConsoleAction
             // @RequiresPermission(AdminOperationsPermission.class)
