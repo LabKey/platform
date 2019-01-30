@@ -124,7 +124,6 @@ public interface ExpSampleSet extends ExpObject
      * @param parentDatas A set of parent data added to the context for each row.  If the row map contains keys starting with "DataInputs", the names will be added to the context under the "Inputs" and "DataInputs" keys.
      * @param parentSamples A set of parent samples added to the context for each row.  If the row map contains keys starting with "MaterialInputs", the names will be added to the context under the "Inputs" and "MaterialInputs" keys.
      * @param skipDuplicates If duplicate names are generated and <code>addUniqueSuffixForDuplicates</code> is false, the row will be removed from the <code>maps</code> collection.
-     * @param addUniqueSuffixForDuplicates When a duplicate name is generated, append an incrementing unique suffix starting with ".1"
      * @throws ExperimentException Thrown when a name can't be generated or when a duplicate name is found and both <code>addUniqueSuffixForDuplicates</code> and <code>skipDuplicates</code> are false.
      *
      * @see org.labkey.api.util.SubstitutionFormat
@@ -133,8 +132,7 @@ public interface ExpSampleSet extends ExpObject
                            @Nullable StringExpressionFactory.FieldKeyStringExpression expr,
                            @Nullable Set<ExpData> parentDatas,
                            @Nullable Set<ExpMaterial> parentSamples,
-                           boolean skipDuplicates,
-                           boolean addUniqueSuffixForDuplicates)
+                           boolean skipDuplicates)
             throws ExperimentException;
 
     String createSampleName(@NotNull Map<String, Object> rowMap) throws ExperimentException;

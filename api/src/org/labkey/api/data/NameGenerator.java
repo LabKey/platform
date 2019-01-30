@@ -195,7 +195,7 @@ public class NameGenerator
     public String generateName(@NotNull Map<String, Object> map)
             throws NameGenerationException
     {
-        try (State state = createState(false, false))
+        try (State state = createState(false))
         {
             return state.nextName(map, null, null);
         }
@@ -206,7 +206,7 @@ public class NameGenerator
                              boolean incrementSampleCounts)
             throws NameGenerationException
     {
-        try (State state = createState(false, incrementSampleCounts))
+        try (State state = createState(incrementSampleCounts))
         {
             return state.nextName(map, parentDatas, parentSamples);
         }
@@ -214,10 +214,10 @@ public class NameGenerator
 
     public void generateNames(@NotNull List<Map<String, Object>> maps,
                               @Nullable Set<ExpData> parentDatas, @Nullable Set<ExpMaterial> parentSamples,
-                              boolean skipDuplicates, boolean addUniqueSuffixForDuplicates, boolean incrementSampleCounts)
+                              boolean skipDuplicates, boolean incrementSampleCounts)
             throws NameGenerationException
     {
-        try (State state = createState(addUniqueSuffixForDuplicates, incrementSampleCounts))
+        try (State state = createState(incrementSampleCounts))
         {
             ListIterator<Map<String, Object>> li = maps.listIterator();
             while (li.hasNext())
@@ -244,12 +244,11 @@ public class NameGenerator
 
     /**
      * Create new state object for a batch of names.
-     * @param addUniqueSuffixForDuplicates Append a unique suffix for duplicate names, e.g. ".1" or ".2"
      * @param incrementSampleCounts Increment the sample counters for each name generated.
      */
-    public State createState(boolean addUniqueSuffixForDuplicates, boolean incrementSampleCounts)
+    public State createState(boolean incrementSampleCounts)
     {
-        return new State(addUniqueSuffixForDuplicates, incrementSampleCounts);
+        return new State(incrementSampleCounts);
     }
 
     public String generateName(@NotNull State state, @NotNull Map<String, Object> rowMap) throws NameGenerationException
@@ -260,7 +259,6 @@ public class NameGenerator
 
     public class State implements AutoCloseable
     {
-        private final boolean _addUniqueSuffixForDuplicates;
         private final boolean _incrementSampleCounts;
 
         private final Map<String, Object> _batchExpressionContext;
@@ -269,9 +267,8 @@ public class NameGenerator
         private int _rowNumber = 0;
         private Map<Tuple3<String, Object, FieldKey>, Object> _lookupCache;
 
-        private State(boolean addUniqueSuffixForDuplicates, boolean incrementSampleCounts)
+        private State(boolean incrementSampleCounts)
         {
-            _addUniqueSuffixForDuplicates = addUniqueSuffixForDuplicates;
             _incrementSampleCounts = incrementSampleCounts;
 
             // Create the name expression context shared for the entire batch of rows
@@ -309,15 +306,7 @@ public class NameGenerator
 
             if (_newNames.containsKey(name))
             {
-                if (_addUniqueSuffixForDuplicates)
-                {
-                    // Add a unique suffix to the end of the name.
-                    int count = _newNames.get(name);
-                    _newNames.put(name, count + 1);
-                    name += "." + count;
-                }
-                else
-                    throw new DuplicateNameException(name, _rowNumber);
+                throw new DuplicateNameException(name, _rowNumber);
             }
             else
             {
