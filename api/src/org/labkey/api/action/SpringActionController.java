@@ -572,7 +572,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
                     // ignore
                 }
 
-                if (!user.isInSiteAdminGroup())
+                if (!user.hasSiteAdminPermission())
                 {
                     if (isApiLike(request,action))
                     {

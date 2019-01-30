@@ -58,7 +58,7 @@ public class SiteAdminMenu extends NavTreeMenu
 
         URLHelper returnURL = context.getActionURL().getReturnURL() == null ? context.getActionURL() : context.getActionURL().getReturnURL();
 
-        if (user.isInSiteAdminGroup())
+        if (user.hasSiteAdminPermission())
         {
             items.add(new NavTree("Site Admins", securityUrls.getManageGroupURL(root, "Administrators", returnURL)));
             items.add(new NavTree("Site Developers", securityUrls.getManageGroupURL(root, "Developers", returnURL)));

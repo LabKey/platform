@@ -469,7 +469,7 @@ public class PageConfig
         List<String> warningMessages = new LinkedList<>();
         User user = context.getUser();
 
-        if (null != user && user.isInSiteAdminGroup())
+        if (null != user && user.hasSiteAdminPermission())
             warningMessages.addAll(getStaticAdminWarnings());
 
         Warnings warnings = Warnings.of(warningMessages);

@@ -614,7 +614,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         props.put("canDeleteOwn", nonNullContainer && container.hasPermission(user, DeletePermission.class));
         props.put("isAdmin", nonNullContainer && container.hasPermission(user, AdminPermission.class));
         props.put("isRootAdmin", user.hasRootAdminPermission());
-        props.put("isSystemAdmin", user.isInSiteAdminGroup());
+        props.put("isSystemAdmin", user.hasSiteAdminPermission());
         props.put("isGuest", user.isGuest());
         props.put("isDeveloper", user.isBrowserDev());
         props.put("isAnalyst", user.hasRootPermission(AnalystPermission.class));

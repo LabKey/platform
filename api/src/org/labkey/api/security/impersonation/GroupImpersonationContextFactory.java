@@ -137,7 +137,7 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
             return false;
 
         // Impersonating the "Site: Administrators" group as a non-site admin is confusing as well.
-        if (group.isAdministrators() && !user.isInSiteAdminGroup())
+        if (group.isAdministrators() && !user.hasSiteAdminPermission())
             return false;
 
         // Site/app admin can impersonate any group

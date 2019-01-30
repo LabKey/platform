@@ -83,6 +83,6 @@ public class PopupUserView extends PopupMenuView
 
     public static boolean allowApiKeyPage(User user)
     {
-        return AppProps.getInstance().isAllowApiKeys() || AppProps.getInstance().isAllowSessionKeys() || user.isInSiteAdminGroup();
+        return AppProps.getInstance().isAllowApiKeys() || AppProps.getInstance().isAllowSessionKeys() || user.hasSiteAdminPermission();
     }
 }

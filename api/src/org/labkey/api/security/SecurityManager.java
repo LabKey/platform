@@ -57,14 +57,15 @@ import org.labkey.api.security.impersonation.ImpersonationContextFactory;
 import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.ApplicationAdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.SeeUserDetailsPermission;
+import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
-import org.labkey.api.security.roles.ApplicationAdminRole;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.NoPermissionsRole;
@@ -72,7 +73,6 @@ import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.HelpTopic;
@@ -1038,7 +1038,7 @@ public class SecurityManager
         try
         {
             // Issue 33254: only allow Site Admins to see the verification token
-            if (message.isMaskToken() && !user.isInSiteAdminGroup())
+            if (message.isMaskToken() && !user.hasSiteAdminPermission())
                 verificationURL.replaceParameter("verification", "**********");
 
             message.setVerificationURL(verificationURL.getURIString());
@@ -2760,7 +2760,7 @@ public class SecurityManager
                 message.append(email.getEmailAddress()).append(" added as a new user to the system, but no email was sent.");
 
                 // Issue 33254: only allow Site Admins to see the verification URL
-                if (currentUser.isInSiteAdminGroup())
+                if (currentUser.hasSiteAdminPermission())
                 {
                     message.append("  Click ");
                     String href = "<a href=\"" + PageFlowUtil.filter(createVerificationURL(context.getContainer(),
@@ -2927,16 +2927,16 @@ public class SecurityManager
 
     public static boolean isAdminOnlyPermissions(Container c)
     {
-        Set<Role> adminRoles = new HashSet<>();
-        adminRoles.add(RoleManager.getRole(SiteAdminRole.class));
-        adminRoles.add(RoleManager.getRole(ApplicationAdminRole.class));
-        adminRoles.add(RoleManager.getRole(ProjectAdminRole.class));
-        adminRoles.add(RoleManager.getRole(FolderAdminRole.class));
         SecurityPolicy policy = c.getPolicy();
 
         for (RoleAssignment ra : policy.getAssignments())
         {
-            if (!adminRoles.contains(ra.getRole()))
+            Role role = ra.getRole();
+
+            if ((role instanceof ProjectAdminRole) || (role instanceof FolderAdminRole))
+                return false;
+            Set<Class<? extends Permission>> permissions = role.getPermissions();
+            if (permissions.contains(SiteAdminPermission.class) || permissions.contains(ApplicationAdminPermission.class))
                 return false;
         }
 

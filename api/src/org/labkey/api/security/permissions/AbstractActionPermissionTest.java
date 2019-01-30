@@ -300,13 +300,13 @@ public abstract class AbstractActionPermissionTest extends Assert
     {
         for (PermissionCheckableAction action : actions)
         {
-            assertPermission(_c, action, user);
+            assertPermission(_c, action, user, _users.get(SITE_ADMIN_EMAIL));
 
             assertNoPermission(_c, action,
                 _users.get(SUBMITTER_EMAIL), _users.get(READER_EMAIL),
                 _users.get(AUTHOR_EMAIL), _users.get(EDITOR_EMAIL),
                 _users.get(FOLDER_ADMIN_EMAIL), _users.get(PROJECT_ADMIN_EMAIL),
-                _users.get(APPLICATION_ADMIN_EMAIL), _users.get(SITE_ADMIN_EMAIL)
+                _users.get(APPLICATION_ADMIN_EMAIL)
             );
         }
     }

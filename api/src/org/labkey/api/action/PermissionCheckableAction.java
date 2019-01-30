@@ -129,7 +129,7 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
         Class<? extends Controller> actionClass = getClass();
 
         boolean requiresSiteAdmin = actionClass.isAnnotationPresent(RequiresSiteAdmin.class);
-        if (requiresSiteAdmin && !user.isInSiteAdminGroup())
+        if (requiresSiteAdmin && !user.hasSiteAdminPermission())
         {
             throw new UnauthorizedException();
         }

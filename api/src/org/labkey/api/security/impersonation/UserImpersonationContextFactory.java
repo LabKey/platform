@@ -213,7 +213,7 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
         {
             // Don't allow global roles (site admin, developer, etc.) if user is being impersonated within a project
             // or if the admin user is not a site admin
-            return null == getImpersonationProject() && getAdminUser().isInSiteAdminGroup();
+            return null == getImpersonationProject() && getAdminUser().hasSiteAdminPermission();
         }
 
         @Override
