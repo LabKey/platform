@@ -129,7 +129,7 @@ LABKEY.Domain.create({
   }
 });
 </pre>
-         * @example Create domain from a <a href='https://www.labkey.org/Documentation/wiki-page.view?name=domainTemplate'>domain template</a>:
+         * @example Create domain from a <a href='https://www.labkey.org/Documentation/wiki-page.view?name=domainTemplates'>domain template</a>:
 <pre name="code" class="xml">
 LABKEY.Domain.create({
   module: "mymodule",
