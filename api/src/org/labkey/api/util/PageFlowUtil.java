@@ -1255,9 +1255,9 @@ public class PageFlowUtil
         return "var form = document.createElement('form');\n" +
             "form.setAttribute('method', 'post');\n" +
             "form.setAttribute('action', " + PageFlowUtil.qh(url.getLocalURIString()) + ");\n" +
-            "var input = document.createElement(\"input\");\n" +
-            "input.type = \"hidden\";\n" +
-            "input.name = \"" + CSRFUtil.csrfName + "\";\n" +
+            "var input = document.createElement('input');\n" +
+            "input.type = 'hidden';\n" +
+            "input.name = '" + CSRFUtil.csrfName + "';\n" +
             "input.value = LABKEY.CSRF;\n" +
             "form.appendChild(input);\n" +
             "form.style.display = 'hidden';\n" +
@@ -1449,6 +1449,7 @@ public class PageFlowUtil
                 (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
                 ">" + filter(text) + "</a>";
     }
+
     public static String unstyledTextLink(String text, URLHelper url)
     {
         return unstyledTextLink(text, url.toString(), null, null);

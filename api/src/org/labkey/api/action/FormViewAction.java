@@ -157,4 +157,10 @@ public abstract class FormViewAction<FORM> extends BaseViewAction<FORM> implemen
     {
         return null;
     }
+
+    // TODO: Sanity check to ensure doAction() methods are migrated. Delete this once OldRedirectActions are converted.
+    public final boolean doAction(FORM form, BindException errors)
+    {
+        throw new IllegalStateException("Should not override this method");
+    }
 }
