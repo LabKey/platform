@@ -74,7 +74,8 @@
         {
             if (canEdit)
             {
-                out.write(PageFlowUtil.textLink("Disable", urls.getDisableConfigParameterURL(AuthenticationManager.SELF_REGISTRATION_KEY)));
+                ActionURL url = urls.getDisableConfigParameterURL(AuthenticationManager.SELF_REGISTRATION_KEY);
+                out.write(PageFlowUtil.textLink("Disable", "javascript:void(0);", PageFlowUtil.postOnClickJavaScript(url), null));
             }
             else
             {
@@ -85,16 +86,17 @@
         }
         else
         {
-                if (canEdit)
-                {
-                    out.write(PageFlowUtil.textLink("Enable", urls.getEnableConfigParameterURL(AuthenticationManager.SELF_REGISTRATION_KEY)));
-                }
-                else
-                {
+            if (canEdit)
+            {
+                ActionURL url = urls.getEnableConfigParameterURL(AuthenticationManager.SELF_REGISTRATION_KEY);
+                out.write(PageFlowUtil.textLink("Enable", "javascript:void(0);", PageFlowUtil.postOnClickJavaScript(url), null));
+            }
+            else
+            {
         %>
             <div class="labkey-disabled-text-link">Disabled</div>
         <%
-                }
+            }
         }
         %>
         </td>
@@ -111,7 +113,8 @@
             {
                 if (canEdit)
                 {
-                    out.write(PageFlowUtil.textLink("Disable", urls.getDisableConfigParameterURL(AuthenticationManager.AUTO_CREATE_ACCOUNTS_KEY)));
+                    ActionURL url = urls.getDisableConfigParameterURL(AuthenticationManager.AUTO_CREATE_ACCOUNTS_KEY);
+                    out.write(PageFlowUtil.textLink("Disable", "javascript:void(0);", PageFlowUtil.postOnClickJavaScript(url), null));
                 }
                 else
                 {
@@ -124,7 +127,8 @@
             {
                 if (canEdit)
                 {
-                    out.write(PageFlowUtil.textLink("Enable", urls.getEnableConfigParameterURL(AuthenticationManager.AUTO_CREATE_ACCOUNTS_KEY)));
+                    ActionURL url = urls.getEnableConfigParameterURL(AuthenticationManager.AUTO_CREATE_ACCOUNTS_KEY);
+                    out.write(PageFlowUtil.textLink("Enable", "javascript:void(0);", PageFlowUtil.postOnClickJavaScript(url), null));
                 }
                 else
                 {
@@ -145,23 +149,25 @@
                 {
                     if (canEdit)
                     {
-                        out.write(PageFlowUtil.textLink("Disable",  urls.getDisableConfigParameterURL(AuthenticationManager.SELF_SERVICE_EMAIL_CHANGES_KEY)));
+                        ActionURL url = urls.getDisableConfigParameterURL(AuthenticationManager.SELF_SERVICE_EMAIL_CHANGES_KEY);
+                        out.write(PageFlowUtil.textLink("Disable", "javascript:void(0);", PageFlowUtil.postOnClickJavaScript(url), null));
                     }
                     else
                     {
             %>
             <div class="labkey-disabled-text-link labkey-enabled-option">Enabled</div>
             <%
-                }
-            }
-            else
-            {
-                if (canEdit)
-                {
-                    out.write(PageFlowUtil.textLink("Enable", urls.getEnableConfigParameterURL(AuthenticationManager.SELF_SERVICE_EMAIL_CHANGES_KEY)));
+                    }
                 }
                 else
                 {
+                    if (canEdit)
+                    {
+                        ActionURL url = urls.getEnableConfigParameterURL(AuthenticationManager.SELF_SERVICE_EMAIL_CHANGES_KEY);
+                        out.write(PageFlowUtil.textLink("Enable", "javascript:void(0);", PageFlowUtil.postOnClickJavaScript(url), null));
+                    }
+                    else
+                    {
             %>
             <div class="labkey-disabled-text-link">Disabled</div>
             <%
@@ -210,7 +216,7 @@
                 if (AuthenticationManager.isActive(authProvider))
                 {
                     if (canEdit)
-                        out.write(PageFlowUtil.textLink("disable", urls.getDisableProviderURL(authProvider)));
+                        out.write(PageFlowUtil.textLink("disable", "javascript:void(0);", PageFlowUtil.postOnClickJavaScript(urls.getDisableProviderURL(authProvider)), null));
                     else
                         out.write("<div class=\"labkey-disabled-text-link labkey-enabled-option\">Enabled</div>");
                 }
@@ -224,7 +230,7 @@
                 else
                 {
                     if (canEdit)
-                        out.write(PageFlowUtil.textLink("enable", urls.getEnableProviderURL(authProvider)));
+                        out.write(PageFlowUtil.textLink("enable", "javascript:void(0);", PageFlowUtil.postOnClickJavaScript(urls.getEnableProviderURL(authProvider)), null));
                     else
                         out.write("<div class=\"labkey-disabled-text-link\">Disabled</div>");
                 }

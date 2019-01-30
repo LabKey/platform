@@ -19,13 +19,13 @@ package org.labkey.core.login;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.OldRedirectAction;
+import org.labkey.api.action.ReadOnlyApiAction;
+import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -262,19 +262,20 @@ public class LoginController extends SpringActionController
         @Override
         public ActionURL getEnableProviderURL(AuthenticationProvider provider)
         {
-            return getActionURL(provider, EnableAction.class);
+            return getProviderEnabledActionURL(provider, true);
         }
 
         @Override
         public ActionURL getDisableProviderURL(AuthenticationProvider provider)
         {
-            return getActionURL(provider, DisableAction.class);
+            return getProviderEnabledActionURL(provider, false);
         }
 
-        private ActionURL getActionURL(AuthenticationProvider provider, Class<? extends Controller> getActionClass)
+        private ActionURL getProviderEnabledActionURL(AuthenticationProvider provider, boolean enabled)
         {
-            ActionURL url = new ActionURL(getActionClass, ContainerManager.getRoot());
+            ActionURL url = new ActionURL(SetProviderEnabledAction.class, ContainerManager.getRoot());
             url.addParameter("provider", provider.getName());
+            url.addParameter("enabled", enabled);
             return url;
         }
 
@@ -934,7 +935,7 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
-    public class GetRegistrationConfigApiAction extends ApiAction
+    public class GetRegistrationConfigApiAction extends ReadOnlyApiAction
     {
         @Override
         public Object execute(Object o, BindException errors)
@@ -2191,28 +2192,19 @@ public class LoginController extends SpringActionController
 
     @SuppressWarnings("unused")
     @RequiresNoPermission
-    public class InvalidateTokenAction extends OldRedirectAction<TokenAuthenticationForm>
+    // This action has historically accepted GET. Technically, it is a mutating operation, but only in the case
+    // where the caller has a secrete (the authentication token).
+    public class InvalidateTokenAction extends RedirectAction<TokenAuthenticationForm>
     {
         @Override
-        public URLHelper getSuccessURL(TokenAuthenticationForm form)
+        public @Nullable URLHelper getURL(TokenAuthenticationForm form, Errors errors)
         {
+            if (null != form.getLabkeyToken())
+                TokenAuthenticationManager.get().invalidateKey(form.getLabkeyToken());
             URLHelper returnUrl = form.getValidReturnUrl();
             if (null != returnUrl)
                 return returnUrl;
             return AppProps.getInstance().getHomePageActionURL();
-        }
-
-        @Override
-        public boolean doAction(TokenAuthenticationForm form, BindException errors)
-        {
-            if (null != form.getLabkeyToken())
-                TokenAuthenticationManager.get().invalidateKey(form.getLabkeyToken());
-            return true;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
         }
     }
 
@@ -2255,19 +2247,24 @@ public class LoginController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class SetAuthenticationParameterAction extends OldRedirectAction<AuthParameterForm>
+    public class SetAuthenticationParameterAction extends FormHandlerAction<AuthParameterForm>
     {
+        @Override
+        public void validateCommand(AuthParameterForm form, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(AuthParameterForm form, BindException errors) throws Exception
+        {
+            AuthenticationManager.setAuthConfigProperty(getUser(), form.getParameter(), form.isEnabled());
+            return true;
+        }
+
         @Override
         public URLHelper getSuccessURL(AuthParameterForm form)
         {
             return getUrls().getConfigureURL();
-        }
-
-        @Override
-        public boolean doAction(AuthParameterForm parameterForm, BindException errors)
-        {
-            AuthenticationManager.setAuthConfigProperty(getUser(), parameterForm.getParameter(), parameterForm.isEnabled());
-            return true;
         }
     }
 
@@ -2298,39 +2295,34 @@ public class LoginController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class EnableAction extends OldRedirectAction<ProviderForm>
+    public class SetProviderEnabledAction extends FormHandlerAction<ProviderForm>
     {
+        @Override
+        public void validateCommand(ProviderForm form, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(ProviderForm form, BindException errors) throws Exception
+        {
+            if (form.isEnabled())
+                AuthenticationManager.enableProvider(form.getProvider(), getUser());
+            else
+                AuthenticationManager.disableProvider(form.getProvider(), getUser());
+            return true;
+        }
+
+        @Override
         public ActionURL getSuccessURL(ProviderForm form)
         {
             return getUrls().getConfigureURL();
         }
-
-        public boolean doAction(ProviderForm form, BindException errors)
-        {
-            AuthenticationManager.enableProvider(form.getProvider(), getUser());
-            return true;
-        }
     }
-
-    @RequiresPermission(AdminOperationsPermission.class)
-    public class DisableAction extends OldRedirectAction<ProviderForm>
-    {
-        public ActionURL getSuccessURL(ProviderForm form)
-        {
-            return getUrls().getConfigureURL();
-        }
-
-        public boolean doAction(ProviderForm form, BindException errors)
-        {
-            AuthenticationManager.disableProvider(form.getProvider(), getUser());
-            return true;
-        }
-    }
-
 
     public static class ProviderForm
     {
         private String _provider;
+        private boolean _enabled;
 
         public String getProvider()
         {
@@ -2341,6 +2333,17 @@ public class LoginController extends SpringActionController
         public void setProvider(String provider)
         {
             _provider = provider;
+        }
+
+        public boolean isEnabled()
+        {
+            return _enabled;
+        }
+
+        @SuppressWarnings("unused")
+        public void setEnabled(boolean enabled)
+        {
+            _enabled = enabled;
         }
     }
 
@@ -2390,7 +2393,7 @@ public class LoginController extends SpringActionController
 
     @SuppressWarnings("unused")
     @RequiresNoPermission
-    public static class WhoAmIAction extends ApiAction
+    public static class WhoAmIAction extends ReadOnlyApiAction
     {
         @Override
         public ApiResponse execute(Object o, BindException errors)
@@ -2614,8 +2617,7 @@ public class LoginController extends SpringActionController
             // @RequiresPermission(AdminOperationsPermission.class)
             assertForAdminOperationsPermission(user,
                 controller.new SetAuthenticationParameterAction(),
-                controller.new EnableAction(),
-                controller.new DisableAction()
+                controller.new SetProviderEnabledAction()
             );
 
             // @AdminConsoleAction
