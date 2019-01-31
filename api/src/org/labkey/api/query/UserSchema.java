@@ -139,7 +139,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     {
         // by default disallow MDX if there is a getOlapContainerFilter() is not null so user can't
         // avoid the filter
-        if (null != getOlapContainerFilter() && !getUser().isSiteAdmin())
+        if (null != getOlapContainerFilter() && !getUser().hasSiteAdminPermission())
             throw new UnauthorizedException("User cannot execute MDX against this schema: " + getName());
     }
 
