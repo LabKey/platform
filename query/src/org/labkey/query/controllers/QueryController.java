@@ -106,11 +106,11 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.PrintWriters;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.data.xml.ColumnType;
-import org.labkey.data.xml.LookupFilterType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
 import org.labkey.data.xml.externalSchema.TemplateSchemaType;
+import org.labkey.data.xml.queryCustomView.FilterType;
 import org.labkey.query.CustomViewImpl;
 import org.labkey.query.CustomViewUtil;
 import org.labkey.query.EditQueriesPermission;
@@ -1059,15 +1059,20 @@ public class QueryController extends SpringActionController
                                             ColumnType.Fk fk = column.getFk();
                                             if (null != fk)
                                             {
-                                                validateLookupFilter(fk.getFkLookupInsertFilter(), "Lookup Insert Filter", errors);
-                                                validateLookupFilter(fk.getFkLookupUpdateFilter(), "Lookup Update Filter", errors);
+                                                try
+                                                {
+                                                    validateLookupFilter(AbstractTableInfo.parseXMLLookupFilters(fk.getFilters()), errors);
+                                                }
+                                                catch (ValidationException e)
+                                                {
+                                                    errors.reject(ERROR_MSG, e.getMessage());
+                                                }
                                             }
                                         }
                                     }
                                 }
                             }
                         }
-
                     }
                 }
             }
@@ -1085,31 +1090,35 @@ public class QueryController extends SpringActionController
             }
         }
 
-        private void validateLookupFilter(@Nullable LookupFilterType lookupFilterType, String displayStr, Errors errors)
+        private void validateLookupFilter(Map<ForeignKey.FilterOperation, List<FilterType>> filterMap, Errors errors)
         {
-            if (null != lookupFilterType)
-            {
-                if (StringUtils.isBlank(lookupFilterType.getColumnName()))
-                    errors.reject(ERROR_MSG, displayStr + " requires columnName");
+            filterMap.forEach((operation, filters) -> {
 
-                if (null == lookupFilterType.getOperator())
+                String displayStr = "Filter for operation : " + operation.name();
+                for (FilterType filter : filters)
                 {
-                    errors.reject(ERROR_MSG, displayStr + " requires operator");
-                }
-                else
-                {
-                    CompareType compareType = CompareType.getByURLKey(lookupFilterType.getOperator().toString());
-                    if (null == compareType)
+                    if (StringUtils.isBlank(filter.getColumn()))
+                        errors.reject(ERROR_MSG, displayStr + " requires columnName");
+
+                    if (null == filter.getOperator())
                     {
-                        errors.reject(ERROR_MSG, displayStr + " operator is invalid");
+                        errors.reject(ERROR_MSG,  displayStr + " requires operator");
                     }
                     else
                     {
-                        if (compareType.isDataValueRequired() && null == lookupFilterType.getValue())
-                            errors.reject(ERROR_MSG, displayStr + " operation requires a value but none is specified");
+                        CompareType compareType = CompareType.getByURLKey(filter.getOperator().toString());
+                        if (null == compareType)
+                        {
+                            errors.reject(ERROR_MSG, displayStr + " operator is invalid");
+                        }
+                        else
+                        {
+                            if (compareType.isDataValueRequired() && null == filter.getValue())
+                                errors.reject(ERROR_MSG, displayStr + " requires a value but none is specified");
+                        }
                     }
                 }
-            }
+            });
         }
 
         @Override
