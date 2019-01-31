@@ -264,10 +264,10 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 getLogger().info("Exporting data from parent study.");
                 exportFromParentStudy(folderExportContext, vf);
 
+                StudyImportContext studyImportContext = importToDestinationStudy(errors, destStudy, vf);
+
                 // import folder items (reports, lists, etc)
                 importFolderItems(destStudy, vf);
-
-                StudyImportContext studyImportContext = importToDestinationStudy(errors, destStudy, vf);
 
                 // copy participants
                 exportParticipantGroups(_form, sourceStudy, participantGroups, folderExportContext, vf);
