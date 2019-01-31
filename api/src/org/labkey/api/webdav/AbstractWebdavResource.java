@@ -398,13 +398,13 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return null;
     }
 
-    public long copyFrom(User user, WebdavResource r) throws IOException
+    public long copyFrom(User user, WebdavResource r) throws IOException, DavException
     {
         return copyFrom(user, r.getFileStream(user));
     }
 
 
-    public void moveFrom(User user, WebdavResource src) throws IOException
+    public void moveFrom(User user, WebdavResource src) throws IOException, DavException
     {
         copyFrom(user, src);
         src.delete(user);

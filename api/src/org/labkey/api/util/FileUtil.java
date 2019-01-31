@@ -401,22 +401,10 @@ public class FileUtil
 
     public static String getFileName(Path fullPath)
     {
-        // In s3fs, path.getFileName().toString() fails if fileName has spaces. (Looks like an s3fs bug to me.)
+        // We want unencoded fileName
         if (hasCloudScheme(fullPath))
         {
-            String fullStr = fullPath.toString();
-            if (null != fullStr)
-            {
-                String[] names = fullStr.split("/");
-                String retStr = names.length > 2 ?
-                        (StringUtils.isNotBlank(names[names.length - 1]) ?
-                                names[names.length - 1] :
-                                names[names.length - 2]) :
-                        names.length == 1 ? names[0] : "";
-
-                return decodeSpaces(retStr);
-            }
-            return "";
+            return fullPath.getFileName().toUri().getPath();
         }
         else
         {

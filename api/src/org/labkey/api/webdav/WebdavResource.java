@@ -83,13 +83,13 @@ public interface WebdavResource extends Resource
     InputStream getInputStream(User user) throws IOException;
 
     /** Caller needs to check permissions */
-    long copyFrom(User user, FileStream in) throws IOException;
+    long copyFrom(User user, FileStream in) throws IOException, DavException;
 
     /** Caller needs to check permissions */
-    long copyFrom(User user, WebdavResource r) throws IOException;
+    long copyFrom(User user, WebdavResource r) throws IOException, DavException;
 
     /** Caller needs to check permissions */
-    void moveFrom(User user, WebdavResource r) throws IOException;
+    void moveFrom(User user, WebdavResource r) throws IOException, DavException;
 
     long getContentLength() throws IOException;
 

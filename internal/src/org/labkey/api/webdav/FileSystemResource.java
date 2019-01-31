@@ -305,7 +305,7 @@ public class FileSystemResource extends AbstractWebdavResource
 
 
     @Override
-    public void moveFrom(User user, WebdavResource src) throws IOException
+    public void moveFrom(User user, WebdavResource src) throws IOException, DavException
     {
         super.moveFrom(user, src);
         resetMetadata();
