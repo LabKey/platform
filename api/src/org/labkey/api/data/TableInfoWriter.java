@@ -24,9 +24,11 @@ import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.DefaultScaleType;
 import org.labkey.data.xml.DefaultValueEnumType;
 import org.labkey.data.xml.FacetingBehaviorType;
+import org.labkey.data.xml.FilterGroupType;
 import org.labkey.data.xml.PHIType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.ValidatorsType;
+import org.labkey.data.xml.queryCustomView.FilterType;
 
 import java.util.Collection;
 import java.util.List;
@@ -185,8 +187,6 @@ public class TableInfoWriter
                     fkXml.setFkTable(tinfoPublicName);
                     fkXml.setFkColumnName(fk.getLookupColumnName());
 
-                    // per spec, don't export the lookup filters for anything but custom queries
-/*
                     if (!fk.getFilters().isEmpty())
                     {
                         ColumnType.Fk.Filters filters = fkXml.addNewFilters();
@@ -204,7 +204,6 @@ public class TableInfoWriter
                             });
                         });
                     }
-*/
                 }
             }
         }
