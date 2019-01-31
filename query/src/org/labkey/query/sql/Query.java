@@ -1080,6 +1080,7 @@ public class Query
 
         int i=1;
 
+        @NotNull
         public CloseableIterator<Map<String, Object>> iterator()
         {
             return new _Iterator();
@@ -1245,7 +1246,6 @@ public class Query
     }
 
 
-
     static class FailTest extends SqlTest
     {
         FailTest(String sql)
@@ -1321,10 +1321,12 @@ public class Query
         new SqlTest("SELECT d, seven, twelve, day, month, date, duration, guid FROM R", 8, Rsize),
         new SqlTest("SELECT d, seven, twelve, day, month, date, duration, guid FROM lists.R", 8, Rsize),
         new SqlTest("SELECT d, seven, twelve, day, month, date, duration, guid FROM Folder.qtest.lists.S", 8, Rsize),
+        new SqlTest("SELECT Folder.qtest.lists.S.d, seven, Folder.qtest.lists.S.twelve, day, Folder.qtest.lists.S.month, date, duration, guid FROM Folder.qtest.lists.S", 8, Rsize),  // Folder+schema-qualified column names
         new SqlTest("SELECT R.d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.guid FROM R", 8, Rsize),
         new SqlTest("SELECT R.* FROM R", Rcolumns, Rsize),
         new SqlTest("SELECT * FROM R", Rcolumns, Rsize),
         new SqlTest("SELECT R.d, seven, R.twelve AS TWE, R.day DOM, LCASE(GUID) FROM lists.R", 5, Rsize),
+        new SqlTest("SELECT lists.R.d, seven, lists.R.twelve AS TWE, R.day DOM, LCASE(GUID) FROM lists.R", 5, Rsize),  // Schema-qualified column names
         new SqlTest("SELECT true as T, false as F FROM R", 2, Rsize),
         new SqlTest("SELECT COUNT(*) AS _count FROM R", 1, 1),
         new SqlTest("SELECT R.d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.guid, R.created, R.createdby, R.createdby.displayname FROM R", 11, Rsize),
@@ -1655,6 +1657,8 @@ public class Query
 
 	static SqlTest[] negative = new SqlTest[]
 	{
+        new FailTest("SELECT d, seven, d, seven FROM R"),        // Duplicate column names aren't supported by default
+        new FailTest("SELECT lists.R.d, lists.R.seven FROM R"),  // Schema-qualified column names work only if FROM specifies schema
 		new FailTest("SELECT S.d, S.seven FROM S"),
 		new FailTest("SELECT S.d, S.seven FROM Folder.S"),
 		new FailTest("SELECT S.d, S.seven FROM Folder.qtest.S"),
@@ -1952,8 +1956,43 @@ public class Query
             {
                 test.validate(this, null);
             }
+
+            testDuplicateColumns(user, c);
         }
 
+        // Duplicate column names are supported, but only when using a special flag, #36424
+        private void testDuplicateColumns(User user, Container c) throws SQLException
+        {
+            String sql = "SELECT d, seven, d, seven FROM R";
+            QueryDefinition query = QueryService.get().createQueryDef(user, c, SchemaKey.fromParts("lists"), GUID.makeHash());
+            query.setSql(sql);
+            ArrayList<QueryException> qerrors = new ArrayList<>();
+            TableInfo t = query.getTable(query.getSchema(), qerrors, false, true, true);
+
+            if (null == t)
+            {
+                Assert.fail("Table not found");
+            }
+            else if (!qerrors.isEmpty())
+            {
+                throw qerrors.get(0);
+            }
+            else
+            {
+                try (Results rs = QueryService.get().select(t, t.getColumns(), null, null))
+                {
+                    assertNotNull(sql, rs);
+                    QueryTestCase.assertEquals(sql, Rsize, rs.getSize());
+                    ResultSetMetaData md = rs.getMetaData();
+                    QueryTestCase.assertEquals(sql, 4, md.getColumnCount());
+                    QueryTestCase.assertEquals(sql, 4, rs.getFieldMap().size());
+                    QueryTestCase.assertEquals(sql, "d", rs.getColumn(1).getName());
+                    QueryTestCase.assertEquals(sql, "seven", rs.getColumn(2).getName());
+                    QueryTestCase.assertEquals(sql, "d_1", rs.getColumn(3).getName());
+                    QueryTestCase.assertEquals(sql, "seven_1", rs.getColumn(4).getName());
+                }
+            }
+        }
 
         @Test
         public void testContainerFilter() throws Exception
