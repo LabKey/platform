@@ -185,11 +185,26 @@ public class TableInfoWriter
                     fkXml.setFkTable(tinfoPublicName);
                     fkXml.setFkColumnName(fk.getLookupColumnName());
 
-                    if (null != fk.getInsertFilter())
-                        fkXml.setFkLookupInsertFilter(fk.getInsertFilter());
+                    // per spec, don't export the lookup filters for anything but custom queries
+/*
+                    if (!fk.getFilters().isEmpty())
+                    {
+                        ColumnType.Fk.Filters filters = fkXml.addNewFilters();
 
-                    if (null != fk.getUpdateFilter())
-                        fkXml.setFkLookupUpdateFilter(fk.getUpdateFilter());
+                        fk.getFilters().forEach((operation, filterList) -> {
+                            FilterGroupType filterGroup = filters.addNewFilterGroup();
+
+                            filterGroup.setOperation(operation.name());
+                            filterList.forEach(filter -> {
+                                FilterType newFilter = filterGroup.addNewFilter();
+
+                                newFilter.setColumn(filter.getColumn());
+                                newFilter.setValue(filter.getValue());
+                                newFilter.setOperator(filter.getOperator());
+                            });
+                        });
+                    }
+*/
                 }
             }
         }

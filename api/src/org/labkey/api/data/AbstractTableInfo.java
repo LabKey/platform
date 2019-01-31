@@ -16,13 +16,11 @@
 
 package org.labkey.api.data;
 
-import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlCursor;
-import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -72,12 +70,13 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.data.xml.AuditType;
 import org.labkey.data.xml.ColumnType;
+import org.labkey.data.xml.FilterGroupType;
 import org.labkey.data.xml.ImportTemplateType;
-import org.labkey.data.xml.LookupFilterType;
 import org.labkey.data.xml.PositionTypeEnum;
 import org.labkey.data.xml.PropertiesType;
 import org.labkey.data.xml.TableCustomizerType;
 import org.labkey.data.xml.TableType;
+import org.labkey.data.xml.queryCustomView.FilterType;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -294,12 +293,12 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     @Override
     public NamedObjectList getSelectList(String columnName)
     {
-        return getSelectList(columnName, null);
+        return getSelectList(columnName, Collections.emptyList());
     }
 
 
     @Override
-    public NamedObjectList getSelectList(String columnName, @Nullable LookupFilterType lookupFilterType)
+    public NamedObjectList getSelectList(String columnName, List<FilterType> filters)
     {
         if (columnName == null)
         {
@@ -307,15 +306,15 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             if (pkColumns.size() != 1)
                 return new NamedObjectList();
             else
-                return getSelectList(pkColumns.get(0), null);
+                return getSelectList(pkColumns.get(0), Collections.emptyList());
         }
 
         ColumnInfo column = getColumn(columnName);
-        return getSelectList(column, lookupFilterType);
+        return getSelectList(column, filters);
     }
 
 
-    public NamedObjectList getSelectList(ColumnInfo firstColumn, @Nullable LookupFilterType lookupFilterType)
+    public NamedObjectList getSelectList(ColumnInfo firstColumn, List<FilterType> filters)
     {
         final NamedObjectList ret = new NamedObjectList();
         if (firstColumn == null)
@@ -337,67 +336,12 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             titleIndex = 2;
         }
 
-        SimpleFilter filter = null;
-        if (null != lookupFilterType && null != lookupFilterType.getOperator() && StringUtils.isNotBlank(lookupFilterType.getColumnName()))
-        {
-            filter = new SimpleFilter();
-            CompareType compareType = CompareType.getByURLKey(lookupFilterType.getOperator().toString());
-            FieldKey fieldKey = FieldKey.fromString(lookupFilterType.getColumnName());
-            ColumnInfo filterColumn = getColumn(fieldKey);
-            if (compareType != null)
-            {
-                if (null != filterColumn)
-                {
-                    try
-                    {
-                        Object value = null;
-                        if (compareType.isDataValueRequired())
-                        {
-                            if (null == compareType.getValueSeparator())
-                            {
-                                value = filterColumn.getJdbcType().convert(lookupFilterType.getValue());    // convert single value from string
-                            }
-                            else
-                            {
-                                List<Object> values = new ArrayList<>();
-                                for (String str : lookupFilterType.getValue().split(compareType.getValueSeparator()))
-                                {
-                                    values.add(filterColumn.getJdbcType().convert(str));               // convert each value from string
-                                }
-                                value = values;
-                            }
-                        }
-
-                        filter.addClause(compareType.createFilterClause(fieldKey, value));
-                    }
-                    catch (ConversionException e)
-                    {
-                        LOG.warn("Could not construct lookup filter: " + makeLookupFilterMessage(lookupFilterType), e);
-                    }
-                }
-                else
-                {
-                    LOG.warn("Lookup filter column not found: " + makeLookupFilterMessage(lookupFilterType));
-                }
-            }
-            else
-            {
-                LOG.warn("Could not find CompareType: " + makeLookupFilterMessage(lookupFilterType));
-            }
-        }
-
+        SimpleFilter filter = SimpleFilter.fromXml(filters.toArray(new FilterType[filters.size()]));
         Sort sort = new Sort();
         sort.insertSortColumn(titleColumn.getFieldKey(), titleColumn.getSortDirection());
         new TableSelector(this, cols, filter, sort).forEach(rs -> ret.put(new SimpleNamedObject(rs.getString(1), rs.getString(titleIndex))));
 
         return ret;
-    }
-
-    private String makeLookupFilterMessage(LookupFilterType lookupFilterType)
-    {
-        String containerPath = null != getUserSchema() ? getUserSchema().getContainer().getPath() : null;
-        return "\"" + getPublicSchemaName() + "." + getPublicName() + "." + lookupFilterType.getColumnName() + "\" '" +
-                lookupFilterType.getOperator().toString() + "' [" + (null != containerPath ? containerPath : "<unknown folder>") + "]";
     }
 
     public List<ColumnInfo> getUserEditableColumns()
@@ -913,16 +857,63 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                 return;
             }
 
-            if (columnFk.isSetFkLookupInsertFilter())
-                qfk.setInsertFilter(columnFk.getFkLookupInsertFilter());
-
-            if (columnFk.isSetFkLookupUpdateFilter())
-                qfk.setUpdateFilter(columnFk.getFkLookupUpdateFilter());
-
+            try
+            {
+                Map<ForeignKey.FilterOperation, List<FilterType>> filterMap = parseXMLLookupFilters(columnFk.getFilters());
+                qfk.setFilters(filterMap);
+            }
+            catch (ValidationException e)
+            {
+                throw new UnsupportedOperationException(e);
+            }
             column.setFk(qfk);
         }
     }
 
+    public static Map<ForeignKey.FilterOperation, List<FilterType>> parseXMLLookupFilters(ColumnType.Fk.Filters fkFilters) throws ValidationException
+    {
+        Map<ForeignKey.FilterOperation, List<FilterType>> filterMap = new HashMap<>();
+        if (fkFilters != null)
+        {
+            for (FilterGroupType group : fkFilters.getFilterGroupArray())
+            {
+                List<FilterType> filters = new ArrayList<>(Arrays.asList(group.getFilterArray()));
+
+                if (group.getOperation() != null)
+                {
+                    String[] operations = group.getOperation().split(",");
+                    if (operations != null)
+                    {
+                        for (String operation : operations)
+                        {
+                            try
+                            {
+                                ForeignKey.FilterOperation filterOperation = ForeignKey.FilterOperation.valueOf(operation.trim());
+                                if (filterMap.containsKey(filterOperation))
+                                    throw new ValidationException("Duplicate operations specified for the same FK filter: " + filterOperation);
+
+                                filterMap.put(filterOperation, filters);
+                            }
+                            catch (IllegalArgumentException e)
+                            {
+                                throw new ValidationException(e.getMessage());
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    if (filterMap.containsKey(ForeignKey.FilterOperation.insert))
+                        throw new ValidationException("Duplicate operations specified for the same FK filter: " + ForeignKey.FilterOperation.insert);
+                    filterMap.put(ForeignKey.FilterOperation.insert, filters);
+                    if (filterMap.containsKey(ForeignKey.FilterOperation.update))
+                        throw new ValidationException("Duplicate operations specified for the same FK filter: " + ForeignKey.FilterOperation.update);
+                    filterMap.put(ForeignKey.FilterOperation.update, filters);
+                }
+            }
+        }
+        return filterMap;
+    }
 
     public void loadFromXML(QuerySchema schema, @Nullable Collection<TableType> xmlTables, Collection<QueryException> errors)
     {

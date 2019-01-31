@@ -20,7 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.Pair;
-import org.labkey.data.xml.LookupFilterType;
+import org.labkey.data.xml.queryCustomView.FilterType;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -43,8 +43,7 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
     protected String _columnName;
     protected String _displayColumnName;
 
-    private LookupFilterType _insertFilter = null;
-    private LookupFilterType _updateFilter = null;
+    private Map<FilterOperation, List<FilterType>> _filters = new HashMap<>();
 
     // Set of additional FieldKeys that query should select to make the join successful.
     private Set<FieldKey> _suggestedFields;
@@ -117,29 +116,15 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
     }
 
     @Override
-    @Nullable
-    public LookupFilterType getInsertFilter()
+    public Map<FilterOperation, List<org.labkey.data.xml.queryCustomView.FilterType>> getFilters()
     {
-        return _insertFilter;
+        return _filters;
     }
 
     @Override
-    public void setInsertFilter(LookupFilterType insertFilter)
+    public void setFilters(Map<FilterOperation, List<org.labkey.data.xml.queryCustomView.FilterType>> filters)
     {
-        _insertFilter = insertFilter;
-    }
-
-    @Override
-    @Nullable
-    public LookupFilterType getUpdateFilter()
-    {
-        return _updateFilter;
-    }
-
-    @Override
-    public void setUpdateFilter(LookupFilterType updateFilter)
-    {
-        _updateFilter = updateFilter;
+        _filters = filters;
     }
 
     private boolean _initNames = false;
@@ -193,9 +178,12 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
         if (lookupTable == null)
             return new NamedObjectList();
 
-        LookupFilterType filter = (DataRegion.MODE_INSERT == ctx.getMode() && null != getInsertFilter()) ? getInsertFilter() :
-                                  (DataRegion.MODE_UPDATE == ctx.getMode() && null != getUpdateFilter()) ? getUpdateFilter() : null;
-        return lookupTable.getSelectList(getLookupColumnName(), filter);
+        Map<FilterOperation, List<FilterType>> filterMap = getFilters();
+        List<FilterType> filters = (DataRegion.MODE_INSERT == ctx.getMode() && filterMap.containsKey(FilterOperation.insert)) ? filterMap.get(FilterOperation.insert) :
+                                   (DataRegion.MODE_UPDATE == ctx.getMode() && filterMap.containsKey(FilterOperation.update)) ? filterMap.get(FilterOperation.update) :
+                                    Collections.emptyList();
+
+        return lookupTable.getSelectList(getLookupColumnName(), filters);
     }
 
 

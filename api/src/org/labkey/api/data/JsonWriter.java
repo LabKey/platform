@@ -15,7 +15,6 @@
  */
 package org.labkey.api.data;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -27,7 +26,8 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.util.ExtUtil;
-import org.labkey.data.xml.LookupFilterType;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.data.xml.queryCustomView.FilterType;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -363,31 +363,39 @@ public class JsonWriter
                     lookupInfo.put("junctionLookup", junctionLookup);
             }
 
-            if (null != fk.getInsertFilter())
+            if (!fk.getFilters().isEmpty())
             {
-                lookupInfo.put("insertFilter", makeLookupFilter(fk.getInsertFilter()));
+                lookupInfo.put("filterGroups", makeLookupFilter(fk.getFilters()));
             }
-
-            if (null != fk.getUpdateFilter())
-            {
-                lookupInfo.put("updateFilter", makeLookupFilter(fk.getUpdateFilter()));
-            }
-
             return lookupInfo;
         }
 
         return null;
     }
 
-    private static JSONObject makeLookupFilter(LookupFilterType lookupFilter)
+    private static JSONArray makeLookupFilter(Map<ForeignKey.FilterOperation, List<FilterType>> filters)
     {
-        JSONObject filter = new JSONObject();
-        filter.put("columnName", lookupFilter.getColumnName());
-        if (null != lookupFilter.getOperator())                                  // Operator must be specified in valid lookup filter, but be safe
-            filter.put("operator", lookupFilter.getOperator().toString());
-        if (StringUtils.isNotBlank(lookupFilter.getValue()))
-            filter.put("value", lookupFilter.getValue());
-        return filter;
+        JSONArray filterGroups = new JSONArray();
+
+        filters.forEach((operation, filterList) -> {
+
+            Map<String, Object> props = new HashMap<>();
+            List<Map<String, String>> filterProps = new ArrayList<>();
+
+            props.put("operation", operation.name());
+
+            filterList.forEach((filter) -> {
+
+                Map<String, String> filterMap = PageFlowUtil.map("column", filter.getColumn(),
+                        "value", filter.getValue(),
+                        "operator", filter.getOperator().toString());
+                filterProps.add(filterMap);
+            });
+            props.put("filters", filterProps);
+
+            filterGroups.put(props);
+        });
+        return filterGroups;
     }
 
     public static Map<String,Object> getColModel(DisplayColumn dc)
