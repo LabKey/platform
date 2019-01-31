@@ -239,6 +239,8 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         {
             if (newReport instanceof GenericChartReport)
             {
+                // log the original descriptor for troubleshooting purposes
+                _log.debug("Attempting to convert legacy descriptor to json: " + descriptor.serialize(context.getContainer()));
                 GenericChartReport chartReport = (GenericChartReport) newReport;
                 chartReport.setChartViewDescriptor((ChartReport) report, context);
             }
