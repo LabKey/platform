@@ -1138,7 +1138,7 @@ public class FileContentServiceImpl implements FileContentService
     public SQLFragment listFilesQuery(@NotNull User currentUser)
     {
         SQLFragment frag = new SQLFragment();
-        if (currentUser == null || !currentUser.isSiteAdmin())
+        if (currentUser == null || !currentUser.hasSiteAdminPermission())
         {
             frag.append("SELECT\n");
             frag.append("  CAST(NULL AS VARCHAR) AS Container,\n");

@@ -2054,7 +2054,7 @@ public class AnnouncementsController extends SpringActionController
                 emailPrefsURL = user.isGuest() ? null : getEmailPreferencesURL(c, url, c.getId());
                 emailManageURL = c.hasPermission(user, AdminPermission.class) ? getAdminEmailURL(c, url) : null;
                 containerEmailTemplateURL = c.hasPermission(user, AdminPermission.class) ? PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeEmailURL(c, AnnouncementManager.NotificationEmailTemplate.class, url) : null;
-                siteEmailTemplateURL = user.isSiteAdmin() ? PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeEmailURL(ContainerManager.getRoot(), AnnouncementManager.NotificationEmailTemplate.class, url) : null;
+                siteEmailTemplateURL = user.hasSiteAdminPermission() ? PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeEmailURL(ContainerManager.getRoot(), AnnouncementManager.NotificationEmailTemplate.class, url) : null;
                 insertURL = perm.allowInsert() ? getInsertURL(c, url) : null;
                 includeGroups = perm.includeGroups();
             }
