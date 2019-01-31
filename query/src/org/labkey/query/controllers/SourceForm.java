@@ -16,6 +16,7 @@
 
 package org.labkey.query.controllers;
 
+import org.json.XML;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.view.ViewContext;
@@ -95,6 +96,6 @@ public class SourceForm extends ViewForm
 
     public String getDefaultMetadataText()
     {
-        return String.format(DEFAULT_METADATA_TEXT, getQueryName());
+        return String.format(DEFAULT_METADATA_TEXT, XML.escape(getQueryName()));
     }
 }
