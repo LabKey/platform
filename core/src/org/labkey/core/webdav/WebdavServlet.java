@@ -50,6 +50,7 @@ import java.net.URISyntaxException;
 
 public class WebdavServlet extends HttpServlet
 {
+    Logger _log = Logger.getLogger(WebdavServlet.class);
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException
@@ -60,6 +61,7 @@ public class WebdavServlet extends HttpServlet
 
         String fullPath = (null==request.getServletPath()?"":request.getServletPath()) + (null==request.getPathInfo()?"":request.getPathInfo());
 
+        _log.debug(request.getMethod() + ": " + request.getRequestURL() + "; " + request.getPathInfo());
         URLHelper helper;
         try
         {

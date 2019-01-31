@@ -74,7 +74,8 @@
     String cancelButtonText = isFolderSetup ? "Next" : "Cancel";
     String cancelButtonUrl = isFolderSetup ? getActionURL().getReturnURL().toString() : getContainer().getStartURL(getUser()).toString();
     ActionURL redirectToPipeline = urlProvider(PipelineUrls.class).urlBegin(getContainer());
-    boolean isCurrentFileRootManaged = !(FileRootProp.cloudRoot.name().equals(bean.getFileRootOption()) &&
+    boolean isCurrentFileRootCloud = FileRootProp.cloudRoot.name().equals(bean.getFileRootOption());
+    boolean isCurrentFileRootManaged = !(isCurrentFileRootCloud &&
                                                 null != storeInfos.get(bean.getCloudRootName()) && !storeInfos.get(bean.getCloudRootName()).isLabKeyManaged());
 %>
 
@@ -164,7 +165,7 @@
                 </table>
             </td>
         </tr>
-        <% if (hasAdminOpsPerm && !isFolderSetup) { %>
+        <% if (hasAdminOpsPerm && !isFolderSetup && !isCurrentFileRootCloud) { %>
         <tr>
             <td>
                 <a id="manageAdditionalFileRoots" class="labkey-text-link" href="<%=h(urlProvider(FileUrls.class).urlShowAdmin(getContainer()))%>">Manage Additional File Roots</a>

@@ -79,6 +79,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.AbstractDocumentResource;
 import org.labkey.api.webdav.AbstractWebdavResourceCollection;
+import org.labkey.api.webdav.DavException;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.core.CoreModule;
@@ -1372,7 +1373,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         }
 
         @Override
-        public void moveFrom(User user, WebdavResource r) throws IOException
+        public void moveFrom(User user, WebdavResource r) throws IOException, DavException
         {
             if (r instanceof AttachmentResource)
             {

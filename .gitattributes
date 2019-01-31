@@ -185,6 +185,7 @@ core/resources/credits/jars.txt -text
 core/resources/credits/scripts.txt -text
 core/resources/credits/source.txt -text
 core/resources/credits/tomcat_jars.txt -text
+core/resources/module.xml -text
 core/resources/schemas/core.xml -text
 core/resources/schemas/dbscripts/postgresql/core-0.00-16.20.sql -text
 core/resources/schemas/dbscripts/postgresql/core-16.30-17.10.sql -text

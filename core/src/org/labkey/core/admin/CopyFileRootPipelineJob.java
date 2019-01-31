@@ -18,12 +18,17 @@ package org.labkey.core.admin;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.ModuleProperty;
 import org.labkey.api.pipeline.CancelledException;
 import org.labkey.api.pipeline.LocalDirectory;
 import org.labkey.api.pipeline.PairSerializer;
@@ -49,6 +54,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class CopyFileRootPipelineJob extends PipelineJob
@@ -121,14 +127,14 @@ public class CopyFileRootPipelineJob extends PipelineJob
                     {
                         Path sourceDir = FileUtil.stringToPath(sourceInfo.first, sourceInfo.second);
                         sourceIsLocalFileSystem = sourceIsLocalFileSystem && !FileUtil.hasCloudScheme(sourceDir);
-                        TaskStatus oneFolderStatus = CopyOneFolder(container, sourceDir, destFileRootDir, startTime);
+                        TaskStatus oneFolderStatus = copyOneFolder(container, sourceDir, destFileRootDir, startTime);
                         status = updateIfError(status, oneFolderStatus);   // Remember there was an error, but continue with other folders
                     }
                 }
             }
             else
             {
-                error("FileContentService not found");
+                getLogger().warn("FileContentService not found");
                 status = TaskStatus.error;
             }
 
@@ -146,13 +152,19 @@ public class CopyFileRootPipelineJob extends PipelineJob
         {
             setActiveTaskStatus(TaskStatus.cancelled);  // Need to set because cleaning upo LocalDirectory can getActiveTaskStatus
         }
+        catch (Exception e)
+        {
+            // Something not caught below
+            error("Unexpected error; ending job.", e);
+            setStatus(TaskStatus.error);
+        }
         finally
         {
             finallyCleanUpLocalDirectory();
         }
     }
 
-    private TaskStatus CopyOneFolder(Container container, Path sourceDir, Path destDir, long startTime)
+    private TaskStatus copyOneFolder(Container container, Path sourceDir, Path destDir, long startTime)
     {
         TaskStatus status = TaskStatus.complete;
 
@@ -175,7 +187,7 @@ public class CopyFileRootPipelineJob extends PipelineJob
             }
             else if (Files.exists(destDir) && !Files.isDirectory(destDir))          // Dest doesn't have to exist
             {
-                error("Destination exists and is not directory: " + FileUtil.pathToString(destDir));
+                getLogger().warn("Destination exists and is not directory: " + FileUtil.pathToString(destDir));
                 status = TaskStatus.error;
             }
             else
@@ -202,7 +214,7 @@ public class CopyFileRootPipelineJob extends PipelineJob
                     }
                     else
                     {
-                        error("FileContentService not available to call fireFileMoveEvent");
+                        getLogger().warn("FileContentService not available to call fireFileMoveEvent");
                         status = TaskStatus.error;
                     }
 
@@ -217,7 +229,7 @@ public class CopyFileRootPipelineJob extends PipelineJob
                 }
                 catch (IllegalArgumentException e)
                 {
-                    error("Error processing folder", e);
+                    getLogger().warn("Error processing folder", e);
                     status = TaskStatus.error;
                 }
                 catch (UncheckedIOException e)
@@ -252,14 +264,14 @@ public class CopyFileRootPipelineJob extends PipelineJob
                 }
                 catch (IllegalArgumentException | IOException e)
                 {
-                    error("Error getting source directory stats", e);
+                    getLogger().warn("Error getting source directory stats", e);
                     return TaskStatus.error;
                 }
             }
         }
         catch (IllegalArgumentException | IOException e)
         {
-            error("Error getting directory stream for source directory", e);
+            getLogger().warn("Error getting directory stream for source directory", e);
             return TaskStatus.error;
         }
         return TaskStatus.complete;
@@ -275,7 +287,7 @@ public class CopyFileRootPipelineJob extends PipelineJob
             }
             catch (IllegalArgumentException | IOException e)
             {
-                error("Error creating destination directory destination directory", e);
+                getLogger().warn("Error creating destination directory destination directory", e);
                 return TaskStatus.error;
             }
         }
@@ -287,19 +299,38 @@ public class CopyFileRootPipelineJob extends PipelineJob
             {
                 try
                 {
-                    String pathString = FileUtil.pathToString(sourceChild);
+                    String pathString = FileUtil.getAbsolutePath(sourceChild);
                     Path destChild = destDir.resolve(FileUtil.getFileName(sourceChild));
                     if (Files.isDirectory(sourceChild))
                     {
-                        setStatus(TaskStatus.running, "Copying files");
-                        info("Copying directory '" + pathString + "'");
-                        status = updateIfError(status, copyFiles(sourceChild, destChild, lastStatTime, stats, origStats));
+                        if (FileUtil.hasCloudScheme(destDir) && StringUtils.contains(pathString, "%"))
+                        {
+                            getLogger().warn("Cannot copy directory '" + pathString + "' to cloud, because its name contains '%'.");
+                            status = TaskStatus.error;
+                        }
+                        else
+                        {
+                            setStatus(TaskStatus.running, "Copying files");
+                            info("Copying directory '" + pathString + "'");
+                            status = updateIfError(status, copyFiles(sourceChild, destChild, lastStatTime, stats, origStats));
+                        }
                     }
                     else
                     {
                         setStatus(TaskStatus.running, "Copying files");
-                        info("Copying file '" + pathString + "'");
+                        info("Copying file  '" + pathString + "'");
+
+                        if (matchesCopyFailureSimulatorRegex("FileRootCopyExpectedFailureSimulator", sourceChild.getFileName().toString()))
+                        {
+                            throw new IOException("Simulating an I/O failure copying " + sourceChild);
+                        }
+                        if (matchesCopyFailureSimulatorRegex("FileRootCopyUnexpectedFailureSimulator", sourceChild.getFileName().toString()))
+                        {
+                            throw new NullPointerException("Simulating an unexpected error copying " + sourceChild);
+                        }
+
                         Files.copy(sourceChild, destChild, StandardCopyOption.REPLACE_EXISTING);
+                        info("Copy complete '" + pathString + "'");
                         stats.first -= 1;
                         stats.second -= Files.size(sourceChild);
                         logStatTime(lastStatTime, stats, origStats);
@@ -308,17 +339,29 @@ public class CopyFileRootPipelineJob extends PipelineJob
                 }
                 catch (IllegalArgumentException | IOException e)
                 {
-                    error("Copy error", e);
+                    getLogger().warn("Copy error", e);
                     status = TaskStatus.error;
                 }
             }
         }
         catch (IllegalArgumentException | IOException e)
         {
-            error("Error getting directory stream for source directory", e);
+            getLogger().warn("Error getting directory stream for source directory", e);
             return TaskStatus.error;
         }
         return status;
+    }
+
+    @Nullable
+    private boolean matchesCopyFailureSimulatorRegex(String propertyName, String fileName)
+    {
+        Module module = ModuleLoader.getInstance().getCoreModule();
+        ModuleProperty mp = module.getModuleProperties().get(propertyName);
+        String s =  mp.getEffectiveValue(getContainer());
+        if (s == null)
+            return false;
+        Pattern p = Pattern.compile(s);
+        return p.matcher(fileName).matches();
     }
 
     private void logStatTime(List<Long> lastStatTime, final Pair<Integer, Long> stats, final Pair<Integer, Long> origStats)
@@ -352,14 +395,14 @@ public class CopyFileRootPipelineJob extends PipelineJob
                 }
                 catch (IOException e)
                 {
-                    error("Error deleting file '" + FileUtil.pathToString(path) + "'", e);
+                    getLogger().warn("Error deleting file '" + FileUtil.pathToString(path) + "'", e);
                     throw new UncheckedIOException(e);
                 }
             });
         }
         catch (IOException e)
         {
-            error("Error getting directory stream for destination directory", e);
+            getLogger().warn("Error getting directory stream for destination directory", e);
             throw new UncheckedIOException(e);
         }
         try
@@ -368,7 +411,7 @@ public class CopyFileRootPipelineJob extends PipelineJob
         }
         catch (IOException e)
         {
-            error("Error deleting directory '" + FileUtil.pathToString(dirPath) + "'", e);
+            getLogger().warn("Error deleting directory '" + FileUtil.pathToString(dirPath) + "'", e);
             throw new UncheckedIOException(e);
         }
     }
