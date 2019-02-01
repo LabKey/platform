@@ -132,11 +132,14 @@
                             val = summary.getMaxDilution(assay.getRenderedCurveFitType());
                         }
 
-                        DecimalFormat shortDecFormat;
-                        if (summary.getMethod() == SampleInfoMethod.Concentration || (val > -1 && val < 1))
+                        DecimalFormat shortDecFormat = summary.getMethod() == SampleInfoMethod.Concentration
+                                ? new DecimalFormat("0.###")
+                                : new DecimalFormat("0");
+
+                        if (Math.abs(val) < 0.001)
+                            shortDecFormat = new DecimalFormat("0.####");
+                        else if (Math.abs(val) < 1)
                             shortDecFormat = new DecimalFormat("0.###");
-                        else
-                            shortDecFormat = new DecimalFormat("0");
 
                         out.write(modifier + shortDecFormat.format(val));
                     }
