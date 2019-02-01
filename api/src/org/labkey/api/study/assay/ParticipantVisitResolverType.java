@@ -38,33 +38,35 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
+ * A factory for {@link ParticipantVisitResolver} objects, which is also responsible for showing whatever UI is needed
+ * to collect user information to feed into the resolver during the copy-to-study operation.
  * User: jeckels
  * Date: Sep 20, 2007
  */
 public interface ParticipantVisitResolverType
 {
-    public ParticipantVisitResolver createResolver(ExpRun run, Container targetStudyContainer, User user) throws IOException, ExperimentException;
+    ParticipantVisitResolver createResolver(ExpRun run, Container targetStudyContainer, User user) throws IOException, ExperimentException;
 
-    public ParticipantVisitResolver createResolver(Collection<ExpMaterial> inputMaterials,
+    ParticipantVisitResolver createResolver(Collection<ExpMaterial> inputMaterials,
                                                    Collection<ExpData> inputDatas,
                                                    Collection<ExpMaterial> outputMaterials,
                                                    Collection<ExpData> outputDatas,
                                                    Container runContainer,
                                                    Container targetStudyContainer, User user) throws IOException, ExperimentException;
 
-    public String getName();
+    String getName();
 
-    public String getDescription();
+    String getDescription();
 
-    public void render(RenderContext ctx) throws Exception;
+    void render(RenderContext ctx) throws Exception;
 
-    public void addHiddenFormFields(AssayRunUploadContext<?> form, InsertView view);
+    void addHiddenFormFields(AssayRunUploadContext<?> form, InsertView view);
 
-    public void configureRun(AssayRunUploadContext<?> context, ExpRun run, Map<ExpData, String> inputDatas) throws ExperimentException;
+    void configureRun(AssayRunUploadContext<?> context, ExpRun run, Map<ExpData, String> inputDatas) throws ExperimentException;
 
-    public boolean collectPropertyOnUpload(AssayRunUploadContext<?> uploadContext, String propertyName);
+    boolean collectPropertyOnUpload(AssayRunUploadContext<?> uploadContext, String propertyName);
 
-    public static class Serializer
+    class Serializer
     {
         public static final String STRING_VALUE_PROPERTY_NAME = "stringValue";
 

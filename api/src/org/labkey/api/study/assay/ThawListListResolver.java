@@ -41,6 +41,20 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * Implementation that looks up participant and date/visit information via a query that the user specified during the
+ * assay import process. The query is the "thaw list", so called because it's the list of samples to be pulled from
+ * the freezer, thawed, and used in the assay. A typical use case might be that a technician has a list of vials
+ * that they are going to analyze. Each row will contain a unique identifier, plus info on the participant, date, and
+ * visit of the sample's collection.
+ *
+ * The unique identifier could be a sample ID from a LIMS, or it could be unique to that single run. For example,
+ * it could be the location on a 96-well plate, or a simple index of samples to be used (1 through X) for that run.
+ * The assay data rows need to contain the unique identifier so that this resolver can look up the matching row
+ * from the "thaw list".
+ *
+ * The implementation uses the "SpecimenID" value from the assay data, and targets either the primary key of the
+ * thaw list query, or its "SpecimenID" column if it doesn't have a single-column PK.
+ *
  * User: jeckels
  * Date: Sep 25, 2007
  */
