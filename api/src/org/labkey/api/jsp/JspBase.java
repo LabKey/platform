@@ -17,6 +17,7 @@
 package org.labkey.api.jsp;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.ReturnUrlForm;
@@ -25,10 +26,11 @@ import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.Button;
+import org.labkey.api.util.Button.ButtonBuilder;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.Link;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
@@ -349,6 +351,17 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return PageFlowUtil.textLink(text, url, id);
     }
 
+    public Link.LinkBuilder link(String text)
+    {
+        return PageFlowUtil.link(text);
+    }
+
+    // Link to another action in the current container
+    public Link.LinkBuilder link(String text, @NotNull Class<? extends Controller> actionClass)
+    {
+        return PageFlowUtil.link(text).href(actionClass, getContainer());
+    }
+
     public _HtmlString generateBackButton()
     {
         return new _HtmlString(PageFlowUtil.generateBackButton());
@@ -359,7 +372,7 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return new _HtmlString(PageFlowUtil.generateBackButton(text));
     }
 
-    public Button.ButtonBuilder button(String text)
+    public ButtonBuilder button(String text)
     {
         return PageFlowUtil.button(text);
     }

@@ -65,6 +65,8 @@ import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.settings.TemplateResourceHandler;
 import org.labkey.api.stats.AnalyticsProvider;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
+import org.labkey.api.util.Button.ButtonBuilder;
+import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
@@ -93,9 +95,6 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import javax.servlet.jsp.PageContext;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
@@ -140,7 +139,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.DeflaterOutputStream;
@@ -1246,15 +1244,15 @@ public class PageFlowUtil
     }
 
     /**
-     *  Returns an onClick handler that posts to the specified url, provided a CSRF token. Use with ButtonBuilder to create
+     *  Returns an onClick handler that posts to the specified href, provided a CSRF token. Use with ButtonBuilder to create
      *  a button that posts or NavTree to create a menu item that posts. TODO: Integrate this into ButtonBuilder and/or
-     *  NavTree as an option (e.g., setPost(true)).
+     *  NavTree as an option (e.g., usePost()).
      */
-    public static String postOnClickJavaScript(ActionURL url)
+    public static String postOnClickJavaScript(String href)
     {
         return "var form = document.createElement('form');\n" +
             "form.setAttribute('method', 'post');\n" +
-            "form.setAttribute('action', " + PageFlowUtil.qh(url.getLocalURIString()) + ");\n" +
+            "form.setAttribute('action', " + PageFlowUtil.qh(href) + ");\n" +
             "var input = document.createElement('input');\n" +
             "input.type = 'hidden';\n" +
             "input.name = '" + CSRFUtil.csrfName + "';\n" +
@@ -1265,9 +1263,24 @@ public class PageFlowUtil
             "form.submit();";
     }
 
-    public static Button.ButtonBuilder button(String text)
+    /**
+     *  Returns an onClick handler that posts to the specified url, providing a CSRF token. Use with ButtonBuilder to create
+     *  a button that posts or NavTree to create a menu item that posts. TODO: Integrate this into ButtonBuilder and/or
+     *  NavTree as an option (see LinkBuilder.usePost()).
+     */
+    public static String postOnClickJavaScript(ActionURL url)
     {
-        return new Button.ButtonBuilder(text);
+        return postOnClickJavaScript(url.getLocalURIString());
+    }
+
+    public static ButtonBuilder button(String text)
+    {
+        return new ButtonBuilder(text);
+    }
+
+    public static LinkBuilder link(String text)
+    {
+        return new LinkBuilder(text);
     }
 
     public static String generateBackButton()
@@ -1384,33 +1397,17 @@ public class PageFlowUtil
     @Deprecated
     public static String textLink(String text, String href, @Nullable String onClickScript, @Nullable String id, Map<String, String> properties)
     {
-        String additions = getAttributes(properties);
-
-        return "<a class=\"labkey-text-link\" " + additions + "href=\"" + filter(href) + "\"" +
-                (id != null ? " id=\"" + id + "\"" : "") +
-                (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
-                ">" + filter(text) + "</a>";
+        return link(text).href(href).onClick(onClickScript).id(id).attributes(properties).build().toString();
     }
 
     public static String textLink(String text, URLHelper url, @Nullable String onClickScript, @Nullable String id, Map<String, String> properties)
     {
-        String additions = getAttributes(properties);
-
-        return "<a class=\"labkey-text-link\" " + additions + "href=\"" + filter(url) + "\"" +
-                (id != null ? " id=\"" + id + "\"" : "") +
-                (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
-                ">" + filter(text) + "</a>";
+        return link(text).href(url).onClick(onClickScript).id(id).attributes(properties).build().toString();
     }
 
     public static String iconLink(String iconCls, String tooltip, String url, @Nullable String onClickScript, @Nullable String id, Map<String, String> properties)
     {
-        String additions = getAttributes(properties);
-
-        return "<a class=\"" + iconCls + "\" " + additions + "href=\"" + filter(url) + "\"" +
-                (id != null ? " id=\"" + id + "\"" : "") +
-                (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
-                (tooltip != null ? "data-tt=\"tooltip\" data-placement=\"top\" title data-original-title=\"" + tooltip + "\"" : "") +
-                ">" + "</a>";
+        return new LinkBuilder().iconCls(iconCls).tooltip(tooltip).href(url).onClick(onClickScript).id(id).attributes(properties).build().toString();
     }
 
     // TODO: Why no HTML filtering?
@@ -1444,10 +1441,7 @@ public class PageFlowUtil
 
     public static String unstyledTextLink(String text, String href, String onClickScript, String id)
     {
-        return "<a href=\"" + filter(href) + "\"" +
-                (id != null ? " id=\"" + id + "\"" : "") +
-                (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
-                ">" + filter(text) + "</a>";
+        return link(text).href(href).onClick(onClickScript).id(id).clearClasses().toString();
     }
 
     public static String unstyledTextLink(String text, URLHelper url)

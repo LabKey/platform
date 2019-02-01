@@ -1755,6 +1755,7 @@ api/src/org/labkey/api/util/CountLimiter.java -text
 api/src/org/labkey/api/util/DOMUtil.java -text
 api/src/org/labkey/api/util/DebugInfoDumper.java -text
 api/src/org/labkey/api/util/DemoMode.java -text
+api/src/org/labkey/api/util/DisplayElementBuilder.java -text
 api/src/org/labkey/api/util/DotRunner.java -text
 api/src/org/labkey/api/util/ErrorRenderer.java -text
 api/src/org/labkey/api/util/ErrorRendererProperties.java -text
@@ -1784,6 +1785,7 @@ api/src/org/labkey/api/util/JdbcUtil.java -text
 api/src/org/labkey/api/util/Job.java -text
 api/src/org/labkey/api/util/JobRunner.java -text
 api/src/org/labkey/api/util/JsonUtil.java -text
+api/src/org/labkey/api/util/Link.java -text
 api/src/org/labkey/api/util/LogOutputStream.java -text
 api/src/org/labkey/api/util/LogPrintWriter.java -text
 api/src/org/labkey/api/util/MXBeanAppender.java -text

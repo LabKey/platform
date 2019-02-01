@@ -16,15 +16,11 @@
 package org.labkey.api.util;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DisplayElement;
-import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.Map;
 
 /**
  * Basic button UI element. Might be a simple link, have a JavaScript handler, etc.
@@ -258,16 +254,8 @@ public class Button extends DisplayElement
         return sb.toString();
     }
 
-    public static class ButtonBuilder
+    public static class ButtonBuilder extends DisplayElementBuilder<Button, ButtonBuilder>
     {
-        private String cssClass;
-        private String iconCls;
-        private String id;
-        private String text;
-        private String href;
-        private String onClick;
-        private String attributes;
-        private String tooltip;
         private String typeCls;
         private boolean disableOnClick;
         private boolean dropdown;
@@ -280,11 +268,9 @@ public class Button extends DisplayElement
             this.text = text;
         }
 
-        public ButtonBuilder addClass(@NotNull String cssClass)
+        @Override
+        protected ButtonBuilder getThis()
         {
-            if (this.cssClass == null)
-                this.cssClass = "";
-            this.cssClass += " " + cssClass;
             return this;
         }
 
@@ -294,67 +280,10 @@ public class Button extends DisplayElement
             return this;
         }
 
-        public ButtonBuilder href(@NotNull String href)
-        {
-            this.href = href;
-            return this;
-        }
-
-        public ButtonBuilder href(@NotNull URLHelper href)
-        {
-            this.href = href.toString();
-            return this;
-        }
-
-        public ButtonBuilder href(@NotNull ReturnURLString returnHref)
-        {
-            this.href = returnHref.toString();
-            return this;
-        }
-
-        public ButtonBuilder href(@NotNull Class<? extends Controller> actionClass, Container container)
-        {
-            this.href = new ActionURL(actionClass, container).toString();
-            return this;
-        }
-
-        public ButtonBuilder onClick(String onClick)
-        {
-            this.onClick = onClick;
-            return this;
-        }
-
-        public ButtonBuilder iconCls(String iconCls)
-        {
-            this.iconCls = iconCls;
-            return this;
-        }
-
-        public ButtonBuilder id(String id)
-        {
-            this.id = id;
-            return this;
-        }
-
         @Deprecated // use Map<String, String> version instead
         public ButtonBuilder attributes(String attributes)
         {
             this.attributes = attributes;
-            return this;
-        }
-
-        public ButtonBuilder attributes(Map<String, String> attributes)
-        {
-            if (attributes != null && attributes.size() > 0)
-            {
-                String sAttributes = "";
-                for (String attribute : attributes.keySet())
-                    sAttributes += PageFlowUtil.filter(attribute) + "=\"" + PageFlowUtil.filter(attributes.get(attribute)) + "\"";
-                this.attributes = sAttributes;
-            }
-            else
-                this.attributes = null;
-
             return this;
         }
 
@@ -392,21 +321,15 @@ public class Button extends DisplayElement
             return this;
         }
 
-        public ButtonBuilder tooltip(String tooltip)
+        @Override
+        public ButtonBuilder usePost()
         {
-            this.tooltip = tooltip;
-            return this;
+            throw new IllegalStateException("Not yet implemented for ButtonBuilder");
         }
 
         public Button build()
         {
             return new Button(this);
-        }
-
-        @Override
-        public String toString()
-        {
-            return build().toString();
         }
     }
 }
