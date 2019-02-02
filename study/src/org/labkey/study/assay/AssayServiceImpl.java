@@ -47,6 +47,7 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.PlateService;
 import org.labkey.api.study.PlateTemplate;
@@ -264,7 +265,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             }
         }
 
-        result.setAllowTransformationScript(provider.createDataExchangeHandler() != null);
+        result.setAllowTransformationScript((provider.createDataExchangeHandler() != null) && canUpdateTransformationScript());
 
         boolean supportsFlag = provider.supportsFlagColumnType(ExpProtocol.AssayDomainTypes.Result);
         for (GWTDomain d : result.getDomains())
@@ -428,6 +429,9 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
 
                     // data transform scripts
                     List<File> transformScripts = new ArrayList<>();
+                    List<String> submittedScripts = assay.getProtocolTransformScripts();
+                    if (!submittedScripts.isEmpty() && !canUpdateTransformationScript())
+                        throw new AssayException("You must be a platform developer or site admin to configure assay transformation scripts.");
                     for (String script : assay.getProtocolTransformScripts())
                     {
                         if (!StringUtils.isBlank(script))
@@ -550,5 +554,13 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         User u = getUser();
         SecurityPolicy policy = c.getPolicy();
         return policy.hasPermission(u, DesignAssayPermission.class);
+    }
+
+    public boolean canUpdateTransformationScript()
+    {
+        Container c = getContainer();
+        User u = getUser();
+        SecurityPolicy policy = c.getPolicy();
+        return policy.hasPermission(u, PlatformDeveloperPermission.class);
     }
 }
