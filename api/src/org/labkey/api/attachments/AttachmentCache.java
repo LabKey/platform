@@ -36,6 +36,7 @@ public class AttachmentCache
     public static final String STYLESHEET_FILE_NAME = "labkey-stylesheet.css";
 
     private static Map<Container, CacheableWriter> _logoCache = new ConcurrentHashMap<>(100, 0.75f, 4);        // Site + project, so size to one per project
+    private static Map<Container, CacheableWriter> _logoMobileCache = new ConcurrentHashMap<>(100, 0.75f, 4);        // Site + project, so size to one per project
     private static Map<Container, CacheableWriter> _favIconCache = new ConcurrentHashMap<>(100, 0.75f, 4);     // Site + project, so size to one per project
     private static Map<String, CacheableWriter> _authLogoMap = new ConcurrentHashMap<>(5, 0.75f, 4);           // Site-wide
 
@@ -46,12 +47,18 @@ public class AttachmentCache
             clearAuthLogoCache();
             clearFavIconCache();
             clearLogoCache();
+            clearLogoMobileCache();
         });
     }
 
     public static void clearLogoCache()
     {
         _logoCache.clear();
+    }
+
+    public static void clearLogoMobileCache()
+    {
+        _logoMobileCache.clear();
     }
 
     public static void clearFavIconCache()
@@ -64,6 +71,11 @@ public class AttachmentCache
         return _logoCache.get(c);
     }
 
+    public static CacheableWriter getCachedLogoMobile(Container c)
+    {
+        return _logoMobileCache.get(c);
+    }
+
     public static CacheableWriter getCachedFavIcon(Container c)
     {
         return _favIconCache.get(c);
@@ -72,6 +84,11 @@ public class AttachmentCache
     public static void cacheLogo(Container c, CacheableWriter logo)
     {
         _logoCache.put(c, logo);
+    }
+
+    public static void cacheLogoMobile(Container c, CacheableWriter logo)
+    {
+        _logoMobileCache.put(c, logo);
     }
 
     public static void cacheFavIcon(Container c, CacheableWriter favIcon)

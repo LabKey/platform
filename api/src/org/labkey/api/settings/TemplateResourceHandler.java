@@ -93,7 +93,7 @@ public enum TemplateResourceHandler
         protected CacheableWriter getWriterForContainer(Container c) throws IOException, ServletException
         {
             // container will be null if the database isn't bootstrapped yet
-            CacheableWriter writer = (null == c ? null : AttachmentCache.getCachedLogo(c));
+            CacheableWriter writer = (null == c ? null : AttachmentCache.getCachedLogoMobile(c));
 
             if (writer == null)
             {
@@ -108,7 +108,7 @@ public enum TemplateResourceHandler
                         writer = new CacheableWriter();
                         AttachmentService.get().writeDocument(writer, parent, attachment.getName(), false);
                     }
-                    AttachmentCache.cacheLogo(parent.getContainer(), writer);
+                    AttachmentCache.cacheLogoMobile(parent.getContainer(), writer);
                 }
             }
 
