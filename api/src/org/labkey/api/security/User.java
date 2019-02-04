@@ -233,12 +233,6 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         return _displayName;
     }
 
-    @Deprecated //should probably use hasSiteAdminPermission(), hasRootAdminPermission(), or hasRootPermission(...) instead
-    public boolean isSiteAdmin()
-    {
-        return isAllowedGlobalRoles() && isInGroup(Group.groupAdministrators);
-    }
-
     /**
      * Does the user have the permission of the Site Administrator at the root container? This is NOT a check for AdminPermission.
      * @return boolean
@@ -296,7 +290,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         return assignedRoles.contains(RoleManager.getRole(ApplicationAdminRole.class));
     }
 
-    private boolean doesAnyRoleHaveAppAdminPermission(Collection<Role> roles)
+    public boolean doesAnyRoleHaveAppAdminPermission(Collection<Role> roles)
     {
         for (Role role : roles)
         {
