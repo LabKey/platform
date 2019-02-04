@@ -91,5 +91,5 @@ Any user with READ access to this folder may view some summary data.  However, a
         %></tr><%
     }
     %></table>
-    <%= button("Update").submit(true).attributes("id=\"groupUpdateButton\"") %>
+    <%= button("Update").submit(true).id("groupUpdateButton") %>
     </labkey:form>

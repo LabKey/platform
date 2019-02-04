@@ -172,5 +172,5 @@ AdminController.ModuleStatusBean bean = (AdminController.ModuleStatusBean)getMod
 <br/>
 <div id="completeDiv" style="visibility: hidden;">
     <%-- Send new installs to set their defaults, and upgrades to the complete page --%>
-    <%= PageFlowUtil.button("Next").href(bean.nextURL).attributes("id=\"nextButton\"") %>
+    <%= button("Next").href(bean.nextURL).id("nextButton") %>
 </div>

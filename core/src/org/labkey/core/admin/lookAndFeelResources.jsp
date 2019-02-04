@@ -79,7 +79,7 @@
     <td>
         <% if (null != bean.customStylesheet)
         { %>
-            Currently using a custom stylesheet. <%=textLink("view CSS", CoreController.CustomStylesheetAction.class) %> <%=textLink("delete custom stylesheet", DeleteCustomStylesheetAction.class)%>
+            Currently using a custom stylesheet. <%=textLink("view CSS", CoreController.CustomStylesheetAction.class) %> <%=link("delete custom stylesheet", DeleteCustomStylesheetAction.class).usePost()%>
         <% } else { %>
             No custom stylesheet.
         <% } %>

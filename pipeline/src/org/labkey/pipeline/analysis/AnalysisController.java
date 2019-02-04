@@ -28,6 +28,7 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.FormHandlerAction;
+import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -146,7 +147,7 @@ public class AnalysisController extends SpringActionController
      * Called from LABKEY.Pipeline.startAnalysis()
      */
     @RequiresPermission(InsertPermission.class)
-    public class StartAnalysisAction extends ApiAction<AnalyzeForm>
+    public class StartAnalysisAction extends MutatingApiAction<AnalyzeForm>
     {
         public ApiResponse execute(AnalyzeForm form, BindException errors)
         {

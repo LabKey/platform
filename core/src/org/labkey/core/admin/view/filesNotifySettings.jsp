@@ -16,6 +16,7 @@
  */
 %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <table class="lk-fields-table">
     <tr>
@@ -38,7 +39,7 @@
                         <option value="individual">Individual</option>
                         <option value="none">None</option>
                     </select></td>
-                    <td><%= button("Configure selected users").submit(true).attributes("labkey-requires-selection=\"users\"") %></td>
+                    <td><%= button("Configure selected users").submit(true).attributes(Map.of("labkey-requires-selection", "users")) %></td>
                 </tr>
             </table>
         </td>

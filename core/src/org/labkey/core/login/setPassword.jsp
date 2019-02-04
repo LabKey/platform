@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.core.login.LoginController" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.core.portal.ProjectController" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     LoginController.SetPasswordBean bean = ((JspView<LoginController.SetPasswordBean>)HttpView.currentView()).getModelBean();
@@ -99,7 +100,7 @@
         <% } %>
         </div>
         <div style="padding-top: 1em;">
-            <%= button(bean.buttonText).submit(true).attributes("name=\"set\"") %>
+            <%= button(bean.buttonText).submit(true).attributes(Map.of("name", "set")) %>
             <%=text(bean.cancellable ? button("Cancel").href(bean.form.getReturnURLHelper() != null ? bean.form.getReturnURLHelper() : new ActionURL(ProjectController.HomeAction.class, getContainer())).toString() : "")%>
         </div>
     <% } %>

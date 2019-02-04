@@ -31,6 +31,7 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.ExtendedApiQueryResponse;
 import org.labkey.api.action.FormHandlerAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -472,7 +473,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetSurveyTemplateAction extends ApiAction<SurveyDesignForm>
+    public class GetSurveyTemplateAction extends ReadOnlyApiAction<SurveyDesignForm>
     {
         @Override
         public ApiResponse execute(SurveyDesignForm form, BindException errors)
@@ -714,7 +715,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetSurveyResponseAction extends ApiAction<SurveyForm>
+    public class GetSurveyResponseAction extends ReadOnlyApiAction<SurveyForm>
     {
         @Override
         public ApiResponse execute(SurveyForm form, BindException errors)
@@ -972,7 +973,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetValidDesignQueries extends ApiAction<QueryForm>
+    public class GetValidDesignQueries extends ReadOnlyApiAction<QueryForm>
     {
         @Override
         public ApiResponse execute(QueryForm form, BindException errors)

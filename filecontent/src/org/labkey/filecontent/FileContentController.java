@@ -20,7 +20,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiResponseWriter;
@@ -29,7 +28,10 @@ import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.ExtFormAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -779,7 +781,7 @@ public class FileContentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public abstract class FileTreeNodeAction extends ApiAction<NodeForm>
+    public abstract class FileTreeNodeAction extends ReadOnlyApiAction<NodeForm>
     {
         protected abstract Set<Map<String, Object>> getChildren(NodeForm form, BindException errors);
 
@@ -809,8 +811,6 @@ public class FileContentController extends SpringActionController
                 }
             };
         }
-
-
     }
 
 
@@ -1172,12 +1172,12 @@ public class FileContentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetEmailPrefAction extends ApiAction<Object>
+    public class GetEmailPrefAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object o, BindException errors)
         {
-            ApiSimpleResponse response =  new ApiSimpleResponse();
+            ApiSimpleResponse response = new ApiSimpleResponse();
 
             MessageConfigService.ConfigTypeProvider provider = MessageConfigService.get().getConfigType(FileEmailConfig.TYPE);
             MessageConfigService.UserPreference pref = provider.getPreference(getContainer(), getUser(), getContainer().getId());
@@ -1194,12 +1194,12 @@ public class FileContentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetFileRootsAction extends ApiAction<Object>
+    public class GetFileRootsAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object o, BindException errors)
         {
-            ApiSimpleResponse response =  new ApiSimpleResponse();
+            ApiSimpleResponse response = new ApiSimpleResponse();
 
             Map<String, String> ret = new HashMap<>();
 
@@ -1244,7 +1244,7 @@ public class FileContentController extends SpringActionController
         @Override
         public ApiResponse execute(EmailPrefForm form, BindException errors)
         {
-            ApiSimpleResponse response =  new ApiSimpleResponse();
+            ApiSimpleResponse response = new ApiSimpleResponse();
 
             MessageConfigService.ConfigTypeProvider provider = MessageConfigService.get().getConfigType(FileEmailConfig.TYPE);
             provider.savePreference(getUser(), getContainer(), getUser(), form.getEmailPref(), getContainer().getId());
@@ -1260,7 +1260,7 @@ public class FileContentController extends SpringActionController
         @Override
         public ApiResponse execute(AbstractConfigTypeProvider.EmailConfigFormImpl form, BindException errors)
         {
-            ApiSimpleResponse response =  new ApiSimpleResponse();
+            ApiSimpleResponse response = new ApiSimpleResponse();
             StringBuilder message = new StringBuilder("The current default has been updated to: ");
 
             //save the default settings
@@ -1317,24 +1317,21 @@ public class FileContentController extends SpringActionController
         }
     }
 
+    @Marshal(Marshaller.Jackson)
     @RequiresSiteAdmin
-    public class SendShortDigestAction extends SimpleViewAction
+    public class SendShortDigestAction extends MutatingApiAction
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
         {
             ShortMessageDigest.getInstance().sendMessageDigest();
 
-            return new HtmlView("15 Minute digest sent");
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return new BeginAction(getViewContext()).appendNavTrail(root).addChild("Send mail digest");
+            return success("15 Minute digest sent");
         }
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetCustomPropertiesAction extends ApiAction<CustomPropertiesForm>
+    public class GetCustomPropertiesAction extends ReadOnlyApiAction<CustomPropertiesForm>
     {
         @Override
         public ApiResponse execute(CustomPropertiesForm form, BindException errors)

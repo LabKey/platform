@@ -7425,16 +7425,15 @@ public class AdminController extends SpringActionController
 
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class ValidateDomainsAction extends OldRedirectAction
+    public class ValidateDomainsAction extends FormHandlerAction
     {
         @Override
-        public URLHelper getSuccessURL(Object o)
+        public void validateCommand(Object target, Errors errors)
         {
-            return PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(ContainerManager.getRoot());
         }
 
         @Override
-        public boolean doAction(Object o, BindException errors) throws Exception
+        public boolean handlePost(Object o, BindException errors) throws Exception
         {
             // Find a valid pipeline root - we don't really care which one, we just need somewhere to write the log file
             for (Container project : Arrays.asList(ContainerManager.getSharedContainer(), ContainerManager.getHomeContainer()))
@@ -7449,6 +7448,12 @@ public class AdminController extends SpringActionController
                 }
             }
             return false;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(Object o)
+        {
+            return PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(ContainerManager.getRoot());
         }
     }
 

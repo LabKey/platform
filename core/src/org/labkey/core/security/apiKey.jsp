@@ -31,6 +31,7 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.security.SecurityController" %>
 <%@ page import="static org.apache.commons.lang3.StringUtils.stripEnd" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -124,7 +125,7 @@ to others.) API keys are appropriate for authenticating ad hoc interactions with
 <labkey:form layout="inline">
     <%=button("Generate API key").onClick("createApiKey('apikey');")%>
     <labkey:input id="apikey-token" size="40" isReadOnly="true"/>
-    <%=button("Copy to clipboard").id("apikey-token-copy").attributes("data-clipboard-target=\"#apikey-token\"") %>
+    <%=button("Copy to clipboard").id("apikey-token-copy").attributes(Map.of("data-clipboard-target", "#apikey-token")) %>
 </labkey:form>
 
 <div id="apikey-rusage" style="display: none">
@@ -158,7 +159,7 @@ compliance requirements where interactions require specifying current role &amp;
 <labkey:form layout="inline">
     <%=button("Generate session key").onClick("createApiKey('session');")%>
     <labkey:input id="session-token" size="42" isReadOnly="true"/>
-    <%=button("Copy to clipboard").id("session-token-copy").attributes("data-clipboard-target=\"#session-token\"") %>
+    <%=button("Copy to clipboard").id("session-token-copy").attributes(Map.of("data-clipboard-target", "#session-token")) %>
 </labkey:form>
 
 <div id="session-rusage" style="display: none">

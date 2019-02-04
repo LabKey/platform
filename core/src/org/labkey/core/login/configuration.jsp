@@ -75,7 +75,7 @@
             if (canEdit)
             {
                 ActionURL url = urls.getDisableConfigParameterURL(AuthenticationManager.SELF_REGISTRATION_KEY);
-                out.write(PageFlowUtil.textLink("Disable", "javascript:void(0);", PageFlowUtil.postOnClickJavaScript(url), null));
+                out.write(link("Disable").href(url).usePost().toString());
             }
             else
             {
@@ -89,7 +89,7 @@
             if (canEdit)
             {
                 ActionURL url = urls.getEnableConfigParameterURL(AuthenticationManager.SELF_REGISTRATION_KEY);
-                out.write(PageFlowUtil.textLink("Enable", "javascript:void(0);", PageFlowUtil.postOnClickJavaScript(url), null));
+                out.write(link("Enable").href(url).usePost().toString());
             }
             else
             {
@@ -114,7 +114,7 @@
                 if (canEdit)
                 {
                     ActionURL url = urls.getDisableConfigParameterURL(AuthenticationManager.AUTO_CREATE_ACCOUNTS_KEY);
-                    out.write(PageFlowUtil.textLink("Disable", "javascript:void(0);", PageFlowUtil.postOnClickJavaScript(url), null));
+                    out.write(link("Disable").href(url).usePost().toString());
                 }
                 else
                 {
@@ -128,7 +128,7 @@
                 if (canEdit)
                 {
                     ActionURL url = urls.getEnableConfigParameterURL(AuthenticationManager.AUTO_CREATE_ACCOUNTS_KEY);
-                    out.write(PageFlowUtil.textLink("Enable", "javascript:void(0);", PageFlowUtil.postOnClickJavaScript(url), null));
+                    out.write(link("Enable").href(url).usePost().toString());
                 }
                 else
                 {
@@ -150,7 +150,7 @@
                     if (canEdit)
                     {
                         ActionURL url = urls.getDisableConfigParameterURL(AuthenticationManager.SELF_SERVICE_EMAIL_CHANGES_KEY);
-                        out.write(PageFlowUtil.textLink("Disable", "javascript:void(0);", PageFlowUtil.postOnClickJavaScript(url), null));
+                        out.write(link("Disable").href(url).usePost().toString());
                     }
                     else
                     {
@@ -164,7 +164,7 @@
                     if (canEdit)
                     {
                         ActionURL url = urls.getEnableConfigParameterURL(AuthenticationManager.SELF_SERVICE_EMAIL_CHANGES_KEY);
-                        out.write(PageFlowUtil.textLink("Enable", "javascript:void(0);", PageFlowUtil.postOnClickJavaScript(url), null));
+                        out.write(link("Enable").href(url).usePost().toString());
                     }
                     else
                     {
@@ -216,7 +216,7 @@
                 if (AuthenticationManager.isActive(authProvider))
                 {
                     if (canEdit)
-                        out.write(PageFlowUtil.textLink("disable", "javascript:void(0);", PageFlowUtil.postOnClickJavaScript(urls.getDisableProviderURL(authProvider)), null));
+                        out.write(jspBase.link("disable").href(urls.getDisableProviderURL(authProvider)).usePost().toString());
                     else
                         out.write("<div class=\"labkey-disabled-text-link labkey-enabled-option\">Enabled</div>");
                 }
@@ -230,7 +230,7 @@
                 else
                 {
                     if (canEdit)
-                        out.write(PageFlowUtil.textLink("enable", "javascript:void(0);", PageFlowUtil.postOnClickJavaScript(urls.getEnableProviderURL(authProvider)), null));
+                        out.write(jspBase.link("enable").href(urls.getEnableProviderURL(authProvider)).usePost().toString());
                     else
                         out.write("<div class=\"labkey-disabled-text-link\">Disabled</div>");
                 }
@@ -243,14 +243,14 @@
             if (null == url || !canEdit)
                 out.write("&nbsp;");
             else
-                out.write(PageFlowUtil.textLink("configure", url));
+                out.write(jspBase.link("configure").href(url).toString());
             out.write("</td>");
 
             out.write("<td>");
             if (canEdit && authProvider instanceof SSOAuthenticationProvider)
             {
                 ActionURL pickLogoURL = urls.getPickLogosURL(authProvider);
-                out.write(PageFlowUtil.textLink("pick logos", pickLogoURL));
+                out.write(jspBase.link("pick logos").href(pickLogoURL).toString());
             };
             out.write("</td>");
 
