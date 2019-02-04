@@ -60,6 +60,7 @@ import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -311,14 +312,14 @@ public class ContainerManager
         }
         else
         {
-            //If current user is NOT a site or folder admin, or the project has been explicitly set to have
+            //If current user does NOT have admin permission on this container, or the project has been explicitly set to have
             // new subfolders inherit permissions, we'll inherit permissions (otherwise they would not be able to see the folder)
-            Integer adminGroupId = null;
-            if (null != c.getProject())
-                adminGroupId = SecurityManager.getGroupId(c.getProject(), "Administrators", false);
-            boolean isProjectAdmin = (null != adminGroupId) && user != null && user.isInGroup(adminGroupId.intValue());
-            if (!isProjectAdmin && user != null && !user.hasRootAdminPermission() || SecurityManager.shouldNewSubfoldersInheritPermissions(c.getProject()))
-                SecurityManager.setInheritPermissions(c);
+            if (user != null)
+            {
+                boolean hasAdminPermission = c.hasPermission(user, AdminPermission.class);
+                if ((!hasAdminPermission && !user.hasRootAdminPermission()) || SecurityManager.shouldNewSubfoldersInheritPermissions(c.getProject()))
+                    SecurityManager.setInheritPermissions(c);
+            }
         }
 
         // NOTE parent caches some info about children (e.g. hasWorkbookChildren)

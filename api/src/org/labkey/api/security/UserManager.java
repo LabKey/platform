@@ -255,7 +255,7 @@ public class UserManager
         List<User> users = new ArrayList<>();
         for (User user : getActiveUsers())
         {
-            if (user.isApplicationAdmin())
+            if (user.hasApplicationAdminPermission())
                 users.add(user);
         }
 
