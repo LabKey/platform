@@ -37,11 +37,14 @@ import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyC;
+import org.labkey.test.params.FieldDefinition;
+import org.labkey.test.util.SampleSetHelper;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -126,14 +129,13 @@ public class ExperimentAPITest extends BaseWebDriverTest
     {
         log("Create sample set");
         goToModule("Experiment");
-        clickButton("Import Sample Set");
-        setFormElement(Locator.id("name"), sampleSetName);
-        checkRadioButton(Locator.radioButtonByNameAndValue("uploadType", "file"));
-        setFormElement(Locator.tagWithName("input", "file"), TestFileUtils.getSampleData("sampleSet.xlsx").getAbsolutePath());
-        waitForFormElementToEqual(Locator.id("idCol1"), "0"); // "KeyCol"
-        waitForElement(Locator.css("select#parentCol > option").withText("Parent"));
-        Locator.id("parentCol").findElement(getDriver()).sendKeys("Parent"); // combo-box helper doesn't work
-        clickButton("Submit");
+        SampleSetHelper sampleHelper = new SampleSetHelper(this);
+        sampleHelper.createSampleSet(sampleSetName, null,
+                Map.of("IntCol", FieldDefinition.ColumnType.Integer,
+                        "StringCol", FieldDefinition.ColumnType.String,
+                        "DateCol", FieldDefinition.ColumnType.DateTime,
+                        "BoolCol", FieldDefinition.ColumnType.Boolean),
+                TestFileUtils.getSampleData("sampleSet.xlsx"));
     }
 
     @Test @Ignore(/*TODO*/"35654: Can't reference experiment materials by name if they aren't associated with a sampleset")
