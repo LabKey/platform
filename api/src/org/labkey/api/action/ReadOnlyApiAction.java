@@ -184,12 +184,12 @@ public abstract class ReadOnlyApiAction<FORM> extends BaseViewAction<FORM>
             else
             {
                 Object response;
-                try (Timing t = MiniProfiler.step("execute"))
+                try (Timing ignored = MiniProfiler.step("execute"))
                 {
                     response = execute(form, errors);
                 }
 
-                try (Timing t = MiniProfiler.step("render"))
+                try (Timing ignored = MiniProfiler.step("render"))
                 {
                     if (isFailure(errors))
                         createResponseWriter().writeAndClose((Errors) errors);
@@ -316,9 +316,17 @@ public abstract class ReadOnlyApiAction<FORM> extends BaseViewAction<FORM>
         try
         {
             Class c = getCommandClass();
-            ObjectReader reader = getObjectReader(c);
-            form = reader.readValue(getViewContext().getRequest().getInputStream());
-            errors = new NullSafeBindException(form != null ? form : new Object(), "form");
+            // Ideally, ObjectReader would handle the Object case as well, but currently readValue() throws with "end-of-input" exception
+            if (Object.class != c)
+            {
+                ObjectReader reader = getObjectReader(c);
+                form = reader.readValue(getViewContext().getRequest().getInputStream());
+            }
+            else
+            {
+                form = (FORM)new Object();
+            }
+            errors = new NullSafeBindException(form, "form");
         }
         catch (SocketTimeoutException x)
         {
@@ -579,6 +587,5 @@ public abstract class ReadOnlyApiAction<FORM> extends BaseViewAction<FORM>
     {
         return new SimpleResponse<>(true, message, data);
     }
-
 }
 

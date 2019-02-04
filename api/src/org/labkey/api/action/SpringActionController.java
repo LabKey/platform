@@ -1119,20 +1119,9 @@ public abstract class SpringActionController implements Controller, HasViewConte
     }
 
     // helpers for debug checks related to Action
-    private static final ThreadLocal<ArrayList<Class>> currentAction = new ThreadLocal<>() {
-        @Override
-        protected ArrayList<Class> initialValue()
-        {
-            return new ArrayList<>();
-        }
-    };
-    private static final ThreadLocal<Boolean> ignoreUpdates = new ThreadLocal<>() {
-        @Override
-        protected Boolean initialValue()
-        {
-            return FALSE;
-        }
-    };
+    private static final ThreadLocal<ArrayList<Class>> currentAction = ThreadLocal.withInitial(ArrayList::new);
+    private static final ThreadLocal<Boolean> ignoreUpdates = ThreadLocal.withInitial(() -> FALSE);
+
     public static void setActionForThread(Controller c)
     {
         if (null != c)
