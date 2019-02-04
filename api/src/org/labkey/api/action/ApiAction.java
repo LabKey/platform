@@ -7,9 +7,4 @@ package org.labkey.api.action;
 @Deprecated
 public abstract class ApiAction<FORM> extends ReadOnlyApiAction<FORM>
 {
-    @Deprecated
-    public ApiAction()
-    {
-        super();
-    }
 }

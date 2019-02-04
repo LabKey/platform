@@ -83,7 +83,7 @@
     <div class="panel-heading">
         <h3 class="panel-title pull-left">Upload file (.xlsx, .xls, .csv, .txt)</h3>
         <span class="lk-import-expando pull-right">
-            <%= PageFlowUtil.button("+").href("#").attributes("id='" + uploadFileDivId + "Expando'") %>
+            <%= button("+").href("#").id(uploadFileDivId + "Expando") %>
         </span>
         <div class="clearfix"></div>
     </div>
@@ -95,7 +95,7 @@
     <div class="panel-heading">
         <h3 class="panel-title pull-left">Copy/paste text</h3>
         <span class="lk-import-expando pull-right">
-            <%=PageFlowUtil.button("&ndash;").textAsHTML(true).href("#").attributes("id='" + copyPasteDivId + "Expando'") %>
+            <%=button("&ndash;").textAsHTML(true).href("#").id(copyPasteDivId + "Expando") %>
         </span>
         <div class="clearfix"></div>
     </div>

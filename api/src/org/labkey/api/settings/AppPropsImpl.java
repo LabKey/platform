@@ -18,6 +18,7 @@ package org.labkey.api.settings;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerManager.RootContainerException;
 import org.labkey.api.module.ModuleLoader;
@@ -333,7 +334,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         String serverGUID = lookupStringValue(SERVER_GUID, SERVER_SESSION_GUID);
         if (serverGUID.equals(SERVER_SESSION_GUID))
         {
-            try
+            try (var ignore = SpringActionController.ignoreSqlUpdates())
             {
                 WriteableAppProps writeable = AppProps.getWriteableInstance();
                 writeable.storeStringValue(SERVER_GUID, serverGUID);
