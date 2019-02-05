@@ -31,6 +31,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.Link;
+import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
@@ -351,15 +352,21 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return PageFlowUtil.textLink(text, url, id);
     }
 
-    public Link.LinkBuilder link(String text)
+    public LinkBuilder link(String text)
     {
         return PageFlowUtil.link(text);
     }
 
     // Link to another action in the current container
-    public Link.LinkBuilder link(String text, @NotNull Class<? extends Controller> actionClass)
+    public LinkBuilder link(String text, @NotNull Class<? extends Controller> actionClass)
     {
         return PageFlowUtil.link(text).href(actionClass, getContainer());
+    }
+
+    // Link to a URLHelper
+    public LinkBuilder link(String text, @NotNull URLHelper url)
+    {
+        return PageFlowUtil.link(text).href(url);
     }
 
     public _HtmlString generateBackButton()
