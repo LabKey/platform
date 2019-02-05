@@ -1117,21 +1117,41 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class ResetLogoAction extends SimpleRedirectAction
+    public class ResetLogoAction extends FormHandlerAction
     {
-        public ActionURL getRedirectURL(Object o)
+        @Override
+        public void validateCommand(Object target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors) throws Exception
         {
             deleteExistingLogo(getContainer(), getUser());
             WriteableAppProps.incrementLookAndFeelRevisionAndSave();
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(Object o)
+        {
             return new AdminUrlsImpl().getLookAndFeelResourcesURL(getContainer());
         }
     }
 
 
     @RequiresPermission(AdminPermission.class)
-    public class ResetPropertiesAction extends SimpleRedirectAction
+    public class ResetPropertiesAction extends FormHandlerAction
     {
-        public ActionURL getRedirectURL(Object o)
+        private URLHelper _returnUrl;
+
+        @Override
+        public void validateCommand(Object target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors) throws Exception
         {
             Container c = getContainer();
             boolean folder = !(c.isRoot() || c.isProject());
@@ -1145,12 +1165,20 @@ public class AdminController extends SpringActionController
             if (!folder)
             {
                 WriteableAppProps.incrementLookAndFeelRevisionAndSave();
-                return new AdminUrlsImpl().getProjectSettingsURL(c);
+                _returnUrl = new AdminUrlsImpl().getProjectSettingsURL(c);
             }
             else
             {
-                return new AdminUrlsImpl().getFolderSettingsURL(c);
+                _returnUrl = new AdminUrlsImpl().getFolderSettingsURL(c);
             }
+
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(Object o)
+        {
+            return _returnUrl;
         }
     }
 
@@ -1171,13 +1199,25 @@ public class AdminController extends SpringActionController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class ResetFaviconAction extends SimpleRedirectAction
+    public class ResetFaviconAction extends FormHandlerAction
     {
-        public ActionURL getRedirectURL(Object o)
+        @Override
+        public void validateCommand(Object target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors) throws Exception
         {
             deleteExistingFavicon(getContainer(), getUser());
             WriteableAppProps.incrementLookAndFeelRevisionAndSave();
 
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(Object o)
+        {
             return new AdminUrlsImpl().getLookAndFeelResourcesURL(getContainer());
         }
     }
@@ -1192,12 +1232,24 @@ public class AdminController extends SpringActionController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class DeleteCustomStylesheetAction extends SimpleRedirectAction
+    public class DeleteCustomStylesheetAction extends FormHandlerAction
     {
-        public ActionURL getRedirectURL(Object o)
+        @Override
+        public void validateCommand(Object target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors) throws Exception
         {
             deleteExistingCustomStylesheet(getContainer(), getUser());
             WriteableAppProps.incrementLookAndFeelRevisionAndSave();
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(Object o)
+        {
             return new AdminUrlsImpl().getLookAndFeelResourcesURL(getContainer());
         }
     }

@@ -27,7 +27,7 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.core.admin.AdminController.AdminUrlsImpl" %>
 <%@ page import="org.labkey.core.admin.ProjectSettingsAction" %>
 <%@ page import="java.util.Arrays" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -286,9 +286,8 @@
     }
 %>
 <tr>
-    <td><%= button("Save").submit(true).onClick("_form.setClean();") %>&nbsp;<%= PageFlowUtil.button("Reset")
-            .href(new AdminController.AdminUrlsImpl().getResetLookAndFeelPropertiesURL(c))
-            .onClick("return confirmReset();") %>
+    <td><%=button("Save").submit(true).onClick("_form.setClean();") %>&nbsp;
+        <%=button("Reset").onClick("return confirmReset();") %>
     </td>
 </tr>
 <tr>
@@ -304,6 +303,7 @@
         if (confirm('Are you sure you want to clear <%=text(clearMessage)%>?'))
         {
             _form.setClean();
+            <%=PageFlowUtil.postOnClickJavaScript(new AdminUrlsImpl().getResetLookAndFeelPropertiesURL(c))%>
             return true;
         }
         else

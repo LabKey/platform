@@ -49,7 +49,7 @@
     <td>
         <% if (null != bean.customLogo)
         { %>
-            Currently using a custom logo. <%=textLink("view logo", TemplateResourceHandler.LOGO.getURL(c)) %> <%=textLink("reset logo to default", ResetLogoAction.class)%>
+            Currently using a custom logo. <%=link("view logo", TemplateResourceHandler.LOGO.getURL(c))%> <%=link("reset logo to default", ResetLogoAction.class).usePost()%>
         <% } else { %>
             Currently using the default logo.
         <% } %>
@@ -64,7 +64,7 @@
     <td>
         <% if (null != bean.customFavIcon)
         { %>
-            Currently using a custom favorite icon. <%=textLink("view icon", TemplateResourceHandler.FAVICON.getURL(c)) %> <%=textLink("reset favorite icon to default", ResetFaviconAction.class)%>
+            Currently using a custom favorite icon. <%=link("view icon", TemplateResourceHandler.FAVICON.getURL(c))%> <%=link("reset favorite icon to default", ResetFaviconAction.class).usePost()%>
         <% } else { %>
             Currently using the default favorite icon.
         <% } %>
@@ -79,7 +79,7 @@
     <td>
         <% if (null != bean.customStylesheet)
         { %>
-            Currently using a custom stylesheet. <%=textLink("view CSS", CoreController.CustomStylesheetAction.class) %> <%=link("delete custom stylesheet", DeleteCustomStylesheetAction.class).usePost()%>
+            Currently using a custom stylesheet. <%=link("view CSS", CoreController.CustomStylesheetAction.class)%> <%=link("delete custom stylesheet", DeleteCustomStylesheetAction.class).usePost()%>
         <% } else { %>
             No custom stylesheet.
         <% } %>
@@ -89,7 +89,7 @@
     <td>Replace with: <input type="file" name="customStylesheet" size="25" style="border: none;"></td>
 </tr>
 <tr>
-    <td><br/><%= button("Save").submit(true).onClick("_form.setClean();") %></td>
+    <td><br/><%=button("Save").submit(true).onClick("_form.setClean();")%></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
