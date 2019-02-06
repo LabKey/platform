@@ -2925,18 +2925,16 @@ public class SecurityManager
         SecurityPolicyManager.savePolicy(policy);
     }
 
-    public static boolean isAdminOnlyPermissions(Container c)
+    public static boolean containsOnlyAdminPermissions(Container c)
     {
         SecurityPolicy policy = c.getPolicy();
 
         for (RoleAssignment ra : policy.getAssignments())
         {
             Role role = ra.getRole();
-
-            if ((role instanceof ProjectAdminRole) || (role instanceof FolderAdminRole))
-                return false;
             Set<Class<? extends Permission>> permissions = role.getPermissions();
-            if (permissions.contains(SiteAdminPermission.class) || permissions.contains(ApplicationAdminPermission.class))
+            if (!(role instanceof ProjectAdminRole) && !(role instanceof FolderAdminRole)
+                && !(permissions.contains(SiteAdminPermission.class) && !permissions.contains(ApplicationAdminPermission.class)))
                 return false;
         }
 

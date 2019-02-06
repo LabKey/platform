@@ -296,7 +296,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         return assignedRoles.contains(RoleManager.getRole(ApplicationAdminRole.class));
     }
 
-    public boolean doesAnyRoleHaveAppAdminPermission(Collection<Role> roles)
+    private boolean doesAnyRoleHaveAppAdminPermission(Collection<Role> roles)
     {
         for (Role role : roles)
         {
