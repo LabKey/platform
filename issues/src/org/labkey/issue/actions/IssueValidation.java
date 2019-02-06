@@ -29,11 +29,18 @@ import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.OwnerRole;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.issue.CustomColumnConfiguration;
 import org.labkey.issue.IssuesController;
@@ -45,6 +52,7 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.MapBindingResult;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -263,5 +271,40 @@ public class IssueValidation
     {
         if (!ViewServlet.validChars(form.getComment()))
             errors.reject(SpringActionController.ERROR_MSG, "Comment has invalid characters");
+    }
+
+    /**
+     * Throw an exception if user does not have permission to update issue
+     */
+    public static void requiresUpdatePermission(User user, Issue issue, Container c)
+    {
+        if (!hasUpdatePermission(user, issue, c))
+        {
+            throw new UnauthorizedException();
+        }
+    }
+
+    /**
+     * Does this user have permission to update this issue?
+     */
+    public static boolean hasUpdatePermission(User user, Issue issue, Container c)
+    {
+        return c.hasPermission(user, UpdatePermission.class, getContextualRoles(user, issue, c));
+    }
+
+    private static Set<Role> getContextualRoles(User user, Issue issue, Container c)
+    {
+        Set<Role> roles = new HashSet<>();
+        SecurityPolicy policy = SecurityPolicyManager.getPolicy(c);
+
+        //36525
+        if (issue.getCreatedBy() == user.getUserId() &&
+                policy.hasPermission("issues", user, ReadPermission.class) &&
+                policy.hasPermission("issues", user, InsertPermission.class))
+        {
+            roles.add(RoleManager.getRole(OwnerRole.class));
+        }
+
+        return roles;
     }
 }

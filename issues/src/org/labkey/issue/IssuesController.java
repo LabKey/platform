@@ -431,7 +431,7 @@ public class IssuesController extends SpringActionController
             page.setIssue(_issue);
             page.setCustomColumnConfiguration(getColumnConfiguration());
             //pass user's update perms to jsp page to determine whether to show notify list
-            page.setUserHasUpdatePermissions(hasUpdatePermission(getUser(), _issue, getContainer()));
+            page.setUserHasUpdatePermissions(IssueValidation.hasUpdatePermission(getUser(), _issue, getContainer()));
             page.setUserHasAdminPermissions(hasAdminPermission(getUser(), _issue));
             page.setMoveDestinations(IssueManager.getMoveDestinationContainers(getContainer(), getUser(), getIssueListDef().getName()).size() != 0);
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
@@ -655,6 +655,15 @@ public class IssuesController extends SpringActionController
         private JSONArray _issues;
         private List<IssuesForm> _issueForms;
 
+        enum action
+        {
+            insert,
+            update,
+            close,
+            reopen,
+            resolve
+        }
+
         public void setIssues(JSONArray issues)
         {
             _issues = issues;
@@ -687,9 +696,36 @@ public class IssuesController extends SpringActionController
         }
     }
 
+    @Deprecated // use the more general purpose IssuesAction
     @RequiresPermission(InsertPermission.class)
-    public class InsertIssuesAction extends MutatingApiAction<IssuesApiForm>
+    public class InsertIssuesAction extends AbstractIssueApiAction
     {
+        @Override
+        IssuesApiForm.action getAction(IssuesForm form)
+        {
+            return IssuesApiForm.action.insert;
+        }
+    }
+
+    /**
+     * General API action to insert, update, resolve, close and reopen issues
+     */
+    @RequiresPermission(ReadPermission.class)
+    public class IssuesAction extends AbstractIssueApiAction
+    {
+        @Override
+        IssuesApiForm.action getAction(IssuesForm form)
+        {
+            if (form.getStrings().containsKey("action"))
+                return IssuesApiForm.action.valueOf(form.getStrings().get("action"));
+            return null;
+        }
+    }
+
+    abstract class AbstractIssueApiAction extends MutatingApiAction<IssuesApiForm>
+    {
+        abstract IssuesApiForm.action getAction(IssuesForm form);
+
         @Override
         public void validateForm(IssuesApiForm form, Errors errors)
         {
@@ -706,6 +742,53 @@ public class IssuesController extends SpringActionController
                 {
                     errors.reject(ERROR_MSG, "IssueListDef not found: " + issuesForm.getIssueDefId());
                     continue;
+                }
+
+                IssuesApiForm.action action = getAction(issuesForm);
+                if (action == null)
+                {
+                    errors.reject(ERROR_MSG, "Action must be specified : (update, resolve, close, reopen)");
+                    continue;
+                }
+
+                Issue prevIssue = null;
+                if (action != IssuesApiForm.action.insert)
+                {
+                    prevIssue = IssueManager.getIssue(getContainer(), getUser(), issuesForm.getIssueId());
+                    if (prevIssue == null)
+                    {
+                        errors.reject(ERROR_MSG, "The specified issue does not exist, id : " + issuesForm.getIssueId());
+                        continue;
+                    }
+                    issuesForm.setOldValues(prevIssue);
+                }
+
+                if (action == IssuesApiForm.action.resolve)
+                {
+                    Issue issue = issuesForm.getBean();
+                    String resolution = issue.getResolution() != null ? issue.getResolution() : "Fixed";
+
+                    if (resolution.equals("Duplicate") &&
+                            issue.getDuplicate() != null &&
+                            !issue.getDuplicate().equals(prevIssue.getDuplicate()))
+                    {
+                        if (issue.getDuplicate() == issue.getIssueId())
+                        {
+                            errors.reject(SpringActionController.ERROR_MSG, "An issue may not be a duplicate of itself");
+                            continue;
+                        }
+                        Issue duplicateOf = IssueManager.getIssue(null, getUser(), issue.getDuplicate().intValue());
+                        if (duplicateOf == null || duplicateOf.lookupContainer() == null)
+                        {
+                            errors.reject(SpringActionController.ERROR_MSG, "Duplicate issue '" + issue.getDuplicate().intValue() + "' not found");
+                            continue;
+                        }
+                        if (!duplicateOf.lookupContainer().hasPermission(getUser(), ReadPermission.class))
+                        {
+                            errors.reject(SpringActionController.ERROR_MSG, "User does not have Read permission for duplicate issue '" + issue.getDuplicate().intValue() + "'");
+                            continue;
+                        }
+                    }
                 }
 
                 AbstractIssuesListDefDomainKind kind = issueListDef.getDomainKind();
@@ -744,16 +827,51 @@ public class IssuesController extends SpringActionController
                     if (issueListDef != null)
                     {
                         CustomColumnConfiguration ccc = new CustomColumnConfigurationImpl(getContainer(), getUser(), issueListDef);
+                        IssuesApiForm.action action = getAction(issuesForm);
                         Issue issue = issuesForm.getBean();
-
-                        issue.open(getContainer(), getUser());
                         Issue prevIssue = new Issue();
-                        prevIssue.open(getContainer(), getUser());
+                        if (issuesForm.getIssueId() != 0)
+                        {
+                            prevIssue = IssueManager.getIssue(getContainer(), getUser(), issuesForm.getIssueId());
+                            issuesForm.setOldValues(prevIssue);
+                        }
+                        Issue duplicateOf = null;
+                        String resolution = issue.getResolution() != null ? issue.getResolution() : "Fixed";
+
+                        switch (action)
+                        {
+                            case insert:
+                                // for new issues, the original is always the default.
+                                issue.open(getContainer(), getUser());
+                                prevIssue.open(getContainer(), getUser());
+                                break;
+                            case update:
+                                issue.change(getUser());
+                                break;
+                            case resolve:
+                                if (resolution.equals("Duplicate") &&
+                                    issue.getDuplicate() != null &&
+                                    !issue.getDuplicate().equals(prevIssue.getDuplicate()))
+                                {
+                                    duplicateOf = IssueManager.getIssue(null, getUser(), issue.getDuplicate().intValue());
+                                }
+                                issue.resolve(getUser());
+                                break;
+                            case reopen:
+                                issue.open(getContainer(), getUser());
+                                break;
+                            case close:
+                                issue.close(getUser());
+                                break;
+                        }
 
                         // validate any related issue values
                         IssueValidation.relatedIssueHandler(issue, getUser(), errors);
                         if (errors.hasErrors())
                             return null;
+
+                        if (action != IssuesApiForm.action.insert)
+                            IssueValidation.requiresUpdatePermission(getUser(), issue, getContainer());
 
                         // bind the user schema table to the form bean so we can get typed properties
                         UserSchema userSchema = QueryService.get().getUserSchema(getUser(), getContainer(), IssuesQuerySchema.SCHEMA_NAME);
@@ -791,13 +909,31 @@ public class IssuesController extends SpringActionController
                                 AttachmentService.get().addAttachments(new CommentAttachmentParent(changeSummary.getComment()), attachmentFiles, getUser());
                         }
 
+                        // update the duplicate issue
+                        if (duplicateOf != null)
+                        {
+                            StringBuilder sb = new StringBuilder();
+                            sb.append("<em>Issue ").append(issue.getIssueId()).append(" marked as duplicate of this issue.</em>");
+                            duplicateOf.addComment(getUser(), sb.toString());
+                            IssueManager.saveIssue(getUser(), getContainer(), duplicateOf);
+                        }
+
                         final String assignedTo = UserManager.getDisplayName(issue.getAssignedTo(), getUser());
                         String change;
-                        if (issue.getAssignedTo() != null)
-                            change = "opened and assigned to " + assignedTo;
+                        if (action == IssuesApiForm.action.insert)
+                        {
+                            if (assignedTo != null)
+                                change = "opened and assigned to " + assignedTo;
+                            else
+                                change = "opened";
+                        }
                         else
-                            change = "opened";
+                            change = action == IssuesApiForm.action.reopen ? "reopened" : action.name() + "d";
 
+                        if ("resolved".equalsIgnoreCase(change))
+                        {
+                            change += " as " + resolution; // Issue 12273
+                        }
                         changeSummary.sendUpdateEmail(getContainer(), getUser(), issuesForm.getComment(),
                                 new DetailsAction(issue, getViewContext()).getURL(), change, getAttachmentFileList());
                     }
@@ -887,7 +1023,7 @@ public class IssuesController extends SpringActionController
             issue.setProperties(form.getTypedColumns());
 
             Issue prevIssue = (Issue)form.getOldValues();
-            requiresUpdatePermission(user, issue, getContainer());
+            IssueValidation.requiresUpdatePermission(user, issue, getContainer());
             ActionURL detailsUrl;
 
             // check for no op
@@ -1163,41 +1299,6 @@ public class IssuesController extends SpringActionController
             return readOnly;
         }
 
-        /**
-         * Throw an exception if user does not have permission to update issue
-         */
-        protected void requiresUpdatePermission(User user, Issue issue, Container c)
-        {
-            if (!hasUpdatePermission(user, issue, c))
-            {
-                throw new UnauthorizedException();
-            }
-        }
-
-        /**
-         * Does this user have permission to update this issue?
-         */
-        protected boolean hasUpdatePermission(User user, Issue issue, Container c)
-        {
-            return getContainer().hasPermission(user, UpdatePermission.class, getContextualRoles(user, issue, c));
-        }
-
-        private Set<Role> getContextualRoles(User user, Issue issue, Container c)
-        {
-            Set<Role> roles = new HashSet<>();
-            SecurityPolicy policy = SecurityPolicyManager.getPolicy(c);
-
-            //36525
-            if (issue.getCreatedBy() == user.getUserId() &&
-                    policy.hasPermission("issues", user, ReadPermission.class) &&
-                    policy.hasPermission("issues", user, InsertPermission.class))
-            {
-                roles.add(RoleManager.getRole(OwnerRole.class));
-            }
-
-            return roles;
-        }
-
         protected boolean hasAdminPermission(User user, Issue issue)
         {
             return getContainer().hasPermission(user, AdminPermission.class,
@@ -1463,7 +1564,7 @@ public class IssuesController extends SpringActionController
 
             Issue prevIssue = _issue.clone();
             User user = getUser();
-            requiresUpdatePermission(user, _issue, getContainer());
+            IssueValidation.requiresUpdatePermission(user, _issue, getContainer());
 
             _issue.beforeUpdate(getContainer());
             beforeReshow(reshow, form, _issue, getIssueListDef());
@@ -1508,7 +1609,7 @@ public class IssuesController extends SpringActionController
 
             Issue prevIssue = _issue.clone();
             User user = getUser();
-            requiresUpdatePermission(user, _issue, getContainer());
+            IssueValidation.requiresUpdatePermission(user, _issue, getContainer());
 
             _issue.beforeResolve(getContainer(), user);
 
@@ -1560,7 +1661,7 @@ public class IssuesController extends SpringActionController
 
             Issue prevIssue = _issue.clone();
             User user = getUser();
-            requiresUpdatePermission(user, _issue, getContainer());
+            IssueValidation.requiresUpdatePermission(user, _issue, getContainer());
 
             _issue.close(user);
             beforeReshow(reshow, form, _issue, getIssueListDef());
@@ -1606,7 +1707,7 @@ public class IssuesController extends SpringActionController
             Issue prevIssue = _issue.clone();
 
             User user = getUser();
-            requiresUpdatePermission(user, _issue, getContainer());
+            IssueValidation.requiresUpdatePermission(user, _issue, getContainer());
 
             _issue.beforeReOpen(getContainer(), true);
             _issue.open(getContainer(), user);
