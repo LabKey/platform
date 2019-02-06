@@ -17,7 +17,6 @@ package org.labkey.api.reports.report.view;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
@@ -31,7 +30,7 @@ import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.reports.report.view.AjaxScriptReportView.Mode;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.writer.ContainerUser;
 
@@ -148,45 +147,48 @@ public class ScriptReportBean extends ReportDesignBean
         if (report != null)
         {
             report = report.clone();
-            ReportDescriptor descriptor = report.getDescriptor();
+            ReportDescriptor reportDescriptor = report.getDescriptor();
 
-            if (!(descriptor instanceof ScriptReportDescriptor))
+            // This check fails if CreateScriptReportAction is called with a non-script report ID. The crawler enjoys doing this.
+            if (reportDescriptor instanceof ScriptReportDescriptor)
             {
-                if (HttpView.hasCurrentView())
-                    Logger.getLogger(ScriptReport.class).error("Bad report descriptor for request: " + HttpView.getContextURL());
-                throw new IllegalStateException("Expected ScriptReportDescriptor, but was: " + descriptor.getClass().getName() + " from " + report.getType());
+                ScriptReportDescriptor scriptReportDescriptor = (ScriptReportDescriptor) reportDescriptor;
+
+                if (getScript() != null)
+                    scriptReportDescriptor.setProperty(ScriptReportDescriptor.Prop.script, getScript());
+
+                if (getScriptExtension() != null)
+                    scriptReportDescriptor.setProperty(ScriptReportDescriptor.Prop.scriptExtension, getScriptExtension());
+
+                scriptReportDescriptor.setProperty(ScriptReportDescriptor.Prop.sourceTabVisible, isSourceTabVisible());
+
+                if (!isShareReport() && !scriptReportDescriptor.hasCustomAccess())
+                    scriptReportDescriptor.setOwner(getUser().getUserId());
+                else
+                    scriptReportDescriptor.setOwner(null);
+
+                if (getRedirectUrl() != null)
+                    scriptReportDescriptor.setProperty(ReportDescriptor.Prop.redirectUrl, getRedirectUrl());
+
+                scriptReportDescriptor.setProperty(ScriptReportDescriptor.Prop.runInBackground, _runInBackground);
+
+                if (getKnitrFormat() != null)
+                    scriptReportDescriptor.setProperty(ScriptReportDescriptor.Prop.knitrFormat, getKnitrFormat());
+
+                scriptReportDescriptor.setProperty(ScriptReportDescriptor.Prop.useDefaultOutputFormat, isUseDefaultOutputFormat());
+                scriptReportDescriptor.setProperty(ScriptReportDescriptor.Prop.rmarkdownOutputOptions, getRmarkdownOutputOptions());
+
+                if (isUseGetDataApi() != null)
+                    scriptReportDescriptor.setProperty(ScriptReportDescriptor.Prop.useGetDataApi, isUseGetDataApi());
+
+                scriptReportDescriptor.setIncludedReports(_includedReports);
+
+                scriptReportDescriptor.setScriptDependencies(getScriptDependencies());
             }
-
-            if (getScript() != null)
-                descriptor.setProperty(ScriptReportDescriptor.Prop.script, getScript());
-
-            if (getScriptExtension() != null)
-                descriptor.setProperty(ScriptReportDescriptor.Prop.scriptExtension, getScriptExtension());
-
-            descriptor.setProperty(ScriptReportDescriptor.Prop.sourceTabVisible, isSourceTabVisible());
-
-            if (!isShareReport() && !descriptor.hasCustomAccess())
-                descriptor.setOwner(getUser().getUserId());
             else
-                descriptor.setOwner(null);
-
-            if (getRedirectUrl() != null)
-                descriptor.setProperty(ReportDescriptor.Prop.redirectUrl, getRedirectUrl());
-
-            descriptor.setProperty(ScriptReportDescriptor.Prop.runInBackground, _runInBackground);
-
-            if (getKnitrFormat() != null)
-                descriptor.setProperty(ScriptReportDescriptor.Prop.knitrFormat, getKnitrFormat());
-
-            descriptor.setProperty(ScriptReportDescriptor.Prop.useDefaultOutputFormat, isUseDefaultOutputFormat());
-            descriptor.setProperty(ScriptReportDescriptor.Prop.rmarkdownOutputOptions, getRmarkdownOutputOptions());
-
-            if (isUseGetDataApi() != null)
-                descriptor.setProperty(ScriptReportDescriptor.Prop.useGetDataApi, isUseGetDataApi());
-
-            ((ScriptReportDescriptor)descriptor).setIncludedReports(_includedReports);
-
-            ((ScriptReportDescriptor)descriptor).setScriptDependencies(getScriptDependencies());
+            {
+                throw new NotFoundException("Specified report is not a script report");
+            }
         }
 
         return report;
