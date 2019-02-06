@@ -15,6 +15,7 @@
  */
 package org.labkey.api.module;
 
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
@@ -76,9 +77,9 @@ public class SimpleFolderType extends MultiPortalFolderType
             menubarEnabled = type.getMenubarEnabled();
 
         if (type.getPreferredWebParts() != null)
-            preferredParts = createWebParts(type.getPreferredWebParts().getWebPartArray());
+            preferredParts = createWebParts(type.getPreferredWebParts().getWebPartArray(), false);
         if (type.getRequiredWebParts() != null)
-            requiredParts = createWebParts(type.getRequiredWebParts().getWebPartArray());
+            requiredParts = createWebParts(type.getRequiredWebParts().getWebPartArray(), true);
 
         if (type.getFolderTabs() != null)
         {
@@ -238,7 +239,7 @@ public class SimpleFolderType extends MultiPortalFolderType
         return tabs;
     }
 
-    public static List<Portal.WebPart> createWebParts(WebPartDocument.WebPart[] references)
+    public static List<Portal.WebPart> createWebParts(WebPartDocument.WebPart[] references, boolean required)
     {
         List<Portal.WebPart> parts = new ArrayList<>();
         HashMap<String, Permission> permissionsMap = new HashMap<>();
@@ -287,7 +288,8 @@ public class SimpleFolderType extends MultiPortalFolderType
                 parts.add(webPart);
             }
             else
-                LOGGER.error("Unable to register folder type web parts: web part " + reference.getName() + " does not exist.");
+                LOGGER.log(required ? Level.ERROR : Level.WARN,
+                        "Unable to register folder type web parts: web part " + reference.getName() + " does not exist.");
         }
         return parts;
     }

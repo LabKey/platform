@@ -90,13 +90,13 @@ public class SimpleFolderTab extends FolderTab.PortalPage
 
         if (tab.getPreferredWebParts() != null)
         {
-            _preferredWebParts = SimpleFolderType.createWebParts(tab.getPreferredWebParts().getWebPartArray());
+            _preferredWebParts = SimpleFolderType.createWebParts(tab.getPreferredWebParts().getWebPartArray(), false);
 
         }
 
         if (tab.getRequiredWebParts() != null)
         {
-            _requiredWebParts = SimpleFolderType.createWebParts(tab.getRequiredWebParts().getWebPartArray());
+            _requiredWebParts = SimpleFolderType.createWebParts(tab.getRequiredWebParts().getWebPartArray(), true);
         }
 
         if (tab.getSelectorsArray() != null)
