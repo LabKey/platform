@@ -556,7 +556,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         return policy.hasPermission(u, DesignAssayPermission.class);
     }
 
-    public boolean canUpdateTransformationScript()
+    private boolean canUpdateTransformationScript()
     {
         Container c = getContainer();
         User u = getUser();

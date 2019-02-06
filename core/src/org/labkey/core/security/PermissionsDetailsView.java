@@ -130,7 +130,7 @@ public class PermissionsDetailsView extends WebPartView
     {
         SecurityPolicy policy = _c.getPolicy();
 
-        if (SecurityManager.isAdminOnlyPermissions(_c))
+        if (SecurityManager.containsOnlyAdminPermissions(_c))
         {
             out.println("<b>Note: </b> Only administrators currently have access to this " + (_c.isProject() ? "project" : "") + " folder. <br>");
 
@@ -140,7 +140,7 @@ public class PermissionsDetailsView extends WebPartView
 
                 for (Container child : ContainerManager.getAllChildren(_c))
                 {
-                    if (!SecurityManager.isAdminOnlyPermissions(child))
+                    if (!SecurityManager.containsOnlyAdminPermissions(child))
                     {
                         childrenAdminOnly = false;
                         break;
