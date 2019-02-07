@@ -100,15 +100,6 @@ public class SampleChooserDisplayColumn extends SimpleDisplayColumn
         }
         else
         {
-            // Otherwise, select the folder's active sample set as the default
-            ExpSampleSet sampleSet = ExperimentService.get().lookupActiveSampleSet(ctx.getContainer());
-            if (sampleSet != null)
-            {
-                props.put(SampleChooserUtils.PROP_NAME_DEFAULT_SAMPLE_SET_LSID, sampleSet.getLSID());
-                props.put(SampleChooserUtils.PROP_NAME_DEFAULT_SAMPLE_SET_NAME, sampleSet.getName());
-                props.put(SampleChooserUtils.PROP_NAME_DEFAULT_SAMPLE_SET_ROW_ID, Integer.toString(sampleSet.getRowId()));
-            }
-
             // Reshow with the same selections
             for (int i = 0; i < _maxSamples; i++)
             {

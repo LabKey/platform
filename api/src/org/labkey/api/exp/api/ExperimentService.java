@@ -212,7 +212,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * @param sampleNames     The set of samples to be resolved by name.
      * @param sampleSet       Optional sample set that the samples must live in.
      * @param throwIfMissing  Throw ExperimentException if any of the sampleNames do not exist.
-     * @param createIfMissing Create missing samples in the given <code>sampleSet</code> or the active sample set.
+     * @param createIfMissing Create missing samples in the given <code>sampleSet</code>.
      * @return Resolved samples
      * @throws ExperimentException
      */
@@ -289,10 +289,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * Requires a user to check for container read permission.
      */
     ExpSampleSet getSampleSet(@NotNull Container scope, @NotNull User user, int rowId);
-
-    ExpSampleSet lookupActiveSampleSet(Container container);
-
-    void setActiveSampleSet(Container container, ExpSampleSet sampleSet);
 
     ExpExperiment createHiddenRunGroup(Container container, User user, ExpRun... runs);
 
@@ -482,8 +478,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
     TableInfo getTinfoMaterialAliasMap();
 
     ExpSampleSet ensureDefaultSampleSet();
-
-    ExpSampleSet ensureActiveSampleSet(Container container);
 
     String getDefaultSampleSetLsid();
 
