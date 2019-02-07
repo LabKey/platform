@@ -263,6 +263,8 @@ public class ReportsController extends SpringActionController
         @Override
         public ActionURL urlShareReport(Container c, Report r)
         {
+            if (r.getDescriptor().getReportId() == null)
+                return null;
             ActionURL url = new ActionURL(ShareReportAction.class, c);
             url.addParameter("reportId", r.getDescriptor().getReportId().toString());
             return url;
