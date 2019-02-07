@@ -255,6 +255,8 @@ public class StudyQuerySchema extends UserSchema
     @Override
     public Object _getTableOrQuery(String name, boolean includeExtraMetadata, boolean forWrite, Collection<QueryException> errors)
     {
+        if (null == name)
+            return null;
         Pair<String, Boolean> key = new Pair<>(name.toLowerCase(),includeExtraMetadata);
         Object torq = forWrite ? pivotCache.get(key) : null;
         if (null != torq)
