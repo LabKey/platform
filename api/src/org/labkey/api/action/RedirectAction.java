@@ -72,7 +72,7 @@ public abstract class RedirectAction<FORM> extends BaseViewAction<FORM>
         return "getURL";
     }
 
-    public abstract @Nullable URLHelper getURL(FORM form, Errors errors);
+    public abstract @Nullable URLHelper getURL(FORM form, Errors errors) throws Exception;
 
     public @NotNull BindException bindParameters(PropertyValues m) throws Exception
     {
