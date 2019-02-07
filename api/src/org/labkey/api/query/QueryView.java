@@ -42,7 +42,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
@@ -1998,7 +1997,8 @@ public class QueryView extends WebPartView<Object>
                     if (_report.allowShareButton(getUser(), getContainer()))
                     {
                         ActionURL shareUrl = PageFlowUtil.urlProvider(ReportUrls.class).urlShareReport(getContainer(), _report);
-                        bar.add(createShareButton(shareUrl, "Share report"));
+                        if (shareUrl != null)
+                            bar.add(createShareButton(shareUrl, "Share report"));
                     }
 
                     dr.setButtonBar(bar);
