@@ -15,6 +15,8 @@
  */
 package org.labkey.api.module;
 
+import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.util.regex.Matcher;
@@ -27,6 +29,7 @@ import java.util.regex.Pattern;
  */
 public class ModuleResourceCaches
 {
+    private static final Logger LOGGER = Logger.getLogger(ModuleResourceCaches.class);
     /**
      * Create a new ModuleResourceCache that finds its resources via one or more ResourceRootProviders.
      *
@@ -85,13 +88,17 @@ public class ModuleResourceCaches
 
 
     @Deprecated // Standard cache keys use URL encode/decode, but this doesn't  TODO: Switch usages to standard cache key
+    @Nullable
     public static CacheId parseCacheKey(String cacheKey, Pattern pattern)
     {
         // Parse out the module name and the config name
         Matcher matcher = pattern.matcher(cacheKey);
 
         if (!matcher.matches() || matcher.groupCount() != 2)
-            throw new IllegalStateException("Unrecognized cache key format: " + cacheKey);
+        {
+            LOGGER.warn("Unrecognized cache key format: " + cacheKey);
+            return null;
+        }
 
         String moduleName = matcher.group(1);
         String filename = matcher.group(2);
