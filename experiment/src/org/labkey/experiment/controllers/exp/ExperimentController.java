@@ -3341,7 +3341,6 @@ public class ExperimentController extends SpringActionController
         ActionURL url = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, model.getContainer());
         dr.getDisplayColumn(1).setURL(url.toString() + "rowId=${RowId}");
         dr.setShowRecordSelectors(getContainer().hasOneOf(getUser(), DeletePermission.class, UpdatePermission.class));
-        dr.addDisplayColumn(0, new ActiveSampleSetColumn(model.getContainer()));
 
         ButtonBar bb = new ButtonBar();
 
@@ -3353,35 +3352,6 @@ public class ExperimentController extends SpringActionController
         return dr;
 
     }
-
-    private static final class ActiveSampleSetColumn extends SimpleDisplayColumn
-    {
-        private final ExpSampleSet _activeSampleSet;
-
-        public ActiveSampleSetColumn(Container c)
-        {
-            _activeSampleSet = ExperimentService.get().lookupActiveSampleSet(c);
-            setCaption("Active");
-        }
-
-        public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
-        {
-            renderGridCellContents(ctx, out);
-        }
-
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
-        {
-            if (_activeSampleSet != null && _activeSampleSet.getLSID().equals(ctx.getRow().get("lsid")))
-            {
-                out.write("<b>Yes</b>");
-            }
-            else
-            {
-                out.write("No");
-            }
-        }
-    }
-
 
     @RequiresPermission(InsertPermission.class)
     public class ShowInsertMaterialSourceAction extends SimpleViewAction<MaterialSourceForm>
@@ -3634,14 +3604,7 @@ public class ExperimentController extends SpringActionController
                         Pair<MaterialSource, List<ExpMaterial>> pair = helper.uploadMaterials();
                         MaterialSource newSource = pair.first;
 
-                        ExpSampleSetImpl activeSampleSet = ExperimentServiceImpl.get().lookupActiveSampleSet(getContainer());
-                        ExpSampleSetImpl newSampleSet = ExperimentServiceImpl.get().getSampleSet(newSource.getRowId());
-
-                        if (activeSampleSet == null)
-                        {
-                            ExperimentService.get().setActiveSampleSet(getContainer(), newSampleSet);
-                        }
-                        _newss = newSampleSet;
+                        _newss = ExperimentServiceImpl.get().getSampleSet(newSource.getRowId());
                     }
                     catch (ExperimentException | IOException | ValidationException e)
                     {
@@ -3672,63 +3635,6 @@ public class ExperimentController extends SpringActionController
                 nav.addChild(_ss.getName(), ExperimentUrlsImpl.get().getShowSampleSetURL(_ss));
             nav.addChild("Import Sample Set");
             return nav;
-        }
-    }
-
-    @RequiresPermission(UpdatePermission.class)
-    public class SetActiveSampleSetAction extends FormHandlerAction
-    {
-        public void validateCommand(Object target, Errors errors)
-        {
-        }
-
-        public boolean handlePost(Object o, BindException errors)
-        {
-            String rowId = null;
-            if (getViewContext().getRequest().getParameter("rowid") != null)
-            {
-                rowId = getViewContext().getRequest().getParameter("rowid");
-            }
-            else if (getViewContext().getRequest().getParameter("rowId") != null)
-            {
-                rowId = getViewContext().getRequest().getParameter("rowId");
-            }
-            else if (getViewContext().getRequest().getParameter("RowId") != null)
-            {
-                rowId = getViewContext().getRequest().getParameter("RowId");
-            }
-            else
-            {
-                Set<String> selectedIds = DataRegionSelection.getSelected(getViewContext(), true);
-                if (selectedIds.size() == 1)
-                {
-                    rowId = selectedIds.iterator().next();
-                }
-            }
-
-            ExpSampleSet sampleSet = null;
-            if (rowId != null)
-                sampleSet = ExperimentService.get().getSampleSet(getContainer(), getUser(), Integer.parseInt(rowId));
-
-            String name = getViewContext().getRequest().getParameter("name");
-            if (sampleSet == null && name != null && name.trim().length() > 0)
-                sampleSet = ExperimentService.get().getSampleSet(getContainer(), name.trim());
-
-            if (sampleSet != null)
-            {
-                ExperimentService.get().setActiveSampleSet(getContainer(), sampleSet);
-            }
-            return true;
-        }
-
-        public ActionURL getSuccessURL(Object o)
-        {
-            String referrer = getViewContext().getRequest().getHeader("Referer");
-            if (referrer != null)
-            {
-                return new ActionURL(referrer);
-            }
-            return ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer());
         }
     }
 

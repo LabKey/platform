@@ -598,7 +598,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return resolvedSamples;
     }
 
-    // Insert new materials into the given sample set or the active sample set.
+    // Insert new materials into the given sample set or the default (unspecified) sample set if none is provided.
     private List<ExpMaterialImpl> createExpMaterials(Container container, User user, @Nullable ExpSampleSet sampleSet, Set<String> sampleNames)
             throws ExperimentException
     {
@@ -607,7 +607,7 @@ public class ExperimentServiceImpl implements ExperimentService
         try (DbScope.Transaction transaction = ensureTransaction())
         {
             if (sampleSet == null)
-                sampleSet = ensureActiveSampleSet(container, user, true);
+                sampleSet = ensureDefaultSampleSet();
 
             // Create materials directly using Name.
             for (String name : sampleNames)
@@ -800,11 +800,6 @@ public class ExperimentServiceImpl implements ExperimentService
 
         Map<String, Object>[] queryResults = new SqlSelector(getSchema(), sql).getMapArray();
         Map<String, ExpSampleSet> lsidToSampleSet = new HashMap<>();
-        ExpSampleSet defaultSampleSet = lookupActiveSampleSet(container);
-        if (defaultSampleSet != null)
-        {
-            lsidToSampleSet.put(defaultSampleSet.getLSID(), defaultSampleSet);
-        }
 
         Map<String, ExpSampleSet> result = new LinkedHashMap<>();
         for (Map<String, Object> queryResult : queryResults)
@@ -823,10 +818,6 @@ public class ExperimentServiceImpl implements ExperimentService
                 {
                     sampleSet = lsidToSampleSet.get(sampleSetLSID);
                 }
-            }
-            if (sampleSet == null)
-            {
-                sampleSet = defaultSampleSet;
             }
             result.put((String) queryResult.get("Role"), sampleSet);
         }
@@ -1290,52 +1281,6 @@ public class ExperimentServiceImpl implements ExperimentService
         return new ExpSampleSetImpl(ms);
     }
 
-
-    public ExpSampleSetImpl lookupActiveSampleSet(Container container)
-    {
-        MaterialSource materialSource = lookupActiveMaterialSource(container);
-        if (materialSource == null)
-        {
-            return null;
-        }
-        return new ExpSampleSetImpl(materialSource);
-    }
-
-    public void setActiveSampleSet(Container container, ExpSampleSet sampleSet)
-    {
-        String materialSourceLSID = sampleSet.getLSID();
-        MaterialSource current = lookupActiveMaterialSource(container);
-        if (current == null)
-        {
-            if (materialSourceLSID == null)
-            {
-                // No current value, no new value
-                return;
-            }
-            else
-            {
-                // No current value, so need to insert a new row
-                String sql = "INSERT INTO " + getTinfoActiveMaterialSource() + " (Container, MaterialSourceLSID) " +
-                        "VALUES (?, ?)";
-                new SqlExecutor(getExpSchema()).execute(sql, container.getId(), materialSourceLSID);
-            }
-        }
-        else
-        {
-            if (materialSourceLSID == null)
-            {
-                // Current value exists, needs to be deleted
-                String sql = "DELETE FROM " + getTinfoActiveMaterialSource() + " WHERE Container = ?";
-                new SqlExecutor(getExpSchema()).execute(sql, container);
-            }
-            else
-            {
-                // Current value exists, needs to be changed
-                String sql = "UPDATE " + getTinfoActiveMaterialSource() + " SET MaterialSourceLSID = ? WHERE Container = ?";
-                new SqlExecutor(getExpSchema()).execute(sql, materialSourceLSID, container);
-            }
-        }
-    }
 
     @Override
     public List<ExpDataClassImpl> getDataClasses(@NotNull Container container, User user, boolean includeOtherContainers)
@@ -3348,49 +3293,6 @@ public class ExperimentServiceImpl implements ExperimentService
             list.add(m);
         }
         return outputMap;
-    }
-
-    public MaterialSource lookupActiveMaterialSource(Container c)
-    {
-        String sql = "SELECT ms.* " +
-            "FROM " + getTinfoMaterialSource() + " ms, " + getTinfoActiveMaterialSource() + " ams " +
-            "WHERE ms.lsid = ams.materialsourcelsid AND ams.container = ?";
-
-        return new SqlSelector(getExpSchema(), new SQLFragment(sql, c.getId())).getObject(MaterialSource.class);
-    }
-
-    public ExpSampleSetImpl ensureActiveSampleSet(Container c)
-    {
-        try
-        {
-            return ensureActiveSampleSet(c, null, false);
-        }
-        catch (ExperimentException e)
-        {
-            // Shouldn't happen since this exception can only be thrown if we are creating a new sample set
-            throw new RuntimeException(e);
-        }
-    }
-
-    public ExpSampleSetImpl ensureActiveSampleSet(Container c, User user, boolean createNewSet)
-            throws ExperimentException
-    {
-        MaterialSource result = lookupActiveMaterialSource(c);
-        if (result == null)
-        {
-            if (createNewSet && user != null)
-            {
-                // Create a new SampleSet in the current container
-                List<GWTPropertyDescriptor> properties = new ArrayList<>();
-                properties.add(new GWTPropertyDescriptor("Name", "http://www.w3.org/2001/XMLSchema#string"));
-                return createSampleSet(c, user, "Samples", null, properties, Collections.emptyList(), 0, -1, -1, -1, null, null);
-            }
-            else
-            {
-                return ensureDefaultSampleSet();
-            }
-        }
-        return new ExpSampleSetImpl(result);
     }
 
     public ExpSampleSetImpl ensureDefaultSampleSet()

@@ -122,13 +122,6 @@ public class SampleSetWebPart extends QueryView
 
         bb.add(new ActionButton(new ActionURL(ExperimentController.UpdateMaterialSourceAction.class, model.getContainer()), "Submit", DataRegion.MODE_UPDATE));
 
-        ActionURL setAsActiveURL = new ActionURL(ExperimentController.SetActiveSampleSetAction.class, model.getContainer());
-        ActionButton setAsActiveButton = new ActionButton(setAsActiveURL, "Make Active", DataRegion.MODE_GRID | DataRegion.MODE_DETAILS);
-        setAsActiveButton.setActionType(ActionButton.Action.POST);
-        setAsActiveButton.setDisplayPermission(UpdatePermission.class);
-        setAsActiveButton.setRequiresSelection(!detailsView);
-        bb.add(setAsActiveButton);
-
         ActionURL showAllURL = new ActionURL(ExperimentController.ShowAllMaterialsAction.class, model.getContainer());
         ActionButton showAllButton = new ActionButton(showAllURL, "Show All Materials", DataRegion.MODE_GRID);
         showAllButton.setDisplayPermission(ReadPermission.class);

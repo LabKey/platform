@@ -507,12 +507,6 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
                     throw new UnexpectedException(e);
                 }
             }
-
-            ExpSampleSet activeSampleSet = ExperimentServiceImpl.get().lookupActiveSampleSet(getContainer());
-            if (activeSampleSet == null)
-            {
-                ExperimentServiceImpl.get().setActiveSampleSet(getContainer(), this);
-            }
         }
 
         // NOTE cacheMaterialSource() of course calls transactioncache.put(), which does not alter the shared cache! (BUG?)

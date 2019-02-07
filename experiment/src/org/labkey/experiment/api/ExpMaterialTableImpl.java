@@ -253,11 +253,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     public ColumnInfo createPropertyColumn(String alias)
     {
         ColumnInfo ret = super.createPropertyColumn(alias);
-        ExpSampleSet ss = _ss != null ? _ss :
-            ExperimentService.get().lookupActiveSampleSet(getContainer());
-        if (ss != null)
+        if (_ss != null)
         {
-            Domain domain = ss.getType();
+            Domain domain = _ss.getType();
             if (domain != null)
             {
                 ret.setFk(new PropertyForeignKey(domain, _userSchema));
@@ -440,14 +438,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             ActionURL gridUrl = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, getContainer());
             gridUrl.addParameter("rowId", ss.getRowId());
             setGridURL(new DetailsURL(gridUrl));
-        }
-        else
-        {
-            ExpSampleSet activeSource = ExperimentService.get().lookupActiveSampleSet(getContainer());
-            if (activeSource != null)
-            {
-                addSampleSetColumns(activeSource, defaultCols);
-            }
         }
 
         ColumnInfo colInputs = addColumn(Column.Inputs);
