@@ -1185,8 +1185,6 @@ public abstract class SpringActionController implements Controller, HasViewConte
         if (ReadOnlyApiAction.class.isAssignableFrom(c) && !MutatingApiAction.class.isAssignableFrom(c))
             readonly = true;
 
-        if ("org.labkey.core.security.SecurityController$AdminResetPasswordAction".equals(c.getName()))
-            return; // 36296
         if (c.getName().contains("JunitController"))
             return;
 
