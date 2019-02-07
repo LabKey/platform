@@ -1702,7 +1702,7 @@ public class SecurityController extends SpringActionController
         @Override
         public ModelAndView getFailView(EmailForm form, BindException errors)
         {
-            String errorMessage = getErrorMessage(errors);
+            String errorMessage = PageFlowUtil.filter(getErrorMessage(errors));
 
             String page = String.format("<p>%1$s: Password %2$s.</p><p>%3$s</p>%4$s",
                     PageFlowUtil.filter(form.getEmail()),
