@@ -42,6 +42,8 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.net.URISyntaxException;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -94,6 +96,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     static final String API_KEY_EXPIRATION_SECONDS = "apiKeyExpirationSeconds";
     static final String ALLOW_SESSION_KEYS = "allowSessionKeys";
     static final String X_FRAME_OPTIONS = "XFrameOption";
+    static String EXTERNAL_REDIRECT_URL = "";
 
     private static final String SERVER_GUID = "serverGUID";
     private static final String SERVER_GUID_XML_PARAMETER_NAME = "org.labkey.mothership." + SERVER_GUID;
@@ -570,4 +573,14 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         return lookupBooleanValue(FILE_UPLOAD_DISABLED, false);
     }
 
+    @Override
+    public List<String> getExternalRedirectURLs()
+    {
+        String urls =  lookupStringValue(EXTERNAL_REDIRECT_URL, "");
+        if (StringUtils.isNotBlank(urls))
+        {
+            return new ArrayList<>(Arrays.asList(urls.split("\n")));
+        }
+        return new ArrayList<>();
+    }
 }

@@ -41,7 +41,6 @@ import java.net.URL;
 public class ReturnURLString
 {
     /** Name for experimental feature to control allowing open redirect behavior */
-    public static final String EXPERIMENTAL_ALLOW_OPEN_REDIRECTS = "AllowOpenRedirects";
 
     private static final Logger LOG = Logger.getLogger(ReturnURLString.class);
 
@@ -127,15 +126,24 @@ public class ReturnURLString
                         logMessageDetails += " from URL: " + request.getRequestURL() + " with referrer: " + request.getHeader("Referer");
                     }
 
-                    if (!AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_ALLOW_OPEN_REDIRECTS))
+                    boolean isConfigured = false;
+
+                    //look in the list of configured external redirect urls
+                    for (String externalRedirectHostURL : AppProps.getInstance().getExternalRedirectURLs())
                     {
-                        LOG.warn("Rejected external host redirect " + logMessageDetails);
-                        ExceptionUtil.logExceptionToMothership(request, new IllegalArgumentException("Rejected open redirect URL: " + url), false);
+                        if (StringUtils.isNotBlank(externalRedirectHostURL) && externalRedirectHostURL.equalsIgnoreCase(h.getHost()))
+                            isConfigured = true;
+                    }
+
+                    if (!isConfigured)
+                    {
+                        LOG.error("Rejected external host redirect " + logMessageDetails +
+                                "\nPlease configure external redirect url host from: Admin gear --> Site --> Admin Console --> Admin Console Links --> External Redirect URLs");
                         return false;
                     }
                     else
                     {
-                        LOG.debug("Detected external host returnURL value, but allowing per experimental feature setting " + logMessageDetails);
+                        LOG.debug("Detected configured external host returnURL: " + url);
                     }
                 }
             }

@@ -24,6 +24,7 @@ import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.NavTreeManager;
 
 import java.net.URISyntaxException;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -212,5 +213,23 @@ public class WriteableAppProps extends AppPropsImpl
     public void setXFrameOptions(String option)
     {
         storeStringValue(X_FRAME_OPTIONS, option);
+    }
+
+    public void setExternalRedirectURLs(List<String> externalRedirectURLs)
+    {
+        String urls = "";
+        if (null != externalRedirectURLs)
+        {
+            for (String externalRedirectURL : externalRedirectURLs)
+            {
+                urls += externalRedirectURL.trim() + "\n"; //using ## as a delimiter since url could have common delimiters such as , ; among other characters
+            }
+        }
+        storeStringValue(EXTERNAL_REDIRECT_URL, urls);
+    }
+
+    public void resetExternalRedirectURLs()
+    {
+        storeStringValue(EXTERNAL_REDIRECT_URL, null);
     }
 }
