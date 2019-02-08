@@ -311,7 +311,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 
 
     @Override
-    protected void checkSqlScript(String lower, String lowerNoWhiteSpace, Collection<String> errors)
+    protected void checkSqlScript(String lowerNoComments, String lowerNoCommentsNoWhiteSpace, Collection<String> errors)
     {
     }
 
