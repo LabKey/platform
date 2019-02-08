@@ -841,25 +841,6 @@ public class Query
             if (resolvedSchema == null && DbSchema.TEMP_SCHEMA_NAME.equalsIgnoreCase(name))
                 resolvedSchema = new QuerySchemaWrapper(DbSchema.getTemp());
 
-            // support external queries for nested schema (for example, ODBC driver uses "[assay.General.A Gpat. Assay With Dot.in Name].[Batches]" as schema.table name)
-            if (resolvedSchema != null && name.contains(".") && !resolvedSchema.getName().equalsIgnoreCase(name))
-            {
-                String[] remainingParts = name.substring(resolvedSchema.getName().length() + 1).split("\\.");
-                for (int j = 0; j < remainingParts.length; j++)
-                {
-                    for (int k = j + 1; k <= remainingParts.length; k++)
-                    {
-                        List<String> subRemainingParts = Arrays.asList(remainingParts).subList(j, k);
-                        QuerySchema subSchema = resolvedSchema.getSchema(StringUtils.join(subRemainingParts, '.'));
-                        if (subSchema != null)
-                        {
-                            resolvedSchema = subSchema;
-                            j = k - 1;
-                            break;
-                        }
-                    }
-                }
-            }
 			if (resolvedSchema == null)
 			{
                 throw new QueryNotFoundException(StringUtils.join(names, "."), null == node ? 0 : node.getLine(), null == node ? 0 : node.getColumn());
