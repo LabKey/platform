@@ -219,15 +219,40 @@ final public class DefaultSchema extends AbstractSchema
             }
         }
 
+        // support external queries for nested schema (for example, ODBC driver uses "[assay.General.A Gpat. Assay With Dot.in Name].[Batches]" as schema.table name)
         if (name.contains("."))
         {
+            QuerySchema resolvedSchema = null;
             String[] schemaParts = name.split("\\.");
             for (int i = 0; i < schemaParts.length; i++)
             {
                 List<String> parts = Arrays.asList(schemaParts).subList(0, i);
                 provider = _providers.get(StringUtils.join(parts, '.'));
                 if (provider != null)
-                    return provider.getSchema(this);
+                {
+                    resolvedSchema = provider.getSchema(this);
+                    break;
+                }
+            }
+
+            if (resolvedSchema != null && !resolvedSchema.getName().equalsIgnoreCase(name))
+            {
+                String[] remainingParts = name.substring(resolvedSchema.getName().length() + 1).split("\\.");
+                for (int j = 0; j < remainingParts.length; j++)
+                {
+                    for (int k = j + 1; k <= remainingParts.length; k++)
+                    {
+                        List<String> subRemainingParts = Arrays.asList(remainingParts).subList(j, k);
+                        QuerySchema subSchema = resolvedSchema.getSchema(StringUtils.join(subRemainingParts, '.'));
+                        if (subSchema != null)
+                        {
+                            resolvedSchema = subSchema;
+                            j = k - 1;
+                            break;
+                        }
+                    }
+                }
+                return resolvedSchema;
             }
         }
 
