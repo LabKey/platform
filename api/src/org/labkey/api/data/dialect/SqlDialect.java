@@ -849,35 +849,35 @@ public abstract class SqlDialect
     public final void checkSqlScript(String sql) throws SQLSyntaxException
     {
         // SQL script writers can choose to bypass our normal syntax checking by including a @SkipLabKeySyntaxCheck "annotation"
-        // in a comment somewhere in the file. While typically not recommended, this is helpful in cases where clients provide
-        // us SQL scripts that don't conform to our rules.
+        // in a comment somewhere in the file. While typically not recommended, this is helpful in cases where clients or third
+        // parties provide us SQL scripts that don't conform to our rules.
         if (sql.contains("@SkipLabKeySyntaxCheck"))
             return;
 
         Collection<String> errors = new ArrayList<>();
-        String lower = sql.toLowerCase();
-        String lowerNoWhiteSpace = lower.replaceAll("\\s", "");
-
-        if (lowerNoWhiteSpace.contains("primarykey,"))
-            errors.add("Do not designate PRIMARY KEY on the column definition line; this creates a PK with an arbitrary name, making it more difficult to change later. Instead, create the PK as a named constraint (e.g., PK_MyTable).");
 
         try
         {
-            new SqlScanner(sql).stripComments();
+            String noComments = new SqlScanner(sql).stripComments().toString();
+            String lowerNoComments = noComments.toLowerCase();
+            String lowerNoCommentsNoWhiteSpace = lowerNoComments.replaceAll("\\s", "");
+
+            if (lowerNoCommentsNoWhiteSpace.contains("primarykey,"))
+                errors.add("Do not designate PRIMARY KEY on the column definition line; this creates a PK with an arbitrary name, making it more difficult to change later. Instead, create the PK as a named constraint (e.g., PK_MyTable).");
+
+            checkSqlScript(lowerNoComments, lowerNoCommentsNoWhiteSpace, errors);
         }
         catch (Exception e)
         {
             errors.add(e.getMessage());
         }
 
-        checkSqlScript(lower, lowerNoWhiteSpace, errors);
-
         if (!errors.isEmpty())
             throw new SQLSyntaxException(errors);
     }
 
 
-    abstract protected void checkSqlScript(String lower, String lowerNoWhiteSpace, Collection<String> errors);
+    abstract protected void checkSqlScript(String lowerNoComments, String lowerNoCommentsNoWhiteSpace, Collection<String> errors);
 
     public String getJDBCArrayType(Object object)
     {
