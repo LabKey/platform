@@ -34,6 +34,7 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.client.DefaultValueType;
+import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
@@ -162,7 +163,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
 
     public HttpView getView(FormType domainIdForm, boolean reshow, BindException errors) throws Exception
     {
-        _returnUrl = domainIdForm.getReturnURLHelper();
+        _returnUrl = domainIdForm.getReturnURLHelper(PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(getContainer()));
         Domain domain = getDomain(domainIdForm);
         List<? extends DomainProperty> properties = domain.getProperties();
         if (properties.isEmpty())
@@ -215,9 +216,13 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
             clearButton.setPrimary(false);
             bbar.add(clearButton);
         }
-        bbar.add(new ActionButton("Cancel", _returnUrl));
+        if (_returnUrl != null)
+        {
+            rgn.addHiddenFormField(ActionURL.Param.returnUrl, _returnUrl);
+            bbar.add(new ActionButton("Cancel", _returnUrl));
+        }
+
         rgn.addHiddenFormField("domainId", "" + domainIdForm.getDomainId());
-        rgn.addHiddenFormField(ActionURL.Param.returnUrl, domainIdForm.getReturnURLHelper());
         rgn.setButtonBar(bbar);
 
         addAdditionalFormFields(domainIdForm, rgn);
