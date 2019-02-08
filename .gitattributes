@@ -454,6 +454,7 @@ core/src/org/labkey/core/admin/MenuViewFactory.java -text
 core/src/org/labkey/core/admin/ProjectSettingsAction.java -text
 core/src/org/labkey/core/admin/TestNetworkDriveBean.java -text
 core/src/org/labkey/core/admin/ValidateDomainsPipelineJob.java -text
+core/src/org/labkey/core/admin/addNewExternalRedirectURL.jsp -text
 core/src/org/labkey/core/admin/admin.jsp -text
 core/src/org/labkey/core/admin/checkDatabase.jsp -text
 core/src/org/labkey/core/admin/confirmProjectMove.jsp -text
@@ -467,6 +468,7 @@ core/src/org/labkey/core/admin/editMenuBar.jsp -text
 core/src/org/labkey/core/admin/emailProps.jsp -text
 core/src/org/labkey/core/admin/emailTest.jsp -text
 core/src/org/labkey/core/admin/enabledFolderTypes.jsp -text
+core/src/org/labkey/core/admin/existingExternalRedirectURLs.jsp -text
 core/src/org/labkey/core/admin/existingShortURLs.jsp -text
 core/src/org/labkey/core/admin/experimentalFeatures.jsp -text
 core/src/org/labkey/core/admin/exportFolder.jsp -text
