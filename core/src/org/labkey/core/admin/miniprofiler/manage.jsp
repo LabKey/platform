@@ -106,7 +106,7 @@ profiler is enabled when the server is running in dev mode or if the current use
     <p>
         <%--<%= button("Reset to Default"). %>&nbsp;--%>
         <%= button("Save").submit(true) %>
-        <%= button("Reset").href(buildURL(MiniProfilerController.ResetAction.class)) %>
+        <%= button("Reset").onClick(PageFlowUtil.postOnClickJavaScript(buildURL(MiniProfilerController.ResetAction.class))) %>
         <%= button("Cancel").href(PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL()) %>
     </p>
 </labkey:form>

@@ -18,12 +18,13 @@ package org.labkey.core.admin.miniprofiler;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.apache.log4j.Logger;
 import org.labkey.api.action.ApiAction;
+import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.IgnoresAllocationTracking;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.SimpleRedirectAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
@@ -149,40 +150,54 @@ public class MiniProfilerController extends SpringActionController
 
     @AdminConsoleAction
     @RequiresPermission(AdminPermission.class)
-    public class ResetAction extends SimpleRedirectAction
+    public class ResetAction extends FormHandlerAction
     {
         @Override
-        public URLHelper getRedirectURL(Object o)
+        public void validateCommand(Object o, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors) throws Exception
         {
             MiniProfiler.resetSettings();
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(Object o)
+        {
             return PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL();
         }
     }
 
     @RequiresSiteAdmin
-    public class EnabledAction extends ApiAction<EnabledForm>
+    public class IsEnabledAction extends ReadOnlyApiAction<Object>
     {
         @Override
-        public Object execute(EnabledForm form, BindException errors)
+        public Object execute(Object o, BindException errors)
         {
-            boolean enabled;
-            if (isPost())
-            {
-                MiniProfiler.Settings settings = MiniProfiler.getSettings();
-                settings.setEnabled(form.isEnabled());
-                MiniProfiler.saveSettings(settings);
-                enabled = settings.isEnabled();
-            }
-            else
-            {
-                enabled = MiniProfiler.isEnabled(getViewContext());
-            }
+            boolean enabled = MiniProfiler.isEnabled(getViewContext());
+            return success(Collections.singletonMap("enabled", enabled));
+        }
+    }
+
+    @RequiresSiteAdmin
+    public class EnableAction extends MutatingApiAction<EnableForm>
+    {
+        @Override
+        public Object execute(EnableForm form, BindException errors)
+        {
+            MiniProfiler.Settings settings = MiniProfiler.getSettings();
+            settings.setEnabled(form.isEnabled());
+            MiniProfiler.saveSettings(settings);
+            boolean enabled = settings.isEnabled();
             return success(Collections.singletonMap("enabled", enabled));
         }
     }
 
     @JsonIgnoreProperties("apiVersion")
-    public static class EnabledForm
+    public static class EnableForm
     {
         private boolean _enabled;
 
@@ -226,8 +241,7 @@ public class MiniProfilerController extends SpringActionController
             MemTracker.get().setViewed(getUser(), form.getId());
 
             // Reset the X-MiniProfiler-Ids header to only include remaining unviewed (without the id we are returning)
-            LinkedHashSet<Long> ids = new LinkedHashSet<>();
-            ids.addAll(MemTracker.get().getUnviewed(getUser()));
+            LinkedHashSet<Long> ids = new LinkedHashSet<>(MemTracker.get().getUnviewed(getUser()));
             getViewContext().getResponse().setHeader("X-MiniProfiler-Ids", ids.toString());
 
             return req;
