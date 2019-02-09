@@ -4618,21 +4618,11 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(ExternalSchemaForm form, BindException errors) throws Exception
+        public boolean handlePost(ExternalSchemaForm form, BindException errors)
         {
             form.refreshFromDb();
             ExternalSchemaDef def = form.getBean();
-
-            try
-            {
-                QueryManager.get().reloadExternalSchema(def);
-            }
-            catch (Exception e)
-            {
-                errors.reject(ERROR_MSG, "Could not reload schema " + def.getUserSchemaName() + ". The data source for the schema may be unreachable, or the schema may have been deleted.");
-                getPageConfig().setTemplate(PageConfig.Template.Dialog);
-                return false;
-            }
+            QueryManager.get().reloadExternalSchema(def);
 
             return true;
         }

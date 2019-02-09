@@ -38,12 +38,13 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.OldRedirectAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleErrorView;
-import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
@@ -99,7 +100,6 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
@@ -110,7 +110,6 @@ import org.labkey.api.view.AjaxCompletion;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.GridView;
-import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -1665,11 +1664,12 @@ public class AnnouncementsController extends SpringActionController
     }
 
     // Used for testing the daily digest email notifications
+    @Marshal(Marshaller.Jackson)
     @RequiresSiteAdmin
-    public class SendDailyDigestAction extends SimpleRedirectAction
+    public class SendDailyDigestAction extends MutatingApiAction
     {
         @Override
-        public URLHelper getRedirectURL(Object o)
+        public Object execute(Object o, BindException errors)
         {
             Thread digestThread = new Thread(() -> {
                 // Normally, daily digest stops at previous midnight; override to include all messages through now
@@ -1695,7 +1695,7 @@ public class AnnouncementsController extends SpringActionController
             });
             digestThread.start();
 
-            return getBeginURL(getContainer());
+            return success("Announcements daily digest sent");
         }
     }
 

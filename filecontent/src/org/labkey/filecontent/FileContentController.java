@@ -1326,7 +1326,7 @@ public class FileContentController extends SpringActionController
         {
             ShortMessageDigest.getInstance().sendMessageDigest();
 
-            return success("15 Minute digest sent");
+            return success("File content 15-minute digest sent");
         }
     }
 

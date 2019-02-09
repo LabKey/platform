@@ -107,7 +107,7 @@ else
             <% if (isAdmin) {%><td class="labkey-noborder"><%=link("edit", urlEdit)%></td><%}%>
             <td class="labkey-noborder"><%=link("reload", urlReload).usePost()%></td>
             <% if (isAdmin) {%><td class="labkey-noborder"><%=link("delete", urlDelete)%></td><%}%>
-            <td class="labkey-noborder">&nbsp;</td><%
+            <td class="labkey-noborder">&nbsp;</td><%  // This column is used for "can't connect" messages (see below)
                 }
                 else
                 {
@@ -131,10 +131,10 @@ else
     { %>
     <%=link("new external schema", urls.urlInsertExternalSchema(c))%>
     <%
-        if (defs.size() > 1)
-        { %>
-        <%=link("reload all schemas", QueryController.ReloadAllUserSchemas.class).usePost()%><%
-        }
+    }
+    if (defs.size() > 1)
+    { %>
+    <%=link("reload all schemas", QueryController.ReloadAllUserSchemas.class).usePost()%><%
     }
     %>
 

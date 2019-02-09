@@ -171,8 +171,9 @@ public class MiniProfilerController extends SpringActionController
         }
     }
 
+    // Invoked by test framework
     @RequiresSiteAdmin
-    public class IsEnabledAction extends ReadOnlyApiAction<Object>
+    public class IsEnabledAction extends ReadOnlyApiAction
     {
         @Override
         public Object execute(Object o, BindException errors)
@@ -182,6 +183,7 @@ public class MiniProfilerController extends SpringActionController
         }
     }
 
+    // Invoked by test framework
     @RequiresSiteAdmin
     public class EnableAction extends MutatingApiAction<EnableForm>
     {

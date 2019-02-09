@@ -33,9 +33,10 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.HasViewContext;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReturnUrlForm;
-import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.notification.NotificationService;
@@ -3747,41 +3748,38 @@ public class ReportsController extends SpringActionController
     }
 
     // Used for testing the daily digest email notifications
+    @Marshal(Marshaller.Jackson)
     @RequiresSiteAdmin
-    public class SendDailyDigestAction extends SimpleRedirectAction
+    public class SendDailyDigestAction extends MutatingApiAction
     {
         @Override
-        public URLHelper getRedirectURL(Object o)
+        public Object execute(Object o, BindException errors) throws Exception
         {
             // Spawn a new thread so the digest creation doesn't have the Spring Action context available.
-            Thread digestThread = new Thread() {
-                @Override
-                public void run()
+            Thread digestThread = new Thread(() -> {
+                // Normally, daily digest stops at previous midnight; override to include all messages through now
+                DailyMessageDigest messageDigest = new DailyMessageDigest() {
+                    @Override
+                    protected Date getEndRange(Date current, Date last)
+                    {
+                        return current;
+                    }
+                };
+
+                messageDigest.addProvider(ReportAndDatasetChangeDigestProvider.get());
+
+                try
                 {
-                    // Normally, daily digest stops at previous midnight; override to include all messages through now
-                    DailyMessageDigest messageDigest = new DailyMessageDigest() {
-                        @Override
-                        protected Date getEndRange(Date current, Date last)
-                        {
-                            return current;
-                        }
-                    };
-
-                    messageDigest.addProvider(ReportAndDatasetChangeDigestProvider.get());
-
-                    try
-                    {
-                        messageDigest.sendMessageDigest();
-                    }
-                    catch (Exception e)
-                    {
-                        ExceptionUtil.logExceptionToMothership(null, e);
-                    }
+                    messageDigest.sendMessageDigest();
                 }
-            };
+                catch (Exception e)
+                {
+                    ExceptionUtil.logExceptionToMothership(null, e);
+                }
+            });
             digestThread.start();
 
-            return new ActionURL(ManageViewsAction.class, getContainer());
+            return success("Reports daily digest sent");
         }
     }
 

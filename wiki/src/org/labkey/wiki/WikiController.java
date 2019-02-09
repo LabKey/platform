@@ -25,10 +25,10 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.ExtFormAction;
+import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
-import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.announcements.DiscussionService;
@@ -52,7 +52,6 @@ import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.WikiTermsOfUseProvider;
@@ -1002,10 +1001,17 @@ public class WikiController extends SpringActionController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class CopySinglePageAction extends SimpleRedirectAction<CopyWikiForm>
+    public class CopySinglePageAction extends FormHandlerAction<CopyWikiForm>
     {
+        private ActionURL _successURL;
+
         @Override
-        public URLHelper getRedirectURL(CopyWikiForm form) throws Exception
+        public void validateCommand(CopyWikiForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(CopyWikiForm form, BindException errors) throws Exception
         {
             String pageName = form.getPageName();
             Container cSrc = getSourceContainer(form.getSourceContainer());
@@ -1029,12 +1035,15 @@ public class WikiController extends SpringActionController
 
             displayWikiModuleInDestContainer(cDest);
 
-            return getPageURL(newWikiPage, cDest);
+            _successURL = getPageURL(newWikiPage, cDest);
+
+            return true;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public URLHelper getSuccessURL(CopyWikiForm copyWikiForm)
         {
-            return null;
+            return _successURL;
         }
     }
 
