@@ -73,6 +73,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.lang.StackWalker.StackFrame;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
@@ -85,6 +86,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -1182,14 +1184,23 @@ public abstract class SpringActionController implements Controller, HasViewConte
         boolean readonly = false;
         if (null != vc && "GET".equals(vc.getRequest().getMethod()))
             readonly = true;
-        if (ReadOnlyApiAction.class.isAssignableFrom(c) && !MutatingApiAction.class.isAssignableFrom(c))
+        else if (ReadOnlyApiAction.class.isAssignableFrom(c) && !MutatingApiAction.class.isAssignableFrom(c))
+            readonly = true;
+        else if (SimpleRedirectAction.class.isAssignableFrom(c) || OldRedirectAction.class.isAssignableFrom(c) || RedirectAction.class.isAssignableFrom(c))
             readonly = true;
 
-        if (c.getName().contains("JunitController"))
-            return;
+        // TODO: Flag SimpleViewAction or getView() method on the stack
 
         if (readonly)
         {
+            if (c.getName().contains("JunitController"))
+                return;
+
+            // HACK: temporary workaround for #36678 - ignore any actions invoked by ViewServlet.mockDispatch()
+//            Optional<StackFrame> optional = StackWalker.getInstance().walk(s->s.filter(sf -> "org.labkey.api.view.ViewServlet".equals(sf.getClassName()) && "mockDispatch".equals(sf.getMethodName())).findFirst());
+//            if (optional.isPresent())
+//                return;
+
             boolean verbose = _log.isDebugEnabled() || mutatingActionsWarned.add(c.getName());
             _log.warn("MUTATING SQL executed as part of handling action: " +
                     (null==vc ? "" : vc.getRequest().getMethod()) + " " +
