@@ -668,7 +668,7 @@ public class AssayTest extends AbstractAssayTest
         table.checkAll();
         table.clickHeaderButton("Copy to Study");
 
-        checkCheckbox(Locator.xpath("//td//input[@type='checkbox']"));
+        checkCheckbox(Locator.xpath("//input[@id='chooseStudy']"));
 
         // Make sure the selected study is Study3
         selectOptionByText(Locator.xpath("//select[@name='targetStudy']"), getTargetStudyOptionText(TEST_ASSAY_FLDR_STUDY3));
@@ -769,7 +769,7 @@ public class AssayTest extends AbstractAssayTest
         table.checkAll();
         table.clickHeaderButton("Copy to Study");
 
-        checkCheckbox(Locator.xpath("//td//input[@type='checkbox']"));
+        checkCheckbox(Locator.xpath("//input[@id='chooseStudy']"));
 
         // Make sure the selected study is Study2
         selectOptionByText(Locator.xpath("//select[@name='targetStudy']"), getTargetStudyOptionText(TEST_ASSAY_FLDR_STUDY2));

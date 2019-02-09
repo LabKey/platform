@@ -819,7 +819,8 @@ public class AssayPublishManager implements AssayPublishService
     }
 
     /** Automatically copy assay data to a study if the design is set up to do so */
-    public List<String> autoCopyResults(ExpProtocol protocol, ExpRun run, User user, Container container)
+    @Nullable
+    public ActionURL autoCopyResults(ExpProtocol protocol, ExpRun run, User user, Container container, List<String> errors)
     {
         LOG.debug("Considering whether to attempt auto-copy results from assay run " + run.getName() + " from container " + container.getPath());
         AssayProvider provider = AssayService.get().getProvider(protocol);
@@ -831,101 +832,108 @@ public class AssayPublishManager implements AssayPublishService
             {
                 LOG.debug("Found configured target study container ID, " + targetStudyContainerId + " for auto-copy with " + run.getName() + " from container " + container.getPath());
                 final Container targetStudyContainer = ContainerManager.getForId(targetStudyContainerId);
-                if (targetStudyContainer != null)
-                {
-                    final StudyImpl study = StudyManager.getInstance().getStudy(targetStudyContainer);
-                    if (study != null)
-                    {
-                        boolean hasPermission = false;
-                        Set<Study> publishTargets = getValidPublishTargets(user, InsertPermission.class);
-                        for (Study publishTarget : publishTargets)
-                        {
-                            if (publishTarget.getContainer().equals(targetStudyContainer))
-                            {
-                                hasPermission = true;
-                                break;
-                            }
-                        }
-                        if (!hasPermission)
-                        {
-                            // We don't have permission to create or add to
-                            return Collections.emptyList();
-                        }
 
-                        LOG.debug("Resolved target study in container " + targetStudyContainer.getPath() + " for auto-copy with " + run.getName() + " from container " + container.getPath());
-
-                        FieldKey ptidFK = provider.getTableMetadata(protocol).getParticipantIDFieldKey();
-                        FieldKey visitFK = provider.getTableMetadata(protocol).getVisitIDFieldKey(study.getTimepointType());
-                        FieldKey objectIdFK = provider.getTableMetadata(protocol).getResultRowIdFieldKey();
-                        FieldKey runFK = provider.getTableMetadata(protocol).getRunRowIdFieldKeyFromResults();
-
-                        AssayProtocolSchema schema = provider.createProtocolSchema(user, container, protocol, null);
-
-                        // Do a query to get all the info we need to do the copy
-                        TableInfo resultTable = schema.createDataTable(false);
-
-                        // Check if we can resolve the PTID column by name. See issue 32281
-                        if (resultTable.getColumn(ptidFK) == null)
-                        {
-                            for (ColumnInfo c : resultTable.getColumns())
-                            {
-                                // Check for a column with the PTID concept URI instead
-                                if (org.labkey.api.gwt.client.ui.PropertyType.PARTICIPANT_CONCEPT_URI.equals(c.getConceptURI()))
-                                {
-                                    ptidFK = c.getFieldKey();
-                                }
-                            }
-                        }
-
-                        Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(resultTable, Arrays.asList(ptidFK, visitFK, objectIdFK, runFK));
-                        final ColumnInfo ptidColumn = cols.get(ptidFK);
-                        final ColumnInfo visitColumn = cols.get(visitFK);
-                        final ColumnInfo objectIdColumn = cols.get(objectIdFK);
-                        final Map<Integer, AssayPublishKey> keys = new HashMap<>();
-                        assert cols.get(runFK) != null : "Could not find object id column: " + objectIdFK;
-
-                        SQLFragment sql = QueryService.get().getSelectSQL(resultTable, cols.values(), new SimpleFilter(runFK, run.getRowId()), null, Table.ALL_ROWS, Table.NO_OFFSET, false);
-
-                        new SqlSelector(resultTable.getSchema(), sql).forEach(rs -> {
-                            // Be careful to not assume that we have participant or visit columns in our data domain
-                            Object ptidObject = ptidColumn == null ? null : ptidColumn.getValue(rs);
-                            String ptid = ptidObject == null ? null : ptidObject.toString();
-                            int objectId = ((Number) objectIdColumn.getValue(rs)).intValue();
-                            Object visit = visitColumn == null ? null : visitColumn.getValue(rs);
-                            // Only copy rows that have a participant and a visit/date
-                            if (ptid != null && visit != null)
-                            {
-                                AssayPublishKey key;
-                                // 13647: Conversion exception in assay auto copy-to-study
-                                if (study.getTimepointType().isVisitBased())
-                                {
-                                    float visitId = Float.parseFloat(visit.toString());
-                                    key = new AssayPublishKey(targetStudyContainer, ptid, visitId, objectId);
-                                    LOG.debug("Resolved info (" + ptid + "/" + visitId + ") for auto-copy of row " + objectId + " for " + run.getName() + " from container " + container.getPath());
-                                }
-                                else
-                                {
-                                    Date date = (Date) ConvertUtils.convert(visit.toString(), Date.class);
-                                    key = new AssayPublishKey(targetStudyContainer, ptid, date, objectId);
-                                    LOG.debug("Resolved info (" + ptid + "/" + date + ") for auto-copy of row " + objectId + " for " + run.getName() + " from container " + container.getPath());
-                                }
-                                keys.put(objectId, key);
-                            }
-                            else
-                            {
-                                LOG.debug("Missing ptid and/or visit info for auto-copy of row " + objectId + " for " + run.getName() + " from container " + container.getPath());
-                            }
-                        });
-
-                        List<String> copyErrors = new ArrayList<>();
-                        LOG.debug("Identified " + keys + " rows with sufficient data to copy to " + targetStudyContainer.getPath() + " for auto-copy with " + run.getName() + " from container " + container.getPath());
-                        provider.copyToStudy(user, container, protocol, targetStudyContainer, keys, copyErrors);
-                        return copyErrors;
-                    }
-                }
+                return autoCopyResults(protocol, provider, run, user, container, targetStudyContainer, errors, LOG);
             }
         }
 
-        return Collections.emptyList();
+        return null;
+    }
+
+    @Nullable
+    public ActionURL autoCopyResults(ExpProtocol protocol, AssayProvider provider, ExpRun run, User user, Container container,
+                                        Container targetStudyContainer, List<String> errors, Logger log)
+    {
+        if (targetStudyContainer != null)
+        {
+            final StudyImpl study = StudyManager.getInstance().getStudy(targetStudyContainer);
+            if (study != null)
+            {
+                boolean hasPermission = false;
+                Set<Study> publishTargets = getValidPublishTargets(user, InsertPermission.class);
+                for (Study publishTarget : publishTargets)
+                {
+                    if (publishTarget.getContainer().equals(targetStudyContainer))
+                    {
+                        hasPermission = true;
+                        break;
+                    }
+                }
+                if (!hasPermission)
+                {
+                    // We don't have permission to create or add to
+                    return null;
+                }
+
+                log.debug("Resolved target study in container " + targetStudyContainer.getPath() + " for auto-copy with " + run.getName() + " from container " + container.getPath());
+
+                FieldKey ptidFK = provider.getTableMetadata(protocol).getParticipantIDFieldKey();
+                FieldKey visitFK = provider.getTableMetadata(protocol).getVisitIDFieldKey(study.getTimepointType());
+                FieldKey objectIdFK = provider.getTableMetadata(protocol).getResultRowIdFieldKey();
+                FieldKey runFK = provider.getTableMetadata(protocol).getRunRowIdFieldKeyFromResults();
+
+                AssayProtocolSchema schema = provider.createProtocolSchema(user, container, protocol, null);
+
+                // Do a query to get all the info we need to do the copy
+                TableInfo resultTable = schema.createDataTable(false);
+
+                // Check if we can resolve the PTID column by name. See issue 32281
+                if (resultTable.getColumn(ptidFK) == null)
+                {
+                    for (ColumnInfo c : resultTable.getColumns())
+                    {
+                        // Check for a column with the PTID concept URI instead
+                        if (org.labkey.api.gwt.client.ui.PropertyType.PARTICIPANT_CONCEPT_URI.equals(c.getConceptURI()))
+                        {
+                            ptidFK = c.getFieldKey();
+                        }
+                    }
+                }
+
+                Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(resultTable, Arrays.asList(ptidFK, visitFK, objectIdFK, runFK));
+                final ColumnInfo ptidColumn = cols.get(ptidFK);
+                final ColumnInfo visitColumn = cols.get(visitFK);
+                final ColumnInfo objectIdColumn = cols.get(objectIdFK);
+                final Map<Integer, AssayPublishKey> keys = new HashMap<>();
+                assert cols.get(runFK) != null : "Could not find object id column: " + objectIdFK;
+
+                SQLFragment sql = QueryService.get().getSelectSQL(resultTable, cols.values(), new SimpleFilter(runFK, run.getRowId()), null, Table.ALL_ROWS, Table.NO_OFFSET, false);
+
+                new SqlSelector(resultTable.getSchema(), sql).forEach(rs -> {
+                    // Be careful to not assume that we have participant or visit columns in our data domain
+                    Object ptidObject = ptidColumn == null ? null : ptidColumn.getValue(rs);
+                    String ptid = ptidObject == null ? null : ptidObject.toString();
+                    int objectId = ((Number) objectIdColumn.getValue(rs)).intValue();
+                    Object visit = visitColumn == null ? null : visitColumn.getValue(rs);
+                    // Only copy rows that have a participant and a visit/date
+                    if (ptid != null && visit != null)
+                    {
+                        AssayPublishKey key;
+                        // 13647: Conversion exception in assay auto copy-to-study
+                        if (study.getTimepointType().isVisitBased())
+                        {
+                            float visitId = Float.parseFloat(visit.toString());
+                            key = new AssayPublishKey(targetStudyContainer, ptid, visitId, objectId);
+                            log.debug("Resolved info (" + ptid + "/" + visitId + ") for auto-copy of row " + objectId + " for " + run.getName() + " from container " + container.getPath());
+                        }
+                        else
+                        {
+                            Date date = (Date) ConvertUtils.convert(visit.toString(), Date.class);
+                            key = new AssayPublishKey(targetStudyContainer, ptid, date, objectId);
+                            log.debug("Resolved info (" + ptid + "/" + date + ") for auto-copy of row " + objectId + " for " + run.getName() + " from container " + container.getPath());
+                        }
+                        keys.put(objectId, key);
+                    }
+                    else
+                    {
+                        log.debug("Missing ptid and/or visit info for auto-copy of row " + objectId + " for " + run.getName() + " from container " + container.getPath());
+                    }
+                });
+
+                log.debug("Identified " + keys + " rows with sufficient data to copy to " + targetStudyContainer.getPath() + " for auto-copy with " + run.getName() + " from container " + container.getPath());
+                return provider.copyToStudy(user, container, protocol, targetStudyContainer, keys, errors);
+            }
+        }
+        return null;
     }
 }
