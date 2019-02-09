@@ -32,7 +32,7 @@
 <h3>External Schemas</h3>
 <p>
     Site administrators can define external schemas to make data stored in any PostgreSQL, Microsoft SQL Server, SAS, MySQL,
-    or Oracle relational database available for viewing, querying, and editing via LabKey Server.
+    Oracle, or Amazon Redshift relational database available for viewing, querying, and editing via LabKey Server.
 </p>
 <%
     if (getUser().hasSiteAdminPermission())
@@ -92,8 +92,7 @@ else
     {
         ActionURL urlEdit = urls.urlUpdateExternalSchema(c, def);
         ActionURL urlView = urls.urlSchemaBrowser(c, def.getUserSchemaName());
-        ActionURL urlReload = urlEdit.clone();
-        urlReload.setAction(QueryController.ReloadExternalSchemaAction.class);
+        ActionURL urlReload = urls.urlReloadExternalSchema(c, def);
         ActionURL urlDelete = urls.urlDeleteExternalSchema(c, def);
 
     %>
@@ -104,10 +103,10 @@ else
                 if (null != DbScope.getDbScope(def.getDataSource()))
                 {
             %>
-            <td class="labkey-noborder"><labkey:link text="view schema" href="<%=h(urlView)%>" /></td>
-            <% if (isAdmin) {%><td class="labkey-noborder"><labkey:link text="edit" href="<%=h(urlEdit)%>" /></td><%}%>
-            <td class="labkey-noborder"><labkey:link text="reload" href="<%=h(urlReload)%>" /></td>
-            <% if (isAdmin) {%><td class="labkey-noborder"><labkey:link text="delete" href="<%=h(urlDelete)%>" /></td><%}%>
+            <td class="labkey-noborder"><%=link("view schema", urlView)%></td>
+            <% if (isAdmin) {%><td class="labkey-noborder"><%=link("edit", urlEdit)%></td><%}%>
+            <td class="labkey-noborder"><%=link("reload", urlReload).usePost()%></td>
+            <% if (isAdmin) {%><td class="labkey-noborder"><%=link("delete", urlDelete)%></td><%}%>
             <td class="labkey-noborder">&nbsp;</td><%
                 }
                 else
@@ -116,7 +115,7 @@ else
             <td class="labkey-noborder">&nbsp;</td>
             <% if (isAdmin) {%><td class="labkey-noborder">&nbsp;</td><%}%>
             <td class="labkey-noborder">&nbsp;</td>
-            <% if (isAdmin) {%><td class="labkey-noborder"><labkey:link text="delete" href="<%=h(urlDelete)%>" /></td><%}%>
+            <% if (isAdmin) {%><td class="labkey-noborder"><%=link("delete", urlDelete)%></td><%}%>
             <td class="labkey-noborder"><div class="labkey-error">Not available: can't connect to <%=h(def.getDataSource())%></div></td>
             <%
                 }
@@ -130,13 +129,12 @@ else
 <%
     if (isAdmin)
     { %>
-    <labkey:link href="<%= new ActionURL(QueryController.InsertExternalSchemaAction.class, c)%>" text="new external schema"/>
+    <%=link("new external schema", urls.urlInsertExternalSchema(c))%>
     <%
-    }
-
-    if (defs.size() > 1)
-    { %>
-    <labkey:link href="<%= new ActionURL(QueryController.ReloadAllUserSchemas.class, c)%>" text="reload all schemas"/><%
+        if (defs.size() > 1)
+        { %>
+        <%=link("reload all schemas", QueryController.ReloadAllUserSchemas.class).usePost()%><%
+        }
     }
     %>
 

@@ -454,6 +454,13 @@ public class QueryController extends SpringActionController
             return url;
         }
 
+        public ActionURL urlReloadExternalSchema(Container c, AbstractExternalSchemaDef def)
+        {
+            ActionURL url = new ActionURL(QueryController.ReloadExternalSchemaAction.class, c);
+            url.addParameter("externalSchemaId", Integer.toString(def.getExternalSchemaId()));
+            return url;
+        }
+
         public ActionURL urlDeleteExternalSchema(Container c, AbstractExternalSchemaDef def)
         {
             ActionURL url = new ActionURL(QueryController.DeleteExternalSchemaAction.class, c);
@@ -4602,11 +4609,16 @@ public class QueryController extends SpringActionController
 
 
 
-    // UNDONE: should use POST, change to FormHandlerAction
     @RequiresPermission(AdminPermission.class)
-    public class ReloadExternalSchemaAction extends SimpleViewAction<ExternalSchemaForm>
+    public class ReloadExternalSchemaAction extends FormHandlerAction<ExternalSchemaForm>
     {
-        public ModelAndView getView(ExternalSchemaForm form, BindException errors)
+        @Override
+        public void validateCommand(ExternalSchemaForm form, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(ExternalSchemaForm form, BindException errors) throws Exception
         {
             form.refreshFromDb();
             ExternalSchemaDef def = form.getBean();
@@ -4619,31 +4631,38 @@ public class QueryController extends SpringActionController
             {
                 errors.reject(ERROR_MSG, "Could not reload schema " + def.getUserSchemaName() + ". The data source for the schema may be unreachable, or the schema may have been deleted.");
                 getPageConfig().setTemplate(PageConfig.Template.Dialog);
-                return new SimpleErrorView(errors);
+                return false;
             }
 
-            return HttpView.redirect(getSuccessURL(form));
+            return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(ExternalSchemaForm form)
         {
             return new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer(), form.getBean().getUserSchemaName());
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root;
         }
     }
 
 
     @RequiresPermission(AdminPermission.class)
-    public class ReloadAllUserSchemas extends SimpleRedirectAction
+    public class ReloadAllUserSchemas extends FormHandlerAction
     {
         @Override
-        public ActionURL getRedirectURL(Object o)
+        public void validateCommand(Object target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors)
         {
             QueryManager.get().reloadAllExternalSchemas(getContainer());
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(Object o)
+        {
             return new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer(), "ALL");
         }
     }
