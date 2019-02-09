@@ -84,7 +84,8 @@ public interface AssayPublishService
      * Automatically copy assay data to a study if the design is set up to do so
      * @return any errors that prevented the copy
      */
-    List<String> autoCopyResults(ExpProtocol protocol, ExpRun run, User user, Container container);
+    @Nullable
+    ActionURL autoCopyResults(ExpProtocol protocol, ExpRun run, User user, Container container, List<String> errors);
 
     /** Checks if the assay and specimen participant/visit/dates don't match based on the specimen id and target study */
     boolean hasMismatchedInfo(List<Integer> dataRowPKs, AssayProtocolSchema schema);

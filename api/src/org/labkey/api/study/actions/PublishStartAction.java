@@ -115,11 +115,12 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
         private String _dataRegionSelectionKey;
         private final String _returnURL;
         private final String _containerFilterName;
+        private List<Integer> _runIds;
 
         public PublishBean(AssayProvider provider, ExpProtocol protocol,
                            List<Integer> ids, String dataRegionSelectionKey,
                            Set<Container> studies, boolean nullStudies, boolean insufficientPermissions, String returnURL,
-                           String containerFilterName)
+                           String containerFilterName, List<Integer> runIds)
         {
             _insufficientPermissions = insufficientPermissions;
             _provider = provider;
@@ -130,6 +131,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
             _dataRegionSelectionKey = dataRegionSelectionKey;
             _returnURL = returnURL;
             _containerFilterName = containerFilterName;
+            _runIds = runIds;
         }
 
         public String getReturnURL()
@@ -180,6 +182,11 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
         {
             return _containerFilterName;
         }
+
+        public List<Integer> getRunIds()
+        {
+            return _runIds;
+        }
     }
 
     public ModelAndView getView(PublishForm publishForm, BindException errors)
@@ -188,11 +195,13 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
         AssayProvider provider = publishForm.getProvider();
 
         final List<Integer> ids;
+        List<Integer> runIds = new ArrayList<>();
+
         AssayTableMetadata tableMetadata = provider.getTableMetadata(_protocol);
         if (publishForm.isRunIds())
         {
             // Need to convert the run ids into data row ids
-            List<Integer> runIds = getCheckboxIds();
+            runIds = getCheckboxIds();
             DataRegionSelection.clearAll(getViewContext(), null);
             // Get the assay results table
             UserSchema schema = provider.createProtocolSchema(getUser(), getContainer(), _protocol, null);
@@ -269,7 +278,8 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
                         nullsFound,
                         insufficientPermissions,
                         publishForm.getReturnUrl(),
-                        publishForm.getContainerFilterName()));
+                        publishForm.getContainerFilterName(),
+                        runIds));
         }
     }
 
