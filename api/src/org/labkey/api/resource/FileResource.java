@@ -15,8 +15,6 @@
  */
 package org.labkey.api.resource;
 
-import org.labkey.api.security.User;
-import org.labkey.api.util.FileStream;
 import org.labkey.api.util.Path;
 
 import java.io.File;
@@ -30,7 +28,7 @@ import java.io.InputStream;
  */
 public class FileResource extends AbstractResource
 {
-    File _file;
+    private final File _file;
 
     FileResource(Path path, File file, Resolver resolver)
     {
@@ -64,18 +62,6 @@ public class FileResource extends AbstractResource
         if (isFile())
             return new FileInputStream(_file);
         return null;
-    }
-
-    public long copyFrom(User user, FileStream in)
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    public long getContentLength()
-    {
-        if (isFile())
-            return _file.length();
-        return 0;
     }
 
     // TODO move more functionality into interface and remove this method
