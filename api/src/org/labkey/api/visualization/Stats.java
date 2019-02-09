@@ -25,12 +25,12 @@ public class Stats
      * @param values An array of double.
      * @returns {double}
      */
-    public double getMean(double[] values)
+    public double getMean(Double[] values)
     {
         if (values == null || values.length ==0)
             return 0;
 
-        double sum = Arrays.stream(values).sum();
+        double sum = Arrays.stream(values).mapToDouble(i->i).sum();
         return sum/values.length;
     }
 
@@ -39,13 +39,14 @@ public class Stats
      * @param values An array of double.
      * @returns {double}
      */
-    public double getStdDev(double[] values)
+    public double getStdDev(Double[] values)
     {
         if (values == null || values.length ==0)
             return 0;
 
         double mean = getMean(values);
-        values = Arrays.stream(values).map(val-> val-mean).map(diff->diff*diff).toArray();
+        Arrays.stream(values).forEach(val-> val = val-mean);
+        Arrays.stream(values).forEach(val-> val = val*val);
         return Math.sqrt(getMean(values));
     }
 
@@ -58,7 +59,7 @@ public class Stats
      * @param epsilon The smallest value that all returned value can be, only used if forcePositiveResult is true. (default to LABKEY.vis.Stat.CUSUM_EPSILON)
      * @returns {number[]}
      */
-    public double[] getCUSUMS(double[] values, boolean negative, boolean transform, boolean forcePositiveResult, Double epsilon)
+    public double[] getCUSUMS(Double[] values, boolean negative, boolean transform, boolean forcePositiveResult, Double epsilon)
     {
         if (values == null || values.length < 2)
             return new double[0];
@@ -100,13 +101,13 @@ public class Stats
      * @param epsilon The smallest value that all returned value can be, only used if forcePositiveResult is true. (default to LABKEY.vis.Stat.MOVING_RANGE_EPSILON)
      * @returns {double[]}
      */
-    public double[] getMovingRanges(double[] values, boolean forcePositiveResult, Double epsilon)
+    public Double[] getMovingRanges(Double[] values, boolean forcePositiveResult, Double epsilon)
     {
         if(values == null || values.length < 1)
-            return new double[0];
+            return new Double[0];
 
-        double[] mR = new double[values.length];
-        mR[0] = 0; // mR[0] is always 0
+        Double[] mR = new Double[values.length];
+        mR[0] = Double.valueOf(0); // mR[0] is always 0
         for(int i=1; i<values.length; i++)
         {
             mR[i] = Math.abs(values[i] - values[i-1]);
