@@ -24,7 +24,6 @@ import org.labkey.api.jsp.JspBase;
 import org.labkey.api.jsp.JspLoader;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
-import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
@@ -219,7 +218,7 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
         // b) copy parameters into request attributes where JSP framework/taglibs might expect them
         ViewContext context = getViewContext();
         
-        if (model != null && model != context)
+        if (model != null)
             context.getExtendedProperties().putAll(model);
         
         for (Map.Entry e : (Set<Map.Entry>)context.getExtendedProperties().entrySet())
