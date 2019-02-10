@@ -25,6 +25,7 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.FormArrayList;
+import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.LabKeyError;
@@ -1092,19 +1093,34 @@ public class PipelineController extends SpringActionController
     }
 
     @RequiresPermission(DeletePermission.class)
-    public class CancelJobAction extends SimpleRedirectAction<StatusController.RowIdForm>
+    public class CancelJobAction extends FormHandlerAction<StatusController.RowIdForm>
     {
-        public ActionURL getRedirectURL(StatusController.RowIdForm form)
+        private ActionURL _successURL;
+
+        @Override
+        public void validateCommand(StatusController.RowIdForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(StatusController.RowIdForm form, BindException errors) throws Exception
         {
             try
             {
                 PipelineStatusManager.cancelStatus(getViewBackgroundInfo(), Collections.singleton(form.getRowId()));
+                _successURL = form.getReturnActionURL(StatusController.urlShowList(getContainer(), true));
             }
             catch (PipelineProvider.HandlerException e)
             {
-                return StatusController.urlDetails(getContainer(), form.getRowId(), e.getMessage());
+                _successURL = StatusController.urlDetails(getContainer(), form.getRowId(), e.getMessage());
             }
-            return form.getReturnActionURL(StatusController.urlShowList(getContainer(), true));
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(StatusController.RowIdForm rowIdForm)
+        {
+            return _successURL;
         }
     }
 

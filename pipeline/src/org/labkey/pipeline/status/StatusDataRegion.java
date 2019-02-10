@@ -15,7 +15,7 @@
  */
 package org.labkey.pipeline.status;
 
-import org.labkey.api.action.ApiAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.DataRegion;
@@ -38,10 +38,10 @@ import java.sql.SQLException;
  */
 public class StatusDataRegion extends DataRegion
 {
-    private Class<? extends ApiAction> _apiAction;
+    private Class<? extends ReadOnlyApiAction> _apiAction;
     private ActionURL _returnURL;
 
-    public StatusDataRegion(Class<? extends ApiAction> apiAction, ActionURL returnURL)
+    public StatusDataRegion(Class<? extends ReadOnlyApiAction> apiAction, ActionURL returnURL)
     {
         setShowPagination(false);
         setAllowHeaderLock(false); // 13731: disabling header locking due to async rendering issues

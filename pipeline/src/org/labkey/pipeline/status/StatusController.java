@@ -250,7 +250,7 @@ public class StatusController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class ShowListRegionAction extends ApiAction<ReturnUrlForm>
+    public class ShowListRegionAction extends ReadOnlyApiAction<ReturnUrlForm>
     {
         public ApiResponse execute(ReturnUrlForm form, BindException errors) throws Exception
         {
@@ -265,7 +265,7 @@ public class StatusController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class ShowPartRegionAction extends ApiAction<ReturnUrlForm>
+    public class ShowPartRegionAction extends ReadOnlyApiAction<ReturnUrlForm>
     {
         public ApiResponse execute(ReturnUrlForm form, BindException errors) throws Exception
         {
@@ -298,17 +298,13 @@ public class StatusController extends SpringActionController
         return url;
     }
 
-    abstract public class DetailsBaseAction<FORM extends RowIdForm> extends FormViewAction<FORM>
+    @RequiresPermission(ReadPermission.class)
+    public class DetailsAction extends SimpleViewAction<RowIdForm>
     {
         private PipelineStatusFile _statusFile;
 
-        public ActionURL getSuccessURL(FORM form)
-        {
-            // Just redirect back to this page
-            return urlDetails(getContainer(), form.getRowId());
-        }
-
-        public ModelAndView getView(FORM form, boolean reshow, BindException errors) throws Exception
+        @Override
+        public ModelAndView getView(RowIdForm form, BindException errors)
         {
             Container c = getContainerCheckAdmin();
 
@@ -368,20 +364,6 @@ public class StatusController extends SpringActionController
         {
             root.addChild("Pipeline Jobs", new ActionURL(BeginAction.class, getContainer()));
             return root.addChild(_statusFile == null ? "Job Status" : _statusFile.getDescription());
-        }
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class DetailsAction extends DetailsBaseAction<RowIdForm>
-    {
-        public void validateCommand(RowIdForm target, Errors errors)
-        {
-            // Do nothing on post
-        }
-
-        public boolean handlePost(RowIdForm rowIdForm, BindException errors)
-        {
-            return true;  // Do nothing on post
         }
     }
 
@@ -459,23 +441,18 @@ public class StatusController extends SpringActionController
     }
 
     @RequiresPermission(UpdatePermission.class)
-    public class ProviderActionAction extends DetailsBaseAction<ProviderActionForm>
+    public class ProviderActionAction extends FormHandlerAction<ProviderActionForm>
     {
-        ActionURL _urlSuccess;
+        private ActionURL _urlSuccess;
 
+        @Override
         public void validateCommand(ProviderActionForm target, Errors errors)
         {
         }
 
+        @Override
         public boolean handlePost(ProviderActionForm form, BindException errors)
         {
-            // Never a post, since buttons user anchor.
-            return true;
-        }
-
-        public ModelAndView getView(ProviderActionForm form, boolean reshow, BindException errors) throws Exception
-        {
-            // Looks a lot like post handling might.  Consider making the buttons post.
             getContainerCheckAdmin();
 
             PipelineStatusFileImpl sf = getStatusFile(form.getRowId());
@@ -490,14 +467,14 @@ public class StatusController extends SpringActionController
             {
                 _urlSuccess = provider.handleStatusAction(getViewContext(), form.getName(), sf);
 
-                return HttpView.redirect(getSuccessURL(form));
+                return true;
             }
             catch (PipelineProvider.HandlerException e)
             {
                 errors.addError(new LabKeyError(e.getMessage()));
             }
 
-            return super.getView(form, reshow, errors);
+            return false;
         }
 
         public ActionURL getSuccessURL(ProviderActionForm form)
@@ -1114,7 +1091,7 @@ public class StatusController extends SpringActionController
             url.addParameter("rowId", sf.getRowId());
             url.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
             ActionButton showData = new ActionButton(url, "Cancel");
-            showData.setActionType(ActionButton.Action.LINK);
+            showData.setActionType(ActionButton.Action.POST);
             bb.add(showData);
         }
 

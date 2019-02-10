@@ -15,7 +15,7 @@
  */
 package org.labkey.pipeline.status;
 
-import org.labkey.api.action.ApiAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.CompareType;
@@ -49,11 +49,11 @@ import org.springframework.validation.BindException;
 public class PipelineQueryView extends QueryView
 {
     private final ViewContext _context;
-    private final Class<? extends ApiAction> _apiAction;
+    private final Class<? extends ReadOnlyApiAction> _apiAction;
     private final PipelineService.PipelineButtonOption _buttonOption;
     private final ActionURL _returnURL;
 
-    public PipelineQueryView(ViewContext context, BindException errors, Class<? extends ApiAction> apiAction, PipelineService.PipelineButtonOption buttonOption, ActionURL returnURL)
+    public PipelineQueryView(ViewContext context, BindException errors, Class<? extends ReadOnlyApiAction> apiAction, PipelineService.PipelineButtonOption buttonOption, ActionURL returnURL)
     {
         super(new PipelineQuerySchema(context.getUser(), context.getContainer()), null, errors);
         _buttonOption = buttonOption;

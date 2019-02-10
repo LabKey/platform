@@ -80,9 +80,7 @@ public class ProviderButtonBar extends ButtonBar
                     if (actions != null && actions.size() > 0)
                     {
                         List<DisplayElement> baseElements = elements;
-                        elements = new ArrayList<>();
-                        for (DisplayElement element : baseElements)
-                            elements.add(element);
+                        elements = new ArrayList<>(baseElements);
 
                         for (PipelineProvider.StatusAction action : actions)
                         {
@@ -92,7 +90,7 @@ public class ProviderButtonBar extends ButtonBar
                                 url.addParameter("name", action.getLabel());
                                 url.addParameter("rowId", _statusFile.getRowId());
                                 ActionButton button = new ActionButton(url, action.getLabel());
-                                button.setActionType(ActionButton.Action.LINK);
+                                button.setActionType(ActionButton.Action.POST);
                                 if (!ctx.getViewContext().getUser().hasRootAdminPermission())
                                     button.setDisplayPermission(UpdatePermission.class);
 
@@ -102,12 +100,7 @@ public class ProviderButtonBar extends ButtonBar
                     }
                 }
 
-                Map<String, List<DisplayElement>> containerElements = _providerContainerElements.get(_providerCurrent);
-                if (containerElements == null)
-                {
-                    containerElements = new HashMap<>();
-                    _providerContainerElements.put(_providerCurrent, containerElements);
-                }
+                Map<String, List<DisplayElement>> containerElements = _providerContainerElements.computeIfAbsent(_providerCurrent, k -> new HashMap<>());
                 containerElements.put(_containerCurrent, elements);
             }
         }
