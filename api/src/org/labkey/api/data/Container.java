@@ -823,7 +823,12 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
             //set default module
             if (initRequired)
-                setDefaultModule(defaultModule);
+            {
+                try (var ignore = SpringActionController.ignoreSqlUpdates())
+                {
+                    setDefaultModule(defaultModule);
+                }
+            }
 
             //ensure that default module is included in active module set
             //should be there already if it's not portal, but if it is core, we have to add it for upgrade
@@ -1126,7 +1131,12 @@ public class Container implements Serializable, Comparable<Container>, Securable
                         //set the default module for the subfolder to be the default module of the parent.
                         Module parentDefault = getParent().getDefaultModule(user);
                         if (module.equals(parentDefault))
-                            setDefaultModule(module);
+                        {
+                            try (var ignore = SpringActionController.ignoreSqlUpdates())
+                            {
+                                setDefaultModule(module);
+                            }
+                        }
 
                         propsWritable.put(module.getName(), Boolean.TRUE.toString());
                     }

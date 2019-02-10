@@ -84,7 +84,6 @@ public class StorageProvisioner
 {
     private static final Logger log = Logger.getLogger(StorageProvisioner.class);
     private static final CPUTimer create = new CPUTimer("StorageProvisioner.create");
-    private static boolean allowRenameOfColumnsDuringUpgrade = false;  // TODO: Remove this? No longer used because dataset migration code is gone.
 
     private static String _create(DbScope scope, DomainKind kind, Domain domain)
     {
@@ -442,16 +441,13 @@ public class StorageProvisioner
 
         renamePropChange.addColumnRename(oldColumnName, newPropDescriptor.getStorageColumnName());
 
-        if (!allowRenameOfColumnsDuringUpgrade)
+        if (base.contains(oldPropName))
         {
-            if (base.contains(oldPropName))
-            {
-                throw new IllegalArgumentException("Cannot rename built-in column " + oldPropName);
-            }
-            else if (base.contains(prop.getName()))
-            {
-                throw new IllegalArgumentException("Cannot rename " + oldPropName + " to built-in column name " + prop.getName());
-            }
+            throw new IllegalArgumentException("Cannot rename built-in column " + oldPropName);
+        }
+        else if (base.contains(prop.getName()))
+        {
+            throw new IllegalArgumentException("Cannot rename " + oldPropName + " to built-in column name " + prop.getName());
         }
 
         // Rename the MV column if it already exists. We'll handle removing it later if the new version
@@ -779,7 +775,12 @@ public class StorageProvisioner
             String tableName = domain.getStorageTableName();
 
             if (null == tableName)
-                tableName = _create(scope, kind, domain);
+            {
+                try (var ignored = SpringActionController.ignoreSqlUpdates())
+                {
+                    tableName = _create(scope, kind, domain);
+                }
+            }
 
             return tableName;
         }
@@ -787,27 +788,25 @@ public class StorageProvisioner
 
     enum RequiredIndicesAction
     {
-
         Drop
+            {
+                @Override
+                protected void doOperation(Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap)
                 {
-                    @Override
-                    protected void doOperation(Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap)
-                    {
-                        dropNotRequiredIndices(domain, schemaTableInfo, requiredIndicesMap);
-                    }
-                },
+                    dropNotRequiredIndices(domain, schemaTableInfo, requiredIndicesMap);
+                }
+            },
         Add
+            {
+                @Override
+                protected void doOperation(Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap)
                 {
-                    @Override
-                    protected void doOperation(Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap)
-                    {
-                        addMissingRequiredIndices(domain, schemaTableInfo, requiredIndicesMap);
+                    addMissingRequiredIndices(domain, schemaTableInfo, requiredIndicesMap);
 
-                    }
-                };
+                }
+            };
 
         protected abstract void doOperation(Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap);
-
     }
 
     public static void dropNotRequiredIndices(Domain domain)
