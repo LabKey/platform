@@ -139,40 +139,40 @@ public abstract class EmailTemplate
 
     static
     {
-        REPLACEMENT_PARAMS.add(new ReplacementParam<String>("organizationName", String.class, "Organization name (look and feel settings)"){
+        REPLACEMENT_PARAMS.add(new ReplacementParam<>("organizationName", String.class, "Organization name (look and feel settings)"){
             public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getCompanyName();}
         });
-        REPLACEMENT_PARAMS.add(new ReplacementParam<String>("siteShortName", String.class, "Header short name"){
+        REPLACEMENT_PARAMS.add(new ReplacementParam<>("siteShortName", String.class, "Header short name"){
             public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getShortName();}
         });
-        REPLACEMENT_PARAMS.add(new ReplacementParam<String>("siteEmailAddress", String.class, "System email address"){
+        REPLACEMENT_PARAMS.add(new ReplacementParam<>("siteEmailAddress", String.class, "System email address"){
             public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getSystemEmailAddress();}
         });
-        REPLACEMENT_PARAMS.add(new ReplacementParam<String>("contextPath", String.class, "Web application context path"){
+        REPLACEMENT_PARAMS.add(new ReplacementParam<>("contextPath", String.class, "Web application context path"){
             public String getValue(Container c) {return AppProps.getInstance().getContextPath();}
         });
-        REPLACEMENT_PARAMS.add(new ReplacementParam<String>("supportLink", String.class, "Page where users can request support"){
+        REPLACEMENT_PARAMS.add(new ReplacementParam<>("supportLink", String.class, "Page where users can request support"){
             public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getReportAProblemPath();}
         });
-        REPLACEMENT_PARAMS.add(new ReplacementParam<String>("systemDescription", String.class, "Header description"){
+        REPLACEMENT_PARAMS.add(new ReplacementParam<>("systemDescription", String.class, "Header description"){
             public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getDescription();}
         });
-        REPLACEMENT_PARAMS.add(new ReplacementParam<String>("systemEmail", String.class, "From address for system notification emails"){
+        REPLACEMENT_PARAMS.add(new ReplacementParam<>("systemEmail", String.class, "From address for system notification emails"){
             public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getSystemEmailAddress();}
         });
-        REPLACEMENT_PARAMS.add(new ReplacementParam<Date>("currentDateTime", Date.class, "Current date and time of the server"){
+        REPLACEMENT_PARAMS.add(new ReplacementParam<>("currentDateTime", Date.class, "Current date and time of the server"){
             public Date getValue(Container c) {return new Date();}
         });
-        REPLACEMENT_PARAMS.add(new ReplacementParam<String>("folderName", String.class, "Name of the folder that generated the email, if it is scoped to a folder"){
+        REPLACEMENT_PARAMS.add(new ReplacementParam<>("folderName", String.class, "Name of the folder that generated the email, if it is scoped to a folder"){
             public String getValue(Container c) {return c.isRoot() ? null : c.getName();}
         });
-        REPLACEMENT_PARAMS.add(new ReplacementParam<String>("folderPath", String.class, "Full path of the folder that generated the email, if it is scoped to a folder"){
+        REPLACEMENT_PARAMS.add(new ReplacementParam<>("folderPath", String.class, "Full path of the folder that generated the email, if it is scoped to a folder"){
             public String getValue(Container c) {return c.isRoot() ? null : c.getPath();}
         });
-        REPLACEMENT_PARAMS.add(new ReplacementParam<String>("folderURL", String.class, "URL to the folder that generated the email, if it is scoped to a folder"){
+        REPLACEMENT_PARAMS.add(new ReplacementParam<>("folderURL", String.class, "URL to the folder that generated the email, if it is scoped to a folder"){
             public String getValue(Container c) {return c.isRoot() ? null : PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c).getURIString();}
         });
-        REPLACEMENT_PARAMS.add(new ReplacementParam<String>("homePageURL", String.class, "The home page of this installation"){
+        REPLACEMENT_PARAMS.add(new ReplacementParam<>("homePageURL", String.class, "The home page of this installation"){
             public String getValue(Container c) {
                 return ActionURL.getBaseServerURL();   // TODO: Use AppProps.getHomePageUrl() instead?
             }
@@ -209,6 +209,41 @@ public abstract class EmailTemplate
     public String getSubject(){return _subject;}
     public void setSubject(String subject){_subject = subject;}
     public String getBody(){return _body;}
+
+    /**
+     * Templates that declare themselves to have an HTNML content type can also include a plain-text alternative
+     * by using the boundary separator. Everything before the boundary is considered part of the HTML, and everything
+     * after is part of the text.
+     */
+    public static String BODY_PART_BOUNDARY = "--text/html--boundary--";
+
+    public String getHtmlBody()
+    {
+        if (getContentType() != ContentType.HTML)
+        {
+            throw new IllegalStateException("Cannot get the HTML for a template with content type " + getContentType());
+        }
+
+        return _body.split(BODY_PART_BOUNDARY)[0];
+    }
+
+    public String getTextBody()
+    {
+        if (getContentType() == ContentType.Plain)
+        {
+            return getBody();
+        }
+
+        String[] bodyParts = _body.split(BODY_PART_BOUNDARY);
+        return bodyParts.length > 1 ? bodyParts[1] : null;
+    }
+
+    /** return true if this template has the capability of rendering both HTML and plain text variants in the same email */
+    public boolean hasMultipleContentTypes()
+    {
+        return getContentType() == ContentType.HTML && _body.contains(BODY_PART_BOUNDARY);
+    }
+
     public void setBody(String body){_body = body;}
     public void setPriority(int priority){_priority = priority;}
     public int getPriority(){return _priority;}
@@ -291,14 +326,14 @@ public abstract class EmailTemplate
         return null;
     }
 
-    public String getReplacement(Container c, String paramNameAndFormat)
+    public String getReplacement(Container c, String paramNameAndFormat, ContentType contentType)
     {
         String paramName = getParameterName(paramNameAndFormat);
         for (ReplacementParam param : getValidReplacements())
         {
             if (param.getName().equalsIgnoreCase(paramName))
             {
-                return param.getFormattedValue(c, getTemplateFormat(paramNameAndFormat), _contentType);
+                return param.getFormattedValue(c, getTemplateFormat(paramNameAndFormat), contentType);
             }
         }
         return null;
@@ -307,7 +342,23 @@ public abstract class EmailTemplate
     /** Sets the sender (with reply-to if needed), subject, and body of the email */
     public void renderAllToMessage(MailHelper.MultipartMessage message, Container c) throws MessagingException, UnsupportedEncodingException
     {
-        message.setEncodedHtmlContent(renderBody(c));
+        String textBody = renderTextBody(c);
+        if (_contentType.equals(ContentType.Plain))
+        {
+            if (textBody == null)
+                textBody = renderBody(c);
+            message.setTextContent(textBody);
+        }
+        else
+        {
+            if (hasMultipleContentTypes())
+            {
+                // HTML-formatted messages can also include a plain-text variant
+                if (textBody != null)
+                    message.setTextContent(textBody);
+            }
+            message.setEncodedHtmlContent(renderHtmlBody(c));
+        }
         message.setSubject(renderSubject(c));
         renderSenderToMessage(message, c);
     }
@@ -352,7 +403,23 @@ public abstract class EmailTemplate
         return render(c, getBody());
     }
 
+    public String renderHtmlBody(Container c)
+    {
+        return render(c, getHtmlBody());
+    }
+
+    @Nullable
+    public String renderTextBody(Container c)
+    {
+        return render(c, getTextBody(), ContentType.Plain);
+    }
+
     protected String render(Container c, String text)
+    {
+        return render(c, text, _contentType);
+    }
+
+    protected String render(Container c, String text, ContentType contentType)
     {
         if (text == null)
         {
@@ -366,8 +433,8 @@ public abstract class EmailTemplate
         {
             start = m.start();
             String value = m.group(1);
-            sb.append(text.substring(end, start));
-            sb.append(getReplacement(c, value));
+            sb.append(text, end, start);
+            sb.append(getReplacement(c, value, contentType));
             end = m.end();
         }
         sb.append(text.substring(end));
