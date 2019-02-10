@@ -28,6 +28,7 @@ import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ExportAction;
+import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleViewAction;
@@ -72,6 +73,7 @@ import org.labkey.api.study.reports.CrosstabReportDescriptor;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
@@ -79,7 +81,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
@@ -312,12 +313,20 @@ public class ReportsController extends BaseStudyController
 
     @RequiresLogin
     @RequiresPermission(ReadPermission.class)
-    /**
-     * Action for non-query based views (static, xls export, advanced)
+    /*
+      Action for non-query based views (static, xls export, advanced)
      */
-    public class SaveReportAction extends SimpleViewAction<SaveReportForm>
+    public class SaveReportAction extends FormHandlerAction<SaveReportForm>
     {
-        public ModelAndView getView(SaveReportForm form, BindException errors)
+        private ActionURL _successURL;
+
+        @Override
+        public void validateCommand(SaveReportForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(SaveReportForm form, BindException errors) throws Exception
         {
             Report report = form.getReport(getViewContext());
             if (report != null)
@@ -328,47 +337,56 @@ public class ReportsController extends BaseStudyController
 
                 if (form.isRedirectToReport())
                 {
-                    throw new RedirectException(new ActionURL(ShowReportAction.class, getContainer()).addParameter("reportId", reportId));
-                }
-
-                if (form.getShowWithDataset() != 0)
-                {
-                    return getDatasetForward(reportId, form.getShowWithDataset());
-                }
-                else if (form.getRedirectToDataset() != null && !form.getRedirectToDataset().equals(-1))
-                {
-                    return getDatasetForward(reportId, form.getRedirectToDataset());
+                    _successURL = new ActionURL(ShowReportAction.class, getContainer()).addParameter("reportId", reportId);
                 }
                 else
-                    return HttpView.redirect(PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
+                {
+                    if (form.getShowWithDataset() != 0)
+                    {
+                        _successURL = getDatasetURL(reportId, form.getShowWithDataset());
+                    }
+                    else if (form.getRedirectToDataset() != null && !form.getRedirectToDataset().equals(-1))
+                    {
+                        _successURL = getDatasetURL(reportId, form.getRedirectToDataset());
+                    }
+                    else
+                    {
+                        _successURL = PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer());
+                    }
+                }
+
+                return true;
             }
             else
             {
-                return new HtmlView("<span class='labkey-error'>The report to save is either invalid or was not specified.</span>");
+                errors.reject(ERROR_MSG, "The report to save is either invalid or was not specified.");
+                return false;
             }
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public URLHelper getSuccessURL(SaveReportForm saveReportForm)
         {
-            return null;
+            return _successURL;
         }
     }
 
-    private ModelAndView getDatasetForward(int reportId, Integer dataset)
+    private ActionURL getDatasetURL(int reportId, Integer dataset)
     {
         ActionURL url = getViewContext().cloneActionURL();
         url.setAction(StudyController.DatasetReportAction.class);
 
         url.replaceParameter(StudyController.DATASET_REPORT_ID_PARAMETER_NAME, String.valueOf(reportId));
         url.replaceParameter(DatasetDefinition.DATASETKEY, String.valueOf(dataset));
-        return HttpView.redirect(url);
+
+        return url;
     }
 
     @RequiresLogin
     @RequiresPermission(ReadPermission.class)
     public class SaveReportViewAction extends FormViewAction<SaveReportViewForm>
     {
-        int _savedReportId = -1;
+        private int _savedReportId = -1;
 
         public ModelAndView getView(SaveReportViewForm form, boolean reshow, BindException errors)
         {
