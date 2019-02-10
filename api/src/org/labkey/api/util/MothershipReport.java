@@ -46,6 +46,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -363,7 +364,7 @@ public class MothershipReport implements Runnable
         // For dev/testing on a local submission simulating a receiver behind a load balancer
         if (null != forwardedFor)
             connection.setRequestProperty(X_FORWARDED_FOR, forwardedFor);
-        try (PrintWriter out = new PrintWriter(connection.getOutputStream(), true))
+        try (PrintWriter out = new PrintWriter(connection.getOutputStream(), true, StandardCharsets.UTF_8))
         {
             boolean first = true;
             for (Map.Entry<String, String> entry : _params.entrySet())
