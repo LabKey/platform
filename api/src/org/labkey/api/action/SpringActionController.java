@@ -1178,7 +1178,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         Class c = getActionForThread();
         if (null == c)
             return;
-        ViewContext vc = HttpView.getRootContext();
+        ViewContext vc = HttpView.currentContext();
         boolean readonly = false;
         if (null != vc && "GET".equals(vc.getRequest().getMethod()))
             readonly = true;
