@@ -329,10 +329,11 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     {
         ActionURL ret = null;
         UserSchema schema = getSchema();
+        QueryDefinition def = getQueryDef();
 
-        if (null != schema)
+        if (null != schema && null != def)
         {
-            ret = schema.urlFor(action, getQueryDef());
+            ret = schema.urlFor(action, def);
             if (ret != null && _customView != null && _customView.getName() != null)
             {
                 ret.replaceParameter(QueryParam.viewName.toString(), _customView.getName());

@@ -95,6 +95,9 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
             proxy: {
                 type: 'ajax',
                 url: LABKEY.ActionURL.buildURL('user', 'getImpersonationUsers', this.impersonatePath),
+                actionMethods: {
+                    read: 'POST'
+                },
                 reader: {
                     type: 'json',
                     root: 'users'
@@ -213,6 +216,9 @@ Ext4.define('LABKEY.Security.ImpersonateGroup', {
             proxy: {
                 type: 'ajax',
                 url: LABKEY.ActionURL.buildURL('user', 'getImpersonationGroups', this.impersonatePath),
+                actionMethods: {
+                    read: 'POST'
+                },
                 reader: {
                     type: 'json',
                     root: 'groups'
@@ -369,6 +375,9 @@ Ext4.define('LABKEY.Security.ImpersonateRoles', {
             proxy: {
                 type: 'ajax',
                 url: LABKEY.ActionURL.buildURL('user', 'getImpersonationRoles', this.impersonatePath),
+                actionMethods: {
+                    read: 'POST'
+                },
                 reader: {
                     type: 'json',
                     root: 'roles'
