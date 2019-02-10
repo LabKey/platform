@@ -430,27 +430,15 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
         return getMessageSource().getMessage(resolvable, Locale.getDefault());
     }
 
-    public boolean isAdminMode()
-    {
-        HttpSession s = getSession();
-        if (null == s)
-            return false;
-        Boolean mode = (Boolean) getSession().getAttribute("adminMode");
-        return null == mode ? false : mode.booleanValue();
-    }
-
     public boolean isShowFolders()
     {
-        if (isAdminMode())
-            return true;
-
         LookAndFeelProperties laf = LookAndFeelProperties.getInstance(getContainer());
         switch (laf.getFolderDisplayMode())
         {
             case ALWAYS:
                 return true;
             case ADMIN:
-                return isAdminMode() || getUser().hasRootAdminPermission();
+                return getUser().hasRootAdminPermission();
             default:
                 return true;
         }
