@@ -30,7 +30,6 @@ import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleApiJsonForm;
-import org.labkey.api.action.SimpleResponse;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.audit.AuditLogService;
@@ -813,7 +812,7 @@ public class AssayController extends SpringActionController
 
         /**
          * Checks if we've been given a protocol id to use as a reference. If so, tracks down its assay provider and
-         * request its desired data LSID namespace prefix, validing that the file name matches the expected inputs.
+         * requests its desired data LSID namespace prefix, validating that the file name matches the expected inputs.
          */
         private DataType getDataType(AssayFileUploadForm form, String originalName)
         {

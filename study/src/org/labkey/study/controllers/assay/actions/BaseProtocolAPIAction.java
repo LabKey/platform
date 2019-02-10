@@ -16,8 +16,8 @@
 package org.labkey.study.controllers.assay.actions;
 
 import org.json.JSONObject;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.AssayJSONConverter;
@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
  * User: jeckels
  * Date: Jan 15, 2009
  */
-public abstract class BaseProtocolAPIAction<FORM extends SimpleApiJsonForm> extends ApiAction<FORM>
+public abstract class BaseProtocolAPIAction<FORM extends SimpleApiJsonForm> extends MutatingApiAction<FORM>
 {
     private AssayProvider _provider;
 

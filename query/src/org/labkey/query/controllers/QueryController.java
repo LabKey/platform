@@ -4696,7 +4696,7 @@ public class QueryController extends SpringActionController
     // Permission will be checked inline (guests are allowed to delete their session custom views)
     @RequiresNoPermission
     @Action(ActionType.Configure.class)
-    public class DeleteViewAction extends ApiAction<DeleteViewForm>
+    public class DeleteViewAction extends MutatingApiAction<DeleteViewForm>
     {
         @Override
         protected ModelAndView handleGet()
