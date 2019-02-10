@@ -37,6 +37,7 @@ import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.IgnoresAllocationTracking;
 import org.labkey.api.action.PermissionCheckableAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.cache.Cache;
@@ -4639,7 +4640,7 @@ public class DavController extends SpringActionController
      * JSON clients can use this API for more robust/easier error description than might be available over web-dav
      */
     @RequiresNoPermission
-    public class LastErrorAction extends ApiAction
+    public class LastErrorAction extends ReadOnlyApiAction
     {
         @Override
         public Object execute(Object o, BindException bindErrors)

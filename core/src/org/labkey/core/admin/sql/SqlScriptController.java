@@ -23,11 +23,11 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.Constants;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
@@ -97,7 +97,7 @@ public class SqlScriptController extends SpringActionController
     @SuppressWarnings("unused")
     @RequiresPermission(AdminOperationsPermission.class)
     @AllowedDuringUpgrade
-    public class GetModuleStatusAction extends ApiAction
+    public class GetModuleStatusAction extends ReadOnlyApiAction
     {
         @Override
         public ApiResponse execute(Object o, BindException errors)

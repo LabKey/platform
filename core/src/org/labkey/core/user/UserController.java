@@ -2542,7 +2542,7 @@ public class UserController extends SpringActionController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class GetImpersonationUsersAction extends ApiAction
+    public class GetImpersonationUsersAction extends MutatingApiAction
     {
         @Override
         public ApiResponse execute(Object object, BindException errors)
@@ -2649,7 +2649,7 @@ public class UserController extends SpringActionController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class GetImpersonationGroupsAction extends ApiAction
+    public class GetImpersonationGroupsAction extends MutatingApiAction
     {
         @Override
         public ApiResponse execute(Object object, BindException errors)
@@ -2728,7 +2728,7 @@ public class UserController extends SpringActionController
 
 
     @RequiresNoPermission
-    public class GetImpersonationRolesAction extends ApiAction
+    public class GetImpersonationRolesAction extends MutatingApiAction
     {
         @Override
         public ApiResponse execute(Object object, BindException errors)

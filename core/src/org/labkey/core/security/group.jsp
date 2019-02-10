@@ -93,24 +93,46 @@
     {
         var elems = document.getElementsByName("delete");
         var l = elems.length;
-        var selected = false;
+        var selected = 0;
         var deletingSelf = false;
         for (var i = 0; i < l; i++)
         {
             if (elems[i].checked)
             {
-                selected = true;
+                selected++;
                 if (elems[i].id === LABKEY.user.id.toString())
                     deletingSelf = true;
             }
         }
         var ok = true;
-        if (selected)
+        if (selected > 0)
         {
-            ok = confirm("Permanently remove selected users from this group?");
-
+            var msg = "Are";
             if (deletingSelf)
-                ok = confirm("Are you sure you want to delete yourself from this group? You may lose the permissions granted to this group.");
+            {
+                msg = "Are you sure you want to delete yourself from this group? You will likely lose all permissions granted to this group.";
+                selected--;
+
+                if (selected > 0)
+                    msg = msg + "\n\nIn addition, are"
+            }
+
+            // Deleting other users case
+            if (selected > 0)
+            {
+                var who = deletingSelf ? "other user" : "selected user";
+
+                if (selected > 1)
+                    who = who + "s";
+
+                msg = msg + " you sure you want to permanently remove the " + who + " from this group?"
+            }
+            // self
+            // self+1
+            // self+more than 1
+            // 1
+            // more than 1
+            ok = confirm(msg);
         }
         if (ok)
             form.setClean(); 

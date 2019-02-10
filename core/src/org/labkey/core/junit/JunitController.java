@@ -28,6 +28,7 @@ import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.PermissionCheckableAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.StatusAppender;
@@ -366,7 +367,7 @@ public class JunitController extends SpringActionController
     // Used by DRT JUnitTest to retrieve the current list of tests
     @SuppressWarnings({"UnusedDeclaration"})
     @RequiresSiteAdmin
-    public static class Testlist extends ApiAction
+    public static class Testlist extends ReadOnlyApiAction
     {
         public ApiResponse execute(Object o, BindException errors)
         {

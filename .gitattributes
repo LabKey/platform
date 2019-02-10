@@ -605,7 +605,6 @@ core/src/org/labkey/core/security/PermissionsDetailsView.java -text
 core/src/org/labkey/core/security/SecurityApiActions.java -text
 core/src/org/labkey/core/security/addUsers.jsp -text
 core/src/org/labkey/core/security/apiKey.jsp -text
-core/src/org/labkey/core/security/deleteUser.jsp -text
 core/src/org/labkey/core/security/group.jsp -text
 core/src/org/labkey/core/security/groupDiagram.jsp -text
 core/src/org/labkey/core/security/permissions.jsp -text
