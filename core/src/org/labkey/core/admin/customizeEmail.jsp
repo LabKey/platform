@@ -84,21 +84,28 @@
             <td align="justify" colspan="2">
                 An email subject or message can contain a mix of static text and substitution parameters.
                 A substitution parameter is inserted into the text when the email is generated. The syntax is:
-                <pre>^&lt;param name&gt;^</pre>
+                <pre style="padding-left: 2em;">^&lt;param name&gt;^</pre>
                 where &lt;param name&gt; is the name of the substitution parameter shown below. For example:
-                <pre>^systemDescription^</pre>
+                <pre style="padding-left: 2em;">^systemDescription^</pre>
 
                 You may also supply an optional format string. If the value of the parameter is not blank, it
                 will be used to format the value in the outgoing email. For the full set of format options available,
                 see the <a target="_blank" href="<%= h(HelpTopic.getJDKJavaDocLink(Formatter.class)) %>">documentation for java.util.Formatter</a>. The syntax is:
-                <pre>^&lt;param name&gt;|&lt;format string&gt;^</pre>
+                <pre style="padding-left: 2em;">^&lt;param name&gt;|&lt;format string&gt;^</pre>
                 For example:
-                <pre>^currentDateTime|The current date is: %1$tb %1$te, %1$tY^</pre>
-                <pre>^siteShortName|The site short name is not blank and its value is: %s^</pre>
+                <pre style="padding-left: 2em;">^currentDateTime|The current date is: %1$tb %1$te, %1$tY^</pre>
+                <pre style="padding-left: 2em;">^siteShortName|The site short name is not blank and its value is: %s^</pre>
             </td>
         </tr>
-        <tr><td colspan="2"><hr></td></tr>
-        <tr><td>&nbsp;</td></tr>
+        <tr id="helpMultipleContentTypes">
+            <td align="justify" colspan="2">
+                This template can be used for emails with both HTML and plain text variants. If you wish to include both
+                in emails, use the delimiter
+                <pre style="padding-left: 2em;"><%= h(EmailTemplate.BODY_PART_BOUNDARY) %></pre>
+                to separate the sections of the template, with HTML first and plain text after. If no delimiter is
+                found, the entire template will be assumed to be HTML.
+            </td>
+        </tr>
         <tr><td colspan="2"><table id="validSubstitutions" class="labkey-data-region-legacy labkey-show-borders"></table></td></tr>
         <tr><td>&nbsp;</td></tr>
         <tr><td align="justify" colspan="2"><i>The values of many of these parameters can be configured on
@@ -128,6 +135,7 @@
         out.write("\t\"showFolderReset\":" + (c.equals(et.getContainer()) && !c.isRoot()) + ",\n");
         // Let users delete a site-scoped template if they're in the root and the template is stored in the root
         out.write("\t\"showSiteReset\":" + (c.isRoot() && c.equals(et.getContainer())) + ",\n");
+        out.write("\t\"hasMultipleContentTypes\":" + (et.getContentType() == ContentType.HTML) + ",\n");
         out.write("\t\"replacements\":[\n");
 
         String innerSep = "\t{";
@@ -175,6 +183,7 @@
                 message.value = this.emailTemplates[i].message;
                 Ext4.get("siteResetButton").dom.style.display = this.emailTemplates[i].showSiteReset ? "" : "none";
                 Ext4.get("folderResetButton").dom.style.display = this.emailTemplates[i].showFolderReset ? "" : "none";
+                Ext4.get("helpMultipleContentTypes").dom.style.display = this.emailTemplates[i].supportsMultipleContentTypes ? "" : "none";
 
                 changeValidSubstitutions(this.emailTemplates[i]);
                 return;

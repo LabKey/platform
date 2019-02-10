@@ -443,6 +443,7 @@ public class AnnouncementManager
             template.init(notificationBean, sender);
             MultipartMessage message = MailHelper.createMultipartMessage();
             template.renderAllToMessage(message, c);
+            message.addHeader("List-Unsubscribe", template.emailPreferencesURL);
 
             return message;
         }
@@ -519,7 +520,10 @@ public class AnnouncementManager
             transaction.commit();
         }
 
-       unindexThread(ann);
+        if (ann != null)
+        {
+            unindexThread(ann);
+        }
     }
 
 
@@ -772,7 +776,7 @@ public class AnnouncementManager
 
                 String e = StringUtils.isEmpty(ann.getParent()) ? ann.getEntityId() : ann.getParent();
                 NavTree t = new NavTree("message", urlThread.clone().addParameter("entityId", e));
-                String nav = NavTree.toJS(Collections.singleton(t), null, false).toString();
+                String nav = NavTree.toJS(Collections.singleton(t), null, false, true).toString();
 
                 String displayTitle = "\"" + documentName + "\" attached to message \"" + ann.getTitle() + "\"";
                 WebdavResource attachmentRes = AttachmentService.get().getDocumentResource(
@@ -801,7 +805,7 @@ public class AnnouncementManager
     }
 
 
-    private static void unindexThread(AnnouncementModel ann)
+    private static void unindexThread(@NotNull AnnouncementModel ann)
     {
         String docid = "thread:" + ann.getEntityId();
         SearchService ss = SearchService.get();
@@ -925,7 +929,7 @@ public class AnnouncementManager
             super(NAME, DEFAULT_SUBJECT, loadBody(), DEFAULT_DESCRIPTION, ContentType.HTML);
             setEditableScopes(EmailTemplate.Scope.SiteOrFolder);
 
-            _replacements.add(new ReplacementParam<String>("createdByUser", String.class, "User that generated the message", ContentType.Plain)
+            _replacements.add(new ReplacementParam<>("createdByUser", String.class, "User that generated the message", ContentType.Plain)
             {
                 public String getValue(Container c)
                 {
@@ -935,7 +939,7 @@ public class AnnouncementManager
                 }
             });
 
-            _replacements.add(new ReplacementParam<String>("createdOrResponded", String.class, "Created or Responded to a message", ContentType.HTML)
+            _replacements.add(new ReplacementParam<>("createdOrResponded", String.class, "Created or Responded to a message", ContentType.HTML)
             {
                 public String getValue(Container c)
                 {
@@ -945,7 +949,7 @@ public class AnnouncementManager
                 }
             });
 
-            _replacements.add(new ReplacementParam<Date>("messageDatetime", Date.class, "Date and time the message is created", ContentType.HTML)
+            _replacements.add(new ReplacementParam<>("messageDatetime", Date.class, "Date and time the message is created", ContentType.HTML)
             {
                 public Date getValue(Container c)
                 {
@@ -955,15 +959,15 @@ public class AnnouncementManager
                 }
             });
 
-            _replacements.add(new ReplacementParam<String>("messageUrl", String.class, "Link to the original message", ContentType.Plain)
+            _replacements.add(new ReplacementParam<>("messageUrl", String.class, "Link to the original message", ContentType.Plain)
             {
                 public String getValue(Container c)
                 {
-                     return messageUrl;
+                    return messageUrl;
                 }
             });
 
-            _replacements.add(new ReplacementParam<String>("messageBody", String.class, "Message content", ContentType.HTML)
+            _replacements.add(new ReplacementParam<>("messageBody", String.class, "Message content, formatted as HTML", ContentType.HTML)
             {
                 public String getValue(Container c)
                 {
@@ -973,7 +977,17 @@ public class AnnouncementManager
                 }
             });
 
-            _replacements.add(new ReplacementParam<String>("messageSubject", String.class, "Message subject", ContentType.HTML)
+            _replacements.add(new ReplacementParam<>("messageBodyText", String.class, "Message content plain text", ContentType.Plain)
+            {
+                public String getValue(Container c)
+                {
+                    if (notificationBean == null)
+                        return null;
+                    return notificationBean.bodyText == null ? "" : notificationBean.bodyText;
+                }
+            });
+
+            _replacements.add(new ReplacementParam<>("messageSubject", String.class, "Message subject", ContentType.HTML)
             {
                 public String getValue(Container c)
                 {
@@ -983,7 +997,7 @@ public class AnnouncementManager
                 }
             });
 
-            _replacements.add(new ReplacementParam<String>("attachments", String.class, "Attachments for this message", ContentType.HTML)
+            _replacements.add(new ReplacementParam<>("attachments", String.class, "Attachments for this message", ContentType.HTML)
             {
                 public String getValue(Container c)
                 {
@@ -991,7 +1005,7 @@ public class AnnouncementManager
                 }
             });
 
-            _replacements.add(new ReplacementParam<String>("reasonFooter", String.class, "Footer information explaining why user is receiving this message", ContentType.HTML)
+            _replacements.add(new ReplacementParam<>("reasonFooter", String.class, "Footer information explaining why user is receiving this message", ContentType.HTML)
             {
                 public String getValue(Container c)
                 {
@@ -999,7 +1013,7 @@ public class AnnouncementManager
                 }
             });
 
-            _replacements.add(new ReplacementParam<String>("emailPreferencesURL", String.class, "Link to allow users to configure their notification preferences", ContentType.HTML)
+            _replacements.add(new ReplacementParam<>("emailPreferencesURL", String.class, "Link to allow users to configure their notification preferences", ContentType.HTML)
             {
                 public String getValue(Container c)
                 {
@@ -1008,6 +1022,16 @@ public class AnnouncementManager
             });
 
             _replacements.addAll(super.getValidReplacements());
+        }
+
+        @Override
+        public boolean hasMultipleContentTypes()
+        {
+            // Don't include plain text variant if the source of the message is HTML
+            return super.hasMultipleContentTypes() &&
+                    (notificationBean == null ||
+                            notificationBean.announcementModel == null ||
+                            !WikiRendererType.HTML.name().equals(notificationBean.announcementModel.getRendererType()));
         }
 
         public List<ReplacementParam> getValidReplacements()
@@ -1107,6 +1131,7 @@ public class AnnouncementManager
         private final AnnouncementModel parentModel;
         private final boolean isResponse;
         private final String body;
+        private final String bodyText;
         private final Settings settings;
         private final ActionURL removeURL;
         private final Reason reason;
@@ -1131,7 +1156,7 @@ public class AnnouncementManager
             this.settings = settings;
             this.reason = reason;
             this.includeGroups = perm.includeGroups();
-
+            this.bodyText = a.getBody();
             if (!settings.isSecure())
             {
                 WikiService wikiService = WikiService.get();
