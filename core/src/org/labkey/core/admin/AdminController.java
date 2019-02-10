@@ -2430,12 +2430,31 @@ public class AdminController extends SpringActionController
 
     @AdminConsoleAction
     @RequiresPermission(AdminPermission.class)
-    public class ResetErrorMarkAction extends SimpleRedirectAction
+    public class ResetErrorMarkAction extends ConfirmAction
     {
-        public ActionURL getRedirectURL(Object o)
+        @Override
+        public ModelAndView getConfirmView(Object o, BindException errors)
+        {
+            return new HtmlView("Are you sure you want to reset the site errors?");
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors) throws Exception
         {
             File errorLogFile = getErrorLogFile();
             _errorMark = errorLogFile.length();
+
+            return true;
+        }
+
+        @Override
+        public void validateCommand(Object o, Errors errors)
+        {
+        }
+
+        @Override
+        public @NotNull URLHelper getSuccessURL(Object o)
+        {
             return getShowAdminURL();
         }
     }
@@ -2550,7 +2569,7 @@ public class AdminController extends SpringActionController
         {
             String buttonHTML = "";
             if (getUser().hasRootAdminPermission())
-                buttonHTML += PageFlowUtil.button("Reset All Statistics").href(getResetQueryStatisticsURL()) + "&nbsp;";
+                buttonHTML += PageFlowUtil.button("Reset All Statistics").onClick(PageFlowUtil.postOnClickJavaScript(getResetQueryStatisticsURL())) + "&nbsp;";
             buttonHTML += PageFlowUtil.button("Export").href(getExportQueriesURL()) + "<br/><br/>";
 
             return QueryProfiler.getInstance().getReportView(form.getStat(), buttonHTML, AdminController::getQueriesURL,
@@ -2678,11 +2697,23 @@ public class AdminController extends SpringActionController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class ResetQueryStatisticsAction extends SimpleRedirectAction<QueriesForm>
+    public class ResetQueryStatisticsAction extends FormHandlerAction<QueriesForm>
     {
-        public ActionURL getRedirectURL(QueriesForm form)
+        @Override
+        public void validateCommand(QueriesForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(QueriesForm form, BindException errors) throws Exception
         {
             QueryProfiler.getInstance().resetAllStatistics();
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(QueriesForm form)
+        {
             return getQueriesURL(form.getStat());
         }
     }
@@ -3509,37 +3540,6 @@ public class AdminController extends SpringActionController
             response.setContentType("image/png");
 
             ChartUtilities.writeChartAsPNG(response.getOutputStream(), chart, showLegend ? 800 : 398, showLegend ? 100 : 70);
-        }
-    }
-
-
-    // TODO: Check permissions, what if guests have read perm?, different containers?
-    @RequiresLogin
-    @RequiresPermission(ReadPermission.class)
-    public class SetAdminModeAction extends SimpleRedirectAction<UserPrefsForm>
-    {
-        public ActionURL getRedirectURL(UserPrefsForm form)
-        {
-            getViewContext().getSession().setAttribute("adminMode", form.isAdminMode());
-            NavTreeManager.uncacheAll();
-            if (null != form.getReturnActionURL())
-                return form.getReturnActionURL();
-            return new ActionURL();
-        }
-    }
-
-    public static class UserPrefsForm extends ReturnUrlForm
-    {
-        private boolean adminMode;
-
-        public boolean isAdminMode()
-        {
-            return adminMode;
-        }
-
-        public void setAdminMode(boolean adminMode)
-        {
-            this.adminMode = adminMode;
         }
     }
 
@@ -5936,9 +5936,15 @@ public class AdminController extends SpringActionController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class DeleteCustomEmailAction extends SimpleRedirectAction<CustomEmailForm>
+    public class DeleteCustomEmailAction extends FormHandlerAction<CustomEmailForm>
     {
-        public ActionURL getRedirectURL(CustomEmailForm form)
+        @Override
+        public void validateCommand(CustomEmailForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(CustomEmailForm form, BindException errors) throws Exception
         {
             if (form.getTemplateClass() != null)
             {
@@ -5948,6 +5954,12 @@ public class AdminController extends SpringActionController
 
                 EmailTemplateService.get().deleteEmailTemplate(template, getContainer());
             }
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(CustomEmailForm form)
+        {
             return new AdminUrlsImpl().getCustomizeEmailURL(getContainer(), form.getTemplateClass(), form.getReturnURLHelper());
         }
     }
@@ -9311,8 +9323,7 @@ public class AdminController extends SpringActionController
             // @RequiresPermission(ReadPermission.class)
             assertForReadPermission(user,
                     controller.new GetModulesAction(),
-                    controller.new ClearDeletedTabFoldersAction(),
-                    controller.new SetAdminModeAction()
+                    controller.new ClearDeletedTabFoldersAction()
             );
 
             // @RequiresPermission(AdminPermission.class)
