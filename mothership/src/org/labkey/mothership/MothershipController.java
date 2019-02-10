@@ -34,6 +34,7 @@ import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.data.xy.XYDataset;
 import org.labkey.api.action.FormHandlerAction;
+import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -766,9 +767,10 @@ public class MothershipController extends SpringActionController
     @RequiresNoPermission
     @AllowedDuringUpgrade
     @CSRF(CSRF.Method.NONE) // Shouldn't force other servers to get a CSRF token just to post an exception report
-    public class ReportExceptionAction extends SimpleViewAction<ExceptionForm>
+    public class ReportExceptionAction extends MutatingApiAction<ExceptionForm>
     {
-        public ModelAndView getView(ExceptionForm form, BindException errors) throws Exception
+        @Override
+        public Object execute(ExceptionForm form, BindException errors) throws Exception
         {
             try
             {
@@ -835,11 +837,6 @@ public class MothershipController extends SpringActionController
                 // and continue infinitely.
                 _log.error("Failed to log exception report", e);
             }
-            return null;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
             return null;
         }
     }

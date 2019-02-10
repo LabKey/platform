@@ -33,6 +33,7 @@ import org.labkey.api.action.FormattedError;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.FolderExportPermission;
@@ -76,7 +77,6 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DotRunner;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
@@ -116,7 +116,6 @@ import java.io.IOException;
 import java.io.Writer;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -328,20 +327,16 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresNoPermission
-    public class BeginAction extends SimpleViewAction
+    public class BeginAction extends SimpleRedirectAction
     {
-        public ModelAndView getView(Object o, BindException errors)
+        @Override
+        public URLHelper getRedirectURL(Object o)
         {
             if (null == getContainer() || getContainer().isRoot())
             {
-                throw new RedirectException(new ActionURL(AddUsersAction.class, ContainerManager.getRoot()));
+                return new ActionURL(AddUsersAction.class, ContainerManager.getRoot());
             }
-            throw new RedirectException(new ActionURL(PermissionsAction.class, getContainer()));
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            throw new UnsupportedOperationException();
+            return new ActionURL(PermissionsAction.class, getContainer());
         }
     }
 
@@ -591,17 +586,26 @@ public class SecurityController extends SpringActionController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class UpdateMembersAction extends SimpleViewAction<UpdateMembersForm>
+    public class UpdateMembersAction extends FormHandlerAction<UpdateMembersForm>
     {
         private Group _group;
-        private boolean _showGroup;
+        private ActionURL _successURL;
 
-        public ModelAndView getView(UpdateMembersForm form, BindException errors) throws Exception
+
+        @Override
+        public void validateCommand(UpdateMembersForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(UpdateMembersForm form, BindException errors) throws Exception
         {
             // 0 - only site-admins can modify members of system groups
             // 1 - Global admins group cannot be empty
             // 2 - warn if you are deleting yourself from global or project admins
             // 3 - if user confirms delete, post to action again, with list of users to delete and confirmation flag.
+
+            assert !form.isQuickUI() : "isQuickUI() is NYI";  // TODO: Remove... unless quick UI is actually used
 
             Container container = getContainer();
 
@@ -698,23 +702,6 @@ public class SecurityController extends SpringActionController
                     {
                         errors.addError(new LabKeyError("The Site Administrators group must always contain at least one member. You cannot remove all members of this group."));
                     }
-                    //if this is site or project admins group and user is removing themselves, display warning.
-                    else if (_group.getName().compareToIgnoreCase("Administrators") == 0
-                            && Arrays.asList(removeNames).contains(getUser().getEmail())
-                            && !form.isConfirmed())
-                    {
-                        //display warning form, including users to delete and add
-                        HttpView<UpdateMembersBean> v = new JspView<>("/org/labkey/core/security/deleteUser.jsp", new UpdateMembersBean());
-
-                        UpdateMembersBean bean = v.getModelBean();
-                        bean.addnames = addNames;
-                        bean.removenames = removeNames;
-                        bean.groupName = _group.getName();
-                        bean.mailPrefix = form.getMailPrefix();
-
-                        getPageConfig().setTemplate(PageConfig.Template.Dialog);
-                        return v;
-                    }
                     else
                     {
                         SecurityManager.deleteMembers(_group, removeIds);
@@ -754,26 +741,19 @@ public class SecurityController extends SpringActionController
                 }
             }
 
-            if (form.isQuickUI())
-                return renderContainerPermissions(_group, errors, messages, false);
-            else
-            {
-                _showGroup = true;
-                return renderGroup(_group, errors, messages);
-            }
+            _successURL = new ActionURL(GroupAction.class, getContainer()).addParameter("id", _group.getUserId());
+
+//  TODO: Delete this and renderContainerPermissions() -- unused
+//            if (form.isQuickUI())
+//                return renderContainerPermissions(_group, errors, messages, false);
+
+            return true;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public URLHelper getSuccessURL(UpdateMembersForm updateMembersForm)
         {
-            if (_showGroup)
-            {
-                return addGroupNavTrail(root, _group);
-            }
-            else
-            {
-                root.addChild("Permissions");
-                return root;
-            }
+            return _successURL;
         }
     }
 
@@ -794,7 +774,7 @@ public class SecurityController extends SpringActionController
         private String mailPrefix;
         // flag to indicate whether this modification was made via the 'quick ui'
         // if so, we'll redirect to a different page when we're done.
-        private boolean quickUI;
+        private boolean quickUI;  // TODO: Delete. Seems to be unused.
 
         public boolean isConfirmed()
         {
@@ -1613,7 +1593,7 @@ public class SecurityController extends SpringActionController
     public class AdminResetPasswordAction extends ConfirmAction<EmailForm>
     {
         @Override
-        public ModelAndView getConfirmView(EmailForm emailForm, BindException errors) throws Exception
+        public ModelAndView getConfirmView(EmailForm emailForm, BindException errors)
         {
             String message;
             boolean loginExists = false;

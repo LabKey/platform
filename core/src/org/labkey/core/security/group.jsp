@@ -94,17 +94,24 @@
         var elems = document.getElementsByName("delete");
         var l = elems.length;
         var selected = false;
+        var deletingSelf = false;
         for (var i = 0; i < l; i++)
         {
             if (elems[i].checked)
             {
                 selected = true;
-                break;
+                if (elems[i].id === LABKEY.user.id.toString())
+                    deletingSelf = true;
             }
         }
         var ok = true;
         if (selected)
+        {
             ok = confirm("Permanently remove selected users from this group?");
+
+            if (deletingSelf)
+                ok = confirm("Are you sure you want to delete yourself from this group? You may lose the permissions granted to this group.");
+        }
         if (ok)
             form.setClean(); 
         return ok;
@@ -146,8 +153,8 @@ if (!bean.group.isDevelopers())
 <%
 }
 
-    FrameFactoryClassic.startTitleFrame(out, "Group members", null, "100%", null);
-    if (bean.members.size() <= 0)
+FrameFactoryClassic.startTitleFrame(out, "Group members", null, "100%", null);
+if (bean.members.size() <= 0)
 {
     %><p>This group currently has no members.</p><%
 }
@@ -164,8 +171,8 @@ else
         </tr>
     <%
     for (UserPrincipal member : bean.members)
-        {
-        Integer userId = member.getUserId();
+    {
+        int userId = member.getUserId();
         String memberName = member.getName();
         boolean isGroup = member.getPrincipalType() == PrincipalType.GROUP;
         %>
@@ -234,13 +241,13 @@ else
             </td>
         </tr>
         <%
-        }
-        ActionURL urlGroup = getViewContext().cloneActionURL();
-        urlGroup.setAction(SecurityController.GroupExportAction.class);
-        urlGroup.replaceParameter("group", bean.groupName);
+    }
+    ActionURL urlGroup = getViewContext().cloneActionURL();
+    urlGroup.setAction(SecurityController.GroupExportAction.class);
+    urlGroup.replaceParameter("group", bean.groupName);
 
-        ActionURL urlGroupActive = urlGroup.clone();
-        urlGroupActive.addParameter("exportActive", true);
+    ActionURL urlGroupActive = urlGroup.clone();
+    urlGroupActive.addParameter("exportActive", true);
     %>
     </table>
     </div><%
