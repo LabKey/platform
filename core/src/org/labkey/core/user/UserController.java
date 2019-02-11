@@ -1704,8 +1704,9 @@ public class UserController extends SpringActionController
 
         public void validateCommand(UserForm target, Errors errors)
         {
-            if(target.getIsChangeEmailRequest())
+            if (target.getIsChangeEmailRequest())
             {
+
                 String requestedEmail = target.getRequestedEmail();
                 String requestedEmailConfirmation = target.getRequestedEmailConfirmation();
 
@@ -1741,21 +1742,40 @@ public class UserController extends SpringActionController
             boolean isUserManager = getUser().hasRootPermission(UserManagementPermission.class);
             if (!isUserManager)
             {
-                if(!AuthenticationManager.isSelfServiceEmailChangesEnabled())  // uh oh, shouldn't be here
+                if (!AuthenticationManager.isSelfServiceEmailChangesEnabled())  // uh oh, shouldn't be here
                 {
                     throw new UnauthorizedException("User attempted to access self-service email change, but this function is disabled.");
                 }
                 _urlUserId = getUser().getUserId();
+
+                if (_urlUserId != form.getUserId())
+                {
+                    errors.reject(ERROR_MSG, "You aren't allowed to change another user's password!");
+                }
+                else
+                {
+                    form._user = getUser();  // Push validated user into form for JSP
+                }
             }
             else  // site or app admin, could be another user's ID
             {
                 _urlUserId = form.getUserId();
+                User user = UserManager.getUser(_urlUserId);
+
+                if (null == user)
+                {
+                    errors.reject(ERROR_MSG, "User does not exist");
+                }
+                else
+                {
+                    form._user = user;  // Push validated user into form for JSP
+                }
             }
 
-            if(form.getIsFromVerifiedLink())
+            if (form.getIsFromVerifiedLink())
             {
                 validateVerification(form, errors);
-                if(errors.getErrorCount() == 0)
+                if (errors.getErrorCount() == 0)
                 {
                     User user = getUser();
                     int userId = user.getUserId();
@@ -2016,7 +2036,8 @@ public class UserController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             addUserDetailsNavTrail(root, _urlUserId);
-            return root.addChild("Change Email Address: " + UserManager.getEmailForId(_urlUserId));
+            String email = UserManager.getEmailForId(_urlUserId);
+            return root.addChild("Change Email Address" + (null != email ? ": " + email : ""));
         }
     }
 
@@ -2034,6 +2055,12 @@ public class UserController extends SpringActionController
         private boolean _isFromVerifiedLink = false;
         private boolean _isVerified = false;
         private String _verificationToken = null;
+        private User _user;
+
+        public User getUser()
+        {
+            return _user;
+        }
 
         public int getUserId()
         {
