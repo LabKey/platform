@@ -481,15 +481,8 @@ public class ProjectController extends SpringActionController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class HidePortalPageAction extends FormViewAction<CustomizePortletForm>
+    public class HidePortalPageAction extends FormHandlerAction<CustomizePortletForm>
     {
-        public ModelAndView getView(CustomizePortletForm form, boolean reshow, BindException errors)
-        {
-            // UNDONE: this is used as a link, fix to make POST
-            handlePost(form, errors);
-            return HttpView.redirect(getContainer().getStartURL(getUser()));
-        }
-
         @Override
         public void validateCommand(CustomizePortletForm target, Errors errors)
         {
@@ -508,35 +501,16 @@ public class ProjectController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root;
-        }
-
         public URLHelper getSuccessURL(CustomizePortletForm form)
         {
             return form.getReturnURLHelper(beginURL());
         }
     }
 
+
     @RequiresPermission(AdminPermission.class)
-    public class DeletePortalPageAction extends FormViewAction<CustomizePortletForm>
+    public class DeletePortalPageAction extends FormHandlerAction<CustomizePortletForm>
     {
-        public ModelAndView getView(CustomizePortletForm form, boolean reshow, BindException errors)
-        {
-            handlePost(form, errors);
-            URLHelper successURL = getSuccessURL(form);
-            if (null != successURL)
-            {
-                //Don't return to the deleted page
-                if(form.getPageId().equalsIgnoreCase(successURL.getParameter("pageId")))
-                    successURL.deleteParameter("pageId");
-
-                return HttpView.redirect(successURL);
-            }
-            return HttpView.redirect(getContainer().getStartURL(getUser()));
-        }
-
         @Override
         public void validateCommand(CustomizePortletForm target, Errors errors)
         {
@@ -555,30 +529,29 @@ public class ProjectController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root;
-        }
-
         public URLHelper getSuccessURL(CustomizePortletForm form)
         {
             return form.getReturnURLHelper(beginURL());
         }
     }
 
+//    URLHelper successURL = getSuccessURL(form);
+//    if (null != successURL)
+//    {
+//        //Don't return to the deleted page
+//        if(form.getPageId().equalsIgnoreCase(successURL.getParameter("pageId")))
+//            successURL.deleteParameter("pageId");
+//
+//        return HttpView.redirect(successURL);
+//    }
+//    return HttpView.redirect(getContainer().getStartURL(getUser()));
+
 
     @RequiresPermission(AdminPermission.class)
-    public class MoveWebPartAction extends FormViewAction<MovePortletForm>
+    public class MoveWebPartAction extends FormHandlerAction<MovePortletForm>
     {
         public void validateCommand(MovePortletForm target, Errors errors)
         {
-        }
-
-        public ModelAndView getView(MovePortletForm movePortletForm, boolean reshow, BindException errors)
-        {
-            // UNDONE: this seems to be used a link, fix to make POST
-            handlePost(movePortletForm, errors);
-            return HttpView.redirect(getSuccessURL(movePortletForm));
         }
 
         public boolean handlePost(MovePortletForm form, BindException errors)
@@ -590,11 +563,6 @@ public class ProjectController extends SpringActionController
         public URLHelper getSuccessURL(MovePortletForm movePortletForm)
         {
             return movePortletForm.getReturnURLHelper(beginURL());
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
         }
     }
 
@@ -719,7 +687,7 @@ public class ProjectController extends SpringActionController
 
     @RequiresPermission(AdminPermission.class)
     @ApiVersion(10.2)
-    public class ToggleWebPartFrameAsyncAction extends ApiAction<CustomizePortletApiForm>
+    public class ToggleWebPartFrameAsyncAction extends MutatingApiAction<CustomizePortletApiForm>
     {
         @Override
         public ApiResponse execute(CustomizePortletApiForm customizePortletForm, BindException errors)
@@ -1004,7 +972,7 @@ public class ProjectController extends SpringActionController
 
     @RequiresPermission(AdminPermission.class)
     @ApiVersion(11.3)
-    public class CustomizeWebPartAsyncAction extends ApiAction<CustomizePortletApiForm>
+    public class CustomizeWebPartAsyncAction extends MutatingApiAction<CustomizePortletApiForm>
     {
         @Override
         public ApiResponse execute(CustomizePortletApiForm form, BindException errors)
@@ -1627,7 +1595,7 @@ public class ProjectController extends SpringActionController
 
 
     @RequiresSiteAdmin
-    public class SetWebPartPermissionsAction extends ApiAction<WebPartPermissionsForm>
+    public class SetWebPartPermissionsAction extends MutatingApiAction<WebPartPermissionsForm>
     {
         @Override
         public ApiResponse execute(WebPartPermissionsForm form, BindException errors)

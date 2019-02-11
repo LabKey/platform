@@ -36,10 +36,11 @@ import org.jfree.data.xy.XYDataset;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.data.*;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.*;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
@@ -65,7 +66,6 @@ import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.DetailsView;
 import org.labkey.api.view.GridView;
 import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.InsertView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -716,9 +716,10 @@ public class MothershipController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class JumpToErrorCodeAction extends SimpleViewAction
+    public class JumpToErrorCodeAction extends SimpleRedirectAction
     {
-        public ModelAndView getView(Object o, BindException errors)
+        @Override
+        public URLHelper getRedirectURL(Object o)
         {
             String errorCode = StringUtils.trimToNull((String)getProperty("errorCode"));
             ActionURL url;
@@ -753,12 +754,7 @@ public class MothershipController extends SpringActionController
             {
                 url = new ActionURL(MothershipController.ShowExceptionsAction.class, getContainer());
             }
-            return HttpView.redirect(url);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
+            return url;
         }
     }
 

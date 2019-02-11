@@ -15,6 +15,7 @@
  */
 package org.labkey.study.query.studydesign;
 
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
@@ -94,7 +95,11 @@ public abstract class AbstractStudyDesignDomainKind extends AbstractDomainKind
                 try
                 {
                     domain = PropertyService.get().createDomain(container, domainURI, tableName);
-                    domain.save(user);
+
+                    try (var ignored = SpringActionController.ignoreSqlUpdates())
+                    {
+                        domain.save(user);
+                    }
                 }
                 catch (Exception e)
                 {

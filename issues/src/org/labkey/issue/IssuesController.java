@@ -79,8 +79,6 @@ import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchUrls;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -1991,9 +1989,10 @@ public class IssuesController extends SpringActionController
 
 
     @RequiresPermission(ReadPermission.class)
-    public class JumpToIssueAction extends SimpleViewAction
+    public class JumpToIssueAction extends SimpleRedirectAction
     {
-        public ModelAndView getView(Object o, BindException errors)
+        @Override
+        public URLHelper getRedirectURL(Object o)
         {
             String issueId = (String)getProperty("issueId");
             if (issueId != null)
@@ -2006,7 +2005,7 @@ public class IssuesController extends SpringActionController
                     if (issue != null)
                     {
                         ActionURL url = getDetailsURL(getContainer(), issue.getIssueId(), false);
-                        return HttpView.redirect(url);
+                        return url;
                     }
                 }
                 catch (NumberFormatException e)
@@ -2015,19 +2014,16 @@ public class IssuesController extends SpringActionController
                 }
 
                 //Search for the query term instead
-                return HttpView.redirect(PageFlowUtil.urlProvider(SearchUrls.class).getSearchURL(getContainer(), issueId, IssueSearchResultTemplate.NAME));
+                return PageFlowUtil.urlProvider(SearchUrls.class).getSearchURL(getContainer(), issueId, IssueSearchResultTemplate.NAME);
             }
+
             ActionURL url = getViewContext().cloneActionURL();
             url.deleteParameters();
             url.addParameter("error", "Invalid issue ID or search term.");
             url.setAction(ListAction.class);
             url.addParameter(DataRegion.LAST_FILTER_PARAM, "true");
-            return HttpView.redirect(url);
-        }
 
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
+            return url;
         }
     }
 

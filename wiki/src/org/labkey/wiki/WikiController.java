@@ -88,6 +88,7 @@ import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.api.wiki.WikiPartFactory;
 import org.labkey.api.wiki.WikiRendererType;
+import org.labkey.wiki.model.CollaborationFolderType;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiEditModel;
 import org.labkey.wiki.model.WikiTree;
@@ -885,7 +886,7 @@ public class WikiController extends SpringActionController
     }
 
 
-    private Container getDestContainer(String destContainer, String path)
+    private Container getDestContainer(String destContainer, String path, BindException errors)
     {
         if (destContainer == null)
         {
@@ -894,8 +895,17 @@ public class WikiController extends SpringActionController
                 return null;
         }
 
-        //get the destination container  TODO: ensure?!?
-        return ContainerManager.ensureContainer(destContainer);
+        Container c = ContainerManager.getForPath(destContainer);
+
+        // Check for existence ourselves so we know whether to set the folder type or not
+        if (null == c)
+        {
+            // Ensure the destination container and set collaboration folder type, #30597
+            c = ContainerManager.ensureContainer(destContainer);
+            ContainerManager.setFolderType(c, new CollaborationFolderType(), getUser(), errors);
+        }
+
+        return c;
     }
 
 
@@ -914,12 +924,9 @@ public class WikiController extends SpringActionController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class CopyWikiAction extends FormViewAction<CopyWikiForm>
+    public class CopyWikiAction extends FormHandlerAction<CopyWikiForm>
     {
-        public ModelAndView getView(CopyWikiForm copyWikiForm, boolean reshow, BindException errors)
-        {
-            return null;
-        }
+        private Container _cDest;
 
         public void validateCommand(CopyWikiForm copyWikiForm, Errors errors)
         {
@@ -927,9 +934,7 @@ public class WikiController extends SpringActionController
 
         public ActionURL getSuccessURL(CopyWikiForm copyWikiForm)
         {
-            Container destContainer = getDestContainer(copyWikiForm.getDestContainer(), copyWikiForm.getPath());
-
-            return getBeginURL(destContainer);
+            return getBeginURL(_cDest);
         }
 
         public boolean handlePost(CopyWikiForm form, BindException errors) throws Exception
@@ -939,9 +944,12 @@ public class WikiController extends SpringActionController
             //Get source container. Handle both post and get cases.
             Container cSrc = getSourceContainer(form.getSourceContainer());
             //Get destination container. Handle both post and get cases.
-            Container cDest = getDestContainer(form.getDestContainer(), form.getPath());
+            _cDest = getDestContainer(form.getDestContainer(), form.getPath(), errors);
 
-            if (cSrc.equals(cDest))
+            if (errors.hasErrors())
+                return false;
+
+            if (cSrc.equals(_cDest))
             {
                 throw new NotFoundException("Cannot copy a wiki into the folder it is being copied from.");
             }
@@ -959,7 +967,7 @@ public class WikiController extends SpringActionController
                     throw new NotFoundException("No page named '" + pageName + "' exists in the source container.");
             }
 
-            if (cDest != null && cDest.hasPermission(getUser(), AdminPermission.class))
+            if (_cDest != null && _cDest.hasPermission(getUser(), AdminPermission.class))
             {
                 //get source wiki pages
                 List<String> srcPageNames;
@@ -972,7 +980,7 @@ public class WikiController extends SpringActionController
                     srcPageNames = WikiSelectManager.getPageNames(cSrc);
 
                 //get existing destination wiki page names
-                List<String> destPageNames = WikiSelectManager.getPageNames(cDest);
+                List<String> destPageNames = WikiSelectManager.getPageNames(_cDest);
 
                 //map source page row ids to new page row ids
                 Map<Integer, Integer> pageIdMap = new HashMap<>();
@@ -983,19 +991,14 @@ public class WikiController extends SpringActionController
                 for (String name : srcPageNames)
                 {
                     Wiki srcWikiPage = WikiSelectManager.getWiki(cSrc, name);
-                    getWikiManager().copyPage(getUser(), cSrc, srcWikiPage, cDest, destPageNames, pageIdMap, form.getIsCopyingHistory());
+                    getWikiManager().copyPage(getUser(), cSrc, srcWikiPage, _cDest, destPageNames, pageIdMap, form.getIsCopyingHistory());
                 }
 
                 //display the wiki module in the destination container
-                displayWikiModuleInDestContainer(cDest);
+                displayWikiModuleInDestContainer(_cDest);
             }
 
             return true;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
         }
     }
 
@@ -1015,7 +1018,11 @@ public class WikiController extends SpringActionController
         {
             String pageName = form.getPageName();
             Container cSrc = getSourceContainer(form.getSourceContainer());
-            Container cDest = getDestContainer(form.getDestContainer(), form.getPath());
+            Container cDest = getDestContainer(form.getDestContainer(), form.getPath(), errors);
+
+            if (errors.hasErrors())
+                return false;
+
             if (pageName == null || cSrc == null || cDest == null)
                 throw new NotFoundException();
 
