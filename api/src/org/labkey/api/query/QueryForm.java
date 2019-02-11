@@ -325,7 +325,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         return _queryDef;
     }
 
-    public ActionURL urlFor(QueryAction action)
+    public @Nullable ActionURL urlFor(QueryAction action)
     {
         ActionURL ret = null;
         UserSchema schema = getSchema();
