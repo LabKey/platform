@@ -657,11 +657,14 @@ public class LoginController extends SpringActionController
                     response.put("approvedTermsOfUse", true);
                 }
 
+                // Use the full hostname in the URL if we have one, otherwise just go with a local URI
+                String redirectString = redirectUrl.getHost() != null && redirectUrl.getScheme() != null ? redirectUrl.getURIString() : redirectUrl.toString();
+
                 if (null != user)
                 {
                     response.put("user", User.getUserProps(user, getContainer()));
-                    if (!StringUtils.isEmpty(redirectUrl.toString()))
-                        response.put("returnUrl", redirectUrl.toString());
+                    if (!StringUtils.isEmpty(redirectUrl.getURIString()))
+                        response.put("returnUrl", redirectString);
                     else
                         response.put("returnUrl", StringUtils.defaultIfEmpty(form.getReturnUrl(),  AppProps.getInstance().getHomePageActionURL().getPath()));
                 }
@@ -669,7 +672,7 @@ public class LoginController extends SpringActionController
                 {
                     // AuthenticationResult returned by AuthenticationManager.handleAuthentication indicated that a secondary authentication is needed
                     // in the ajax response inform js handler to load page from secondary authenticator url
-                    response.put("returnUrl", redirectUrl.toString());
+                    response.put("returnUrl", redirectString);
                 }
             }
             else if (!errors.hasErrors())
@@ -679,9 +682,13 @@ public class LoginController extends SpringActionController
                 if (null != authResult.getRedirectURL() && !authResult.getRedirectURL().getPath().isEmpty())
                 {
                     URLHelper redirectUrl = authResult.getRedirectURL();
+
+                    // Use the full hostname in the URL if we have one, otherwise just go with a local URI
+                    String redirectString = redirectUrl.getHost() != null && redirectUrl.getScheme() != null ? redirectUrl.getURIString() : redirectUrl.toString();
+
                     response = new ApiSimpleResponse();
                     response.put("success", false);
-                    response.put("returnUrl", redirectUrl.toString());
+                    response.put("returnUrl", redirectString);
                     AuthenticationManager.setLoginReturnProperties(getViewContext().getRequest(), null);
                 }
             }
