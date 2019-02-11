@@ -6,6 +6,8 @@ public class Stats
 {
 
     public static double MOVING_RANG_EPSILON = 0.0000001;
+    public static int  CUSUM_CONTROL_LIMIT = 5;
+    public static double MOVING_RANGE_UPPER_LIMIT_WEIGHT = 3.268;
 
     public static Stats _instance = new Stats();
 
