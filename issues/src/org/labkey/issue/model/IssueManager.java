@@ -1122,18 +1122,31 @@ public class IssueManager
     }
 
     /**
-     * Returns the name of the first issue list definition in scope
+     * Returns the default issue list definition if there is only one in scope.
      */
     @Nullable
     public static String getDefaultIssueListDefName(Container container)
     {
-        if (getIssueListDef(container, IssueListDef.DEFAULT_ISSUE_LIST_NAME) != null)
-            return IssueListDef.DEFAULT_ISSUE_LIST_NAME;
+        IssueListDef defaultIssueListDef = getDefaultIssueListDef(container);
+        if (defaultIssueListDef != null)
+            return defaultIssueListDef.getName();
 
-        for (IssueListDef def : IssueManager.getIssueListDefs(container))
-        {
-            return def.getName();
-        }
+        return null;
+    }
+
+    /**
+     * Returns the default issue list definition if there is only one in scope.
+     */
+    public static IssueListDef getDefaultIssueListDef(Container container)
+    {
+        IssueListDef defaultIssueListDef = getIssueListDef(container, IssueListDef.DEFAULT_ISSUE_LIST_NAME);
+        if (defaultIssueListDef != null)
+            return defaultIssueListDef;
+
+        Collection<IssueListDef> issueListDefs = IssueManager.getIssueListDefs(container);
+        if (issueListDefs.size() == 1)
+            return issueListDefs.iterator().next();
+
         return null;
     }
 

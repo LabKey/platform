@@ -122,6 +122,7 @@ import org.labkey.issue.model.Issue.Comment;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.model.IssuePage;
+import org.labkey.issue.query.IssueDefDomainKind;
 import org.labkey.issue.query.IssuesQuerySchema;
 import org.labkey.issue.view.IssuesListView;
 import org.springframework.util.LinkedCaseInsensitiveMap;
@@ -733,15 +734,11 @@ public class IssuesController extends SpringActionController
                 return;
             }
 
+            // Fetch the default
+            IssueListDef defaultIssueListDef = IssueManager.getDefaultIssueListDef(getContainer());
+
             for (IssuesForm issuesForm : form.getIssueForms())
             {
-                IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), NumberUtils.toInt(issuesForm.getIssueDefId()));
-                if (issueListDef == null)
-                {
-                    errors.reject(ERROR_MSG, "IssueListDef not found: " + issuesForm.getIssueDefId());
-                    continue;
-                }
-
                 IssuesApiForm.action action = getAction(issuesForm);
                 if (action == null)
                 {
@@ -749,6 +746,7 @@ public class IssuesController extends SpringActionController
                     continue;
                 }
 
+                Integer issueDefId;
                 Issue prevIssue = null;
                 if (action != IssuesApiForm.action.insert)
                 {
@@ -759,6 +757,40 @@ public class IssuesController extends SpringActionController
                         continue;
                     }
                     issuesForm.setOldValues(prevIssue);
+                    issueDefId = prevIssue.getIssueDefId();
+                }
+                else
+                {
+                    if (defaultIssueListDef == null && issuesForm.getIssueDefId() == null)
+                    {
+                        errors.reject(ERROR_MSG, "IssueDefId is required when creating new issues");
+                        continue;
+                    }
+
+                    if (issuesForm.getIssueDefId() != null)
+                        issueDefId = Integer.valueOf(issuesForm.getIssueDefId());
+                    else
+                        issueDefId = defaultIssueListDef.getRowId();
+                }
+
+                IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), issueDefId);
+                if (issueListDef == null)
+                {
+                    errors.reject(ERROR_MSG, "IssueListDef not found: " + issuesForm.getIssueDefId());
+                    continue;
+                }
+
+                // set the issueListDefId on the issue form if it wasn't explicitly specified
+                if (issuesForm.getIssueDefId() == null)
+                {
+                    issuesForm.set(IssuesListView.ISSUE_LIST_DEF_ID, String.valueOf(issueDefId));
+                }
+
+                if (action == IssuesApiForm.action.reopen)
+                {
+                    // clear resolution, resolvedBy, and duplicate fields
+                    Issue issue = issuesForm.getBean();
+                    issue.beforeReOpen(getContainer());
                 }
 
                 if (action == IssuesApiForm.action.resolve)
@@ -792,11 +824,13 @@ public class IssuesController extends SpringActionController
                 AbstractIssuesListDefDomainKind kind = issueListDef.getDomainKind();
                 if (kind != null)
                 {
+                    Map<String, Object> prevIssueProps = prevIssue == null ? Collections.emptyMap() : prevIssue.getProperties();
+
                     Map<String, String> stringMap = new CaseInsensitiveHashMap<>(issuesForm.getStrings());
                     for (PropertyStorageSpec prop : kind.getRequiredProperties())
                     {
-                        if (!"resolution".equalsIgnoreCase(prop.getName()))
-                            stringMap.putIfAbsent(prop.getName(), null);
+                        if (!IssueDefDomainKind.RESOLUTION_LOOKUP.equalsIgnoreCase(prop.getName()))
+                            stringMap.computeIfAbsent(prop.getName(), (propName) -> Objects.toString(prevIssueProps.get(propName), null));
                     }
                     issuesForm.setStrings(stringMap);
                 }
@@ -853,6 +887,7 @@ public class IssuesController extends SpringActionController
                                 {
                                     duplicateOf = IssueManager.getIssue(null, getUser(), issue.getDuplicate().intValue());
                                 }
+                                issue.beforeResolve(getContainer(), getUser());
                                 issue.resolve(getUser());
                                 break;
                             case reopen:
@@ -868,7 +903,9 @@ public class IssuesController extends SpringActionController
                         if (errors.hasErrors())
                             return null;
 
-                        if (action != IssuesApiForm.action.insert)
+                        if (action == IssuesApiForm.action.insert)
+                            IssueValidation.requiresInsertPermission(getUser(), issue, getContainer());
+                        else
                             IssueValidation.requiresUpdatePermission(getUser(), issue, getContainer());
 
                         // bind the user schema table to the form bean so we can get typed properties

@@ -17,6 +17,7 @@ package org.labkey.issue.model;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -27,9 +28,10 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.Tuple3;
+import org.springframework.validation.Errors;
 
 import java.io.Serializable;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -38,8 +40,12 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
+
+import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
 
 public class Issue extends Entity implements Serializable, Cloneable
@@ -466,41 +472,35 @@ public class Issue extends Entity implements Serializable, Cloneable
 
     public List<String> getNotifyListDisplayNames(User user)
     {
-        ArrayList<String> ret = new ArrayList<>();
-        String notifyList = getNotifyList();
-        String[] raw = StringUtils.split(null == notifyList ? "" :notifyList, ";\n");
-        for (String id : raw)
-        {
-            if (null == (id = StringUtils.trimToNull(id)))
-                continue;
-            ValidEmail v = null;
-            User u = null;
-            try
-            {
-                v = new ValidEmail(id);
-                u = UserManager.getUser(v);
-            } catch (ValidEmail.InvalidEmailException x) { }
-            if (v == null || u == null)
-                try { u = UserManager.getUser(Integer.parseInt(id)); } catch (NumberFormatException x) { };
-            if (v == null && u == null)
-                u = UserManager.getUserByDisplayName(id);
-
-            // filter out inactive users
-            if (u != null && !u.isActive())
-                continue;
-
-            String display = null != u ? u.getAutocompleteName(ContainerManager.getForId(getContainerId()), user) : null != v ? v.getEmailAddress() : id;
-            ret.add(display);
-        }
-        return ret;
+        Container c = lookupContainer();
+        return getNotifyListUserEmails(getNotifyList(), null).stream()
+                .map(t -> {
+                    String id = t.first;
+                    User u = t.second;
+                    ValidEmail v = t.third;
+                    return null != u ? u.getAutocompleteName(c, user) : null != v ? v.getEmailAddress() : id;
+                })
+                .collect(Collectors.toList());
     }
 
 
     public List<ValidEmail> getNotifyListEmail()
     {
-        ArrayList<ValidEmail> ret = new ArrayList<>();
-        String notifyList = getNotifyList();
+        return getNotifyListEmail(getNotifyList(), null);
+    }
+
+    public static List<ValidEmail> getNotifyListEmail(String notifyList, @Nullable Errors errors)
+    {
+        return getNotifyListUserEmails(notifyList, errors).stream()
+                .map(t -> t.third)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
+    private static List<Tuple3<@NotNull String, @Nullable User, @Nullable ValidEmail>> getNotifyListUserEmails(String notifyList, @Nullable Errors errors)
+    {
         String[] raw = StringUtils.split(null == notifyList ? "" : notifyList, ";\n");
+        ArrayList<Tuple3<String, User, ValidEmail>> ret = new ArrayList<>(raw.length);
         for (String id : raw)
         {
             if (null == (id=StringUtils.trimToNull(id)))
@@ -517,14 +517,19 @@ public class Issue extends Entity implements Serializable, Cloneable
             if (v == null && u == null)
                 u = UserManager.getUserByDisplayName(id);
             if (u != null)
-                try { v = new ValidEmail(u.getEmail()); } catch (ValidEmail.InvalidEmailException x) { }
+            try { new ValidEmail(u.getEmail()); } catch (ValidEmail.InvalidEmailException x) { }
+
+            if (u == null && errors != null)
+            {
+                errors.reject(ERROR_MSG, "Invalid user '" + id + "'");
+                continue;
+            }
 
             // filter out inactive users
             if (u != null && !u.isActive())
                 continue;
 
-            if (null != v)
-                ret.add(v);
+            ret.add(Tuple3.of(id, u, v));
         }
         return ret;
     }

@@ -33,7 +33,6 @@ import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -76,7 +75,7 @@ public class IssueValidation
             for (Map.Entry<String, String> entry : newFields.entrySet())
             {
                 // special case the assigned to field if the status is closed
-                if (entry.getKey().equals("assignedTo") && Issue.statusCLOSED.equals(form.getBean().getStatus()))
+                if (entry.getKey().equalsIgnoreCase("assignedTo") && Issue.statusCLOSED.equals(form.getBean().getStatus()))
                     continue;
 
                 ColumnInfo col = tableInfo.getColumn(FieldKey.fromParts(entry.getKey()));
@@ -145,39 +144,7 @@ public class IssueValidation
 
     public static void validateNotifyList(IssuesController.IssuesForm form, Errors errors)
     {
-        User user;
-        for (String username : StringUtils.split(StringUtils.trimToEmpty(form.getNotifyList()), ";\n"))
-        {
-            // NOTE: this "username" should be a user id but may be a psuedo-username (an assumed user which has default domain appended)
-            //       or in the other special case this is an email address
-            username = username.trim();
-
-            // Ignore lines of all whitespace, otherwise show an error.
-            if (!"".equals(username))
-            {
-                user = UserManager.getUserByDisplayName(username);
-                if (user != null)
-                    continue;
-                // Trying to generate user object from the "name" will not be enough if the username is for the default domain
-                // TODO: most of this logic can be reduced when we change the Schema and fix the typing of these fields. (making announcements and issues consistent)
-                try
-                {
-                    user = UserManager.getUser( new ValidEmail(username) );
-                }
-                catch (ValidEmail.InvalidEmailException e)
-                {
-                    // do nothing?
-                }
-                finally
-                {
-                    if (user == null)
-                    {
-                        String message = "Failed to add user " + username + ": Invalid user display name";
-                        errors.reject(SpringActionController.ERROR_MSG, message);
-                    }
-                }
-            }
-        }
+        Issue.getNotifyListEmail(form.getNotifyList(), errors);
     }
 
     public static void validateAssignedTo(IssuesController.IssuesForm form, Container container, Errors errors)
@@ -276,12 +243,27 @@ public class IssueValidation
     /**
      * Throw an exception if user does not have permission to update issue
      */
+    public static void requiresInsertPermission(User user, Issue issue, Container c)
+    {
+        if (!hasInsertPermission(user, issue, c))
+            throw new UnauthorizedException();
+    }
+
+    /**
+     * Throw an exception if user does not have permission to update issue
+     */
     public static void requiresUpdatePermission(User user, Issue issue, Container c)
     {
         if (!hasUpdatePermission(user, issue, c))
-        {
             throw new UnauthorizedException();
-        }
+    }
+
+    /**
+     * Does this user have permission to update this issue?
+     */
+    public static boolean hasInsertPermission(User user, Issue issue, Container c)
+    {
+        return c.hasPermission(user, InsertPermission.class, getContextualRoles(user, issue, c));
     }
 
     /**
