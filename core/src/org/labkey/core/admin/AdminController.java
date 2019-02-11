@@ -9158,20 +9158,38 @@ public class AdminController extends SpringActionController
 
                 if (StringUtils.isEmpty(newExternalRedirectURL))
                 {
-                    errors.addError(new LabKeyError("External Redirect URL must not be blank"));
+                    errors.addError(new LabKeyError("External Redirect URL must not be blank."));
                     return false;
                 }
                 else if (StringUtils.isNotEmpty(newExternalRedirectURL))
                 {
                     List<String> redirectURLs = AppProps.getInstance().getExternalRedirectURLs();
-                    redirectURLs.add(newExternalRedirectURL);
-                    WriteableAppProps appProps = AppProps.getWriteableInstance();
-                    appProps.setExternalRedirectURLs(redirectURLs);
-                    appProps.save(getUser());
+                    if (!isDuplicate(redirectURLs, newExternalRedirectURL, errors))
+                    {
+                        redirectURLs.add(newExternalRedirectURL);
+                        WriteableAppProps appProps = AppProps.getWriteableInstance();
+                        appProps.setExternalRedirectURLs(redirectURLs);
+                        appProps.save(getUser());
+                    }
+                    else
+                        return false;
                 }
             }
 
             return true;
+        }
+
+        private boolean isDuplicate(List<String> redirectURLs, String newExternalRedirectURL, BindException errors)
+        {
+            for (String redirectURL : redirectURLs)
+            {
+                if (newExternalRedirectURL.equalsIgnoreCase(redirectURL))
+                {
+                    errors.addError(new LabKeyError("'" + redirectURL + "' already exists. Duplicate hosts not allowed."));
+                    return true; //its a dupe!
+                }
+            }
+            return false; //its not a dupe!
         }
 
         @Override
