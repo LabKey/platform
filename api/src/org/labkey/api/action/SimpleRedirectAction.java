@@ -45,7 +45,7 @@ public abstract class SimpleRedirectAction<FORM> extends SimpleViewAction<FORM>
         return HttpView.redirect(url);
     }
 
-    public NavTree appendNavTrail(NavTree root)
+    public final NavTree appendNavTrail(NavTree root)
     {
         return null;
     }

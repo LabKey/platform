@@ -413,12 +413,24 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                 + PageFlowUtil.jsString(folderLabel);
 
         if (portalPage.isHidden())
+        {
             menu.addChild(new NavTree("Show", "javascript:LABKEY.Portal.showTab(" + portalTabParams + ")"));
+        }
         else
-            menu.addChild(new NavTree("Hide", projectURLProvider.getHidePortalPageURL(container, portalPageId, ctx.getActionURL())));
+        {
+            ActionURL url = projectURLProvider.getHidePortalPageURL(container, portalPageId, ctx.getActionURL());
+            NavTree hide = new NavTree("Hide");
+            hide.setScript(PageFlowUtil.postOnClickJavaScript(url));
+            menu.addChild(hide);
+        }
 
         if (portalPage.isCustomTab())
-            menu.addChild(new NavTree("Delete", projectURLProvider.getDeletePortalPageURL(container, portalPageId, ctx.getActionURL())));
+        {
+            ActionURL url = projectURLProvider.getDeletePortalPageURL(container, portalPageId, ctx.getActionURL());
+            NavTree delete = new NavTree("Delete");
+            delete.setScript(PageFlowUtil.postOnClickJavaScript(url));
+            menu.addChild(delete);
+        }
 
         NavTree moveMenu = new NavTree("Move");
         moveMenu.addChild(new NavTree("Left", "javascript:LABKEY.Portal.moveTabLeft(" + portalTabParams + ");"));
