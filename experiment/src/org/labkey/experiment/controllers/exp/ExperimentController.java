@@ -3549,8 +3549,9 @@ public class ExperimentController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             root.addChild("Sample Sets", ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer()));
-            if (_form.getQueryName() != null)
-                root.addChild(_form.getQueryName(), _form.urlFor(QueryAction.executeQuery));
+            ActionURL url = _form.urlFor(QueryAction.executeQuery);
+            if (_form.getQueryName() != null && url != null)
+                root.addChild(_form.getQueryName(), url);
             root.addChild("Import Data");
             return root;
         }
