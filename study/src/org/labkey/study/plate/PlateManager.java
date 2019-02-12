@@ -177,7 +177,10 @@ public class PlateManager implements PlateService
             if (cached != null)
                 templates.set(i, cached);
             else
+            {
                 populatePlate(template);
+                cache(template);
+            }
         }
         return templates;
     }
