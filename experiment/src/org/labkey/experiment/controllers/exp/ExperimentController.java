@@ -596,15 +596,6 @@ public class ExperimentController extends SpringActionController
                             button.addMenuItem(importData);
                             hasImportDataOption = true;
                         }
-                        // Adding simplified import option until such time as we can replace the import option altogether
-                        // TODO remove and update call to setImportURL in ExpMaterialTableImpl when the time is right.
-                        ActionURL urlSimpleImport = new ActionURL("experiment", "importSamples", getContainer());
-                        urlSimpleImport.addParameter("query.queryName", _source.getName());
-                        urlSimpleImport.addParameter("schemaName", "exp.materials");
-
-                        NavTree importData = new NavTree(getInsertButtonText("Simple bulk data import"), urlSimpleImport);
-                        importData.setId(getBaseMenuId() + ":Insert:SimpleImport");
-                        button.addMenuItem(importData);
                     }
 
                     return hasInsertNewOption &&  hasImportDataOption? button : hasInsertNewOption ? createInsertButton() : hasImportDataOption ? createImportButton() : null;
@@ -3472,6 +3463,7 @@ public class ExperimentController extends SpringActionController
     {
         private String name;
         private String nameExpression;
+        private Boolean nameReadOnly = false;
 
         public String getName()
         {
@@ -3491,6 +3483,16 @@ public class ExperimentController extends SpringActionController
         public void setNameExpression(String nameExpression)
         {
             this.nameExpression = nameExpression;
+        }
+
+        public Boolean getNameReadOnly()
+        {
+            return nameReadOnly;
+        }
+
+        public void setNameReadOnly(Boolean nameReadOnly)
+        {
+            this.nameReadOnly = nameReadOnly;
         }
     }
 
@@ -6030,6 +6032,21 @@ public class ExperimentController extends SpringActionController
         public ActionURL getMaterialDetailsURL(Container c, int materialRowId)
         {
             return new ActionURL(ShowMaterialAction.class, c).addParameter("rowId", materialRowId);
+        }
+
+        @Override
+        public ActionURL getCreateSampleSetURL(Container container)
+        {
+            return new ActionURL(CreateSampleSetAction.class, container);
+        }
+
+        @Override
+        public ActionURL getImportSamplesURL(Container container, String sampleSetName)
+        {
+            ActionURL url = new ActionURL(ImportSamplesAction.class, container);
+            url.addParameter("query.queryName", sampleSetName);
+            url.addParameter("schemaName", "exp.materials");
+            return url;
         }
 
         @Override

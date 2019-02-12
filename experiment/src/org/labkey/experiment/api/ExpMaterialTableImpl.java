@@ -285,9 +285,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             if (filter)
                 addCondition(getRealTable().getColumn("CpasType"), _ss.getLSID());
 
-            ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getShowUploadMaterialsURL(getContainer());
-            url.addParameter("name", _ss.getName());
-            url.addParameter("importMoreSamples", true);
+            ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getImportSamplesURL(getContainer(), _ss.getName());
             setImportURL(new DetailsURL(url));
         }
     }

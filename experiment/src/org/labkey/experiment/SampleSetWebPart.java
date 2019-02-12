@@ -114,12 +114,6 @@ public class SampleSetWebPart extends QueryView
         deleteButton.setRequiresSelection(true);
         bb.add(deleteButton);
 
-        ActionButton uploadMaterialsButton = new ActionButton(ExperimentController.ShowUploadMaterialsAction.class, "Import Sample Set", DataRegion.MODE_GRID, ActionButton.Action.LINK);
-        ActionURL uploadURL = new ActionURL(ExperimentController.ShowUploadMaterialsAction.class, model.getContainer());
-        uploadMaterialsButton.setURL(uploadURL);
-        uploadMaterialsButton.setDisplayPermission(UpdatePermission.class);
-        bb.add(uploadMaterialsButton);
-
         bb.add(new ActionButton(new ActionURL(ExperimentController.UpdateMaterialSourceAction.class, model.getContainer()), "Submit", DataRegion.MODE_UPDATE));
 
         ActionURL showAllURL = new ActionURL(ExperimentController.ShowAllMaterialsAction.class, model.getContainer());

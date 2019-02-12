@@ -14,7 +14,7 @@
 <labkey:form action="" method="POST" layout="horizontal">
     <labkey:input
         id="name" name="name" label="Name" value="<%=h(bean.getName())%>"
-        contextContent="Name of sample set (required)." size="60"
+        contextContent="Name of sample set (required)." size="60" isDisabled="<%=bean.getNameReadOnly()%>"
     />
     <labkey:input
         id="nameExpression" name="nameExpression" label="Name Expression" value="<%=h(bean.getNameExpression())%>"
