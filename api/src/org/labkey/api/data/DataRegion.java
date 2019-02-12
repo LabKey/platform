@@ -2054,9 +2054,9 @@ public class DataRegion extends DisplayElement
             }
             else
             {
-                Map<String, Object>[] maps = new TableSelector(getTable(), selectKeyMap.values(), new PkFilter(getTable(), viewForm.getPkVals()), null).getMapArray();
-                if (maps.length > 0)
-                    valueMap = maps[0];
+                Collection<Map<String, Object>> maps = new TableSelector(getTable(), selectKeyMap.values(), new PkFilter(getTable(), viewForm.getPkVals()), null).getMapCollection();
+                if (!maps.isEmpty())
+                    valueMap = maps.iterator().next();
             }
             ctx.setRow(valueMap);
         }
@@ -2070,9 +2070,6 @@ public class DataRegion extends DisplayElement
      * of multiple rows these values need to be aggregated. Therefore, if all rows share a common value for a field then
      * that value will be passed through, otherwise, the field is resolved as empty and it is left to the UI to convey
      * that there were multiple values available for that field.
-     * @param ctx
-     * @param out
-     * @throws IOException
      */
     private void renderMultipleUpdateForm(RenderContext ctx, Writer out) throws IOException
     {

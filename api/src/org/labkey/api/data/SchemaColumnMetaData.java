@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.PkMetaDataReader;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.data.xml.ColumnType;
@@ -389,7 +390,7 @@ public class SchemaColumnMetaData
         {
             for (ColumnInfo column : _columns)
             {
-                if (column.isStringType() && !StringUtils.equalsIgnoreCase("entityid",column.getSqlTypeName()))
+                if (column.isStringType() && !SqlDialect.isGUIDType(column.getSqlTypeName()))
                 {
                     _titleColumn = column.getName();
                     break;

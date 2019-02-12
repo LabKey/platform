@@ -1228,14 +1228,18 @@ public abstract class SqlDialect
         throw new UnsupportedOperationException();
     }
 
+    public static boolean isGUIDType(String sqlTypeName)
+    {
+        return StringUtils.equalsIgnoreCase("entityid", sqlTypeName) ||
+                StringUtils.equalsIgnoreCase("uniqueidentifier", sqlTypeName);
+    }
 
     public JdbcType getJdbcType(int type, String typeName)
     {
         JdbcType t = JdbcType.valueOf(type);
         if ((t == JdbcType.VARCHAR || t == JdbcType.CHAR) && null != typeName)
         {
-            if (StringUtils.equalsIgnoreCase("entityid",typeName) ||
-                StringUtils.equalsIgnoreCase("uniqueidentifier",typeName))
+            if (isGUIDType(typeName))
                 t = JdbcType.GUID;
         }
         return t;

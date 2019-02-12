@@ -388,7 +388,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         {
             for (ColumnInfo column : getColumns())
             {
-                if (column.isStringType() && !column.getSqlTypeName().equalsIgnoreCase("entityid"))
+                if (column.isStringType() && !SqlDialect.isGUIDType(column.getSqlTypeName()))
                 {
                     _titleColumn = column.getName();
                     break;
