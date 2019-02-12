@@ -1205,7 +1205,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         @Override
         void close();
     }
-    /** use this AutoCloseable to mark a section of code as allowing UPDATES even withing an read-only action (e.g. for auditing) */
+    /** use this AutoCloseable to mark a section of code as allowing UPDATES even within a read-only action (e.g. for auditing) */
     public static _AutoCloseable ignoreSqlUpdates()
     {
         final Boolean prevValue = ignoreUpdates.get();

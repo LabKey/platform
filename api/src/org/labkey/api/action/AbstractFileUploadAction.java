@@ -18,14 +18,20 @@ package org.labkey.api.action;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.writer.PrintWriters;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.multipart.MultipartFile;
 import org.labkey.api.util.ExceptionUtil;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -36,8 +42,10 @@ import java.util.Map;
  * User: jeckels
  * Date: Jan 19, 2009
  */
-public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAction.FileUploadForm> extends ExportAction<FORM>
+public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAction.FileUploadForm> extends FormViewAction<FORM>
 {
+    private ModelAndView _successView = null;
+
     public static class FileUploadForm
     {
         private String[] _fileName = new String[0];
@@ -50,6 +58,7 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
             return _fileName;
         }
 
+        @SuppressWarnings("unused")
         public void setFileName(String[] fileName)
         {
             _fileName = fileName;
@@ -60,6 +69,7 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
             return _fileContent;
         }
 
+        @SuppressWarnings("unused")
         public void setFileContent(String[] fileContent)
         {
             _fileContent = fileContent;
@@ -70,28 +80,69 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
             return _forceMultipleResults;
         }
 
+        @SuppressWarnings("unused")
         public void setForceMultipleResults(boolean forceMultipleResults)
         {
             _forceMultipleResults = forceMultipleResults;
         }
     }
 
-    public AbstractFileUploadAction()
+    @Override
+    public ModelAndView getView(FORM form, boolean reshow, BindException errors) throws Exception
     {
-        super();
+        return null; // handlePost() sends the response... null view here to suppress all further rendering
     }
 
-    protected AbstractFileUploadAction(Class<? extends FORM> formClass)
+    @Override
+    public NavTree appendNavTrail(NavTree root)
     {
-        super(formClass);
+        throw new IllegalStateException("Shouldn't be called");
     }
 
-    public void export(FORM form, HttpServletResponse response, BindException errors) throws Exception
+    @Override
+    public void validateCommand(FORM target, Errors errors)
+    {
+    }
+
+    @Override
+    public boolean handlePost(FORM form, BindException errors) throws Exception
+    {
+        try
+        {
+            export(form, getViewContext().getResponse());
+        }
+        catch (ExportException e)
+        {
+            _successView = e.getErrorView();
+        }
+
+        return true;
+    }
+
+    @Override
+    public URLHelper getSuccessURL(FORM form)
+    {
+        return null;
+    }
+
+    @Override
+    public ModelAndView getSuccessView(FORM form)
+    {
+        return _successView;
+    }
+
+    @Override
+    protected String getCommandClassMethodName()
+    {
+        return "getResponse";
+    }
+
+    private void export(FORM form, HttpServletResponse response) throws Exception
     {
         response.reset();
         response.setContentType("text/html");
 
-        try (OutputStream out = response.getOutputStream(); OutputStreamWriter writer = new OutputStreamWriter(out))
+        try (OutputStream out = response.getOutputStream(); PrintWriter writer = PrintWriters.getPrintWriter(out))
         {
             if (form.getFileName() == null)
             {
@@ -120,7 +171,6 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
             {
                 MultipartHttpServletRequest request = (MultipartHttpServletRequest) basicRequest;
 
-                //noinspection unchecked
                 Iterator<String> nameIterator = request.getFileNames();
                 while (nameIterator.hasNext())
                 {
@@ -149,7 +199,7 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
                 String content = form.getFileContent()[i];
                 if (content != null)
                 {
-                    File f = handleFile(filename, new ByteArrayInputStream(content.getBytes()), writer);
+                    File f = handleFile(filename, new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)), writer);
                     if (f != null)
                     {
                         savedFiles.put("FileContent" + (i == 0 ? "" : (i + 1)), new Pair<>(f, filename));
@@ -159,7 +209,7 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
 
             try
             {
-                writer.write(getResponse(savedFiles, form));
+                writer.write(getResponse(form, savedFiles));
                 writer.flush();
             }
             catch (UploadException e)
@@ -169,7 +219,7 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
         }
     }
 
-    protected File handleFile(String filename, InputStream input, Writer writer) throws IOException
+    private File handleFile(String filename, InputStream input, Writer writer) throws IOException
     {
         if (filename == null || input == null)
         {
@@ -233,7 +283,7 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
      * @param files HTTP parameter name -> [File as saved on disk (potentially renamed to be unique, Original file name in POST]
      * @return a meaningful handle that the client can use to refer to the file
      */
-    protected abstract String getResponse(Map<String, Pair<File, String>> files, FORM form) throws UploadException;
+    public abstract String getResponse(FORM form, Map<String, Pair<File, String>> files) throws UploadException;
 
     private void error(Writer writer, String message, int statusCode) throws IOException
     {
