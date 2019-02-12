@@ -3056,11 +3056,6 @@ public class ExperimentServiceImpl implements ExperimentService
         return getExpSchema().getTable("MaterialSource");
     }
 
-    public TableInfo getTinfoActiveMaterialSource()
-    {
-        return getExpSchema().getTable("ActiveMaterialSource");
-    }
-
     public TableInfo getTinfoData()
     {
         return getExpSchema().getTable("Data");
@@ -4069,8 +4064,6 @@ public class ExperimentServiceImpl implements ExperimentService
                 sampleSet.delete(user);
             }
 
-            Table.delete(getTinfoActiveMaterialSource(), containerFilter);
-
             // Delete all the experiments/run groups/batches
             for (ExpExperimentImpl exp : exps)
             {
@@ -4485,7 +4478,6 @@ public class ExperimentServiceImpl implements ExperimentService
             SqlExecutor executor = new SqlExecutor(getExpSchema());
             executor.execute("UPDATE " + getTinfoDataClass() + " SET materialSourceId = NULL WHERE materialSourceId = ?", source.getRowId());
             executor.execute("UPDATE " + getTinfoProtocolInput() + " SET materialSourceId = NULL WHERE materialSourceId = ?", source.getRowId());
-            executor.execute("DELETE FROM " + getTinfoActiveMaterialSource() + " WHERE MaterialSourceLSID = ?", source.getLSID());
             executor.execute("DELETE FROM " + getTinfoMaterialSource() + " WHERE RowId = ?", rowId);
 
             transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);

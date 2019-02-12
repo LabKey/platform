@@ -67,18 +67,6 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
                 return wrapColumn(alias, _rootTable.getColumn("Modified"));
             case ModifiedBy:
                 return createUserColumn(alias, _rootTable.getColumn("ModifiedBy"));
-            case Active:
-            {
-                SQLFragment sql = new SQLFragment("(CASE WHEN " + ExprColumn.STR_TABLE_ALIAS + ".LSID IN (SELECT MaterialSourceLSID FROM " +
-                    ExperimentServiceImpl.get().getTinfoActiveMaterialSource() + " WHERE Container = ?) THEN ? ELSE ? END)");
-                sql.add(_userSchema.getContainer());
-                sql.add(Boolean.TRUE);
-                sql.add(Boolean.FALSE);
-                ExprColumn result = new ExprColumn(this, "Active", sql, JdbcType.BOOLEAN);
-                result.setFormat("Yes;No");
-                result.setDescription("Indicates if this sample set is currently the active, or default, for this folder or project");
-                return result;
-            }
             case SampleCount:
             {
                 SQLFragment sql = new SQLFragment("(SELECT COUNT(*) FROM " +
@@ -106,7 +94,6 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
         addColumn(ExpSampleSetTable.Column.Modified);
         addColumn(ExpSampleSetTable.Column.ModifiedBy);
         addContainerColumn(ExpSampleSetTable.Column.Folder, new ActionURL(ExperimentController.ListMaterialSourcesAction.class, getContainer()));
-        addColumn(ExpSampleSetTable.Column.Active);
         addColumn(ExpSampleSetTable.Column.SampleCount);
 
         DetailsURL detailsURL = new DetailsURL(new ActionURL(ExperimentController.ShowMaterialSourceAction.class, _userSchema.getContainer()),

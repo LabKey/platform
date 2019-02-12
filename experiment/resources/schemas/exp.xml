@@ -983,12 +983,6 @@
       </columns>
       <description>A junction table between Runs and RunGroups</description>
     </table>
-    <table tableName="ActiveMaterialSource" tableDbType="TABLE">
-      <columns>
-        <column columnName="Container"/>
-        <column columnName="MaterialSourceLSID"/>
-      </columns>
-    </table>
     <table tableName="ConditionalFormat" tableDbType="TABLE">
       <columns>
           <column columnName="RowId" />
