@@ -47,9 +47,13 @@ public class Stats
             return 0;
 
         double mean = getMean(values);
-        Arrays.stream(values).forEach(val-> val = val-mean);
-        Arrays.stream(values).forEach(val-> val = val*val);
-        return Math.sqrt(getMean(values));
+        Double[] squareDiffs = new Double[values.length];
+        for(int i =0; i< values.length; i++)
+        {
+            Double diff = values[i] - mean;
+            squareDiffs[i] = diff*diff;
+        }
+        return Math.sqrt(getMean(squareDiffs));
     }
 
     /**
@@ -75,14 +79,14 @@ public class Stats
 
         double[] cusums = new double[values.length];
         cusums[0] = 0;
-        for(int i=0; i< values.length; i++)
+        for(int i=1; i< values.length; i++)
         {
             double standardized = (values[i]-mean) / stdDEV; //standard value (z-score)
             if (transform)
                 standardized = (Math.sqrt(Math.abs(standardized)) - 0.822) / 0.349; //the transformed standardize normal quantity value so that it is sensitive to variability changes
             if (negative)
                 standardized = standardized * -1;
-            double cusum = Math.max(0, standardized - CUSUM_WEIGHT_FACTOR + cusums[i]);
+            double cusum = Math.max(0, standardized - CUSUM_WEIGHT_FACTOR + cusums[i-1]);
             cusums[i] = cusum;
         }
         if (forcePositiveResult)
