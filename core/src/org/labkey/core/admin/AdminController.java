@@ -9143,7 +9143,7 @@ public class AdminController extends SpringActionController
             else if (form.isSaveAll())
             {
                 List<String> redirectURLs = form.getExistingRedirectURLList(); //get urls from the form, this includes updated urls
-                if (redirectURLs.size() > 0)
+                if (null != redirectURLs && redirectURLs.size() > 0)
                 {
                     if (!hasDuplicates(redirectURLs, errors))
                     {
