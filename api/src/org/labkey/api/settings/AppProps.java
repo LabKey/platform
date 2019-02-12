@@ -212,6 +212,10 @@ public interface AppProps
 
     boolean isFileUploadDisabled();
 
+    /**
+     *
+     * @return List of configured external redirect host urls
+     */
     List<String> getExternalRedirectURLs();
 
 }

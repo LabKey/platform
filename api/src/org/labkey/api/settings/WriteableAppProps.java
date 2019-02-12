@@ -16,6 +16,7 @@
 
 package org.labkey.api.settings;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
@@ -215,21 +216,16 @@ public class WriteableAppProps extends AppPropsImpl
         storeStringValue(X_FRAME_OPTIONS, option);
     }
 
-    public void setExternalRedirectURLs(List<String> externalRedirectURLs)
+    public void setExternalRedirectURLs(@NotNull List<String> externalRedirectURLs)
     {
         String urls = "";
         if (null != externalRedirectURLs)
         {
             for (String externalRedirectURL : externalRedirectURLs)
             {
-                urls += externalRedirectURL.trim() + "\n"; //using ## as a delimiter since url could have common delimiters such as , ; among other characters
+                urls += externalRedirectURL.trim() + EXTERNAL_REDIRECT_HOST_URL_DELIMITER;
             }
         }
-        storeStringValue(EXTERNAL_REDIRECT_URL, urls);
-    }
-
-    public void resetExternalRedirectURLs()
-    {
-        storeStringValue(EXTERNAL_REDIRECT_URL, null);
+        storeStringValue(EXTERNAL_REDIRECT_HOST_URLS, urls);
     }
 }

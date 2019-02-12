@@ -40,8 +40,6 @@ import java.net.URL;
  */
 public class ReturnURLString
 {
-    /** Name for experimental feature to control allowing open redirect behavior */
-
     private static final Logger LOG = Logger.getLogger(ReturnURLString.class);
 
     private final String _source;
@@ -137,7 +135,7 @@ public class ReturnURLString
 
                     if (!isConfigured)
                     {
-                        LOG.error("Rejected external host redirect " + logMessageDetails +
+                        LOG.warn("Rejected external host redirect " + logMessageDetails +
                                 "\nPlease configure external redirect url host from: Admin gear --> Site --> Admin Console --> Admin Console Links --> External Redirect URLs");
                         return false;
                     }

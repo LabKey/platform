@@ -96,7 +96,8 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     static final String API_KEY_EXPIRATION_SECONDS = "apiKeyExpirationSeconds";
     static final String ALLOW_SESSION_KEYS = "allowSessionKeys";
     static final String X_FRAME_OPTIONS = "XFrameOption";
-    static String EXTERNAL_REDIRECT_URL = "";
+    static String EXTERNAL_REDIRECT_HOST_URLS = "externalRedirectHostURLs"; //configured redirect host urls (delimited by newline) will be saved under this property.
+    static String EXTERNAL_REDIRECT_HOST_URL_DELIMITER = "\n";
 
     private static final String SERVER_GUID = "serverGUID";
     private static final String SERVER_GUID_XML_PARAMETER_NAME = "org.labkey.mothership." + SERVER_GUID;
@@ -574,12 +575,13 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     }
 
     @Override
+    @NotNull
     public List<String> getExternalRedirectURLs()
     {
-        String urls =  lookupStringValue(EXTERNAL_REDIRECT_URL, "");
+        String urls =  lookupStringValue(EXTERNAL_REDIRECT_HOST_URLS, "");
         if (StringUtils.isNotBlank(urls))
         {
-            return new ArrayList<>(Arrays.asList(urls.split("\n")));
+            return new ArrayList<>(Arrays.asList(urls.split(EXTERNAL_REDIRECT_HOST_URL_DELIMITER)));
         }
         return new ArrayList<>();
     }
