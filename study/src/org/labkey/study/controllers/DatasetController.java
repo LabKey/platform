@@ -70,7 +70,6 @@ public class DatasetController extends BaseStudyController
 
     public DatasetController()
     {
-        super();
         setActionResolver(ACTION_RESOLVER);
     }
 

@@ -30,6 +30,7 @@ import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.HasViewContext;
+import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.OldRedirectAction;
 import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.action.ReturnUrlForm;
@@ -5312,7 +5313,7 @@ public class SpecimenController extends BaseStudyController
     }
 
     @RequiresPermission(ManageRequestSettingsPermission.class)
-    public class UpdateRequestabilityRulesAction extends ApiAction<UpdateRequestabilityRulesForm>
+    public class UpdateRequestabilityRulesAction extends MutatingApiAction<UpdateRequestabilityRulesForm>
     {
         @Override
         public ApiResponse execute(UpdateRequestabilityRulesForm form, BindException errors)
@@ -5653,7 +5654,7 @@ public class SpecimenController extends BaseStudyController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class SaveSpecimenWebPartSettingsAction extends ApiAction<SpecimenWebPartForm>
+    public class SaveSpecimenWebPartSettingsAction extends MutatingApiAction<SpecimenWebPartForm>
     {
         @Override
         public ApiResponse execute(SpecimenWebPartForm form, BindException errors)

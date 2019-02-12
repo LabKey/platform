@@ -93,7 +93,6 @@ public class ParticipantGroupController extends BaseStudyController
 
     public ParticipantGroupController()
     {
-        super();
         setActionResolver(ACTION_RESOLVER);
     }
 

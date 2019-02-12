@@ -124,7 +124,6 @@ public class ReportsController extends BaseStudyController
 
     public ReportsController()
     {
-        super();
         setActionResolver(_actionResolver);
     }
 

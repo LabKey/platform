@@ -747,6 +747,7 @@ public class AssayController extends SpringActionController
             return _protocolId;
         }
 
+        @SuppressWarnings("unused")
         public void setProtocolId(Integer protocolId)
         {
             _protocolId = protocolId;
@@ -756,11 +757,6 @@ public class AssayController extends SpringActionController
     @RequiresPermission(InsertPermission.class)
     public class AssayFileUploadAction extends AbstractFileUploadAction<AssayFileUploadForm>
     {
-        public AssayFileUploadAction()
-        {
-            super(AssayFileUploadForm.class);
-        }
-
         protected File getTargetFile(String filename) throws IOException
         {
             if (!PipelineService.get().hasValidPipelineRoot(getContainer()))
@@ -778,7 +774,7 @@ public class AssayController extends SpringActionController
             }
         }
 
-        protected String getResponse(Map<String, Pair<File, String>> files, AssayFileUploadForm form)
+        public String getResponse(AssayFileUploadForm form, Map<String, Pair<File, String>> files)
         {
             JSONObject fullMap = new JSONObject();
             for (Map.Entry<String, Pair<File, String>> entry : files.entrySet())

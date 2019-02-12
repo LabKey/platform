@@ -165,7 +165,7 @@
                                 ActionURL returnURL = getActionURL();
                                 ActionURL editDefinition = new ActionURL(StudyDefinitionController.EditStudyDefinitionAction.class, p);
                                 editDefinition.addReturnURL(returnURL);
-                                %><%= textLink("Edit Additional Properties", editDefinition) %><%
+                                %><%=link("Edit Additional Properties", editDefinition).usePost()%><%
                             }
                             else
                             {

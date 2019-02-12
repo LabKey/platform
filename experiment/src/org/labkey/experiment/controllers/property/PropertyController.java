@@ -455,7 +455,7 @@ public class PropertyController extends SpringActionController
             return tempFile;
         }
 
-        protected String getResponse(Map<String, Pair<File, String>> files, FileUploadForm form) throws UploadException
+        public String getResponse(FileUploadForm form, Map<String, Pair<File, String>> files) throws UploadException
         {
             if (files.isEmpty())
             {

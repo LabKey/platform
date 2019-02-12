@@ -423,7 +423,7 @@ public class SpecimenApiController extends BaseStudyController
 
     @RequiresPermission(RequestSpecimensPermission.class)
     @ApiVersion(9.1)
-    public class AddVialsToRequestAction extends ApiAction<VialRequestForm>
+    public class AddVialsToRequestAction extends MutatingApiAction<VialRequestForm>
     {
         public ApiResponse execute(VialRequestForm vialRequestForm, BindException errors) throws Exception
         {
