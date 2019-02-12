@@ -14,7 +14,7 @@
 <labkey:form method="post">
     <table>
         <tr>
-            <td class="labkey-form-label"><label for="newExternalRedirectURLTextField">Host</label><%= helpPopup("Host", "New external redirect host URL")%></td>
+            <td class="labkey-form-label"><label for="newExternalRedirectURLTextField">Host</label><%= helpPopup("Host", "New external redirect host URL. Ex: www.myexternalhost.com")%></td>
             <td><input name="newExternalRedirectURL" id="newExternalRedirectURLTextField" size="75" /></td>
         </tr>
         <tr>

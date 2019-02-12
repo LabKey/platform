@@ -9146,7 +9146,6 @@ public class AdminController extends SpringActionController
                 if (existingURLs.size() > 0)
                 {
                     WriteableAppProps appProps = AppProps.getWriteableInstance();
-                    appProps.resetExternalRedirectURLs();
                     appProps.setExternalRedirectURLs(form.getExistingRedirectURLList());
                     appProps.save(getUser());
                 }
