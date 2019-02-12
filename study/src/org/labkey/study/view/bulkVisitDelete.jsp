@@ -54,11 +54,7 @@
     boolean isDateBased = study != null && study.getTimepointType() == TimepointType.DATE;
     String noun = isDateBased ? "Timepoint" : "Visit";
 
-    ActionURL returnURL;
-    if (getActionURL().getParameter("returnUrl") != null)
-        returnURL = new ActionURL(getActionURL().getParameter("returnUrl"));
-    else
-        returnURL = new ActionURL(StudyController.ManageVisitsAction.class, getContainer());
+    ActionURL returnURL = form.getReturnActionURL(new ActionURL(StudyController.ManageVisitsAction.class, getContainer()));
 
     Map<VisitMapKey, VisitManager.VisitStatistics> visitSummaryMap = visitManager.getVisitSummary(getUser(), null, null, Collections.singleton(VisitManager.VisitStatistic.RowCount), true);
     Map<Integer, Integer> visitRowCountMap = new HashMap<>();

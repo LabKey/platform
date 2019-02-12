@@ -2267,7 +2267,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static class DeleteVisitsForm
+    public static class DeleteVisitsForm extends ReturnUrlForm
     {
         private int[] _visitIds;
 
