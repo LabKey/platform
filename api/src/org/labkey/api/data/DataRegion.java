@@ -1276,59 +1276,6 @@ public class DataRegion extends DisplayElement
         return msg;
     }
 
-    protected void renderRegionStart(RenderContext ctx, Writer out, boolean renderButtons, boolean showRecordSelectors, List<DisplayColumn> renderers) throws IOException
-    {
-        if (renderButtons)
-            renderFormBegin(ctx, out, MODE_GRID);
-        out.write("\n<div class=\"labkey-data-region-wrap\"><table class=\"labkey-data-region");
-
-        if (isShowBorders())
-            out.write(" labkey-show-borders");
-        else if (isShowSurroundingBorder())
-            out.write(" labkey-show-surrounding-border");
-
-        if (_aggregateResults != null && !_aggregateResults.isEmpty())
-            out.write(" labkey-has-col-totals");
-        out.write("\"");
-
-        out.write(" id=\"" + PageFlowUtil.filter(getDomId()) + "\"");
-
-        String name = getName();
-        if (name != null)
-        {
-            out.write(" lk-region-name=\"" + PageFlowUtil.filter(name) + "\" ");
-        }
-        out.write(">\n");
-
-        //colgroup
-        out.write("\n<colgroup>");
-        if (showRecordSelectors)
-            out.write("\n<col class=\"labkey-selectors\" width=\"35\"/>");
-        Iterator<DisplayColumn> itr = renderers.iterator();
-        DisplayColumn renderer;
-        while (itr.hasNext())
-        {
-            renderer = itr.next();
-            if (renderer.isVisible(ctx))
-                renderer.renderColTag(out, !itr.hasNext());
-        }
-        out.write("\n</colgroup>");
-    }
-
-    // TODO: Need to migrate or remove usage of renderer.renderGridEnd
-    protected void renderRegionEnd(RenderContext ctx, Writer out, boolean renderButtons, List<DisplayColumn> renderers) throws IOException
-    {
-        out.write("\n</table></div>");
-        if (renderButtons)
-            renderFormEnd(ctx, out);
-
-        for (DisplayColumn renderer : renderers)
-        {
-            if (renderer.isVisible(ctx))
-                renderer.renderGridEnd(ctx, out);
-        }
-    }
-
     protected boolean shouldRenderHeader(boolean renderButtons)
     {
         return ((renderButtons && _buttonBarPosition.atTop() && _gridButtonBar.getList().size() > 0)
