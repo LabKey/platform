@@ -60,6 +60,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.MailHelper.BulkEmailer;
@@ -168,12 +169,20 @@ public class AnnouncementManager
 
     public static @Nullable AnnouncementModel getAnnouncement(@Nullable Container c, String entityId)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("EntityId"), entityId);
-        if (c != null)
+        try
         {
-            filter.addCondition(FieldKey.fromParts("Container"), c);
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("EntityId"), new GUID(entityId));
+            if (c != null)
+            {
+                filter.addCondition(FieldKey.fromParts("Container"), c);
+            }
+            return new TableSelector(_comm.getTableInfoAnnouncements(), filter, null).getObject(AnnouncementModel.class);
         }
-        return new TableSelector(_comm.getTableInfoAnnouncements(), filter, null).getObject(AnnouncementModel.class);
+        catch (IllegalArgumentException e)
+        {
+            // Bad GUID, no match!
+            return null;
+        }
     }
 
     private static MessageConfigService.ConfigTypeProvider _configProvider;
