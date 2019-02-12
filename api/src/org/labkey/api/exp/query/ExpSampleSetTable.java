@@ -34,7 +34,6 @@ public interface ExpSampleSetTable extends ExpTable<ExpSampleSetTable.Column>
         CreatedBy,
         ModifiedBy,
         Folder,
-        Active,
         SampleCount,
     }
 }
