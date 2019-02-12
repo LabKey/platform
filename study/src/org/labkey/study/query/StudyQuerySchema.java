@@ -191,7 +191,7 @@ public class StudyQuerySchema extends UserSchema
     }
 
 
-    public static StudyQuerySchema createSchema(StudyImpl study, User user, boolean mustCheckPermissions)
+    public static StudyQuerySchema createSchema(StudyImpl study, @NotNull User user, boolean mustCheckPermissions)
     {
         if (null == study)
             throw new NotFoundException("Study not found.");

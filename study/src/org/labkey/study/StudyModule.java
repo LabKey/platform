@@ -66,6 +66,7 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
@@ -491,7 +492,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 MutableInt requestsEnabled = new MutableInt(0);
 
                 StudyManager.getInstance().getAllStudies().stream()
-                    .map(study->StudyQuerySchema.createSchema(study, null, false))
+                    .map(study->StudyQuerySchema.createSchema(study, User.getSearchUser(), false))
                     .forEach(schema->{
                         RepositorySettings settings = SpecimenManager.getInstance().getRepositorySettings(schema.getContainer());
 
