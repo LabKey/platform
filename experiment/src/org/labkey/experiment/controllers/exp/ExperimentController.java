@@ -33,7 +33,6 @@ import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
-import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.exp.AbstractParameter;
 import org.labkey.api.exp.DuplicateMaterialException;
 import org.labkey.api.exp.ExperimentDataHandler;
@@ -129,7 +128,6 @@ import org.labkey.api.study.assay.AssayFileWriter;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.ImageUtil;
@@ -202,7 +200,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.Writer;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -5671,9 +5668,15 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(InsertPermission.class)
-    public class ImportXarFileAction extends SimpleViewAction<ImportXarForm>
+    public class ImportXarFileAction extends FormHandlerAction<ImportXarForm>
     {
-        public ModelAndView getView(ImportXarForm form, BindException errors) throws Exception
+        @Override
+        public void validateCommand(ImportXarForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(ImportXarForm form, BindException errors) throws Exception
         {
             for (File f : form.getValidatedFiles(getContainer()))
             {
@@ -5696,18 +5699,19 @@ public class ExperimentController extends SpringActionController
                 }
             }
 
-            return HttpView.redirect(getContainer().getStartURL(getUser()));
+            return true;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public URLHelper getSuccessURL(ImportXarForm importXarForm)
         {
-            throw new UnsupportedOperationException();
+            return getContainer().getStartURL(getUser());
         }
     }
 
 
     @RequiresPermission(InsertPermission.class)
-    public class ImportXarAction extends ApiAction<ImportXarForm>
+    public class ImportXarAction extends MutatingApiAction<ImportXarForm>
     {
         @Override
         public Object execute(ImportXarForm form, BindException errors) throws Exception

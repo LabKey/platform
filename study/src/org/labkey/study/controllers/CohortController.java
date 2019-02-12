@@ -16,8 +16,8 @@
 package org.labkey.study.controllers;
 
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
@@ -35,6 +35,7 @@ import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.HttpView;
@@ -70,19 +71,30 @@ public class CohortController extends BaseStudyController
 
     public CohortController()
     {
-        super();
         setActionResolver(ACTION_RESOLVER);
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class DeleteCohortAction extends SimpleRedirectAction<CohortIdForm>
+    public class DeleteCohortAction extends FormHandlerAction<CohortIdForm>
     {
-        public ActionURL getRedirectURL(CohortIdForm form)
+        @Override
+        public void validateCommand(CohortIdForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(CohortIdForm form, BindException errors) throws Exception
         {
             CohortImpl cohort = StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), form.getRowId());
             if (cohort != null && !cohort.isInUse())
                 StudyManager.getInstance().deleteCohort(cohort);
 
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(CohortIdForm form)
+        {
             return new ActionURL(CohortController.ManageCohortsAction.class, getContainer());
         }
     }
@@ -95,9 +107,15 @@ public class CohortController extends BaseStudyController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class DeleteUnusedCohortsAction extends SimpleRedirectAction
+    public class DeleteUnusedCohortsAction extends FormHandlerAction
     {
-        public ActionURL getRedirectURL(Object form)
+        @Override
+        public void validateCommand(Object target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors) throws Exception
         {
             List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(getContainer(), getUser());
             for (CohortImpl cohort : cohorts)
@@ -106,6 +124,12 @@ public class CohortController extends BaseStudyController
                     StudyManager.getInstance().deleteCohort(cohort);
             }
 
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(Object o)
+        {
             return new ActionURL(ManageCohortsAction.class, getContainer());
         }
     }

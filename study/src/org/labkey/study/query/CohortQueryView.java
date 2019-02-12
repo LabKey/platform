@@ -25,6 +25,7 @@ import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -72,7 +73,7 @@ public class CohortQueryView extends ExtensibleObjectQueryView
             bar.add(insertButton);
 
             ActionURL deleteUnusedURL = new ActionURL(CohortController.DeleteUnusedCohortsAction.class, getSchema().getContainer());
-            bar.add(new ActionButton(deleteUnusedURL, "Delete Unused"));
+            bar.add(new ActionButton(deleteUnusedURL, "Delete Unused").setActionType(ActionButton.Action.POST));
 
             ActionURL editDefinitionURL = new ActionURL(StudyDefinitionController.EditCohortDefinitionAction.class, getSchema().getContainer());
             bar.add(new ActionButton(editDefinitionURL, "Edit Cohort Definition"));
@@ -134,7 +135,7 @@ public class CohortQueryView extends ExtensibleObjectQueryView
                         ActionURL actionURL = new ActionURL(CohortController.DeleteCohortAction.class, folder);
                         actionURL.addParameter("rowId", rowId.toString());
 
-                        out.write(PageFlowUtil.textLink("delete", actionURL));
+                        out.write(new LinkBuilder("delete").href(actionURL).usePost().toString());
                     }
                     else
                     {
