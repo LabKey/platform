@@ -9125,11 +9125,11 @@ public class AdminController extends SpringActionController
             //handle delete of existing external redirect url
             if (form.isDelete())
             {
-                String existing = form.getExistingExternalURL();
+                String urlToDelete = form.getExistingExternalURL();
                 List<String> redirectURLs = AppProps.getInstance().getExternalRedirectURLs();
                 for (String externalRedirectURL : redirectURLs)
                 {
-                    if (null != existing && existing.trim().equalsIgnoreCase(externalRedirectURL.trim()))
+                    if (null != urlToDelete && urlToDelete.trim().equalsIgnoreCase(externalRedirectURL.trim()))
                     {
                         redirectURLs.remove(externalRedirectURL);
                         WriteableAppProps appProps = AppProps.getWriteableInstance();
@@ -9139,15 +9139,20 @@ public class AdminController extends SpringActionController
                     }
                 }
             }
-            //handle updates - clicking on Save button under Existing will reset External Links and re-save them all
+            //handle updates - clicking on Save button under Existing will save the updated urls
             else if (form.isSaveAll())
             {
-                List<String> existingURLs = form.getExistingRedirectURLList();
-                if (existingURLs.size() > 0)
+                List<String> redirectURLs = form.getExistingRedirectURLList(); //get urls from the form, this includes updated urls
+                if (redirectURLs.size() > 0)
                 {
-                    WriteableAppProps appProps = AppProps.getWriteableInstance();
-                    appProps.setExternalRedirectURLs(form.getExistingRedirectURLList());
-                    appProps.save(getUser());
+                    if (!hasDuplicates(redirectURLs, errors))
+                    {
+                        WriteableAppProps appProps = AppProps.getWriteableInstance();
+                        appProps.setExternalRedirectURLs(form.getExistingRedirectURLList());
+                        appProps.save(getUser());
+                    }
+                    else
+                        return false;
                 }
             }
             //save new external redirect url
@@ -9162,12 +9167,12 @@ public class AdminController extends SpringActionController
                 }
                 else if (StringUtils.isNotEmpty(newExternalRedirectURL))
                 {
-                    List<String> redirectURLs = AppProps.getInstance().getExternalRedirectURLs();
-                    if (!isDuplicate(redirectURLs, newExternalRedirectURL, errors))
+                    List<String> existingRedirectURLS = AppProps.getInstance().getExternalRedirectURLs();
+                    if (!isDuplicate(existingRedirectURLS, newExternalRedirectURL, errors))
                     {
-                        redirectURLs.add(newExternalRedirectURL);
+                        existingRedirectURLS.add(newExternalRedirectURL);
                         WriteableAppProps appProps = AppProps.getWriteableInstance();
-                        appProps.setExternalRedirectURLs(redirectURLs);
+                        appProps.setExternalRedirectURLs(existingRedirectURLS);
                         appProps.save(getUser());
                     }
                     else
@@ -9178,9 +9183,27 @@ public class AdminController extends SpringActionController
             return true;
         }
 
-        private boolean isDuplicate(List<String> redirectURLs, String newExternalRedirectURL, BindException errors)
+        private boolean hasDuplicates(List<String> redirectURLs, BindException errors)
         {
+            boolean foundDuplicates = false;
+            Map<String, String> urlMap = new HashMap<>();
+
             for (String redirectURL : redirectURLs)
+            {
+                if (urlMap.containsKey(redirectURL.trim()))
+                {
+                    errors.addError(new LabKeyError("'" + redirectURL + "' already exists. Duplicate hosts not allowed."));
+                    foundDuplicates = true;
+                }
+                else
+                    urlMap.put(redirectURL.trim(), null);
+            }
+            return foundDuplicates;
+        }
+
+        private boolean isDuplicate(List<String> existingURLs, String newExternalRedirectURL, BindException errors)
+        {
+            for (String redirectURL : existingURLs)
             {
                 if (newExternalRedirectURL.equalsIgnoreCase(redirectURL))
                 {
