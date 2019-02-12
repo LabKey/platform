@@ -152,7 +152,7 @@
 
 </script>
 
-<labkey:form id="groupMembersForm" action="<%=h(buildURL(SecurityController.UpdateMembersAction.class))%>" method="POST" layout="horizontal">
+<labkey:form id="groupMembersForm" method="POST" layout="horizontal">
 <%
 if (bean.messages.size() > 0)
 {

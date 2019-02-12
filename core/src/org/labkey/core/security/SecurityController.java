@@ -585,186 +585,6 @@ public class SecurityController extends SpringActionController
     }
 
 
-    @RequiresPermission(AdminPermission.class)
-    public class UpdateMembersAction extends FormHandlerAction<UpdateMembersForm>
-    {
-        private Group _group;
-        private ActionURL _successURL;
-
-
-        @Override
-        public void validateCommand(UpdateMembersForm target, Errors errors)
-        {
-        }
-
-        @Override
-        public boolean handlePost(UpdateMembersForm form, BindException errors) throws Exception
-        {
-            // 0 - only site-admins can modify members of system groups
-            // 1 - Global admins group cannot be empty
-            // 2 - warn if you are deleting yourself from global or project admins
-            // 3 - if user confirms delete, post to action again, with list of users to delete and confirmation flag.
-
-            assert !form.isQuickUI() : "isQuickUI() is NYI";  // TODO: Remove... unless quick UI is actually used
-
-            Container container = getContainer();
-
-            if (!container.isRoot() && !container.isProject())
-                container = container.getProject();
-
-            _group = form.getGroupFor(getContainer());
-            if (null == _group)
-                throw new RedirectException(new ActionURL(PermissionsAction.class, container));
-
-            if (_group.isSystemGroup() && !getUser().hasSiteAdminPermission())
-                throw new UnauthorizedException("Can not update members of system group: " + _group.getName());
-
-            List<String> messages = new ArrayList<>();
-
-            //check for new users to add.
-            String[] addNames = form.getNames() == null ? new String[0] : form.getNames().split("\n");
-
-            // split the list of names to add into groups and users (emails)
-            List<Group> addGroups = new ArrayList<>();
-            List<String> emails = new ArrayList<>();
-            for (String name : addNames)
-            {
-                // check for the groupId in the global group list or in the project
-                Integer gid = SecurityManager.getGroupId(null, StringUtils.trim(name), false);
-                Integer pid = SecurityManager.getGroupId(container, StringUtils.trim(name), false);
-
-                if (null != gid || null != pid)
-                {
-                    Group g = (gid != null ? SecurityManager.getGroup(gid) : SecurityManager.getGroup(pid));
-                    addGroups.add(g);
-                }
-                else
-                {
-                    emails.add(name);
-                }
-            }
-
-            List<String> invalidEmails = new ArrayList<>();
-            List<ValidEmail> addEmails = SecurityManager.normalizeEmails(emails, invalidEmails);
-
-            for (String rawEmail : invalidEmails)
-            {
-                // Ignore lines of all whitespace, otherwise show an error.
-                String e = trimToNull(rawEmail);
-                if (null != e)
-                    errors.reject(ERROR_MSG, "Could not add user " + filter(e) + ": Invalid email address");
-            }
-
-            String[] removeNames = form.getDelete();
-            invalidEmails.clear();
-
-            // delete group members by ID (can be both groups and users)
-            List<UserPrincipal> removeIds = new ArrayList<>();
-            if (removeNames != null && removeNames.length > 0)
-            {
-                for (String removeName : removeNames)
-                {
-                    // first check if the member name is a site group, otherwise get principal based on this container
-                    Integer id = SecurityManager.getGroupId(null, removeName, false);
-                    if (null != id)
-                    {
-                        removeIds.add(SecurityManager.getGroup(id));
-                    }
-                    else
-                    {
-                        UserPrincipal principal = SecurityManager.getPrincipal(removeName, container);
-
-                        // Race condition... principal could have been deleted, #18560
-                        if (null != principal)
-                            removeIds.add(principal);
-                    }
-                }
-            }
-
-            for (String rawEmail : invalidEmails)
-            {
-                // Ignore lines of all whitespace, otherwise show an error.
-                String e = trimToNull(rawEmail);
-                if (null != e)
-                    errors.reject(ERROR_MSG, "Could not remove user " + filter(e) + ": Invalid email address");
-            }
-
-            if (_group != null)
-            {
-                //check for users to delete
-                if (removeNames != null)
-                {
-                    //get list of group members to determine how many there are
-                    Set<User> userMembers = SecurityManager.getGroupMembers(_group, MemberType.ACTIVE_AND_INACTIVE_USERS);
-
-                    //if this is the site admins group and user is attempting to remove all site admins, display error.
-                    if (_group.getUserId() == Group.groupAdministrators && removeNames.length == userMembers.size())
-                    {
-                        errors.addError(new LabKeyError("The Site Administrators group must always contain at least one member. You cannot remove all members of this group."));
-                    }
-                    else
-                    {
-                        SecurityManager.deleteMembers(_group, removeIds);
-                    }
-                }
-
-                if (addGroups.size() > 0 || addEmails.size() > 0)
-                {
-                    // add new users
-                    List<User> addUsers = new ArrayList<>(addEmails.size());
-                    for (ValidEmail email : addEmails)
-                    {
-                        String addMessage = SecurityManager.addUser(getViewContext(), email, form.getSendEmail(), form.getMailPrefix());
-                        if (addMessage != null)
-                            messages.add(addMessage);
-
-                        // get the user and ensure that the user is still active
-                        User user = UserManager.getUser(email);
-
-                        // Null check since user creation may have failed, #8066
-                        if (null != user)
-                        {
-                            if (!user.isActive())
-                                errors.reject(ERROR_MSG, "You may not add the user '" + PageFlowUtil.filter(email)
-                                    + "' to this group because that user account is currently deactivated." +
-                                    " To re-activate this account, contact your system administrator.");
-                            else
-                                addUsers.add(user);
-                        }
-                    }
-
-                    List<String> addErrors = SecurityManager.addMembers(_group, addGroups);
-                    addErrors.addAll(SecurityManager.addMembers(_group, addUsers));
-
-                    for (String error : addErrors)
-                        errors.reject(ERROR_MSG, error);
-                }
-            }
-
-            _successURL = new ActionURL(GroupAction.class, getContainer()).addParameter("id", _group.getUserId());
-
-//  TODO: Delete this and renderContainerPermissions() -- unused
-//            if (form.isQuickUI())
-//                return renderContainerPermissions(_group, errors, messages, false);
-
-            return true;
-        }
-
-        @Override
-        public URLHelper getSuccessURL(UpdateMembersForm updateMembersForm)
-        {
-            return _successURL;
-        }
-    }
-
-    public static class UpdateMembersBean
-    {
-        public String[] addnames;
-        public String[] removenames;
-        public String groupName;
-        public String mailPrefix;
-    }
-
     public static class UpdateMembersForm extends GroupForm
     {
         private String names;
@@ -886,22 +706,190 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class GroupAction extends SimpleViewAction<GroupForm>
+    public class GroupAction extends FormViewAction<UpdateMembersForm>
     {
         private Group _group;
+        private ActionURL _successURL;
+        private List<String> _messages = new ArrayList<>();
 
-        public ModelAndView getView(GroupForm form, BindException errors)
+        @Override
+        public ModelAndView getView(UpdateMembersForm form, boolean reshow, BindException errors) throws Exception
         {
             _group = form.getGroupFor(getContainer());
             if (null == _group)
                 throw new RedirectException(new ActionURL(PermissionsAction.class, getContainer()));
-            return renderGroup(_group, errors, Collections.emptyList());
+            return renderGroup(_group, errors, _messages);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("globalGroups");
             return addGroupNavTrail(root, _group);
+        }
+
+        @Override
+        public void validateCommand(UpdateMembersForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(UpdateMembersForm form, BindException errors) throws Exception
+        {
+            // 0 - only site-admins can modify members of system groups
+            // 1 - Global admins group cannot be empty
+            // 2 - warn if you are deleting yourself from global or project admins
+            // 3 - if user confirms delete, post to action again, with list of users to delete and confirmation flag.
+
+            assert !form.isQuickUI() : "isQuickUI() is NYI";  // TODO: Remove... unless quick UI is actually used
+
+            Container container = getContainer();
+
+            if (!container.isRoot() && !container.isProject())
+                container = container.getProject();
+
+            _group = form.getGroupFor(getContainer());
+            if (null == _group)
+                throw new RedirectException(new ActionURL(PermissionsAction.class, container));
+
+            if (_group.isSystemGroup() && !getUser().hasSiteAdminPermission())
+                throw new UnauthorizedException("Can not update members of system group: " + _group.getName());
+
+            _messages = new ArrayList<>();
+
+            //check for new users to add.
+            String[] addNames = form.getNames() == null ? new String[0] : form.getNames().split("\n");
+
+            // split the list of names to add into groups and users (emails)
+            List<Group> addGroups = new ArrayList<>();
+            List<String> emails = new ArrayList<>();
+            for (String name : addNames)
+            {
+                // check for the groupId in the global group list or in the project
+                Integer gid = SecurityManager.getGroupId(null, StringUtils.trim(name), false);
+                Integer pid = SecurityManager.getGroupId(container, StringUtils.trim(name), false);
+
+                if (null != gid || null != pid)
+                {
+                    Group g = (gid != null ? SecurityManager.getGroup(gid) : SecurityManager.getGroup(pid));
+                    addGroups.add(g);
+                }
+                else
+                {
+                    emails.add(name);
+                }
+            }
+
+            List<String> invalidEmails = new ArrayList<>();
+            List<ValidEmail> addEmails = SecurityManager.normalizeEmails(emails, invalidEmails);
+
+            for (String rawEmail : invalidEmails)
+            {
+                // Ignore lines of all whitespace, otherwise show an error.
+                String e = trimToNull(rawEmail);
+                if (null != e)
+                    errors.reject(ERROR_MSG, "Could not add user " + filter(e) + ": Invalid email address");
+            }
+
+            String[] removeNames = form.getDelete();
+            invalidEmails.clear();
+
+            // delete group members by ID (can be both groups and users)
+            List<UserPrincipal> removeIds = new ArrayList<>();
+            if (removeNames != null && removeNames.length > 0)
+            {
+                for (String removeName : removeNames)
+                {
+                    // first check if the member name is a site group, otherwise get principal based on this container
+                    Integer id = SecurityManager.getGroupId(null, removeName, false);
+                    if (null != id)
+                    {
+                        removeIds.add(SecurityManager.getGroup(id));
+                    }
+                    else
+                    {
+                        UserPrincipal principal = SecurityManager.getPrincipal(removeName, container);
+
+                        // Race condition... principal could have been deleted, #18560
+                        if (null != principal)
+                            removeIds.add(principal);
+                    }
+                }
+            }
+
+            for (String rawEmail : invalidEmails)
+            {
+                // Ignore lines of all whitespace, otherwise show an error.
+                String e = trimToNull(rawEmail);
+                if (null != e)
+                    errors.reject(ERROR_MSG, "Could not remove user " + filter(e) + ": Invalid email address");
+            }
+
+            if (_group != null)
+            {
+                //check for users to delete
+                if (removeNames != null)
+                {
+                    //get list of group members to determine how many there are
+                    Set<User> userMembers = SecurityManager.getGroupMembers(_group, MemberType.ACTIVE_AND_INACTIVE_USERS);
+
+                    //if this is the site admins group and user is attempting to remove all site admins, display error.
+                    if (_group.getUserId() == Group.groupAdministrators && removeNames.length == userMembers.size())
+                    {
+                        errors.addError(new LabKeyError("The Site Administrators group must always contain at least one member. You cannot remove all members of this group."));
+                    }
+                    else
+                    {
+                        SecurityManager.deleteMembers(_group, removeIds);
+                    }
+                }
+
+                if (addGroups.size() > 0 || addEmails.size() > 0)
+                {
+                    // add new users
+                    List<User> addUsers = new ArrayList<>(addEmails.size());
+                    for (ValidEmail email : addEmails)
+                    {
+                        String addMessage = SecurityManager.addUser(getViewContext(), email, form.getSendEmail(), form.getMailPrefix());
+                        if (addMessage != null)
+                            _messages.add(addMessage);
+
+                        // get the user and ensure that the user is still active
+                        User user = UserManager.getUser(email);
+
+                        // Null check since user creation may have failed, #8066
+                        if (null != user)
+                        {
+                            if (!user.isActive())
+                                errors.reject(ERROR_MSG, "You may not add the user '" + PageFlowUtil.filter(email)
+                                        + "' to this group because that user account is currently deactivated." +
+                                        " To re-activate this account, contact your system administrator.");
+                            else
+                                addUsers.add(user);
+                        }
+                    }
+
+                    List<String> addErrors = SecurityManager.addMembers(_group, addGroups);
+                    addErrors.addAll(SecurityManager.addMembers(_group, addUsers));
+
+                    for (String error : addErrors)
+                        errors.reject(ERROR_MSG, error);
+                }
+            }
+
+            _successURL = new ActionURL(GroupAction.class, getContainer()).addParameter("id", _group.getUserId());
+
+//  TODO: Delete this and renderContainerPermissions() -- unused
+//            if (form.isQuickUI())
+//                return renderContainerPermissions(_group, errors, messages, false);
+
+            return !errors.hasErrors();
+        }
+
+        @Override
+        public URLHelper getSuccessURL(UpdateMembersForm updateMembersForm)
+        {
+            return _messages.isEmpty() ? _successURL : null;
         }
     }
 
@@ -2024,7 +2012,6 @@ public class SecurityController extends SpringActionController
             assertForAdminPermission(user,
                 controller.new PermissionsAction(),
                 controller.new StandardDeleteGroupAction(),
-                controller.new UpdateMembersAction(),
                 controller.new GroupAction(),
                 controller.new CompleteMemberAction(),
                 controller.new CompleteUserAction(),

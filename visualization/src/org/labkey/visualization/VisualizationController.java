@@ -44,6 +44,7 @@ import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.ExtendedApiQueryResponse;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
+import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.announcements.DiscussionService;
@@ -1059,7 +1060,7 @@ public class VisualizationController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class)
     @RequiresLogin
-    public class SaveVisualizationAction extends ApiAction<SaveVisualizationForm>
+    public class SaveVisualizationAction extends MutatingApiAction<SaveVisualizationForm>
     {
         private Report _currentReport;
 
@@ -1233,7 +1234,7 @@ public class VisualizationController extends SpringActionController
     }
 
     @RequiresLogin @RequiresPermission(ReadPermission.class)
-    public class SaveGenericReportAction extends ApiAction<ChartWizardReportForm>
+    public class SaveGenericReportAction extends MutatingApiAction<ChartWizardReportForm>
     {
         @Override
         public void validateForm(ChartWizardReportForm form, Errors errors)
