@@ -74,6 +74,10 @@ public interface ExperimentUrls extends UrlProvider
 
     ActionURL getMaterialDetailsURL(Container c, int materialRowId);
 
+    ActionURL getCreateSampleSetURL(Container c);
+
+    ActionURL getImportSamplesURL(Container c, String sampleSetName);
+
     ActionURL getShowUploadMaterialsURL(Container container);
 
     ActionURL getDataDetailsURL(ExpData data);
