@@ -51,7 +51,7 @@
             renderTo        : <%=q(renderId)%>,
             schemaName      : <%=q(form.getSchemaName())%>,
             queryName       : <%=q(form.getQueryName())%>,
-            returnUrl       : <%=q(form.getReturnActionURL().getLocalURIString())%>,
+            returnUrl       : <%=q(form.getReturnActionURL() != null ? form.getReturnActionURL().getLocalURIString() : null)%>,
             allSchemas      : <%=q(allSchemas)%>
         });
 
