@@ -33,6 +33,7 @@
 <%@ page import="org.labkey.core.security.GroupView" %>
 <%@ page import="org.labkey.core.security.SecurityApiActions" %>
 <%@ page import="org.labkey.core.security.SecurityController" %>
+<%@ page import="org.labkey.core.security.SecurityController.GroupAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -152,7 +153,7 @@
 
 </script>
 
-<labkey:form id="groupMembersForm" method="POST" layout="horizontal">
+<labkey:form id="groupMembersForm" action="<%=h(buildURL(GroupAction.class))%>" method="POST" layout="horizontal">
 <%
 if (bean.messages.size() > 0)
 {
