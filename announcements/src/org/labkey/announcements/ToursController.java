@@ -91,9 +91,15 @@ public class ToursController extends SpringActionController
         @Override
         public ModelAndView getView(EditTourForm editTourForm, BindException errors)
         {
-            TourModel model;
+            TourModel model = null;
             if (null != editTourForm.getRowid())
-                model = TourManager.getTour(getContainer(), Integer.parseInt(editTourForm.getRowid()));
+                try
+                {
+                    model = TourManager.getTour(getContainer(), Integer.parseInt(editTourForm.getRowid()));
+                }
+                catch (NumberFormatException e) {
+                    // Fall through
+                }
             else
                 model = new TourModel();
 
