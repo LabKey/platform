@@ -219,7 +219,7 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
         }
     }
 
-    private File handleFile(String filename, InputStream input, Writer writer) throws IOException
+    protected File handleFile(String filename, InputStream input, Writer writer) throws IOException
     {
         if (filename == null || input == null)
         {
