@@ -244,7 +244,7 @@
         <h1 class="labkey-page-section-header">Forms</h1>
         <h2>Horizontal form</h2>
         <div class="lk-sg-example">
-            <labkey:form action="some-action" layout="horizontal">
+            <labkey:form action="some-action" layout="horizontal" autoComplete="off">
                 <labkey:input type="displayfield" label="Display Field" value="Value to display as text"/>
                 <labkey:input name="name" label="Standard Input" placeholder="Placeholder Text" id="exampleInputName1"/>
                 <labkey:input name="avatar" label="Avatar" type="file" id="avatar1" contextContent="It's best to use an image smaller than 400x400 pixels"/>
@@ -261,6 +261,7 @@
                         .addOption(new Option.OptionBuilder().value("VW").label("Volkswagen").build())
                         .addOption(new Option.OptionBuilder().value("GM").label("General Motors").build())
                 %>
+                <labkey:input name="test" label="HTML5 attributes" autoComplete="on" isAutoFocused="true" isMultiple="true" pattern="[A-Za-z]{3}" placeholder="3 letter country code"/>
                 <button type="submit" class="btn btn-default">Invite</button>
             </labkey:form>
         </div>
