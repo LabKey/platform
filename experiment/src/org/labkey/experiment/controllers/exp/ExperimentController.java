@@ -3556,88 +3556,6 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(UpdatePermission.class)
-    public class ShowUploadMaterialsAction extends FormViewAction<UploadMaterialSetForm>
-    {
-        ExpSampleSetImpl _ss;
-        ExpSampleSetImpl _newss;
-
-        @Override
-        public void validateCommand(UploadMaterialSetForm form, Errors errors)
-        {
-            if (StringUtils.isEmpty(form.getName()) || form.getName() == null)
-                errors.reject(ERROR_MSG, "You must supply a name for the sample set");
-
-            if (form.isImportMoreSamples() && form.getInsertUpdateChoice() == null)
-                errors.reject(ERROR_MSG, "Please select how to deal with duplicates.");
-
-            // 11138: IAE in org.labkey.api.reader.AbstractTabLoader.<init>()
-            if (StringUtils.isEmpty(form.getData()) && StringUtils.isEmpty(form.getTsvData()))
-                errors.reject(ERROR_MSG, "Please paste data into the text field or upload a tsv.");
-        }
-
-        @Override
-        public ModelAndView getView(UploadMaterialSetForm form, boolean reshow, BindException errors)
-        {
-            return new JspView<>("/org/labkey/experiment/uploadMaterials.jsp", form, errors);
-        }
-
-        @Override
-        public boolean handlePost(UploadMaterialSetForm form, BindException errors)
-        {
-            try
-            {
-                _ss = form.getSampleSet();
-
-                // TODO: how to get this FormattedError into the validate command?
-                if (!form.isImportMoreSamples() && null != _ss)
-                {
-                    errors.addError(new FormattedError("A sample set with that name already exists.  If you would like to import samples to that set, go here:  " +
-                            "<a href=" + getViewContext().getActionURL() + "name=" + form.getName() + "&importMoreSamples=true>Import More Samples</a>"));
-                }
-
-                if (!errors.hasErrors())
-                {
-                    try
-                    {
-                        UploadSamplesHelper helper = new UploadSamplesHelper(form, _ss == null ? null : _ss.getDataObject());
-                        Pair<MaterialSource, List<ExpMaterial>> pair = helper.uploadMaterials();
-                        MaterialSource newSource = pair.first;
-
-                        _newss = ExperimentServiceImpl.get().getSampleSet(newSource.getRowId());
-                    }
-                    catch (ExperimentException | IOException | ValidationException e)
-                    {
-                        errors.reject(ERROR_MSG, e.getMessage());
-                    }
-                }
-            }
-            finally
-            {
-                // Success or failure, clear the sample set cache as the object may have been mutated - issue 27407
-                ExperimentService.get().clearCaches();
-            }
-
-            return !errors.hasErrors();
-        }
-
-        @Override
-        public URLHelper getSuccessURL(UploadMaterialSetForm form)
-        {
-            return form.getReturnActionURL(_newss != null ? ExperimentUrlsImpl.get().getShowSampleSetURL(_newss) : getContainer().getStartURL(getUser()));
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            setHelpTopic("sampleSets");
-            NavTree nav = appendRootNavTrail(root).addChild("Sample Sets", ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer()));
-            if (_ss != null)
-                nav.addChild(_ss.getName(), ExperimentUrlsImpl.get().getShowSampleSetURL(_ss));
-            nav.addChild("Import Sample Set");
-            return nav;
-        }
-    }
-
     @RequiresPermission(InsertPermission.class)
     public class ShowAddXarFileAction extends FormViewAction<Object>
     {
@@ -6047,12 +5965,6 @@ public class ExperimentController extends SpringActionController
             url.addParameter("query.queryName", sampleSetName);
             url.addParameter("schemaName", "exp.materials");
             return url;
-        }
-
-        @Override
-        public ActionURL getShowUploadMaterialsURL(Container container)
-        {
-            return new ActionURL(ShowUploadMaterialsAction.class, container);
         }
 
         public ActionURL getDataDetailsURL(ExpData data)

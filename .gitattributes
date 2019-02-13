@@ -1057,7 +1057,6 @@ experiment/src/org/labkey/experiment/types/importVocabulary.jsp -text
 experiment/src/org/labkey/experiment/types/repair.jsp -text
 experiment/src/org/labkey/experiment/types/typeDetails.jsp -text
 experiment/src/org/labkey/experiment/types/types.jsp -text
-experiment/src/org/labkey/experiment/uploadMaterials.jsp -text
 experiment/src/org/labkey/experiment/xar/AbstractXarImporter.java -text
 experiment/src/org/labkey/experiment/xar/AutoFileLSIDReplacer.java -text
 experiment/src/org/labkey/experiment/xar/FileResolver.java -text
