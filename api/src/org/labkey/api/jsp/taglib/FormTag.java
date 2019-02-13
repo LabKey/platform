@@ -31,6 +31,8 @@ import java.io.IOException;
 
 public class FormTag extends BodyTagSupport
 {
+    private String autoComplete;
+    private Boolean isNoValidate;
     private String name;
     private String method="GET";
     private Object action;
@@ -131,6 +133,21 @@ public class FormTag extends BodyTagSupport
         _layout = layout;
     }
 
+    public void setAutoComplete(String autoComplete)
+    {
+        this.autoComplete = autoComplete;
+    }
+
+    public void setIsNoValidate(Boolean isNoValidate)
+    {
+        this.isNoValidate = isNoValidate;
+    }
+
+    public Boolean isNoValidate()
+    {
+        return isNoValidate == null ? false : isNoValidate;
+    }
+
     public int doStartTag() throws JspException
     {
         StringBuilder sb = new StringBuilder();
@@ -167,6 +184,11 @@ public class FormTag extends BodyTagSupport
             sb.append(" onsubmit=\"").append(onsubmit).append("\"");
         if (StringUtils.isNotEmpty(style))
             sb.append(" style=\"").append(style).append("\"");
+        if (StringUtils.isNotEmpty(autoComplete))
+            sb.append(" autocomplete=\"").append(autoComplete).append("\"");
+
+        if (isNoValidate())
+            sb.append(" novalidate");
 
         String cls = "";
         if (StringUtils.isNotEmpty(_class))

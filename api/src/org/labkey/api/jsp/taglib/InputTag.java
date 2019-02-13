@@ -19,31 +19,120 @@ import org.labkey.api.util.element.DisplayField;
 import org.labkey.api.util.element.Input;
 import org.labkey.api.util.element.TextArea;
 
-import javax.servlet.jsp.JspException;
 import java.io.IOException;
 
 public class InputTag extends SimpleTagBase
 {
+    private String autoComplete; // "on" / "off"
     private Boolean checked;
     private String contextContent;
     private String className;
+    private String dirName;
     private Boolean forceSmallContext;
+    private String form;
+    private String formAction;
+    private String formEncType;
+    private String formMethod;
+    private Boolean formNoValidate;
+    private String formTarget;
     private Boolean formGroup;
     private String id;
     private Boolean isDisabled;
     private Boolean isRequired;
     private Boolean isReadOnly;
+    private Boolean isAutoFocused;
+    private Boolean isMultiple;
     private String label;
+    private String list;
     private String stateMessage;
+    private String max;
+    private Integer maxLength;
+    private String min;
     private String name;
     private String onChange;
     private String onKeyUp;
     private String placeholder;
+    private String pattern; // regular expression
+    private Integer size;
     private String state;
+    private Integer step;
     private String type;
     private Object value;
-    private Integer size;
-    private Integer maxLength;
+
+    public void setAutoComplete(String autoComplete)
+    {
+        this.autoComplete = autoComplete;
+    }
+
+    public void setDirName(String dirName)
+    {
+        this.dirName = dirName;
+    }
+
+    public void setForm(String form)
+    {
+        this.form = form;
+    }
+
+    public void setFormAction(String formAction)
+    {
+        this.formAction = formAction;
+    }
+
+    public void setFormEncType(String formEncType)
+    {
+        this.formEncType = formEncType;
+    }
+
+    public void setFormMethod(String formMethod)
+    {
+        this.formMethod = formMethod;
+    }
+
+    public void setFormNoValidate(Boolean formNoValidate)
+    {
+        this.formNoValidate = formNoValidate;
+    }
+
+    public void setFormTarget(String formTarget)
+    {
+        this.formTarget = formTarget;
+    }
+
+    public void setIsAutoFocused(Boolean autoFocused)
+    {
+        isAutoFocused = autoFocused;
+    }
+
+    public void setIsMultiple(Boolean multiple)
+    {
+        isMultiple = multiple;
+    }
+
+    public void setList(String list)
+    {
+        this.list = list;
+    }
+
+    public void setMax(String max)
+    {
+        this.max = max;
+    }
+
+    public void setMin(String min)
+    {
+        this.min = min;
+    }
+
+    public void setPattern(String pattern)
+    {
+        this.pattern = pattern;
+    }
+
+    public void setStep(Integer step)
+    {
+        this.step = step;
+    }
 
     public void setChecked(Boolean checked)
     {
@@ -171,6 +260,15 @@ public class InputTag extends SimpleTagBase
         if (null == isReadOnly)
             setIsReadOnly(false);
 
+        if (null == isMultiple)
+            setIsMultiple(false);
+
+        if (null == isAutoFocused)
+            setIsAutoFocused(false);
+
+        if (null == formNoValidate)
+            setFormNoValidate(false);
+
         input.contextContent(contextContent)
             .forceSmallContext(forceSmallContext)
             .formGroup(formGroup)
@@ -188,10 +286,24 @@ public class InputTag extends SimpleTagBase
             .checked(checked)
             .size(size)
             .maxLength(maxLength)
-            .state(Input.State.get(state));
+            .state(Input.State.get(state))
+            .autoComplete(autoComplete)
+            .dirName(dirName)
+            .form(form)
+            .formAction(formAction)
+            .formEncodingType(formEncType)
+            .formMethod(formMethod)
+            .formNoValidate(formNoValidate)
+            .formTarget(formTarget)
+            .autoFocus(isAutoFocused)
+            .multiple(isMultiple)
+            .dataList(list)
+            .maxValue(max)
+            .minValue(min)
+            .regularExpression(pattern)
+            .stepValue(step);
 
         FormTag form = (FormTag) findAncestorWithClass(this, FormTag.class);
-
 
         if (className != null)
             input.className(className);

@@ -240,6 +240,15 @@
             <name>className</name>
             <rtexprvalue>true</rtexprvalue>
         </attribute>
+        <attribute>
+            <name>autoComplete</name>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>isNoValidate</name>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.Boolean</type>
+        </attribute>
     </tag>
     <tag>
         <name>input</name>
@@ -326,6 +335,70 @@
         <attribute>
             <name>isReadOnly</name>
             <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>autoComplete</name>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>isAutoFocused</name>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.Boolean</type>
+        </attribute>
+        <attribute>
+            <name>dirName</name>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>form</name>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>formAction</name>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>formEncType</name>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>formMethod</name>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>formNoValidate</name>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.Boolean</type>
+        </attribute>
+        <attribute>
+            <name>formTarget</name>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>list</name>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>max</name>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>min</name>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>isMultiple</name>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.Boolean</type>
+        </attribute>
+        <attribute>
+            <name>pattern</name>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>step</name>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.Integer</type>
         </attribute>
     </tag>
     <tag>

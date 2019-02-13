@@ -73,61 +73,96 @@ public class Input extends DisplayElement
         }
     }
 
+    private final String _autoComplete;
+    private final boolean _autoFocus;
     private final boolean _checked;
     private final String _className;
     private final String _contextContent;
     private final boolean _disabled;
+    private final String _dirName;
     private final boolean _forceSmallContext;
     private final Format _format;
+    private final String _form;
+    private final String _formAction;
+    private final String _formEncType;
+    private final String _formMethod;
+    private final boolean _formNoValidate;
+    private final String _formTarget;
     private final boolean _formGroup;
     private final String _id;
     private final String _label;
     private final String _labelClassName;
     private final Layout _layout;
+    private final String _list;
+    private final String _max;
+    private final Integer _maxLength;
+    private final String _min;
+    private final boolean _multiple;
     private final String _name;
+    private final boolean _needsWrapping;
     private final String _onChange;
     private final String _onKeyUp;
     private final String _placeholder;
     private final boolean _readOnly;
+    private final String _regExp;
     private final boolean _required;
     private final Integer _size;
-    private final Integer _maxLength;
     private final State _state;
+    private final Integer _step;
     private final String _stateMessage;
     private final boolean _showLabel;
     private final String _type;
     private final boolean _unsafeValue;
     private final Object _value;
-    private final boolean _needsWrapping;
 
     protected Input(InputBuilder builder)
     {
+        _autoComplete = builder._autoComplete;
+        _autoFocus = builder._autoFocus == null ? false : builder._autoFocus;
         _contextContent = builder._contextContent;
         _checked = builder._checked;
         _className = builder._type.equals("checkbox") || builder._type.equals("radio") ? "form-check" : builder._className;
         _disabled = builder._disabled == null ? false : builder._disabled;
+        _dirName = builder._dirName;
         _forceSmallContext = builder._forceSmallContext == null ? false : builder._forceSmallContext;
+        _form = builder._form;
+        _formAction = builder._formAction;
+        _formEncType = builder._formEncodingType;
+        _formMethod = builder._formMethod;
+        _formTarget = builder._formTarget;
+        _formNoValidate = builder._formNoValidate == null ? false : builder._formNoValidate;
         _format = builder._format;
         _formGroup = builder._formGroup == null ? false : builder._formGroup;
         _id = builder._id;
         _label = builder._label;
         _labelClassName = builder._labelClassName;
         _layout = builder._layout;
+        _list = builder._dataList;
         _stateMessage = builder._stateMessage;
+        _max = builder._max;
+        _maxLength = builder._maxLength;
+        _min = builder._min;
+        _multiple = builder._multiple == null ? false : builder._multiple;
         _name = builder._name;
         _onChange = builder._onChange;
         _onKeyUp = builder._onKeyUp;
         _placeholder = builder._placeholder;
         _readOnly = builder._readOnly == null ? false : builder._readOnly;
+        _regExp = builder._regExp;
         _required = builder._required == null ? false : builder._required;
         _type = builder._type;
         _size = builder._size;
-        _maxLength = builder._maxLength;
         _state = builder._state;
+        _step = builder._step;
         _showLabel = builder._showLabel == null ? builder._label != null : builder._showLabel;
         _unsafeValue = builder._unsafeValue == null ? false : builder._unsafeValue;
         _value = builder._value;
         _needsWrapping = builder._needsWrapping == null ? true : builder._needsWrapping;
+    }
+
+    public String getAutoComplete()
+    {
+        return _autoComplete;
     }
 
     public String getContextContent()
@@ -270,6 +305,76 @@ public class Input extends DisplayElement
         return _needsWrapping;
     }
 
+    public boolean isAutoFocused()
+    {
+        return _autoFocus;
+    }
+
+    public String getDirName()
+    {
+        return _dirName;
+    }
+
+    public String getForm()
+    {
+        return _form;
+    }
+
+    public String getFormAction()
+    {
+        return _formAction;
+    }
+
+    public String getFormEncType()
+    {
+        return _formEncType;
+    }
+
+    public String getFormMethod()
+    {
+        return _formMethod;
+    }
+
+    public boolean isFormNoValidate()
+    {
+        return _formNoValidate;
+    }
+
+    public String getFormTarget()
+    {
+        return _formTarget;
+    }
+
+    public String getList()
+    {
+        return _list;
+    }
+
+    public String getMax()
+    {
+        return _max;
+    }
+
+    public String getMin()
+    {
+        return _min;
+    }
+
+    public boolean isMultiple()
+    {
+        return _multiple;
+    }
+
+    public String getRegExp()
+    {
+        return _regExp;
+    }
+
+    public Integer getStep()
+    {
+        return _step;
+    }
+
     @Override
     public void render(RenderContext ctx, Writer out) throws IOException
     {
@@ -361,8 +466,32 @@ public class Input extends DisplayElement
             sb.append(" size=\"").append(getSize()).append("\"");
         if (getMaxLength() != null)
             sb.append(" maxlength=\"").append(getMaxLength()).append("\"");
+        if (StringUtils.isNotEmpty(getAutoComplete()))
+            sb.append(" autocomplete=\"").append(getAutoComplete()).append("\"");
         if (StringUtils.isNotEmpty(getContextContent()))
             sb.append(" aria-describedby=\"").append(getId()).append("HelpBlock\""); //described by the help block
+        if (StringUtils.isNotEmpty(getDirName()))
+            sb.append(" dirname=\"").append(getDirName()).append("\"");
+        if (StringUtils.isNotEmpty(getForm()))
+            sb.append(" form=\"").append(getForm()).append("\"");
+        if (StringUtils.isNotEmpty(getFormAction()))
+            sb.append(" formaction=\"").append(getFormAction()).append("\"");
+        if (StringUtils.isNotEmpty(getFormEncType()))
+            sb.append(" formenctype=\"").append(getFormEncType()).append("\"");
+        if (StringUtils.isNotEmpty(getFormMethod()))
+            sb.append(" formmethod=\"").append(getFormMethod()).append("\"");
+        if (StringUtils.isNotEmpty(getFormTarget()))
+            sb.append(" formtarget=\"").append(getFormTarget()).append("\"");
+        if (StringUtils.isNotEmpty(getList()))
+            sb.append(" list=\"").append(getList()).append("\"");
+        if (StringUtils.isNotEmpty(getMax()))
+            sb.append(" max=\"").append(getMax()).append("\"");
+        if (StringUtils.isNotEmpty(getMin()))
+            sb.append(" min=\"").append(getMin()).append("\"");
+        if (StringUtils.isNotEmpty(getRegExp()))
+            sb.append(" pattern=\"").append(getRegExp()).append("\"");
+        if (getStep() != null)
+            sb.append(" step=\"").append(getStep()).append("\"");
 
         doValue(sb);
         doInputEvents(sb);
@@ -375,6 +504,15 @@ public class Input extends DisplayElement
 
         if (isReadOnly())
             sb.append(" readonly");
+
+        if (isFormNoValidate())
+            sb.append(" formnovalidate");
+
+        if (isMultiple())
+            sb.append(" multiple");
+
+        if (isAutoFocused())
+            sb.append(" autofocus");
 
         sb.append(">");
     }
@@ -502,27 +640,42 @@ public class Input extends DisplayElement
     @SuppressWarnings("unchecked")
     public static class InputBuilder<T extends InputBuilder<T>>
     {
+        private String _autoComplete;
+        private Boolean _autoFocus;
         private boolean _checked;
         private String _className = "form-control";
         private String _contextContent;
+        private String _dataList;
         private Boolean _disabled;
+        private String _dirName;
         private Boolean _forceSmallContext;
         private Format _format;
+        private String _form;
+        private String _formAction;
+        private String _formEncodingType;
+        private String _formMethod;
+        private Boolean _formNoValidate;
+        private String _formTarget;
         private Boolean _formGroup;
         private String _id;
         private String _label;
         private String _labelClassName = "control-label";
         private Layout _layout;
+        private String _max;
+        private Integer _maxLength;
+        private String _min;
+        private Boolean _multiple;
         private String _name;
         private String _onChange;
         private String _onKeyUp;
         private String _placeholder;
         private Boolean _readOnly;
         private Boolean _required;
+        private String _regExp;
         private Boolean _showLabel;
         private Integer _size;
-        private Integer _maxLength;
         private State _state;
+        private Integer _step;
         private String _stateMessage;
         private String _type = "text";
         private Boolean _unsafeValue;
@@ -690,6 +843,96 @@ public class Input extends DisplayElement
         public T needsWrapping(Boolean wrapped)
         {
             _needsWrapping = wrapped;
+            return (T)this;
+        }
+
+        public T autoComplete(String autoComplete)
+        {
+            _autoComplete = autoComplete;
+            return (T)this;
+        }
+
+        public T dirName(String dirName)
+        {
+            _dirName = dirName;
+            return (T)this;
+        }
+
+        public T form(String form)
+        {
+            _form = form;
+            return (T)this;
+        }
+
+        public T formAction(String formAction)
+        {
+            _formAction = formAction;
+            return (T)this;
+        }
+
+        public T formEncodingType(String formEncodingType)
+        {
+            _formEncodingType = formEncodingType;
+            return (T)this;
+        }
+
+        public T formMethod(String formMethod)
+        {
+            _formMethod = formMethod;
+            return (T)this;
+        }
+
+        public T formNoValidate(Boolean formNoValidate)
+        {
+            _formNoValidate = formNoValidate;
+            return (T)this;
+        }
+
+        public T formTarget(String formTarget)
+        {
+            _formTarget = formTarget;
+            return (T)this;
+        }
+
+        public T autoFocus(Boolean autoFocus)
+        {
+            _autoFocus = autoFocus;
+            return (T)this;
+        }
+
+        public T multiple(Boolean multiple)
+        {
+            _multiple = multiple;
+            return (T)this;
+        }
+
+        public T dataList(String dataList)
+        {
+            _dataList = dataList;
+            return (T)this;
+        }
+
+        public T maxValue(String maxValue)
+        {
+            _max = maxValue;
+            return (T)this;
+        }
+
+        public T minValue(String minValue)
+        {
+            _min = minValue;
+            return (T)this;
+        }
+
+        public T regularExpression(String regularExpression)
+        {
+            _regExp = regularExpression;
+            return (T)this;
+        }
+
+        public T stepValue(Integer stepValue)
+        {
+            _step = stepValue;
             return (T)this;
         }
 
