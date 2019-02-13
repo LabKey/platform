@@ -137,10 +137,15 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
         return "getResponse";
     }
 
+    protected void setContentType(HttpServletResponse response)
+    {
+        response.setContentType("text/html");
+    }
+
     private void export(FORM form, HttpServletResponse response) throws Exception
     {
         response.reset();
-        response.setContentType("text/html");
+        setContentType(response);
 
         try (OutputStream out = response.getOutputStream(); PrintWriter writer = PrintWriters.getPrintWriter(out))
         {
