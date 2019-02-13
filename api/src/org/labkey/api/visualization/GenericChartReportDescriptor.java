@@ -229,6 +229,7 @@ public class GenericChartReportDescriptor extends VisualizationReportDescriptor
         String caseInsensitiveXColName = xColName.toLowerCase();
         List<String> caseInsensitiveYColNames = new ArrayList<>();
         yColNames.forEach(y -> caseInsensitiveYColNames.add(y.toLowerCase()));
+        Map<String, String> yColCaptionsMap = new HashMap<>();
         for (DisplayColumn col : displayColumns)
         {
             if (col.getColumnInfo() == null)
@@ -237,11 +238,17 @@ public class GenericChartReportDescriptor extends VisualizationReportDescriptor
             if (colFieldKey.equals(caseInsensitiveXColName))
                 xCol = col;
             else if (caseInsensitiveYColNames.contains(colFieldKey))
+            {
                 yCols.add(col);
+                yColCaptionsMap.put(colFieldKey, col.getCaption());
+            }
         }
 
         if (xCol == null || yCols.size() == 0)
             throw new ValidationException("Unable to convert chart view");
+
+        List<String> yColCaptions = new ArrayList<>();
+        yColNames.forEach(y -> yColCaptions.add(yColCaptionsMap.getOrDefault(y.toLowerCase(), y)));
 
         JSONObject xColJson = getColumnInfoJson(xCol, schemaName, queryName);
         measures.put("x", xColJson);
@@ -281,13 +288,13 @@ public class GenericChartReportDescriptor extends VisualizationReportDescriptor
 
         JSONObject labels = new JSONObject();
         labels.put("x", xCol.getCaption());
-        if (yColNames.size() > 1 && (showMultiPlot || isMultiYAxis))
+        if (yColCaptions.size() > 1 && (showMultiPlot || isMultiYAxis))
         {
-            labels.put("y", yColNames.get(0));
-            labels.put("yRight", StringUtils.join(yColNames.subList(1, yColNames.size()), ", "));
+            labels.put("y", yColCaptions.get(0));
+            labels.put("yRight", StringUtils.join(yColCaptions.subList(1, yColCaptions.size()), ", "));
         }
         else
-            labels.put("y", StringUtils.join(yColNames, ", "));
+            labels.put("y", StringUtils.join(yColCaptions, ", "));
 
         labels.put("main", plotName);
         newChartConfig.put("labels", labels);
