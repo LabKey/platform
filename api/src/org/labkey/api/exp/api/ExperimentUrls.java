@@ -78,8 +78,6 @@ public interface ExperimentUrls extends UrlProvider
 
     ActionURL getImportSamplesURL(Container c, String sampleSetName);
 
-    ActionURL getShowUploadMaterialsURL(Container container);
-
     ActionURL getDataDetailsURL(ExpData data);
 
     ActionURL getShowFileURL(Container container);
