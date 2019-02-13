@@ -186,9 +186,9 @@
                               checked="<%=bean.isEnabled()%>" />
 
                 <br/>
-                <%= button("Cancel").href(bean.getReturnUrl()) %>
-                &nbsp;&nbsp;
                 <%= button("Next").primary(true).href("#configuration") %>
+                &nbsp;&nbsp;
+                <%= button("Cancel").href(bean.getReturnUrl()) %>
             </div>
 
             <div id="configuration" class="lk-trigger-section">
@@ -271,16 +271,34 @@
                 <labkey:input type="hidden" name="returnUrl" value="<%=h(bean.getReturnUrl())%>"/>
 
                 <br/>
-                <%= button("Cancel").href(bean.getReturnUrl()) %>
+                <%= button("Save").primary(true).id("btnSubmit") %>
                 &nbsp;&nbsp;
+                <%= button("Cancel").href(bean.getReturnUrl()) %>
                 <%= button("Back").href("#details") %>
-                <%= button("Save").primary(true).id("btnSubmit").addClass("lk-pipeline-allowNavigate") %>
             </div>
         </div>
     </div>
 </labkey:form>
 <script type="text/javascript">
     +function($) {
+        var initFormValues, body = $("body");
+        body.on("focus", "#pipelineForm :input", initOldFormValues);
+
+        function initOldFormValues () {
+            if (!initFormValues)
+                initFormValues = $("form").serialize();
+        }
+
+        function checkChanged() {
+            var formCurrentValues = $("form").serialize();
+            if(initFormValues && formCurrentValues !== initFormValues) {
+                return 'Unsaved change detected. Are you sure you want to leave?';
+            }
+            return null;
+        }
+
+        window.onbeforeunload = checkChanged;
+
         var taskPipelineVariables = {};
         <%
         for (String key : triggerConfigTasks.keySet())
@@ -453,10 +471,6 @@
             addParameterGroup();
         });
 
-        $(".lk-pipeline-allowNavigate").on('click', function () {
-            allowNavigate();
-        });
-
         $("#pipelineTaskSelect").on('change', function () {
             setHelpText(this.value);
             handleMoveField(this.value);
@@ -493,8 +507,10 @@
                 jsonData : data,
                 success: LABKEY.Utils.getCallbackWrapper(function(response)
                 {
-                    if (response.success)
+                    if (response.success) {
+                        window.onbeforeunload = null;
                         window.location = response.returnUrl;
+                    }
                 }),
                 failure: LABKEY.Utils.getCallbackWrapper(function(exceptionInfo) {
                     LABKEY.Utils.alert('Error', 'Unable to save the pipeline trigger configuration for the following reason: ' + exceptionInfo.exception);
@@ -541,19 +557,6 @@
             elem.appendTo($("#extraParams"));
         }
 
-        var _isDirty = false, body = $("body");
-        body.on("change", "#pipelineForm :input", function() {
-            _isDirty = true
-        });
-
-        function isDirty() {
-            return _isDirty;
-        }
-        function allowNavigate() {
-            window.onbeforeunload = undefined;
-        }
-
-        window.onbeforeunload = LABKEY.beforeunload(isDirty);
         setHelpText();
     }(jQuery);
 </script>
