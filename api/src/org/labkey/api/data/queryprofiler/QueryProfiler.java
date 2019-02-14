@@ -180,11 +180,12 @@ public class QueryProfiler
         _listeners.add(listener);
     }
 
-    public void track(@Nullable DbScope scope, String sql, @Nullable List<Object> parameters, long elapsed,
+    @Nullable
+    public StackTraceElement[] track(@Nullable DbScope scope, String sql, @Nullable List<Object> parameters, long elapsed,
                       @Nullable StackTraceElement[] stackTrace, boolean requestThread, QueryLogging queryLogging)
     {
         if (null == stackTrace)
-            stackTrace = Thread.currentThread().getStackTrace();
+            stackTrace = MiniProfiler.getTroubleshootingStackTrace();
 
         for (DatabaseQueryListener listener : _listeners)
         {
@@ -211,6 +212,7 @@ public class QueryProfiler
 
         // Don't block if queue is full
         _queue.offer(new Query(scope, sql, parameters, elapsed, stackTrace, requestThread));
+        return stackTrace;
     }
 
     public void resetAllStatistics()
@@ -361,7 +363,7 @@ public class QueryProfiler
                     }
 
                     out.println("<table>\n");
-                    out.println("  <tr>\n    <td><b>SQL</b></td>\n    <td style=\"padding-left: 20px;\"><b>SQL&nbsp;With&nbsp;Parameters</b></td>\n  </tr>\n");
+                    out.println("  <tr>\n    <td><strong>SQL</strong></td>\n    <td style=\"padding-left: 1em;\"><strong>SQL&nbsp;With&nbsp;Parameters</strong></td>\n  </tr>\n");
                     out.println("  <tr>\n");
                     out.println("    <td>" + PageFlowUtil.filter(tracker.getSql(), true) + "</td>\n");
                     out.println("    <td style=\"padding-left: 20px;\">" + PageFlowUtil.filter(tracker.getSqlAndParameters(), true) + "</td>\n");

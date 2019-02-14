@@ -16,9 +16,12 @@
 
 package org.labkey.api.cache;
 
+import org.jetbrains.annotations.Nullable;
+
 public class CacheStats implements Comparable<CacheStats>
 {
     private final String _description;
+    @Nullable
     private final StackTraceElement[] _stackTrace;
     private final long _gets;
     private final long _misses;
@@ -31,12 +34,12 @@ public class CacheStats implements Comparable<CacheStats>
     private final int _limit;
 
 
-    public CacheStats(String description, StackTraceElement[] stackTrace, Stats stats, int size, int limit)
+    public CacheStats(String description, @Nullable StackTraceElement[] stackTrace, Stats stats, int size, int limit)
     {
         this(description, stackTrace, stats.gets.get(), stats.misses.get(), stats.puts.get(), stats.expirations.get(), stats.removes.get(), stats.clears.get(), size, stats.max_size.get(), limit);
     }
 
-    private CacheStats(String description, StackTraceElement[] stackTrace, long gets, long misses, long puts, long expirations, long removes, long clears, long size, long maxSize, int limit)
+    private CacheStats(String description, @Nullable StackTraceElement[] stackTrace, long gets, long misses, long puts, long expirations, long removes, long clears, long size, long maxSize, int limit)
     {
         _description = description;
         _stackTrace = stackTrace;
@@ -56,6 +59,7 @@ public class CacheStats implements Comparable<CacheStats>
         return _description;
     }
 
+    @Nullable
     public StackTraceElement[] getCreationStackTrace()
     {
         return _stackTrace;

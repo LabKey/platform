@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.WebPartView;
@@ -87,6 +88,10 @@ public class Query
 
     public String getStackTrace()
     {
+        if (_stackTrace == null)
+        {
+            return MiniProfiler.NO_STACK_TRACE_AVAILABLE;
+        }
         StringBuilder sb = new StringBuilder();
 
         for (int i = 3; i < _stackTrace.length; i++)

@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.data.Container;
+import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.util.Debug;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
@@ -79,6 +80,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     protected Map<String, ModelAndView> _views;
     protected ViewContext _viewContext;
     protected Map _renderMap = null;
+    @Nullable
     protected final StackTraceElement[] _creationStackTrace;
 
 
@@ -238,7 +240,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     {
         _viewContext = context;
         setView(this);
-        _creationStackTrace = Thread.currentThread().getStackTrace();
+        _creationStackTrace = MiniProfiler.getTroubleshootingStackTrace();
         MemTracker.getInstance().put(this);
     }
 

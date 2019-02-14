@@ -32,6 +32,7 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.LoginUrls;
@@ -100,8 +101,12 @@ public class ExceptionUtil
     }
 
 
-    public static String renderStackTrace(StackTraceElement[] stackTrace)
+    public static String renderStackTrace(@Nullable StackTraceElement[] stackTrace)
     {
+        if (stackTrace == null)
+        {
+            return MiniProfiler.NO_STACK_TRACE_AVAILABLE;
+        }
         StringBuilder trace = new StringBuilder();
 
         for (int i = 2; i < stackTrace.length; i++)

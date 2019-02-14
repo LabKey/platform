@@ -44,32 +44,31 @@ import java.util.Set;
  */
 public class MiniProfiler
 {
+    /** Message that points the user to turn on stack trace collection if desired */
+    public static final String NO_STACK_TRACE_AVAILABLE = "No stack trace available. Enable capturing stack traces via the Admin Console's Profiler link.";
     private static final String CATEGORY = "miniprofiler";
 
     private static final BeanObjectFactory<Settings> SETTINGS_FACTORY = new BeanObjectFactory<>(Settings.class);
 
-    private static final Cache<User, Settings> SETTINGS_CACHE = CacheManager.getBlockingCache(1000, CacheManager.DEFAULT_TIMEOUT, "miniprofiler settings", new CacheLoader<User, Settings>()
-    {
-        @Override
-        public Settings load(User user, @Nullable Object argument)
+    static boolean _collectTroubleshootingStackTraces = false;
+
+    private static final Cache<User, Settings> SETTINGS_CACHE = CacheManager.getBlockingCache(1000, CacheManager.DEFAULT_TIMEOUT, "miniprofiler settings", (user, argument) -> {
+        // site-wide settings keyed by guest user, otherwise per-user settings
+        RequestInfo current = MemTracker.get().current();
+        boolean ignored = current != null && current.isIgnored();
+        try
         {
-            // site-wide settings keyed by guest user, otherwise per-user settings
-            RequestInfo current = MemTracker.get().current();
-            boolean ignored = current != null && current.isIgnored();
-            try
-            {
-                // suspend profiler while we load the settings
-                if (current != null)
-                    current.setIgnored(true);
-                Map<String, String> properties = PropertyManager.getProperties(user, ContainerManager.getRoot(), CATEGORY);
-                return SETTINGS_FACTORY.fromMap(properties);
-            }
-            finally
-            {
-                // resume profiling
-                if (current != null)
-                    current.setIgnored(ignored);
-            }
+            // suspend profiler while we load the settings
+            if (current != null)
+                current.setIgnored(true);
+            Map<String, String> properties = PropertyManager.getProperties(user, ContainerManager.getRoot(), CATEGORY);
+            return SETTINGS_FACTORY.fromMap(properties);
+        }
+        finally
+        {
+            // resume profiling
+            if (current != null)
+                current.setIgnored(ignored);
         }
     });
 
@@ -116,6 +115,7 @@ public class MiniProfiler
     public static void saveSettings(@NotNull Settings settings, @NotNull User user)
     {
         PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(CATEGORY, true);
+        setCollectTroubleshootingStackTraces(settings._collectTroubleshootingStackTraces);
         SETTINGS_FACTORY.toStringMap(settings, map);
         map.save();
         SETTINGS_CACHE.remove(user);
@@ -237,6 +237,42 @@ public class MiniProfiler
         requestInfo.addCustomTiming(category, elapsed, msg, detailsUrl, stackTrace);
     }
 
+    /** @return true if an admin has opted-in to collecting stack traces to troubleshoot memory leaks, unclosed result sets, or similar problems */
+    public static boolean isCollectTroubleshootingStackTraces()
+    {
+        return _collectTroubleshootingStackTraces;
+    }
+
+    /**
+     * @return the stack of the calling thread if the collection of these troubleshooting stack traces has been enabled.
+     * It is expensive to generate these, so this approach is intended to make it easy to only get them during active
+     * investigation. Returns null if the setting is disabled.
+     */
+    @Nullable
+    public static StackTraceElement[] getTroubleshootingStackTrace()
+    {
+        if (isCollectTroubleshootingStackTraces())
+        {
+            StackTraceElement[] fullStack = Thread.currentThread().getStackTrace();
+            if (fullStack.length > 0)
+            {
+                // Automatically omit this method from the stack
+                int callerFramesToOmit = 1;
+                StackTraceElement[] result = new StackTraceElement[fullStack.length - callerFramesToOmit];
+                System.arraycopy(fullStack, 1, result, 0, result.length);
+                return result;
+            }
+            return fullStack;
+        }
+        return null;
+    }
+
+    /** This setting will be retained only for the current instance of the web app. Once the server is restarted, it will default to false again */
+    public static void setCollectTroubleshootingStackTraces(boolean enabled)
+    {
+        _collectTroubleshootingStackTraces = enabled;
+    }
+
     public static enum RenderPosition
     {
         TopLeft("left"),
@@ -268,7 +304,7 @@ public class MiniProfiler
         private boolean _startHidden = false;
         private boolean _showControls = true;
         private RenderPosition _renderPosition = RenderPosition.BottomRight;
-        private boolean _captureCustomTimingStacktrace = true;
+        private boolean _collectTroubleshootingStackTraces;
         private String _toggleShortcut = "alt+p";
 
         public boolean isEnabled()
@@ -341,14 +377,14 @@ public class MiniProfiler
             _renderPosition = renderPosition;
         }
 
-        public boolean isCaptureCustomTimingStacktrace()
+        public boolean isCollectTroubleshootingStackTraces()
         {
-            return _captureCustomTimingStacktrace;
+            return _collectTroubleshootingStackTraces;
         }
 
-        public void setCaptureCustomTimingStacktrace(boolean captureCustomTimingStacktrace)
+        public void setCollectTroubleshootingStackTraces(boolean collect)
         {
-            _captureCustomTimingStacktrace = captureCustomTimingStacktrace;
+            _collectTroubleshootingStackTraces = collect;
         }
 
         public String getToggleShortcut()

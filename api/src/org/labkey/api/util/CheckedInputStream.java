@@ -16,6 +16,8 @@
 package org.labkey.api.util;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.miniprofiler.MiniProfiler;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,13 +30,14 @@ import java.io.InputStream;
 
 public class CheckedInputStream extends InputStreamWrapper
 {
+    @Nullable
     private final StackTraceElement[] _creationStackTrace;
     private boolean _closed = false;
 
     public CheckedInputStream(InputStream is)
     {
         super(is);
-        _creationStackTrace = Thread.currentThread().getStackTrace();
+        _creationStackTrace = MiniProfiler.getTroubleshootingStackTrace();
     }
 
     @Override

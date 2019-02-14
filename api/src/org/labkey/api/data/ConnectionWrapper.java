@@ -23,6 +23,8 @@ import org.labkey.api.data.DbScope.ConnectionType;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.StatementWrapper;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
+import org.labkey.api.miniprofiler.MiniProfiler;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Pair;
@@ -1035,7 +1037,7 @@ public class ConnectionWrapper implements java.sql.Connection
             if (getLogger().isDebugEnabled())
                 getLogger().debug(message + " " + DateUtil.formatDuration(duration));
 
-            QueryProfiler.getInstance().track(null, "DatabaseMetaData." + methodName, null, duration, Thread.currentThread().getStackTrace(),
+            QueryProfiler.getInstance().track(null, "DatabaseMetaData." + methodName, null, duration, MiniProfiler.getTroubleshootingStackTrace(),
                                               ViewServlet.isRequestThread(), QueryLogging.emptyQueryLogging());
         }
 

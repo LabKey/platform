@@ -42,10 +42,12 @@ import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MemTracker;
@@ -1093,21 +1095,24 @@ public class Table
 
     static void _appendTableStackTrace(StringBuilder sb, int count)
     {
-        StackTraceElement[] ste = Thread.currentThread().getStackTrace();
-        int i=1;  // Always skip call to getStackTrace()
-        for ( ; i<ste.length ; i++)
+        StackTraceElement[] ste = MiniProfiler.getTroubleshootingStackTrace();
+        if (ste != null)
         {
-            String line = ste[i].toString();
-            if (!line.startsWith("org.labkey.api.data.Table."))
-                break;
-        }
-        int last = Math.min(ste.length,i+count);
-        for ( ; i<last ; i++)
-        {
-            String line = ste[i].toString();
-            if (line.startsWith("javax.servelet.http.HttpServlet.service("))
-                break;
-            sb.append("\n\t").append(line);
+            int i = 0;
+            for (; i < ste.length; i++)
+            {
+                String line = ste[i].toString();
+                if (!line.startsWith("org.labkey.api.data.Table."))
+                    break;
+            }
+            int last = Math.min(ste.length, i + count);
+            for (; i < last; i++)
+            {
+                String line = ste[i].toString();
+                if (line.startsWith("javax.servelet.http.HttpServlet.service("))
+                    break;
+                sb.append("\n\t").append(line);
+            }
         }
     }
 

@@ -2664,7 +2664,8 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
             zeroBasedList = null;
         }
 
-        QueryProfiler.getInstance().track(_conn.getScope(), sql, zeroBasedList, elapsed, _stackTrace, isRequestThread(), queryLogging);
+        // Hold on to this stack trace so that we can reuse it later (if collection has been enabled)
+        StackTraceElement[] stack = QueryProfiler.getInstance().track(_conn.getScope(), sql, zeroBasedList, elapsed, _stackTrace, isRequestThread(), queryLogging);
 
         if (x != null)
         {
@@ -2726,7 +2727,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
             logEntry.append("\n    cancelled by user");
         if (null != x)
             logEntry.append("\n    ").append(x);
-        _appendTableStackTrace(logEntry, 5);
+        _appendTableStackTrace(logEntry, 5, stack);
 
         final String logString = logEntry.toString();
         _log.log(Level.DEBUG, logString);
@@ -2760,23 +2761,25 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     }
 
 
-    private void _appendTableStackTrace(StringBuilder sb, int count)
+    private void _appendTableStackTrace(StringBuilder sb, int count, @Nullable StackTraceElement[] ste)
     {
-        StackTraceElement[] ste = Thread.currentThread().getStackTrace();
-        int i=1;  // Always skip getStackTrace() call
-        for ( ; i<ste.length ; i++)
+        if (ste != null)
         {
-            String line = ste[i].toString();
-            if (!(line.startsWith("org.labkey.api.data.") || line.startsWith("java.lang.Thread")))
-                break;
-        }
-        int last = Math.min(ste.length,i+count);
-        for ( ; i<last ; i++)
-        {
-            String line = ste[i].toString();
-            if (line.startsWith("javax.servlet.http.HttpServlet.service("))
-                break;
-            sb.append("\n    ").append(line);
+            int i = 1;  // Always skip getStackTrace() call
+            for (; i < ste.length; i++)
+            {
+                String line = ste[i].toString();
+                if (!(line.startsWith("org.labkey.api.data.") || line.startsWith("java.lang.Thread")))
+                    break;
+            }
+            int last = Math.min(ste.length, i + count);
+            for (; i < last; i++)
+            {
+                String line = ste[i].toString();
+                if (line.startsWith("javax.servlet.http.HttpServlet.service("))
+                    break;
+                sb.append("\n    ").append(line);
+            }
         }
     }
 

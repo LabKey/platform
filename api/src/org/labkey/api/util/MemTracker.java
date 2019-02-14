@@ -70,16 +70,17 @@ public class MemTracker
 
     static class AllocationInfo
     {
+        @Nullable
         private final StackTraceElement[] _stackTrace;
         private final long _threadId;
         private final long _allocTime;
 
         AllocationInfo()
         {
-            this(Thread.currentThread().getStackTrace(), Thread.currentThread().getId(), HeartBeat.currentTimeMillis());
+            this(MiniProfiler.getTroubleshootingStackTrace(), Thread.currentThread().getId(), HeartBeat.currentTimeMillis());
         }
 
-        AllocationInfo(StackTraceElement[] stackTrace, long threadId, long allocTime)
+        AllocationInfo(@Nullable StackTraceElement[] stackTrace, long threadId, long allocTime)
         {
             _stackTrace = stackTrace;
             _threadId = threadId;
@@ -88,6 +89,10 @@ public class MemTracker
 
         public String getHtmlStack()
         {
+            if (_stackTrace == null)
+            {
+                return MiniProfiler.NO_STACK_TRACE_AVAILABLE;
+            }
             StringBuilder builder = new StringBuilder();
             for (int i = 3; i < _stackTrace.length; i++)
             {
@@ -462,8 +467,8 @@ public class MemTracker
 
             // Intentional use of deprecated constructor below because we want distinct instances of the same integer;
             // Integer.valueOf() will return the same object.
-            Object b = new Integer(1);
-            Object c = new Integer(1);
+            Object b = Integer.valueOf(1);
+            Object c = Integer.valueOf(1);
             assertNotSame(b, c);
             assertEquals(b, c);
             t._put(b);

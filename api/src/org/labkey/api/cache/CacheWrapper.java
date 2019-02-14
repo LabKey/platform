@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.mbean.CacheMXBean;
+import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.util.Filter;
 import org.labkey.api.view.ViewServlet;
 
@@ -42,6 +43,7 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
     private final String _debugName;
     private final Stats _stats;
     private final Stats _transactionStats;
+    @Nullable
     private final StackTraceElement[] _stackTrace;
     private final V _nullMarker = (V)NULL_MARKER;
 
@@ -53,7 +55,7 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
         _debugName = debugName;
         _stats = (null != stats ? stats : new Stats());
         _transactionStats = new Stats();
-        _stackTrace = Thread.currentThread().getStackTrace();
+        _stackTrace = MiniProfiler.getTroubleshootingStackTrace();
     }
 
 
@@ -215,6 +217,7 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
     }
 
     @Override
+    @Nullable
     public StackTraceElement[] getCreationStackTrace()
     {
         return _stackTrace;

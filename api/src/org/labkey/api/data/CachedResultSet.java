@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.RowMap;
 import org.labkey.api.dataiterator.DataIterator;
+import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
@@ -74,6 +75,7 @@ public class CachedResultSet implements ResultSet, TableResultSet
     // data
     private final ArrayList<RowMap<Object>> _rowMaps;
     private final boolean _isComplete;
+    @Nullable
     private final StackTraceElement[] _stackTrace;
     private final String _threadName;
 
@@ -116,7 +118,7 @@ public class CachedResultSet implements ResultSet, TableResultSet
             throw new RuntimeSQLException(x);
         }
 
-        if (AppProps.getInstance().isDevMode())
+        if (MiniProfiler.isCollectTroubleshootingStackTraces())
         {
             // Stash stack trace that created this CachedRowSet
             if (null != stackTrace)
@@ -125,7 +127,7 @@ public class CachedResultSet implements ResultSet, TableResultSet
             }
             else
             {
-                _stackTrace = Thread.currentThread().getStackTrace();
+                _stackTrace = MiniProfiler.getTroubleshootingStackTrace();
             }
 
             _threadName = Thread.currentThread().getName();

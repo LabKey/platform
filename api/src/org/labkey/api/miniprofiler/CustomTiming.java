@@ -67,7 +67,7 @@ public class CustomTiming implements AutoCloseable
     /** Create a CustomTiming that starts a new CPUTimer. */
     public CustomTiming(Timing parent, String category, String message, @Nullable String url)
     {
-        this(parent, category, message, url, MiniProfiler.getSettings().isCaptureCustomTimingStacktrace() ? Thread.currentThread().getStackTrace() : null);
+        this(parent, category, message, url, MiniProfiler.getTroubleshootingStackTrace());
     }
 
     /** Create a CustomTiming that starts a new CPUTimer. */

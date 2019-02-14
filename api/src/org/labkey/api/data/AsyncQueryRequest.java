@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
+import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.util.MemTracker;
@@ -40,6 +41,7 @@ public class AsyncQueryRequest<T>
     {
     }
 
+    @Nullable
     private final StackTraceElement[] _creationStackTrace;
     private final HttpServletResponse _rootResponse;
 
@@ -51,7 +53,7 @@ public class AsyncQueryRequest<T>
 
     public AsyncQueryRequest(HttpServletResponse response)
     {
-        _creationStackTrace = Thread.currentThread().getStackTrace();
+        _creationStackTrace = MiniProfiler.getTroubleshootingStackTrace();
 
         _rootResponse = getRootResponse(response);
     }
@@ -228,6 +230,7 @@ public class AsyncQueryRequest<T>
         return null;
     }
 
+    @Nullable
     public StackTraceElement[] getCreationStackTrace()
     {
         return _creationStackTrace;

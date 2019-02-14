@@ -15,6 +15,8 @@
  */
 package org.labkey.api.cache;
 
+import org.jetbrains.annotations.Nullable;
+
 /**
  * User: adam
  * Date: Jul 8, 2010
@@ -24,6 +26,7 @@ public interface Tracking
 {
     String getDebugName();
 
+    @Nullable
     StackTraceElement[] getCreationStackTrace();
 
     Stats getStats();

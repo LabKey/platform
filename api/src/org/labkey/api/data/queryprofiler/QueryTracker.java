@@ -207,7 +207,7 @@ class QueryTracker
             }
         }
 
-        out.println("<tr><td><b>Count</b></td><td style=\"padding-left:10;\"><b>Traces</b></td></tr>\n");
+        out.println("<tr><td><strong>Count</strong></td><td style=\"padding-left:1em;\"><strong>Traces</strong></td></tr>\n");
 
         int alt = 0;
         String[] classes = new String[]{"labkey-alternate-row", "labkey-row"};
@@ -218,7 +218,7 @@ class QueryTracker
             String formattedStackTrace = formattedCommonPrefix + PageFlowUtil.filter(stackTrace.substring(commonLength), true);
             int count = entry.getValue().get();
 
-            out.println("<tr class=\"" + classes[alt] + "\"><td valign=top align=right>" + count + "</td><td style=\"padding-left:10;\">" + formattedStackTrace + "</td></tr>\n");
+            out.println("<tr class=\"" + classes[alt] + "\"><td valign=top align=right>" + count + "</td><td style=\"padding-left:1em;\">" + formattedStackTrace + "</td></tr>\n");
             alt = 1 - alt;
         }
     }
