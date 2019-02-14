@@ -1127,6 +1127,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         if (null != c)
             setActionForThread(c.getClass());
     }
+
     public static void setActionForThread(Class c)
     {
         boolean enableasserts = false;
@@ -1136,11 +1137,13 @@ public abstract class SpringActionController implements Controller, HasViewConte
             currentAction.get().add(c);
         }
     }
+
     public static void clearActionForThread(Controller c)
     {
         if (null != c)
             clearActionForThread(c.getClass());
     }
+
     public static void clearActionForThread(Class c)
     {
         boolean enableasserts = false;
@@ -1153,6 +1156,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
             list.remove(list.size() - 1);
         }
     }
+
     @Nullable
     public static Class getActionForThread()
     {
@@ -1166,6 +1170,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         }
         return null;
     }
+
     public static void executingMutatingSql(String sql)
     {
         boolean enableasserts = false;
@@ -1199,17 +1204,25 @@ public abstract class SpringActionController implements Controller, HasViewConte
                     verbose ? new Throwable() : null);
         }
     }
+
     private static final Set<String> mutatingActionsWarned = new CopyOnWriteArraySet<>();
+
     public interface _AutoCloseable extends AutoCloseable
     {
         @Override
         void close();
     }
     /** use this AutoCloseable to mark a section of code as allowing UPDATES even within a read-only action (e.g. for auditing) */
+
     public static _AutoCloseable ignoreSqlUpdates()
     {
         final Boolean prevValue = ignoreUpdates.get();
         ignoreUpdates.set(TRUE);
         return () -> ignoreUpdates.set(prevValue);
+    }
+
+    public static Set<String> getMutatingActionsWarned()
+    {
+        return mutatingActionsWarned;
     }
 }
