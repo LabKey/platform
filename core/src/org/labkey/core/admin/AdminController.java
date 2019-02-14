@@ -203,6 +203,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -9351,6 +9352,58 @@ public class AdminController extends SpringActionController
         return res;
     }
 
+
+    @SuppressWarnings("unused")  // Invoked by
+    @AdminConsoleAction
+    public class ExportMutationWarningsAction extends ExportAction
+    {
+        @Override
+        public void export(Object o, HttpServletResponse response, BindException errors) throws IOException
+        {
+            try (TextWriter writer = (new TextWriter()
+            {
+                @Override
+                protected String getFilename()
+                {
+                    return "MutationWarnings.txt";
+                }
+
+                @Override
+                protected void write()
+                {
+                    Set<String> warnings = getMutatingActionsWarned();
+
+                    if (warnings.isEmpty())
+                    {
+                        _pw.println("There are no mutation warnings!");
+                    }
+                    else
+                    {
+                        String previous = null;
+
+                        // Sort by package + name and enumerate
+                        for (String warning : new TreeSet<>(warnings))
+                        {
+                            String moduleName = warning.split("\\.")[2];
+
+                            if (!moduleName.equals(previous))
+                            {
+                                _pw.println();
+                                _pw.println(moduleName);
+                                _pw.println();
+                                previous = moduleName;
+                            }
+
+                            _pw.println(warning);
+                        }
+                    }
+                }
+            }))
+            {
+                writer.write(response);
+            }
+        }
+    }
 
 
     public static class TestCase extends AbstractActionPermissionTest
