@@ -43,7 +43,7 @@ public interface AssayDataCollector<ContextType extends AssayRunUploadContext>
     /** Indicates if there are (or might be) additional files that queued up to be consumed by more runs */
     enum AdditionalUploadType
     {
-        Disallowed(null), AlreadyUploaded("Save and Import Next File"), UploadRequired("Save and Import Another Run");
+        Disallowed(null), AlreadyUploaded("Save and Import Another Run"), UploadRequired("Save and Import Another Run");
 
         private String _buttonText;
 
