@@ -2844,14 +2844,17 @@ public class AdminController extends SpringActionController
             html.append("</table>\n");
         }
 
-        private void appendDescription(StringBuilder html, String description, StackTraceElement[] creationStackTrace)
+        private void appendDescription(StringBuilder html, String description, @Nullable StackTraceElement[] creationStackTrace)
         {
             StringBuilder sb = new StringBuilder();
 
-            for (StackTraceElement element : creationStackTrace)
+            if (creationStackTrace != null)
             {
-                sb.append(element.toString());
-                sb.append("\n");
+                for (StackTraceElement element : creationStackTrace)
+                {
+                    sb.append(element);
+                    sb.append("\n");
+                }
             }
 
             String message = PageFlowUtil.jsString(sb);

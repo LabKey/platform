@@ -115,7 +115,7 @@ public class MiniProfilerController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            root.addChild("MiniProfiler Settings");
+            root.addChild("Profiling Settings");
             return root;
         }
 

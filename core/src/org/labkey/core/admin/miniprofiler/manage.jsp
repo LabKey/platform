@@ -36,24 +36,44 @@
     renderOptions.put(MiniProfiler.RenderPosition.BottomRight.name(), MiniProfiler.RenderPosition.BottomRight.toString());
 %>
 
-The MiniProfiler is a simple profiler utility that shows at a glance how long actions and queries take to execute. The
-profiler is enabled when the server is running in dev mode or if the current user is in the <%=helpLink("globalGroups", "site developer group")%>.
+LabKey Server includes some simple built-in profiling tools.
 
-<p>
-<%=text(MiniProfiler.getHelpTopic().getLinkHtml("Profiler Help"))%>
-</p>
+Some of them incur overhead to track or take space in the UI, and are thus configurable here.
 
 <labkey:errors/>
 <labkey:form action="<%=h(buildURL(MiniProfilerController.ManageAction.class))%>" method="POST">
     <table class="labkey-manage-display">
         <tr>
-            <td class="labkey-form-label">Enabled<%=helpPopup("Enabled", "Enable the MiniProfiler widget, causing it to appear for all Site Administrators and Site Developers")%></td>
+            <td class="labkey-form-label" style="width: 200px;"><label for="collectTroubleshootingStackTraces">Capture stack traces until server shutdown<%=helpPopup("Capture stack traces",
+                    "The server can automatically capture stack traces for key operations, including the creation of certain objects, " +
+                            "the execution of database, queries, and more. While they can be very useful for troubleshooting, " +
+                            "they can add 10% or more overhead, so this setting will automatically reset when the server is restarted.")%></label></td>
+            <td>
+                <labkey:checkbox name="collectTroubleshootingStackTraces" id="collectTroubleshootingStackTraces" value="true" checked="<%=MiniProfiler.isCollectTroubleshootingStackTraces()%>"/>
+            </td>
+        </tr>
+
+        <tr>
+            <td>&nbsp;</td>
+        </tr>
+
+        <tr>
+            <td colspan="2">
+                The MiniProfiler is a simple profiler utility that shows at a glance how long actions and queries take
+                to execute. It's shown in the corner of each LabKey web page. The profiler is enabled when the server is
+                running in dev mode or if the current user is in the <%=helpLink("globalGroups", "site developer group")%>.
+                <%=text(MiniProfiler.getHelpTopic().getLinkHtml("MiniProfiler Help"))%>
+            </td>
+        </tr>
+
+        <tr>
+            <td class="labkey-form-label"><label for="enabled">Enabled<%=helpPopup("Enabled", "Enable the MiniProfiler widget, causing it to appear for all Site Administrators and Site Developers")%></label></td>
             <td>
                 <labkey:checkbox name="enabled" id="enabled" value="true" checked="<%=settings.isEnabled()%>"/>
             </td>
         </tr>
         <tr>
-            <td class="labkey-form-label">Render position<%=helpPopup("Render Position", "Specifies the corner in which to render the MiniProfiler widget")%></td>
+            <td class="labkey-form-label"><label for="renderPosition">Render position<%=helpPopup("Render Position", "Specifies the corner in which to render the MiniProfiler widget")%></label></td>
             <td>
                 <select name="renderPosition" id="renderPosition">
                     <labkey:options map="<%=renderOptions%>" value="<%=h(settings.getRenderPosition())%>"/>
@@ -61,53 +81,50 @@ profiler is enabled when the server is running in dev mode or if the current use
             </td>
         </tr>
         <tr>
-            <td class="labkey-form-label">Toggle shortcut<%=helpPopup("Toggle shortcut", "Show/hide the MiniProfiler widget using a keyboard shortcut (e.g., 'alt+p' or 'alt+shift+p', or 'none' to disable toggling.)")%></td>
+            <td class="labkey-form-label"><label for="toggleShortcut">Toggle shortcut<%=helpPopup("Toggle shortcut", "Show/hide the MiniProfiler widget using a keyboard shortcut (e.g., 'alt+p' or 'alt+shift+p', or 'none' to disable toggling.)")%></label></td>
             <td>
                 <input name="toggleShortcut" id="toggleShortcut" value="<%=h(settings.getToggleShortcut())%>"/>
             </td>
         </tr>
         <tr>
-            <td class="labkey-form-label">Start hidden<%=helpPopup("Start Hidden", "MiniProfiler widget will initially be hidden, requiring keyboard activation via the 'Toggle shortcut'")%></td>
+            <td class="labkey-form-label"><label for="startHidden">Start hidden<%=helpPopup("Start Hidden", "MiniProfiler widget will initially be hidden, requiring keyboard activation via the 'Toggle shortcut'")%></label></td>
             <td>
                 <labkey:checkbox name="startHidden" id="startHidden" value="true" checked="<%=settings.isStartHidden()%>"/>
             </td>
         </tr>
         <tr>
-            <td class="labkey-form-label">Show controls<%=helpPopup("Show Controls", "Show the minimize and clear controls in the MiniProfiler widget")%></td>
+            <td class="labkey-form-label"><label for="showControls">Show controls<%=helpPopup("Show Controls", "Show the minimize and clear controls in the MiniProfiler widget")%></label></td>
             <td>
                 <labkey:checkbox name="showControls" id="showControls" value="true" checked="<%=settings.isShowControls()%>"/>
             </td>
         </tr>
         <tr>
-            <td class="labkey-form-label">Show trivial timings by default<%=helpPopup("Show Trivial", "Specify whether trivial timings are displayed by default")%></td>
+            <td class="labkey-form-label"><label for="showTrivial">Show trivial timings by default<%=helpPopup("Show Trivial", "Specify whether trivial timings are displayed by default")%></label></td>
             <td>
                 <labkey:checkbox name="showTrivial" id="showTrivial" value="true" checked="<%=settings.isShowTrivial()%>"/>
             </td>
         </tr>
         <tr>
-            <td class="labkey-form-label">Trivial milliseconds<%=helpPopup("Trivial Milliseconds", "Timings that are less than this value are considered trivial and will be greyed out.")%></td>
+            <td class="labkey-form-label"><label for="trivialMillis">Trivial milliseconds<%=helpPopup("Trivial Milliseconds", "Timings that are less than this value are considered trivial and will be greyed out.")%></label></td>
             <td>
                 <input id="trivialMillis" name="trivialMillis" type="text" value="<%=settings.getTrivialMillis()%>">
             </td>
         </tr>
         <tr>
-            <td class="labkey-form-label">Show children timings by default<%=helpPopup("Show Children Time", "Specify whether inclusive timings are displayed by default")%></td>
+            <td class="labkey-form-label"><label for="showChildrenTime">Show children timings by default<%=helpPopup("Show Children Time", "Specify whether inclusive timings are displayed by default")%></label></td>
             <td>
                 <labkey:checkbox name="showChildrenTime" id="showChildrenTime" value="true" checked="<%=settings.isShowChildrenTime()%>"/>
             </td>
         </tr>
         <tr>
-            <td class="labkey-form-label">Custom timing stacktrace<%=helpPopup("Custom timing stacktrace", "Capture stacktrace when recording custom timings")%></td>
+            <td/>
             <td>
-                <labkey:checkbox name="captureCustomTimingStacktrace" id="captureCustomTimingStacktrace" value="true" checked="<%=settings.isCaptureCustomTimingStacktrace()%>"/>
+                    <%--<%= button("Reset to Default"). %>&nbsp;--%>
+                <%= button("Save").submit(true) %>
+                <%= button("Reset").onClick(PageFlowUtil.postOnClickJavaScript(buildURL(MiniProfilerController.ResetAction.class))) %>
+                <%= button("Cancel").href(PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL()) %>
             </td>
         </tr>
     </table>
-    <p>
-        <%--<%= button("Reset to Default"). %>&nbsp;--%>
-        <%= button("Save").submit(true) %>
-        <%= button("Reset").onClick(PageFlowUtil.postOnClickJavaScript(buildURL(MiniProfilerController.ResetAction.class))) %>
-        <%= button("Cancel").href(PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL()) %>
-    </p>
 </labkey:form>
 
