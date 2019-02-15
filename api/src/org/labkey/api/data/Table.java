@@ -25,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.BoundMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -794,7 +795,15 @@ public class Table
     }
 
 
+
+
     public static <K> K update(@Nullable User user, TableInfo table, K fieldsIn, Object pkVals, @Nullable Filter filter, Level level)
+    {
+        return update(user, table, fieldsIn, null, pkVals, filter, level);
+    }
+
+    /* NOTE this does not enforce that keyColumn is an appropriately unique column! */
+    public static <K> K update(@Nullable User user, TableInfo table, K fieldsIn, @Nullable ColumnInfo keyColumn, Object pkVals, @Nullable Filter filter, Level level)
     {
         assert (table.getTableType() != DatabaseTableType.NOT_IN_DB): (table.getName() + " is not in the physical database.");
         assert null != pkVals;
@@ -808,7 +817,17 @@ public class Table
         String comma = "";
 
         // UNDONE -- rowVersion
-        List<ColumnInfo> columnPK = table.getPkColumns();
+        List<ColumnInfo> columnPK;
+        if (null != keyColumn)
+        {
+            columnPK = Collections.singletonList(keyColumn);
+        }
+        else
+        {
+            columnPK = table.getPkColumns();
+            if (columnPK.isEmpty())
+                columnPK = table.getAlternateKeyColumns();
+        }
 
         // Name-value pairs for the PK columns for this row
         Map<String, Object> keys = new CaseInsensitiveHashMap<>();

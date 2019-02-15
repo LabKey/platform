@@ -17,12 +17,13 @@
 package org.labkey.api.exp.query;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpSampleSet;
 
 import java.util.Set;
 
-public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>
+public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, UpdateableTableInfo
 {
     void setMaterials(Set<ExpMaterial> predecessorMaterials);
 

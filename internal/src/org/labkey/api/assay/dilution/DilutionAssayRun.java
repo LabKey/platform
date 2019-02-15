@@ -241,16 +241,12 @@ public abstract class DilutionAssayRun extends Luc5Assay
 
         Collection<ExpMaterial> inputs = _run.getMaterialInputs().keySet();
         Domain sampleDomain = _provider.getSampleWellGroupDomain(_protocol);
-        List<? extends DomainProperty> sampleDomainProperties = sampleDomain.getProperties();
 
         for (ExpMaterial material : inputs)
         {
+            Map<PropertyDescriptor, Object> map = material.getPropertyValues();
             Map<PropertyDescriptor, Object> sampleProperties = new TreeMap<>(new PropertyDescriptorComparator());
-            for (DomainProperty dp : sampleDomainProperties)
-            {
-                PropertyDescriptor property = dp.getPropertyDescriptor();
-                sampleProperties.put(property, material.getProperty(property));
-            }
+            sampleProperties.putAll(map);
             samplePropertyMap.put(getSampleKey(material), sampleProperties);
         }
         return samplePropertyMap;
@@ -279,7 +275,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
             Map<PropertyDescriptor, Object> sampleProperties = samplePropertiesMap.get(getSampleKey(summary));
             Map<PropertyDescriptor, Object> dataProperties = new TreeMap<>(new PropertyDescriptorComparator());
             String sampleKeyWithVirus = getSampleKeyForResultPoperties(summary, virusTable);
-            String dataRowLsid = getDataHandler().getDataRowLSID(outputData, summary.getFirstWellGroup().getName(), sampleProperties).toString();
+            String dataRowLsid = getDataHandler().getDataRowLSID(outputData, summary.getFirstWellGroup().getName()).toString();
             mgr.getDataPropertiesFromRunData(resultTable, dataRowLsid, _run.getContainer(), propertyDescriptors, dataProperties);
             dilutionResultPropertiesMap.put(sampleKeyWithVirus, new DilutionResultProperties(dataProperties,
                     getVirusProperties(mgr, dataRowLsid, _run.getContainer(), virusTable)));
@@ -389,7 +385,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
             _materialKey = materialKey;
             _sampleProperties = sortProperties(sampleProperties);
             _dataProperties = sortProperties(dilutionResultProperties.getDataProperties());
-            _dataRowLsid = provider.getDataHandler().getDataRowLSID(data, dilutionSummary.getFirstWellGroup().getName(), sampleProperties).toString();
+            _dataRowLsid = provider.getDataHandler().getDataRowLSID(data, dilutionSummary.getFirstWellGroup().getName()).toString();
             _dataContainer = data.getContainer();
             _virusProperties = dilutionResultProperties.getVirusProperties();
         }

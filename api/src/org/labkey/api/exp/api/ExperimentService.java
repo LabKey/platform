@@ -234,7 +234,11 @@ public interface ExperimentService extends ExperimentRunTypeSource
      */
     @NotNull List<? extends ExpMaterial> getExpMaterialsByName(String name, Container container, User user);
 
-    Map<String, ExpSampleSet> getSampleSetsForRoles(Container container, ContainerFilter filter, ExpProtocol.ApplicationType type);
+    @Deprecated
+    default Map<String, ExpSampleSet> getSampleSetsForRoles(Container container, ContainerFilter filter, ExpProtocol.ApplicationType type)
+    {
+        return SampleSetService.get().getSampleSetsForRoles(container, filter, type);
+    }
 
     /**
      * Create a new SampleSet with the provided properties.
@@ -243,52 +247,92 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * A name expression may be provided instead of idCols and will be used to generate the sample names.
      */
     @NotNull
-    ExpSampleSet createSampleSet(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol, String nameExpression)
-            throws ExperimentException, SQLException;
+    @Deprecated
+    default ExpSampleSet createSampleSet(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol, String nameExpression)
+            throws ExperimentException, SQLException
+    {
+        return SampleSetService.get().createSampleSet(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression);
+    }
 
     /**
      * (MAB) todo need a builder interface, or at least  parameter bean
      */
     @NotNull
-    ExpSampleSet createSampleSet(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
-                                 String nameExpression, @Nullable TemplateInfo templateInfo)
-            throws ExperimentException, SQLException;
+    @Deprecated
+    default ExpSampleSet createSampleSet(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
+                                         String nameExpression, @Nullable TemplateInfo templateInfo)
+            throws ExperimentException, SQLException
+    {
+        return SampleSetService.get().createSampleSet(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, templateInfo);
+    }
 
     @NotNull
-    ExpSampleSet createSampleSet();
+    @Deprecated
+    default ExpSampleSet createSampleSet()
+    {
+        return SampleSetService.get().createSampleSet();
+    }
 
     @Nullable
-    ExpSampleSet getSampleSet(int rowId);
+    @Deprecated
+    default ExpSampleSet getSampleSet(int rowId)
+    {
+        return SampleSetService.get().getSampleSet(rowId);
+    }
 
     @Nullable
-    ExpSampleSet getSampleSet(String lsid);
+    @Deprecated
+    default ExpSampleSet getSampleSet(String lsid)
+    {
+        return SampleSetService.get().getSampleSet(lsid);
+    }
 
     /**
      * @param includeOtherContainers whether sample sets from the shared container or the container's project should be included
      */
-    List<? extends ExpSampleSet> getSampleSets(@NotNull Container container, User user, boolean includeOtherContainers);
+    @Deprecated
+    default List<? extends ExpSampleSet> getSampleSets(@NotNull Container container, User user, boolean includeOtherContainers)
+    {
+        return SampleSetService.get().getSampleSets(container, user, includeOtherContainers);
+    }
 
     /**
      * Get a SampleSet by name within the definition container.
      */
-    ExpSampleSet getSampleSet(@NotNull Container definitionContainer, @NotNull String sampleSetName);
+    @Deprecated
+    default ExpSampleSet getSampleSet(@NotNull Container definitionContainer, @NotNull String sampleSetName)
+    {
+        return SampleSetService.get().getSampleSet(definitionContainer, sampleSetName);
+    }
 
     /**
      * Get a SampleSet by name within scope -- current, project, and shared.
      * Requires a user to check for container read permission.
      */
-    ExpSampleSet getSampleSet(@NotNull Container scope, @NotNull User user, @NotNull String sampleSetName);
+    @Deprecated
+    default ExpSampleSet getSampleSet(@NotNull Container scope, @NotNull User user, @NotNull String sampleSetName)
+    {
+        return SampleSetService.get().getSampleSet(scope, user, sampleSetName);
+    }
 
     /**
      * Get a SampleSet by rowId within the definition container.
      */
-    ExpSampleSet getSampleSet(@NotNull Container definitionContainer, int rowId);
+    @Deprecated
+    default ExpSampleSet getSampleSet(@NotNull Container definitionContainer, int rowId)
+    {
+        return SampleSetService.get().getSampleSet(definitionContainer, rowId);
+    }
 
     /**
      * Get a SampleSet by rowId within scope -- current, project, and shared.
      * Requires a user to check for container read permission.
      */
-    ExpSampleSet getSampleSet(@NotNull Container scope, @NotNull User user, int rowId);
+    @Deprecated
+    default ExpSampleSet getSampleSet(@NotNull Container scope, @NotNull User user, int rowId)
+    {
+        return SampleSetService.get().getSampleSet(scope, user, rowId);
+    }
 
     ExpExperiment createHiddenRunGroup(Container container, User user, ExpRun... runs);
 
@@ -477,9 +521,17 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     TableInfo getTinfoMaterialAliasMap();
 
-    ExpSampleSet ensureDefaultSampleSet();
+    @Deprecated
+    default ExpSampleSet ensureDefaultSampleSet()
+    {
+        return SampleSetService.get().ensureDefaultSampleSet();
+    }
 
-    String getDefaultSampleSetLsid();
+    @Deprecated
+    default String getDefaultSampleSetLsid()
+    {
+        return SampleSetService.get().getDefaultSampleSetLsid();
+    }
 
     List<? extends ExpRun> getRunsUsingMaterials(List<ExpMaterial> materials);
 
@@ -504,7 +556,11 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     void deleteAllExpObjInContainer(Container container, User user) throws ExperimentException;
 
-    Lsid getSampleSetLsid(String name, Container container);
+    @Deprecated
+    default Lsid getSampleSetLsid(String name, Container container)
+    {
+        return SampleSetService.get().getSampleSetLsid(name, container);
+    }
 
     void deleteExperimentRunsByRowIds(Container container, final User user, int... selectedRunIds);
 
@@ -516,7 +572,11 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * Increment and get the sample counters for the given date, or the current date if no date is supplied.
      * The resulting map has keys "dailySampleCount", "weeklySampleCount", "monthlySampleCount", and "yearlySampleCount".
      */
-    Map<String, Integer> incrementSampleCounts(@Nullable Date counterDate);
+    @Deprecated
+    default Map<String, Integer> incrementSampleCounts(@Nullable Date counterDate)
+    {
+        return SampleSetService.get().incrementSampleCounts(counterDate);
+    }
 
     void addExperimentListener(ExperimentListener listener);
 

@@ -71,6 +71,13 @@ public abstract class WrapperDataIterator implements DataIterator, ScrollableDat
         return _delegate.get(i);
     }
 
+    /*
+        getSupplier(), subclass should decide whether to pass through getSupplier like this
+            return _delegate.getSupplier(i);
+        or whether to use the default impl
+            default Supplier<Object> getSupplier(final int i)
+    */
+
     @Override
     public boolean isScrollable()
     {

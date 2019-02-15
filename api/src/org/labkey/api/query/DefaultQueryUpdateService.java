@@ -18,6 +18,7 @@ package org.labkey.api.query;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -555,9 +556,14 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     }
 
 
-    protected void convertTypes(Container c, Map<String,Object> row) throws ValidationException
+    final protected void convertTypes(Container c, Map<String,Object> row) throws ValidationException
     {
-        for (ColumnInfo col : getDbTable().getColumns())
+        convertTypes(c, row,  getDbTable(), null);
+    }
+
+    protected void convertTypes(Container c, Map<String,Object> row, TableInfo t, @Nullable String file_link_dir_name) throws ValidationException
+    {
+        for (ColumnInfo col : t.getColumns())
         {
             Object value = row.get(col.getName());
             if (null != value)
@@ -576,7 +582,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                         default:
                             if (PropertyType.FILE_LINK == col.getPropertyType() && (value instanceof MultipartFile || value instanceof AttachmentFile))
                             {
-                                value = saveFile(c, col.getName(), value, null);
+                                value = saveFile(c, col.getName(), value, file_link_dir_name);
                             }
                             row.put(col.getName(), ConvertUtils.convert(value.toString(), col.getJdbcType().getJavaClass()));
                     }

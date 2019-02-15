@@ -246,6 +246,7 @@ public class NameGenerator
      * Create new state object for a batch of names.
      * @param incrementSampleCounts Increment the sample counters for each name generated.
      */
+    @NotNull
     public State createState(boolean incrementSampleCounts)
     {
         return new State(incrementSampleCounts);

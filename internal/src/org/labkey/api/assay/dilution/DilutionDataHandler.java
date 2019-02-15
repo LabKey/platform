@@ -386,9 +386,10 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
     protected void applyDilution(List<? extends WellData> wells, ExpMaterial sampleInput, Map<String, DomainProperty> sampleProperties, boolean reverseDirection) throws ExperimentException
     {
         boolean first = true;
-        Double dilution = (Double) sampleInput.getProperty(sampleProperties.get(DilutionAssayProvider.SAMPLE_INITIAL_DILUTION_PROPERTY_NAME));
-        Double factor = (Double) sampleInput.getProperty(sampleProperties.get(DilutionAssayProvider.SAMPLE_DILUTION_FACTOR_PROPERTY_NAME));
-        String methodString = (String) sampleInput.getProperty(sampleProperties.get(DilutionAssayProvider.SAMPLE_METHOD_PROPERTY_NAME));
+        Map<PropertyDescriptor,Object> sampleValues = sampleInput.getPropertyValues();
+        Double dilution = (Double) sampleValues.get(sampleProperties.get(DilutionAssayProvider.SAMPLE_INITIAL_DILUTION_PROPERTY_NAME).getPropertyDescriptor());
+        Double factor = (Double) sampleValues.get(sampleProperties.get(DilutionAssayProvider.SAMPLE_DILUTION_FACTOR_PROPERTY_NAME).getPropertyDescriptor());
+        String methodString = (String) sampleValues.get(sampleProperties.get(DilutionAssayProvider.SAMPLE_METHOD_PROPERTY_NAME).getPropertyDescriptor());
 
         if (null == dilution || null == factor || null == methodString)
         {
@@ -561,7 +562,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         return new Pair<>(type, format);
     }
 
-    public Lsid getDataRowLSID(ExpData data, String wellGroupName, Map<PropertyDescriptor, Object> sampleProperties)
+    public Lsid getDataRowLSID(ExpData data, String wellGroupName)
     {
         Lsid.LsidBuilder dataRowLsid = new Lsid.LsidBuilder(data.getLSID());
         dataRowLsid.setNamespacePrefix(_dataRowLsidPrefix);

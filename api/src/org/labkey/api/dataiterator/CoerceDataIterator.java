@@ -60,7 +60,7 @@ public class CoerceDataIterator extends SimpleTranslator
             if (null != to)
             {
                 seen.add(to.getName());
-                if (to.getPropertyType() == PropertyType.ATTACHMENT)
+                if (to.getPropertyType() == PropertyType.ATTACHMENT || to.getPropertyType() == PropertyType.FILE_LINK)
                     addColumn(to, i);
                 else if (to.getFk() instanceof MultiValuedForeignKey)
                     addColumn(to.getName(), i); // pass-through multi-value columns -- converting will stringify a collection

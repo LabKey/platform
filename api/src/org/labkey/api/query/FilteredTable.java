@@ -277,10 +277,9 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         _filter.addAllClauses(filter);
     }
 
-    public ColumnInfo wrapColumn(String alias, ColumnInfo underlyingColumn)
+    public ColumnInfo wrapColumnFromJoinedTable(String alias, ColumnInfo underlyingColumn, String tableAlias)
     {
-        assert underlyingColumn.getParentTable() == _rootTable;
-        ExprColumn ret = new ExprColumn(this, alias, underlyingColumn.getValueSql(ExprColumn.STR_TABLE_ALIAS), underlyingColumn.getJdbcType());
+        ExprColumn ret = new ExprColumn(this, alias, underlyingColumn.getValueSql(tableAlias), underlyingColumn.getJdbcType());
         ret.copyAttributesFrom(underlyingColumn);
         ret.copyURLFrom(underlyingColumn, null, null);
         ret.setLabel(null);  // The alias should be used to generate the default label, not whatever was in underlyingColumn; name might be set later (e.g., meta data override)
@@ -293,6 +292,12 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
             ret.setColumnLogging(new ColumnLogging(true, underlyingColumn.getFieldKey(), underlyingColumn.getParentTable(), getPHIDataLoggingColumns(), getPHILoggingComment(), getSelectQueryAuditProvider()));
         }
         return ret;
+    }
+
+    public ColumnInfo wrapColumn(String alias, ColumnInfo underlyingColumn)
+    {
+        assert underlyingColumn.getParentTable() == _rootTable;
+        return wrapColumnFromJoinedTable(alias, underlyingColumn, ExprColumn.STR_TABLE_ALIAS);
     }
 
     public ColumnInfo wrapColumn(ColumnInfo underlyingColumn)

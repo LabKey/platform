@@ -670,7 +670,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     /**
      * Save uploaded file to dirName directory under file or pipeline root.
      */
-    protected Object saveFile(Container container, String name, Object value, @Nullable String dirName) throws ValidationException, QueryUpdateServiceException
+    public static Object saveFile(Container container, String name, Object value, @Nullable String dirName) throws ValidationException, QueryUpdateServiceException
     {
         if (value instanceof MultipartFile)
         {
@@ -717,7 +717,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
     // For security reasons, make sure the user hasn't tried to reference a file that's not under
     // the pipeline root. Otherwise, they could get access to any file on the server
-    protected File checkFileUnderRoot(Container container, File file) throws ExperimentException
+    static File checkFileUnderRoot(Container container, File file) throws ExperimentException
     {
         PipeRoot root = PipelineService.get().findPipelineRoot(container);
         if (root == null)

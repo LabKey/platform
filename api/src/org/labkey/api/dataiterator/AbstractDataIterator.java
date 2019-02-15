@@ -24,6 +24,9 @@ import org.labkey.api.query.ValidationException;
 import java.util.HashSet;
 import java.util.Set;
 
+import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
+import static org.apache.commons.lang3.StringUtils.defaultString;
+
 /**
  * User: matthewb
  * Date: 2011-05-26
@@ -43,6 +46,11 @@ public abstract class AbstractDataIterator implements DataIterator
         _errors = null==context ? null : context._errors;
     }
 
+    public String toString()
+    {
+        return defaultIfBlank(getDebugName(),super.toString());
+    }
+
     public void setDebugName(String name)
     {
         _debugName = name;
@@ -52,7 +60,7 @@ public abstract class AbstractDataIterator implements DataIterator
     @Override
     public String getDebugName()
     {
-        return StringUtils.defaultString(_debugName, getClass().getSimpleName());
+        return defaultString(_debugName, getClass().getSimpleName());
     }
 
 
@@ -89,13 +97,14 @@ public abstract class AbstractDataIterator implements DataIterator
 
     protected ValidationException getRowError()
     {
-        int row = (Integer)this.get(0);
+        Integer row = (Integer)this.get(0);
         if (null == _rowError)
             _rowError = _errors.getLastRowError();
         if (null == _rowError || row != _rowError.getRowNumber())
         {
             _rowError = new ValidationException();
-            _rowError.setRowNumber(row);
+            if (null != row)
+                _rowError.setRowNumber(row);
             _errors.addRowError(_rowError);
         }
         return _rowError;

@@ -48,7 +48,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
 
     private final TableInfo _table;
     private final Container _c;
-    private final boolean _selectIds;
+    private boolean _selectIds;
     private final InsertOption _insertOption;
     private final Set<String> _skipColumnNames = new CaseInsensitiveHashSet();
     private final Set<String> _dontUpdate = new CaseInsensitiveHashSet();
@@ -128,6 +128,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
           @Nullable Set<String> keyColumns, @Nullable Set<String> addlSkipColumns, @Nullable Set<String> dontUpdate)
     {
         super(data, context);
+        setDebugName(table.getName());
 
         _table = table;
         _c = c;
@@ -249,12 +250,27 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         }
     }
 
+    public TableInsertDataIterator setMaxBatchSize(int size)
+    {
+        if (!_selectIds)
+            _batchSize = size;
+        return this;
+    }
+
+    public TableInsertDataIterator setSelectIds(boolean selectIds)
+    {
+        _selectIds = selectIds;
+        if (_selectIds)
+            _batchSize = 1;
+        return this;
+    }
+
 
     @Override
     public DataIterator getDataIterator(DataIteratorContext context)
     {
         assert _context == context;
-        return this;
+        return LoggingDataIterator.wrap(this);
     }
 
 

@@ -172,7 +172,7 @@ public class DataIteratorUtil
             if (null != label && !targetAliasesMap.containsKey(label))
                 targetAliasesMap.put(label, new Pair<>(col, MatchType.alias));
             String translatedFieldKey;
-            if (useImportAliases)
+            if (useImportAliases || "folder".equalsIgnoreCase(col.getName()))
             {
                 for (String alias : col.getImportAliasSet())
                     if (!targetAliasesMap.containsKey(alias))

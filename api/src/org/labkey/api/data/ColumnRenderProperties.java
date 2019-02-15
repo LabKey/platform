@@ -508,6 +508,11 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         return _propertyType;
     }
 
+    public void setPropertyType(PropertyType propertyType)
+    {
+        _propertyType = propertyType;
+    }
+
     @Override
     public String getPropertyURI()
     {

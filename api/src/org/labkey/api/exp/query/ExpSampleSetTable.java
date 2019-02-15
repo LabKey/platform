@@ -35,5 +35,18 @@ public interface ExpSampleSetTable extends ExpTable<ExpSampleSetTable.Column>
         ModifiedBy,
         Folder,
         SampleCount,
+        // Columns not supported by ExpSampleSetTableImpl.createColumn()
+        Flag,
+        Run,
+        SampleSet,
+        SourceProtocolLSID,
+        SourceProtocolApplication,
+        SourceApplicationInput,
+        RunApplication,
+        RunApplicationOutput,
+        Property,
+        Alias,
+        Inputs,
+        Outputs
     }
 }

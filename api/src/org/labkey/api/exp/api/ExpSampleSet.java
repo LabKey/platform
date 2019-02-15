@@ -49,8 +49,11 @@ public interface ExpSampleSet extends ExpObject
     ExpMaterial getSample(String name);
     ExpMaterial getSample(Container c, String name);
 
-    @NotNull
+    // use getDomain()
+    @NotNull @Deprecated
     Domain getType();
+
+    Domain getDomain();
 
     String getDescription();
 
@@ -140,6 +143,9 @@ public interface ExpSampleSet extends ExpObject
     String createSampleName(@NotNull Map<String, Object> rowMap,
                             @Nullable Set<ExpData> parentDatas,
                             @Nullable Set<ExpMaterial> parentSamples) throws ExperimentException;
+
+
+    void setIdCol1(String s);
 
     void setDescription(String s);
 

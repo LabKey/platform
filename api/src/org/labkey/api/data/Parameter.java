@@ -202,6 +202,7 @@ public class Parameter implements AutoCloseable
         _uri = c.getPropertyURI();
         _type = c.getJdbcType();
         _indexes = indexes;
+        // CONSIDER: this seems pretty low-level for this check (see also DefaultQueryUpdateService.convertTypes())
         setFileAsName = (c.getInputType().equalsIgnoreCase("file") && _type == JdbcType.VARCHAR);
     }
 

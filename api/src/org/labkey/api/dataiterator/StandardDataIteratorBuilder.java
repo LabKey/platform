@@ -149,7 +149,7 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
          * but not all information is available on the ColumnInfo
          * notably we need PropertyValidators
          *
-         * Anyway match up the columns and property descriptors and keep them in a set of TranslateHeleprs
+         * Anyway match up the columns and property descriptors and keep them in a set of TranslateHelpers
          */
         List<ColumnInfo> cols = _target.getColumns();
         Map<FieldKey, TranslateHelper> unusedCols = new HashMap<>(cols.size() * 2);
@@ -224,7 +224,8 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
 
         for (TranslateHelper pair : targetCols)
         {
-            boolean isAttachment = (null != pair.dp && pair.dp.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT);
+            PropertyType pt = null==pair.dp ? null : pair.dp.getPropertyDescriptor().getPropertyType();
+            boolean isAttachment = pt == PropertyType.ATTACHMENT || pt == PropertyType.FILE_LINK;
             boolean supportsMV = (null != pair.target && null != pair.target.getMvColumnName()) || (null != pair.dp && pair.dp.isMvEnabled());
             int indexConvert;
 

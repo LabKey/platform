@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.GUID;
 
 import java.util.Collection;
@@ -58,5 +59,17 @@ public class UnionContainerFilter extends ContainerFilter
     public Type getType()
     {
         return _filters[0].getType();
+    }
+
+    @Override
+    public String toString()
+    {
+        return getClass().getName();
+    }
+
+    @Override
+    public SimpleFilter.FilterClause createFilterClause(DbSchema schema, FieldKey containerFilterColumn, Container container)
+    {
+        return super.createFilterClause(schema, containerFilterColumn, container);
     }
 }

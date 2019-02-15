@@ -626,7 +626,8 @@ public class StorageProvisioner
         @Override
         public List<ColumnInfo> getAlternateKeyColumns()
         {
-            return _inner.getAlternateKeyColumns();
+            // don't delegate to schema table info, it will return getPkColumns()
+            return super.getAlternateKeyColumns();
         }
 
         @NotNull
@@ -768,7 +769,11 @@ public class StorageProvisioner
 
     private static final Object ENSURE_LOCK = new Object();
 
-    private static String ensureStorageTable(Domain domain, DomainKind kind, DbScope scope)
+    /**
+     * This is really an internal method, use createTableInfo() in most scenarios
+     * This is public to support upgrade scenarios only.
+     */
+    public static String ensureStorageTable(Domain domain, DomainKind kind, DbScope scope)
     {
         synchronized (ENSURE_LOCK)
         {

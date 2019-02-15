@@ -176,7 +176,7 @@ abstract public class DomainKind implements Handler<String>
 
     public DbSchemaType getSchemaType()
     {
-        return DbSchemaType.Module;
+        return DbSchemaType.Provisioned;
     }
 
     /** ask the domain to clear caches related to this domain */

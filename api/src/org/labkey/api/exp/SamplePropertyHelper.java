@@ -162,7 +162,7 @@ public abstract class SamplePropertyHelper<ObjectType>
 
     public Map<String, Map<DomainProperty, String>> getPostedPropertyValues(HttpServletRequest request) throws ExperimentException
     {
-        Map<String, Map<DomainProperty, String>> result = new HashMap<>();
+        Map<String, Map<DomainProperty, String>> result = new LinkedHashMap<>();
         for (String sampleName : getSampleNames())
         {
             Map<DomainProperty, String> values = new HashMap<>();

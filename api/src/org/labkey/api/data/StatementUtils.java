@@ -687,10 +687,10 @@ public class StatementUtils
             if (_selectIds && null != autoIncrementColumn)
             {
                 selectAutoIncrement = true;
-                if (null != objectIdVar)
+                if (useVariables)
                     rowIdVar = "_rowid_";
                 rowIdVar = _dialect.addReselect(sqlfInsertInto, autoIncrementColumn, rowIdVar);
-                if (null != objectIdVar)
+                if (useVariables)
                     sqlfDeclare.append("DECLARE ").append(rowIdVar).append(" INT;\n");  // TODO: Move this into addReselect()?
             }
         }

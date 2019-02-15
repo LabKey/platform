@@ -214,6 +214,7 @@ public class PlateBasedRunCreator<ProviderType extends AbstractPlateBasedAssayPr
                     String prefix = sampleSetLSID.toString();
 
                     sampleSet.setMaterialLSIDPrefix(prefix);
+                    sampleSet.setIdCol1("SpecimenID");
                     sampleSet.save(context.getUser());
                 }
 

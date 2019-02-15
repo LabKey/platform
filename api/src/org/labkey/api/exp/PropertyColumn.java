@@ -101,6 +101,7 @@ public class PropertyColumn extends LookupColumn
         // ColumnRenderProperties
         pd.copyTo(to);
 
+        to.setPropertyType(pd.getPropertyType());
         to.setRequired(pd.isRequired());
         to.setNullable(pd.isNullable());
         to.setHidden(pd.isHidden());

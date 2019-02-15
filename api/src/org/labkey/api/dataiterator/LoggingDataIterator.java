@@ -54,6 +54,7 @@ public class LoggingDataIterator extends AbstractDataIterator implements Scrolla
         super(null);
         _data = in;
         _log = log;
+        setDebugName("log(" + in.getDebugName() + ")");
     }
 
     @Override
@@ -101,6 +102,7 @@ public class LoggingDataIterator extends AbstractDataIterator implements Scrolla
             JSONObject json = new JSONObject(map);
             // avoid recursion bombs
             json.remove("extraProperties");
+            json.remove("properties");
             sb.append(json.toString());
             sb.append("\n");
         }

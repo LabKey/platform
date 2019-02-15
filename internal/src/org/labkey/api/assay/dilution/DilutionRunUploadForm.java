@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRun;
@@ -87,14 +87,14 @@ public class DilutionRunUploadForm<Provider extends DilutionAssayProvider> exten
             }
             if (selected != null)
             {
-                Map<String, Object> values = OntologyManager.getProperties(getContainer(), selected.getLSID());
+                Map<PropertyDescriptor, Object> values = selected.getPropertyValues();
                 Map<DomainProperty, Object> ret = new HashMap<>();
                 Set<String> requiredColumns = new CaseInsensitiveHashSet(ThawListResolverType.REQUIRED_COLUMNS);
                 for (DomainProperty property : domain.getProperties())
                 {
                     // 20047 On reimport with a thaw list, don't use the previously resolved LastEntered values for specimenIds. Users should reinput the Thaw List index values.
                     if (!didImportUseThawList(reRun) || !requiredColumns.contains((property.getName())))
-                        ret.put(property, values.get(property.getPropertyURI()));
+                        ret.put(property, values.get(property.getPropertyDescriptor()));
                 }
                 return ret;
             }
