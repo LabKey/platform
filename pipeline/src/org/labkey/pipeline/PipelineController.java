@@ -30,7 +30,6 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.OldRedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleRedirectAction;
@@ -663,14 +662,15 @@ public class PipelineController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class UpdateRootPermissionsAction extends OldRedirectAction<PermissionForm>
+    public class UpdateRootPermissionsAction extends FormHandlerAction<PermissionForm>
     {
-        public ActionURL getSuccessURL(PermissionForm permissionForm)
+        @Override
+        public void validateCommand(PermissionForm target, Errors errors)
         {
-            return permissionForm.getReturnActionURL(new ActionURL(SetupAction.class, getContainer()));
         }
 
-        public boolean doAction(PermissionForm form, BindException errors)
+        @Override
+        public boolean handlePost(PermissionForm form, BindException errors) throws Exception
         {
             Container c = getContainer();
             PipeRoot pipeRoot = getPipelineRoot(c);
@@ -711,6 +711,11 @@ public class PipelineController extends SpringActionController
             }
 
             return true;
+        }
+
+        public ActionURL getSuccessURL(PermissionForm permissionForm)
+        {
+            return permissionForm.getReturnActionURL(new ActionURL(SetupAction.class, getContainer()));
         }
     }
 

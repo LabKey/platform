@@ -37,11 +37,11 @@ import org.labkey.announcements.query.AnnouncementSchema;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ConfirmAction;
+import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.OldRedirectAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleErrorView;
@@ -285,9 +285,15 @@ public class AnnouncementsController extends SpringActionController
     }
 
     @RequiresPermission(DeletePermission.class)
-    public class DeleteThreadsAction extends OldRedirectAction
+    public class DeleteThreadsAction extends FormHandlerAction
     {
-        public boolean doAction(Object o, BindException errors)
+        @Override
+        public void validateCommand(Object target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors)
         {
             if (!getPermissions().allowDeleteAnyThread())
             {
@@ -2439,7 +2445,7 @@ public class AnnouncementsController extends SpringActionController
                 String conversation = settings.getConversationName().toLowerCase();
                 String conversations = conversation + "s";
                 ActionButton delete = new ActionButton(DeleteThreadsAction.class, "Delete");
-                delete.setActionType(ActionButton.Action.GET);
+                delete.setActionType(ActionButton.Action.POST);
                 delete.setDisplayPermission(DeletePermission.class);
                 delete.setRequiresSelection(true, "Are you sure you want to delete this " + conversation + "?", "Are you sure you want to delete these " + conversations + "?");
                 bb.add(delete);
@@ -2544,7 +2550,7 @@ public class AnnouncementsController extends SpringActionController
                         url.addParameter("threadId", ann.getParent() == null ? ann.getEntityId() : ann.getParent());
                         url.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
                         url.addParameter("unsubscribe", true);
-                        buttons.addChild("unsubscribe", url);
+                        buttons.addChild("unsubscribe").setScript(PageFlowUtil.postOnClickJavaScript(url));
                     }
                     else
                     {
@@ -2552,7 +2558,7 @@ public class AnnouncementsController extends SpringActionController
                         int emailOption = getEmailOptionIncludingInherited(c, getViewContext().getUser(), ann.lookupSrcIdentifer());
 
                         // Or if they're subscribed because they've posted to this thread already
-                        // Remember the emailOption is a bitmask, so lodon't use simple equality checks
+                        // Remember the emailOption is a bitmask, so don't use simple equality checks
                         boolean forumSubscription;
                         if ((emailOption == EmailOption.MESSAGES_ALL.getValue())
                                 || (emailOption == EmailOption.MESSAGES_ALL_DAILY_DIGEST.getValue()))
@@ -2582,7 +2588,7 @@ public class AnnouncementsController extends SpringActionController
                             ActionURL subscribeThreadURL = new ActionURL(SubscribeThreadAction.class, c);
                             subscribeThreadURL.addParameter("threadId", ann.getParent() == null ? ann.getEntityId() : ann.getParent());
                             subscribeThreadURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
-                            subscribeTree.addChild("thread", subscribeThreadURL);
+                            subscribeTree.addChild("thread").setScript(PageFlowUtil.postOnClickJavaScript(subscribeThreadURL));
                             buttons.addChild(subscribeTree);
                         }
                     }
@@ -2652,16 +2658,15 @@ public class AnnouncementsController extends SpringActionController
     }
 
     @RequiresLogin @RequiresPermission(ReadPermission.class)
-    public class SubscribeThreadAction extends OldRedirectAction<SubscriptionBean>
+    public class SubscribeThreadAction extends FormHandlerAction<SubscriptionBean>
     {
         @Override
-        public URLHelper getSuccessURL(SubscriptionBean subscriptionBean)
+        public void validateCommand(SubscriptionBean target, Errors errors)
         {
-            return subscriptionBean.getReturnActionURL(getBeginURL(getContainer()));
         }
 
         @Override
-        public boolean doAction(SubscriptionBean bean, BindException errors)
+        public boolean handlePost(SubscriptionBean bean, BindException errors)
         {
             String id = bean.getThreadId();
             if (id == null)
@@ -2691,6 +2696,12 @@ public class AnnouncementsController extends SpringActionController
                 new SqlExecutor(CommSchema.getInstance().getSchema()).execute("INSERT INTO comm.userlist (UserId, MessageId) VALUES (?, ?)", getUser(), ann.getRowId());
             }
             return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(SubscriptionBean subscriptionBean)
+        {
+            return subscriptionBean.getReturnActionURL(getBeginURL(getContainer()));
         }
     }
 

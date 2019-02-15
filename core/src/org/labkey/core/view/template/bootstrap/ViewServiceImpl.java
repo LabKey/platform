@@ -555,7 +555,7 @@ public class ViewServiceImpl implements ViewService
                         }
                         else if (link.getScript() != null)
                         {
-                            out.print("<a onClick=" + PageFlowUtil.jsString(link.getScript()) + ">" + linkText + "</a>");
+                            out.print("<a onClick=\"" + PageFlowUtil.filter(link.getScript()) + "\">" + linkText + "</a>");
                         }
                     }
                     out.print("</div>");

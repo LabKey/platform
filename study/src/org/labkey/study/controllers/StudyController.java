@@ -3620,9 +3620,15 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class DeleteQCStateAction extends OldRedirectAction<DeleteQCStateForm>
+    public class DeleteQCStateAction extends FormHandlerAction<DeleteQCStateForm>
     {
-        public boolean doAction(DeleteQCStateForm form, BindException errors)
+        @Override
+        public void validateCommand(DeleteQCStateForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(DeleteQCStateForm form, BindException errors) throws Exception
         {
             if (form.isAll())
             {
