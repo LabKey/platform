@@ -918,6 +918,25 @@ LABKEY.Utils = new function()
             }
         },
 
+        /**
+         * POSTs to the given href, including CSRF token. Taken from PageFlowUtil.postOnClickJavascript .
+         * @param href containing action and parameters to be POSTed
+         */
+
+        postOnClickJavaScript : function (href) {
+            var form = document.createElement('form');
+            form.setAttribute('method', 'post');
+            form.setAttribute('action', href);
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'X-LABKEY-CSRF';
+            input.value = LABKEY.CSRF;
+            form.appendChild(input);
+            form.style.display = 'hidden';
+            document.body.appendChild(form);
+            form.submit();
+        },
+
         // private
         collapseExpand: collapseExpand,
         notifyExpandCollapse: notifyExpandCollapse,
