@@ -52,6 +52,8 @@ LABKEY.Utils = new function()
             'j-n-y|j-n-Y|' +
             'j-M-y|j-M-Y|' + DATEALTFORMATS_Either;
 
+    var DATETIMEFORMAT_WithMS = 'Y-m-d H:i:s.u'; //24 hr format with milliseconds
+
     function isObject(v)
     {
         return typeof v == "object" && Object.prototype.toString.call(v) === '[object Object]';
@@ -230,6 +232,16 @@ LABKEY.Utils = new function()
         getDateAltFormats : function()
         {
             return LABKEY.useMDYDateParsing ? DATEALTFORMATS_MonthDay : DATEALTFORMATS_DayMonth;
+        },
+
+        /**
+         * Returns date format with timestamp including milliseconds. Useful for parsing the date in "yyyy-MM-dd HH:mm:ss.SSS" format
+         * as returned by DateUtil.getJsonDateTimeFormatString().
+         * ex. Ext4.Date.parse("2019-02-15 17:15:10.123", 'Y-m-d H:i:s.u')
+         */
+        getDateTimeFormatWithMS : function()
+        {
+            return DATETIMEFORMAT_WithMS;
         },
 
         displayAjaxErrorResponse: function() {
