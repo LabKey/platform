@@ -505,19 +505,24 @@ public class Issue extends Entity implements Serializable, Cloneable
         {
             if (null == (id=StringUtils.trimToNull(id)))
                 continue;
+
             ValidEmail v = null;
             User u = null;
-            try {
-                v = new ValidEmail(id);
-                u = UserManager.getUser(v);
-            } catch (ValidEmail.InvalidEmailException x) { }
 
-            if (v == null || u == null)
-                try { u = UserManager.getUser(Integer.parseInt(id)); } catch (NumberFormatException x) { };
-            if (v == null && u == null)
+            try { u = UserManager.getUser(Integer.parseInt(id)); } catch (NumberFormatException x) { };
+
+            if (u == null)
                 u = UserManager.getUserByDisplayName(id);
-            if (u != null)
-            try { new ValidEmail(u.getEmail()); } catch (ValidEmail.InvalidEmailException x) { }
+
+            if (u == null)
+            {
+                try
+                {
+                    v = new ValidEmail(id);
+                    u = UserManager.getUser(v);
+                }
+                catch (ValidEmail.InvalidEmailException x) { }
+            }
 
             if (u == null && errors != null)
             {
@@ -528,6 +533,9 @@ public class Issue extends Entity implements Serializable, Cloneable
             // filter out inactive users
             if (u != null && !u.isActive())
                 continue;
+
+            if (u != null)
+                try { v = new ValidEmail(u.getEmail()); } catch (ValidEmail.InvalidEmailException x) { }
 
             ret.add(Tuple3.of(id, u, v));
         }
