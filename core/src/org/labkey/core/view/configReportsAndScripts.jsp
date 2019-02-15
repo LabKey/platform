@@ -41,7 +41,7 @@
 %>
 <%
     boolean isRemoteEnabled = PremiumService.get().isRemoteREnabled();
-    boolean isRDockerAvailable = true;
+    boolean isRDockerAvailable = false;
     if (AppProps.getInstance().isExperimentalFeatureEnabled(RStudioService.R_DOCKER_SANDBOX))
     {
         DockerService ds = DockerService.get();
