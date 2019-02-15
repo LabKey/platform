@@ -18,6 +18,7 @@ package org.labkey.issue;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
+import org.labkey.issue.model.IssueListDefCache;
 import org.labkey.issue.model.IssueManager;
 
 /**
@@ -30,5 +31,10 @@ public class IssueContainerListener extends ContainerManager.AbstractContainerLi
     public void containerDeleted(Container c, User user)
     {
         IssueManager.purgeContainer(c, user);
+    }
+
+    public void containerMoved(Container c, Container oldParent, User user)
+    {
+        IssueListDefCache.clearCache();
     }
 }

@@ -123,4 +123,9 @@ public class IssueListDefCache
     {
         ISSUE_DEF_DB_CACHE.remove(c);
     }
+
+    public static void clearCache()
+    {
+        ISSUE_DEF_DB_CACHE.clear();
+    }
 }
