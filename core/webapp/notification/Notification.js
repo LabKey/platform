@@ -242,13 +242,15 @@
                     && !event.target.classList.contains("labkey-notification-toggle")
                     && !event.target.classList.contains("labkey-notification-close"))
                 {
-                    window.location = LABKEY.ActionURL.buildURL("notification", "goto",
+                    var goToHref = LABKEY.ActionURL.buildURL("notification", "goto",
                         LABKEY.notifications[id].ContainerId || LABKEY.container.id,
                         {
                             rowid: LABKEY.notifications[id].RowId,
                             returnUrl: LABKEY.notifications[id].ActionLinkUrl
                         }
                     );
+
+                    LABKEY.Utils.postOnClickJavaScript(goToHref);
                 }
             }
         };

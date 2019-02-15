@@ -18,7 +18,7 @@ package org.labkey.core.notification;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.OldRedirectAction;
+import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -75,19 +75,25 @@ public class NotificationController extends SpringActionController
 
     // redirect to target URL and mark notification as read
     @RequiresLogin
-    public static class GotoAction extends OldRedirectAction<NotificationForm>
+    public static class GotoAction extends FormHandlerAction<NotificationForm>
     {
+        @Override
+        public void validateCommand(NotificationForm target, Errors errors)
+        {
+
+        }
+
+        @Override
+        public boolean handlePost(NotificationForm form, BindException errors)
+        {
+            NotificationService.get().markAsRead(getUser(), form.getRowid());
+            return true;
+        }
+
         @Override
         public URLHelper getSuccessURL(NotificationForm form)
         {
             return form.getReturnActionURL();
-        }
-
-        @Override
-        public boolean doAction(NotificationForm form, BindException errors)
-        {
-            NotificationService.get().markAsRead(getUser(), form.getRowid());
-            return true;
         }
     }
 
