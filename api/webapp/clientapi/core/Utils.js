@@ -937,6 +937,16 @@ LABKEY.Utils = new function()
             form.submit();
         },
 
+        /**
+         * Displays a confirmation dialog with the specified message and then, if confirmed, POSTs to the href, using the method above
+         */
+        confirmAndPost : function (message, href) {
+            if (confirm(message))
+                this.postOnClickJavaScript(href);
+
+            return false;
+        },
+
         // private
         collapseExpand: collapseExpand,
         notifyExpandCollapse: notifyExpandCollapse,
