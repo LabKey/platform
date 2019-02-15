@@ -117,14 +117,8 @@ public class ReturnURLString
                 if (!h.getHost().equalsIgnoreCase(allowedHost))
                 {
                     // Server host name that doesn't match, log and possibly reject based on config
-                    String logMessageDetails = "returnURL value: " + url;
-                    HttpServletRequest request = HttpView.currentRequest();
-                    if (request != null)
-                    {
-                        logMessageDetails += " from URL: " + request.getRequestURL() + " with referrer: " + request.getHeader("Referer");
-                    }
-
-                    boolean isConfigured = false;
+                    // Allow 'localhost' for servers in dev mode
+                    boolean isConfigured = AppProps.getInstance().isDevMode() && "localhost".equalsIgnoreCase(h.getHost());
 
                     //look in the list of configured external redirect urls
                     for (String externalRedirectHostURL : AppProps.getInstance().getExternalRedirectURLs())
@@ -135,6 +129,17 @@ public class ReturnURLString
 
                     if (!isConfigured)
                     {
+                        String logMessageDetails = "returnURL value: " + url;
+                        HttpServletRequest request = HttpView.currentRequest();
+                        if (request != null)
+                        {
+                            logMessageDetails += " from URL: " + request.getRequestURL();
+                            if (request.getHeader("Referer") != null)
+                            {
+                                logMessageDetails += " with referrer: " + request.getHeader("Referer");
+                            }
+                        }
+
                         LOG.warn("Rejected external host redirect " + logMessageDetails +
                                 "\nPlease configure external redirect url host from: Admin gear --> Site --> Admin Console --> Admin Console Links --> External Redirect URLs");
                         return false;
