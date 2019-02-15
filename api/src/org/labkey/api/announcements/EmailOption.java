@@ -19,8 +19,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Wrapper over a bitmask that controls the subscription type for notification messages related to announcement
- * or message board updates.
+ * Wrapper over a set of options combined into a single value that controls the subscription type for notification messages related to
+ * announcement or message board updates.
  * User: arauch
  * Date: Sep 24, 2005
  */
