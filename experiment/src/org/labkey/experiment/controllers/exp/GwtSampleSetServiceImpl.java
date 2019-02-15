@@ -34,9 +34,9 @@ import java.util.List;
  * User: jeckels
  * Date: Feb 8, 2008
  */
-public class SampleSetServiceImpl extends BaseRemoteService implements SampleSetService
+public class GwtSampleSetServiceImpl extends BaseRemoteService implements SampleSetService
 {
-    public SampleSetServiceImpl(ViewContext context)
+    public GwtSampleSetServiceImpl(ViewContext context)
     {
         super(context);
     }

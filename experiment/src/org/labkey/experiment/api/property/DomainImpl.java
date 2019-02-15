@@ -313,7 +313,7 @@ public class DomainImpl implements Domain
     public void delete(@Nullable User user) throws DomainNotFoundException
     {
         ExperimentService exp = ExperimentService.get();
-        Lock domainLock =  getLock(_dd);
+        Lock domainLock = getLock(_dd);
         try (DbScope.Transaction transaction = exp.getSchema().getScope().ensureTransaction(domainLock))
         {
             DefaultValueService.get().clearDefaultValues(getContainer(), this);

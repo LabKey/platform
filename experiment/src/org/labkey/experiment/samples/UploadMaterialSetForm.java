@@ -23,7 +23,6 @@ import org.labkey.api.view.ViewForm;
 import org.labkey.experiment.api.ExpSampleSetImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 
-import java.io.IOException;
 import java.util.Map;
 
 public class UploadMaterialSetForm extends ViewForm
@@ -292,6 +291,6 @@ public class UploadMaterialSetForm extends ViewForm
     {
         if (name == null)
             return null;
-        return ExperimentServiceImpl.get().getSampleSet(getContainer(), getUser(), name);
+        return (ExpSampleSetImpl)ExperimentServiceImpl.get().getSampleSet(getContainer(), getUser(), name);
     }
 }

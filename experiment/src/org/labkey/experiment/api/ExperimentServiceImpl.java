@@ -67,7 +67,6 @@ import org.labkey.api.exp.query.ExpRunGroupMapTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSampleSetTable;
 import org.labkey.api.exp.query.ExpSchema;
-import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.exp.xar.XarConstants;
 import org.labkey.api.gwt.client.DefaultValueType;
@@ -109,7 +108,6 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
@@ -140,9 +138,6 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -171,23 +166,12 @@ import static org.labkey.api.data.CompareType.IN;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTROLLBACK;
 import static org.labkey.api.exp.OntologyManager.getTinfoObject;
-import static org.labkey.api.exp.query.ExpSchema.NestedSchemas.materials;
 
 public class ExperimentServiceImpl implements ExperimentService
 {
     private static final Logger LOG = Logger.getLogger(ExperimentServiceImpl.class);
 
     private StringKeyCache<Protocol> protocolCache;
-
-    private StringKeyCache<SortedSet<MaterialSource>> materialSourceCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "MaterialSource", (container, argument) ->
-    {
-        Container c = ContainerManager.getForId(container);
-        if (c == null)
-            return Collections.emptySortedSet();
-
-        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-        return Collections.unmodifiableSortedSet(new TreeSet<>(new TableSelector(getTinfoMaterialSource(), filter, null).getCollection(MaterialSource.class)));
-    });
 
     private final StringKeyCache<SortedSet<DataClass>> dataClassCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "DataClass", (containerId, argument) ->
     {
@@ -212,20 +196,6 @@ public class ExperimentServiceImpl implements ExperimentService
 
     private static final ReentrantLock XAR_IMPORT_LOCK = new ReentrantLock();
 
-    StringKeyCache<SortedSet<MaterialSource>> getMaterialSourceCache()
-    {
-        return materialSourceCache;
-    }
-
-    public void clearMaterialSourceCache(@Nullable Container c)
-    {
-        LOG.debug("clearMaterialSourceCache: " + (c == null ? "all" : c.getPath()));
-        if (c == null)
-            materialSourceCache.clear();
-        else
-            materialSourceCache.remove(c.getId());
-    }
-
     StringKeyCache<SortedSet<DataClass>> getDataClassCache()
     {
         return dataClassCache;
@@ -249,6 +219,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return protocolCache;
     }
 
+    @Override
     public ExpRunImpl getExpRun(int rowid)
     {
         SimpleFilter filter = new SimpleFilter().addCondition(FieldKey.fromParts(ExpRunTable.Column.RowId.name()), rowid);
@@ -267,17 +238,20 @@ public class ExperimentServiceImpl implements ExperimentService
         return runs;
     }
 
+    @Override
     public ReentrantLock getProtocolImportLock()
     {
         return XAR_IMPORT_LOCK;
     }
 
+    @Override
     public HttpView createRunExportView(Container container, String defaultFilenamePrefix)
     {
         ActionURL postURL = new ActionURL(ExperimentController.ExportRunsAction.class, container);
         return new JspView<>("/org/labkey/experiment/XARExportOptions.jsp", new ExperimentController.ExportBean(LSIDRelativizer.FOLDER_RELATIVE, XarExportType.BROWSER_DOWNLOAD, defaultFilenamePrefix + ".xar", new ExperimentController.ExportOptionsForm(), null, postURL));
     }
 
+    @Override
     public HttpView createFileExportView(Container container, String defaultFilenamePrefix)
     {
         Set<String> roles = getDataInputRoles(container, ContainerFilter.CURRENT);
@@ -289,6 +263,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return new JspView<>("/org/labkey/experiment/fileExportOptions.jsp", new ExperimentController.ExportBean(LSIDRelativizer.FOLDER_RELATIVE, XarExportType.BROWSER_DOWNLOAD, defaultFilenamePrefix + ".zip", new ExperimentController.ExportOptionsForm(), roles, postURL));
     }
 
+    @Override
     public void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, @Nullable ExpExperiment runGroup, String comment)
     {
         Container c = run != null ? run.getContainer() : protocol.getContainer();
@@ -351,6 +326,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return null;
     }
 
+    @Override
     public ExpRunImpl getExpRun(String lsid)
     {
         ExperimentRun run = getExperimentRun(lsid);
@@ -359,6 +335,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return new ExpRunImpl(run);
     }
 
+    @Override
     public List<ExpRunImpl> getExpRuns(Container container, @Nullable ExpProtocol parentProtocol, @Nullable ExpProtocol childProtocol)
     {
         SQLFragment sql = new SQLFragment(" SELECT ER.* "
@@ -380,12 +357,14 @@ public class ExperimentServiceImpl implements ExperimentService
         return ExpRunImpl.fromRuns(new SqlSelector(getSchema(), sql).getArrayList(ExperimentRun.class));
     }
 
+    @Override
     public List<ExpRunImpl> getExpRunsForJobId(int jobId)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("jobid"), jobId);
         return ExpRunImpl.fromRuns(new TableSelector(getTinfoExperimentRun(), filter, null).getArrayList(ExperimentRun.class));
     }
 
+    @Override
     public List<ExpRunImpl> getExpRunsForFilePathRoot(File filePathRoot)
     {
         String path = filePathRoot.getAbsolutePath();
@@ -393,6 +372,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return ExpRunImpl.fromRuns(new TableSelector(getTinfoExperimentRun(), filter, null).getArrayList(ExperimentRun.class));
     }
 
+    @Override
     public ExpRunImpl createExperimentRun(Container container, String name)
     {
         ExperimentRun run = new ExperimentRun();
@@ -402,6 +382,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return new ExpRunImpl(run);
     }
 
+    @Override
     public ExpDataImpl getExpData(int rowid)
     {
         Data data = new TableSelector(getTinfoData(), new SimpleFilter(FieldKey.fromParts("RowId"), rowid), null).getObject(Data.class);
@@ -410,6 +391,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return new ExpDataImpl(data);
     }
 
+    @Override
     public ExpDataImpl getExpData(String lsid)
     {
         Data data = new TableSelector(getTinfoData(), new SimpleFilter(FieldKey.fromParts("LSID"), lsid), null).getObject(Data.class);
@@ -418,6 +400,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return new ExpDataImpl(data);
     }
 
+    @Override
     public List<ExpDataImpl> getExpDatas(int... rowids)
     {
         if (rowids.length == 0)
@@ -428,6 +411,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return getExpDatas(ids);
     }
 
+    @Override
     public List<ExpDataImpl> getExpDatasByLSID(Collection<String> lsids)
     {
         if (lsids.size() == 0)
@@ -435,6 +419,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), new SimpleFilter(FieldKey.fromParts("LSID"), lsids, IN), null).getArrayList(Data.class));
     }
 
+    @Override
     public List<ExpDataImpl> getExpDatas(Collection<Integer> rowids)
     {
         if (rowids.size() == 0)
@@ -442,6 +427,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), new SimpleFilter(FieldKey.fromParts("RowId"), rowids, IN), null).getArrayList(Data.class));
     }
 
+    @Override
     public List<ExpDataImpl> getExpDatas(Container container, @Nullable DataType type, @Nullable String name)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
@@ -452,6 +438,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), filter, null).getArrayList(Data.class));
     }
 
+    @Override
     public ExpDataImpl createData(URI uri, XarSource source) throws XarFormatException
     {
         // Check if it's in the database already
@@ -501,22 +488,26 @@ public class ExperimentServiceImpl implements ExperimentService
         return data;
     }
 
+    @Override
     public ExpDataImpl createData(Container container, @NotNull DataType type)
     {
         Lsid lsid = new Lsid(generateGuidLSID(container, type));
         return createData(container, lsid.getObjectId(), lsid.toString());
     }
 
+    @Override
     public ExpDataImpl createData(Container container, @NotNull DataType type, @NotNull String name)
     {
         return createData(container, type, name, false);
     }
 
+    @Override
     public ExpDataImpl createData(Container container, @NotNull DataType type, @NotNull String name, boolean generated)
     {
         return createData(container, name, generateLSID(container, type, name), generated);
     }
 
+    @Override
     public ExpDataImpl createData(Container container, String name, String lsid)
     {
         return createData(container, name, lsid, false);
@@ -534,6 +525,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @NotNull
+    @Override
     public List<ExpMaterialImpl> getExpMaterialsByName(String name, Container container, User user)
     {
         List<ExpMaterialImpl> result = getSamplesByName(container, user).get(name);
@@ -637,6 +629,7 @@ public class ExperimentServiceImpl implements ExperimentService
         }
     }
 
+    @Override
     public ExpMaterialImpl createExpMaterial(Container container, Lsid lsid)
     {
         ExpMaterialImpl result = new ExpMaterialImpl(new Material());
@@ -646,6 +639,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return result;
     }
 
+    @Override
     public ExpMaterialImpl createExpMaterial(Container container, String lsid, String name)
     {
         ExpMaterialImpl result = new ExpMaterialImpl(new Material());
@@ -657,6 +651,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return result;
     }
 
+    @Override
     public ExpMaterialImpl getExpMaterial(String lsid)
     {
         Material result = new TableSelector(getTinfoMaterial(), new SimpleFilter(FieldKey.fromParts("LSID"), lsid), null).getObject(Material.class);
@@ -739,108 +734,8 @@ public class ExperimentServiceImpl implements ExperimentService
         task.addRunnable(r, SearchService.PRIORITY.bulk);
     }
 
-    public void indexSampleSet(ExpSampleSet sampleSet)
-    {
-        SearchService ss = SearchService.get();
-        if (ss == null)
-            return;
 
-        SearchService.IndexTask task = ss.defaultTask();
-
-        Runnable r = () -> {
-            // Index all ExpMaterial that have never been indexed OR where either the ExpSampleSet definition or ExpMaterial itself has changed since last indexed
-            SQLFragment sql = new SQLFragment("SELECT * FROM ")
-                    .append(getTinfoMaterial(), "m")
-                    .append(" WHERE m.LSID NOT LIKE '%:").append(StudyService.SPECIMEN_NAMESPACE_PREFIX).append("%'")
-                    .append(" AND m.cpasType = ?").add(sampleSet.getLSID())
-                    .append(" AND (m.lastIndexed IS NULL OR m.lastIndexed < ? OR (m.modified IS NOT NULL AND m.lastIndexed < m.modified))")
-                    .add(sampleSet.getModified());
-
-            new SqlSelector(getSchema().getScope(), sql).forEachBatch(batch -> {
-                for (Material m : batch)
-                {
-                    ExpMaterialImpl impl = new ExpMaterialImpl(m);
-                    impl.index(task);
-                }
-            }, Material.class, 1000);
-        };
-
-        task.addRunnable(r, SearchService.PRIORITY.bulk);
-    }
-
-
-    public Map<String, ExpSampleSet> getSampleSetsForRoles(Container container, ContainerFilter filter, ExpProtocol.ApplicationType type)
-    {
-        SQLFragment sql = new SQLFragment();
-        sql.append("SELECT mi.Role, MAX(m.CpasType) AS SampleSetLSID, COUNT (DISTINCT m.CpasType) AS SampleSetCount FROM ");
-        sql.append(getTinfoMaterial(), "m");
-        sql.append(", ");
-        sql.append(getTinfoMaterialInput(), "mi");
-        sql.append(", ");
-        sql.append(getTinfoProtocolApplication(), "pa");
-        sql.append(", ");
-        sql.append(getTinfoExperimentRun(), "r");
-
-        if (type != null)
-        {
-            sql.append(", ");
-            sql.append(getTinfoProtocol(), "p");
-            sql.append(" WHERE p.lsid = pa.protocollsid AND p.applicationtype = ? AND ");
-            sql.add(type.toString());
-        }
-        else
-        {
-            sql.append(" WHERE ");
-        }
-
-        sql.append(" m.RowId = mi.MaterialId AND mi.TargetApplicationId = pa.RowId AND " +
-                "pa.RunId = r.RowId AND ");
-        sql.append(filter.getSQLFragment(getSchema(), new SQLFragment("r.Container"), container));
-        sql.append(" GROUP BY mi.Role ORDER BY mi.Role");
-
-        Map<String, Object>[] queryResults = new SqlSelector(getSchema(), sql).getMapArray();
-        Map<String, ExpSampleSet> lsidToSampleSet = new HashMap<>();
-
-        Map<String, ExpSampleSet> result = new LinkedHashMap<>();
-        for (Map<String, Object> queryResult : queryResults)
-        {
-            ExpSampleSet sampleSet = null;
-            Number sampleSetCount = (Number) queryResult.get("SampleSetCount");
-            if (sampleSetCount.intValue() == 1)
-            {
-                String sampleSetLSID = (String) queryResult.get("SampleSetLSID");
-                if (!lsidToSampleSet.containsKey(sampleSetLSID))
-                {
-                    sampleSet = getSampleSet(sampleSetLSID);
-                    lsidToSampleSet.put(sampleSetLSID, sampleSet);
-                }
-                else
-                {
-                    sampleSet = lsidToSampleSet.get(sampleSetLSID);
-                }
-            }
-            result.put((String) queryResult.get("Role"), sampleSet);
-        }
-        return result;
-    }
-
-    public List<ExpSampleSetImpl> getSampleSets(@NotNull Container container, @Nullable User user, boolean includeOtherContainers)
-    {
-        List<String> containerIds = createContainerList(container, user, includeOtherContainers);
-
-        // Do the sort on the Java side to make sure it's always case-insensitive, even on Postgres
-        TreeSet<ExpSampleSetImpl> result = new TreeSet<>();
-        for (String containerId : containerIds)
-        {
-            for (MaterialSource source : getMaterialSourceCache().get(containerId))
-            {
-                result.add(new ExpSampleSetImpl(source));
-            }
-        }
-
-        return List.copyOf(result);
-    }
-
+    @Override
     public ExpExperimentImpl getExpExperiment(int rowid)
     {
         Experiment experiment = new TableSelector(getTinfoExperiment()).getObject(rowid, Experiment.class);
@@ -851,6 +746,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return null;
     }
 
+    @Override
     public ExpExperimentImpl createExpExperiment(Container container, String name)
     {
         Experiment exp = new Experiment();
@@ -860,6 +756,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return new ExpExperimentImpl(exp);
     }
 
+    @Override
     public ExpExperiment getExpExperiment(String lsid)
     {
         Experiment experiment =
@@ -868,6 +765,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
 
+    @Override
     public ExpProtocolImpl getExpProtocol(int rowid)
     {
         return getExpProtocol(rowid, true);
@@ -895,6 +793,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
 
+    @Override
     public ExpProtocolImpl getExpProtocol(String lsid)
     {
         return getExpProtocol(lsid, true);
@@ -938,17 +837,20 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
 
+    @Override
     public ExpProtocolImpl getExpProtocol(Container container, String name)
     {
         return getExpProtocol(generateLSID(container, ExpProtocol.class, name));
     }
 
 
+    @Override
     public ExpProtocolImpl createExpProtocol(Container container, ExpProtocol.ApplicationType type, String name)
     {
         return createExpProtocol(container, type, name, generateLSID(container, ExpProtocol.class, name));
     }
 
+    @Override
     public ExpProtocolImpl createExpProtocol(Container container, ExpProtocol.ApplicationType type, String name, String lsid)
     {
         ExpProtocolImpl existing = getExpProtocol(lsid);
@@ -1059,31 +961,37 @@ public class ExperimentServiceImpl implements ExperimentService
         obj.setMaxOccurs(maxOccurs);
     }
 
+    @Override
     public ExpRunTable createRunTable(String name, UserSchema schema)
     {
         return new ExpRunTableImpl(name, schema);
     }
 
+    @Override
     public ExpRunGroupMapTable createRunGroupMapTable(String name, UserSchema schema)
     {
         return new ExpRunGroupMapTableImpl(name, schema);
     }
 
+    @Override
     public ExpDataTable createDataTable(String name, UserSchema schema)
     {
         return new ExpDataTableImpl(name, schema);
     }
 
+    @Override
     public ExpDataInputTable createDataInputTable(String name, ExpSchema expSchema)
     {
         return new ExpDataInputTableImpl(name, expSchema);
     }
 
+    @Override
     public ExpDataProtocolInputTableImpl createDataProtocolInputTable(String name, ExpSchema expSchema)
     {
         return new ExpDataProtocolInputTableImpl(name, expSchema);
     }
 
+    @Override
     public ExpSampleSetTable createSampleSetTable(String name, UserSchema schema)
     {
         return new ExpSampleSetTableImpl(name, schema);
@@ -1095,16 +1003,19 @@ public class ExperimentServiceImpl implements ExperimentService
         return new ExpDataClassTableImpl(name, schema);
     }
 
+    @Override
     public ExpProtocolTableImpl createProtocolTable(String name, UserSchema schema)
     {
         return new ExpProtocolTableImpl(name, schema);
     }
 
+    @Override
     public ExpExperimentTableImpl createExperimentTable(String name, UserSchema schema)
     {
         return new ExpExperimentTableImpl(name, schema);
     }
 
+    @Override
     public ExpMaterialTable createMaterialTable(String name, UserSchema schema)
     {
         return new ExpMaterialTableImpl(name, schema);
@@ -1116,16 +1027,19 @@ public class ExperimentServiceImpl implements ExperimentService
         return new ExpDataClassDataTableImpl(name, schema, (ExpDataClassImpl) dataClass);
     }
 
+    @Override
     public ExpMaterialInputTable createMaterialInputTable(String name, ExpSchema schema)
     {
         return new ExpMaterialInputTableImpl(name, schema);
     }
 
+    @Override
     public ExpMaterialProtocolInputTableImpl createMaterialProtocolInputTable(String name, ExpSchema expSchema)
     {
         return new ExpMaterialProtocolInputTableImpl(name, expSchema);
     }
 
+    @Override
     public ExpProtocolApplicationTable createProtocolApplicationTable(String name, UserSchema schema)
     {
         return new ExpProtocolApplicationTableImpl(name, schema);
@@ -1137,6 +1051,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return new ExpQCFlagTableImpl(name, schema);
     }
 
+    @Override
     public ExpDataTable createFilesTable(String name, UserSchema schema)
     {
         return new ExpFilesTableImpl(name, schema);
@@ -1175,16 +1090,19 @@ public class ExperimentServiceImpl implements ExperimentService
         return new Lsid(lsidPrefix, "Folder-" + container.getRowId(), objectName).toString();
     }
 
+    @Override
     public String generateGuidLSID(Container container, Class<? extends ExpObject> clazz)
     {
         return generateGuidLSID(container, getNamespacePrefix(clazz));
     }
 
+    @Override
     public String generateGuidLSID(Container container, DataType type)
     {
         return generateGuidLSID(container, type.getNamespacePrefix());
     }
 
+    @Override
     public String generateLSID(Container container, Class<? extends ExpObject> clazz, @NotNull String name)
     {
         if (clazz == ExpSampleSet.class && name.equals(DEFAULT_MATERIAL_SOURCE_NAME) && ContainerManager.getSharedContainer().equals(container))
@@ -1192,12 +1110,14 @@ public class ExperimentServiceImpl implements ExperimentService
         return generateLSID(container, getNamespacePrefix(clazz), name);
     }
 
+    @Override
     public String generateLSID(@NotNull Container container, @NotNull DataType type, @NotNull String name)
     {
         return generateLSID(container, type.getNamespacePrefix(), name);
     }
 
     @Nullable
+    @Override
     public ExpObject findObjectFromLSID(String lsid)
     {
         Identifiable id = LsidManager.get().getObject(lsid);
@@ -1207,80 +1127,6 @@ public class ExperimentServiceImpl implements ExperimentService
         }
         return null;
     }
-
-    @Override
-    public ExpSampleSetImpl getSampleSet(@NotNull Container c, @NotNull String sampleSetName)
-    {
-        return getSampleSet(c, null, false, sampleSetName);
-    }
-
-    // NOTE: This method used to not take a user or check permissions
-    @Override
-    public ExpSampleSetImpl getSampleSet(@NotNull Container c, @NotNull User user, @NotNull String sampleSetName)
-    {
-        return getSampleSet(c, user, true, sampleSetName);
-    }
-
-    private ExpSampleSetImpl getSampleSet(@NotNull Container c, @Nullable User user, boolean includeOtherContainers, String sampleSetName)
-    {
-        return getSampleSet(c, user, includeOtherContainers, (materialSource -> materialSource.getName().equalsIgnoreCase(sampleSetName)));
-    }
-
-    @Override
-    public ExpSampleSetImpl getSampleSet(@NotNull Container c, int rowId)
-    {
-        return getSampleSet(c, null, rowId, false);
-    }
-
-    @Override
-    public ExpSampleSetImpl getSampleSet(@NotNull Container c, @NotNull User user, int rowId)
-    {
-        return getSampleSet(c, user, rowId, true);
-    }
-
-    private ExpSampleSetImpl getSampleSet(@NotNull Container c, @Nullable User user, int rowId, boolean includeOtherContainers)
-    {
-        return getSampleSet(c, user, includeOtherContainers, (materialSource -> materialSource.getRowId() == rowId));
-    }
-
-    private ExpSampleSetImpl getSampleSet(@NotNull Container c, @Nullable User user, boolean includeOtherContainers, Predicate<MaterialSource> predicate)
-    {
-        List<String> containerIds = createContainerList(c, user, includeOtherContainers);
-        for (String containerId : containerIds)
-        {
-            Collection<MaterialSource> sampleSets = getMaterialSourceCache().get(containerId);
-            for (MaterialSource materialSource : sampleSets)
-            {
-                if (predicate.test(materialSource))
-                    return new ExpSampleSetImpl(materialSource);
-            }
-        }
-
-        return null;
-    }
-
-    @Nullable
-    public ExpSampleSetImpl getSampleSet(int rowId)
-    {
-        // TODO: Cache
-        MaterialSource materialSource = new TableSelector(getTinfoMaterialSource()).getObject(rowId, MaterialSource.class);
-        if (materialSource == null)
-            return null;
-
-        return new ExpSampleSetImpl(materialSource);
-    }
-
-    @Nullable
-    public ExpSampleSetImpl getSampleSet(String lsid)
-    {
-        // TODO: Cache
-        MaterialSource ms = getMaterialSource(lsid);
-        if (ms == null)
-            return null;
-
-        return new ExpSampleSetImpl(ms);
-    }
-
 
     @Override
     public List<ExpDataClassImpl> getDataClasses(@NotNull Container container, User user, boolean includeOtherContainers)
@@ -1436,6 +1282,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return data == null ? null : new ExpDataImpl(data);
     }
 
+    @Override
     public ExpExperiment createHiddenRunGroup(Container container, User user, ExpRun... runs)
     {
         if (runs.length == 0)
@@ -1581,17 +1428,20 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
 
+    @Override
     public DbSchema getSchema()
     {
         return getExpSchema();
     }
 
+    @Override
     public List<ExpRun> importXar(XarSource source, PipelineJob pipelineJob, boolean reloadExistingRuns) throws ExperimentException
     {
         XarImportOptions options = new XarImportOptions().setReplaceExistingRuns(reloadExistingRuns);
         return importXar(source, pipelineJob, options);
     }
 
+    @Override
     public List<ExpRun> importXar(XarSource source, PipelineJob pipelineJob, XarImportOptions options) throws ExperimentException
     {
         XarReader reader = new XarReader(source, pipelineJob);
@@ -1602,16 +1452,19 @@ public class ExperimentServiceImpl implements ExperimentService
         return reader.getExperimentRuns();
     }
 
+    @Override
     public ExpRun importRun(PipelineJob job, XarSource source) throws PipelineJobException, ValidationException
     {
         return ExpGeneratorHelper.insertRun(job, source, null);
     }
 
+    @Override
     public Set<String> getDataInputRoles(Container container, ContainerFilter filter, ExpProtocol.ApplicationType... types)
     {
         return getInputRoles(container, filter, getTinfoDataInput(), types);
     }
 
+    @Override
     public Set<String> getMaterialInputRoles(Container container, ExpProtocol.ApplicationType... types)
     {
         return getInputRoles(container, ContainerFilter.Type.Current.create(null), getTinfoMaterialInput(), types);
@@ -1720,6 +1573,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Nullable
+    @Override
     public List<? extends ExpDataProtocolInput> getDataProtocolInputs(int protocolId, boolean input, @Nullable String name, @Nullable Integer dataClassId)
     {
         TableInfo inputTable = ExperimentServiceImpl.get().getTinfoProtocolInput();
@@ -2945,6 +2799,7 @@ public class ExperimentServiceImpl implements ExperimentService
     /**
      * @return the data objects that were attached to the run that should be attached to the run in its new folder
      */
+    @Override
     public List<ExpDataImpl> deleteExperimentRunForMove(int runId, User user)
     {
         List<ExpDataImpl> datasToDelete = getAllDataOwnedByRun(runId);
@@ -3001,11 +2856,13 @@ public class ExperimentServiceImpl implements ExperimentService
         return DbSchema.get("exp", DbSchemaType.Module);
     }
 
+    @Override
     public TableInfo getTinfoExperiment()
     {
         return getExpSchema().getTable("Experiment");
     }
 
+    @Override
     public TableInfo getTinfoExperimentRun()
     {
         return getExpSchema().getTable("ExperimentRun");
@@ -3021,6 +2878,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return getExpSchema().getTable("ExperimentRunDataInputs");
     }
 
+    @Override
     public TableInfo getTinfoProtocol()
     {
         return getExpSchema().getTable("Protocol");
@@ -3041,16 +2899,19 @@ public class ExperimentServiceImpl implements ExperimentService
         return getExpSchema().getTable("ProtocolParameter");
     }
 
+    @Override
     public TableInfo getTinfoMaterial()
     {
         return getExpSchema().getTable("Material");
     }
 
+    @Override
     public TableInfo getTinfoMaterialInput()
     {
         return getExpSchema().getTable("MaterialInput");
     }
 
+    @Override
     public TableInfo getTinfoMaterialSource()
     {
         return getExpSchema().getTable("MaterialSource");
@@ -3061,21 +2922,25 @@ public class ExperimentServiceImpl implements ExperimentService
         return getExpSchema().getTable("Data");
     }
 
+    @Override
     public TableInfo getTinfoDataClass()
     {
         return getExpSchema().getTable("DataClass");
     }
 
+    @Override
     public TableInfo getTinfoDataInput()
     {
         return getExpSchema().getTable("DataInput");
     }
 
+    @Override
     public TableInfo getTinfoProtocolInput()
     {
         return getExpSchema().getTable("ProtocolInput");
     }
 
+    @Override
     public TableInfo getTinfoProtocolApplication()
     {
         return getExpSchema().getTable("ProtocolApplication");
@@ -3096,16 +2961,19 @@ public class ExperimentServiceImpl implements ExperimentService
         return getExpSchema().getTable("ProtocolActionPredecessorLSIDView");
     }
 
+    @Override
     public TableInfo getTinfoPropertyDescriptor()
     {
         return getExpSchema().getTable("PropertyDescriptor");
     }
 
+    @Override
     public TableInfo getTinfoRunList ()
     {
         return getExpSchema().getTable("RunList");
     }
 
+    @Override
     public TableInfo getTinfoAssayQCFlag()
     {
         return getExpSchema().getTable("AssayQCFlag");
@@ -3139,6 +3007,7 @@ public class ExperimentServiceImpl implements ExperimentService
      *
      * @return Object identified by this lsid or null if lsid not found
      */
+    @Override
     public Identifiable getObject(Lsid lsid)
     {
         LsidType type = findType(lsid);
@@ -3152,6 +3021,7 @@ public class ExperimentServiceImpl implements ExperimentService
      * @param lsid Full lsid we're looking for.
      * @return Object type for this lsid. Hmm should we return a class
      */
+    @Override
     public LsidType findType(Lsid lsid)
     {
         //First check if we created this. If so, might be able to find without query
@@ -3197,6 +3067,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return filter;
     }
 
+    @Override
     public List<ExpExperimentImpl> getExperiments(Container container, User user, boolean includeOtherContainers, boolean includeBatches)
     {
         return getExperiments(container, user, includeOtherContainers, includeBatches, false);
@@ -3233,13 +3104,15 @@ public class ExperimentServiceImpl implements ExperimentService
         return run;
     }
 
+    @Override
     public void clearCaches()
     {
-        getMaterialSourceCache().clear();
+        ((SampleSetServiceImpl)SampleSetService.get()).clearMaterialSourceCache(null);
         getDataClassCache().clear();
         getProtocolCache().clear();
     }
 
+    @Override
     public ExpProtocolApplication getExpProtocolApplication(String lsid)
     {
         ProtocolApplication app = getProtocolApplication(lsid);
@@ -3290,32 +3163,6 @@ public class ExperimentServiceImpl implements ExperimentService
         return outputMap;
     }
 
-    public ExpSampleSetImpl ensureDefaultSampleSet()
-    {
-        ExpSampleSetImpl sampleSet = getSampleSet(getDefaultSampleSetLsid());
-
-        if (null == sampleSet)
-            return createDefaultSampleSet();
-        else
-            return sampleSet;
-    }
-
-    private synchronized ExpSampleSetImpl createDefaultSampleSet()
-    {
-        //might have been created on another thread, so check within synch block
-        ExpSampleSetImpl matSource = getSampleSet(getDefaultSampleSetLsid());
-        if (null == matSource)
-        {
-            matSource = createSampleSet();
-            matSource.setLSID(getDefaultSampleSetLsid());
-            matSource.setName(DEFAULT_MATERIAL_SOURCE_NAME);
-            matSource.setMaterialLSIDPrefix(new Lsid.LsidBuilder("Sample", DEFAULT_MATERIAL_SOURCE_NAME).toString() + "#");
-            matSource.setContainer(ContainerManager.getSharedContainer());
-            matSource.save(null);
-        }
-
-        return matSource;
-    }
 
     /**
      * @return map from OntologyEntryURI to parameter
@@ -3368,6 +3215,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), filter, sort).getArrayList(Data.class));
     }
 
+    @Override
     public ExpDataImpl getExpDataByURL(String url, @Nullable Container c)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("DataFileUrl"), url);
@@ -3387,11 +3235,6 @@ public class ExperimentServiceImpl implements ExperimentService
             return getExpDataByURL(url.substring(0, url.length() - 1), c);
         }
         return null;
-    }
-
-    public Lsid getSampleSetLsid(String sourceName, Container container)
-    {
-        return Lsid.parse(generateLSID(container, ExpSampleSet.class, sourceName));
     }
 
     public Lsid getDataClassLsid(String name, Container container)
@@ -3686,10 +3529,10 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public void deleteMaterialByRowIds(User user, Container container, Collection<Integer> selectedMaterialIds)
     {
-        deleteMaterialByRowIds(user, container, selectedMaterialIds, true);
+        deleteMaterialByRowIds(user, container, selectedMaterialIds, true, null);
     }
 
-    public void deleteMaterialByRowIds(User user, Container container, Collection<Integer> selectedMaterialIds, boolean deleteRunsUsingMaterials)
+    public void deleteMaterialByRowIds(User user, Container container, Collection<Integer> selectedMaterialIds, boolean deleteRunsUsingMaterials, ExpSampleSet ssDeleteFrom)
     {
         if (selectedMaterialIds.isEmpty())
             return;
@@ -3710,10 +3553,19 @@ public class ExperimentServiceImpl implements ExperimentService
                 materials = ExpMaterialImpl.fromMaterials(new SqlSelector(getExpSchema(), sql).getArrayList(Material.class));
             }
 
+            Set<ExpSampleSet> sss = new HashSet<>();
+            if (null != ssDeleteFrom)
+                sss.add(ssDeleteFrom);
             for (ExpMaterial material : materials)
             {
                 if (!material.getContainer().hasPermission(user, DeletePermission.class))
                     throw new UnauthorizedException();
+                if (null == ssDeleteFrom)
+                {
+                    ExpSampleSet ss = material.getSampleSet();
+                    if (null != ss)
+                        sss.add(ss);
+                }
             }
 
             try (Timing t = MiniProfiler.step("beforeDelete"))
@@ -3782,6 +3634,18 @@ public class ExperimentServiceImpl implements ExperimentService
                 SQLFragment materialInputSQL = new SQLFragment("DELETE FROM exp.MaterialInput WHERE MaterialId ");
                 materialInputSQL.append(rowIdInFrag);
                 executor.execute(materialInputSQL);
+            }
+
+            try (Timing t = MiniProfiler.step("expsampleset materialized tables"))
+            {
+                for (ExpSampleSet ss : sss)
+                {
+                    TableInfo dbTinfo = ((ExpSampleSetImpl)ss).getTinfo();
+                    SQLFragment samplesetSQL = new SQLFragment("DELETE FROM " + dbTinfo + " WHERE lsid IN (SELECT lsid FROM exp.Material WHERE RowId ");
+                    samplesetSQL.append(rowIdInFrag);
+                    samplesetSQL.append(")");
+                    executor.execute(samplesetSQL);
+                }
             }
 
             try (Timing t = MiniProfiler.step("exp.Material"))
@@ -3998,6 +3862,7 @@ public class ExperimentServiceImpl implements ExperimentService
         }
     }
 
+    @Override
     public void deleteAllExpObjInContainer(Container c, User user) throws ExperimentException
     {
         if (null == c)
@@ -4007,7 +3872,7 @@ public class ExperimentServiceImpl implements ExperimentService
         int[] runIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql, c).getArray(Integer.class));
 
         List<ExpExperimentImpl> exps = getExperiments(c, user, false, true, true);
-        List<ExpSampleSetImpl> sampleSets = getSampleSets(c, user, false);
+        List<ExpSampleSetImpl> sampleSets = ((SampleSetServiceImpl)SampleSetService.get()).getSampleSets(c, user, false);
         List<ExpDataClassImpl> dataClasses = getDataClasses(c, user, false);
 
         sql = "SELECT RowId FROM " + getTinfoProtocol() + " WHERE Container = ?";
@@ -4050,7 +3915,6 @@ public class ExperimentServiceImpl implements ExperimentService
                     "   OR toLsid   IN (SELECT ObjectUri FROM " + getTinfoObject() + " WHERE Container = ?)";
             new SqlExecutor(getExpSchema()).execute(deleteObjEdges, c, c);
 
-            OntologyManager.deleteAllObjects(c, user);
             SimpleFilter containerFilter = SimpleFilter.createContainerFilter(c);
             Table.delete(getTinfoDataAliasMap(), containerFilter);
             Table.delete(getTinfoMaterialAliasMap(), containerFilter);
@@ -4085,6 +3949,8 @@ public class ExperimentServiceImpl implements ExperimentService
             Collection<Integer> dataIds = new SqlSelector(getExpSchema(), sql, c).getCollection(Integer.class);
             deleteDataByRowIds(user, c, dataIds);
 
+            OntologyManager.deleteAllObjects(c, user);
+
             transaction.commit();
         }
         catch (ValidationException e)
@@ -4093,6 +3959,7 @@ public class ExperimentServiceImpl implements ExperimentService
         }
     }
 
+    @Override
     public void moveContainer(Container c, Container oldParent, Container newParent)
     {
         if (null == c)
@@ -4124,6 +3991,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), filter, null).getArrayList(Data.class));
     }
 
+    @Override
     public void moveRuns(ViewBackgroundInfo info, Container sourceContainer, List<ExpRun> runs) throws IOException
     {
         int[] rowIds = new int[runs.size()];
@@ -4191,17 +4059,6 @@ public class ExperimentServiceImpl implements ExperimentService
         {
             materialListener.beforeMaterialDelete(materials, container, user);
         }
-    }
-
-    public MaterialSource getMaterialSource(String lsid)
-    {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("LSID"), lsid);
-        return new TableSelector(getTinfoMaterialSource(), filter, null).getObject(MaterialSource.class);
-    }
-
-    public String getDefaultSampleSetLsid()
-    {
-        return new Lsid.LsidBuilder("SampleSource", "Default").toString();
     }
 
 
@@ -4275,6 +4132,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return getRunsUsingMaterials(ids);
     }
 
+    @Override
     public List<ExpRunImpl> getRunsUsingMaterials(int... ids)
     {
         if (ids.length == 0)
@@ -4315,6 +4173,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
 
+    @Override
     public List<? extends ExpRun> runsDeletedWithInput(List<? extends ExpRun> runs)
     {
         List<ExpRun> ret = new ArrayList<>();
@@ -4414,7 +4273,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return new SqlSelector(getExpSchema(), sql).getArrayList(ExperimentRun.class);
     }
 
-    private void deleteDomainObjects(Container c, String lsid) throws ExperimentException
+    void deleteDomainObjects(Container c, String lsid) throws ExperimentException
     {
         //Delete everything the ontology knows about this
         //includes all properties where this is the owner.
@@ -4433,65 +4292,6 @@ public class ExperimentServiceImpl implements ExperimentService
         }
     }
 
-    /**
-     * Delete all exp.Material from the SampleSet.  If container is not provided,
-     * all rows from the SampleSet will be deleted regardless of container.
-     */
-    public int truncateSampleSet(ExpSampleSet source, User user, @Nullable Container c)
-    {
-        assert getExpSchema().getScope().isTransactionActive();
-
-        SimpleFilter filter = c == null ? new SimpleFilter() : SimpleFilter.createContainerFilter(c);
-        filter.addCondition(FieldKey.fromParts("CpasType"), source.getLSID());
-
-        MultiValuedMap<String, Integer> byContainer = new ArrayListValuedHashMap<>();
-        TableSelector ts = new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), Sets.newCaseInsensitiveHashSet("container", "rowid"), filter, null);
-        ts.forEachMap(row -> byContainer.put((String)row.get("container"), (Integer)row.get("rowid")));
-
-        int count = 0;
-        for (Map.Entry<String, Collection<Integer>> entry : byContainer.asMap().entrySet())
-        {
-            Container container = ContainerManager.getForId(entry.getKey());
-            deleteMaterialByRowIds(user, container, entry.getValue());
-            count += entry.getValue().size();
-        }
-        return count;
-    }
-
-    public void deleteSampleSet(int rowId, Container c, User user) throws ExperimentException
-    {
-        CPUTimer timer = new CPUTimer("delete sampleset");
-        timer.start();
-
-        ExpSampleSetImpl source = getSampleSet(c, user, rowId);
-        if (null == source)
-            throw new IllegalArgumentException("Can't find SampleSet with rowId " + rowId);
-        if (!source.getContainer().equals(c))
-            throw new ExperimentException("Trying to delete a SampleSet from a different container");
-
-        try (DbScope.Transaction transaction = ensureTransaction())
-        {
-            truncateSampleSet(source, user, null);
-
-            deleteDomainObjects(source.getContainer(), source.getLSID());
-
-            SqlExecutor executor = new SqlExecutor(getExpSchema());
-            executor.execute("UPDATE " + getTinfoDataClass() + " SET materialSourceId = NULL WHERE materialSourceId = ?", source.getRowId());
-            executor.execute("UPDATE " + getTinfoProtocolInput() + " SET materialSourceId = NULL WHERE materialSourceId = ?", source.getRowId());
-            executor.execute("DELETE FROM " + getTinfoMaterialSource() + " WHERE RowId = ?", rowId);
-
-            transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
-            transaction.commit();
-        }
-        SchemaKey samplesSchema = SchemaKey.fromParts(SamplesSchema.SCHEMA_NAME);
-        QueryService.get().fireQueryDeleted(user, c, null, samplesSchema, singleton(source.getName()));
-
-        SchemaKey expMaterialsSchema = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, materials.toString());
-        QueryService.get().fireQueryDeleted(user, c, null, expMaterialsSchema, singleton(source.getName()));
-
-        timer.stop();
-        LOG.info("Deleted SampleSet '" + source.getName() + "' from '" + c.getPath() + "' in " + timer.getDuration());
-    }
 
     /**
      * Delete all exp.Data from the DataClass.  If container is not provided,
@@ -4602,6 +4402,8 @@ public class ExperimentServiceImpl implements ExperimentService
 
         for (String lsidStr : lsids)
         {
+            if (null == lsidStr)
+                continue;
             Lsid lsid = Lsid.parse(lsidStr);
             AttachmentParent parent = new ExpDataClassAttachmentParent(container, lsid);
             attachmentParents.add(parent);
@@ -4899,6 +4701,7 @@ public class ExperimentServiceImpl implements ExperimentService
                 "WHERE m.sourceApplicationId = ?", applicationId).getArrayList(MaterialInput.class);
     }
 
+    @Override
     public List<ExpDataImpl> getExpData(Container c)
     {
         return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), SimpleFilter.createContainerFilter(c), null).getArrayList(Data.class));
@@ -4932,6 +4735,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return new TableSelector(getTinfoMaterialInput(), filter, null).getArrayList(MaterialInput.class);
     }
 
+    @Override
     public List<ProtocolApplicationParameter> getProtocolApplicationParameters(int rowId)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ProtocolApplicationId"), rowId);
@@ -5096,6 +4900,7 @@ public class ExperimentServiceImpl implements ExperimentService
         Table.insert(user, getTinfoProtocolActionPredecessor(), mValsPredecessor);
     }
 
+    @Override
     public ExpRun getCreatingRun(File file, Container c)
     {
         ExpDataImpl data = getExpDataByURL(file, c);
@@ -5150,6 +4955,7 @@ public class ExperimentServiceImpl implements ExperimentService
         }
     }
 
+    @Override
     public ExpRun saveSimpleExperimentRun(ExpRun baseRun, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials,
                                             Map<ExpData, String> outputDatas, Map<ExpData, String> transformedDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles) throws ExperimentException
     {
@@ -5821,6 +5627,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return SAMPLE_DERIVATION_PROTOCOL_LSID.equals(protocol.getLSID());
     }
 
+    @Override
     public void registerExperimentDataHandler(ExperimentDataHandler handler)
     {
         _dataHandlers.add(handler);
@@ -5828,16 +5635,19 @@ public class ExperimentServiceImpl implements ExperimentService
             registerDataType(handler.getDataType());
     }
 
+    @Override
     public void registerExperimentRunTypeSource(ExperimentRunTypeSource source)
     {
         _runTypeSources.add(source);
     }
 
+    @Override
     public void registerDataType(DataType type)
     {
         _dataTypes.put(type.getNamespacePrefix(), type);
     }
 
+    @Override
     @NotNull
     public Set<ExperimentRunType> getExperimentRunTypes(@Nullable Container container)
     {
@@ -5854,21 +5664,25 @@ public class ExperimentServiceImpl implements ExperimentService
         return Collections.unmodifiableSet(_dataHandlers);
     }
 
+    @Override
     public DataType getDataType(String namespacePrefix)
     {
         return _dataTypes.get(namespacePrefix);
     }
 
+    @Override
     public void registerProtocolImplementation(ProtocolImplementation impl)
     {
         _protocolImplementations.put(impl.getName(), impl);
     }
 
+    @Override
     public ProtocolImplementation getProtocolImplementation(String name)
     {
         return _protocolImplementations.get(name);
     }
 
+    @Override
     public void registerProtocolInputCriteria(ExpProtocolInputCriteria.Factory factory)
     {
         _protocolInputCriteriaFactories.put(factory.getName(), factory);
@@ -5884,6 +5698,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return factory.create(config);
     }
 
+    @Override
     public ExpProtocolApplicationImpl getExpProtocolApplication(int rowId)
     {
         ProtocolApplication app = new TableSelector(getTinfoProtocolApplication()).getObject(rowId, ProtocolApplication.class);
@@ -5892,6 +5707,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return new ExpProtocolApplicationImpl(app);
     }
 
+    @Override
     public List<ExpProtocolApplicationImpl> getExpProtocolApplicationsForRun(int runId)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RunId"), runId);
@@ -5899,138 +5715,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return ExpProtocolApplicationImpl.fromProtocolApplications(new TableSelector(getTinfoProtocolApplication(), filter, sort).getArrayList(ProtocolApplication.class));
     }
 
-    @NotNull
-    public ExpSampleSetImpl createSampleSet()
-    {
-        return new ExpSampleSetImpl(new MaterialSource());
-    }
-
-    @NotNull
-    public ExpSampleSetImpl createSampleSet(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol, String nameExpression)
-            throws ExperimentException
-    {
-        return createSampleSet(c,u,name,description,properties,indices,idCol1,idCol2,idCol3,parentCol,null, null);
-    }
-
-    @NotNull
-    public ExpSampleSetImpl createSampleSet(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
-                                            String nameExpression, @Nullable TemplateInfo templateInfo)
-        throws ExperimentException
-    {
-        ExpSampleSet existing = getSampleSet(c, name);
-        if (existing != null)
-            throw new IllegalArgumentException("SampleSet '" + existing.getName() + "' already exists");
-
-        if (properties == null || properties.size() < 1)
-            throw new ExperimentException("At least one property is required");
-
-        if (idCol2 != -1 && idCol1 == idCol2)
-            throw new ExperimentException("You cannot use the same id column twice.");
-
-        if (idCol3 != -1 && (idCol1 == idCol3 || idCol2 == idCol3))
-            throw new ExperimentException("You cannot use the same id column twice.");
-
-        if ((idCol1 > -1 && idCol1 >= properties.size()) ||
-            (idCol2 > -1 && idCol2 >= properties.size()) ||
-            (idCol3 > -1 && idCol3 >= properties.size()) ||
-            (parentCol > -1 && parentCol >= properties.size()))
-            throw new ExperimentException("column index out of range");
-
-        // Name expression is only allowed when no idCol is set
-        if (nameExpression != null && idCol1 > -1)
-            throw new ExperimentException("Name expression cannot be used with id columns");
-
-        Lsid lsid = getSampleSetLsid(name, c);
-        Domain domain = PropertyService.get().createDomain(c, lsid.toString(), name, templateInfo);
-        DomainKind kind = domain.getDomainKind();
-        Set<String> reservedNames = kind.getReservedPropertyNames(domain);
-        Set<String> lowerReservedNames = reservedNames.stream().map(String::toLowerCase).collect(Collectors.toSet());
-
-        boolean hasNameProperty = false;
-        String idUri1 = null, idUri2 = null, idUri3 = null, parentUri = null;
-        Map<DomainProperty, Object> defaultValues = new HashMap<>();
-        Set<String> propertyUris = new HashSet<>();
-        for (int i = 0; i < properties.size(); i++)
-        {
-            GWTPropertyDescriptor pd = properties.get(i);
-            if (pd == null)
-                throw new ExperimentException("null property: " + i);
-            String propertyName = pd.getName().toLowerCase();
-
-            if (ExpMaterialTable.Column.Name.name().equalsIgnoreCase(propertyName))
-            {
-                hasNameProperty = true;
-            }
-            else
-            {
-                if (lowerReservedNames.contains(propertyName))
-                {
-                    if (pd.getLabel() == null)
-                        pd.setLabel(pd.getName());
-                    pd.setName("Property_" + pd.getName());
-                }
-
-                DomainProperty dp = DomainUtil.addProperty(domain, pd, defaultValues, propertyUris, null);
-
-                if (idCol1 == i)    idUri1    = dp.getPropertyURI();
-                if (idCol2 == i)    idUri2    = dp.getPropertyURI();
-                if (idCol3 == i)    idUri3    = dp.getPropertyURI();
-                if (parentCol == i) parentUri = dp.getPropertyURI();
-            }
-        }
-
-        Set<PropertyStorageSpec.Index> propertyIndices = new HashSet<>();
-        for (GWTIndex index : indices)
-        {
-            PropertyStorageSpec.Index propIndex = new PropertyStorageSpec.Index(index.isUnique(), index.getColumnNames());
-            propertyIndices.add(propIndex);
-        }
-        domain.setPropertyIndices(propertyIndices);
-
-        if (!hasNameProperty && idUri1 == null)
-            throw new ExperimentException("Either a 'Name' property or an index for idCol1 is required");
-
-        if (hasNameProperty && idUri1 != null)
-            throw new ExperimentException("Either a 'Name' property or idCols can be used, but not both");
-
-        MaterialSource source = new MaterialSource();
-        source.setLSID(lsid.toString());
-        source.setName(name);
-        source.setDescription(description);
-        source.setMaterialLSIDPrefix(new Lsid.LsidBuilder("Sample", String.valueOf(c.getRowId()) + "." + PageFlowUtil.encode(name), "").toString());
-        if (nameExpression != null)
-            source.setNameExpression(nameExpression);
-        source.setContainer(c);
-
-        if (hasNameProperty)
-        {
-            source.setIdCol1(ExpMaterialTable.Column.Name.name());
-        }
-        else
-        {
-            source.setIdCol1(idUri1);
-            if (idUri2 != null)
-                source.setIdCol2(idUri2);
-            if (idUri3 != null)
-                source.setIdCol3(idUri3);
-        }
-        if (parentUri != null)
-            source.setParentCol(parentUri);
-
-        ExpSampleSetImpl ss = new ExpSampleSetImpl(source);
-        try (DbScope.Transaction transaction = ensureTransaction())
-        {
-            domain.save(u);
-            ss.save(u);
-            DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
-
-            transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
-            transaction.commit();
-        }
-
-        return ss;
-    }
-
+    @Override
     public ExpDataClassImpl createDataClass(
             Container c, User u, String name, String description,
             List<GWTPropertyDescriptor> properties,
@@ -6038,9 +5723,22 @@ public class ExperimentServiceImpl implements ExperimentService
             @Nullable TemplateInfo templateInfo)
         throws ExperimentException
     {
+        if (name == null)
+            throw new IllegalArgumentException("DataClass name is required");
+
+        TableInfo dataClassTable = ExperimentService.get().getTinfoDataClass();
+        int nameMax = dataClassTable.getColumn("Name").getScale();
+        if (name.length() > nameMax)
+            throw new IllegalArgumentException("DataClass name may not exceed " + nameMax + " characters.");
+
         ExpDataClass existing = getDataClass(c, u, name);
         if (existing != null)
             throw new IllegalArgumentException("DataClass '" + existing.getName() + "' already exists");
+
+        // Validate the name expression length
+        int nameExpMax = dataClassTable.getColumn("NameExpression").getScale();
+        if (nameExpression != null && nameExpression.length() > nameExpMax)
+            throw new IllegalArgumentException("Name expression may not exceed " + nameExpMax + " characters.");
 
         if (sampleSetId != null)
         {
@@ -6114,6 +5812,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return impl;
     }
 
+    @Override
     public List<ExpProtocolImpl> getExpProtocols(Container... containers)
     {
         SimpleFilter filter = new SimpleFilter(new SimpleFilter.InClause(FieldKey.fromParts("Container"), Arrays.asList(containers)));
@@ -6152,6 +5851,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return ExpProtocolImpl.fromProtocols(new TableSelector(getTinfoProtocol(), protocolFilter, null).getArrayList(Protocol.class));
     }
 
+    @Override
     public PipelineJob importXarAsync(ViewBackgroundInfo info, File file, String description, PipeRoot root) throws IOException
     {
         ExperimentPipelineJob job = new ExperimentPipelineJob(info, file, description, false, root);
@@ -6239,6 +5939,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), filter, null).getArrayList(Data.class));
     }
 
+    @Override
     public ExpProtocol insertProtocol(@NotNull ExpProtocol wrappedProtocol, @Nullable List<ExpProtocol> steps, @Nullable Map<String, List<String>> predecessors, User user) throws ExperimentException
     {
         if (wrappedProtocol == null)
@@ -6375,6 +6076,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     // TODO: Switch this to use insertProtocol(ExpProtocol, List, Map, User)
+    @Override
     public ExpProtocol insertSimpleProtocol(ExpProtocol wrappedProtocol, User user) throws ExperimentException
     {
         try (DbScope.Transaction transaction = getSchema().getScope().ensureTransaction(getProtocolImportLock()))
@@ -6491,17 +6193,17 @@ public class ExperimentServiceImpl implements ExperimentService
     public Map<String, List<ExpMaterialImpl>> getSamplesByName(Container container, User user)
     {
         Map<String, List<ExpMaterialImpl>> potentialParents = new HashMap<>();
-        for (ExpSampleSetImpl sampleSet : getSampleSets(container, user, true))
+        for (ExpSampleSet sampleSet : getSampleSets(container, user, true))
         {
-            List<ExpMaterialImpl> samples = new ArrayList<>(sampleSet.getSamples());
+            List<ExpMaterial> samples = new ArrayList<>(sampleSet.getSamples());
             if (!container.equals(sampleSet.getContainer()))
             {
-                samples.addAll(sampleSet.getSamples(container));
+                samples.addAll(((ExpSampleSetImpl)sampleSet).getSamples(container));
             }
-            for (ExpMaterialImpl expMaterial : samples)
+            for (ExpMaterial expMaterial : samples)
             {
                 List<ExpMaterialImpl> matchingSamples = potentialParents.computeIfAbsent(expMaterial.getName(), k -> new LinkedList<>());
-                matchingSamples.add(expMaterial);
+                matchingSamples.add((ExpMaterialImpl)expMaterial);
             }
         }
 
@@ -6510,60 +6212,6 @@ public class ExperimentServiceImpl implements ExperimentService
         return potentialParents;
     }
 
-    public enum SampleSequenceType
-    {
-        DAILY("yyyy-MM-dd"),
-        WEEKLY("YYYY-'W'ww"),
-        MONTHLY("yyyy-MM"),
-        YEARLY("yyyy");
-
-        final DateTimeFormatter _formatter;
-        // we are totally 'leaking' these sequences, however a) they are small b) we leak < 2 a day, so...
-        static final HashMap<String, DbSequence> _sequences = new HashMap<>();
-
-        SampleSequenceType(String pattern)
-        {
-            _formatter = DateTimeFormatter.ofPattern(pattern);
-        }
-
-        public String getSequenceName(@Nullable Date date)
-        {
-            LocalDateTime ldt;
-            if (date == null)
-                ldt = LocalDateTime.now();
-            else
-                ldt = LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
-            String suffix = _formatter.format(ldt);
-            return "org.labkey.api.exp.api.ExpMaterial:" + name() + ":" + suffix;
-        }
-
-        public int next(Date date)
-        {
-            String seqName = getSequenceName(date);
-            DbSequence seq;
-            synchronized (_sequences)
-            {
-                seq = _sequences.get(seqName);
-                if (seq == null)
-                {
-                    seq = DbSequenceManager.getPreallocatingSequence(ContainerManager.getRoot(), seqName);
-                    _sequences.put(seqName, seq);
-                }
-            }
-            return seq.next();
-        }
-    }
-
-    @Override
-    public Map<String, Integer> incrementSampleCounts(@Nullable Date counterDate)
-    {
-        Map<String, Integer> counts = new HashMap<>();
-        counts.put("dailySampleCount",   SampleSequenceType.DAILY.next(counterDate));
-        counts.put("weeklySampleCount",  SampleSequenceType.WEEKLY.next(counterDate));
-        counts.put("monthlySampleCount", SampleSequenceType.MONTHLY.next(counterDate));
-        counts.put("yearlySampleCount",  SampleSequenceType.YEARLY.next(counterDate));
-        return counts;
-    }
 
     /**
      * Ensure that an alias entry exists for each string value passed in, else create it.
@@ -6597,6 +6245,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return rowIds;
     }
 
+    @Override
     public GWTDomain convertJsonToDomain(JSONObject obj) throws JSONException
     {
         GWTDomain domain = new GWTDomain();
@@ -6644,6 +6293,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return domain;
     }
 
+    @Override
     public GWTPropertyDescriptor convertJsonToPropertyDescriptor(JSONObject obj) throws JSONException
     {
         GWTPropertyDescriptor prop = new GWTPropertyDescriptor();
@@ -6717,6 +6367,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return prop;
     }
 
+    @Override
     public GWTPropertyValidator convertJsonToPropertyValidator(JSONObject obj) throws JSONException
     {
         GWTPropertyValidator validator = new GWTPropertyValidator();
@@ -6729,6 +6380,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return validator;
     }
 
+    @Override
     public JSONArray convertPropertyValidatorsToJson(GWTPropertyDescriptor pd)
     {
         JSONArray json = new JSONArray();
@@ -6767,6 +6419,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return json;
     }
 
+    @Override
     public void addExperimentListener(ExperimentListener listener)
     {
         _listeners.add(listener);

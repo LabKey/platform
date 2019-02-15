@@ -15,13 +15,16 @@
  */
 package org.labkey.experiment.api;
 
+import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpLineage;
@@ -44,7 +47,6 @@ import org.labkey.experiment.samples.UploadSamplesHelper;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -78,6 +80,75 @@ public class ExpSampleSetTestCase
     public void tearDown()
     {
         ContainerManager.deleteAll(c, TestContext.get().getUser());
+    }
+
+    // validate name is not null
+    @Test
+    public void nameNotNull() throws Exception
+    {
+        final User user = TestContext.get().getUser();
+
+        try
+        {
+            List<GWTPropertyDescriptor> props = new ArrayList<>();
+            props.add(new GWTPropertyDescriptor("name", "string"));
+
+            final ExpSampleSet ss = ExperimentService.get().createSampleSet(c, user,
+                    null, null, props, Collections.emptyList(),
+                    -1, -1, -1, -1, null, null);
+        }
+        catch (ExperimentException ee)
+        {
+            assertEquals("SampleSet name is required", ee.getMessage());
+        }
+    }
+
+    // validate name scale
+    @Test
+    public void nameScale() throws Exception
+    {
+        final User user = TestContext.get().getUser();
+
+        try
+        {
+            List<GWTPropertyDescriptor> props = new ArrayList<>();
+            props.add(new GWTPropertyDescriptor("name", "string"));
+
+            String name = StringUtils.repeat("a", 1000);
+
+            final ExpSampleSet ss = ExperimentService.get().createSampleSet(c, user,
+                    name, null, props, Collections.emptyList(),
+                    -1, -1, -1, -1, null, null);
+        }
+        catch (ExperimentException ee)
+        {
+            assertEquals("SampleSet name may not exceed 100 characters.", ee.getMessage());
+        }
+    }
+
+    // validate name expression scale
+    @Test
+    public void nameExpressionScale() throws Exception
+    {
+        final User user = TestContext.get().getUser();
+
+        try
+        {
+            List<GWTPropertyDescriptor> props = new ArrayList<>();
+            props.add(new GWTPropertyDescriptor("name", "string"));
+            props.add(new GWTPropertyDescriptor("prop", "string"));
+            props.add(new GWTPropertyDescriptor("age", "int"));
+
+            String nameExpression = StringUtils.repeat("a", 1000);
+
+            final ExpSampleSet ss = ExperimentService.get().createSampleSet(c, user,
+                    "Samples", null, props, Collections.emptyList(),
+                    -1, -1, -1, -1, nameExpression, null);
+        }
+        catch (ExperimentException ee)
+        {
+            assertEquals("Name expression may not exceed 500 characters.", ee.getMessage());
+        }
     }
 
     // idCols all null, nameExpression null, no 'name' property -- fail
@@ -285,7 +356,6 @@ public class ExpSampleSetTestCase
         }
     }
 
-
     @Test
     public void testNameExpression() throws Exception
     {
@@ -342,7 +412,7 @@ public class ExpSampleSetTestCase
 
         final String nameExpression = "S-${now:date}-${dailySampleCount}";
 
-        final ExpSampleSetImpl ss = ExperimentServiceImpl.get().createSampleSet(c, user,
+        final ExpSampleSetImpl ss = SampleSetServiceImpl.get().createSampleSet(c, user,
                 "Samples", null, props, Collections.emptyList(),
                 -1, -1, -1, -1, nameExpression, null);
 
@@ -359,9 +429,9 @@ public class ExpSampleSetTestCase
 
         // insert 3 rows with no values
         List<Map<String, Object>> rows = new ArrayList<>();
-        rows.add(Collections.emptyMap());
-        rows.add(Collections.emptyMap());
-        rows.add(Collections.emptyMap());
+        rows.add(new CaseInsensitiveHashMap<>());
+        rows.add(new CaseInsensitiveHashMap<>());
+        rows.add(new CaseInsensitiveHashMap<>());
 
         BatchValidationException errors = new BatchValidationException();
         List<Map<String, Object>> inserted = svc.insertRows(user, c, rows, errors, null, null);
@@ -407,15 +477,31 @@ public class ExpSampleSetTestCase
         Map<PropertyDescriptor, Object> map = material1.getPropertyValues();
         assertEquals("Expected to only have 'age' property, got: " + map, 1, map.size());
 
-        Integer age = (Integer)material1.getPropertyValues().values().iterator().next();
-        assertEquals("Expected to insert age of 20, got: " + age, 20, age.intValue());
+        Integer age1 = (Integer)material1.getPropertyValues().values().iterator().next();
+        assertNotNull(age1);
+        assertEquals("Expected to insert age of 20, got: " + age1, 20, age1.intValue());
 
         ExpMaterial material2 = pair.second.get(1);
-        age = (Integer)material2.getPropertyValues().values().iterator().next();
-        assertEquals("Expected to insert age of 30, got: " + age, 30, age.intValue());
+        Integer age2 = (Integer)material2.getPropertyValues().values().iterator().next();
+        assertNotNull(age2);
+        assertEquals("Expected to insert age of 30, got: " + age2, 30, age2.intValue());
 
         allSamples = ss.getSamples(c);
         assertEquals("Expected 5 total samples", 5, allSamples.size());
+
+        // how about an update
+        var updated = new CaseInsensitiveHashMap<Object>();
+        updated.put("name", material1.getName());
+        updated.put("lsid", material1.getLSID());
+        updated.put("age", age1 + 1);
+        svc.updateRows(user, c, Collections.singletonList(updated), null, null, null);
+        var result = new TableSelector(table, TableSelector.ALL_COLUMNS, new SimpleFilter("lsid", material1.getLSID()), null).getMap();
+        assertEquals(21, ((Integer)result.get("age")).intValue());
+
+        // and a delete
+        svc.deleteRows(user, c, Collections.singletonList(updated), null, null);
+        allSamples = ss.getSamples(c);
+        assertEquals("Expected 5 total samples", 4, allSamples.size());
     }
 
 
@@ -431,7 +517,7 @@ public class ExpSampleSetTestCase
         props.add(new GWTPropertyDescriptor("data", "int"));
         props.add(new GWTPropertyDescriptor("parent", "string"));
 
-        final ExpSampleSetImpl ss = ExperimentServiceImpl.get().createSampleSet(c, user,
+        final ExpSampleSetImpl ss = SampleSetServiceImpl.get().createSampleSet(c, user,
                 "Samples", null, props, Collections.emptyList(),
                 0, -1, -1, 2, null, null);
 

@@ -34,7 +34,10 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ProtocolImplementation;
+import org.labkey.api.exp.api.SampleSetService;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -363,6 +366,12 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     }
 
 
+    @Override
+    public void setIdCol1(String s)
+    {
+        ensureUnlocked();
+        _object.setIdCol1(s);
+    }
 
     @Override
     public void setDescription(String s)
@@ -416,6 +425,13 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     @Override
     @NotNull
     public Domain getType()
+    {
+        return getDomain();
+    }
+
+    @Override
+    @NotNull
+    public Domain getDomain()
     {
         if (_domain == null)
         {
@@ -511,9 +527,9 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
 
         // NOTE cacheMaterialSource() of course calls transactioncache.put(), which does not alter the shared cache! (BUG?)
         // Just call uncache(), and let normal cache loading do its thing
-        ExperimentServiceImpl.get().clearMaterialSourceCache(getContainer());
+        SampleSetServiceImpl.get().clearMaterialSourceCache(getContainer());
 
-        ExperimentServiceImpl.get().indexSampleSet(this);
+        SampleSetServiceImpl.get().indexSampleSet(this);
     }
 
     @Override
@@ -521,12 +537,18 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     {
         try
         {
-            ExperimentServiceImpl.get().deleteSampleSet(getRowId(), getContainer(), user);
+            SampleSetService.get().deleteSampleSet(getRowId(), getContainer(), user);
         }
         catch (ExperimentException e)
         {
             throw new RuntimeValidationException(e);
         }
+    }
+
+    public TableInfo getTinfo()
+    {
+        Domain d = getDomain();
+        return StorageProvisioner.createTableInfo(d);
     }
 
     @Override

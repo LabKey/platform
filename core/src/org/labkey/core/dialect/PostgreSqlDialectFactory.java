@@ -64,15 +64,18 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
             return null;
 
         String databaseProductVersion = md.getDatabaseProductVersion();
-        int betaIdx = databaseProductVersion.indexOf("beta");
 
+        int betaIdx = databaseProductVersion.indexOf("beta");
         if (-1 != betaIdx)
             databaseProductVersion = StringUtils.left(databaseProductVersion, betaIdx);
 
         int rcIdx = databaseProductVersion.indexOf("rc");
-
         if (-1 != rcIdx)
             databaseProductVersion = StringUtils.left(databaseProductVersion, rcIdx);
+
+        int parenIdx = databaseProductVersion.indexOf("(");
+        if (-1 != parenIdx)
+            databaseProductVersion = StringUtils.left(databaseProductVersion, parenIdx);
 
         VersionNumber versionNumber = new VersionNumber(databaseProductVersion);
 

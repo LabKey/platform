@@ -49,6 +49,7 @@ public class SampleChooser extends SampleChooserUtils implements EntryPoint
         RootPanel rootPanel = ServiceUtil.findRootPanel("org.labkey.experiment.samplechooser.client.SampleChooser");
         if (rootPanel != null)
         {
+            _table.addStyleName("table");
             _maxSampleCount = Integer.parseInt(PropertyUtil.getServerProperty(PROP_NAME_MAX_SAMPLE_COUNT));
             int minSampleCount = Integer.parseInt(PropertyUtil.getServerProperty(PROP_NAME_MIN_SAMPLE_COUNT));
             String defaultCountString = PropertyUtil.getServerProperty(PROP_NAME_DEFAULT_SAMPLE_COUNT);

@@ -65,7 +65,7 @@ public class ExpMaterialProtocolInputImpl extends ExpProtocolInputImpl<MaterialP
         if (materialSourceId == null)
             return null;
 
-        return ExperimentServiceImpl.get().getSampleSet(materialSourceId);
+        return SampleSetServiceImpl.get().getSampleSet(materialSourceId);
     }
 
     @Override

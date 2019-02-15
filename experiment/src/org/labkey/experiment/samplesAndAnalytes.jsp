@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.experiment.api.ExperimentServiceImpl" %>
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.experiment.api.SampleSetServiceImpl" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Container proj = getContainer().getProject();
@@ -32,7 +33,7 @@
     }
     else
     {
-        List<ExpSampleSetImpl> sampleSets = ExperimentServiceImpl.get().getSampleSets(getContainer(), getUser(), true);
+        List<ExpSampleSetImpl> sampleSets = SampleSetServiceImpl.get().getSampleSets(getContainer(), getUser(), true);
 
         int i = 0;
     %> <table style="width:50px;margin-right:1em" ><tr><td style="vertical-align:top;white-space:nowrap;margin:1em"> <%

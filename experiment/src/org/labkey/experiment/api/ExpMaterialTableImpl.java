@@ -18,6 +18,8 @@ package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DataColumn;
@@ -26,10 +28,14 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
+import org.labkey.api.data.Parameter;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
+import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -37,6 +43,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.exp.api.SampleSetService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpDataTable;
@@ -47,11 +54,14 @@ import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.PropertyForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.RowIdForeignKey;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
@@ -60,8 +70,12 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
+import org.labkey.experiment.ExpDataIterators;
+import org.labkey.experiment.ExpDataIterators.*;
 import org.labkey.experiment.controllers.exp.ExperimentController;
+import org.labkey.experiment.samples.UploadSamplesHelper;
 
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -255,10 +269,24 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         ColumnInfo ret = super.createPropertyColumn(alias);
         if (_ss != null)
         {
-            Domain domain = _ss.getType();
-            if (domain != null)
+            final TableInfo t = _ss.getTinfo();
+            if (t != null)
             {
-                ret.setFk(new PropertyForeignKey(domain, _userSchema));
+                ret.setFk(new LookupForeignKey()
+                {
+                    @Override
+                    public TableInfo getLookupTableInfo()
+                    {
+                        return t;
+                    }
+
+                    @Override
+                    protected ColumnInfo getPkColumn(TableInfo table)
+                    {
+                        return t.getColumn("lsid");
+                    }
+                });
+//                ret.setFk(new PropertyForeignKey(domain, _userSchema));
             }
         }
         ret.setIsUnselectable(true);
@@ -426,7 +454,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.SampleSet));
 
         addColumn(ExpMaterialTable.Column.Flag);
-        if (ss != null)
+        // TODO is this a real Domain???
+        if (ss != null && !"urn:lsid:labkey.com:SampleSource:Default".equals(ss.getDomain().getTypeURI()))
         {
             defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Flag));
             setSampleSet(ss, filter);
@@ -479,25 +508,72 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
     private void addSampleSetColumns(ExpSampleSet ss, List<FieldKey> visibleColumns)
     {
+        UserSchema schema = getUserSchema();
+        Domain domain = ss.getDomain();
+        TableInfo dbTable = ((ExpSampleSetImpl)ss).getTinfo();
         ColumnInfo lsidColumn = getColumn(Column.LSID);
+
         visibleColumns.remove(FieldKey.fromParts("Run"));
-        for (DomainProperty dp : ss.getType().getProperties())
+
+        for (ColumnInfo dbColumn : dbTable.getColumns())
         {
-            PropertyDescriptor pd = dp.getPropertyDescriptor();
-            ColumnInfo propColumn = new PropertyColumn(pd, lsidColumn, _userSchema.getContainer(), _userSchema.getUser(), true);
-            if (isIdCol(ss, pd))
+            if (lsidColumn.getFieldKey().equals(dbColumn.getFieldKey()))
+                continue;
+            // TODO missing values? comments? flags?
+            DomainProperty dp = domain.getPropertyByURI(dbColumn.getPropertyURI());
+            ColumnInfo propColumn = wrapColumnFromJoinedTable(null==dp?dbColumn.getName():dp.getName(), dbColumn, ExprColumn.STR_TABLE_ALIAS);
+            if (null != dp)
             {
-                propColumn.setNullable(false);
-                propColumn.setDisplayColumnFactory(new IdColumnRendererFactory());
+                PropertyColumn.copyAttributes(schema.getUser(), propColumn, dp.getPropertyDescriptor(), schema.getContainer(),
+                    SchemaKey.fromParts("samples"), ss.getName(), FieldKey.fromParts("RowId"));
+                if (isIdCol(ss, dp.getPropertyDescriptor()))
+                {
+                    propColumn.setNullable(false);
+                    propColumn.setDisplayColumnFactory(new IdColumnRendererFactory());
+                }
+                visibleColumns.add(propColumn.getFieldKey());
             }
-            if (getColumn(propColumn.getName()) == null)
-            {
-                addColumn(propColumn);
-                visibleColumns.add(FieldKey.fromParts(pd.getName()));
-            }
+            addColumn(propColumn);
         }
         setDefaultVisibleColumns(visibleColumns);
     }
+
+    @NotNull
+    @Override
+    public SQLFragment getFromSQL(String alias)
+    {
+        TableInfo provisioned = null == _ss ? null : _ss.getTinfo();
+
+        // all columns from exp.data except lsid
+        Set<String> dataCols = new CaseInsensitiveHashSet(_rootTable.getColumnNameSet());
+
+        // don't select lsdi twice
+        if (null != provisioned)
+            dataCols.remove("lsid");
+
+        SQLFragment sql = new SQLFragment();
+        sql.append("(SELECT ");
+        String comma = "";
+        for (String dataCol : dataCols)
+        {
+            sql.append(comma).append("m.").append(dataCol);
+            comma = ", ";
+        }
+        if (null != provisioned)
+            sql.append(comma).append("ss.*");
+        sql.append(" FROM ");
+        sql.append(_rootTable, "m");
+        if (null != provisioned)
+            sql.append(" INNER JOIN ").append(provisioned, "ss").append(" ON m.lsid = ss.lsid");
+
+        // WHERE
+        Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
+        SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable.getSqlDialect(), columnMap);
+        sql.append("\n").append(filterFrag).append(") ").append(alias);
+
+        return sql;
+    }
+
 
     private boolean isIdCol(ExpSampleSet ss, PropertyDescriptor pd)
     {
@@ -533,8 +609,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     @Override
     public QueryUpdateService getUpdateService()
     {
-        return new SampleSetUpdateService(this, _ss);
+        return new SampleSetUpdateServiceDI(this, _ss);
     }
+
+
 
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
@@ -558,5 +636,115 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         else
             ret.remove("idx_material_ak");
         return Collections.unmodifiableMap(ret);
+    }
+
+
+    //
+    // UpdatableTableInfo
+    //
+
+
+    @Override
+    public boolean insertSupported()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean updateSupported()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean deleteSupported()
+    {
+        return true;
+    }
+
+    @Override
+    public TableInfo getSchemaTableInfo()
+    {
+        return ((FilteredTable)getRealTable()).getRealTable();
+    }
+
+    @Override
+    public ObjectUriType getObjectUriType()
+    {
+        return ObjectUriType.schemaColumn;
+    }
+
+    @Nullable
+    @Override
+    public String getObjectURIColumnName()
+    {
+        return "lsid";
+    }
+
+    @Nullable
+    @Override
+    public String getObjectIdColumnName()
+    {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public CaseInsensitiveHashMap<String> remapSchemaColumns()
+    {
+        if (null != getRealTable().getColumn("container") && null != getColumn("folder"))
+        {
+            CaseInsensitiveHashMap<String> m = new CaseInsensitiveHashMap<>();
+            m.put("container", "folder");
+            return m;
+        }
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public CaseInsensitiveHashSet skipProperties()
+    {
+        return null;
+    }
+
+    @Override
+    public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
+    {
+        TableInfo expTable = ExperimentService.get().getTinfoMaterial();
+        TableInfo propertiesTable = _ss.getTinfo();
+
+        // TODO: subclass PersistDataIteratorBuilder to index Materials! not DataClasss!
+        DataIteratorBuilder persist = new ExpDataIterators.PersistDataIteratorBuilder(data, expTable, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser())
+            .setFileLinkDirectory("sampleset")
+            .setIndexFunction( lsids -> () ->
+                {
+                    for (String lsid : lsids)
+                    {
+                        ExpMaterialImpl expMaterial = ExperimentServiceImpl.get().getExpMaterial(lsid);
+                        if (null != expMaterial)
+                            expMaterial.index(null);
+                    }
+                });
+
+        return new AliasDataIteratorBuilder(persist, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoMaterialAliasMap());
+    }
+
+    @Override
+    public Parameter.ParameterMap insertStatement(Connection conn, User user)
+    {
+        return null;
+    }
+
+    @Override
+    public Parameter.ParameterMap updateStatement(Connection conn, User user, Set<String> columns)
+    {
+        return null;
+    }
+
+    @Override
+    public Parameter.ParameterMap deleteStatement(Connection conn)
+    {
+        return null;
     }
 }

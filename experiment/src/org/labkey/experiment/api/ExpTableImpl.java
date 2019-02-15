@@ -146,6 +146,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
     protected ColumnInfo addContainerColumn(C containerCol, ActionURL url)
     {
         ColumnInfo result = addColumn(containerCol);
+        result.getImportAliasSet().add("container");
         ContainerForeignKey.initColumn(result, _userSchema, url);
         return result;
     }
@@ -279,6 +280,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
         ret.setMeasure(false);
         ret.setDimension(false);
         ret.setConceptURI(org.labkey.api.gwt.client.ui.PropertyType.expFlag.getURI());
+        ret.setPropertyURI(org.labkey.api.gwt.client.ui.PropertyType.expFlag.getURI());
         ret.setImportAliasesSet(Sets.newCaseInsensitiveHashSet("comment"));
         return ret;
     }

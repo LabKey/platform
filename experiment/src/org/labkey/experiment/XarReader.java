@@ -424,10 +424,10 @@ public class XarReader extends AbstractXarImporter
     private ExpSampleSetImpl loadSampleSet(SampleSetType sampleSet) throws XarFormatException
     {
         String lsid = LsidUtils.resolveLsidFromTemplate(sampleSet.getAbout(), getRootContext(), "SampleSet");
-        ExpSampleSetImpl existingMaterialSource = ExperimentServiceImpl.get().getSampleSet(lsid);
+        ExpSampleSetImpl existingMaterialSource = SampleSetServiceImpl.get().getSampleSet(lsid);
 
         getLog().debug("Importing SampleSet with LSID '" + lsid + "'");
-        ExpSampleSetImpl materialSource = ExperimentServiceImpl.get().createSampleSet();
+        ExpSampleSetImpl materialSource = SampleSetServiceImpl.get().createSampleSet();
         materialSource.setDescription(sampleSet.getDescription());
         materialSource.setName(sampleSet.getName());
         materialSource.setLSID(lsid);

@@ -10,9 +10,11 @@
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the Licensfn_dropifexistse for the specific language governing permissions and
+ * See the License for the specific language governing permissions and
  * limitations under the License.
  */
 
--- Removing active sample sets
-SELECT core.fn_dropifexists('ActiveMaterialSource', 'exp', 'TABLE', NULL);
+CREATE SCHEMA expsampleset
+go
+EXEC core.executeJavaUpgradeCode 'materializeSampleSets';
+go

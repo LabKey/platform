@@ -16,12 +16,9 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
@@ -36,14 +33,10 @@ import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.NameExpressionDataIteratorBuilder;
 import org.labkey.api.dataiterator.SimpleTranslator;
-import org.labkey.api.dataiterator.TableInsertDataIterator;
-import org.labkey.api.dataiterator.WrapperDataIterator;
-import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -74,29 +67,23 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.experiment.ExpDataIterators;
+import org.labkey.experiment.ExpDataIterators.*;
 import org.labkey.experiment.controllers.exp.ExperimentController;
-import org.labkey.experiment.controllers.exp.RunInputOutputBean;
-import org.labkey.experiment.samples.UploadSamplesHelper;
-import org.labkey.experiment.samples.UploadSamplesHelper.UploadSampleRunRecord;
 
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 /**
  * User: kevink
@@ -104,8 +91,6 @@ import java.util.stream.Collectors;
  */
 public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassDataTable.Column> implements ExpDataClassDataTable
 {
-    private static final Logger LOG = Logger.getLogger(ExpDataClassDataTableImpl.class);
-
     private @NotNull ExpDataClassImpl _dataClass;
 
     public ExpDataClassDataTableImpl(String name, UserSchema schema, @NotNull ExpDataClassImpl dataClass)
@@ -215,6 +200,8 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 aliasCol.setNullable(true);
                 aliasCol.setRequired(false);
                 aliasCol.setDisplayColumnFactory(new AliasDisplayColumnFactory());
+                aliasCol.setConceptURI("http://www.labkey.org/exp/xml#alias");
+                aliasCol.setPropertyURI("http://www.labkey.org/exp/xml#alias");
                 return aliasCol;
 
             case Inputs:
@@ -258,7 +245,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         defaultVisible.add(FieldKey.fromParts(Column.Name));
         defaultVisible.add(FieldKey.fromParts(Column.Flag));
 
-        ColumnInfo lsidCol = addColumn(Column.LSID);
+        addColumn(Column.LSID);
         ColumnInfo rowIdCol = addColumn(Column.RowId);
         ColumnInfo nameCol = addColumn(Column.Name);
         addColumn(Column.Created);
@@ -294,6 +281,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             for (int i = 0; null != getColumn(newName); i++)
                 newName = newName + i;
 
+            // TODO use wrapColumnFromTable()
             ExprColumn expr = new ExprColumn(this, col.getName(), col.getValueSql(ExprColumn.STR_TABLE_ALIAS), col.getJdbcType());
             expr.copyAttributesFrom(col);
             if (col.isHidden())
@@ -309,6 +297,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         for (ColumnInfo col : cols)
         {
             String propertyURI = col.getPropertyURI();
+            // TODO use PropertyColumn.copyAttributes()
             if (null != propertyURI)
             {
                 DomainProperty dp = properties.get(propertyURI);
@@ -502,8 +491,19 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     @Override
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
     {
-        DataIteratorBuilder step0 = new DataClassDataIteratorBuilder(data, context, getUserSchema().getUser());
-        return new DataClassAliasIteratorBuilder(step0, context, getUserSchema().getUser());
+        TableInfo expTable = ExperimentService.get().getTinfoData();
+        TableInfo propertiesTable = _dataClass.getTinfo();
+        PersistDataIteratorBuilder step0 = new ExpDataIterators.PersistDataIteratorBuilder(data, expTable, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser())
+            .setIndexFunction( lsids -> () ->
+            {
+                List<ExpDataImpl> expDatas = ExperimentServiceImpl.get().getExpDatasByLSID(lsids);
+                if (expDatas != null)
+                {
+                    for (ExpDataImpl expData : expDatas)
+                        expData.index(null);
+                }
+            });
+        return new AliasDataIteratorBuilder(step0, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoDataAliasMap());
     }
 
     @Override
@@ -553,6 +553,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             final ExperimentService svc = ExperimentService.get();
 
             SimpleTranslator step0 = new SimpleTranslator(input, context);
+            step0.setDebugName("step0");
             step0.selectAll(Sets.newCaseInsensitiveHashSet("lsid", "dataClass", "genId"));
 
             TableInfo expData = svc.getTinfoData();
@@ -565,7 +566,8 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             // auto gen a sequence number for genId - reserve BATCH_SIZE numbers at a time so we don't select the next sequence value for every row
             ColumnInfo genIdCol = _dataClass.getTinfo().getColumn(FieldKey.fromParts("genId"));
-            final int batchSize = _context.getInsertOption().batch ? BATCH_SIZE : 1;
+            // TODO convert to DbSequenceManager.getPreallocatingSequence() for performance
+            final int batchSize = 1; // _context.getInsertOption().batch ? BATCH_SIZE : 1;
             step0.addColumn(genIdCol, (Supplier) () -> {
                 int genId;
                 if (_sequenceNum == null || ((_count % batchSize) == 0))
@@ -602,489 +604,14 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             }
 
             // Generate names
-            DataIteratorBuilder step1 = DataIteratorBuilder.wrap(step0);
+            DataIteratorBuilder step1 = DataIteratorBuilder.wrap(LoggingDataIterator.wrap(step0));
             if (_dataClass.getNameExpression() != null)
             {
-                step0.addColumn(new ColumnInfo("nameExpression"), (Supplier) () -> _dataClass.getNameExpression());
+                step0.addColumn(new ColumnInfo("nameExpression", JdbcType.VARCHAR), (Supplier) () -> _dataClass.getNameExpression());
                 step1 = new NameExpressionDataIteratorBuilder(step1,  ExpDataClassDataTableImpl.this);
             }
 
             return LoggingDataIterator.wrap(step1.getDataIterator(context));
-        }
-    }
-
-    private class DataClassDataIteratorBuilder implements DataIteratorBuilder
-    {
-        private DataIteratorContext _context;
-        private final DataIteratorBuilder _in;
-
-        private User _user;
-
-        DataClassDataIteratorBuilder(@NotNull DataIteratorBuilder in, DataIteratorContext context, User user)
-        {
-            _context = context;
-            _in = in;
-            _user = user;
-        }
-
-        @Override
-        public DataIterator getDataIterator(DataIteratorContext context)
-        {
-            _context = context;
-            DataIterator input = _in.getDataIterator(context);
-            if (null == input)
-                return null;           // Can happen if context has errors
-
-            final Container c = getContainer();
-            final Map<String, Integer> colNameMap = DataIteratorUtil.createColumnNameMap(input);
-
-            SimpleTranslator step0 = new SimpleTranslator(input, context);
-            step0.selectAll(Sets.newCaseInsensitiveHashSet("alias"));
-
-            // TODO: save file path to exp.data.DataFileUrl
-
-            // Insert into exp.data then the provisioned table
-            DataIteratorBuilder step2 = TableInsertDataIterator.create(DataIteratorBuilder.wrap(step0), ExperimentService.get().getTinfoData(), c, context);
-            DataIteratorBuilder step3 = TableInsertDataIterator.create(step2, ExpDataClassDataTableImpl.this._dataClass.getTinfo(), c, context);
-
-            DataIteratorBuilder step4 = step3;
-            if (colNameMap.containsKey("flag") || colNameMap.containsKey("comment"))
-            {
-                step4 = new FlagDataIteratorBuilder(step3, context, _user);
-            }
-
-            // Wire up derived parent/child data and materials
-            DataIteratorBuilder step5 = new DerivationDataIteratorBuilder(step4, _user);
-
-            // Hack: add the alias and lsid values back into the input so we can process them in the chained data iterator
-            DataIteratorBuilder step6 = step5;
-            if (colNameMap.containsKey("alias"))
-            {
-                SimpleTranslator st = new SimpleTranslator(step5.getDataIterator(context), context);
-                st.selectAll();
-                ColumnInfo aliasCol = getColumn(FieldKey.fromParts("alias"));
-                st.addColumn(aliasCol, new Supplier(){
-                    @Override
-                    public Object get()
-                    {
-                        return input.get(colNameMap.get("alias"));
-                    }
-                });
-                step6 = DataIteratorBuilder.wrap(st);
-            }
-
-            DataIteratorBuilder step7 = new SearchIndexIteratorBuilder(step6); // may need to add this after the aliases are set
-
-            return LoggingDataIterator.wrap(step7.getDataIterator(context));
-        }
-    }
-
-    private class FlagDataIteratorBuilder implements DataIteratorBuilder
-    {
-        private DataIteratorContext _context;
-        private final DataIteratorBuilder _in;
-        private final User _user;
-
-        FlagDataIteratorBuilder(@NotNull DataIteratorBuilder in, DataIteratorContext context, User user)
-        {
-            _context = context;
-            _in = in;
-            _user = user;
-        }
-
-        @Override
-        public DataIterator getDataIterator(DataIteratorContext context)
-        {
-            DataIterator pre = _in.getDataIterator(context);
-            return LoggingDataIterator.wrap(new FlagDataIterator(pre, context, _user));
-        }
-    }
-
-    private class FlagDataIterator extends WrapperDataIterator
-    {
-        final DataIteratorContext _context;
-        final User _user;
-        final Integer _lsidCol;
-        final Integer _flagCol;
-
-        protected FlagDataIterator(DataIterator di, DataIteratorContext context, User user)
-        {
-            super(di);
-            _context = context;
-            _user = user;
-
-            Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
-            _lsidCol = map.get("lsid");
-            _flagCol = map.containsKey("flag") ? map.get("flag") : map.get("comment");
-        }
-
-        private BatchValidationException getErrors()
-        {
-            return _context.getErrors();
-        }
-
-        @Override
-        public boolean next() throws BatchValidationException
-        {
-            boolean hasNext = super.next();
-            if (!hasNext)
-                return false;
-
-            // skip processing if there are errors upstream
-            if (getErrors().hasErrors())
-                return hasNext;
-
-            if (_lsidCol != null && _flagCol != null)
-            {
-                Object lsidValue = get(_lsidCol);
-                Object flagValue = get(_flagCol);
-
-                if (lsidValue instanceof String)
-                {
-                    String lsid = (String)lsidValue;
-                    String flag = Objects.toString(flagValue, null);
-
-                    ExpData data = ExperimentService.get().getExpData(lsid);
-                    try
-                    {
-                        data.setComment(_user, flag);
-                    }
-                    catch (ValidationException e)
-                    {
-                        throw new BatchValidationException(e);
-                    }
-                }
-
-            }
-            return true;
-        }
-    }
-
-    /**
-     * Data iterator to handle aliases
-     */
-    private class DataClassAliasIteratorBuilder implements DataIteratorBuilder
-    {
-        private DataIteratorContext _context;
-        private final DataIteratorBuilder _in;
-        private User _user;
-
-        DataClassAliasIteratorBuilder(@NotNull DataIteratorBuilder in, DataIteratorContext context, User user)
-        {
-            _context = context;
-            _in = in;
-            _user = user;
-        }
-
-        @Override
-        public DataIterator getDataIterator(DataIteratorContext context)
-        {
-            DataIterator pre = _in.getDataIterator(context);
-            return LoggingDataIterator.wrap(new AliasDataIterator(pre, context, _user));
-        }
-    }
-
-    private class AliasDataIterator extends WrapperDataIterator
-    {
-        final DataIteratorContext _context;
-        final Integer _lsidCol;
-        final Integer _aliasCol;
-        final User _user;
-        Map<String, Object> _lsidAliasMap = new HashMap<>();
-
-        protected AliasDataIterator(DataIterator di, DataIteratorContext context, User user)
-        {
-            super(di);
-            _context = context;
-
-            Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
-            _lsidCol = map.get("lsid");
-            _aliasCol = map.get("alias");
-
-            _user = user;
-        }
-
-        private BatchValidationException getErrors()
-        {
-            return _context.getErrors();
-        }
-
-        @Override
-        public boolean next() throws BatchValidationException
-        {
-            boolean hasNext = super.next();
-
-            // skip processing if there are errors upstream
-            if (getErrors().hasErrors())
-                return hasNext;
-
-            // after the last row, insert all of the aliases
-            if (!hasNext)
-            {
-                final ExperimentService svc = ExperimentService.get();
-
-                try (DbScope.Transaction transaction = svc.getTinfoDataClass().getSchema().getScope().ensureTransaction())
-                {
-                    for (Map.Entry<String, Object> entry : _lsidAliasMap.entrySet())
-                    {
-                        String lsid = entry.getKey();
-                        Object aliases = entry.getValue();
-                        AliasInsertHelper.handleInsertUpdate(getContainer(), _user, lsid, svc.getTinfoDataAliasMap(), aliases);
-                    }
-                    transaction.commit();
-                }
-
-                return false;
-            }
-
-            // For each iteration, collect the lsid and alias col values.
-            if (_lsidCol != null && _aliasCol != null)
-            {
-                Object lsidValue = get(_lsidCol);
-                Object aliasValue = get(_aliasCol);
-
-                if (aliasValue != null && lsidValue instanceof String)
-                {
-                    _lsidAliasMap.put((String) lsidValue, aliasValue);
-                }
-            }
-            return true;
-        }
-    }
-
-    private class DerivationDataIteratorBuilder implements DataIteratorBuilder
-    {
-        final DataIteratorBuilder _pre;
-        final User _user;
-
-        DerivationDataIteratorBuilder(DataIteratorBuilder pre, User user)
-        {
-            _pre = pre;
-            _user = user;
-        }
-
-        @Override
-        public DataIterator getDataIterator(DataIteratorContext context)
-        {
-            DataIterator pre = _pre.getDataIterator(context);
-            return LoggingDataIterator.wrap(new DerivationDataIterator(pre, context, _user));
-        }
-    }
-
-    private class DerivationDataIterator extends WrapperDataIterator
-    {
-        final DataIteratorContext _context;
-        final Integer _lsidCol;
-        final Map<Integer, String> _parentCols;
-        // Map from Data LSID to Set of (parentColName, parentName)
-        final Map<String, Set<Pair<String, String>>> _parentNames;
-        final User _user;
-
-        protected DerivationDataIterator(DataIterator di, DataIteratorContext context, User user)
-        {
-            super(di);
-            _context = context;
-
-            Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
-            _lsidCol = map.get("lsid");
-            _parentNames = new LinkedHashMap<>();
-            _parentCols = new HashMap<>();
-            _user = user;
-
-            for (Map.Entry<String, Integer> entry : map.entrySet())
-            {
-                String name = entry.getKey();
-                if (UploadSamplesHelper.isInputOutputHeader(name))
-                {
-                    _parentCols.put(entry.getValue(), entry.getKey());
-                }
-            }
-        }
-
-        private BatchValidationException getErrors()
-        {
-            return _context.getErrors();
-        }
-
-        @Override
-        public boolean next() throws BatchValidationException
-        {
-            boolean hasNext = super.next();
-
-            // skip processing if there are errors upstream
-            if (getErrors().hasErrors())
-                return hasNext;
-
-            // For each iteration, collect the parent col values
-            if (!_parentCols.isEmpty())
-            {
-                String lsid = (String) get(_lsidCol);
-                Set<Pair<String, String>> allParts = new HashSet<>();
-                for (Integer parentCol : _parentCols.keySet())
-                {
-                    Object o = get(parentCol);
-                    if (o != null)
-                    {
-                        Collection<String> parentNames;
-                        if (o instanceof String)
-                        {
-                            parentNames = Arrays.asList(((String) o).split(","));
-                        }
-                        else if (o instanceof JSONArray)
-                        {
-                            parentNames = Arrays.stream(((JSONArray) o).toArray()).map(String::valueOf).collect(Collectors.toSet());
-                        }
-                        else if (o instanceof Collection)
-                        {
-                            Collection<?> c = ((Collection)o);
-                            parentNames = c.stream().map(String::valueOf).collect(Collectors.toSet());
-                        }
-                        else
-                        {
-                            getErrors().addRowError(new ValidationException("Expected comma separated list or a JSONArray of parent names: " + o, _parentCols.get(parentCol)));
-                            continue;
-                        }
-
-                        String parentColName = _parentCols.get(parentCol);
-                        Set<Pair<String, String>> parts = parentNames.stream()
-                                .map(String::trim)
-                                .filter(s -> !s.isEmpty())
-                                .map(s -> Pair.of(parentColName, s))
-                                .collect(Collectors.toSet());
-
-                        allParts.addAll(parts);
-                    }
-                }
-                _parentNames.put(lsid, allParts);
-            }
-
-            if (getErrors().hasErrors())
-                return hasNext;
-
-            if (!hasNext)
-            {
-                try
-                {
-                    RemapCache cache = new RemapCache();
-                    Map<Integer, ExpMaterial> materialCache = new HashMap<>();
-                    Map<Integer, ExpData> dataCache = new HashMap<>();
-
-                    List<UploadSampleRunRecord> runRecords = new ArrayList<>();
-                    for (Map.Entry<String, Set<Pair<String, String>>> entry : _parentNames.entrySet())
-                    {
-                        String lsid = entry.getKey();
-                        Set<Pair<String, String>> parentNames = entry.getValue();
-
-                        Pair<RunInputOutputBean, RunInputOutputBean> pair =
-                                UploadSamplesHelper.resolveInputsAndOutputs(_user, getContainer(), parentNames, null, cache, materialCache, dataCache);
-
-                        ExpData data = null;
-                        if (pair.first != null)
-                        {
-                            // Add parent derivation run
-                            Map<ExpMaterial, String> parentMaterialMap = pair.first.getMaterials();
-                            Map<ExpData, String> parentDataMap = pair.first.getDatas();
-
-                            data = ExperimentService.get().getExpData(lsid);
-                            if (data != null)
-                            {
-                                UploadSamplesHelper.record(false, runRecords, parentMaterialMap, Collections.emptyMap(),
-                                        parentDataMap, new HashMap<>(Collections.singletonMap(data, "Data")));
-                            }
-                        }
-
-                        if (pair.second != null)
-                        {
-                            // Add child derivation run
-                            Map<ExpMaterial, String> childMaterialMap = pair.second.getMaterials();
-                            Map<ExpData, String> childDataMap = pair.second.getDatas();
-
-                            if (data == null)
-                                data = ExperimentService.get().getExpData(lsid);
-                            if (data != null)
-                            {
-                                UploadSamplesHelper.record(false, runRecords, Collections.emptyMap(), childMaterialMap,
-                                        new HashMap<>(Collections.singletonMap(data, "Data")), childDataMap);
-                            }
-                        }
-                    }
-
-                    if (!runRecords.isEmpty())
-                    {
-                        ExperimentService.get().deriveSamplesBulk(runRecords, new ViewBackgroundInfo(getContainer(), _user, null), null);
-                    }
-                }
-                catch (ExperimentException e)
-                {
-                    throw new RuntimeException(e);
-                }
-                catch (ValidationException e)
-                {
-                    getErrors().addRowError(e);
-                }
-            }
-            return hasNext;
-        }
-    }
-
-    private class SearchIndexIteratorBuilder implements DataIteratorBuilder
-    {
-        final DataIteratorBuilder _pre;
-
-        SearchIndexIteratorBuilder(DataIteratorBuilder pre)
-        {
-            _pre = pre;
-        }
-
-        @Override
-        public DataIterator getDataIterator(DataIteratorContext context)
-        {
-            DataIterator pre = _pre.getDataIterator(context);
-            return LoggingDataIterator.wrap(new SearchIndexIterator(pre, context));
-        }
-    }
-
-    private class SearchIndexIterator extends WrapperDataIterator
-    {
-        final DataIteratorContext _context;
-        final Integer _lsidCol;
-        final ArrayList<String> _lsids;
-
-        protected SearchIndexIterator(DataIterator di, DataIteratorContext context)
-        {
-            super(di);
-            _context = context;
-
-            Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
-            _lsidCol = map.get("lsid");
-            _lsids = new ArrayList<>(100);
-
-            if (null != DbScope.getLabKeyScope() && null != DbScope.getLabKeyScope().getCurrentTransaction())
-            {
-                Runnable indexTask = () -> {
-                    List<ExpDataImpl> datas = ExperimentServiceImpl.get().getExpDatasByLSID(_lsids);
-                    if (datas != null)
-                    {
-                        for (ExpDataImpl data : datas)
-                            data.index(null);
-                    }
-                };
-                DbScope.getLabKeyScope().getCurrentTransaction().addCommitTask(indexTask, DbScope.CommitTaskOption.POSTCOMMIT);
-            }
-        }
-
-        @Override
-        public boolean next() throws BatchValidationException
-        {
-            boolean hasNext = super.next();
-
-            if (hasNext)
-            {
-                String lsid = (String) get(_lsidCol);
-                if (null != lsid)
-                    _lsids.add(lsid);
-            }
-            return hasNext;
         }
     }
 
@@ -1095,7 +622,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         return new DataClassDataUpdateService(this);
     }
 
-    private class DataClassDataUpdateService extends DefaultQueryUpdateService
+    class DataClassDataUpdateService extends DefaultQueryUpdateService
     {
         public DataClassDataUpdateService(ExpDataClassDataTableImpl table)
         {
@@ -1111,15 +638,12 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         @Override
         public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum,Object> configParameters, Map<String, Object> extraScriptContext)
         {
-            // Temporary work around for Issue 26082 -- use INSERT instead of IMPORT
             return _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
         }
 
         @Override
         public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext) throws SQLException
         {
-            // Temporary work around for Issue 26082 -- use INSERT instead of IMPORT
-            context.setInsertOption(InsertOption.INSERT);
             return super.loadRows(user, container, rows, context, extraScriptContext);
         }
 
@@ -1195,12 +719,11 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             Map<String, Object> ret = new CaseInsensitiveHashMap<>(super._update(user, c, rowStripped, oldRow, keys));
 
             // update provisioned table -- note that LSID isn't the PK so we need to use the filter to update the correct row instead
-            keys = new Object[] { };
+            keys = new Object[] {lsid};
             TableInfo t = ExpDataClassDataTableImpl.this._dataClass.getTinfo();
             if (t.getColumnNameSet().stream().anyMatch(rowStripped::containsKey))
             {
-                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("LSID"), lsid);
-                ret.putAll(Table.update(user, t, rowStripped, keys, filter, Level.DEBUG));
+                ret.putAll(Table.update(user, t, rowStripped, t.getColumn("lsid"), keys, null, Level.DEBUG));
             }
 
             // update comment
@@ -1345,128 +868,4 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         }
     }
 
-    public static class AliasInsertHelper
-    {
-        public static void handleInsertUpdate(Container container, User user, String lsid, TableInfo aliasMapTable, Object value)
-        {
-            // parse the alias value into separate names and alias rowIds
-            Set<String> aliasNames = new HashSet<>();
-            Set<Integer> aliasIds = new HashSet<>();
-            parseValue(value, aliasNames, aliasIds);
-
-            aliasNames.forEach(s -> {
-                if ((s.startsWith("'") && s.endsWith("'")) || (s.startsWith("\"") && s.endsWith("\"")))
-                    throw new IllegalArgumentException("Alias values must not be surrounded by quote characters: " + s);
-            });
-
-            // ensure the alias exist collect the alias' rowId
-            aliasIds.addAll(ensureAliases(user, aliasNames));
-
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("LSID"), lsid);
-            Table.delete(aliasMapTable, filter);
-            insertMapEntries(container, user, aliasMapTable, aliasIds, lsid);
-        }
-
-        private static void parseValue(Object value, Set<String> aliasNames, Set<Integer> aliasIds)
-        {
-            if (value == null)
-                return;
-
-            if (value instanceof String[])
-            {
-                String[] aa = (String[]) value;
-                for (String a : aa)
-                    parseValue(a, aliasNames, aliasIds); // recurse
-            }
-            else if (value instanceof JSONArray)
-            {
-                // LABKEY.Query.updateRows passes a JSONArray of individual alias names.
-                for (Object o : ((JSONArray)value).toArray())
-                    parseValue(o.toString(), aliasNames, aliasIds); // recurse
-            }
-            else if (value instanceof Collection)
-            {
-                // Generic query insert form and Excel/tsv import passes an ArrayList with a single String element containing the comma-separated list of values: "abc,def"
-                // LABKEY.Query.insertRows passes an ArrayList containing individual alias names.
-                for (Object o : (Collection)value)
-                    parseValue(o, aliasNames, aliasIds); // recurse
-            }
-            else if (value instanceof String)
-            {
-                // Parse the single string element value submitted by the generic query insert and the tsv import forms.
-                for (String s : splitAliases((String)value))
-                {
-                    aliasNames.add(s);
-                }
-            }
-            else if (value instanceof Integer)
-            {
-                aliasIds.add((Integer)value);
-            }
-            else
-            {
-                throw new IllegalArgumentException("Unsupported value for column 'Alias': " + value);
-            }
-        }
-
-        public static Set<String> splitAliases(String aliases)
-        {
-            if (aliases == null)
-                return Collections.emptySet();
-
-            aliases = aliases.trim();
-            if (aliases.length() == 0)
-                return Collections.emptySet();
-
-            // If the user entered a string formatted as a JSONArray, parse it now.
-            if (aliases.startsWith("[") && aliases.endsWith("]"))
-            {
-                Set<String> parts = new HashSet<>();
-                JSONArray a = new JSONArray(aliases);
-                for (Object o : a.toArray())
-                {
-                    if (o == null)
-                        continue;
-                    String s = StringUtils.trim(String.valueOf(o));
-                    if (s.length() == 0)
-                        continue;
-
-                    parts.add(s);
-                }
-
-                return parts;
-            }
-
-            if (aliases.contains(","))
-            {
-                // The user entered a comma-separated list of values
-                return Arrays.stream(aliases.split(","))
-                        .map(String::trim)
-                        .filter(StringUtils::isNotEmpty)
-                        .collect(Collectors.toSet());
-            }
-            else
-            {
-                return Collections.singleton(aliases);
-            }
-        }
-
-        private static void insertMapEntries(Container container, User user, TableInfo aliasMapTable, Set<Integer> aliasIds, String lsid)
-        {
-            for (Integer aliasId : aliasIds)
-            {
-                Map<String, Object> row = CaseInsensitiveHashMap.of(
-                        "container", container.getEntityId(),
-                        "alias", aliasId,
-                        "lsid", lsid
-                );
-                Table.insert(user, aliasMapTable, row);
-            }
-        }
-
-        private static Collection<Integer> ensureAliases(User user, Set<String> aliasNames)
-        {
-            return ExperimentServiceImpl.get().ensureAliases(user, aliasNames);
-        }
-    }
 }

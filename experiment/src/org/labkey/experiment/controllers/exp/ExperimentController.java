@@ -171,10 +171,11 @@ import org.labkey.experiment.api.ExpRunImpl;
 import org.labkey.experiment.api.ExpSampleSetImpl;
 import org.labkey.experiment.api.Experiment;
 import org.labkey.experiment.api.ExperimentServiceImpl;
+import org.labkey.experiment.api.SampleSetServiceImpl;
 import org.labkey.experiment.api.MaterialSource;
 import org.labkey.experiment.api.ProtocolActionStepDetail;
 import org.labkey.experiment.api.SampleSetDomainKind;
-import org.labkey.experiment.api.SampleSetUpdateService;
+import org.labkey.experiment.api.SampleSetUpdateServiceDI;
 import org.labkey.experiment.controllers.property.PropertyController;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.samples.UploadMaterialSetForm;
@@ -495,7 +496,7 @@ public class ExperimentController extends SpringActionController
 
         public ModelAndView getView(ExpObjectForm form, BindException errors)
         {
-            _source = ExperimentServiceImpl.get().getSampleSet(getContainer(), getUser(), form.getRowId());
+            _source = (ExpSampleSetImpl)ExperimentService.get().getSampleSet(getContainer(), getUser(), form.getRowId());
             if (_source == null && form.getLsid() != null)
             {
                 if (form.getLsid().equalsIgnoreCase("Material") || form.getLsid().equalsIgnoreCase("Sample"))
@@ -504,7 +505,7 @@ public class ExperimentController extends SpringActionController
                     throw new RedirectException(new ActionURL(ShowAllMaterialsAction.class, getContainer()));
                 }
                 // Check if the URL specifies the LSID, and stick the bean back into the form
-                _source = ExperimentServiceImpl.get().getSampleSet(form.getLsid());
+                _source = (ExpSampleSetImpl)ExperimentService.get().getSampleSet(form.getLsid());
             }
 
             if (_source == null)
@@ -512,7 +513,7 @@ public class ExperimentController extends SpringActionController
                 throw new NotFoundException("No matching sample set found");
             }
 
-            List<ExpSampleSetImpl> allScopedSampleSets = ExperimentServiceImpl.get().getSampleSets(getContainer(), getUser(), true);
+            List<ExpSampleSetImpl> allScopedSampleSets = (List<ExpSampleSetImpl>)ExperimentService.get().getSampleSets(getContainer(), getUser(), true);
             if (!allScopedSampleSets.contains(_source))
             {
                 ensureCorrectContainer(getContainer(), _source, getViewContext());
@@ -831,7 +832,7 @@ public class ExperimentController extends SpringActionController
             detailsView.setTitle("Standard Properties");
             detailsView.setFrame(WebPartView.FrameType.PORTAL);
 
-            CustomPropertiesView cpv = new CustomPropertiesView(_material.getLSID(), c);
+            CustomPropertiesView cpv = new CustomPropertiesView(_material, c);
 
             return new VBox(new StandardAndCustomPropertiesView(detailsView, cpv));
         }
@@ -3374,7 +3375,7 @@ public class ExperimentController extends SpringActionController
                 throw new NotFoundException("MaterialSource with LSID " + _source.getLSID());
             }
             Table.update(getUser(), ExperimentService.get().getTinfoMaterialSource(), form.getTypedValues(), _source.getRowId());
-            ExperimentServiceImpl.get().clearMaterialSourceCache(getContainer());
+            SampleSetServiceImpl.get().clearMaterialSourceCache(getContainer());
             return true;
         }
 
@@ -3507,13 +3508,14 @@ public class ExperimentController extends SpringActionController
         public void validateForm(QueryForm queryForm, Errors errors)
         {
             _form = queryForm;
+            _form.setSchemaName("samples");
             _insertOption = queryForm.getInsertOption();
             super.validateForm(queryForm, errors);
             if (queryForm.getQueryName() == null)
                 errors.reject(ERROR_MSG, "Sample set name is required");
             else
             {
-                _sampleSet = ExperimentServiceImpl.get().getSampleSet(getContainer(), getUser(), queryForm.getQueryName());
+                _sampleSet = (ExpSampleSetImpl) SampleSetServiceImpl.get().getSampleSet(getContainer(), getUser(), queryForm.getQueryName());
                 if (_sampleSet == null)
                 {
                     errors.reject(ERROR_MSG, "Sample set '" + queryForm.getQueryName() + " not found.");
@@ -4734,8 +4736,10 @@ public class ExperimentController extends SpringActionController
 
                 if (sampleSet != null)
                 {
+                    Map<String,Object> pvs = new HashMap<>();
                     for (Map.Entry<DomainProperty, String> propertyEntry : entry.getValue().entrySet())
-                        outputMaterial.setProperty(getUser(), propertyEntry.getKey().getPropertyDescriptor(), propertyEntry.getValue());
+                        pvs.put(propertyEntry.getKey().getName(), propertyEntry.getValue());
+                    ((ExpMaterialImpl)outputMaterial).setProperties(getUser(), pvs);
                 }
 
                 outputMaterials.put(outputMaterial, helper.getSampleNames().get(i++));
@@ -5228,7 +5232,7 @@ public class ExperimentController extends SpringActionController
 
                 Map<Enum, Object> configParams = new HashMap<>();
                 // Skip derivation during insert -- DeriveAction will call ExperimentService.get().derive() after samples are inserted
-                configParams.put(SampleSetUpdateService.Options.SkipDerivation, true);
+                configParams.put(SampleSetUpdateServiceDI.Options.SkipDerivation, true);
 
                 BatchValidationException qusErrors = new BatchValidationException();
                 List<Map<String, Object>> insertedRows = qus.insertRows(getUser(), getContainer(), rows, qusErrors, configParams, null);
@@ -6004,7 +6008,7 @@ public class ExperimentController extends SpringActionController
     {
         protected BaseRemoteService createService()
         {
-            return new SampleSetServiceImpl(getViewContext());
+            return new GwtSampleSetServiceImpl(getViewContext());
         }
     }
 

@@ -23,17 +23,32 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.dataiterator.CoerceDataIterator;
+import org.labkey.api.dataiterator.DataIterator;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
+import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.DataIteratorUtil;
+import org.labkey.api.dataiterator.LoggingDataIterator;
+import org.labkey.api.dataiterator.MapDataIterator;
+import org.labkey.api.dataiterator.ScrollableDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
+import org.labkey.api.dataiterator.WrapperDataIterator;
+import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
@@ -44,8 +59,10 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SimpleRunRecord;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.ExperimentProperty;
@@ -54,7 +71,9 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
@@ -67,11 +86,12 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.experiment.SampleSetAuditProvider;
-import org.labkey.experiment.api.ExpDataClassDataTableImpl;
+import org.labkey.experiment.api.AliasInsertHelper;
 import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpSampleSetImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.MaterialSource;
+import org.labkey.experiment.api.SampleSetServiceImpl;
 import org.labkey.experiment.controllers.exp.RunInputOutputBean;
 import org.labkey.experiment.samples.UploadMaterialSetForm.InsertUpdateChoice;
 import org.labkey.experiment.samples.UploadMaterialSetForm.NameFormatChoice;
@@ -87,9 +107,11 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.util.MultiPhaseCPUTimer.InvocationTimer.Order.EnumOrder;
+import static org.labkey.experiment.samples.UploadMaterialSetForm.InsertUpdateChoice.insertOnly;
 
 public class UploadSamplesHelper
 {
@@ -177,7 +199,7 @@ public class UploadSamplesHelper
         if (_materialSource == null)
         {
             materialSourceLsid = ExperimentService.get().getSampleSetLsid(_form.getName(), _form.getContainer()).toString();
-            _materialSource = ExperimentServiceImpl.get().getMaterialSource(materialSourceLsid);
+            _materialSource = SampleSetServiceImpl.get().getMaterialSource(materialSourceLsid);
             if (_materialSource == null && !_form.isCreateNewSampleSet())
                 throw new ExperimentException("Can't create new Sample Set '" + _form.getName() + "'");
         }
@@ -194,11 +216,13 @@ public class UploadSamplesHelper
         try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction())
         {
             Domain domain = PropertyService.get().getDomain(getContainer(), materialSourceLsid);
+            boolean newDomain = false;
             if (domain == null)
             {
                 if (!_form.isCreateNewSampleSet())
                     throw new ExperimentException("Can't create new domain for Sample Set '" + _form.getName() + "'");
                 domain = PropertyService.get().createDomain(getContainer(), materialSourceLsid, _form.getName());
+                newDomain = true;
             }
             Map<String, DomainProperty> descriptorsByName = domain.createImportMap(true);
 
@@ -284,67 +308,15 @@ public class UploadSamplesHelper
                     throw new ExperimentException("Can't create new columns on existing sample set.");
                 // Need to save the domain - it has at least one new property
                 domain.save(_form.getUser());
+                if (newDomain)
+                    StorageProvisioner.createTableInfo(domain);
             }
 
-            String nameExpression = null;
-            boolean usingNameAsUniqueColumn = false;
-            List<String> idColPropertyURIs = new ArrayList<>();
-            if (_materialSource != null && _materialSource.getIdCol1() != null)
-            {
-                usingNameAsUniqueColumn = getIdColPropertyURIs(_materialSource, idColPropertyURIs);
-            }
-            else
-            {
-                if (NameFormatChoice.IdColumns.equals(_form.getNameFormatEnum()))
-                {
-                    if (_form.getIdColumn1() < 0 || _form.getIdColumn1() >= columns.length)
-                        throw new ExperimentException("An id column must be be selected to uniquely identify each sample (idColumn1 was " + _form.getIdColumn1() + ")");
-
-                    if (isNameHeader(columns[_form.getIdColumn1()].name))
-                    {
-                        idColPropertyURIs.add(columns[_form.getIdColumn1()].name);
-                        usingNameAsUniqueColumn = true;
-                    }
-                    else
-                    {
-                        idColPropertyURIs.add(columns[_form.getIdColumn1()].name);
-                        if (_form.getIdColumn2() >= 0)
-                        {
-                            if (_form.getIdColumn2() >= columns.length)
-                                throw new ExperimentException("idColumn2 out of bounds: " + _form.getIdColumn2());
-                            idColPropertyURIs.add(columns[_form.getIdColumn2()].name);
-                        }
-                        if (_form.getIdColumn3() >= 0)
-                        {
-                            if (_form.getIdColumn3() >= columns.length)
-                                throw new ExperimentException("idColumn3 out of bounds: " + _form.getIdColumn3());
-                            idColPropertyURIs.add(columns[_form.getIdColumn3()].name);
-                        }
-                    }
-                }
-                else
-                {
-                    assert NameFormatChoice.NameExpression.equals(_form.getNameFormatEnum());
-                    if (_form.getNameExpression() == null || _form.getNameExpression().length() == 0)
-                        throw new ExperimentException("Name expression required");
-
-                    nameExpression = _form.getNameExpression();
-                }
-            }
-
-            String parentColPropertyURI;
-            if (_materialSource != null && _materialSource.getParentCol() != null)
-            {
-                parentColPropertyURI = _materialSource.getParentCol();
-            }
-            else if (_form.getParentColumn() >= 0)
-            {
-                parentColPropertyURI = columns[_form.getParentColumn()].name;
-            }
-            else
-            {
-                parentColPropertyURI = null;
-            }
+            ColumnExpressions columnExpressions = new ColumnExpressions(_form, columns).invoke();
+            String nameExpression = columnExpressions.getNameExpression();
+            boolean usingNameAsUniqueColumn = columnExpressions.isUsingNameAsUniqueColumn();
+            List<String> idColPropertyURIs = columnExpressions.getIdColPropertyURIs();
+            String parentColPropertyURI = columnExpressions.getParentColPropertyURI();
 
             timer.setPhase(Phase.ensureSampleSet);
             boolean createdSampleSet = ensureSampleSet(nameExpression, usingNameAsUniqueColumn, idColPropertyURIs, parentColPropertyURI);
@@ -363,7 +335,7 @@ public class UploadSamplesHelper
             if (!createdSampleSet)
             {
                 timer.setPhase(Phase.deleteOld);
-                reusedMaterialLSIDs = deleteOldPropertyValues(hasCommentHeader, maps, descriptors);
+                reusedMaterialLSIDs = deleteOldPropertyValuesBeforeUpload(hasCommentHeader, maps, descriptors);
             }
 
             materials = insertTabDelimitedMaterial(maps, new ArrayList<>(descriptors), _materialSource, reusedMaterialLSIDs, inputOutputColumns, _form.isSkipDerivation(), timer);
@@ -522,7 +494,12 @@ public class UploadSamplesHelper
         }
     }
 
-    private Set<String> deleteOldPropertyValues(boolean hasCommentHeader, List<Map<String, Object>> maps, Set<PropertyDescriptor> descriptors) throws ExperimentException
+
+    /** this is increasingly misnamed.
+     * find currently existing materials, also merge "comments" column.
+     * This may go away completely depending on complete dataiterator implementation
+     */
+    private Set<String> deleteOldPropertyValuesBeforeUpload(boolean hasCommentHeader, List<Map<String, Object>> maps, Set<PropertyDescriptor> descriptors) throws ExperimentException
     {
         Set<String> reusedMaterialLSIDs = new HashSet<>();
         InsertUpdateChoice insertUpdate = _form.getInsertUpdateChoiceEnum();
@@ -543,7 +520,7 @@ public class UploadSamplesHelper
             }
             else
             {
-                if (insertUpdate == InsertUpdateChoice.insertOnly)
+                if (insertUpdate == insertOnly)
                     throw new ExperimentException("Can't insert; material already exists for '" + name + "' in folder '" + material.getContainer().getPath() + "'");
 
                 if (insertUpdate == InsertUpdateChoice.insertIgnore)
@@ -568,11 +545,12 @@ public class UploadSamplesHelper
                     li.set(newMap);
                 }
 
-                for (PropertyDescriptor descriptor : descriptors)
-                {
-                    // Delete values that we have received new versions of
-                    OntologyManager.deleteProperty(material.getLSID(), descriptor.getPropertyURI(), material.getContainer(), descriptor.getContainer());
-                }
+//                for (PropertyDescriptor descriptor : descriptors)
+//                {
+//                    // Delete values that we have received new versions of
+//                    OntologyManager.deleteProperty(material.getLSID(), descriptor.getPropertyURI(), material.getContainer(), descriptor.getContainer());
+//                }
+
                 reusedMaterialLSIDs.add(lsid);
             }
         }
@@ -580,22 +558,22 @@ public class UploadSamplesHelper
         return reusedMaterialLSIDs;
     }
 
-    private boolean isNameHeader(String name)
+    private static boolean isNameHeader(String name)
     {
         return name.equalsIgnoreCase(ExpMaterialTable.Column.Name.name());
     }
 
-    private boolean isDescriptionHeader(String name)
+    private static boolean isDescriptionHeader(String name)
     {
         return name.equalsIgnoreCase(ExpMaterialTable.Column.Description.name());
     }
 
-    private boolean isCommentHeader(String name)
+    private static boolean isCommentHeader(String name)
     {
         return name.equalsIgnoreCase(ExpMaterialTable.Column.Flag.name()) || name.equalsIgnoreCase("Comment");
     }
 
-    private boolean isAliasHeader(String name)
+    private static boolean isAliasHeader(String name)
     {
         return name.equalsIgnoreCase(ExpMaterialTable.Column.Alias.name());
     }
@@ -607,7 +585,7 @@ public class UploadSamplesHelper
                 parts[0].equalsIgnoreCase(ExpData.DATA_OUTPUT_CHILD) || parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_OUTPUT_CHILD);
     }
 
-    private boolean isReservedHeader(String name)
+    private static boolean isReservedHeader(String name)
     {
         if (isNameHeader(name) || isDescriptionHeader(name) || isCommentHeader(name) || "CpasType".equalsIgnoreCase(name) || isAliasHeader(name))
             return true;
@@ -690,13 +668,44 @@ public class UploadSamplesHelper
             return Collections.emptyList();
 
         Container c = getContainer();
+        List<String> resultingLsids = new ArrayList<>(rows.size());
+
 
         //Parent object is the MaterialSet type
         int ownerObjectId = OntologyManager.ensureObject(source.getContainer(), source.getLSID());
-        MaterialImportHelper helper = new MaterialImportHelper(c, source, _form.getUser(), reusedMaterialLSIDs);
+        MaterialImportHelper helper = new MaterialImportHelper(c, source, _sampleSet, _form.getUser(), reusedMaterialLSIDs);
 
         timer.setPhase(Phase.insertTabDelimited);
-        OntologyManager.insertTabDelimited(c, _form.getUser(), ownerObjectId, helper, descriptors, rows, true);
+
+        TableInfo sampleSetTinfo = _sampleSet.getTinfo();
+
+        var props = _sampleSet.getDomain().getProperties();
+
+        for (var currentRow : rows)
+        {
+            // TODO: there is no validation in this placeholder code-path, this will handled by conversion to QueryUpdateService
+            // TODO: validate that QueryUpdateService handle conversion of "Inf" and "-Inf" (19391)
+            // TODO: Interesting that exp.Material does not have objectid column, less important now that it is materialized
+
+            // creates exp.Material row
+            String lsid = helper.beforeImportObject(currentRow);
+            resultingLsids.add(lsid);
+
+            CaseInsensitiveHashMap<Object> ins = new CaseInsensitiveHashMap<>();
+            props.forEach(prop -> { if (currentRow.containsKey(prop.getName())) ins.put(prop.getName(), currentRow.get(prop.getName())); } );
+            props.forEach(prop -> { if (currentRow.containsKey(prop.getPropertyURI())) ins.put(prop.getName(), currentRow.get(prop.getPropertyURI())); } );
+            ins.put("lsid", lsid);
+
+            // this table row should usually already exist
+            try
+            {
+                Table.update(_form.getUser(), sampleSetTinfo, ins, lsid);
+            }
+            catch (OptimisticConflictException x)
+            {
+                Table.insert(_form.getUser(), sampleSetTinfo, ins);
+            }
+        }
 
         // process any alias values
         timer.setPhase(Phase.aliases);
@@ -716,7 +725,7 @@ public class UploadSamplesHelper
             if (material != null)
             {
                 Object aliases = row.get("Alias");
-                ExpDataClassDataTableImpl.AliasInsertHelper.handleInsertUpdate(c, _form.getUser(), material.getLSID(), aliasMap, aliases);
+                AliasInsertHelper.handleInsertUpdate(c, _form.getUser(), material.getLSID(), aliasMap, aliases);
             }
         });
 
@@ -798,7 +807,7 @@ public class UploadSamplesHelper
      * If the run has more than the sample as an output, the material is removed as an output of the run
      * otherwise the run will be deleted.
      */
-    private static void clearSampleSourceRun(User user, ExpMaterial material) throws ValidationException
+    public static void clearSampleSourceRun(User user, ExpMaterial material) throws ValidationException
     {
         ExpProtocolApplication existingSourceApp = material.getSourceApplication();
         if (existingSourceApp == null)
@@ -951,6 +960,17 @@ public class UploadSamplesHelper
             String parentValue = pair.second;
 
             String[] parts = parentColName.split("\\.|/");
+            if (parts.length == 1)
+            {
+                if (parts[0].equalsIgnoreCase("parent"))
+                {
+                    ExpMaterial sample = findMaterial(c, user, null, parentValue, cache, materialMap);
+                    if (sample != null)
+                        parentMaterials.put(sample, "Sample");
+                    else
+                        throw new ValidationException("Sample input '" + parentValue + "' in SampleSet '" + parts[1] + "' not found");
+                }
+            }
             if (parts.length == 2)
             {
                 if (parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_INPUT_PARENT))
@@ -1187,20 +1207,22 @@ public class UploadSamplesHelper
 
     private class MaterialImportHelper implements OntologyManager.ImportHelper
     {
-        private Container _container;
-        private List<String> _idCols;
-        private User _user;
-        private MaterialSource _source;
+        private final Container _container;
+        private final List<String> _idCols;
+        private final User _user;
+        private final MaterialSource _source;
+        private final ExpSampleSetImpl _sampleSet;
         private final Set<String> _reusedMaterialLSIDs;
-        private List<ExpMaterial> _materials = new ArrayList<>();
+        private final List<ExpMaterial> _materials = new ArrayList<>();
         private int _currentRow = 0;
 
-        MaterialImportHelper(Container container, MaterialSource source, User user, Set<String> reusedMaterialLSIDs)
+        MaterialImportHelper(Container container, MaterialSource source, ExpSampleSet ss, User user, Set<String> reusedMaterialLSIDs)
         {
             _container = container;
             _idCols = new ArrayList<>();
             getIdColPropertyURIs(source, _idCols);
             _source = source;
+            _sampleSet = (ExpSampleSetImpl)ss;
             _user = user;
             _reusedMaterialLSIDs = reusedMaterialLSIDs;
         }
@@ -1218,7 +1240,7 @@ public class UploadSamplesHelper
                 material.setCpasType(_source.getLSID());
                 if (map.containsKey("Description"))
                     material.setDescription((String)map.get("Description"));
-                material.save(_user);
+                material.save(_user, _sampleSet);
             }
             else
             {
@@ -1254,4 +1276,418 @@ public class UploadSamplesHelper
         {
         }
     }
+
+
+    /** This is just a bit of shared code, that mabe belongs on UploadMaterialSetForm, or in ensureSampleSet()
+     * Anyway, it's here for now (removed from uploadMaterials())
+     */
+    private class ColumnExpressions
+    {
+        private final UploadMaterialSetForm _form;
+        private final ColumnDescriptor[] _columns;
+        private String _nameExpression;
+        private boolean _usingNameAsUniqueColumn;
+        private List<String> _idColPropertyURIs;
+        private String _parentColPropertyURI;
+
+        public ColumnExpressions(UploadMaterialSetForm form, ColumnDescriptor... columns)
+        {
+            _form = form;
+            _columns = columns;
+        }
+
+        public String getNameExpression()
+        {
+            return _nameExpression;
+        }
+
+        public boolean isUsingNameAsUniqueColumn()
+        {
+            return _usingNameAsUniqueColumn;
+        }
+
+        public List<String> getIdColPropertyURIs()
+        {
+            return _idColPropertyURIs;
+        }
+
+        public String getParentColPropertyURI()
+        {
+            return _parentColPropertyURI;
+        }
+
+        public ColumnExpressions invoke() throws ExperimentException
+        {
+            _nameExpression = null;
+            _usingNameAsUniqueColumn = false;
+            _idColPropertyURIs = new ArrayList<>();
+            if (_materialSource != null && _materialSource.getIdCol1() != null)
+            {
+                _usingNameAsUniqueColumn = UploadSamplesHelper.this.getIdColPropertyURIs(_materialSource, _idColPropertyURIs);
+            }
+            else
+            {
+                if (NameFormatChoice.IdColumns.equals(_form.getNameFormatEnum()))
+                {
+                    if (_form.getIdColumn1() < 0 || _form.getIdColumn1() >= _columns.length)
+                        throw new ExperimentException("An id column must be be selected to uniquely identify each sample (idColumn1 was " + _form.getIdColumn1() + ")");
+
+                    if (isNameHeader(_columns[_form.getIdColumn1()].name))
+                    {
+                        _idColPropertyURIs.add(_columns[_form.getIdColumn1()].name);
+                        _usingNameAsUniqueColumn = true;
+                    }
+                    else
+                    {
+                        _idColPropertyURIs.add(_columns[_form.getIdColumn1()].name);
+                        if (_form.getIdColumn2() >= 0)
+                        {
+                            if (_form.getIdColumn2() >= _columns.length)
+                                throw new ExperimentException("idColumn2 out of bounds: " + _form.getIdColumn2());
+                            _idColPropertyURIs.add(_columns[_form.getIdColumn2()].name);
+                        }
+                        if (_form.getIdColumn3() >= 0)
+                        {
+                            if (_form.getIdColumn3() >= _columns.length)
+                                throw new ExperimentException("idColumn3 out of bounds: " + _form.getIdColumn3());
+                            _idColPropertyURIs.add(_columns[_form.getIdColumn3()].name);
+                        }
+                    }
+                }
+                else
+                {
+                    assert NameFormatChoice.NameExpression.equals(_form.getNameFormatEnum());
+                    if (_form.getNameExpression() == null || _form.getNameExpression().length() == 0)
+                        throw new ExperimentException("Name expression required");
+
+                    _nameExpression = _form.getNameExpression();
+                }
+            }
+
+            if (_materialSource != null && _materialSource.getParentCol() != null)
+            {
+                _parentColPropertyURI = _materialSource.getParentCol();
+            }
+            else if (_form.getParentColumn() >= 0)
+            {
+                _parentColPropertyURI = _columns[_form.getParentColumn()].name;
+            }
+            else
+            {
+                _parentColPropertyURI = null;
+            }
+            return this;
+        }
+    }
+
+/*** STRATEGY **********************************************************************************************************
+ * rewrite chunks of functionality of original UploadSamplesHelper as dataiterators, and use the new bits
+ * piecewise, until we can flip the while thing (SampleSetUpdateService) to use dataiterators.
+ *
+ * The new functionality WILL SUPPORT: insertOnly and insertOrUpdate
+ * The new functionality WILL NOT SUPPORT: updating the table schema
+ * Undecided on updateOnly (probably not) and insertIgnore (probably not)
+ */
+
+
+    /* this might be generally useful
+     * See SimpleTranslator.selectAll(@NotNull Set<String> skipColumns) for similiar functionality, but SampleTranslator
+     * copies data, this is straight pass through.
+     */
+    static class DropColumnsDataIterator extends WrapperDataIterator
+    {
+        int[] indexMap;
+        int columnCount = 0;
+
+        DropColumnsDataIterator(DataIterator di, Set<String> drop)
+        {
+            super(di);
+            int inputColumnCount = di.getColumnCount();
+            indexMap = new int[inputColumnCount+1];
+            for (int inIndex = 0 ; inIndex <= inputColumnCount ; inIndex++ )
+            {
+                String name = di.getColumnInfo(inIndex).getName();
+                if (!drop.contains(name))
+                {
+                    indexMap[++columnCount] = inIndex;
+                }
+            }
+        }
+
+        @Override
+        public int getColumnCount()
+        {
+            return columnCount;
+        }
+
+        @Override
+        public Object get(int i)
+        {
+            return super.get(indexMap[i]);
+        }
+
+        @Override
+        public ColumnInfo getColumnInfo(int i)
+        {
+            return super.getColumnInfo(indexMap[i]);
+        }
+
+        @Override
+        public Object getConstantValue(int i)
+        {
+            return super.getConstantValue(indexMap[i]);
+        }
+
+        @Override
+        public Supplier<Object> getSupplier(int i)
+        {
+            return super.getSupplier(indexMap[i]);
+        }
+    }
+
+
+    /* TODO validate/compare functionality of CoerceDataIterator and loadRows() */
+
+    public static class PrepareDataIteratorBuilder implements DataIteratorBuilder
+    {
+        final ExpSampleSetImpl sampleset;
+        final DataIteratorBuilder builder;
+        final Lsid.LsidBuilder lsidBuilder;
+
+        public PrepareDataIteratorBuilder(ExpSampleSetImpl sampleset, DataIteratorBuilder in)
+        {
+            this.sampleset = sampleset;
+            this.builder = in;
+            this.lsidBuilder = generateSampleLSID(sampleset.getDataObject());
+        }
+
+        public PrepareDataIteratorBuilder(ExpSampleSetImpl sampleset, DataIterator in)
+        {
+            this(sampleset, DataIteratorBuilder.wrap(in));
+        }
+
+        @Override
+        public DataIterator getDataIterator(DataIteratorContext context)
+        {
+            DataIterator source = builder.getDataIterator(context);
+
+            // drop columns
+            var drop = new CaseInsensitiveHashSet();
+            for (int i=1 ; i<=source.getColumnCount() ; i++)
+            {
+                String name = source.getColumnInfo(i).getName();
+                if (isReservedHeader(name))
+                {
+                    // Allow 'Name' and 'Comment' to be loaded by the TabLoader.
+                    // Skip over other reserved names 'RowId', 'Run', etc.
+                    if (isCommentHeader(name))
+                        continue;
+                    if (isNameHeader(name))
+                        continue;
+                    if (isDescriptionHeader(name))
+                        continue;
+                    if (isInputOutputHeader(name))
+                        continue;
+                    if (isAliasHeader(name))
+                        continue;
+                    drop.add(name);
+                }
+            }
+            if (!drop.isEmpty())
+                source = new DropColumnsDataIterator(source, drop);
+
+//            CoerceDataIterator to handle the lookup/alternatekeys functionality of loadRows(),
+//            TODO check if this covers all the functionality, in particular how is alternateKeyCandidates used?
+            CoerceDataIterator c = new CoerceDataIterator(source, context, sampleset.getTinfo());
+
+            // sampleset.createSampleNames() + generate lsid
+            // TODO does not handle insertIgnore
+            DataIterator names = new _GenerateNamesDataIterator(sampleset, DataIteratorUtil.wrapMap(c, false), context);
+
+            return LoggingDataIterator.wrap(names);
+        }
+    }
+
+
+    static class _GenerateNamesDataIterator extends SimpleTranslator
+    {
+        final ExpSampleSetImpl sampleset;
+        final NameGenerator nameGen;
+        final NameGenerator.State nameState;
+        final Lsid.LsidBuilder lsidBuilder;
+        boolean first = true;
+
+        String generatedName = null;
+        String generatedLsid = null;
+
+        _GenerateNamesDataIterator(ExpSampleSetImpl sampleset, MapDataIterator source, DataIteratorContext context)
+        {
+            super(source, context);
+            this.sampleset = sampleset;
+            nameGen = sampleset.getNameGenerator();
+            nameState = nameGen.createState(true);
+            lsidBuilder = generateSampleLSID(sampleset.getDataObject());
+            CaseInsensitiveHashSet skip = new CaseInsensitiveHashSet();
+            skip.addAll("name","lsid");
+            selectAll(skip);
+
+            addColumn(new ColumnInfo("name",JdbcType.VARCHAR), (Supplier)() -> generatedName);
+            addColumn(new ColumnInfo("lsid",JdbcType.VARCHAR), (Supplier)() -> generatedLsid);
+            // Ensure we have a cpasType column and it is of the right value
+            addColumn(new ColumnInfo("cpasType",JdbcType.VARCHAR), new SimpleTranslator.ConstantColumn(sampleset.getLSID()));
+        }
+
+        void onFirst()
+        {
+            first = false;
+        }
+
+        @Override
+        protected void processNextInput()
+        {
+            Map<String,Object> map = ((MapDataIterator)getInput()).getMap();
+            try
+            {
+                generatedName = nameGen.generateName(nameState, map);
+                generatedLsid = lsidBuilder.setObjectId(generatedName).toString();
+            }
+            catch (NameGenerator.DuplicateNameException dup)
+            {
+                addRowError("Duplicate name '" + dup.getName() + "' on row " + dup.getRowNumber());
+            }
+            catch (NameGenerator.NameGenerationException e)
+            {
+                // Failed to generate a name due to some part of the expression not in the row
+                if (sampleset.hasNameExpression())
+                    addRowError("Failed to generate name for Sample on row " + e.getRowNumber());
+                else if (sampleset.hasNameAsIdCol())
+                    addRowError("Name is required for Sample on row " + e.getRowNumber());
+                else
+                    addRowError("All id columns are required for Sample on row " + e.getRowNumber());
+            }
+        }
+
+        @Override
+        public boolean next() throws BatchValidationException
+        {
+            // consider add  onFirst() as callback from SimpleTranslator
+            if (first)
+                onFirst();
+
+            // calls processNextInput()
+            return super.next();
+        }
+
+        @Override
+        public void close() throws IOException
+        {
+            if (null != nameState)
+                nameState.close();
+        }
+    }
+
+
+    /*
+     * this data iterator replaces the functionality of the old deleteOldPropertyValuesBeforeUpload()
+     * 1) merges comment columns
+     * 2) marks each row as new or existing
+     * 3) enables detecting duplicates with existing rows for name generation (appending unique suffix0
+     */
+
+    static class _BeforeMergeDataIterator extends SimpleTranslator
+    {
+        // this map does double duty as set of existing lsids, and map to existing comments
+        // Name -> (Lsid, Comment)
+
+        final ExpSampleSetImpl sampleset;
+        final InsertUpdateChoice option;
+
+        Map<String,Pair<String,String>> lsidMap = null;
+
+        int indexOfLsid = -1;
+        int indexOfComment=-1;
+
+        // updated in next()
+        String existingComment = null;
+        boolean updateRow = false;
+
+        _BeforeMergeDataIterator(ExpSampleSetImpl sampleset, ScrollableDataIterator in, DataIteratorContext context, InsertUpdateChoice option)
+        {
+            super(in, context);
+
+            this.sampleset = sampleset;
+            this.option = option;
+
+            selectAll(Collections.singleton("comment"));
+
+            // remove comment column, we're going to add a coalesce column in its place
+            for (int i=1 ; i<=in.getColumnCount() ; i++)
+                if ("comment".equalsIgnoreCase(in.getColumnInfo(i).getName()))
+                    indexOfComment = i;
+            for (int i=1 ; i<=in.getColumnCount() ; i++)
+                if ("lsid".equalsIgnoreCase(in.getColumnInfo(i).getName()))
+                    indexOfLsid = i;
+            if (indexOfLsid < 0)
+                throw new IllegalStateException("Expected an LSID column");
+
+            // add COMMENT field
+            addColumn(new ColumnInfo("comment", JdbcType.VARCHAR), (Supplier) () ->
+            {
+                String newComment = (String)getInput().get(indexOfComment);
+                return StringUtils.defaultIfBlank(newComment, existingComment);
+            });
+
+            // add __update_row__ field
+            addColumn(new ColumnInfo("__update_row__", JdbcType.BOOLEAN), (Supplier) () -> updateRow );
+        }
+
+        void initializeOnFirst() throws BatchValidationException
+        {
+            if (option == insertOnly)
+                return;
+
+            TableInfo t = sampleset.getTinfo();
+            DbScope scope = t.getSchema().getScope();
+
+            ScrollableDataIterator di = (ScrollableDataIterator)getInput();
+
+            Set<String> lsidSet = new HashSet<>();
+            while (di.next())
+            {
+                String lsid = (String)di.get(indexOfLsid);
+                lsidSet.add(lsid);
+            }
+            di.beforeFirst();
+
+            // select existing
+            SQLFragment select = new SQLFragment("SELECT lsid, comment FROM " + t + "WHERE lsid ");
+            scope.getSqlDialect().appendInClauseSql(select, lsidSet);
+            //new SqlSelector(scope, select).forEach(rs -> lsidMap.get(rs.getString(1)).setValue(rs.getString(2)));
+            new SqlSelector(scope, select).fillValueMap(lsidMap);
+        }
+
+        @Override
+        protected void processNextInput()
+        {
+            String lsid = (String)getInputColumnValue(indexOfLsid);
+            updateRow = lsidMap.containsKey(lsid);
+            existingComment = !updateRow ? null : lsidMap.get(lsid).getValue();
+        }
+
+        @Override
+        public boolean next() throws BatchValidationException
+        {
+            if (null == lsidMap)
+            {
+                lsidMap = new HashMap<>();
+                initializeOnFirst();
+            }
+
+            // calls processNextInput()
+            return super.next();
+        }
+    }
+
+
+
 }

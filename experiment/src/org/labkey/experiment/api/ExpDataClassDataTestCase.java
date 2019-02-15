@@ -86,6 +86,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.joining;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -135,6 +136,66 @@ public class ExpDataClassDataTestCase
             throw errors;
         return ret;
     }
+
+    // validate name is not null
+    @Test
+    public void nameNotNull() throws Exception
+    {
+        final User user = TestContext.get().getUser();
+
+        try
+        {
+            List<GWTPropertyDescriptor> props = new ArrayList<>();
+            props.add(new GWTPropertyDescriptor("foo", "string"));
+
+            ExperimentServiceImpl.get().createDataClass(c, user, null, null, props, emptyList(), null, null, null);
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals("DataClass name is required", e.getMessage());
+        }
+    }
+
+    // validate name scale
+    @Test
+    public void nameScale() throws Exception
+    {
+        final User user = TestContext.get().getUser();
+
+        try
+        {
+            List<GWTPropertyDescriptor> props = new ArrayList<>();
+            props.add(new GWTPropertyDescriptor("foo", "string"));
+
+            String name = StringUtils.repeat("a", 1000);
+            ExperimentServiceImpl.get().createDataClass(c, user, name, null, props, emptyList(), null, null, null);
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals("DataClass name may not exceed 200 characters.", e.getMessage());
+        }
+    }
+
+    // validate name expression scale
+    @Test
+    public void nameExpressionScale() throws Exception
+    {
+        final User user = TestContext.get().getUser();
+
+        try
+        {
+            List<GWTPropertyDescriptor> props = new ArrayList<>();
+            props.add(new GWTPropertyDescriptor("foo", "string"));
+
+            String nameExpr = StringUtils.repeat("a", 1000);
+            ExperimentServiceImpl.get().createDataClass(c, user, "testing", null, props, emptyList(), null, nameExpr, null);
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals("Name expression may not exceed 500 characters.", e.getMessage());
+        }
+    }
+
 
     @Test
     public void testDataClass() throws Exception
@@ -378,7 +439,7 @@ public class ExpDataClassDataTestCase
         props.add(new GWTPropertyDescriptor("age", "string"));
 
         // Create a SampleSet and some samples
-        final ExpSampleSet ss = ExperimentService.get().createSampleSet(c, user, "Samples", null, props, Collections.emptyList(), 0, -1, -1, -1, null, null);
+        final ExpSampleSet ss = ExperimentService.get().createSampleSet(c, user, "Samples", null, props, emptyList(), 0, -1, -1, -1, null, null);
         final ExpMaterial s1 = ExperimentService.get().createExpMaterial(c,
                 ss.generateSampleLSID().setObjectId("S-1").toString(), "S-1");
         s1.setCpasType(ss.getLSID());
@@ -391,10 +452,10 @@ public class ExpDataClassDataTestCase
 
         // Create two DataClasses
         final String firstDataClassName = "firstDataClass";
-        final ExpDataClassImpl firstDataClass = ExperimentServiceImpl.get().createDataClass(c, user, firstDataClassName, null, props, Collections.emptyList(), null, null, null);
+        final ExpDataClassImpl firstDataClass = ExperimentServiceImpl.get().createDataClass(c, user, firstDataClassName, null, props, emptyList(), null, null, null);
 
         final String secondDataClassName = "secondDataClass";
-        final ExpDataClassImpl secondDataClass = ExperimentServiceImpl.get().createDataClass(c, user, secondDataClassName, null, props, Collections.emptyList(), null, null, null);
+        final ExpDataClassImpl secondDataClass = ExperimentServiceImpl.get().createDataClass(c, user, secondDataClassName, null, props, emptyList(), null, null, null);
         insertRows(c, Arrays.asList(new CaseInsensitiveHashMap<>(Collections.singletonMap("name", "jimbo"))), secondDataClassName);
 
         // Import data with magic "DataInputs" and "MaterialInputs" columns
@@ -425,7 +486,9 @@ public class ExpDataClassDataTestCase
         final UserSchema schema = QueryService.get().getUserSchema(user, c, expDataSchemaKey);
         final TableInfo table = schema.getTable(firstDataClassName);
         final MapLoader mapLoader = new MapLoader(rows);
-        int count = table.getUpdateService().loadRows(user, c, mapLoader, new DataIteratorContext(), null);
+        DataIteratorContext diContext = new DataIteratorContext();
+        int count = table.getUpdateService().loadRows(user, c, mapLoader, diContext, null);
+        assertFalse( diContext.getErrors().hasErrors() );
         assertEquals(3, count);
 
         // Verify lineage
@@ -717,7 +780,7 @@ public class ExpDataClassDataTestCase
         List<GWTPropertyDescriptor> props = new ArrayList<>();
         props.add(new GWTPropertyDescriptor("aa", "int"));
 
-        final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, "testing", null, props, Collections.emptyList(), null, null, null);
+        final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, "testing", null, props, emptyList(), null, null, null);
         final int dataClassId = dataClass.getRowId();
 
         UserSchema schema = QueryService.get().getUserSchema(user, c, expDataSchemaKey);

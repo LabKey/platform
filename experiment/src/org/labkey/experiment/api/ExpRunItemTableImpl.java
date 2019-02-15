@@ -69,6 +69,8 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
         ret.setShownInUpdateView(false);
         ret.setIsUnselectable(true);
         ret.setHidden(true);
+        ret.setConceptURI("http://www.labkey.org/exp/xml#" + alias);
+        ret.setPropertyURI("http://www.labkey.org/exp/xml#" + alias);
         return ret;
     }
 

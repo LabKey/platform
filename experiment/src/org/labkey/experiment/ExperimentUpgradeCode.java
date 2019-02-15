@@ -27,20 +27,28 @@ import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.User;
+import org.labkey.experiment.api.ExpSampleSetImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
+import org.labkey.experiment.api.MaterialSource;
+import org.labkey.experiment.api.SampleSetServiceImpl;
 
 import java.util.Collection;
 import java.util.Map;
@@ -209,5 +217,104 @@ public class ExperimentUpgradeCode implements UpgradeCode
             return;
 
         ExperimentServiceImpl.get().rebuildAllEdges();
+    }
+
+
+    private static void materializeSampleSet(ExpSampleSetImpl ss)
+    {
+        Logger log = Logger.getLogger(ExperimentUpgradeCode.class);
+        Domain domain = ss.getDomain();
+        DomainKind kind = null;
+        try
+        {
+            kind =  domain.getDomainKind();
+        }
+        catch (IllegalArgumentException iae)
+        {
+            // pass
+        }
+        if (null == kind)
+        {
+            return;
+        }
+        DbScope scope = ExperimentServiceImpl.get().getSchema().getScope();
+        SqlDialect d = scope.getSqlDialect();
+
+        StorageProvisioner.ensureStorageTable(domain, kind, scope);
+        // refetch the domain which we just updated
+        domain = PropertyService.get().getDomain(domain.getTypeId());
+        assert(null != domain.getStorageTableName());
+
+        Integer samplesetObjectId = new SqlSelector(ExperimentServiceImpl.get().getSchema(),
+                "SELECT objectid FROM exp.object WHERE objecturi=?", ss.getDataObject().getLSID())
+                .getObject(Integer.class);
+
+        // check if no existing rows
+        if (null == samplesetObjectId)
+            return;
+
+        // generate SQL to select from exp.material and exp.objectproperty
+        SQLFragment select = new SQLFragment("SELECT O.objecturi AS lsid");
+        SQLFragment insert = new SQLFragment("INSERT INTO expsampleset.");
+        insert.append(domain.getStorageTableName());
+        insert.append(" (lsid");
+        String comma = ", ";
+        for (DomainProperty dp : domain.getProperties())
+        {
+            select.append(comma);
+            // TODO need casts
+            String dbtype = d.getSqlTypeName(dp.getJdbcType());
+            String columnSelectName = d.getColumnSelectName(dp.getPropertyDescriptor().getStorageColumnName().toLowerCase());
+            if (dp.getPropertyType() == PropertyType.BOOLEAN)
+                select.append("\n  (SELECT CAST(CASE WHEN floatvalue IS NULL THEN NULL WHEN floatvalue=1.0 THEN 1 ELSE 0 END AS " + dbtype + ") FROM exp.objectproperty OP WHERE OP.objectid=O.objectid AND OP.propertyid=" + dp.getPropertyId() + ") AS " + columnSelectName);
+            else if (dp.getJdbcType().isText())
+                select.append("\n  (SELECT stringvalue FROM exp.objectproperty OP WHERE OP.objectid=O.objectid AND OP.propertyid=" + dp.getPropertyId() + ") AS " + columnSelectName);
+            else if (dp.getJdbcType().isDateOrTime())
+                select.append("\n  (SELECT CAST(datetimevalue AS " + dbtype + ") FROM exp.objectproperty OP WHERE OP.objectid=O.objectid AND OP.propertyid=" + dp.getPropertyId() + ") AS " + columnSelectName);
+            else
+                select.append("\n  (SELECT CAST(floatvalue AS " + dbtype + ") FROM exp.objectproperty OP WHERE OP.objectid=O.objectid AND OP.propertyid=" + dp.getPropertyId() + ") AS " + columnSelectName);
+
+            insert.append(comma);
+            insert.append(columnSelectName);
+            if (null != dp.getPropertyDescriptor().getMvIndicatorStorageColumnName())
+            {
+                String mvcolumnSelectName = d.getColumnSelectName(dp.getPropertyDescriptor().getMvIndicatorStorageColumnName()).toLowerCase();
+                select.append(comma);
+                select.append("(SELECT mvindicator FROM exp.objectproperty OP WHERE OP.objectid=O.objectid AND OP.propertyid=" + dp.getPropertyId() + ") AS " + mvcolumnSelectName);
+                insert.append(comma);
+                insert.append(mvcolumnSelectName);
+            }
+        }
+        select.append("\nFROM exp.object O\nWHERE O.ownerobjectid=" + samplesetObjectId);
+        insert.append(")\n");
+        insert.append(select);
+
+        new SqlExecutor(scope).execute(insert);
+        SQLFragment deleteObjectProperties = new SQLFragment("DELETE FROM exp.objectproperty WHERE objectid IN (SELECT objectid FROM exp.object WHERE ownerobjectid=" + samplesetObjectId + ")");
+        deleteObjectProperties.append(" AND propertyId IN (");
+        comma = "";
+        for (DomainProperty dp : domain.getProperties())
+        {
+            deleteObjectProperties.append(comma).append(dp.getPropertyId());
+            comma = ",";
+        }
+        deleteObjectProperties.append(")");
+        if (!domain.getProperties().isEmpty())
+            new SqlExecutor(scope).execute(deleteObjectProperties);
+    }
+
+
+    /** Called from exp-18.31-18.32.sql */
+    public static void materializeSampleSets(ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        SampleSetServiceImpl sss = SampleSetServiceImpl.get();
+        // get all MaterialSource across all containers
+        TableInfo source = ExperimentServiceImpl.get().getTinfoMaterialSource();
+        new TableSelector(source, null, null).stream(MaterialSource.class)
+                .map(ExpSampleSetImpl::new)
+                .forEach(ExperimentUpgradeCode::materializeSampleSet);
     }
 }

@@ -38,6 +38,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.FilterProtocolInputCriteria;
+import org.labkey.api.exp.api.SampleSetService;
 import org.labkey.api.exp.property.DomainAuditProvider;
 import org.labkey.api.exp.property.DomainPropertyAuditProvider;
 import org.labkey.api.exp.property.ExperimentProperty;
@@ -79,6 +80,7 @@ import org.labkey.experiment.api.ExpSampleSetTestCase;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.LogDataType;
 import org.labkey.experiment.api.SampleSetDomainKind;
+import org.labkey.experiment.api.SampleSetServiceImpl;
 import org.labkey.experiment.api.data.ChildOfCompareType;
 import org.labkey.experiment.api.data.ParentOfCompareType;
 import org.labkey.experiment.api.property.DomainPropertyImpl;
@@ -127,7 +129,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
     public double getVersion()
     {
-        return 18.31;
+        return 18.33;
     }
 
     @Nullable
@@ -143,6 +145,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         addController("experiment-types", TypesController.class);
         addController("property", PropertyController.class);
         ExperimentService.setInstance(new ExperimentServiceImpl());
+        SampleSetService.setInstance(new SampleSetServiceImpl());
         PropertyService.setInstance(new PropertyServiceImpl());
         DefaultValueService.setInstance(new DefaultValueServiceImpl());
 
@@ -448,7 +451,8 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     {
         return PageFlowUtil.set(
                 ExpSchema.SCHEMA_NAME,
-                DataClassDomainKind.PROVISIONED_SCHEMA_NAME
+                DataClassDomainKind.PROVISIONED_SCHEMA_NAME,
+                SampleSetDomainKind.PROVISIONED_SCHEMA_NAME
         );
     }
 
@@ -456,7 +460,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     public Collection<String> getProvisionedSchemaNames()
     {
-        return PageFlowUtil.set(DataClassDomainKind.PROVISIONED_SCHEMA_NAME);
+        return PageFlowUtil.set(DataClassDomainKind.PROVISIONED_SCHEMA_NAME, SampleSetDomainKind.PROVISIONED_SCHEMA_NAME);
     }
 
 

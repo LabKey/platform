@@ -16,25 +16,33 @@
 
 package org.labkey.experiment.api;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.exp.api.SampleSetService;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
@@ -107,33 +115,21 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         return ret;
     }
 
+
+
     @Nullable
     public ExpSampleSet getSampleSet()
     {
         String type = _object.getCpasType();
         if (!"Material".equals(type) && !"Sample".equals(type))
         {
-            return ExperimentService.get().getSampleSet(type);
+            // try current container first (uses cache)
+            return SampleSetService.get().getSampleSetByType(type, getContainer());
         }
         else
         {
             return null;
         }
-    }
-
-    public Map<PropertyDescriptor, Object> getPropertyValues()
-    {
-        ExpSampleSet sampleSet = getSampleSet();
-        if (sampleSet == null)
-        {
-            return Collections.emptyMap();
-        }
-        Map<PropertyDescriptor, Object> values = new HashMap<>();
-        for (DomainProperty pd : sampleSet.getType().getProperties())
-        {
-            values.put(pd.getPropertyDescriptor(), getProperty(pd));
-        }
-        return values;
     }
 
     public List<ExpProtocolApplicationImpl> getTargetApplications()
@@ -164,7 +160,18 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
 
     public void save(User user)
     {
+        save(user, (ExpSampleSetImpl)getSampleSet());
+    }
+
+    public void save(User user, ExpSampleSetImpl ss)
+    {
         save(user, ExperimentServiceImpl.get().getTinfoMaterial());
+        if (null != ss)
+        {
+            TableInfo ti = ss.getTinfo();
+            if (null != ti)
+                new SqlExecutor(ti.getSchema()).execute("INSERT INTO " + ti + " (lsid) SELECT ? WHERE NOT EXISTS (SELECT lsid FROM " + ti + " WHERE lsid = ?)", getLSID(), getLSID());
+        }
         index(null);
     }
 
@@ -326,5 +333,134 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     public String getDocumentId()
     {
         return "material:" + getRowId();
+    }
+
+    /* This is expensive! consider using getProperties(SampleSet ss) */
+    @Override
+    public Map<String, Object> getProperties()
+    {
+        return getProperties((ExpSampleSetImpl)getSampleSet());
+    }
+
+    public Map<String,Object> getProperties(ExpSampleSetImpl ss)
+    {
+        var ret = super.getProperties();
+        var ti = null == ss ? null : ss.getTinfo();
+        if (null != ti)
+        {
+            new SqlSelector(ti.getSchema(),"SELECT * FROM " + ti + " WHERE lsid=?",  getLSID()).forEach(rs ->
+            {
+                for (ColumnInfo c : ti.getColumns())
+                {
+                    if (c.getPropertyURI() == null)
+                        continue;
+                    Object value = c.getValue(rs);
+                    ret.put(c.getPropertyURI(), value);
+                }
+            });
+        }
+        return ret;
+    }
+
+    public Map<PropertyDescriptor, Object> getPropertyValues()
+    {
+        ExpSampleSetImpl sampleSet = (ExpSampleSetImpl)getSampleSet();
+        Map<String,Object> uriMap = getProperties(sampleSet);
+        Map<PropertyDescriptor, Object> values = new HashMap<>();
+        for (DomainProperty pd : sampleSet.getType().getProperties())
+        {
+            values.put(pd.getPropertyDescriptor(), uriMap.get(pd.getPropertyURI()));
+        }
+        return values;
+    }
+
+    @Override
+    public Map<String, ObjectProperty> getObjectProperties()
+    {
+        return getObjectProperties((ExpSampleSetImpl)getSampleSet());
+    }
+
+    public Map<String, ObjectProperty> getObjectProperties(ExpSampleSetImpl ss)
+    {
+        HashMap<String,ObjectProperty> ret = new HashMap<>(super.getObjectProperties());
+        var ti = null == ss ? null : ss.getTinfo();
+        if (null != ti)
+        {
+            new SqlSelector(ti.getSchema(),"SELECT * FROM " + ti + " WHERE lsid=?",  getLSID()).forEach(rs ->
+            {
+                for (ColumnInfo c : ti.getColumns())
+                {
+                    if (c.getPropertyURI() == null || StringUtils.equalsIgnoreCase("lsid",c.getName()))
+                        continue;
+                    Object value = c.getValue(rs);
+                    var prop = new ObjectProperty(getLSID(), getContainer(), c.getPropertyURI(), value, null==c.getPropertyType()? PropertyType.getFromJdbcType(c.getJdbcType()) : c.getPropertyType());
+                    ret.put(c.getPropertyURI(), prop);
+                }
+            });
+        }
+        return ret;
+    }
+
+    @Override
+    public Object getProperty(DomainProperty prop)
+    {
+        return super.getProperty(prop);
+    }
+
+    @Override
+    public Object getProperty(PropertyDescriptor pd)
+    {
+        var map = getProperties();
+        return map.get(pd.getPropertyURI());
+    }
+
+    @Override
+    public void setProperty(User user, PropertyDescriptor pd, Object value) throws ValidationException
+    {
+        if (null == pd.getStorageColumnName())
+            super.setProperty(user, pd, value);
+        else
+            setProperties(user, Collections.singletonMap(pd.getName(), value));
+    }
+
+    public void setProperties(User user, Map<String,Object> values_) throws ValidationException
+    {
+        ExpSampleSetImpl ss = (ExpSampleSetImpl)getSampleSet();
+        Map<String, Object> values = new HashMap<>(values_);
+        Map<String,Object> converted = new HashMap<>();
+        Domain d = ss.getDomain();
+
+        TableInfo ti = ss.getTinfo();
+        if (null != ti)
+        {
+            for (DomainProperty dp : d.getProperties())
+            {
+                String key = null;
+                Object value;
+                if (values.containsKey(dp.getName()))
+                    value = values.get(key = dp.getName());
+                else if (values.containsKey(dp.getPropertyURI()))
+                    value = values.get(key = dp.getPropertyURI());
+                else
+                    continue;
+                try
+                {
+                    value = dp.getJdbcType().convert(value);
+                }
+                catch (ConversionException x)
+                {
+                    throw new ValidationException("Could not convert '" + value + "' for field " + dp.getName() + ", should be of type " + dp.getPropertyDescriptor().getPropertyType().getJavaType().getSimpleName());
+                }
+                converted.put(dp.getName(), value);
+                values.remove(key);
+            }
+            Table.update(user, ss.getTinfo(), converted, getLSID());
+        }
+        for (var entry : values.entrySet())
+        {
+            PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(entry.getKey(), ss.getContainer());
+            if (null != pd)
+            super.setProperty(user, pd, entry.getValue());
+        }
     }
 }
