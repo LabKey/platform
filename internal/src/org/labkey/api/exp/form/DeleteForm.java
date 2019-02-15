@@ -72,6 +72,7 @@ public class DeleteForm extends ProtocolIdForm implements DataRegionSelection.Da
 
     public void clearSelected()
     {
-        DataRegionSelection.clearAll(getViewContext(), getDataRegionSelectionKey());
+        if (_singleObjectRowId == null)
+            DataRegionSelection.clearAll(getViewContext(), getDataRegionSelectionKey());
     }
 }
