@@ -109,7 +109,7 @@ public class Stats
      */
     public Double[] getMovingRanges(Double[] values, boolean forcePositiveResult, Double epsilon)
     {
-        if(values == null || values.length < 1)
+        if(values == null || values.length <= 1)
             return new Double[0];
 
         Double[] mR = new Double[values.length];
