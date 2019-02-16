@@ -32,7 +32,6 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.clientLibrary.xml.DependenciesType;
 import org.labkey.clientLibrary.xml.DependencyType;
@@ -122,55 +121,23 @@ public class ClientDependency
         _module = null; // not related to a module
     }
 
-    private ClientDependency(Path filePath, ModeTypeEnum.Enum mode)
+    private ClientDependency(Path filePath, ModeTypeEnum.Enum mode, Resource r, TYPE primaryType, Module module)
     {
         if (mode != null)
             _mode = mode;
 
         _filePath = filePath;
-        _primaryType = TYPE.fromPath(_filePath);
+        _primaryType = primaryType;
+        _module = module;
+        _resource = r;
 
-        if (_primaryType == null)
+        if (!TYPE.context.equals(_primaryType))
         {
-            _log.warn("Client dependency type not recognized: " + filePath);
-            return;
-        }
-
-        if (TYPE.context.equals(_primaryType))
-        {
-            String moduleName = FileUtil.getBaseName(_filePath.getName());
-            Module m = ModuleLoader.getInstance().getModule(moduleName);
-            if (m == null)
-            {
-                //TODO: throw exception??
-                logError("Module \"" + moduleName + "\" not found, skipping script file \"" + filePath + "\".");
-            }
-            else
-                _module = m;
-        }
-        else
-        {
-            WebdavResource r = WebdavService.get().getRootResolver().lookup(_filePath);
-            //TODO: can we connect this resource back to a module, and load that module's context by default?--
-
-            if (r == null || !r.exists())
-            {
-                // Allows you to run in dev mode without having the concatenated scripts built
-                if (!AppProps.getInstance().isDevMode() || !_mode.equals(ModeTypeEnum.PRODUCTION))
-                {
-                    logError("Script file \"" + filePath + "\" not found, skipping.");
-                }
-            }
-            else
-            {
-                _resource = r;
-                _filePath = r.getPath(); //use canonical, case-sensitive name
-                processScript(_filePath);
-            }
+            processScript(_filePath);
         }
     }
 
-    private void logError(String message)
+    private static void logError(String message)
     {
         URLHelper url = null;
         ViewContext ctx = HttpView.getRootContext();
@@ -276,7 +243,7 @@ public class ClientDependency
         return cd;
     }
 
-    private static ClientDependency fromFilePath(String path, ModeTypeEnum.Enum mode)
+    private static @Nullable ClientDependency fromFilePath(String path, ModeTypeEnum.Enum mode)
     {
         path = path.replaceAll("^/", "");
 
@@ -294,7 +261,47 @@ public class ClientDependency
                 return cached;
         }
 
-        ClientDependency cr = new ClientDependency(filePath, mode);
+        TYPE primaryType = TYPE.fromPath(filePath);
+        Module module = null;
+        Resource r = null;
+
+        if (primaryType == null)
+        {
+            _log.warn("Client dependency type not recognized: " + filePath);
+            return null;
+        }
+
+        if (TYPE.context.equals(primaryType))
+        {
+            String moduleName = FileUtil.getBaseName(filePath.getName());
+            Module m = ModuleLoader.getInstance().getModule(moduleName);
+            if (m == null)
+            {
+                logError("Module \"" + moduleName + "\" not found, skipping script file \"" + filePath + "\".");
+                return null;
+            }
+            else
+            {
+                module = m;
+            }
+        }
+        else
+        {
+            r = WebdavService.get().getRootResolver().lookup(filePath);
+            //TODO: can we connect this resource back to a module, and load that module's context by default?--
+
+            if (r == null || !r.exists())
+            {
+                // Allows you to run in dev mode without having the concatenated scripts built
+                if (!AppProps.getInstance().isDevMode() || !mode.equals(ModeTypeEnum.PRODUCTION))
+                {
+                    logError("Script file \"" + filePath + "\" not found, skipping.");
+                    return null;
+                }
+            }
+        }
+
+        ClientDependency cr = new ClientDependency(filePath, mode, r, primaryType, module);
         if (!AppProps.getInstance().isDevMode())
             CacheManager.getSharedCache().put(key, cr);
         return cr;
