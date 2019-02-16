@@ -9375,10 +9375,12 @@ public class AdminController extends SpringActionController
 
                     if (warnings.isEmpty())
                     {
-                        _pw.println("There are no mutation warnings!");
+                        _pw.println("No mutation warnings were logged!");
                     }
                     else
                     {
+                        _pw.println(warnings.size() + " distinct mutation " + StringUtilsLabKey.pluralize(warnings.size(), "warning was", "warnings were") + " logged:");
+
                         String previous = null;
 
                         // Sort by package + name and enumerate

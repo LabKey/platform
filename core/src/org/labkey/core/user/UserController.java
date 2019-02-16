@@ -1785,8 +1785,13 @@ public class UserController extends SpringActionController
                     if (formUser != null && !user.hasSiteAdminPermission() && formUser.hasSiteAdminPermission())
                         throw new UnauthorizedException("Can not reset password for a Site Admin user");
 
-                    // update email in database
-                    UserManager.changeEmail(isUserManager, userId, _currentEmailFromDatabase, _requestedEmailFromDatabase, form.getVerificationToken(), getUser());
+                    // Allow mutating SQL from GET requests, since links in password change emails must use GET. Database updates
+                    // occur only if a secret (validation token) is provided, which prevents CSRF attacks on this action.
+                    try (var ignored = SpringActionController.ignoreSqlUpdates())
+                    {
+                        // update email in database
+                        UserManager.changeEmail(isUserManager, userId, _currentEmailFromDatabase, _requestedEmailFromDatabase, form.getVerificationToken(), getUser());
+                    }
                     // post-verification email to old account
                     Container c = getContainer();
                     MimeMessage m = getChangeEmailMessage(_currentEmailFromDatabase, _requestedEmailFromDatabase);

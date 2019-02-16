@@ -86,7 +86,6 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AjaxCompletion;
-import org.labkey.api.view.HBox;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -486,51 +485,6 @@ public class SecurityController extends SpringActionController
             return new ActionURL(PermissionsAction.class, getContainer());
         }
     }
-
-    private ModelAndView renderContainerPermissions(Group expandedGroup, BindException errors, List<String> messages, boolean wizard)
-    {
-        Container c = getContainer();
-        Container project = c.getProject();
-
-        // If we are working with the root container, project will be null.
-        // This causes ContainersView() to fail, so handle specially.
-        if (project == null)
-            project = ContainerManager.getRoot();
-
-        HBox body = new HBox();
-        VBox projectViews = new VBox();
-
-        //don't display folder tree if we are in root
-        if (!project.isRoot())
-        {
-            projectViews.addView(new ContainersView(project));
-        }
-
-        ActionURL startURL = c.getFolderType().getStartURL(c, getUser());
-        projectViews.addView(new HtmlView(PageFlowUtil.button("Done").href(startURL).toString()));
-
-        if (c.isRoot())
-        {
-            body.addView(projectViews);
-        }
-        else
-        {
-            body.addView(projectViews, "60%");
-            body.addView(new PermissionsDetailsView(c, "container"), "40%");
-        }
-
-        if (wizard)
-        {
-            VBox outer = new VBox();
-            String message = "Use this page to ensure that only appropriate users have permission to view and edit the new " + (c.isProject() ? "Project" : "folder");
-            outer.addView(new HtmlView(message));
-            outer.addView(body);
-            return outer;
-        }
-
-        return body;
-    }
-
 
     public static class PermissionsForm extends ReturnUrlForm
     {
