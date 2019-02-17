@@ -82,7 +82,7 @@ public class StringUtilsLabKey
         {
             return "";
         }
-        return String.valueOf(RANDOM.nextInt(9) + 1) + getPaddedUniquifier(length - 1);
+        return (RANDOM.nextInt(9) + 1) + getPaddedUniquifier(length - 1);
     }
 
     /**
