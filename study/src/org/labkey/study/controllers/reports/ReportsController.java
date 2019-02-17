@@ -1491,7 +1491,7 @@ public class ReportsController extends BaseStudyController
 
     @RequiresLogin
     @RequiresPermission(ReadPermission.class)
-    public class SaveParticipantReportAction extends ApiAction<ParticipantReportForm>
+    public class SaveParticipantReportAction extends MutatingApiAction<ParticipantReportForm>
     {
         @Override
         public void validateForm(ParticipantReportForm form, Errors errors)

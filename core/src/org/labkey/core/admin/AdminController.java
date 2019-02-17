@@ -9379,7 +9379,8 @@ public class AdminController extends SpringActionController
                     }
                     else
                     {
-                        _pw.println(warnings.size() + " distinct mutation " + StringUtilsLabKey.pluralize(warnings.size(), "warning was", "warnings were") + " logged:");
+                        String prefix = "distinct mutation warning";
+                        _pw.println(StringUtilsLabKey.pluralize(warnings.size(), prefix + " was", prefix + "s were") + " logged:");
 
                         String previous = null;
 

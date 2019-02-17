@@ -4152,9 +4152,17 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class SubmitStudyBatchAction extends SimpleRedirectAction<PipelinePathForm>
+    public class SubmitStudyBatchAction extends FormHandlerAction<PipelinePathForm>
     {
-        public ActionURL getRedirectURL(PipelinePathForm form) throws Exception
+        private ActionURL _successUrl = null;
+
+        @Override
+        public void validateCommand(PipelinePathForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(PipelinePathForm form, BindException errors) throws Exception
         {
             Study study = getStudyRedirectIfNull();
             Container c = getContainer();
@@ -4175,15 +4183,22 @@ public class StudyController extends BaseStudyController
                     VirtualFile datasetsDir = new FileSystemFile(f.getParentFile());
                     DatasetImportUtils.submitStudyBatch(study, datasetsDir, f.getName(), c, getUser(), getViewContext().getActionURL(), root);
                 }
+                _successUrl = PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(getContainer());
             }
             catch (DatasetImportUtils.DatasetLockExistsException e)
             {
                 ActionURL importURL = new ActionURL(ImportStudyBatchAction.class, getContainer());
                 importURL.addParameter("path", form.getPath());
-                return importURL;
+                _successUrl = importURL;
             }
 
-            return PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(c);
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(PipelinePathForm pipelinePathForm)
+        {
+            return _successUrl;
         }
     }
 
