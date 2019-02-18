@@ -1125,6 +1125,16 @@ public class QueryController extends SpringActionController
                         }
                     }
                 }
+
+                try
+                {
+                    // attempt to convert to something we can query against
+                    SimpleFilter.fromXml(filters.toArray(new FilterType[filters.size()]));
+                }
+                catch (Exception e)
+                {
+                    errors.reject(ERROR_MSG, e.getMessage());
+                }
             });
         }
 
