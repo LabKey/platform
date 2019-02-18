@@ -24,13 +24,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.ExtendedApiQueryResponse;
 import org.labkey.api.action.FormHandlerAction;
+import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
@@ -57,6 +57,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.CSRF;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -109,8 +110,9 @@ public class SurveyController extends SpringActionController implements SurveyUr
         return new ActionURL(UpdateSurveyAction.class, container).addParameter("surveyDesignId", surveyDesignId);
     }
 
+    @CSRF(CSRF.Method.POST)
     @RequiresPermission(ReadPermission.class)
-    public class CreateSurveyTemplateAction extends ApiAction<SurveyTemplateForm>
+    public class CreateSurveyTemplateAction extends MutatingApiAction<SurveyTemplateForm>
     {
         @Override
         public ApiResponse execute(SurveyTemplateForm form, BindException errors)
@@ -332,8 +334,9 @@ public class SurveyController extends SpringActionController implements SurveyUr
         }
     }
 
+    @CSRF(CSRF.Method.POST)
     @RequiresPermission(InsertPermission.class)
-    public class SaveSurveyTemplateAction extends ApiAction<SurveyDesignForm>
+    public class SaveSurveyTemplateAction extends MutatingApiAction<SurveyDesignForm>
     {
         @Override
         public ApiResponse execute(SurveyDesignForm form, BindException errors) throws Exception
@@ -496,8 +499,9 @@ public class SurveyController extends SpringActionController implements SurveyUr
         }
    }
 
+    @CSRF(CSRF.Method.POST)
     @RequiresPermission(InsertPermission.class)
-    public class UpdateSurveyResponseAction extends ApiAction<SurveyResponseForm>
+    public class UpdateSurveyResponseAction extends MutatingApiAction<SurveyResponseForm>
     {
         @Override
         public ApiResponse execute(SurveyResponseForm form, BindException errors) throws Exception
@@ -833,8 +837,9 @@ public class SurveyController extends SpringActionController implements SurveyUr
         }
     }
 
+    @CSRF(CSRF.Method.POST)
     @RequiresPermission(InsertPermission.class)
-    public class UpdateSurveyResponseAttachmentsAction extends ApiAction<SurveyAttachmentForm>
+    public class UpdateSurveyResponseAttachmentsAction extends MutatingApiAction<SurveyAttachmentForm>
     {
         @Override
         public ApiResponse execute(SurveyAttachmentForm form, BindException errors) throws Exception
