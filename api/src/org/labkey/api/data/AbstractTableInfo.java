@@ -336,7 +336,15 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             titleIndex = 2;
         }
 
-        SimpleFilter filter = SimpleFilter.fromXml(filters.toArray(new FilterType[filters.size()]));
+        SimpleFilter filter = null;
+        try
+        {
+            filter = SimpleFilter.fromXml(filters.toArray(new FilterType[filters.size()]));
+        }
+        catch (Exception e)
+        {
+            LOG.warn("Filtered lookup failed for column: " + firstColumn.getName(), e);
+        }
         Sort sort = new Sort();
         sort.insertSortColumn(titleColumn.getFieldKey(), titleColumn.getSortDirection());
         new TableSelector(this, cols, filter, sort).forEach(rs -> ret.put(new SimpleNamedObject(rs.getString(1), rs.getString(titleIndex))));
