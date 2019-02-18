@@ -419,7 +419,7 @@
         <%=h(comment.getCreatedByName(user))%>
     </b></td></tr>
     </table>
-    <div style="word-break: break-all">
+    <div style="word-break: break-word; overflow-wrap: break-word">
         <%=text(comment.getComment())%>
         <%=text(bean.renderAttachments(context, comment))%>
     </div><%
