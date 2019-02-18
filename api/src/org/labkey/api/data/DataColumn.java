@@ -129,7 +129,6 @@ public class DataColumn extends DisplayColumn
             for (ColumnAnalyticsProvider columnAnalyticsProvider : analyticsProviderRegistry.getColumnAnalyticsProviders(_boundColumn, true))
             {
                 addAnalyticsProvider(columnAnalyticsProvider);
-                columnAnalyticsProvider.addClientDependencies(_clientDependencies);
             }
         }
     }
