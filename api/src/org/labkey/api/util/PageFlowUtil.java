@@ -1252,7 +1252,7 @@ public class PageFlowUtil
     {
         return "var form = document.createElement('form');\n" +
             "form.setAttribute('method', 'post');\n" +
-            "form.setAttribute('action', " + PageFlowUtil.qh(href) + ");\n" +
+            "form.setAttribute('action', '" + href + "');\n" +
             "var input = document.createElement('input');\n" +
             "input.type = 'hidden';\n" +
             "input.name = '" + CSRFUtil.csrfName + "';\n" +
