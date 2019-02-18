@@ -15,25 +15,25 @@
  */
 package org.labkey.api.study.assay;
 
-import org.labkey.api.action.NullSafeBindException;
+import org.labkey.api.action.LabKeyError;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.study.actions.UploadWizardAction;
-import org.labkey.api.study.actions.BulkPropertiesUploadForm;
-import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.action.LabKeyError;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.ValidationException;
-import org.springframework.web.servlet.ModelAndView;
+import org.labkey.api.study.actions.BulkPropertiesUploadForm;
+import org.labkey.api.study.actions.UploadWizardAction;
+import org.labkey.api.view.ActionURL;
 import org.springframework.validation.BindException;
 
 import javax.servlet.ServletException;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Collections;
 import java.io.File;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
  * User: jeckels
@@ -62,31 +62,24 @@ public class BulkPropertiesUploadWizardAction<FormType extends BulkPropertiesUpl
     private class BulkPropertiesBatchStepHandler extends BatchStepHandler
     {
         @Override
-        public ModelAndView handleStep(FormType form, BindException errors) throws ServletException, ExperimentException
+        public boolean executeStep(FormType form, BindException errors) throws ServletException, SQLException, ExperimentException
         {
             if (form.isBulkUploadAttempted())
             {
-                BindException batchErrors = new NullSafeBindException(form, "form");
-                // Collect the errors in a separate list because if otherwise we fail, the superclass will add them a
-                // second time during its reshow logic
-                try
+                List<ExpRun> runs = insertRuns(form, errors);
+                if (errors.getErrorCount() == 0 && !runs.isEmpty())
                 {
-                    if (validatePostedProperties(getViewContext(), form.getBatchProperties(), batchErrors))
-                    {
-                        List<ExpRun> runs = insertRuns(form, errors);
-                        if (batchErrors.getErrorCount() == 0 && errors.getErrorCount() == 0 && !runs.isEmpty())
-                        {
-                            return afterRunCreation(form, runs.get(0), errors);
-                        }
-                    }
-                }
-                catch (ExperimentException e)
-                {
-                    errors.addError(new LabKeyError(e));
+                    _run = runs.get(0);
+                    return true;
                 }
             }
+            return false;
+        }
 
-            return super.handleStep(form, errors);
+        @Override
+        public ActionURL getSuccessUrl(FormType form)
+        {
+            return getUploadWizardCompleteURL(form, _run);
         }
 
         private List<ExpRun> insertRuns(FormType form, BindException errors)
@@ -144,5 +137,4 @@ public class BulkPropertiesUploadWizardAction<FormType extends BulkPropertiesUpl
             return Collections.emptyList();
         }
     }
-
 }

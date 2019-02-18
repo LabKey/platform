@@ -25,9 +25,11 @@ import org.labkey.api.study.assay.PlateBasedAssayProvider;
 import org.labkey.api.study.assay.PlateSamplePropertyHelper;
 import org.labkey.api.view.InsertView;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
-import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.ServletException;
+import java.sql.SQLException;
 import java.util.Map;
 
 /**
@@ -66,32 +68,30 @@ public abstract class PlateBasedUploadWizardAction <FormType extends PlateUpload
         protected Map<String, Map<DomainProperty, String>> _postedSampleProperties = null;
 
         @Override
-        protected boolean validatePost(FormType form, BindException errors) throws ExperimentException
+        public void validateStep(FormType form, Errors errors)
         {
-            boolean runPropsValid = super.validatePost(form, errors);
-
-            ProviderType provider = form.getProvider();
-            PlateSamplePropertyHelper helper = provider.getSamplePropertyHelper(form, getSelectedParticipantVisitResolverType(provider, form));
-
-            boolean samplePropsValid = true;
+            super.validateStep(form, errors);
             try
             {
+                ProviderType provider = form.getProvider();
+                PlateSamplePropertyHelper helper = provider.getSamplePropertyHelper(form, getSelectedParticipantVisitResolverType(provider, form));
+
                 _postedSampleProperties = helper.getPostedPropertyValues(form.getRequest());
                 for (Map.Entry<String, Map<DomainProperty, String>> entry : _postedSampleProperties.entrySet())
                 {
                     // if samplePropsValid flips to false, we want to leave it false (via the "&&" below).  We don't
                     // short-circuit the loop because we want to run through all samples every time, so all errors can be reported.
-                    samplePropsValid = validatePostedProperties(getViewContext(), entry.getValue(), errors) && samplePropsValid;
+                    validatePostedProperties(getViewContext(), entry.getValue(), errors);
                 }
             }
             catch (ExperimentException e)
             {
                 errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
             }
-            return runPropsValid && samplePropsValid && !errors.hasErrors();
         }
 
-        protected ModelAndView handleSuccessfulPost(FormType form, BindException errors) throws ExperimentException
+        @Override
+        public boolean executeStep(FormType form, BindException errors) throws ServletException, SQLException, ExperimentException
         {
             form.setSampleProperties(_postedSampleProperties);
             for (Map.Entry<String, Map<DomainProperty, String>> entry : _postedSampleProperties.entrySet())
@@ -105,7 +105,7 @@ public abstract class PlateBasedUploadWizardAction <FormType extends PlateUpload
                     errors.addError(new ObjectError("main", null, null, e.toString()));
                 }
             }
-            return super.handleSuccessfulPost(form, errors);
+            return super.executeStep(form, errors);
         }
     }
 }
