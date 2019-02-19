@@ -250,7 +250,7 @@
                         }
                     );
 
-                    LABKEY.Utils.postOnClickJavaScript(goToHref);
+                    LABKEY.Utils.postToAction(goToHref);
                 }
             }
         };
