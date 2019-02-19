@@ -76,7 +76,7 @@ public class SampleSetDomainKind extends AbstractDomainKind
         )));
 
         RESERVED_NAMES = BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet());
-        RESERVED_NAMES.addAll(Arrays.asList(ExpSampleSetTable.Column.values()).stream().map(ExpSampleSetTable.Column::name).collect(Collectors.toList()));
+        RESERVED_NAMES.addAll(Arrays.stream(ExpSampleSetTable.Column.values()).map(ExpSampleSetTable.Column::name).collect(Collectors.toList()));
         RESERVED_NAMES.add("CpasType");
 
         FOREIGN_KEYS = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
@@ -197,7 +197,7 @@ public class SampleSetDomainKind extends AbstractDomainKind
     {
         // Cannot edit default sample set
         ExpSampleSet ss = getSampleSet(domain);
-        if (ss == null || ExperimentService.get().ensureDefaultSampleSet().equals(ss))
+        if (ss == null || ExperimentService.get().getDefaultSampleSetLsid().equals(domain.getTypeURI()))
         {
             return false;
         }
