@@ -18,12 +18,14 @@ package org.labkey.study.controllers.plate;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.gwt.client.util.ColorGenerator;
+import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.security.RequiresAnyOf;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
@@ -130,19 +132,12 @@ public class PlateController extends SpringActionController
         }           
     }
 
-    @RequiresPermission(ReadPermission.class)
-    public class DesignerServiceAction extends SimpleViewAction
+    @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
+    public class DesignerServiceAction extends GWTServiceAction
     {
-        public ModelAndView getView(Object o, BindException errors)
+        protected BaseRemoteService createService() throws IllegalStateException
         {
-            PlateDataServiceImpl service = new PlateDataServiceImpl(getViewContext());
-            service.doPost(getViewContext().getRequest(), getViewContext().getResponse());
-            return null;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
+            return new PlateDataServiceImpl(getViewContext());
         }
     }
 

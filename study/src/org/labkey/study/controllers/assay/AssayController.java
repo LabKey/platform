@@ -253,7 +253,7 @@ public class AssayController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public static class AssayListAction extends ApiAction<AssayListForm>
+    public static class AssayListAction extends MutatingApiAction<AssayListForm>
     {
         public ApiResponse execute(AssayListForm form, BindException errors)
         {
