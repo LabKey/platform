@@ -49,7 +49,6 @@ import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisJob;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocol;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocolFactory;
-import org.labkey.api.security.CSRF;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -170,7 +169,6 @@ public class AnalysisController extends SpringActionController
     /**
      * Called from LABKEY.Pipeline.getFileStatus().
      */
-    @CSRF(CSRF.Method.POST)
     @RequiresPermission(ReadPermission.class)
     public class GetFileStatusAction extends MutatingApiAction<AnalyzeForm>
     {
@@ -210,7 +208,6 @@ public class AnalysisController extends SpringActionController
     /**
      * Called from LABKEY.Pipeline.getProtocols().
      */
-    @CSRF(CSRF.Method.POST)
     @RequiresPermission(ReadPermission.class)
     public class GetSavedProtocolsAction extends MutatingApiAction<AnalyzeForm>
     {
@@ -527,7 +524,6 @@ public class AnalysisController extends SpringActionController
         }
     }
 
-    @CSRF(CSRF.Method.POST)
     @RequiresPermission(ReadPermission.class)
     public class FileNotificationAction extends MutatingApiAction<Object>
     {

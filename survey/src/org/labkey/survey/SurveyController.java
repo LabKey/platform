@@ -57,7 +57,6 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.CSRF;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -110,7 +109,6 @@ public class SurveyController extends SpringActionController implements SurveyUr
         return new ActionURL(UpdateSurveyAction.class, container).addParameter("surveyDesignId", surveyDesignId);
     }
 
-    @CSRF(CSRF.Method.POST)
     @RequiresPermission(ReadPermission.class)
     public class CreateSurveyTemplateAction extends MutatingApiAction<SurveyTemplateForm>
     {
@@ -334,7 +332,6 @@ public class SurveyController extends SpringActionController implements SurveyUr
         }
     }
 
-    @CSRF(CSRF.Method.POST)
     @RequiresPermission(InsertPermission.class)
     public class SaveSurveyTemplateAction extends MutatingApiAction<SurveyDesignForm>
     {
@@ -499,7 +496,6 @@ public class SurveyController extends SpringActionController implements SurveyUr
         }
    }
 
-    @CSRF(CSRF.Method.POST)
     @RequiresPermission(InsertPermission.class)
     public class UpdateSurveyResponseAction extends MutatingApiAction<SurveyResponseForm>
     {
@@ -837,7 +833,6 @@ public class SurveyController extends SpringActionController implements SurveyUr
         }
     }
 
-    @CSRF(CSRF.Method.POST)
     @RequiresPermission(InsertPermission.class)
     public class UpdateSurveyResponseAttachmentsAction extends MutatingApiAction<SurveyAttachmentForm>
     {

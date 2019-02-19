@@ -57,7 +57,6 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.ExcelFormatException;
 import org.labkey.api.reader.TabLoader;
-import org.labkey.api.security.CSRF;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
@@ -327,7 +326,6 @@ public class PropertyController extends SpringActionController
         }
     }
 
-    @CSRF(CSRF.Method.NONE)
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
     public class GetDomainAction extends ReadOnlyApiAction<GetForm>
@@ -392,7 +390,6 @@ public class PropertyController extends SpringActionController
      * Infer the fields from the uploaded file and return the array of fields in a format that can
      * be used in the CreateDomainAction.
      */
-    @CSRF(CSRF.Method.NONE)
     @RequiresPermission(ReadPermission.class)
     public class InferDomainAction extends ReadOnlyApiAction<Object>
     {

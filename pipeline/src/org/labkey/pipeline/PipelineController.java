@@ -60,7 +60,6 @@ import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.pipeline.view.SetupForm;
-import org.labkey.api.security.CSRF;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.RequiresPermission;
@@ -475,7 +474,6 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    @CSRF(CSRF.Method.NONE)
     @RequiresPermission(ReadPermission.class)
     public class ActionsAction extends ReadOnlyApiAction<PipelineActionsForm>
     {
@@ -578,7 +576,6 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    @CSRF(CSRF.Method.NONE)
     @RequiresPermission(ReadPermission.class)
     public class GetPipelineActionConfigAction extends ReadOnlyApiAction
     {
@@ -609,7 +606,6 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    @CSRF(CSRF.Method.NONE)
     @RequiresPermission(ReadPermission.class)
     public class GetPipelineFilePropertiesAction extends ReadOnlyApiAction
     {
@@ -1202,7 +1198,6 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    @CSRF(CSRF.Method.NONE)
     @RequiresPermission(ReadPermission.class)
     public class GetPipelineContainerAction extends ReadOnlyApiAction
     {
@@ -1570,7 +1565,6 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    @CSRF(CSRF.Method.POST)
     @RequiresPermission(AdminPermission.class)
     public class SavePipelineTriggerAction extends MutatingApiAction<PipelineTriggerForm>
     {

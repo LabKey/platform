@@ -108,7 +108,6 @@ import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.ActionNames;
-import org.labkey.api.security.CSRF;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
@@ -330,7 +329,6 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @CSRF(CSRF.Method.POST)
     @RequiresPermission(ReadPermission.class)
     public class CreateHiddenRunGroupAction extends MutatingApiAction<SimpleApiJsonForm>
     {
@@ -745,7 +743,6 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @CSRF(CSRF.Method.POST)
     @RequiresPermission(InsertPermission.class)
     @ApiVersion(9.2)
     @RequiresLogin
@@ -1270,7 +1267,6 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @CSRF(CSRF.Method.POST)
     @RequiresPermission(AdminPermission.class)
     public class RemoveConceptMappingAction extends MutatingApiAction<ConceptURIForm>
     {
@@ -1802,7 +1798,6 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @CSRF(CSRF.Method.POST)
     @RequiresPermission(AdminPermission.class)
     public class CheckDataFileAction extends MutatingApiAction<DataFileForm>
     {
@@ -2007,7 +2002,6 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @CSRF(CSRF.Method.POST)
     @RequiresNoPermission
     public class ParseFileAction extends MutatingApiAction<ParseForm>
     {
@@ -6016,7 +6010,6 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @CSRF(CSRF.Method.NONE)
     @RequiresPermission(ReadPermission.class)
     public class LineageAction extends ReadOnlyApiAction<ExpLineageOptions>
     {
@@ -6080,7 +6073,6 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @CSRF(CSRF.Method.NONE)
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(AdminPermission.class)
     public class CheckDataClassesIndexedAction extends ReadOnlyApiAction
