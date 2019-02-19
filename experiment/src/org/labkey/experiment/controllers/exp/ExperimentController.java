@@ -101,7 +101,6 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderFactory;
@@ -171,10 +170,10 @@ import org.labkey.experiment.api.ExpRunImpl;
 import org.labkey.experiment.api.ExpSampleSetImpl;
 import org.labkey.experiment.api.Experiment;
 import org.labkey.experiment.api.ExperimentServiceImpl;
-import org.labkey.experiment.api.SampleSetServiceImpl;
 import org.labkey.experiment.api.MaterialSource;
 import org.labkey.experiment.api.ProtocolActionStepDetail;
 import org.labkey.experiment.api.SampleSetDomainKind;
+import org.labkey.experiment.api.SampleSetServiceImpl;
 import org.labkey.experiment.api.SampleSetUpdateServiceDI;
 import org.labkey.experiment.controllers.property.PropertyController;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
@@ -331,7 +330,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class CreateHiddenRunGroupAction extends ApiAction<SimpleApiJsonForm>
+    public class CreateHiddenRunGroupAction extends MutatingApiAction<SimpleApiJsonForm>
     {
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
         {
