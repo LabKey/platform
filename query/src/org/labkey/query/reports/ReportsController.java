@@ -3784,7 +3784,7 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class UpdateReportDisplayOrderAction extends ApiAction<ReportsForm>
+    public class UpdateReportDisplayOrderAction extends MutatingApiAction<ReportsForm>
     {
         public ApiResponse execute(ReportsForm form, BindException errors)
         {
