@@ -4589,36 +4589,20 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(InsertPermission.class)
-    public class DescribeDerivedSamplesAction extends SimpleViewAction<DeriveMaterialForm>
+    public class DeriveSamplesAction extends FormViewAction<DeriveMaterialForm>
     {
-        List<ExpMaterial> _materials;
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            setHelpTopic("sampleSets");
-            root = appendRootNavTrail(root);
-            root.addChild("Sample Sets", ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer()));
-            ExpSampleSet sampleSet = _materials != null && _materials.size() > 0 ? _materials.get(0).getSampleSet() : null;
-            if (sampleSet != null)
-            {
-                root.addChild(sampleSet.getName(), ExperimentUrlsImpl.get().getShowSampleSetURL(sampleSet));
-            }
-            root.addChild("Derive Samples");
-            return root;
-        }
+        private List<ExpMaterial> _materials;
+        private ActionURL _successUrl;
 
         @Override
-        public void validate(DeriveMaterialForm form, BindException errors)
+        public ModelAndView getView(DeriveMaterialForm form, boolean reshow, BindException errors) throws Exception
         {
             _materials = form.lookupMaterials();
             if (_materials.isEmpty())
             {
                 throw new NotFoundException("Could not find any matching materials");
             }
-        }
 
-        public ModelAndView getView(DeriveMaterialForm form, BindException errors)
-        {
             Container c = getContainer();
 
             if (form.getOutputCount() <= 0)
@@ -4669,14 +4653,29 @@ public class ExperimentController extends SpringActionController
 
             return new VBox(view, insertView);
         }
-    }
 
-    @RequiresPermission(InsertPermission.class)
-    public class DeriveSamplesAction extends SimpleViewAction<DeriveMaterialForm>
-    {
-        private DescribeDerivedSamplesAction _action;
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            setHelpTopic("sampleSets");
+            root = appendRootNavTrail(root);
+            root.addChild("Sample Sets", ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer()));
+            ExpSampleSet sampleSet = _materials != null && _materials.size() > 0 ? _materials.get(0).getSampleSet() : null;
+            if (sampleSet != null)
+            {
+                root.addChild(sampleSet.getName(), ExperimentUrlsImpl.get().getShowSampleSetURL(sampleSet));
+            }
+            root.addChild("Derive Samples");
+            return root;
+        }
 
-        public ModelAndView getView(DeriveMaterialForm form, BindException errors) throws Exception
+        @Override
+        public void validateCommand(DeriveMaterialForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(DeriveMaterialForm form, BindException errors) throws Exception
         {
             List<ExpMaterial> materials = form.lookupMaterials();
 
@@ -4706,19 +4705,19 @@ public class ExperimentController extends SpringActionController
                 for (Map.Entry<String, Map<DomainProperty, String>> entry : helper.getPostedPropertyValues(getViewContext().getRequest()).entrySet())
                     valid = UploadWizardAction.validatePostedProperties(getViewContext(), entry.getValue(), errors) && valid;
                 if (!valid)
-                    return redirectError(form, errors);
+                    return false;
 
                 allProperties = helper.getSampleProperties(getViewContext().getRequest());
             }
             catch (DuplicateMaterialException e)
             {
                 errors.addError(new ObjectError(ColumnInfo.propNameFromName(e.getColName()), null, null, ERROR_MSG + " " + e.getMessage()));
-                return redirectError(form, errors);
+                return false;
             }
             catch (ExperimentException e)
             {
                 errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
-                return redirectError(form, errors);
+                return false;
             }
             int i = 0;
             for (Map.Entry<String, Map<DomainProperty, String>> entry : allProperties.entrySet())
@@ -4745,21 +4744,15 @@ public class ExperimentController extends SpringActionController
 
             ExperimentService.get().deriveSamples(inputMaterials, outputMaterials, getViewBackgroundInfo(), _log);
 
-            throw new RedirectException(ExperimentUrlsImpl.get().getShowSampleURL(getContainer(), outputMaterials.keySet().iterator().next()));
+            _successUrl = ExperimentUrlsImpl.get().getShowSampleURL(getContainer(), outputMaterials.keySet().iterator().next());
+
+            return true;
         }
 
-        private ModelAndView redirectError(DeriveMaterialForm form, BindException errors)
+        @Override
+        public URLHelper getSuccessURL(DeriveMaterialForm deriveMaterialForm)
         {
-            _action = new DescribeDerivedSamplesAction();
-            _action.setViewContext(getViewContext());
-            _action.setPageConfig(defaultPageConfig());
-            return _action.getView(form, errors);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            setHelpTopic("sampleSets");
-            return _action.appendNavTrail(root);
+            return _successUrl;
         }
     }
 
