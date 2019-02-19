@@ -856,9 +856,10 @@ public class MothershipController extends SpringActionController
     @CSRF(CSRF.Method.NONE)
     @SuppressWarnings("UnusedDeclaration")
     @RequiresNoPermission
-    public class CheckForUpdatesAction extends SimpleViewAction<UpdateCheckForm>
+    public class CheckForUpdatesAction extends MutatingApiAction<UpdateCheckForm>
     {
-        public ModelAndView getView(UpdateCheckForm form, BindException errors) throws Exception
+        @Override
+        public Object execute(UpdateCheckForm form, BindException errors) throws Exception
         {
             // First log this installation and session
             ServerSession session = form.toSession(getContainer());
@@ -878,12 +879,6 @@ public class MothershipController extends SpringActionController
                 getViewContext().getResponse().getWriter().print(getUpgradeMessage(form.parseSvnRevision()));
             }
 
-            return null;
-        }
-
-
-        public NavTree appendNavTrail(NavTree root)
-        {
             return null;
         }
     }
