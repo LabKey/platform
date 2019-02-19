@@ -153,7 +153,11 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
                     int id = typeNameIdMapWritable.size() + 1;
                     String value = String.valueOf(id);
                     typeNameIdMapWritable.put(keyWithId, value);
-                    typeNameIdMapWritable.save();
+                    // Questionable... but suppress for now
+                    try (var ignored = SpringActionController.ignoreSqlUpdates())
+                    {
+                        typeNameIdMapWritable.save();
+                    }
                     _typeNameIdMap = PropertyManager.getProperties(_container, CATEGORY_NAME);
                 }
             }
@@ -237,15 +241,11 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
         SpecimenTypeSummary summary = SpecimenManager.getInstance().getSpecimenTypeSummary(container, getUserSchema().getUser());
         List<? extends SpecimenTypeSummary.TypeCount> primaryTypes = summary.getPrimaryTypes();
 
-        // TODO (MAB) I don't know what this is doing, but it writes to the database
-        try (var ignore=SpringActionController.ignoreSqlUpdates())
+        for (SpecimenTypeSummary.TypeCount type : primaryTypes)
         {
-            for (SpecimenTypeSummary.TypeCount type : primaryTypes)
+            if (type.getId() != null)
             {
-                if (type.getId() != null)
-                {
-                    legalMap.putName(type.getLabel());
-                }
+                legalMap.putName(type.getLabel());
             }
         }
 
