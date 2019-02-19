@@ -108,6 +108,7 @@ import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.ActionNames;
+import org.labkey.api.security.CSRF;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
@@ -329,6 +330,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
+    @CSRF(CSRF.Method.POST)
     @RequiresPermission(ReadPermission.class)
     public class CreateHiddenRunGroupAction extends MutatingApiAction<SimpleApiJsonForm>
     {
@@ -743,10 +745,11 @@ public class ExperimentController extends SpringActionController
         }
     }
 
+    @CSRF(CSRF.Method.POST)
     @RequiresPermission(InsertPermission.class)
     @ApiVersion(9.2)
     @RequiresLogin
-    public class SaveMaterialsAction extends ApiAction<SaveMaterialsForm>
+    public class SaveMaterialsAction extends MutatingApiAction<SaveMaterialsForm>
     {
         public ApiResponse execute(SaveMaterialsForm form, BindException errors) throws Exception
         {
@@ -1267,8 +1270,9 @@ public class ExperimentController extends SpringActionController
         }
     }
 
+    @CSRF(CSRF.Method.POST)
     @RequiresPermission(AdminPermission.class)
-    public class RemoveConceptMappingAction extends ApiAction<ConceptURIForm>
+    public class RemoveConceptMappingAction extends MutatingApiAction<ConceptURIForm>
     {
         @Override
         public void validateForm(ConceptURIForm form, Errors errors)
@@ -1798,8 +1802,9 @@ public class ExperimentController extends SpringActionController
         }
     }
 
+    @CSRF(CSRF.Method.POST)
     @RequiresPermission(AdminPermission.class)
-    public class CheckDataFileAction extends ApiAction<DataFileForm>
+    public class CheckDataFileAction extends MutatingApiAction<DataFileForm>
     {
         private ExpDataImpl _data;
 
@@ -2002,9 +2007,9 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-
+    @CSRF(CSRF.Method.POST)
     @RequiresNoPermission
-    public class ParseFileAction extends ApiAction<ParseForm>
+    public class ParseFileAction extends MutatingApiAction<ParseForm>
     {
         @Override
         public Object execute(ParseForm form, BindException errors) throws Exception
@@ -6011,8 +6016,9 @@ public class ExperimentController extends SpringActionController
         }
     }
 
+    @CSRF(CSRF.Method.NONE)
     @RequiresPermission(ReadPermission.class)
-    public class LineageAction extends ApiAction<ExpLineageOptions>
+    public class LineageAction extends ReadOnlyApiAction<ExpLineageOptions>
     {
         private ExpRunItem _output;
 
@@ -6074,9 +6080,10 @@ public class ExperimentController extends SpringActionController
         }
     }
 
+    @CSRF(CSRF.Method.NONE)
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(AdminPermission.class)
-    public class CheckDataClassesIndexedAction extends ApiAction
+    public class CheckDataClassesIndexedAction extends ReadOnlyApiAction
     {
         @Override
         public Object execute(Object o, BindException errors) throws Exception

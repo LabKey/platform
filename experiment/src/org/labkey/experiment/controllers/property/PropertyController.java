@@ -22,7 +22,6 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.AbstractFileUploadAction;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
@@ -31,6 +30,7 @@ import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -57,6 +57,7 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.ExcelFormatException;
 import org.labkey.api.reader.TabLoader;
+import org.labkey.api.security.CSRF;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
@@ -326,9 +327,10 @@ public class PropertyController extends SpringActionController
         }
     }
 
+    @CSRF(CSRF.Method.NONE)
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public class GetDomainAction extends ApiAction<GetForm>
+    public class GetDomainAction extends ReadOnlyApiAction<GetForm>
     {
         @Override
         protected ObjectMapper createObjectMapper()
@@ -390,8 +392,9 @@ public class PropertyController extends SpringActionController
      * Infer the fields from the uploaded file and return the array of fields in a format that can
      * be used in the CreateDomainAction.
      */
+    @CSRF(CSRF.Method.NONE)
     @RequiresPermission(ReadPermission.class)
-    public class InferDomainAction extends ApiAction<Object>
+    public class InferDomainAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public Object execute(Object o, BindException errors) throws Exception

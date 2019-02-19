@@ -104,6 +104,7 @@
                     {
                         LABKEY.Ajax.request({
                             url: LABKEY.ActionURL.buildURL('experiment', 'removeConceptMapping.api'),
+                            method: 'POST',
                             params: {conceptURI: uri},
                             scope: this,
                             success: LABKEY.Utils.getCallbackWrapper(function (response)
