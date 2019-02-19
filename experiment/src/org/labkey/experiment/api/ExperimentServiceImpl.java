@@ -35,6 +35,7 @@ import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
@@ -1318,6 +1319,9 @@ public class ExperimentServiceImpl implements ExperimentService
         List<Experiment> exp = new SqlSelector(getSchema(), sql).getArrayList(Experiment.class);
         if (!exp.isEmpty())
         {
+            // We're not actually mutating in this case, but we would be if some action hadn't already cached this run group. Flag it as if we're mutating.
+            SpringActionController.executingMutatingSql("Creating an experiment run group");
+
             // We don't care which one we use. It's possible to have multiple matches if a run was deleted that was
             // already part of a hidden run group.
             return new ExpExperimentImpl(exp.get(0));
