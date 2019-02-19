@@ -935,7 +935,7 @@ LABKEY.Utils = new function()
          * @param href containing action and parameters to be POSTed
          */
 
-        postOnClickJavaScript : function (href) {
+        postToAction : function (href) {
             var form = document.createElement('form');
             form.setAttribute('method', 'post');
             form.setAttribute('action', href);
@@ -954,7 +954,7 @@ LABKEY.Utils = new function()
          */
         confirmAndPost : function (message, href) {
             if (confirm(message))
-                this.postOnClickJavaScript(href);
+                this.postToAction(href);
 
             return false;
         },
