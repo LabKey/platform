@@ -23,7 +23,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
@@ -50,6 +49,7 @@ import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisJob;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocol;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocolFactory;
+import org.labkey.api.security.CSRF;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -170,8 +170,9 @@ public class AnalysisController extends SpringActionController
     /**
      * Called from LABKEY.Pipeline.getFileStatus().
      */
+    @CSRF(CSRF.Method.POST)
     @RequiresPermission(ReadPermission.class)
-    public class GetFileStatusAction extends ApiAction<AnalyzeForm>
+    public class GetFileStatusAction extends MutatingApiAction<AnalyzeForm>
     {
         public ApiResponse execute(AnalyzeForm form, BindException errors)
         {
@@ -209,8 +210,9 @@ public class AnalysisController extends SpringActionController
     /**
      * Called from LABKEY.Pipeline.getProtocols().
      */
+    @CSRF(CSRF.Method.POST)
     @RequiresPermission(ReadPermission.class)
-    public class GetSavedProtocolsAction extends ApiAction<AnalyzeForm>
+    public class GetSavedProtocolsAction extends MutatingApiAction<AnalyzeForm>
     {
         public ApiResponse execute(AnalyzeForm form, BindException errors)
         {
@@ -525,8 +527,9 @@ public class AnalysisController extends SpringActionController
         }
     }
 
+    @CSRF(CSRF.Method.POST)
     @RequiresPermission(ReadPermission.class)
-    public class FileNotificationAction extends ApiAction<Object>
+    public class FileNotificationAction extends MutatingApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object form, BindException errors) throws Exception

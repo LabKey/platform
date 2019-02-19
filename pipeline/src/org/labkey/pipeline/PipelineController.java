@@ -19,7 +19,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.BaseViewAction;
@@ -30,6 +29,7 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleRedirectAction;
@@ -60,6 +60,7 @@ import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.pipeline.view.SetupForm;
+import org.labkey.api.security.CSRF;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.RequiresPermission;
@@ -474,8 +475,9 @@ public class PipelineController extends SpringActionController
         }
     }
 
+    @CSRF(CSRF.Method.NONE)
     @RequiresPermission(ReadPermission.class)
-    public class ActionsAction extends ApiAction<PipelineActionsForm>
+    public class ActionsAction extends ReadOnlyApiAction<PipelineActionsForm>
     {
         public ApiResponse execute(PipelineActionsForm form, BindException errors)
         {
@@ -576,8 +578,9 @@ public class PipelineController extends SpringActionController
         }
     }
 
+    @CSRF(CSRF.Method.NONE)
     @RequiresPermission(ReadPermission.class)
-    public class GetPipelineActionConfigAction extends ApiAction
+    public class GetPipelineActionConfigAction extends ReadOnlyApiAction
     {
         public ApiResponse execute(Object form, BindException errors) throws Exception
         {
@@ -606,8 +609,9 @@ public class PipelineController extends SpringActionController
         }
     }
 
+    @CSRF(CSRF.Method.NONE)
     @RequiresPermission(ReadPermission.class)
-    public class GetPipelineFilePropertiesAction extends ApiAction
+    public class GetPipelineFilePropertiesAction extends ReadOnlyApiAction
     {
         public ApiResponse execute(Object form, BindException errors) throws Exception
         {
@@ -1198,8 +1202,9 @@ public class PipelineController extends SpringActionController
         }
     }
 
+    @CSRF(CSRF.Method.NONE)
     @RequiresPermission(ReadPermission.class)
-    public class GetPipelineContainerAction extends ApiAction
+    public class GetPipelineContainerAction extends ReadOnlyApiAction
     {
         public ApiResponse execute(Object form, BindException errors)
         {
@@ -1565,8 +1570,9 @@ public class PipelineController extends SpringActionController
         }
     }
 
+    @CSRF(CSRF.Method.POST)
     @RequiresPermission(AdminPermission.class)
-    public class SavePipelineTriggerAction extends ApiAction<PipelineTriggerForm>
+    public class SavePipelineTriggerAction extends MutatingApiAction<PipelineTriggerForm>
     {
         @Override
         public void validateForm(PipelineTriggerForm form, Errors errors)
