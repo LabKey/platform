@@ -33,6 +33,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -49,6 +50,7 @@ import org.labkey.experiment.api.ExpSampleSetImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.MaterialSource;
 import org.labkey.experiment.api.SampleSetServiceImpl;
+import org.labkey.experiment.api.property.DomainImpl;
 
 import java.util.Collection;
 import java.util.Map;
@@ -239,6 +241,17 @@ public class ExperimentUpgradeCode implements UpgradeCode
         }
         DbScope scope = ExperimentServiceImpl.get().getSchema().getScope();
         SqlDialect d = scope.getSqlDialect();
+
+        // Make sure that all properties have a storagecolumnname value
+        for (DomainProperty property : domain.getProperties())
+        {
+            PropertyDescriptor propertyDescriptor = property.getPropertyDescriptor();
+            if (propertyDescriptor.getStorageColumnName() == null)
+            {
+                ((DomainImpl)domain).generateStorageColumnName(propertyDescriptor);
+                OntologyManager.updatePropertyDescriptor(propertyDescriptor);
+            }
+        }
 
         StorageProvisioner.ensureStorageTable(domain, kind, scope);
         // refetch the domain which we just updated
