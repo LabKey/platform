@@ -33,7 +33,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.action.ApiResponse;
@@ -45,6 +44,7 @@ import org.labkey.api.action.ExtendedApiQueryResponse;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.announcements.DiscussionService;
@@ -79,7 +79,6 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.model.ReportPropsManager;
-import org.labkey.api.reports.report.ChartReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.view.ReportUtil;
@@ -89,7 +88,6 @@ import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -259,7 +257,7 @@ public class VisualizationController extends SpringActionController
 
     @Action(ActionType.SelectMetaData.class)
     @RequiresPermission(ReadPermission.class)
-    public class GetMeasuresAction<Form extends MeasureSetRequest> extends ApiAction<Form>
+    public class GetMeasuresAction<Form extends MeasureSetRequest> extends ReadOnlyApiAction<Form>
     {
         public ApiResponse execute(Form measureRequest, BindException errors)
         {
@@ -284,7 +282,7 @@ public class VisualizationController extends SpringActionController
 
     @Action(ActionType.SelectMetaData.class)
     @RequiresPermission(ReadPermission.class)
-    public class GetMeasuresStaticAction<Form extends MeasureSetRequest> extends ApiAction<Form>
+    public class GetMeasuresStaticAction<Form extends MeasureSetRequest> extends ReadOnlyApiAction<Form>
     {
         public ApiResponse execute(Form measureRequest, BindException errors)
         {
@@ -314,7 +312,7 @@ public class VisualizationController extends SpringActionController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class ClearMeasuresCacheAction extends ApiAction<Object>
+    public class ClearMeasuresCacheAction extends MutatingApiAction<Object>
     {
         public ApiResponse execute(Object measureRequest, BindException errors)
         {
@@ -428,7 +426,7 @@ public class VisualizationController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetVisualizationTypes extends ApiAction
+    public class GetVisualizationTypes extends ReadOnlyApiAction
     {
         Map<String, Object> getBaseTypeProperties(Study study)
         {
@@ -505,7 +503,7 @@ public class VisualizationController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
     @Marshal(Marshaller.Jackson)
-    public class GetDataAction extends ApiAction<VisDataRequest>
+    public class GetDataAction extends MutatingApiAction<VisDataRequest>
     {
         @Override
         protected ObjectReader getObjectReader(Class c)
@@ -994,7 +992,7 @@ public class VisualizationController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetVisualizationAction extends ApiAction<ChartWizardReportForm>
+    public class GetVisualizationAction extends MutatingApiAction<ChartWizardReportForm>
     {
         private ReportDescriptor descriptor;
 
@@ -1347,7 +1345,7 @@ public class VisualizationController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectMetaData.class)
-    public class GetGenericReportColumnsAction extends ApiAction<ColumnListForm>
+    public class GetGenericReportColumnsAction extends ReadOnlyApiAction<ColumnListForm>
     {
         @Override
         public ApiResponse execute(ColumnListForm form, BindException errors)
@@ -1604,7 +1602,7 @@ public class VisualizationController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
-    public class GetSourceCountsAction extends ApiAction<SourceCountForm>
+    public class GetSourceCountsAction extends MutatingApiAction<SourceCountForm>
     {
         @Override
         public ApiResponse execute(SourceCountForm form, BindException errors) throws Exception

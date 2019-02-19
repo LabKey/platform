@@ -131,6 +131,7 @@ Ext4.define('LABKEY.vis.TimeChartXAxisField', {
                         filters: [LABKEY.Query.Visualization.Filter.create({schemaName: 'study'})],
                         dateMeasures: false
                     }),
+                    method: 'GET',
                     reader: {
                         type: 'json',
                         root: 'measures',

@@ -94,6 +94,7 @@ Ext4.define('LABKEY.vis.TimeChartYMeasureField', {
                         filters: [LABKEY.Query.Visualization.Filter.create({schemaName: this.measure.schemaName, queryName: this.measure.queryName})],
                         dateMeasures: true
                     }),
+                    method: 'GET',
                     reader: {
                         type: 'json',
                         root: 'measures',
@@ -216,6 +217,7 @@ Ext4.define('LABKEY.vis.TimeChartYMeasureField', {
                 proxy: {
                     type: 'ajax',
                     url : LABKEY.ActionURL.buildURL("visualization", "getDimensions", null, this.measure),
+                    method : 'GET',
                     reader: {
                         type: 'json',
                         root: 'dimensions',

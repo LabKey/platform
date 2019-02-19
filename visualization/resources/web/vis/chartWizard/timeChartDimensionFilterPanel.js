@@ -115,6 +115,7 @@ Ext4.define('LABKEY.vis.DimensionFilterPanel', {
                 proxy: {
                     type: 'ajax',
                     url : LABKEY.ActionURL.buildURL("visualization", "getDimensionValues", null, this.dimension),
+                    method: 'GET',
                     reader: {
                         type: 'json',
                         root: 'values',
