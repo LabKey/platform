@@ -20,7 +20,6 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.study.StudyService;
 
-import java.sql.SQLException;
 import java.util.Map;
 
 /**
@@ -45,9 +44,9 @@ public class SpecimenPivotByPrimaryType extends BaseSpecimenPivotTable
         for (ColumnInfo col : getRealTable().getColumns())
         {
             // look for the primary/derivative pivot encoding
-            String parts[] = col.getName().split(AGGREGATE_DELIM);
+            String[] parts = col.getName().split(AGGREGATE_DELIM);
 
-            if (parts != null && parts.length == 2)
+            if (parts.length == 2)
             {
                 int primaryId = NumberUtils.toInt(parts[0]);
 

@@ -35,7 +35,6 @@ import org.labkey.study.model.PrimaryType;
 import org.labkey.study.model.SpecimenTypeSummary;
 import org.labkey.study.model.StudyManager;
 
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
