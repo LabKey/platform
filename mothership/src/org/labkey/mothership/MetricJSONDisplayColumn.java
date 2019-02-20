@@ -23,8 +23,7 @@ public class MetricJSONDisplayColumn extends DataColumn
         }
     }
 
-    @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    public String getOutput(RenderContext ctx)
     {
         if(ctx.get("jsonMetrics") != null && ctx.get("jsonMetrics") != "")
         {
@@ -33,7 +32,39 @@ public class MetricJSONDisplayColumn extends DataColumn
             Map<String, Integer> folderType = JsonPath.parse(json).read(path);
 
             if (folderType.containsKey(_jsonProp))
-                out.write(String.valueOf(folderType.get(_jsonProp)));
+                return String.valueOf(folderType.get(_jsonProp));
         }
+        return "";
+    }
+
+    @Override
+    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    {
+        out.write(getOutput(ctx));
+    }
+
+    @Override
+    public String getValue(RenderContext ctx)
+    {
+        return getOutput(ctx);
+    }
+
+    @Override
+    public Class getValueClass()
+    {
+        return String.class;
+    }
+
+    @Override
+    public Class getDisplayValueClass()
+    {
+        return String.class;
+    }
+
+
+    @Override
+    public Object getDisplayValue(RenderContext ctx)
+    {
+        return getValue(ctx);
     }
 }
