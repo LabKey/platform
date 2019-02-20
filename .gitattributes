@@ -2958,6 +2958,7 @@ study/test/src/org/labkey/test/tests/study/AbstractStudyTimeKeyFieldTest.java -t
 study/test/src/org/labkey/test/tests/study/AncillaryStudyTest.java -text
 study/test/src/org/labkey/test/tests/study/AssayTest.java -text
 study/test/src/org/labkey/test/tests/study/CohortTest.java -text
+study/test/src/org/labkey/test/tests/study/CopyAssayToStudyTest.java -text
 study/test/src/org/labkey/test/tests/study/ExtraKeyStudyTest.java -text
 study/test/src/org/labkey/test/tests/study/ProgressReportTest.java -text
 study/test/src/org/labkey/test/tests/study/QuerySnapshotTest.java -text
