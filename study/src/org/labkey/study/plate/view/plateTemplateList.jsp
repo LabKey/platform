@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page import="org.labkey.api.study.PlateTemplate" %>
 <%@ page import="org.labkey.api.study.PlateTypeHandler" %>
+<%@ page import="org.labkey.api.study.permissions.DesignAssayPermission" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -28,13 +29,60 @@
 <%@ page import="org.labkey.study.controllers.plate.PlateController" %>
 <%@ page import="org.labkey.study.plate.PlateManager" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.study.permissions.DesignAssayPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+
 <%
     JspView<PlateController.PlateTemplateListBean> me = (JspView<PlateController.PlateTemplateListBean>) HttpView.currentView();
     Container c = getContainer();
     List<? extends PlateTemplate> plateTemplates = me.getModelBean().getTemplates();
 %>
+
+<script type="application/javascript">
+
+    (function($){
+
+        deletePlate = function(templateName, plateId){
+
+            LABKEY.Utils.modal("Delete plate", null, function(){
+                // set the form field values and then submit the delete form after confirmation
+                $('#templateName').val(templateName);
+                $('#plateId').val(plateId);
+                showDialog();
+
+            }, null);
+        };
+
+        showDialog = function() {
+            var html = [
+                "<div style='margin-bottom: 20px;'>",
+                "<div id='message'>",
+                "Permanently delete this plate template?",
+                "</div>",
+                "<a class='btn btn-default' style='float: right' id='cancelSubmitBtn'>No</a>",
+                "<a class='btn btn-default' style='float: right; margin-right: 8px' id='confirmSubmitBtn'>Yes</a>",
+                "</div>"
+            ].join("");
+
+            $("#modal-fn-body").html(html);
+
+            $("#confirmSubmitBtn").on("click", function() {
+                $('#deleteForm').submit();
+            });
+
+            $("#cancelSubmitBtn").on("click", function() {
+                $('#lk-utils-modal').modal('hide');
+            });
+        };
+
+    })(jQuery);
+</script>
+
+<labkey:form method="POST" id="deleteForm" action="<%=new ActionURL(PlateController.DeleteAction.class, getContainer())%>">
+    <input type="hidden" name="templateName" id="templateName" value="">
+    <input type="hidden" name="plateId" id="plateId" value="">
+</labkey:form>
+
 <h4>Available Plate Templates</h4>
 <table class="labkey-data-region-legacy labkey-show-borders">
     <tr>
@@ -78,14 +126,18 @@
             }
             if (isAssayDesigner || c.hasPermission(getUser(), DeletePermission.class))
             {
+                if (plateTemplates.size() > 1)
+                {
         %>
-            <%= text(((plateTemplates.size() > 1) ?
-                textLink("delete", new ActionURL(PlateController.DeleteAction.class, getContainer()).
-                        addParameter("templateName", template.getName()).
-                        addParameter("plateId", template.getRowId()),
-                        "return confirm('Permanently delete this plate template?')", null) :
-                        "Cannot delete the final template.")) %>
+                    <a href="javascript:{}" onclick="deletePlate(<%=q(template.getName())%>, <%=template.getRowId()%>);" class="labkey-text-link">delete</a>
         <%
+                }
+                else
+                {
+        %>
+                    Cannot delete the final template.
+        <%
+                }
             }
         %>
         </td>

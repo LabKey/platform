@@ -17,6 +17,7 @@
 package org.labkey.study.controllers.plate;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.ReturnUrlForm;
@@ -40,6 +41,7 @@ import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -253,23 +255,26 @@ public class PlateController extends SpringActionController
     }
 
     @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
-    public class DeleteAction extends SimpleViewAction<NameForm>
+    public class DeleteAction extends FormHandlerAction<NameForm>
     {
-        public ModelAndView getView(NameForm form, BindException errors)
+        @Override
+        public void validateCommand(NameForm target, Errors errors)
         {
-            List<? extends PlateTemplate> templates = PlateService.get().getPlateTemplates(getContainer());
-            if (templates.size() > 1)
-            {
-                PlateTemplate template = PlateService.get().getPlateTemplate(getContainer(), form.getPlateId());
-                if (template != null)
-                    PlateService.get().deletePlate(getContainer(), template.getRowId());
-            }
-            return HttpView.redirect(new ActionURL(BeginAction.class, getContainer()));
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public boolean handlePost(NameForm form, BindException errors) throws Exception
         {
-            return null;
+            PlateTemplate template = PlateService.get().getPlateTemplate(getContainer(), form.getPlateId());
+            if (template != null)
+                PlateService.get().deletePlate(getContainer(), template.getRowId());
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(NameForm nameForm)
+        {
+            return new ActionURL(BeginAction.class, getContainer());
         }
     }
 
