@@ -19,9 +19,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -37,7 +37,7 @@ import org.springframework.validation.BindException;
  */
 @RequiresPermission(ReadPermission.class)
 @Action(ActionType.SelectMetaData.class)
-public class ValidateQueriesAction extends ApiAction
+public class ValidateQueriesAction extends ReadOnlyApiAction
 {
     @Override
     public ApiResponse execute(Object o, BindException errors)

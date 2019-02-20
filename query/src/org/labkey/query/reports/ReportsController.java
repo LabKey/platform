@@ -27,7 +27,6 @@ import org.json.JSONObject;
 import org.junit.Test;
 import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.CustomApiForm;
@@ -36,6 +35,7 @@ import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -826,7 +826,7 @@ public class ReportsController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
-    public class ViewScriptReportAction extends ApiAction<ScriptReportBean>
+    public class ViewScriptReportAction extends ReadOnlyApiAction<ScriptReportBean>
     {
         @Override
         public ApiResponse execute(ScriptReportBean bean, BindException errors) throws Exception
@@ -899,7 +899,7 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetBackgroundReportResultsAction extends ApiAction<ScriptReportBean>
+    public class GetBackgroundReportResultsAction extends ReadOnlyApiAction<ScriptReportBean>
     {
         @Override
         public ApiResponse execute(ScriptReportBean bean, BindException errors) throws Exception
@@ -2373,7 +2373,7 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class ReportSectionsAction extends ApiAction
+    public class ReportSectionsAction extends ReadOnlyApiAction
     {
         public ApiResponse execute(Object o, BindException errors)
         {
@@ -2636,7 +2636,7 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class BrowseDataAction extends ApiAction<BrowseDataForm>
+    public class BrowseDataAction extends ReadOnlyApiAction<BrowseDataForm>
     {
         public ApiResponse execute(BrowseDataForm form, BindException errors) throws Exception
         {
@@ -2881,7 +2881,7 @@ public class ReportsController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectMetaData.class)
-    public class BrowseDataTreeAction extends ApiAction<BrowseDataForm>
+    public class BrowseDataTreeAction extends ReadOnlyApiAction<BrowseDataForm>
     {
         SortOrder _sortOrder;
 
@@ -3228,7 +3228,7 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetCategoriesAction extends ApiAction<BrowseDataForm>
+    public class GetCategoriesAction extends ReadOnlyApiAction<BrowseDataForm>
     {
         public ApiResponse execute(BrowseDataForm form, BindException errors)
         {
@@ -3631,7 +3631,7 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetReportAction extends ApiAction<ReportForm>
+    public class GetReportAction extends ReadOnlyApiAction<ReportForm>
     {
         @Override
         public ApiResponse execute(ReportForm form, BindException errors)

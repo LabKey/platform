@@ -19,9 +19,9 @@ package org.labkey.query.controllers;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QueryForm;
@@ -44,7 +44,7 @@ import java.util.List;
 
 @RequiresPermission(ReadPermission.class)
 @Action(ActionType.SelectMetaData.class)
-public class ValidateQueryAction extends ApiAction<ValidateQueryAction.ValidateQueryForm>
+public class ValidateQueryAction extends ReadOnlyApiAction<ValidateQueryAction.ValidateQueryForm>
 {
     UserSchema schema;
     TableInfo table;

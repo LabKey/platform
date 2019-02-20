@@ -21,9 +21,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AbstractTableInfo;
@@ -78,7 +78,7 @@ import static org.apache.commons.lang3.StringUtils.trimToNull;
  */
 @RequiresPermission(ReadPermission.class)
 @Action(ActionType.SelectMetaData.class)
-public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
+public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsAction.Form>
 {
     private static final Logger LOG = Logger.getLogger(GetQueryDetailsAction.class);
 

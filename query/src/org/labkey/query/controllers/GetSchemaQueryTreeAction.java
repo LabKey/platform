@@ -19,8 +19,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
@@ -53,7 +53,7 @@ import java.util.Map;
 
 @RequiresPermission(ReadPermission.class)
 @Action(ActionType.SelectMetaData.class)
-public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction.Form>
+public class GetSchemaQueryTreeAction extends ReadOnlyApiAction<GetSchemaQueryTreeAction.Form>
 {
     boolean _withHtmlEncoding = false;
 

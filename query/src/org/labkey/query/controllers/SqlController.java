@@ -17,9 +17,9 @@ package org.labkey.query.controllers;
 
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import org.apache.commons.lang3.StringUtils;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -169,7 +169,7 @@ public class SqlController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class)
     @Marshal(Marshaller.Jackson)
-    public class ExecuteAction extends ApiAction<SqlForm>
+    public class ExecuteAction extends ReadOnlyApiAction<SqlForm>
     {
         @Override
         public Object execute(SqlForm form, BindException errors) throws ServletException

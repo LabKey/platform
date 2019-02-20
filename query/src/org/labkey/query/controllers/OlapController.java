@@ -28,7 +28,6 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -38,6 +37,7 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.app.SinglePageAppUrls;
@@ -117,7 +117,6 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.StringReader;
@@ -239,7 +238,7 @@ public class OlapController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectMetaData.class)
-    public class GetCubeDefinitionAction extends ApiAction<CubeForm>
+    public class GetCubeDefinitionAction extends ReadOnlyApiAction<CubeForm>
     {
         @Override
         public void validateForm(CubeForm form, Errors errors)
@@ -560,7 +559,7 @@ public class OlapController extends SpringActionController
     */
     @RequiresSiteAdmin
     @Action(ActionType.SelectData.class)
-    public class ExecuteMdxAction extends ApiAction<ExecuteMdxForm>
+    public class ExecuteMdxAction extends ReadOnlyApiAction<ExecuteMdxForm>
     {
         @Override
         public void validateForm(ExecuteMdxForm form, Errors errors)
@@ -703,7 +702,7 @@ public class OlapController extends SpringActionController
      */
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
-    public class JsonQueryAction extends ApiAction<JsonQueryForm>
+    public class JsonQueryAction extends ReadOnlyApiAction<JsonQueryForm>
     {
         @Override
         public ApiResponse execute(JsonQueryForm form, BindException errors) throws Exception
@@ -819,7 +818,7 @@ public class OlapController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
     @Deprecated // same as countFilter
-    public class CountDistinctQueryAction extends ApiAction<JsonQueryForm>
+    public class CountDistinctQueryAction extends ReadOnlyApiAction<JsonQueryForm>
     {
         @Override
         public ApiResponse execute(JsonQueryForm form, BindException errors) throws Exception
@@ -1292,7 +1291,7 @@ public class OlapController extends SpringActionController
     }
 
     @RequiresPermission(AdminReadPermission.class)
-    public class ListAppsAction extends ApiAction<Object>
+    public class ListAppsAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public Object execute(Object o, BindException errors)
@@ -1520,7 +1519,7 @@ public class OlapController extends SpringActionController
     }
 
     @RequiresNoPermission
-    public class GetActiveAppConfigAction extends ApiAction
+    public class GetActiveAppConfigAction extends ReadOnlyApiAction
     {
         @Override
         public ApiResponse execute(Object o, BindException errors)

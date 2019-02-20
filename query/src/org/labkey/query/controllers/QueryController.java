@@ -2725,7 +2725,7 @@ public class QueryController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     @ApiVersion(9.1)
     @Action(ActionType.SelectData.class)
-    public class SelectRowsAction extends ApiAction<APIQueryForm>
+    public class SelectRowsAction extends ReadOnlyApiAction<APIQueryForm>
     {
         public ApiResponse execute(APIQueryForm form, BindException errors)
         {
@@ -2812,7 +2812,7 @@ public class QueryController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
-    public class GetDataAction extends ApiAction<SimpleApiJsonForm>
+    public class GetDataAction extends ReadOnlyApiAction<SimpleApiJsonForm>
     {
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
         {
@@ -2918,7 +2918,7 @@ public class QueryController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     @ApiVersion(9.1)
     @Action(ActionType.SelectData.class)
-    public class ExecuteSqlAction extends ApiAction<ExecuteSqlForm>
+    public class ExecuteSqlAction extends ReadOnlyApiAction<ExecuteSqlForm>
     {
         public ApiResponse execute(ExecuteSqlForm form, BindException errors)
         {
@@ -3036,7 +3036,7 @@ public class QueryController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
-    public class SelectDistinctAction extends ApiAction<SelectDistinctForm>
+    public class SelectDistinctAction extends ReadOnlyApiAction<SelectDistinctForm>
     {
         @Override
         public ApiResponse execute(SelectDistinctForm form, BindException errors) throws Exception
@@ -3194,7 +3194,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetColumnSummaryStatsAction extends ApiAction<QueryForm>
+    public class GetColumnSummaryStatsAction extends ReadOnlyApiAction<QueryForm>
     {
         private FieldKey _colFieldKey;
 
@@ -4505,7 +4505,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class GetTablesAction extends ApiAction<GetTablesForm>
+    public class GetTablesAction extends ReadOnlyApiAction<GetTablesForm>
     {
         @Override
         public ApiResponse execute(GetTablesForm form, BindException errors)
@@ -4572,7 +4572,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class SchemaTemplateAction extends ApiAction<SchemaTemplateForm>
+    public class SchemaTemplateAction extends ReadOnlyApiAction<SchemaTemplateForm>
     {
         @Override
         public ApiResponse execute(SchemaTemplateForm form, BindException errors)
@@ -4593,7 +4593,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class SchemaTemplatesAction extends ApiAction
+    public class SchemaTemplatesAction extends ReadOnlyApiAction
     {
         @Override
         public ApiResponse execute(Object form, BindException errors)
@@ -4819,7 +4819,7 @@ public class QueryController extends SpringActionController
 
     // Moves a session view into the database.
     @RequiresPermission(ReadPermission.class) @RequiresLogin
-    public class SaveSessionViewAction extends ApiAction<SaveSessionViewForm>
+    public class SaveSessionViewAction extends MutatingApiAction<SaveSessionViewForm>
     {
         @Override
         public ApiResponse execute(SaveSessionViewForm form, BindException errors)
@@ -5291,7 +5291,7 @@ public class QueryController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class)
     @ApiVersion(12.3)
-    public class GetSchemasAction extends ApiAction<GetSchemasForm>
+    public class GetSchemasAction extends ReadOnlyApiAction<GetSchemasForm>
     {
         public ApiResponse execute(GetSchemasForm form, BindException errors)
         {
@@ -5405,7 +5405,7 @@ public class QueryController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectMetaData.class)
-    public class GetQueriesAction extends ApiAction<GetQueriesForm>
+    public class GetQueriesAction extends ReadOnlyApiAction<GetQueriesForm>
     {
         public ApiResponse execute(GetQueriesForm form, BindException errors)
         {
@@ -5574,7 +5574,7 @@ public class QueryController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectMetaData.class)
-    public class GetQueryViewsAction extends ApiAction<GetQueryViewsForm>
+    public class GetQueryViewsAction extends ReadOnlyApiAction<GetQueryViewsForm>
     {
         public ApiResponse execute(GetQueryViewsForm form, BindException errors)
         {
@@ -5644,7 +5644,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresNoPermission
-    public class GetServerDateAction extends ApiAction
+    public class GetServerDateAction extends ReadOnlyApiAction
     {
         public ApiResponse execute(Object o, BindException errors)
         {
@@ -5701,7 +5701,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class SaveApiTestAction extends ApiAction<SaveApiTestForm>
+    public class SaveApiTestAction extends MutatingApiAction<SaveApiTestForm>
     {
         public ApiResponse execute(SaveApiTestForm form, BindException errors)
         {
@@ -5860,7 +5860,7 @@ public class QueryController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectMetaData.class)
-    public class ValidateQueryMetadataAction extends ApiAction<QueryForm>
+    public class ValidateQueryMetadataAction extends ReadOnlyApiAction<QueryForm>
     {
         public ApiResponse execute(QueryForm form, BindException errors)
         {
@@ -6208,7 +6208,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class SaveNamedSetAction extends ApiAction<NamedSetForm>
+    public class SaveNamedSetAction extends ReadOnlyApiAction<NamedSetForm>
     {
         @Override
         public Object execute(NamedSetForm namedSetForm, BindException errors)
@@ -6250,7 +6250,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class DeleteNamedSetAction extends ApiAction<NamedSetForm>
+    public class DeleteNamedSetAction extends ReadOnlyApiAction<NamedSetForm>
     {
 
         @Override
@@ -6419,7 +6419,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class GetSchemasWithDataSourcesAction extends ApiAction
+    public class GetSchemasWithDataSourcesAction extends ReadOnlyApiAction
     {
         @Override
         public Object execute(Object o, BindException errors)
