@@ -1304,6 +1304,9 @@ list/src/org/labkey/list/view/listsWebPart.jsp -text
 list/webapp/WEB-INF/list/listContext.xml -text
 mothership/build.gradle -text
 mothership/module.properties -text
+mothership/resources/credits/jars.txt -text
+mothership/resources/queries/mothership/folderTypeMetric.query.xml -text
+mothership/resources/queries/mothership/folderTypeMetric.sql -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-0.00-16.30.sql -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-16.30-17.10.sql -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-17.20-17.30.sql -text
@@ -1347,6 +1350,8 @@ mothership/src/org/labkey/mothership/AssignedToDisplayColumn.java -text
 mothership/src/org/labkey/mothership/CreateIssueDisplayColumn.java -text
 mothership/src/org/labkey/mothership/ExceptionReport.java -text
 mothership/src/org/labkey/mothership/ExceptionStackTrace.java -text
+mothership/src/org/labkey/mothership/MetricJSONDisplayColumn.java -text
+mothership/src/org/labkey/mothership/MetricJSONDisplayColumnFactory.java -text
 mothership/src/org/labkey/mothership/MothershipController.java -text
 mothership/src/org/labkey/mothership/MothershipManager.java -text
 mothership/src/org/labkey/mothership/MothershipModule.java -text

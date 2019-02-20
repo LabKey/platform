@@ -1,0 +1,67 @@
+<query xmlns="http://labkey.org/data/xml/query">
+    <metadata>
+        <tables xmlns="http://labkey.org/data/xml">
+            <table tableName="folderTypeMetric" tableDbType="NOT_IN_DB">
+                <tableTitle>Folder Type Metric</tableTitle>
+                <columns>
+                    <column columnName="Study">
+                        <displayColumnFactory>
+                            <className>org.labkey.mothership.MetricJSONDisplayColumnFactory</className>
+                            <properties>
+                                <property name="jsonPath">Study</property>
+                            </properties>
+                        </displayColumnFactory>
+                    </column>
+                    <column columnName="Assay">
+                        <displayColumnFactory>
+                            <className>org.labkey.mothership.MetricJSONDisplayColumnFactory</className>
+                            <properties>
+                                <property name="jsonPath">Assay</property>
+                            </properties>
+                        </displayColumnFactory>
+                    </column>
+                    <column columnName="Collaboration">
+                        <displayColumnFactory>
+                            <className>org.labkey.mothership.MetricJSONDisplayColumnFactory</className>
+                            <properties>
+                                <property name="jsonPath">Collaboration</property>
+                            </properties>
+                        </displayColumnFactory>
+                    </column>
+                    <column columnName="MicroArray">
+                        <displayColumnFactory>
+                            <className>org.labkey.mothership.MetricJSONDisplayColumnFactory</className>
+                            <properties>
+                                <property name="jsonPath">Microarray</property>
+                            </properties>
+                        </displayColumnFactory>
+                    </column>
+                    <column columnName="TargetedMS">
+                        <displayColumnFactory>
+                            <className>org.labkey.mothership.MetricJSONDisplayColumnFactory</className>
+                            <properties>
+                                <property name="jsonPath">Targeted MS</property>
+                            </properties>
+                        </displayColumnFactory>
+                    </column>
+                    <column columnName="NAb">
+                        <displayColumnFactory>
+                            <className>org.labkey.mothership.MetricJSONDisplayColumnFactory</className>
+                            <properties>
+                                <property name="jsonPath">Nab</property>
+                            </properties>
+                        </displayColumnFactory>
+                    </column>
+                    <column columnName="Flow">
+                        <displayColumnFactory>
+                            <className>org.labkey.mothership.MetricJSONDisplayColumnFactory</className>
+                            <properties>
+                                <property name="jsonPath">Flow</property>
+                            </properties>
+                        </displayColumnFactory>
+                    </column>
+                </columns>
+            </table>
+        </tables>
+    </metadata>
+</query>
