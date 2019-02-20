@@ -201,7 +201,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
         if (publishForm.isRunIds())
         {
             // Need to convert the run ids into data row ids
-            runIds = getCheckboxIds();
+            runIds = getCheckboxIds(getViewContext());
             DataRegionSelection.clearAll(getViewContext(), null);
             // Get the assay results table
             UserSchema schema = provider.createProtocolSchema(getUser(), getContainer(), _protocol, null);
@@ -227,7 +227,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
         }
         else
         {
-            ids = getCheckboxIds();
+            ids = getCheckboxIds(getViewContext());
         }
 
         // If the TargetStudy column is on the result domain, redirect past the choose target study page directly to the confirm page.

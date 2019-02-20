@@ -25,6 +25,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.ViewContext;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -79,12 +80,12 @@ public abstract class BaseAssayAction<T extends ProtocolIdForm> extends SimpleVi
      * Use the POST that was sent as the new selection in the session,
      * over-writing anything currently stored there.
      */
-    protected List<Integer> getCheckboxIds()
+    public static List<Integer> getCheckboxIds(ViewContext context)
     {
-        Set<String> idStrings = DataRegionSelection.getSelected(getViewContext(), null, true, false);
+        Set<String> idStrings = DataRegionSelection.getSelected(context, null, true, false);
 
-        DataRegionSelection.clearAll(getViewContext(), null);
-        DataRegionSelection.setSelected(getViewContext(), null, idStrings, true);
+        DataRegionSelection.clearAll(context, null);
+        DataRegionSelection.setSelected(context, null, idStrings, true);
 
         List<Integer> ids = new ArrayList<>();
         for (String rowIdStr : idStrings)

@@ -22,7 +22,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.BaseViewAction;
+import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.HasBindParameters;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -52,14 +54,15 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependency;
-import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -75,10 +78,19 @@ import java.util.stream.Collectors;
  * Time: 11:02:04 AM
  */
 @RequiresPermission(InsertPermission.class)
-public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.PublishConfirmForm>
+public class PublishConfirmAction extends FormViewAction<PublishConfirmAction.PublishConfirmForm>
 {
     private ExpProtocol _protocol;
     @Nullable private String _targetStudyName;
+
+    private Map<Object, String> _postedVisits;
+    private Map<Object, String> _postedDates;
+    private Map<Object, String> _postedPtids;
+    private Map<Object, String> _postedTargetStudies;
+    private Set<Integer> _selectedObjects;
+    private List<Integer> _allObjects = Collections.emptyList();
+    private Container _targetStudy;
+    private ActionURL _successURL;
 
     public static class PublishConfirmForm extends ProtocolIdForm implements DataRegionSelection.DataSelectionKeyForm, HasBindParameters
     {
@@ -231,65 +243,78 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         }
     }
 
-    public ModelAndView getView(PublishConfirmForm publishConfirmForm, BindException errors)
+    @Override
+    public void validateCommand(PublishConfirmForm form, Errors errors)
+    {
+        // Check if a single target study was posted for the entire run (the common case)
+        if (form.getTargetStudy() != null && form.getTargetStudy().length == 1)
+        {
+            _targetStudy = ContainerManager.getForId(form.getTargetStudy()[0]);
+            if (_targetStudy == null)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, "Could not find target study");
+            }
+        }
+
+        if (_targetStudy != null)
+        {
+            Study study = StudyService.get().getStudy(_targetStudy);
+            if (study == null)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, "No study configured for " + _targetStudy);
+            }
+            AssayPublishService.get().getTimepointType(_targetStudy);
+            _targetStudyName = study.getLabel();
+        }
+
+        _selectedObjects = new HashSet<>(BaseAssayAction.getCheckboxIds(getViewContext()));
+        _allObjects = form.getObjectIdValues();
+
+        if (_allObjects == null) // On first post, this is empty, so use the current selection
+            _allObjects = new ArrayList<>(_selectedObjects);
+
+        _protocol = form.getProtocol();
+    }
+
+    @Override
+    public boolean handlePost(PublishConfirmForm form, BindException errors) throws Exception
+    {
+        if (form.isAttemptPublish() && form.getDefaultValueSourceEnum() == PublishResultsQueryView.DefaultValueSource.UserSpecified)
+        {
+            _postedVisits = new HashMap<>();
+            _postedDates = new HashMap<>();
+            _postedPtids = new HashMap<>();
+            _postedTargetStudies = new HashMap<>();
+
+            attemptCopy(form, errors, getViewContext(), form.getProvider(), _selectedObjects, _allObjects, _targetStudy, _postedTargetStudies, _postedVisits, _postedDates, _postedPtids);
+        }
+
+        return !errors.hasErrors();
+    }
+
+    @Override
+    public URLHelper getSuccessURL(PublishConfirmForm publishConfirmForm)
+    {
+        return _successURL;
+    }
+
+    @Override
+    public ModelAndView getView(PublishConfirmForm publishConfirmForm, boolean reshow, BindException errors) throws Exception
     {
         getPageConfig().addClientDependency(ClientDependency.fromPath("study/assayPublish.js"));
 
         ViewContext context = getViewContext();
-        _protocol = publishConfirmForm.getProtocol();
         AssayProvider provider = publishConfirmForm.getProvider();
-        Set<Integer> selectedObjects = new HashSet<>(getCheckboxIds());
-        List<Integer> allObjects = publishConfirmForm.getObjectIdValues();
 
-        if (allObjects == null) // On first post, this is empty, so use the current selection
-            allObjects = new ArrayList<>(selectedObjects);
-
-        // Check if a single target study was posted for the entire run (the common case)
-        Container targetStudy = null;
-        if (publishConfirmForm.getTargetStudy() != null && publishConfirmForm.getTargetStudy().length == 1)
-        {
-            targetStudy = ContainerManager.getForId(publishConfirmForm.getTargetStudy()[0]);
-            if (targetStudy == null)
-            {
-                throw new NotFoundException("Could not find target study");
-            }
-        }
-        Map<Object, String> postedVisits = null;
-        Map<Object, String> postedDates = null;
-        Map<Object, String> postedPtids = null;
-        Map<Object, String> postedTargetStudies = null;
-        TimepointType timepointType = null;
-        if (targetStudy != null)
-        {
-            Study study = StudyService.get().getStudy(targetStudy);
-            if (study == null)
-            {
-                throw new IllegalArgumentException("No study configured for " + targetStudy);
-            }
-            timepointType = AssayPublishService.get().getTimepointType(targetStudy);
-            _targetStudyName = study.getLabel();
-        }
-
-        // todo: this isn't a great way to determine if this is our final post, but it'll do for now:
-        if (publishConfirmForm.isAttemptPublish() && publishConfirmForm.getDefaultValueSourceEnum() == PublishResultsQueryView.DefaultValueSource.UserSpecified)
-        {
-            postedVisits = new HashMap<>();
-            postedDates = new HashMap<>();
-            postedPtids = new HashMap<>();
-            postedTargetStudies = new HashMap<>();
-            attemptCopy(publishConfirmForm, errors, context, provider, selectedObjects, allObjects, targetStudy, postedTargetStudies, postedVisits, postedDates, postedPtids);
-        }
-
-        AssayProtocolSchema schema = provider.createProtocolSchema(getUser(), getContainer(), _protocol, targetStudy);
-
-        boolean mismatched = AssayPublishService.get().hasMismatchedInfo(allObjects, schema);
+        AssayProtocolSchema schema = provider.createProtocolSchema(getUser(), getContainer(), _protocol, _targetStudy);
+        boolean mismatched = AssayPublishService.get().hasMismatchedInfo(_allObjects, schema);
 
         // Show the form
         QuerySettings settings = schema.getSettings(context, AssayProtocolSchema.DATA_TABLE_NAME, AssayProtocolSchema.DATA_TABLE_NAME);
         settings.setAllowChooseView(false);
         settings.setSelectionKey(publishConfirmForm.getDataRegionSelectionKey());
         PublishResultsQueryView queryView = new PublishResultsQueryView(provider, _protocol, schema, settings,
-                allObjects, targetStudy, postedTargetStudies, postedVisits, postedDates, postedPtids, publishConfirmForm.getDefaultValueSourceEnum(), mismatched);
+                _allObjects, _targetStudy, _postedTargetStudies, _postedVisits, _postedDates, _postedPtids, publishConfirmForm.getDefaultValueSourceEnum(), mismatched);
 
         if (publishConfirmForm.getContainerFilterName() != null)
             queryView.getSettings().setContainerFilterName(publishConfirmForm.getContainerFilterName());
@@ -298,7 +323,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         URLHelper returnURL = publishConfirmForm.getReturnURLHelper();
         if (null == returnURL)
         {
-            returnURL = getSummaryLink(_protocol).addParameter("clearDataRegionSelectionKey", publishConfirmForm.getDataRegionSelectionKey());
+            returnURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol).addParameter("clearDataRegionSelectionKey", publishConfirmForm.getDataRegionSelectionKey());
         }
 
         ActionURL publishURL = getPublishHandlerURL(_protocol);
@@ -330,8 +355,12 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         cancelButton.setScript("LABKEY.setSubmit(true);", true);
         buttons.add(cancelButton);
 
-
         queryView.setButtons(buttons);
+
+        TimepointType timepointType = null;
+        if (_targetStudy != null)
+            timepointType = AssayPublishService.get().getTimepointType(_targetStudy);
+
         return new VBox(new JspView<>("/org/labkey/api/study/actions/publishHeader.jsp",
                 new PublishConfirmBean(timepointType, mismatched), errors), queryView);
     }
@@ -480,14 +509,13 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         if (errors.getErrorCount() == 0 && !publishConfirmForm.isValidate())
         {
             List<String> publishErrors = new ArrayList<>();
-            ActionURL successURL  = provider.copyToStudy(getUser(), getContainer(), _protocol, targetStudy, publishData, publishErrors);
+            _successURL  = provider.copyToStudy(getUser(), getContainer(), _protocol, targetStudy, publishData, publishErrors);
             if (publishErrors.isEmpty())
             {
                 DataRegionSelection.clearAll(getViewContext(), publishConfirmForm.getDataRegionSelectionKey());
                 // Issue 14111: successURL shouldn't be null if there are no errors, but better to go somewhere than to NPE.
-                if (successURL == null)
-                    successURL = PageFlowUtil.urlProvider(StudyUrls.class).getDatasetsURL(targetStudy);
-                throw new RedirectException(successURL);
+                if (_successURL == null)
+                    _successURL = PageFlowUtil.urlProvider(StudyUrls.class).getDatasetsURL(targetStudy);
             }
             for (String publishError : publishErrors)
             {
@@ -526,7 +554,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
     public NavTree appendNavTrail(NavTree root)
     {
         getPageConfig().setHelpTopic(new HelpTopic("publishAssayData"));
-        NavTree result = super.appendNavTrail(root);
+        NavTree result = root.addChild("Assay List", PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(getContainer()));
         result.addChild(_protocol.getName(), PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
         result.addChild("Copy to " + (_targetStudyName == null ? "Study" : _targetStudyName) + ": Verify Results");
         return result;
