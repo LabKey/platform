@@ -62,7 +62,7 @@ public class TableUpdaterFileListener implements FileListener
 
     public interface PathGetter
     {
-        /** @return the string that is expected to be the in database */
+        /** @return the string that is expected to be in the database */
         String get(File f);
         String get(Path f);
         /** @return the file path separator (typically '/' or '\') */
@@ -308,28 +308,47 @@ public class TableUpdaterFileListener implements FileListener
                 destPath = destPath + _pathGetter.getSeparatorSuffix();
             }
 
-            SQLFragment whereClause = new SQLFragment(" WHERE ");
+            int childRowsUpdated = 0;
+
             if (srcPath.startsWith("file:"))
             {
                 // Consider paths file:/... and file:///...
                 String srcCore = srcPath.replaceFirst("^file:/+", "/");
+
+                // Do one update for file:/
                 String srcPath1 = "file:" + srcCore;
+                SQLFragment whereClause1 = new SQLFragment(" WHERE ");
+                whereClause1.append(dialect.getStringIndexOfFunction(new SQLFragment("?", srcPath1), new SQLFragment(dbColumnName))).append(" = 1");
+                SQLFragment childPathsSQL1 = new SQLFragment(sharedSQL);
+                childPathsSQL1.append(dialect.concatenate(new SQLFragment("?", destPath), new SQLFragment(dialect.getSubstringFunction(dbColumnName, Integer.toString(srcPath1.length() + 1), "5000"))));
+                childPathsSQL1.append(whereClause1);
+
+                childRowsUpdated += new SqlExecutor(schema).execute(childPathsSQL1);
+
+                // And a second update for file:///
                 String srcPath2 = "file://" + srcCore;
-                whereClause.append(dialect.getStringIndexOfFunction(new SQLFragment("?", srcPath1), new SQLFragment(dbColumnName))).append(" = 1 OR ");
-                whereClause.append(dialect.getStringIndexOfFunction(new SQLFragment("?", srcPath2), new SQLFragment(dbColumnName))).append(" = 1");
+                SQLFragment whereClause2 = new SQLFragment(" WHERE ");
+                whereClause2.append(dialect.getStringIndexOfFunction(new SQLFragment("?", srcPath2), new SQLFragment(dbColumnName))).append(" = 1");
+                SQLFragment childPathsSQL2 = new SQLFragment(sharedSQL);
+                childPathsSQL2.append(dialect.concatenate(new SQLFragment("?", destPath), new SQLFragment(dialect.getSubstringFunction(dbColumnName, Integer.toString(srcPath2.length() + 1), "5000"))));
+                childPathsSQL2.append(whereClause2);
+
+                childRowsUpdated += new SqlExecutor(schema).execute(childPathsSQL2);
             }
             else
             {
+                SQLFragment whereClause = new SQLFragment(" WHERE ");
                 whereClause.append(dialect.getStringIndexOfFunction(new SQLFragment("?", srcPath), new SQLFragment(dbColumnName))).append(" = 1");
+
+                // Make the SQL to handle children
+                SQLFragment childPathsSQL = new SQLFragment(sharedSQL);
+                childPathsSQL.append(dialect.concatenate(new SQLFragment("?", destPath), new SQLFragment(dialect.getSubstringFunction(dbColumnName, Integer.toString(srcPath.length() + 1), "5000"))));
+                childPathsSQL.append(whereClause);
+
+                childRowsUpdated += new SqlExecutor(schema).execute(childPathsSQL);
             }
 
-            // Make the SQL to handle children
-            SQLFragment childPathsSQL = new SQLFragment(sharedSQL);
-            childPathsSQL.append(dialect.concatenate(new SQLFragment("?", destPath), new SQLFragment(dialect.getSubstringFunction(dbColumnName, Integer.toString(srcPath.length() + 1), "5000"))));
-            childPathsSQL.append(whereClause);
-
-            int childRows = new SqlExecutor(schema).execute(childPathsSQL);
-            LOG.info("Updated " + childRows + " child paths in " + _table + " rows for move from " + src + " to " + dest);
+            LOG.info("Updated " + childRowsUpdated + " child paths in " + _table + " rows for move from " + src + " to " + dest);
         }
     }
 
