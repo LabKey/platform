@@ -121,7 +121,7 @@ public class SampleSetDomainKind extends AbstractDomainKind
     {
         Lsid lsid = new Lsid(domainURI);
         String prefix = lsid.getNamespacePrefix();
-        if ("SampleSet".equals(prefix) || "SampleSource".equals(prefix))
+        if ("SampleSet".equals(prefix) || "SampleSource".equals(prefix) || "AssayDomain-Fractions".equals(prefix))
             return Priority.MEDIUM;
         return null;
     }
