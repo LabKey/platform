@@ -27,6 +27,7 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormHandlerAction;
+import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
@@ -51,6 +52,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -79,7 +81,6 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -421,19 +422,72 @@ public class DesignerController extends SpringActionController
 
     @SuppressWarnings("unchecked")
     @RequiresPermission(AdminPermission.class)
-    public class CreateRepository extends SimpleViewAction<CreateRepositoryForm>
+    public class CreateRepository extends FormViewAction<CreateRepositoryForm>
     {
-        String titleForNav;
+        private String _titleForNav;
+        private int _studyId;
+        private StudyDesignInfo _info;
+        private ActionURL _successURL;
 
-        public ModelAndView getView(CreateRepositoryForm form, BindException errors) throws Exception
+        @Override
+        public void validateCommand(CreateRepositoryForm form, Errors errors)
         {
-            int studyId = form.getStudyId();
-            StudyDesignInfo info = StudyDesignManager.get().getStudyDesign(getContainer(), studyId);
-            StudyDesignVersion version = StudyDesignManager.get().getStudyDesignVersion(info.getContainer(), info.getStudyId());
-            GWTStudyDefinition def = XMLSerializer.fromXML(version.getXML(), getUser(), getContainer());
+            _studyId = form.getStudyId();
+            _info = StudyDesignManager.get().getStudyDesign(getContainer(), _studyId);
+
+            if (null == _info)
+                errors.reject(SpringActionController.ERROR_MSG, "Couldn't find study with id " + form.getStudyId());
 
             form.setMessage(null); //We're reusing the form, so reset the message.
-            validateStep(form, info); //Make sure we are not in some weird back/forward state
+            setWizardStep(form, _info); //Make sure we are not in some weird back/forward state
+
+            _titleForNav = form.getWizardStep().getTitle();
+            if (_titleForNav == null)
+                _titleForNav = form.getStudyName();
+        }
+
+        @Override
+        public boolean handlePost(CreateRepositoryForm form, BindException errors) throws Exception
+        {
+            //Wizard step is the *last* wizard step shown to the user.
+            //Each method handles the post and sets up the form to render the next wizard step
+            //  or re-render same step if errors occurred
+            switch(form.getWizardStep())
+            {
+                case CONFIRM:
+                    //Put visitids back on uploaded participant info...
+                    List<Map<String,Object>> participantMaps = new ArrayList<>(getParticipants().size());
+                    for (int i = 0; i < getParticipants().size(); i++)
+                    {
+                        HashMap<String, Object> newMap = new HashMap<>(getParticipants().get(i));
+                        newMap.put("Date", newMap.get("StartDate")); //Date of demographic data *is* StartDate by default
+                        participantMaps.add(newMap);
+                    }
+                    Study study = StudyDesignManager.get().generateStudyFromDesign(getUser(), ContainerManager.getForId(form.getParentFolderId()),
+                            form.getFolderName(), form.getBeginDate(), form.getSubjectNounSingular(), form.getSubjectNounPlural(),
+                            form.getSubjectColumnName(), _info, participantMaps, getSpecimens());
+                    _successURL = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(study.getContainer());
+                    return true;
+            }
+            return false;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(CreateRepositoryForm createRepositoryForm)
+        {
+            return _successURL;
+        }
+
+        @Override
+        public ModelAndView getView(CreateRepositoryForm form, boolean reshow, BindException errors) throws Exception
+        {
+            if (_info == null)
+            {
+                _studyId = form.getStudyId();
+                _info = StudyDesignManager.get().getStudyDesign(getContainer(), _studyId);
+            }
+            StudyDesignVersion version = StudyDesignManager.get().getStudyDesignVersion(_info.getContainer(), _info.getStudyId());
+            GWTStudyDefinition def = XMLSerializer.fromXML(version.getXML(), getUser(), getContainer());
 
             //Wizard step is the *last* wizard step shown to the user.
             //Each method handles the post and sets up the form to render the next wizard step
@@ -443,12 +497,12 @@ public class DesignerController extends SpringActionController
                 case INIT:
                     //We keep the same form instance across posts except if we start new wizard
                     form = new CreateRepositoryForm();
-                    form.setStudyId(studyId);
+                    form.setStudyId(_studyId);
                     form.setParentFolderId(getContainer().getId());
                     form.setBeginDate(new Date());
                     form.setWizardStepNumber(WizardStep.PICK_FOLDER.getNumber());
-                    form.setStudyName(info.getLabel());
-                    form.setFolderName(info.getLabel());
+                    form.setStudyName(_info.getLabel());
+                    form.setFolderName(_info.getLabel());
                     form.setSubjectNounSingular(def.getAnimalSpecies());
                     form.setSubjectNounPlural(def.getAnimalSpecies() + "s");
                     form.setSubjectColumnName(def.getAnimalSpecies() + "Id");
@@ -470,40 +524,19 @@ public class DesignerController extends SpringActionController
                 case UPLOAD_SAMPLES:
                     handleUploadSamples(form);
                     break;
-                case CONFIRM:
-                    //Put visitids back on uploaded participant info...
-                    List<Map<String,Object>> participantMaps = new ArrayList<>(getParticipants().size());
-                    for (int i = 0; i < getParticipants().size(); i++)
-                    {
-                        HashMap<String, Object> newMap = new HashMap<>(getParticipants().get(i));
-                        newMap.put("Date", newMap.get("StartDate")); //Date of demographic data *is* StartDate by default
-                        participantMaps.add(newMap);
-                    }
-                    Study study = StudyDesignManager.get().generateStudyFromDesign(getUser(), ContainerManager.getForId(form.getParentFolderId()),
-                            form.getFolderName(), form.getBeginDate(), form.getSubjectNounSingular(), form.getSubjectNounPlural(),
-                            form.getSubjectColumnName(), info, participantMaps, getSpecimens());
-                    final ActionURL studyFolderUrl = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(study.getContainer());
-                    throw new RedirectException(studyFolderUrl);
             }
-
-            titleForNav = form.getWizardStep().getTitle();
-            if (titleForNav == null)
-                titleForNav = form.getStudyName();
             return new JspView<>("/org/labkey/study/designer/view/CreateRepositoryWizard.jsp", form);
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Create Study Folder: " + titleForNav);
+            return root.addChild("Create Study Folder: " + _titleForNav);
         }
     }
 
 
-    private void validateStep(CreateRepositoryForm form, StudyDesignInfo info)
+    private void setWizardStep(CreateRepositoryForm form, StudyDesignInfo info)
     {
-        if (null == info)
-            throw new NotFoundException("Couldn't find study with id " + form.getStudyId());
-
         //Now see if the study already exists.
         if (info.isActive())
         {

@@ -17,6 +17,7 @@ package org.labkey.study.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
@@ -92,7 +93,7 @@ public class SpecimenTablesProvider
         Domain domain = PropertyService.get().getDomain(_container, domainURI);
         if (null == domain && create)
         {
-            try
+            try (var ignore = SpringActionController.ignoreSqlUpdates())
             {
                 domain = PropertyService.get().createDomain(_container, domainURI, domainKind.getKindName());
 
