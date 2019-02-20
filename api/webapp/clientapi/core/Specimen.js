@@ -327,6 +327,7 @@ LABKEY.Specimen = new function()
 
             sendJsonQueryRequest({
                 url : LABKEY.ActionURL.buildURL("study-samples-api", "cancelRequest", config.containerPath),
+                method : 'POST',
                 success: getSuccessCallbackWrapper(config.success),
                 failure: LABKEY.Utils.getCallbackWrapper(config.failure, this, true),
                 jsonData : {requestId : config.requestId }
@@ -420,6 +421,7 @@ LABKEY.Specimen = new function()
 
             sendJsonQueryRequest({
                 url : LABKEY.ActionURL.buildURL("study-samples-api", "addSamplesToRequest", config.containerPath),
+                method : 'POST',
                 success: getSuccessCallbackWrapper(success),
                 failure: LABKEY.Utils.getCallbackWrapper(failure, this, true),
                 jsonData : {
@@ -470,6 +472,7 @@ LABKEY.Specimen = new function()
 
             sendJsonQueryRequest({
                 url : LABKEY.ActionURL.buildURL("study-samples-api", "removeVialsFromRequest", config.containerPath),
+                method: 'POST',
                 success: getSuccessCallbackWrapper(config.success),
                 failure: LABKEY.Utils.getCallbackWrapper(config.failure, this, true),
                 jsonData : {requestId : config.requestId, vialIds : config.vialIdArray, idType : config.idType}
