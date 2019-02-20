@@ -15,10 +15,10 @@
  */
 package org.labkey.study.controllers.assay.actions;
 
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
+import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
@@ -46,7 +46,7 @@ import java.util.stream.Collectors;
  */
 @Marshal(Marshaller.Jackson)
 @RequiresPermission(ReadPermission.class)
-public class ProtocolAction extends ApiAction<GWTProtocol>
+public class ProtocolAction extends MutatingApiAction<GWTProtocol>
 {
     public ProtocolAction()
     {

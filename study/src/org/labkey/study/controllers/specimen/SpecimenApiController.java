@@ -199,7 +199,7 @@ public class SpecimenApiController extends BaseStudyController
 
     @RequiresPermission(ReadPermission.class)
     @ApiVersion(9.1)
-    public class GetRepositoriesAction extends ApiAction<SpecimenApiForm>
+    public class GetRepositoriesAction extends ReadOnlyApiAction<SpecimenApiForm>
     {
         public ApiResponse execute(SpecimenApiForm form, BindException errors)
         {
@@ -217,7 +217,7 @@ public class SpecimenApiController extends BaseStudyController
 
     @RequiresPermission(ReadPermission.class)
     @ApiVersion(9.1)
-    public class GetOpenRequestsAction extends ApiAction<GetRequestsForm>
+    public class GetOpenRequestsAction extends ReadOnlyApiAction<GetRequestsForm>
     {
         public ApiResponse execute(GetRequestsForm requestsForm, BindException errors)
         {
@@ -250,7 +250,7 @@ public class SpecimenApiController extends BaseStudyController
 
     @RequiresPermission(ReadPermission.class)
     @ApiVersion(9.1)
-    public class GetRequestAction extends ApiAction<RequestIdForm>
+    public class GetRequestAction extends ReadOnlyApiAction<RequestIdForm>
     {
         public ApiResponse execute(RequestIdForm requestIdForm, BindException errors)
         {
@@ -293,7 +293,7 @@ public class SpecimenApiController extends BaseStudyController
 
     @RequiresPermission(ReadPermission.class)
     @ApiVersion(9.1)
-    public class GetProvidingLocations extends ApiAction<GetProvidingLocationsForm>
+    public class GetProvidingLocations extends ReadOnlyApiAction<GetProvidingLocationsForm>
     {
         public ApiResponse execute(GetProvidingLocationsForm form, BindException errors)
         {
@@ -311,7 +311,7 @@ public class SpecimenApiController extends BaseStudyController
 
     @RequiresPermission(ReadPermission.class)
     @ApiVersion(9.1)
-    public class GetVialsByRowIdAction extends ApiAction<GetVialsByRowIdForm>
+    public class GetVialsByRowIdAction extends ReadOnlyApiAction<GetVialsByRowIdForm>
     {
         public ApiResponse execute(GetVialsByRowIdForm form, BindException errors)
         {
@@ -485,7 +485,7 @@ public class SpecimenApiController extends BaseStudyController
 
     @RequiresPermission(RequestSpecimensPermission.class)
     @ApiVersion(9.1)
-    public class RemoveVialsFromRequestAction extends ApiAction<VialRequestForm>
+    public class RemoveVialsFromRequestAction extends MutatingApiAction<VialRequestForm>
     {
         public ApiResponse execute(VialRequestForm vialRequestForm, BindException errors) throws Exception
         {
@@ -525,7 +525,7 @@ public class SpecimenApiController extends BaseStudyController
 
     @RequiresPermission(RequestSpecimensPermission.class)
     @ApiVersion(9.1)
-    public class AddSamplesToRequestAction extends ApiAction<AddSpecimenToRequestForm>
+    public class AddSamplesToRequestAction extends MutatingApiAction<AddSpecimenToRequestForm>
     {
         public ApiResponse execute(AddSpecimenToRequestForm addSampleToRequestForm, BindException errors) throws Exception
         {
@@ -559,7 +559,7 @@ public class SpecimenApiController extends BaseStudyController
 
     @RequiresPermission(RequestSpecimensPermission.class)
     @ApiVersion(9.1)
-    public class CancelRequestAction extends ApiAction<RequestIdForm>
+    public class CancelRequestAction extends MutatingApiAction<RequestIdForm>
     {
         public ApiResponse execute(RequestIdForm deleteRequestForm, BindException errors) throws Exception
         {
@@ -603,7 +603,7 @@ public class SpecimenApiController extends BaseStudyController
 
     @RequiresPermission(ReadPermission.class)
     @ApiVersion(11.2)
-    public class GetVialTypeSummaryAction extends ApiAction<SpecimenApiForm>
+    public class GetVialTypeSummaryAction extends ReadOnlyApiAction<SpecimenApiForm>
     {
         public ApiResponse execute(SpecimenApiForm form, BindException errors)
         {
@@ -629,7 +629,7 @@ public class SpecimenApiController extends BaseStudyController
 
     @RequiresPermission(ReadPermission.class)
     @ApiVersion(13.1)
-    public class GetSpecimenWebPartGroupsAction extends ApiAction<SpecimenApiForm>
+    public class GetSpecimenWebPartGroupsAction extends ReadOnlyApiAction<SpecimenApiForm>
     {
         public ApiResponse execute(SpecimenApiForm form, BindException errors)
         {

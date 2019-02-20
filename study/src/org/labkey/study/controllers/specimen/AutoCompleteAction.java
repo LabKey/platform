@@ -17,9 +17,9 @@
 package org.labkey.study.controllers.specimen;
 
 import org.json.JSONObject;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
@@ -39,7 +39,7 @@ import java.util.List;
  * Date: Jul 21, 2009
  */
 @RequiresPermission(ReadPermission.class)
-public class AutoCompleteAction extends ApiAction<AutoCompleteAction.AutoCompletionForm>
+public class AutoCompleteAction extends ReadOnlyApiAction<AutoCompleteAction.AutoCompletionForm>
 {
     @Override
     public ApiResponse execute(AutoCompletionForm form, BindException errors)

@@ -21,7 +21,6 @@ import gwt.client.org.labkey.study.designer.client.model.GWTStudyDefinition;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -29,6 +28,7 @@ import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -348,7 +348,7 @@ public class DesignerController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetStudyDesigns extends ApiAction<GetStudyDesignsForm>
+    public class GetStudyDesigns extends ReadOnlyApiAction<GetStudyDesignsForm>
     {
 
         public ApiResponse execute(GetStudyDesignsForm getStudyDesignsForm, BindException errors) throws Exception

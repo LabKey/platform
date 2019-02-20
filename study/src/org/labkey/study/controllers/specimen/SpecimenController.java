@@ -23,7 +23,6 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormHandlerAction;
@@ -33,6 +32,7 @@ import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.OldRedirectAction;
 import org.labkey.api.action.QueryViewAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
@@ -5597,7 +5597,7 @@ public class SpecimenController extends BaseStudyController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class CompleteSpecimenAction extends ApiAction<CompleteSpecimenForm>
+    public class CompleteSpecimenAction extends ReadOnlyApiAction<CompleteSpecimenForm>
     {
         @Override
         public ApiResponse execute(CompleteSpecimenForm form, BindException errors)

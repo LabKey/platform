@@ -17,11 +17,11 @@ package org.labkey.study.controllers;
 
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.data.Container;
@@ -173,7 +173,7 @@ public class StudyDesignController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetStudyProducts extends ApiAction<GetStudyProductsForm>
+    public class GetStudyProducts extends ReadOnlyApiAction<GetStudyProductsForm>
     {
         private StudyImpl _study;
 
@@ -249,7 +249,7 @@ public class StudyDesignController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetStudyTreatments extends ApiAction<GetStudyTreatmentsForm>
+    public class GetStudyTreatments extends ReadOnlyApiAction<GetStudyTreatmentsForm>
     {
         private StudyImpl _study;
 
@@ -351,7 +351,7 @@ public class StudyDesignController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetStudyTreatmentSchedule extends ApiAction<Object>
+    public class GetStudyTreatmentSchedule extends ReadOnlyApiAction<Object>
     {
         private StudyImpl _study;
 

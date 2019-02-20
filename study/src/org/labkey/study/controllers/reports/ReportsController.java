@@ -24,13 +24,13 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.BeanViewForm;
@@ -1850,7 +1850,7 @@ public class ReportsController extends BaseStudyController
 
     @RequiresLogin
     @RequiresPermission(ReadPermission.class)
-    public class GetAssayReportDataAction extends ApiAction<ProgressReportForm>
+    public class GetAssayReportDataAction extends ReadOnlyApiAction<ProgressReportForm>
     {
         @Override
         public ApiResponse execute(ProgressReportForm form, BindException errors)
@@ -1876,7 +1876,7 @@ public class ReportsController extends BaseStudyController
 
 
     @RequiresPermission(ReadPermission.class)
-    public class GetReportInfosAction extends ApiAction<GetReportInfosForm>
+    public class GetReportInfosAction extends ReadOnlyApiAction<GetReportInfosForm>
     {
         @Override
         public ApiResponse execute(GetReportInfosForm form, BindException errors) throws Exception
