@@ -235,20 +235,40 @@ public class ExperimentUpgradeCode implements UpgradeCode
         {
             // pass
         }
-        if (null == kind)
+        if (null == kind || domain.getStorageTableName() != null)
         {
             return;
         }
         DbScope scope = ExperimentServiceImpl.get().getSchema().getScope();
         SqlDialect d = scope.getSqlDialect();
 
-        // Make sure that all properties have a storagecolumnname value
         for (DomainProperty property : domain.getProperties())
         {
+            // Make sure that all properties have a storagecolumnname value
             PropertyDescriptor propertyDescriptor = property.getPropertyDescriptor();
+            boolean updated = false;
             if (propertyDescriptor.getStorageColumnName() == null)
             {
                 ((DomainImpl)domain).generateStorageColumnName(propertyDescriptor);
+                updated = true;
+            }
+
+            // Issue 36817 - deal with string values longer than the property descriptor's declared scale
+            if (propertyDescriptor.getJdbcType().isText())
+            {
+                SQLFragment longestSQL =  new SQLFragment("SELECT MAX(LENGTH(StringValue)) FROM ").
+                        append(OntologyManager.getTinfoObjectProperty(), "op").
+                        append(" WHERE PropertyId = ?").
+                        add(propertyDescriptor.getPropertyId());
+                Integer longest = new SqlSelector(OntologyManager.getExpSchema(), longestSQL).getObject(Integer.class);
+                if (longest != null && longest.intValue() > propertyDescriptor.getScale())
+                {
+                    propertyDescriptor.setScale(4000);
+                    updated = true;
+                }
+            }
+            if (updated)
+            {
                 OntologyManager.updatePropertyDescriptor(propertyDescriptor);
             }
         }
