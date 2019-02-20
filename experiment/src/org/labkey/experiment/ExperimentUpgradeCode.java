@@ -235,7 +235,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         {
             // pass
         }
-        if (null == kind || domain.getStorageTableName() != null)
+        if (null == kind)
         {
             return;
         }
