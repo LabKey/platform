@@ -107,7 +107,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     protected TsvAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, Module declaringModule)
     {
         super(protocolLSIDPrefix, runLSIDPrefix, (AssayDataType) ExperimentService.get().getDataType(TsvDataHandler.NAMESPACE), declaringModule);
-        setMaxFileInputs(10);  // no specific requirement for this, can be changed easily
+        setMaxFileInputs(100);  // no specific requirement for this, can be changed easily
     }
 
     public List<AssayDataCollector> getDataCollectors(@Nullable Map<String, File> uploadedFiles, AssayRunUploadForm context)
