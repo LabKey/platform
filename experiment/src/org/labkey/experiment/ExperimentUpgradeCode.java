@@ -323,7 +323,6 @@ public class ExperimentUpgradeCode implements UpgradeCode
         if (context.isNewInstall())
             return;
 
-        SampleSetServiceImpl sss = SampleSetServiceImpl.get();
         // get all MaterialSource across all containers
         TableInfo source = ExperimentServiceImpl.get().getTinfoMaterialSource();
         new TableSelector(source, null, null).stream(MaterialSource.class)
