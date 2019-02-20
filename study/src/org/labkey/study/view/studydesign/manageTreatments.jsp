@@ -135,7 +135,7 @@ Enter treatment information in the grids below.
             <%=textLink("Manage Study Products", manageStudyProductsURL)%>
         </li>
         <li>
-            Each cohort label must be unique. Enter the number of <%=study.getSubjectNounPlural().toLowerCase()%> for
+            Each cohort label must be unique. Enter the number of <%=h(study.getSubjectNounPlural().toLowerCase())%> for
             the cohort in the count column.</li>
         <li>
             Use the manage cohorts page to further configuration information about the cohorts for this study.

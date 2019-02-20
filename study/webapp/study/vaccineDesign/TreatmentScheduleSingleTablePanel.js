@@ -155,6 +155,9 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentScheduleSingleTableGrid', {
                                             if (resp.success) {
                                                 win.close();
                                                 me.fireEvent('celledited');
+                                                var changed = cmp.treatmentId != resp.treatmentIds[0];
+                                                if (changed)
+                                                    cmp.setValue(''); // force a change event, in case label is same, but id changed
                                                 cmp.treatmentId = resp.treatmentIds[0];
                                                 cmp.setValue(treatments[0].Label);
                                                 cmp.getEl().dom.title = treatments[0].Label;
