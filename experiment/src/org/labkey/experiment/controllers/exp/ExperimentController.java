@@ -4416,9 +4416,17 @@ public class ExperimentController extends SpringActionController
 
     /** Check for update on the object itself */
     @RequiresNoPermission
-    public class SetFlagAction extends SimpleViewAction<SetFlagForm>
+    public class SetFlagAction extends FormHandlerAction<SetFlagForm>
     {
-        public ModelAndView getView(SetFlagForm form, BindException errors) throws Exception
+        private URLHelper _successURL;
+
+        @Override
+        public void validateCommand(SetFlagForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(SetFlagForm form, BindException errors) throws Exception
         {
             String lsid = form.getLsid();
             if (lsid == null)
@@ -4440,15 +4448,15 @@ public class ExperimentController extends SpringActionController
 
             if (form.isRedirect())
             {
-                String url = obj.urlFlag(!StringUtils.isEmpty(form.getComment()));
-                throw new RedirectException(url);
+                _successURL = new URLHelper(obj.urlFlag(!StringUtils.isEmpty(form.getComment())));
             }
-            return null;
+            return true;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public URLHelper getSuccessURL(SetFlagForm form)
         {
-            throw new UnsupportedOperationException();
+            return _successURL;
         }
     }
 
