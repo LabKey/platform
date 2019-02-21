@@ -115,6 +115,11 @@
         request.add(LABKEY.Security.getModules, {
             success: function(data) {
                 moduleTypes = data;
+
+                // keep a map from the module name to the display/tab name
+                Ext4.each(moduleTypes.modules, function(m) {
+                    moduleTypesMap[m.name] = m.tabName;
+                });
             }
         });
 
@@ -337,19 +342,22 @@
                             store: {
                                 fields: ['module', 'tabName'],
                                 idIndex: 0,
-                                data: (function(hasLoaded, selectedModules){
+                                data: (function(me, hasLoaded, selectedModules){
                                     var items = [];
-                                    if(!hasLoaded)
-                                        return [{module: 'Core', tabName: 'Portal'}];
-                                    else {
-                                        if(selectedModules && selectedModules.length){
-                                            items = Ext4.Array.map(selectedModules, function(e){
-                                                return {module: e, tabName: moduleTypesMap[e]};
-                                            }, this);
-                                        }
+                                    if (!hasLoaded) {
+                                        Ext4.each(me.getActiveModules(), function(m) {
+                                            if (m.active) {
+                                                items.push({module: m.name, tabName: moduleTypesMap[m.name]});
+                                            }
+                                        });
+                                    }
+                                    else if (selectedModules && selectedModules.length) {
+                                        Ext4.each(selectedModules, function(m) {
+                                            items.push({module: m, tabName: moduleTypesMap[m]});
+                                        });
                                     }
                                     return items;
-                                })(hasLoaded, selectedModules)
+                                })(this, hasLoaded, selectedModules)
                             }
                         },{
                             html: 'Choose Modules:',
@@ -385,7 +393,7 @@
                                         }
                                         store.add(records);
 
-                                        if (records.length == 1)
+                                        if (records.length === 1)
                                             combo.setValue(records[0].module);
                                         else if (oldVal)
                                             combo.setValue(oldVal);
@@ -395,32 +403,20 @@
                                     buffer: 20
                                 }
                             },
-                            items: function(){
+                            items: function(me){
                                 var items = [];
-                                if (moduleTypes) {
-                                    Ext4.each(moduleTypes.modules, function(m) {
-                                        if (!m.required) {
-                                            // keep a map from the module name to the display/tab name
-                                            moduleTypesMap[m.name] = m.tabName;
-
-                                            //the effect of this is that by default, a new container inherits modules from the parent
-                                            //if creating a project, there is nothing to inherit, so we set to Portal below
-                                            if ((m.active || m.enabled) && (userHasEnableRestrictedModulesPermission || !m.requireSitePermission)) {
-                                                items.push({
-                                                    xtype: 'checkbox',
-                                                    name: 'activeModules',
-                                                    inputValue: m.name,
-                                                    boxLabel: m.tabName,
-                                                    checked: (hasLoaded ? (selectedModules && selectedModules.indexOf(m.name) != -1) : m.active)
-                                                });
-                                            }
-                                        }
-                                    }, this);
-                                }
+                                Ext4.each(me.getActiveModules(), function(m) {
+                                    items.push({
+                                        xtype: 'checkbox',
+                                        name: 'activeModules',
+                                        inputValue: m.name,
+                                        boxLabel: m.tabName,
+                                        checked: (hasLoaded ? (selectedModules && selectedModules.indexOf(m.name) !== -1) : m.active)
+                                    });
+                                }, this);
 
                                 return items;
-
-                            }()
+                            }(this)
                         }
                     ]);
 
@@ -433,6 +429,21 @@
                     }
 
                     scrollToBottom();
+                },
+                getActiveModules : function() {
+                    var modules = [];
+                    if (moduleTypes) {
+                        Ext4.each(moduleTypes.modules, function(m) {
+                            if (!m.required) {
+                                //the effect of this is that by default, a new container inherits modules from the parent
+                                //if creating a project, there is nothing to inherit, so we set to Portal below
+                                if ((m.active || m.enabled) && (userHasEnableRestrictedModulesPermission || !m.requireSitePermission)) {
+                                    modules.push(m);
+                                }
+                            }
+                        }, this);
+                    }
+                    return modules;
                 },
                 // gets the folder writers associated with the current container
                 getFolderTemplateWriters : function() {
