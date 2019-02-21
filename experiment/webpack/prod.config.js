@@ -5,27 +5,12 @@
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const constants = require('./constants');
-
-// TODO figure out how to get app.view.template.xml to load all chunks with prefix "vendors" so we don't have to list them here
-// TODO can we pull these out into a separate config file (what are the least number of files to touch to add a new entry point)
-const entryPoints = [{
-    name: 'assayDesigner',
-    title: 'Assay Designer',
-    permission: 'admin',
-    path: './src/client/AssayDesigner',
-    chunks: ['vendors~assayDesigner~domainDesigner', 'assayDesigner']
-},{
-    name: 'domainDesigner',
-    title: 'Domain Designer',
-    permission: 'admin',
-    path: './src/client/DomainDesigner',
-    chunks: ['vendors~assayDesigner~domainDesigner', 'vendors~domainDesigner', 'domainDesigner']
-}];
+const entryPoints = require('./entryPoints');
 
 let entries = {};
 let plugins = [];
-for (let i = 0; i < entryPoints.length; i++) {
-    const entryPoint = entryPoints[i];
+for (let i = 0; i < entryPoints.apps.length; i++) {
+    const entryPoint = entryPoints.apps[i];
 
     entries[entryPoint.name] = entryPoint.path + '/app.tsx';
 

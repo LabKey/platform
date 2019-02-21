@@ -12,6 +12,7 @@ export function fetchProtocol(protocolId: number): Promise<AssayProtocolModel> {
     return new Promise((resolve, reject) => {
         Ajax.request({
             url: buildURL('assay', 'protocol.api', { protocolId }),
+            method: 'GET',
             success: Utils.getCallbackWrapper((data) => {
                 if (data.data) {
                     resolve(new AssayProtocolModel(data.data));

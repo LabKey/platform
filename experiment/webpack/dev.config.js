@@ -5,6 +5,7 @@
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const constants = require('./constants');
+const entryPoints = require('./entryPoints');
 
 const devServer = {
     host: 'localhost',
@@ -25,6 +26,24 @@ const devServer = {
 
 const devServerURL = 'http://' + devServer.host + ':' + devServer.port;
 
+let entries = {};
+for (let i = 0; i < entryPoints.apps.length; i++) {
+    const entryPoint = entryPoints.apps[i];
+
+    entries[entryPoint.name] = [
+        // activate HMR for React
+        'react-hot-loader/patch',
+
+        // bundle the client for webpack-dev-server
+        // and connect to the provided endpoint
+        'webpack-dev-server/client?' + devServerURL,
+
+        'webpack/hot/only-dev-server',
+
+        entryPoint.path + '/dev.tsx'
+    ];
+}
+
 module.exports = {
     context: constants.context(__dirname),
 
@@ -32,32 +51,7 @@ module.exports = {
 
     devServer: devServer,
 
-    entry: {
-        'assayDesigner': [
-            // activate HMR for React
-            'react-hot-loader/patch',
-
-            // bundle the client for webpack-dev-server
-            // and connect to the provided endpoint
-            'webpack-dev-server/client?' + devServerURL,
-
-            'webpack/hot/only-dev-server',
-
-            './src/client/AssayDesigner/dev.tsx'
-        ],
-        'domainDesigner': [
-            // activate HMR for React
-            'react-hot-loader/patch',
-
-            // bundle the client for webpack-dev-server
-            // and connect to the provided endpoint
-            'webpack-dev-server/client?' + devServerURL,
-
-            'webpack/hot/only-dev-server',
-
-            './src/client/DomainDesigner/dev.tsx'
-        ]
-    },
+    entry: entries,
 
     output: {
         path: constants.outputPath(__dirname),

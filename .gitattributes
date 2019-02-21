@@ -1103,6 +1103,7 @@ experiment/webpack/app.template.html -text
 experiment/webpack/app.view.template.xml -text
 experiment/webpack/constants.js -text
 experiment/webpack/dev.config.js -text
+experiment/webpack/entryPoints.js -text
 experiment/webpack/prod.config.js -text
 filecontent/gwtsrc/org/labkey/filecontent/designer/FilePropertiesDesigner.gwt.xml -text
 filecontent/gwtsrc/org/labkey/filecontent/designer/client/FilePropertiesDesigner.java -text
