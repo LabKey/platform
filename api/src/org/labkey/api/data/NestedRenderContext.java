@@ -83,8 +83,13 @@ public class NestedRenderContext extends RenderContext
 
     public SimpleFilter buildFilter(TableInfo tinfo, List<ColumnInfo> displayColumns, ActionURL url, String name, int maxRows, long offset, Sort sort)
     {
+        return buildFilter(tinfo, displayColumns, url, name, maxRows, offset, sort, false);
+    }
+
+    public SimpleFilter buildFilter(TableInfo tinfo, List<ColumnInfo> displayColumns, ActionURL url, String name, int maxRows, long offset, Sort sort, boolean skipFiltering)
+    {
         SimpleFilter result = super.buildFilter(tinfo, displayColumns, url, name, maxRows, offset, sort);
-        if (_nestingOption != null && (maxRows > 0 || offset > 0))
+        if (_nestingOption != null && !skipFiltering)
         {
             // We have to apply pagination as a subquery, since we want to paginate based
             // on groups, not on the actual rows in the query we end up executing
@@ -103,7 +108,7 @@ public class NestedRenderContext extends RenderContext
             }
 
             SQLFragment fromSQL = new SQLFragment(" FROM (");
-            ColumnInfo groupColumn = appendFromSQL(tinfo, name, groupingSort, fromSQL, _nestingOption.getRowIdFieldKey());
+            ColumnInfo groupColumn = appendFromSQL(tinfo, name, groupingSort, fromSQL, _nestingOption.getRowIdFieldKey(), true);
             fromSQL.append(" ) FilterOnly ");
 
             Collection<ColumnInfo> cols = Collections.singletonList(groupColumn);
@@ -123,7 +128,7 @@ public class NestedRenderContext extends RenderContext
             // Add one to the limit so we can tell if there are more groups or not, and should therefore show pagination
             SQLFragment fullSQL = new SQLFragment(" " + groupColumn.getAlias() + " IN (SELECT " + groupColumn.getAlias() + " FROM (");
             fullSQL.append(tinfo.getSchema().getSqlDialect().limitRows(new SQLFragment("SELECT "  + groupColumn.getAlias() + " "),
-                    fromSQL, null, sortSQL, groupBySQL, maxRows == 0 ? 0 : maxRows + 1, offset));
+                    fromSQL, null, sortSQL, groupBySQL, maxRows == Table.ALL_ROWS || maxRows == Table.NO_ROWS ? maxRows : maxRows + 1, offset));
             fullSQL.append(" ) Limited )");
 
             // Apply a filter that restricts the group ids to the right "page" of data
@@ -151,7 +156,7 @@ public class NestedRenderContext extends RenderContext
         // a count of the number of groups
         Sort sort = new Sort(_nestingOption.getRowIdFieldKey());
         final SQLFragment fromSQL = new SQLFragment();
-        ColumnInfo groupColumn = appendFromSQL(tinfo, dataRegionName, sort, fromSQL, _nestingOption.getAggregateRowIdFieldKey());
+        ColumnInfo groupColumn = appendFromSQL(tinfo, dataRegionName, sort, fromSQL, _nestingOption.getAggregateRowIdFieldKey(), false);
         fromSQL.insert(0, "SELECT " + groupColumn.getAlias() + " FROM (");
         fromSQL.append(") FilterOnly GROUP BY ");
         fromSQL.append(groupColumn.getAlias());
@@ -180,9 +185,9 @@ public class NestedRenderContext extends RenderContext
         return Collections.emptyMap();
     }
 
-    private ColumnInfo appendFromSQL(TableInfo tinfo, String dataRegionName, Sort sort, SQLFragment sql, FieldKey groupFieldKey)
+    private ColumnInfo appendFromSQL(TableInfo tinfo, String dataRegionName, Sort sort, SQLFragment sql, FieldKey groupFieldKey, boolean skipFiltering)
     {
-        SimpleFilter filter = super.buildFilter(tinfo, getViewContext().getActionURL(), dataRegionName, Table.ALL_ROWS, Table.NO_OFFSET, sort);
+        SimpleFilter filter = buildFilter(tinfo, Collections.emptyList(), getViewContext().getActionURL(), dataRegionName, Table.ALL_ROWS, Table.NO_OFFSET, sort, skipFiltering);
 
         // We need to do an aggregate query to find out the group ids that we want to show based
         // on pagination.

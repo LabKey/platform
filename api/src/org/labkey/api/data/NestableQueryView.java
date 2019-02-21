@@ -42,15 +42,15 @@ public abstract class NestableQueryView extends QueryView
     protected QueryNestingOption _selectedNestingOption;
 
     protected final boolean _expanded;
-    protected final boolean _allowNesting;
+    protected final boolean _forExport;
     protected final QueryNestingOption[] _queryNestingOptions;
     protected List<FieldKey> _overrideColumns;
 
-    public NestableQueryView(UserSchema schema, QuerySettings settings, boolean expanded, boolean allowNesting, QueryNestingOption... queryNestingOptions)
+    public NestableQueryView(UserSchema schema, QuerySettings settings, boolean expanded, boolean forExport, QueryNestingOption... queryNestingOptions)
     {
         super(schema, settings);
         _expanded = expanded;
-        _allowNesting = allowNesting;
+        _forExport = forExport;
         _queryNestingOptions = queryNestingOptions;
         _buttonBarPosition = DataRegion.ButtonBarPosition.TOP;
         setShowExportButtons(false);
@@ -112,14 +112,11 @@ public abstract class NestableQueryView extends QueryView
         List<DisplayColumn> originalColumns = getDisplayColumns();
 
         // Figure out if we have nestable columns
-        if (_allowNesting)
-        {
-            _selectedNestingOption = determineNestingOption();
-        }
+        _selectedNestingOption = determineNestingOption();
 
         // Create the right kind of data region
         DataRegion rgn;
-        if (_selectedNestingOption != null && (_allowNesting || !_expanded))
+        if (_selectedNestingOption != null && (!_forExport || !_expanded))
         {
             rgn = _selectedNestingOption.createDataRegion(originalColumns, getDataRegionName(), _expanded);
         }
