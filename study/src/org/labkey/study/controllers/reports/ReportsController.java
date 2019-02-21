@@ -1106,7 +1106,6 @@ public class ReportsController extends BaseStudyController
 
         public SaveReportViewForm(Report report)
         {
-            super();
             label = report.getDescriptor().getReportName();
             params = report.getDescriptor().toQueryString();
             reportType = report.getDescriptor().getReportType();

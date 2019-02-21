@@ -51,7 +51,6 @@ public class StudyDefinitionController extends BaseStudyController
 
     public StudyDefinitionController()
     {
-        super();
         setActionResolver(ACTION_RESOLVER);
     }
 

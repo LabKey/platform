@@ -82,7 +82,6 @@ public class StudyDesignController extends BaseStudyController
 
     public StudyDesignController()
     {
-        super();
         setActionResolver(ACTION_RESOLVER);
     }
 

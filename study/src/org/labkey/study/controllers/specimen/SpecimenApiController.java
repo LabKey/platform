@@ -48,7 +48,6 @@ public class SpecimenApiController extends BaseStudyController
 
     public SpecimenApiController()
     {
-        super();
         setActionResolver(_resolver);
     }
 

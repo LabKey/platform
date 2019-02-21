@@ -52,7 +52,6 @@ public class StudyPropertiesController extends BaseStudyController
 
     public StudyPropertiesController()
     {
-        super();
         setActionResolver(ACTION_RESOLVER);
     }
 

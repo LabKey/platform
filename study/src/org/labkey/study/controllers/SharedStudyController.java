@@ -143,7 +143,6 @@ public class SharedStudyController extends BaseStudyController
 
         public SharedStudyContainerFilterAction()
         {
-            super();
             setSupportedMethods(new String[] { "GET", "POST", "DELETE" });
         }
 

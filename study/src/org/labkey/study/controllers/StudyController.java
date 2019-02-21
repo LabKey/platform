@@ -690,11 +690,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(ReadPermission.class)
     public class DatasetReportAction extends QueryReportAction
     {
-        public DatasetReportAction()
-        {
-            super();
-        }
-
+        @Override
         protected Report getReport(QueryReportForm form)
         {
             if (_report == null)
@@ -708,6 +704,7 @@ public class StudyController extends BaseStudyController
             return _report;
         }
 
+        @Override
         protected ModelAndView getHtmlView(QueryReportForm form, BindException errors) throws Exception
         {
             ViewContext context = getViewContext();

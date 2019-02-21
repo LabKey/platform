@@ -1112,7 +1112,6 @@ public class WikiController extends SpringActionController
     {
         public SourceAction()
         {
-            super();
             _source = true;
         }
     }
@@ -2457,8 +2456,6 @@ public class WikiController extends SpringActionController
         @SuppressWarnings({"UnusedDeclaration"})
         public AttachFilesAction()
         {
-            super();
-
             //because this will typically be called from a hidden iframe
             //we must respond with a content-type of text/html or the
             //browser will prompt the user to save the response, as the

@@ -1381,7 +1381,6 @@ public class ParticipantGroupController extends BaseStudyController
     {
         public SessionParticipantGroupAction()
         {
-            super();
             setSupportedMethods(new String[] { "GET", "POST", "DELETE" });
         }
 
@@ -1487,7 +1486,7 @@ public class ParticipantGroupController extends BaseStudyController
 
     Collection<String> getParticipantIds()
     {
-        return  Arrays.asList(StudyManager.getInstance().getParticipantIds(getStudy(), getUser(), getDefaultContainerFilter(), -1));
+        return Arrays.asList(StudyManager.getInstance().getParticipantIds(getStudy(), getUser(), getDefaultContainerFilter(), -1));
     }
 
     Collection<String> getParticipantIdsNotInGroupCategory(ParticipantCategoryImpl category)
