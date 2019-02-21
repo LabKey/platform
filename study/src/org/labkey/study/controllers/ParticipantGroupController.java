@@ -1377,7 +1377,7 @@ public class ParticipantGroupController extends BaseStudyController
     // CONSIDER: Merge with UpdateParticipantGroupAction
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public class SessionParticipantGroupAction extends MutatingApiAction<UpdateParticipantGroupForm>
+    public class SessionParticipantGroupAction extends ReadOnlyApiAction<UpdateParticipantGroupForm>
     {
         public SessionParticipantGroupAction()
         {

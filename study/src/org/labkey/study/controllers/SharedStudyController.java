@@ -19,7 +19,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
-import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -137,7 +137,7 @@ public class SharedStudyController extends BaseStudyController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public class SharedStudyContainerFilterAction extends MutatingApiAction<SharedStudyContainerFilterForm>
+    public class SharedStudyContainerFilterAction extends ReadOnlyApiAction<SharedStudyContainerFilterForm>
     {
         private Study _study = null;
 
