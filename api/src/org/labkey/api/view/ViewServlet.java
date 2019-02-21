@@ -241,6 +241,7 @@ public class ViewServlet extends HttpServlet
         {
             return _mock.getQueryString();
         }
+        @Override
         public String getRequestURI()
         {
             return _mock.getRequestURI();
