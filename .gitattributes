@@ -719,6 +719,7 @@ demo/src/org/labkey/demo/view/DemoWebPart.java -text
 demo/src/org/labkey/demo/view/bindTest.jsp -text
 demo/src/org/labkey/demo/view/bulkUpdate.jsp -text
 demo/src/org/labkey/demo/view/demoWebPart.jsp -text
+experiment/.npmrc -text
 experiment/build.gradle -text
 experiment/gwtsrc/org/labkey/experiment/property/Designer.gwt.xml -text
 experiment/gwtsrc/org/labkey/experiment/property/client/Designer.java -text
@@ -731,6 +732,8 @@ experiment/gwtsrc/org/labkey/experiment/samplechooser/client/SampleInfo.java -te
 experiment/gwtsrc/org/labkey/experiment/samplechooser/client/SampleSetService.java -text
 experiment/gwtsrc/org/labkey/experiment/samplechooser/client/SampleSetServiceAsync.java -text
 experiment/module.properties -text
+experiment/package-lock.json -text
+experiment/package_ignore.json -text
 experiment/resources/queries/exp/DataClasses/NameOnly.qview.xml -text
 experiment/resources/queries/exp/RunGroups/NameOnly.qview.xml -text
 experiment/resources/queries/exp/SampleSets/NameOnly.qview.xml -text
@@ -865,6 +868,14 @@ experiment/resources/schemas/dbscripts/sqlserver/obsolete/exp_drop.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/obsolete/findOrphans.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/required_scripts.txt -text
 experiment/resources/schemas/exp.xml -text
+experiment/src/client/AssayDesigner/AssayDesigner.tsx -text
+experiment/src/client/AssayDesigner/actions.ts -text
+experiment/src/client/AssayDesigner/app.tsx -text
+experiment/src/client/AssayDesigner/dev.tsx -text
+experiment/src/client/AssayDesigner/models.ts -text
+experiment/src/client/DomainDesigner/DomainDesigner.tsx -text
+experiment/src/client/DomainDesigner/app.tsx -text
+experiment/src/client/DomainDesigner/dev.tsx -text
 experiment/src/org/labkey/experiment/ArchiveURLRewriter.java -text
 experiment/src/org/labkey/experiment/ChooseExperimentTypeBean.java -text
 experiment/src/org/labkey/experiment/ConfirmDelete.jsp -text
@@ -1074,6 +1085,7 @@ experiment/src/org/labkey/experiment/xar/XarExportSelection.java -text
 experiment/test/sampledata/sampleSet.tsv -text
 experiment/test/sampledata/sampleSet.xlsx -text
 experiment/test/sampledata/simpleSampleSet.xls -text
+experiment/tsconfig.json -text
 experiment/webapp/Experiment/ExperimentRunNotFound.gif -text
 experiment/webapp/Experiment/QCFlagToggle.css -text
 experiment/webapp/Experiment/QCFlagToggleWindow.js -text
@@ -1087,6 +1099,11 @@ experiment/webapp/Experiment/images/unflagData.png -text
 experiment/webapp/Experiment/unflagDefault.gif -text
 experiment/webapp/Experiment/unflagRun.gif -text
 experiment/webapp/WEB-INF/experiment/experimentContext.xml -text
+experiment/webpack/app.template.html -text
+experiment/webpack/app.view.template.xml -text
+experiment/webpack/constants.js -text
+experiment/webpack/dev.config.js -text
+experiment/webpack/prod.config.js -text
 filecontent/gwtsrc/org/labkey/filecontent/designer/FilePropertiesDesigner.gwt.xml -text
 filecontent/gwtsrc/org/labkey/filecontent/designer/client/FilePropertiesDesigner.java -text
 filecontent/gwtsrc/org/labkey/filecontent/designer/client/FilePropertiesService.java -text
