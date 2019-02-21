@@ -189,18 +189,22 @@ public class ContainerManager
 
     private static int getNewChildSortOrder(Container parent)
     {
+        int nextSortOrderVal = 0;
+
         List<Container> children = parent.getChildren();
         if (children != null)
         {
             for (Container child : children)
             {
-                if (child.getSortOrder() != 0)
-                {
-                    // custom sorting applies: put new container at the end.
-                    return children.size();
-                }
+                // find the max sort order value for the set of children
+                nextSortOrderVal = Math.max(nextSortOrderVal, child.getSortOrder());
             }
         }
+
+        // custom sorting applies: put new container at the end.
+        if (nextSortOrderVal > 0)
+            return nextSortOrderVal + 1;
+
         // we're sorted alphabetically
         return 0;
     }
