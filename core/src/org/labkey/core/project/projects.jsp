@@ -127,10 +127,17 @@ Ext4.onReady(function() {
         containerPath: config.containerPath,
         schemaName: 'core',
         queryName: 'Containers',
-        sort: 'SortOrder,DisplayName',
         containerFilter: config.containerFilter,
-        columns: 'Name,DisplayName,EntityId,Path,ContainerType,iconurl',
+        columns: 'Name,SortOrder,DisplayName,EntityId,Path,ContainerType,iconurl',
         autoLoad: false,
+        sorters: [{
+            sorterFn: function(rec1, rec2){
+                // Issue 36731: use natural sort for projects webpart to match the nav menu ordering
+                var sort1 = rec1.get('SortOrder') + rec1.get('DisplayName');
+                var sort2 = rec2.get('SortOrder') + rec2.get('DisplayName');
+                return LABKEY.internal.SortUtil.naturalSort(sort1, sort2);
+            }
+        }],
         metadata: {
             url: {
                 createIfDoesNotExist: true,
