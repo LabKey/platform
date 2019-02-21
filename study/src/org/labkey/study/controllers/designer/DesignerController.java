@@ -205,7 +205,6 @@ public class DesignerController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class DesignerAction extends SimpleViewAction<StudyDesignForm>
     {
-
         public NavTree appendNavTrail(NavTree root)
         {
             try
@@ -277,10 +276,9 @@ public class DesignerController extends SpringActionController
             }
             else
             {
-
                 VaccineStudyWebPart.Model model = new VaccineStudyWebPart.Model();
                 Study study = BaseStudyController.getStudyRedirectIfNull(getContainer());
-                StudyDesignInfo info = StudyDesignManager.get().getDesignForStudy(getUser(), study, getContainer().hasPermission(getUser(), AdminPermission.class));
+                StudyDesignInfo info = StudyDesignManager.get().ensureDesignForStudy(getUser(), study, getContainer().hasPermission(getUser(), AdminPermission.class));
                 if (null == info)
                     return new HtmlView("Study design information not available for this study.  Contact an administrator to configure the study design.");
 

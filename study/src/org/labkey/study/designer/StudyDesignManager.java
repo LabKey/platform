@@ -24,7 +24,6 @@ import gwt.client.org.labkey.study.designer.client.model.GWTSampleMeasure;
 import gwt.client.org.labkey.study.designer.client.model.GWTStudyDefinition;
 import gwt.client.org.labkey.study.designer.client.model.GWTTimepoint;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.xmlbeans.XmlException;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -63,7 +62,6 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 
-import javax.servlet.ServletException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -141,7 +139,7 @@ public class StudyDesignManager
         Table.update(user, getStudyDesignTable(), design, design.getStudyId());
         String sql = "UPDATE " + getStudyVersionTable() + " SET Container = ? WHERE Container = ? AND StudyId = ?";
         new SqlExecutor(getSchema()).execute(sql, newContainer, oldContainer, design.getStudyId());
-        
+
         return design;
     }
 
@@ -241,7 +239,7 @@ public class StudyDesignManager
 
         return new TableSelector(getStudyVersionTable(), filter, new Sort("Revision")).getArray(StudyDesignVersion.class);
     }
-    
+
     public StudyDesignVersion getStudyDesignVersion(Container c, int studyId, int versionId)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
@@ -387,7 +385,7 @@ public class StudyDesignManager
             studyFolder = ContainerManager.createContainer(parent, folderName);
         if (null != StudyManager.getInstance().getStudy(studyFolder))
             throw new IllegalStateException("Study already exists in folder");
-        
+
         SecurityManager.setInheritPermissions(studyFolder);
         studyFolder.setFolderType(FolderTypeManager.get().getFolderType(StudyFolderType.NAME), user);
 
@@ -448,7 +446,7 @@ public class StudyDesignManager
         study.setParticipantCohortDatasetId(subjectDataset.getDatasetId());
         study.setParticipantCohortProperty("Cohort");
         StudyManager.getInstance().updateStudy(user, study);
-        
+
         AssayPublishService.get().publishAssayData(user, parent, studyFolder, "Subjects", null, participantDataset, nameMap, errors);
         if (errors.size() > 0) //We were supposed to check these coming in
             throw new RuntimeException(StringUtils.join(errors, '\n'));
@@ -468,7 +466,7 @@ public class StudyDesignManager
         Table.update(user, getStudyDesignTable(), info, info.getStudyId());
 
         Portal.addPart(study.getContainer(), StudyModule.studyDesignSummaryWebPartFactory, null, 0);
-        
+
         return study;
     }
 
@@ -479,7 +477,7 @@ public class StudyDesignManager
         for (GWTCohort cohort : cohorts)
             count += cohort.getCount();
 
-        List<Map<String,Object>> participantInfo = new ArrayList<>(count);
+        List<Map<String, Object>> participantInfo = new ArrayList<>(count);
         for (int cohortNum = 0; cohortNum < cohorts.size(); cohortNum++)
         {
             GWTCohort cohort = cohorts.get(cohortNum);
@@ -488,7 +486,7 @@ public class StudyDesignManager
             for (int participantNum = 0; participantNum < cohort.getCount(); participantNum++)
             {
                 participantId = sprintf("%03d%02d%02d", def.getCavdStudyId(), cohortNum + 1, participantNum + 1);
-                Map<String,Object> m = new HashMap<>();
+                Map<String, Object> m = new HashMap<>();
                 m.put("ParticipantId", participantId);
                 m.put("Cohort", cohort.getName());
                 m.put("Index", participantNum + 1);
@@ -599,24 +597,31 @@ public class StudyDesignManager
     }
 
 
-    public StudyDesignInfo getDesignForStudy(User user, Study study, boolean createIfNull) throws Exception
+    public StudyDesignInfo ensureDesignForStudy(User user, Study study, boolean createIfNull) throws Exception
     {
         StudyDesignInfo info = getDesignForStudy(study);
         if (null == info && createIfNull)
         {
-            GWTStudyDefinition def = DesignerController.getTemplate(user, study.getContainer());
-            def.setStudyName(study.getLabel());
-            StudyDesignVersion version = new StudyDesignVersion();
-            version.setContainer(study.getContainer());
-            version.setDescription(study.getDescription());
-            version.setLabel(study.getLabel());
-            version.setXML(XMLSerializer.toXML(def).toString());
-            version = saveStudyDesign(user, study.getContainer(), version);
-            info = getStudyDesign(study.getContainer(), version.getStudyId());
-            info.setLabel(study.getLabel());
-            info.setActive(true);
-            Table.update(user, getStudyDesignTable(), info, info.getStudyId());
+            info = createDesignForStudy(user, study);
         }
+
+        return info;
+    }
+
+    private StudyDesignInfo createDesignForStudy(User user, Study study) throws Exception
+    {
+        GWTStudyDefinition def = DesignerController.getTemplate(user, study.getContainer());
+        def.setStudyName(study.getLabel());
+        StudyDesignVersion version = new StudyDesignVersion();
+        version.setContainer(study.getContainer());
+        version.setDescription(study.getDescription());
+        version.setLabel(study.getLabel());
+        version.setXML(XMLSerializer.toXML(def).toString());
+        version = saveStudyDesign(user, study.getContainer(), version);
+        StudyDesignInfo info = getStudyDesign(study.getContainer(), version.getStudyId());
+        info.setLabel(study.getLabel());
+        info.setActive(true);
+        Table.update(user, getStudyDesignTable(), info, info.getStudyId());
 
         return info;
     }

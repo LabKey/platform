@@ -19,6 +19,7 @@
 <%@ page import="gwt.client.org.labkey.study.designer.client.model.GWTCohort" %>
 <%@ page import="gwt.client.org.labkey.study.designer.client.model.GWTImmunogen" %>
 <%@ page import="gwt.client.org.labkey.study.designer.client.model.GWTStudyDefinition" %>
+<%@ page import="org.labkey.api.action.SpringActionController" %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.User" %>
@@ -50,7 +51,10 @@
     boolean designExistsForLabel = StudyDesignManager.get().getStudyDesign(c, study.getLabel()) != null;
     if (info == null && c.hasPermission(user, AdminPermission.class) && !designExistsForLabel)
     {
-        info = StudyDesignManager.get().getDesignForStudy(user, study, true);
+        try (var ignored = SpringActionController.ignoreSqlUpdates())
+        {
+            info = StudyDesignManager.get().ensureDesignForStudy(user, study, true);
+        }
     }
 
     if (null == info)

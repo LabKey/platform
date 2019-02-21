@@ -34,7 +34,7 @@ import org.labkey.study.model.*;
 import org.springframework.validation.BindException;
 
 import java.util.*;
-import java.sql.SQLException;
+
 /*
  * User: brittp
  * Date: Dec 18, 2008
