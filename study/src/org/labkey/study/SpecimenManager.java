@@ -1086,16 +1086,8 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
     public DisplaySettings getDisplaySettings(Container container)
     {
-        Map<String, String> settingsMap = PropertyManager.getProperties(UserManager.getGuestUser(),
-                container, "SpecimenRequestDisplay");
-        if (settingsMap.isEmpty())
-        {
-            DisplaySettings defaults = DisplaySettings.getDefaultSettings();
-            saveDisplaySettings(container, defaults);
-            return defaults;
-        }
-        else
-            return new DisplaySettings(settingsMap);
+        Map<String, String> settingsMap = PropertyManager.getProperties(UserManager.getGuestUser(), container, "SpecimenRequestDisplay");
+        return settingsMap.isEmpty() ? DisplaySettings.getDefaultSettings() : new DisplaySettings(settingsMap);
     }
 
     public void saveDisplaySettings(Container container, DisplaySettings settings)
@@ -1108,16 +1100,8 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
     public StatusSettings getStatusSettings(Container container)
     {
-        Map<String, String> settingsMap = PropertyManager.getProperties(UserManager.getGuestUser(),
-                container, "SpecimenRequestStatus");
-        if (settingsMap.get(StatusSettings.KEY_USE_SHOPPING_CART) == null)
-        {
-            StatusSettings defaults = StatusSettings.getDefaultSettings();
-            saveStatusSettings(container, defaults);
-            return defaults;
-        }
-        else
-            return new StatusSettings(settingsMap);
+        Map<String, String> settingsMap = PropertyManager.getProperties(UserManager.getGuestUser(), container, "SpecimenRequestStatus");
+        return settingsMap.get(StatusSettings.KEY_USE_SHOPPING_CART) == null ? StatusSettings.getDefaultSettings() : new StatusSettings(settingsMap);
     }
 
     public void saveStatusSettings(Container container, StatusSettings settings)
