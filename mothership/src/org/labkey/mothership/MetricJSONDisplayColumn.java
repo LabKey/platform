@@ -1,6 +1,7 @@
 package org.labkey.mothership;
 
 import com.jayway.jsonpath.JsonPath;
+import net.minidev.json.JSONArray;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
@@ -8,7 +9,6 @@ import org.labkey.api.data.RenderContext;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Collection;
-import java.util.Map;
 
 public class MetricJSONDisplayColumn extends DataColumn
 {
@@ -28,11 +28,45 @@ public class MetricJSONDisplayColumn extends DataColumn
         if(ctx.get("jsonMetrics") != null && ctx.get("jsonMetrics") != "")
         {
             String json = (String) ctx.get("jsonMetrics");
-            String path = "$.folderTypeCounts";
-            Map<String, Integer> folderType = JsonPath.parse(json).read(path);
 
-            if (folderType.containsKey(_jsonProp))
-                return String.valueOf(folderType.get(_jsonProp));
+            StringBuilder checkPath = new StringBuilder();
+            StringBuilder path = new StringBuilder();
+            String[] paths = _jsonProp.split("\\.");
+
+            checkPath.append("$.");
+
+            if (paths.length <= 1)
+            {
+                JSONArray jsonArray = JsonPath.parse(json).read(checkPath.append("[?(@.['").append(_jsonProp).append("'])]").toString());
+                if(jsonArray.size() > 0)
+                {
+                    int count = JsonPath.parse(json).read(path.append("$.").append(_jsonProp).toString());
+                    return String.valueOf(count);
+                }
+
+            }
+            else
+            {
+                checkPath.append(paths[0]).append("[?(@.");
+                path.append("$.");
+                for(int i =1 ; i < paths.length; i ++)
+                {
+                    checkPath.append("['").append(paths[i]).append("']");
+                }
+                checkPath.append(")]");
+
+                for (String str : paths)
+                {
+                    path.append("['").append(str).append("']");
+                }
+
+                JSONArray jsonArray = JsonPath.parse(json).read(checkPath.toString());
+                if (jsonArray.size() > 0)
+                {
+                    int folderTypeCount = JsonPath.parse(json).read(path.toString());
+                    return String.valueOf(folderTypeCount);
+                }
+            }
         }
         return "";
     }
@@ -66,5 +100,11 @@ public class MetricJSONDisplayColumn extends DataColumn
     public Object getDisplayValue(RenderContext ctx)
     {
         return getValue(ctx);
+    }
+
+    @Override
+    public boolean isFilterable()
+    {
+        return false;
     }
 }
