@@ -2966,7 +2966,9 @@ public class DavController extends SpringActionController
 
             // MKCOL with missing intermediate should fail (RFC2518:8.3.1)
             Resource parent = resource.parent();
-            if (null == parent || !parent.isCollection())
+            Boolean createIntermediates = getBooleanParameter("createIntermediates");
+            createIntermediates = createIntermediates != null ? createIntermediates : false;
+            if (!createIntermediates && (null == parent || !parent.isCollection()))
                 throw new DavException(WebdavStatus.SC_CONFLICT, String.valueOf(path.getParent()) + " is not a collection");
 
             if (!resource.canCreate(getUser(),true))

@@ -128,7 +128,8 @@ Ext4.define('File.panel.Upload', {
                     var suppressDirConflictError = this.uploadPanel.isCloudPath;
                     this.uploadPanel.fileSystem.createDirectory({
                         path : this.uploadPanel.fileSystem.encodeForURL(parentFolderUri + file.name),
-                        suppressDirConflictError: suppressDirConflictError
+                        suppressDirConflictError: suppressDirConflictError,
+                        createIntermediates: this.options.params.createIntermediates
                     });
                 }
             },

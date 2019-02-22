@@ -310,15 +310,17 @@
          * <li>Response: the response object</li>
          * <li>Options: The parameter to the request call.</li>
          * @param {Object} [config.scope] The scope of the callback functions.
+         * @param {Object} [config.createIntermediates] Flag to indicate whether to create any missing intermediates.
          * @methodOf LABKEY.FileSystem.WebdavFileSystem#
          */
         createDirectory: function (config)
         {
             var onFailure = LABKEY.Utils.getCallbackWrapper(config.failure, this, true);
+            var createIntermediates = config.createIntermediates ? '&createIntermediates=' + config.createIntermediates : '';
 
             Ext4.Ajax.request({
                 method: 'MKCOL',
-                url: config.path + "?pageId="+this.pageId,
+                url: config.path + '?pageId='+this.pageId + createIntermediates,
                 headers: {
                     'Content-Type': 'application/json'
                 },
