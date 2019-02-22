@@ -256,7 +256,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
             // Issue 36817 - deal with string values longer than the property descriptor's declared scale
             if (propertyDescriptor.getJdbcType().isText())
             {
-                SQLFragment longestSQL =  new SQLFragment("SELECT MAX(LENGTH(StringValue)) FROM ").
+                SQLFragment longestSQL =  new SQLFragment("SELECT MAX(").append(d.getVarcharLengthFunction()).append("(StringValue)) FROM ").
                         append(OntologyManager.getTinfoObjectProperty(), "op").
                         append(" WHERE PropertyId = ?").
                         add(propertyDescriptor.getPropertyId());
@@ -318,12 +318,16 @@ public class ExperimentUpgradeCode implements UpgradeCode
                 insert.append(mvcolumnSelectName);
             }
         }
-        select.append("\nFROM exp.object O\nWHERE O.ownerobjectid=" + samplesetObjectId);
+        select.append("\nFROM exp.object O\n");
+        select.append("WHERE O.objecturi IN (SELECT lsid FROM exp.material WHERE CpasType = ?)");
+        select.add(ss.getDataObject().getLSID());
         insert.append(")\n");
         insert.append(select);
 
         new SqlExecutor(scope).execute(insert);
-        SQLFragment deleteObjectProperties = new SQLFragment("DELETE FROM exp.objectproperty WHERE objectid IN (SELECT objectid FROM exp.object WHERE ownerobjectid=" + samplesetObjectId + ")");
+        SQLFragment deleteObjectProperties = new SQLFragment("DELETE FROM exp.objectproperty\n");
+        deleteObjectProperties.append("WHERE objectid IN (SELECT objectid FROM exp.object WHERE objecturi IN (SELECT lsid FROM exp.material WHERE CpasType = ?))");
+        deleteObjectProperties.add(ss.getDataObject().getLSID());
         deleteObjectProperties.append(" AND propertyId IN (");
         comma = "";
         for (DomainProperty dp : domain.getProperties())
