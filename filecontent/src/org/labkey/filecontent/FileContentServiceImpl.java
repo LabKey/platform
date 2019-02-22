@@ -25,6 +25,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.cache.Cache;
@@ -1371,7 +1372,7 @@ public class FileContentServiceImpl implements FileContentService
             if (file == null)
                 return;
 
-            try
+            try (var ignore = SpringActionController.ignoreSqlUpdates())
             {
                 java.nio.file.Path rootPath = file.toPath();
                 Files.walk(rootPath, 100) // prevent symlink loop
