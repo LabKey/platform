@@ -101,7 +101,7 @@ public class AuditLogImpl implements AuditLogService, StartupListener
 
     private <K extends AuditTypeEvent> K _addEvent(User user, K event)
     {
-        try (var cl = SpringActionController.ignoreSqlUpdates())
+        try (var ignored = SpringActionController.ignoreSqlUpdates())
         {
             assert event.getContainer() != null : "Container cannot be null";
 

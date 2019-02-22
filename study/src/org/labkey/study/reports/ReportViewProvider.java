@@ -87,7 +87,7 @@ public class ReportViewProvider implements DataViewProvider
         Container c = context.getContainer();
         User user = context.getUser();
 
-        try (var cl = SpringActionController.ignoreSqlUpdates())
+        try (var ignored = SpringActionController.ignoreSqlUpdates())
         {
             ReportPropsManager.get().ensureProperty(c, user, "status", "Status", PropertyType.STRING);
             ReportPropsManager.get().ensureProperty(c, user, "author", "Author", PropertyType.INTEGER);

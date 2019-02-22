@@ -128,7 +128,7 @@ public class StudyPropertiesTable extends BaseStudyTable
         {
             _domain = PropertyService.get().createDomain(c, domainURI, StudyImpl.DOMAIN_INFO.getDomainName());
 
-            try (var ig = SpringActionController.ignoreSqlUpdates())
+            try (var ignored = SpringActionController.ignoreSqlUpdates())
             {
                 // Don't save the domain if we're in the root. We want to allow cross-folder queries of this table from the
                 // root, but we won't show any custom properties in this case, since they're defined in each project. #20090
