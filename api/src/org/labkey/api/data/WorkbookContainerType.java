@@ -45,6 +45,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.labkey.api.data.ContainerType.DataType.protocol;
 
 public class WorkbookContainerType implements ContainerType
@@ -341,7 +342,7 @@ public class WorkbookContainerType implements ContainerType
                 throw new Exception("This indicates the duplicate key insert was allowed");
             }
 
-            assertTrue("Duplicate key should not be allowed", errors3.getRowErrors().get(0).getMessage().contains("duplicate key value violates unique constraint"));
+            assertThat("Unexpected error message.  Message was: " + errors3.getRowErrors().get(0).getMessage(), errors3.getRowErrors().get(0).getMessage(), containsString("duplicate key"));
         }
 
         private static void validateLookups(UserSchema us, String tableName, FieldKey lookupPath)
