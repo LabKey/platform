@@ -99,7 +99,7 @@ function showSystemRows(value)
                         else
                         {
                     %>
-                            <td><%= textLink("delete", buildURL(SpecimenController.DeleteStatusAction.class, "id=" + status.getRowId()))%></td>
+                            <td><%=link("delete").href(buildURL(SpecimenController.DeleteStatusAction.class, "id=" + status.getRowId())).usePost()%></td>
                     <%
                         }
                     %>
