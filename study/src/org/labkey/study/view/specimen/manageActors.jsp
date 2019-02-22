@@ -103,7 +103,7 @@
                         %><%= textLink("Update Members", updateMembersLink) %><%
                         if (!inUseActorIds.contains(actor.getRowId()))
                         {
-                            %><%=textLink("Delete", buildURL(SpecimenController.DeleteActorAction.class) + "id=" + actor.getRowId(), "return confirm('Deleting this actor will delete all information about its membership.  All member emails will need to be entered again if you recreate this actor.')", null) %><%
+                            %><%=link("Delete").onClick("return LABKEY.Utils.confirmAndPost('Deleting this actor will delete all information about its membership. All member emails will need to be entered again if you recreate this actor.', '" + buildURL(SpecimenController.DeleteActorAction.class) + "id=" + actor.getRowId() + "')") %><%
                         }
                     }
                 %>

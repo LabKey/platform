@@ -230,14 +230,14 @@
                 %>
                 <br>You may remove these specimens from this request if they are not expected to be re-added to the database.<br>
                 <%= button("Delete missing specimens")
-                        .href(buildURL(SpecimenController.DeleteMissingRequestSpecimensAction.class, "id=" + bean.getSpecimenRequest().getRowId()))
-                        .onClick("return confirm('Delete missing specimens?  This action cannot be undone.')") %><%
+                        .onClick("return LABKEY.Utils.confirmAndPost('Delete missing specimens? This action cannot be undone.', '" + buildURL(SpecimenController.DeleteMissingRequestSpecimensAction.class, "id=" + bean.getSpecimenRequest().getRowId()) + "')") %><%
                     }
                 %>
             </td>
         </tr>
 <%
         }
+
         if (multipleSites && !bean.isFinalState())
         {
 %>
@@ -323,7 +323,7 @@
                 Request processing will begin after the request has been submitted.<br><br>
                 <%= button("Submit Request")
                         .href(buildURL(SpecimenController.SubmitRequestAction.class) + "id=" + bean.getSpecimenRequest().getRowId())
-                        .onClick("return confirm('" + SpecimenController.ManageRequestBean.SUBMISSION_WARNING + "')") %>
+                        .onClick("return LABKEY.Utils.confirmAndPost('" + SpecimenController.ManageRequestBean.SUBMISSION_WARNING + "', '" + buildURL(SpecimenController.SubmitRequestAction.class) + "id=" + bean.getSpecimenRequest().getRowId() + "')") %>
 <%
             }
             else
@@ -342,8 +342,7 @@
             }
 %>
                 <%= button("Cancel Request")
-                        .href(buildURL(SpecimenController.DeleteRequestAction.class, "id=" + bean.getSpecimenRequest().getRowId()))
-                        .onClick("return confirm('" + SpecimenController.ManageRequestBean.CANCELLATION_WARNING + "')") %>
+                        .onClick("return LABKEY.Utils.confirmAndPost('" + SpecimenController.ManageRequestBean.CANCELLATION_WARNING + "', '" + buildURL(SpecimenController.DeleteRequestAction.class, "id=" + bean.getSpecimenRequest().getRowId()) + "')") %>
 <%
             if (bean.getReturnUrl() != null)
             {

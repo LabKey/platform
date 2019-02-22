@@ -124,9 +124,9 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
                         String cancelLink = (new ActionURL(SpecimenController.DeleteRequestAction.class, ctx.getContainer())).toString() + "id=${requestId}";
 
                         content.append(PageFlowUtil.button("Submit").href(submitLink)
-                                .onClick("return confirm('" + SpecimenController.ManageRequestBean.SUBMISSION_WARNING + "')")).append(" ");
+                            .onClick("return LABKEY.Utils.confirmAndPost('" + SpecimenController.ManageRequestBean.SUBMISSION_WARNING + "', '" + submitLink + "')")).append(" ");
                         content.append(PageFlowUtil.button("Cancel").href(cancelLink)
-                                .onClick("return confirm('" + SpecimenController.ManageRequestBean.CANCELLATION_WARNING + "')")).append(" ");
+                            .onClick("return LABKEY.Utils.confirmAndPost('" + SpecimenController.ManageRequestBean.CANCELLATION_WARNING + "', '" + cancelLink + "')")).append(" ");
                     }
                 }
 

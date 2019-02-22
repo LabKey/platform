@@ -66,7 +66,7 @@ function verifyNewRequirement(prefix)
                     {
                 %>
                 <tr>
-                    <td><%= textLink("Delete", deleteDefaultRequirement.replaceParameter("id", String.valueOf(requirement.getRowId())))%></td>
+                    <td><%= link("Delete", deleteDefaultRequirement.replaceParameter("id", String.valueOf(requirement.getRowId()))).usePost() %></td>
                     <td><%= h(requirement.getActor().getLabel()) %></td>
                     <td colspan="2"><%= requirement.getDescription() != null ? h(requirement.getDescription()) : "&nbsp;" %></td>
                 </tr>
@@ -109,7 +109,7 @@ function verifyNewRequirement(prefix)
                     {
                 %>
                 <tr>
-                    <td><%= textLink("Delete", deleteDefaultRequirement.replaceParameter("id", String.valueOf(requirement.getRowId())))%></td>
+                    <td><%= link("Delete", deleteDefaultRequirement.replaceParameter("id", String.valueOf(requirement.getRowId()))).usePost() %></td>
                     <td><%= h(requirement.getActor().getLabel()) %></td>
                     <td colspan="2"><%= requirement.getDescription() != null ? h(requirement.getDescription()) : "&nbsp;" %></td>
                 </tr>
@@ -152,7 +152,7 @@ function verifyNewRequirement(prefix)
                     {
                 %>
                 <tr>
-                    <td><%= textLink("Delete", deleteDefaultRequirement.replaceParameter("id", String.valueOf(requirement.getRowId())))%></td>
+                    <td><%= link("Delete", deleteDefaultRequirement.replaceParameter("id", String.valueOf(requirement.getRowId()))).usePost() %></td>
                     <td><%= h(requirement.getActor().getLabel()) %></td>
                     <td colspan="2"><%= requirement.getDescription() != null ? h(requirement.getDescription()) : "&nbsp;" %></td>
                 </tr>
@@ -195,7 +195,7 @@ function verifyNewRequirement(prefix)
                     {
                 %>
                 <tr>
-                    <td><%= textLink("Delete", deleteDefaultRequirement.replaceParameter("id", String.valueOf(requirement.getRowId())))%></td>
+                    <td><%= link("Delete", deleteDefaultRequirement.replaceParameter("id", String.valueOf(requirement.getRowId()))).usePost() %></td>
                     <td><%= h(requirement.getActor().getLabel()) %></td>
                     <td colspan="2"><%= requirement.getDescription() != null ? h(requirement.getDescription()) : "&nbsp;" %></td>
                 </tr>

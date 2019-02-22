@@ -240,8 +240,8 @@ public class SpecimenUtils
                 String clearCommentsURL = urlFor(SpecimenController.ClearCommentsAction.class);
                 NavTree clearItem = commentsMenuButton.addMenuItem("Clear Vial Comments for Selected", "#",
                         "if (verifySelected(" + jsRegionObject + ".form, '" + clearCommentsURL +
-                        "', 'post', 'rows') && confirm('This will permanently clear comments for all selected vials.  " +
-                                (manualQCEnabled ? "Quality control states will remain unchanged.  " : "" )+ "Continue?')) " +
+                        "', 'post', 'rows') && confirm('This will permanently clear comments for all selected vials. " +
+                                (manualQCEnabled ? "Quality control states will remain unchanged. " : "" )+ "Continue?')) " +
                                 jsRegionObject + ".form.submit();\nreturn false;");
                 clearItem.setId("Comments:Clear");
 
