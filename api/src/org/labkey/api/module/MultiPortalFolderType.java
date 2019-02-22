@@ -265,7 +265,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
 
     private void migrateLegacyPortalPage(Container container)
     {
-        try (var ig = SpringActionController.ignoreSqlUpdates())
+        try (var ignored = SpringActionController.ignoreSqlUpdates())
         {
             _migrateLegacyPortalPage(container);
         }
