@@ -446,20 +446,28 @@ public class MothershipController extends SpringActionController
     }
 
     @RequiresPermission(UpdatePermission.class)
-    public class CreateIssueFinishedAction extends SimpleViewAction<CreateIssueFinishedForm>
+    public class CreateIssueFinishedAction extends FormHandlerAction<CreateIssueFinishedForm>
     {
-        public ModelAndView getView(CreateIssueFinishedForm form, BindException errors)
+        @Override
+        public void validateCommand(CreateIssueFinishedForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(CreateIssueFinishedForm form, BindException errors)
         {
             ExceptionStackTrace stackTrace = MothershipManager.get().getExceptionStackTrace(form.getExceptionStackTraceId(), getContainer());
             stackTrace.setBugNumber(form.getIssueId());
             stackTrace.setAssignedTo(form.getAssignedTo());
             MothershipManager.get().updateExceptionStackTrace(stackTrace, getUser());
-            throw new RedirectException(new ActionURL(BeginAction.class, getContainer()));
+
+            return true;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public URLHelper getSuccessURL(CreateIssueFinishedForm createIssueFinishedForm)
         {
-            throw new UnsupportedOperationException();
+            return new ActionURL(BeginAction.class, getContainer());
         }
     }
 

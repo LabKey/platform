@@ -90,6 +90,7 @@ import org.labkey.api.security.roles.OwnerRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.Button;
+import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
@@ -105,6 +106,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.ContainerUser;
@@ -619,7 +621,21 @@ public class IssuesController extends SpringActionController
                 ActionURL url = new ActionURL(form.getCallbackURL());
                 url.addParameter("issueId", _issue.getIssueId());
                 url.addParameter("assignedTo", _issue.getAssignedTo());
-                return url;
+
+                try
+                {
+                    // Forward to the callback URL to treat it as a POST. Need to pass along the token on the URL, since our
+                    // AuthenticatedRequest hides this parameter from the MockRequest used to forward.
+                    HttpServletRequest request = getViewContext().getRequest();
+                    url.addParameter(CSRFUtil.csrfName, request.getParameter(CSRFUtil.csrfName));
+                    ViewServlet.forwardActionURL(request, getViewContext().getResponse(), url);
+                }
+                catch (IOException | ServletException e)
+                {
+                    throw new RuntimeException(e);
+                }
+
+                return null;
             }
 
             return form.getReturnActionURL(getDetailsURL(getContainer(), _issue.getIssueId(), false));
