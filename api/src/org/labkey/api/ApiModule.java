@@ -21,6 +21,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.LookAndFeelResourceType;
 import org.labkey.api.attachments.SecureDocumentType;
 import org.labkey.api.data.SqlScanner;
+import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.exp.api.ExpRunAttachmentType;
 import org.labkey.api.module.CodeOnlyModule;
@@ -90,7 +91,8 @@ public class ApiModule extends CodeOnlyModule
     public @NotNull Set<Class> getIntegrationTests()
     {
         return ImmutableSet.of(
-            ApiKeyManager.TestCase.class
+            ApiKeyManager.TestCase.class,
+            WorkbookContainerType.TestCase.class
         );
     }
 }
