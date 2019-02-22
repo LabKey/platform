@@ -1,6 +1,7 @@
 package org.labkey.mothership;
 
 import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.JsonPathException;
 import net.minidev.json.JSONArray;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
@@ -34,38 +35,44 @@ public class MetricJSONDisplayColumn extends DataColumn
             String[] paths = _jsonProp.split("\\.");
 
             checkPath.append("$.");
-
-            if (paths.length <= 1)
+            try
             {
-                JSONArray jsonArray = JsonPath.parse(json).read(checkPath.append("[?(@.['").append(_jsonProp).append("'])]").toString());
-                if(jsonArray.size() > 0)
+                if (paths.length <= 1)
                 {
-                    int count = JsonPath.parse(json).read(path.append("$.").append(_jsonProp).toString());
-                    return String.valueOf(count);
-                }
+                    JSONArray jsonArray = JsonPath.parse(json).read(checkPath.append("[?(@.['").append(_jsonProp).append("'])]").toString());
+                    if (jsonArray.size() > 0)
+                    {
+                        int count = JsonPath.parse(json).read(path.append("$.").append(_jsonProp).toString());
+                        return String.valueOf(count);
+                    }
 
+                }
+                else
+                {
+                    checkPath.append(paths[0]).append("[?(@.");
+                    path.append("$.");
+                    for (int i = 1; i < paths.length; i++)
+                    {
+                        checkPath.append("['").append(paths[i]).append("']");
+                    }
+                    checkPath.append(")]");
+
+                    for (String str : paths)
+                    {
+                        path.append("['").append(str).append("']");
+                    }
+
+                    JSONArray jsonArray = JsonPath.parse(json).read(checkPath.toString());
+                    if (jsonArray.size() > 0)
+                    {
+                        int folderTypeCount = JsonPath.parse(json).read(path.toString());
+                        return String.valueOf(folderTypeCount);
+                    }
+                }
             }
-            else
+            catch (JsonPathException ex)
             {
-                checkPath.append(paths[0]).append("[?(@.");
-                path.append("$.");
-                for(int i =1 ; i < paths.length; i ++)
-                {
-                    checkPath.append("['").append(paths[i]).append("']");
-                }
-                checkPath.append(")]");
-
-                for (String str : paths)
-                {
-                    path.append("['").append(str).append("']");
-                }
-
-                JSONArray jsonArray = JsonPath.parse(json).read(checkPath.toString());
-                if (jsonArray.size() > 0)
-                {
-                    int folderTypeCount = JsonPath.parse(json).read(path.toString());
-                    return String.valueOf(folderTypeCount);
-                }
+                return "Invalid Json Path Exception";
             }
         }
         return "";
