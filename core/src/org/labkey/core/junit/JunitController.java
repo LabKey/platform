@@ -24,7 +24,6 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.junit.runner.Result;
 import org.junit.runner.notification.Failure;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.PermissionCheckableAction;

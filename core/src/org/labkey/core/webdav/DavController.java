@@ -32,7 +32,6 @@ import org.json.JSONObject;
 import org.json.JSONWriter;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.IgnoresAllocationTracking;
