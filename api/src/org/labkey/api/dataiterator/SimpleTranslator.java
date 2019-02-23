@@ -30,6 +30,8 @@ import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSequence;
+import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
@@ -1196,6 +1198,64 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             if (!allowPassThrough)
                 _outputColumns.set(indexOut, new Pair<>(new ColumnInfo(name, col.getJdbcType()), c));
             return indexOut;
+        }
+    }
+
+    public int addSequenceColumn(ColumnInfo col, Container sequenceContainer, String sequenceName, @Nullable Integer sequenceId, int batchSize)
+    {
+        SequenceColumn seqCol = new SequenceColumn(sequenceContainer, sequenceName, sequenceId, batchSize);
+        return addColumn(col, seqCol);
+    }
+
+    protected class SequenceColumn implements Supplier
+    {
+        // sequence settings
+        private Container seqContainer;
+        private String seqName;
+        private int seqId;
+        private int batchSize;
+
+        // sequence state
+        private DbSequence sequence;
+        private int count = 0;
+        private Integer sequenceNum;
+
+        public SequenceColumn(Container seqContainer, String seqName, @Nullable Integer seqId, @Nullable Integer batchSize)
+        {
+            this.seqContainer = seqContainer;
+            this.seqName = seqName;
+            this.seqId = seqId == null ? 0 : seqId.intValue();
+            this.batchSize = batchSize == null ? 1 : batchSize;
+        }
+
+        // TODO convert to DbSequenceManager.getPreallocatingSequence() for performance
+        private DbSequence getSequence()
+        {
+            if (sequence == null)
+                sequence = DbSequenceManager.get(seqContainer, seqName, seqId);
+            return sequence;
+        }
+
+        @Override
+        public Object get()
+        {
+            int genId;
+            if (sequenceNum == null || ((count % batchSize) == 0))
+            {
+                DbSequence sequence = getSequence();
+                sequenceNum = sequence.next();
+                if (batchSize > 1)
+                    sequence.ensureMinimum(sequenceNum + batchSize - 1);
+                count = 1;
+                genId = sequenceNum;
+            }
+            else
+            {
+                count++;
+                genId = ++sequenceNum;
+            }
+
+            return genId;
         }
     }
     

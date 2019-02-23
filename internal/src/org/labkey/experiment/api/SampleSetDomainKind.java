@@ -72,6 +72,7 @@ public class SampleSetDomainKind extends AbstractDomainKind
 
     static {
         BASE_PROPERTIES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
+                new PropertyStorageSpec("genId", JdbcType.INTEGER),
                 new PropertyStorageSpec("lsid", JdbcType.VARCHAR, 300).setNullable(false)
         )));
 
@@ -80,8 +81,8 @@ public class SampleSetDomainKind extends AbstractDomainKind
         RESERVED_NAMES.add("CpasType");
 
         FOREIGN_KEYS = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
-                // NOTE: We join to exp.data using LSID instead of rowid for insert performance -- we will generate
-                // the LSID once on the server and insert into exp.object, exp.data, and the provisioned table at the same time.
+                // NOTE: We join to exp.material using LSID instead of rowid for insert performance -- we will generate
+                // the LSID once on the server and insert into exp.object, exp.material, and the provisioned table at the same time.
                 new PropertyStorageSpec.ForeignKey("lsid", "exp", "Material", "LSID", null, false)
         )));
 
