@@ -1024,12 +1024,23 @@ public class PipelineController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class ResetEmailNotificationAction extends SimpleRedirectAction
+    public class ResetEmailNotificationAction extends FormHandlerAction
     {
-        public ActionURL getRedirectURL(Object o)
+        @Override
+        public void validateCommand(Object target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors)
         {
             PipelineEmailPreferences.get().deleteAll(getContainer());
+            return true;
+        }
 
+        @Override
+        public URLHelper getSuccessURL(Object o)
+        {
             return new ActionURL(SetupAction.class, getContainer());
         }
     }
