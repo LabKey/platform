@@ -25,7 +25,25 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MultiValuedDisplayColumn;
+import org.labkey.api.data.MultiValuedForeignKey;
+import org.labkey.api.data.Parameter;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -68,7 +86,8 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.ExpDataIterators;
-import org.labkey.experiment.ExpDataIterators.*;
+import org.labkey.experiment.ExpDataIterators.AliasDataIteratorBuilder;
+import org.labkey.experiment.ExpDataIterators.PersistDataIteratorBuilder;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.IOException;
@@ -531,10 +550,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         private DataIteratorContext _context;
         private final DataIteratorBuilder _in;
 
-        // genId sequence state
-        private int _count = 0;
-        private Integer _sequenceNum;
-
         public PreTriggerDataIteratorBuilder(@NotNull DataIteratorBuilder in, DataIteratorContext context)
         {
             _context = context;
@@ -568,25 +583,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             ColumnInfo genIdCol = _dataClass.getTinfo().getColumn(FieldKey.fromParts("genId"));
             // TODO convert to DbSequenceManager.getPreallocatingSequence() for performance
             final int batchSize = 1; // _context.getInsertOption().batch ? BATCH_SIZE : 1;
-            step0.addColumn(genIdCol, (Supplier) () -> {
-                int genId;
-                if (_sequenceNum == null || ((_count % batchSize) == 0))
-                {
-                    DbSequence sequence = DbSequenceManager.get(_dataClass.getContainer(), ExpDataClassImpl.GENID_SEQUENCE_NAME, _dataClass.getRowId());
-                    _sequenceNum = sequence.next();
-                    if (batchSize > 1)
-                        sequence.ensureMinimum(_sequenceNum + batchSize - 1);
-                    _count = 1;
-                    genId = _sequenceNum;
-                }
-                else
-                {
-                    _count++;
-                    genId = ++_sequenceNum;
-                }
-
-                return genId;
-            });
+            step0.addSequenceColumn(genIdCol, _dataClass.getContainer(), ExpDataClassImpl.GENID_SEQUENCE_NAME, _dataClass.getRowId(), batchSize);
 
             // Ensure we have a dataClass column and it is of the right value
             ColumnInfo classIdCol = expData.getColumn("classId");

@@ -43,7 +43,6 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
-import org.labkey.api.exp.api.SampleSetService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpDataTable;
@@ -56,7 +55,6 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
-import org.labkey.api.query.PropertyForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.SchemaKey;
@@ -71,9 +69,8 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.ExpDataIterators;
-import org.labkey.experiment.ExpDataIterators.*;
+import org.labkey.experiment.ExpDataIterators.AliasDataIteratorBuilder;
 import org.labkey.experiment.controllers.exp.ExperimentController;
-import org.labkey.experiment.samples.UploadSamplesHelper;
 
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -519,6 +516,16 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             if (lsidColumn.getFieldKey().equals(dbColumn.getFieldKey()))
                 continue;
+
+            if (dbColumn.getName().equalsIgnoreCase("genid"))
+            {
+                dbColumn.setHidden(true);
+                dbColumn.setUserEditable(false);
+                dbColumn.setShownInDetailsView(false);
+                dbColumn.setShownInInsertView(false);
+                dbColumn.setShownInUpdateView(false);
+            }
+
             // TODO missing values? comments? flags?
             DomainProperty dp = domain.getPropertyByURI(dbColumn.getPropertyURI());
             ColumnInfo propColumn = wrapColumnFromJoinedTable(null==dp?dbColumn.getName():dp.getName(), dbColumn, ExprColumn.STR_TABLE_ALIAS);
@@ -544,10 +551,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     {
         TableInfo provisioned = null == _ss ? null : _ss.getTinfo();
 
-        // all columns from exp.data except lsid
+        // all columns from exp.material except lsid
         Set<String> dataCols = new CaseInsensitiveHashSet(_rootTable.getColumnNameSet());
 
-        // don't select lsdi twice
+        // don't select lsid twice
         if (null != provisioned)
             dataCols.remove("lsid");
 
@@ -714,7 +721,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         TableInfo expTable = ExperimentService.get().getTinfoMaterial();
         TableInfo propertiesTable = _ss.getTinfo();
 
-        // TODO: subclass PersistDataIteratorBuilder to index Materials! not DataClasss!
+        // TODO: subclass PersistDataIteratorBuilder to index Materials! not DataClass!
         DataIteratorBuilder persist = new ExpDataIterators.PersistDataIteratorBuilder(data, expTable, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser())
             .setFileLinkDirectory("sampleset")
             .setIndexFunction( lsids -> () ->

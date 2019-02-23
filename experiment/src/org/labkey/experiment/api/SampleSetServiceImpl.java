@@ -469,6 +469,8 @@ public class SampleSetServiceImpl implements SampleSetService
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
+            DbSequenceManager.delete(c, ExpSampleSetImpl.GENID_SEQUENCE_NAME, source.getRowId());
+
             // TODO: option to skip deleting rows from the materialized table since we're about to delete it anyway
             // TODO do we need both truncateSampleSet() and deleteDomainObjects()?
             truncateSampleSet(source, user, null);

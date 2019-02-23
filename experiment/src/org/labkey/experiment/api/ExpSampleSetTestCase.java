@@ -82,6 +82,13 @@ public class ExpSampleSetTestCase
         ContainerManager.deleteAll(c, TestContext.get().getUser());
     }
 
+    private void assertExpectedName(ExpSampleSet ss, String expectedName)
+    {
+        ExpMaterial s = ss.getSample(c, expectedName);
+        assertNotNull("Expected to create sample with name '" + expectedName + "'", s);
+        assertEquals(expectedName, s.getName());
+    }
+
     // validate name is not null
     @Test
     public void nameNotNull() throws Exception
@@ -203,9 +210,7 @@ public class ExpSampleSetTestCase
         if (errors.hasErrors())
             throw errors;
 
-        sample = ss.getSample(c, "bob");
-        assertNotNull(sample);
-        assertEquals("bob", sample.getName());
+        assertExpectedName(ss, "bob");
     }
 
     // idCols all null, nameExpression not null, has 'name' property -- ok
@@ -260,10 +265,8 @@ public class ExpSampleSetTestCase
         if (errors.hasErrors())
             throw errors;
 
-        sample1 = ss.getSample(c, expectedName1);
-        assertEquals(expectedName1, sample1.getName());
-        sample2 = ss.getSample(c, expectedName2);
-        assertEquals(expectedName2, sample2.getName());
+        assertExpectedName(ss, expectedName1);
+        assertExpectedName(ss, expectedName2);
     }
 
     // idCols not null, nameExpression null, 'name' property (not used) -- fail **
@@ -320,8 +323,7 @@ public class ExpSampleSetTestCase
         if (errors.hasErrors())
             throw errors;
 
-        sample1 = ss.getSample(c, expectedName1);
-        assertEquals(expectedName1, sample1.getName());
+        assertExpectedName(ss, expectedName1);
 
         // try to insert without a value for 'name' property results in an error
         rows = new ArrayList<>();
@@ -367,18 +369,18 @@ public class ExpSampleSetTestCase
         props.add(new GWTPropertyDescriptor("prop", "string"));
         props.add(new GWTPropertyDescriptor("age", "int"));
 
-        final String nameExpression = "S-${prop}.${age}";
+        final String nameExpression = "S-${prop}.${age}.${genId:number('000')}";
 
         final ExpSampleSet ss = ExperimentService.get().createSampleSet(c, user,
                 "Samples", null, props, Collections.emptyList(),
                 -1, -1, -1, -1, nameExpression, null);
 
         final String expectedName1 = "bob";
-        final String expectedName2 = "S-red.11";
-        ExpMaterial sample1 = ss.getSample(c, expectedName1);
-        assertNull(sample1);
-        ExpMaterial sample2 = ss.getSample(c, expectedName2);
-        assertNull(sample2);
+        final String expectedName2 = "S-red.11.002";
+        final String expectedName3 = "S-red.11.003";
+        assertNull(ss.getSample(c, expectedName1));
+        assertNull(ss.getSample(c, expectedName2));
+        assertNull(ss.getSample(c, expectedName3));
 
         UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
         TableInfo table = schema.getTable("Samples");
@@ -387,16 +389,26 @@ public class ExpSampleSetTestCase
         List<Map<String, Object>> rows = new ArrayList<>();
         rows.add(CaseInsensitiveHashMap.of("name", "bob", "prop", "blue", "age", 10));
         rows.add(CaseInsensitiveHashMap.of("prop", "red", "age", 11));
+        rows.add(CaseInsensitiveHashMap.of("prop", "red", "age", 11));
 
         BatchValidationException errors = new BatchValidationException();
-        svc.insertRows(user, c, rows, errors, null, null);
+        List<Map<String, Object>> ret = svc.insertRows(user, c, rows, errors, null, null);
         if (errors.hasErrors())
             throw errors;
 
-        sample1 = ss.getSample(c, expectedName1);
-        assertEquals(expectedName1, sample1.getName());
-        sample2 = ss.getSample(c, expectedName2);
-        assertEquals(expectedName2, sample2.getName());
+        assertEquals(3, ret.size());
+
+        assertEquals(1, ret.get(0).get("genId"));
+        assertEquals(expectedName1, ret.get(0).get("name"));
+        assertExpectedName(ss, expectedName1);
+
+        assertEquals(2, ret.get(1).get("genId"));
+        assertEquals(expectedName2, ret.get(1).get("name"));
+        assertExpectedName(ss, expectedName2);
+
+        assertEquals(3, ret.get(2).get("genId"));
+        assertEquals(expectedName3, ret.get(2).get("name"));
+        assertExpectedName(ss, expectedName3);
     }
 
     // Issue 33682: Calling insertRows on SampleSet with empty values will not insert new samples

@@ -37,7 +37,6 @@ import org.labkey.api.exp.api.ProtocolImplementation;
 import org.labkey.api.exp.api.SampleSetService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -64,6 +63,8 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
 {
     private Domain _domain;
     private NameGenerator _nameGen;
+
+    public static final String GENID_SEQUENCE_NAME = "org.labkey.experiment.api.MaterialSource";
 
     // For serialization
     protected ExpSampleSetImpl() {}
