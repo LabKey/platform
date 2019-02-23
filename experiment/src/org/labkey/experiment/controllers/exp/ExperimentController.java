@@ -656,35 +656,38 @@ public class ExperimentController extends SpringActionController
 
             // Not all sample sets can be edited
             DomainKind domainKind = _source.getType().getDomainKind();
-            if (!ExperimentService.get().ensureDefaultSampleSet().equals(_source) && domainKind != null && domainKind.canEditDefinition(getUser(), _source.getType()))
+            try (var ignore = SpringActionController.ignoreSqlUpdates())
             {
-                ActionURL editURL = domainKind.urlEditDefinition(_source.getType(), new ViewBackgroundInfo(_source.getContainer(), getUser(), getViewContext().getActionURL()));
-                if (editURL != null)
+                if (!ExperimentService.get().ensureDefaultSampleSet().equals(_source) && domainKind != null && domainKind.canEditDefinition(getUser(), _source.getType()))
                 {
-                    editURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
-                    ActionButton editTypeButton = new ActionButton(editURL, "Edit Fields", DataRegion.MODE_DETAILS);
-                    editTypeButton.setDisplayPermission(UpdatePermission.class);
-                    detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(editTypeButton);
-                }
+                    ActionURL editURL = domainKind.urlEditDefinition(_source.getType(), new ViewBackgroundInfo(_source.getContainer(), getUser(), getViewContext().getActionURL()));
+                    if (editURL != null)
+                    {
+                        editURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
+                        ActionButton editTypeButton = new ActionButton(editURL, "Edit Fields", DataRegion.MODE_DETAILS);
+                        editTypeButton.setDisplayPermission(UpdatePermission.class);
+                        detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(editTypeButton);
+                    }
 
-                if (domainKind instanceof SampleSetDomainKind)
-                {
-                    ActionURL updateURL = new ActionURL(ShowUpdateMaterialSourceAction.class, _source.getContainer());
-                    updateURL.addParameter("RowId", _source.getRowId());
-                    updateURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
-                    ActionButton updateButton = new ActionButton(updateURL, "Edit Set", DataRegion.MODE_DETAILS, ActionButton.Action.LINK);
-                    updateButton.setDisplayPermission(UpdatePermission.class);
-                    detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(updateButton);
+                    if (domainKind instanceof SampleSetDomainKind)
+                    {
+                        ActionURL updateURL = new ActionURL(ShowUpdateMaterialSourceAction.class, _source.getContainer());
+                        updateURL.addParameter("RowId", _source.getRowId());
+                        updateURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
+                        ActionButton updateButton = new ActionButton(updateURL, "Edit Set", DataRegion.MODE_DETAILS, ActionButton.Action.LINK);
+                        updateButton.setDisplayPermission(UpdatePermission.class);
+                        detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(updateButton);
 
-                    ActionButton deleteButton = new ActionButton(ExperimentController.DeleteMaterialSourceAction.class, "Delete Set", DataRegion.MODE_DETAILS, ActionButton.Action.POST);
-                    deleteButton.setDisplayPermission(DeletePermission.class);
-                    ActionURL deleteURL = new ActionURL(ExperimentController.DeleteMaterialSourceAction.class, _source.getContainer());
-                    deleteURL.addParameter("singleObjectRowId", _source.getRowId());
-                    deleteURL.addParameter(ActionURL.Param.returnUrl, ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer()).toString());
+                        ActionButton deleteButton = new ActionButton(ExperimentController.DeleteMaterialSourceAction.class, "Delete Set", DataRegion.MODE_DETAILS, ActionButton.Action.POST);
+                        deleteButton.setDisplayPermission(DeletePermission.class);
+                        ActionURL deleteURL = new ActionURL(ExperimentController.DeleteMaterialSourceAction.class, _source.getContainer());
+                        deleteURL.addParameter("singleObjectRowId", _source.getRowId());
+                        deleteURL.addParameter(ActionURL.Param.returnUrl, ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer()).toString());
 
-                    deleteButton.setURL(deleteURL);
-                    deleteButton.setActionType(ActionButton.Action.LINK);
-                    detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(deleteButton);
+                        deleteButton.setURL(deleteURL);
+                        deleteButton.setActionType(ActionButton.Action.LINK);
+                        detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(deleteButton);
+                    }
                 }
             }
 
