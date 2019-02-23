@@ -810,39 +810,36 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
         if (_defaultModule == null)
         {
-            Map props = PropertyManager.getProperties(this, "defaultModules");
-            String defaultModuleName = (String) props.get("name");
-
-            boolean initRequired = false;
-            if (null == defaultModuleName || null == ModuleLoader.getInstance().getModule(defaultModuleName))
+            try (var ignore = SpringActionController.ignoreSqlUpdates())
             {
-                defaultModuleName = "Core";
-                initRequired = true;
-            }
-            Module defaultModule = ModuleLoader.getInstance().getModule(defaultModuleName);
+                Map props = PropertyManager.getProperties(this, "defaultModules");
+                String defaultModuleName = (String) props.get("name");
 
-            //set default module
-            if (initRequired)
-            {
-                try (var ignore = SpringActionController.ignoreSqlUpdates())
+                boolean initRequired = false;
+                if (null == defaultModuleName || null == ModuleLoader.getInstance().getModule(defaultModuleName))
                 {
+                    defaultModuleName = "Core";
+                    initRequired = true;
+                }
+                Module defaultModule = ModuleLoader.getInstance().getModule(defaultModuleName);
+
+                //set default module
+                if (initRequired)
                     setDefaultModule(defaultModule);
-                }
-            }
 
-            //ensure that default module is included in active module set
-            //should be there already if it's not portal, but if it is core, we have to add it for upgrade
-            if (defaultModuleName.compareToIgnoreCase("Core") == 0)
-            {
-                Set<Module> modules = new HashSet<>(getActiveModules(user));
-                if (!modules.contains(defaultModule))
+                //ensure that default module is included in active module set
+                //should be there already if it's not portal, but if it is core, we have to add it for upgrade
+                if (defaultModuleName.compareToIgnoreCase("Core") == 0)
                 {
-                    modules.add(defaultModule);
-                    setActiveModules(modules, user);
+                    Set<Module> modules = new HashSet<>(getActiveModules(user));
+                    if (!modules.contains(defaultModule))
+                    {
+                        modules.add(defaultModule);
+                        setActiveModules(modules, user);
+                    }
                 }
+                _defaultModule = defaultModule;
             }
-
-            _defaultModule = defaultModule;
         }
         return _defaultModule;
     }
