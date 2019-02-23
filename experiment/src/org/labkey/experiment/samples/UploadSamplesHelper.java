@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -72,8 +73,8 @@ import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
@@ -1500,9 +1501,22 @@ public class UploadSamplesHelper
 //            TODO check if this covers all the functionality, in particular how is alternateKeyCandidates used?
             CoerceDataIterator c = new CoerceDataIterator(source, context, sampleset.getTinfo());
 
+
+            // auto gen a sequence number for genId - reserve BATCH_SIZE numbers at a time so we don't select the next sequence value for every row
+            SimpleTranslator addGenId = new SimpleTranslator(c, context);
+            addGenId.setDebugName("add genId");
+            addGenId.selectAll(Sets.newCaseInsensitiveHashSet("genId"));
+
+            ColumnInfo genIdCol = new ColumnInfo(FieldKey.fromParts("genId"), JdbcType.INTEGER);
+            // TODO convert to DbSequenceManager.getPreallocatingSequence() for performance
+            final int batchSize = 1; // _context.getInsertOption().batch ? BATCH_SIZE : 1;
+            addGenId.addSequenceColumn(genIdCol, sampleset.getContainer(), ExpSampleSetImpl.GENID_SEQUENCE_NAME, sampleset.getRowId(), batchSize);
+            DataIterator logGenId = LoggingDataIterator.wrap(addGenId);
+
+
             // sampleset.createSampleNames() + generate lsid
             // TODO does not handle insertIgnore
-            DataIterator names = new _GenerateNamesDataIterator(sampleset, DataIteratorUtil.wrapMap(c, false), context);
+            DataIterator names = new _GenerateNamesDataIterator(sampleset, DataIteratorUtil.wrapMap(logGenId, false), context);
 
             return LoggingDataIterator.wrap(names);
         }
