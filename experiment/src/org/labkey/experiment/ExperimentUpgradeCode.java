@@ -283,9 +283,6 @@ public class ExperimentUpgradeCode implements UpgradeCode
         assert(null != domain.getStorageTableName());
         LOG.debug("SampleSet '" + ss.getName() + "' (" + ss.getRowId() + ") provisioned");
 
-        Integer samplesetObjectId = new SqlSelector(ExperimentServiceImpl.get().getSchema(),
-                "SELECT objectid FROM exp.object WHERE objecturi=?", ss.getDataObject().getLSID())
-                .getObject(Integer.class);
 
         // generate SQL to select from exp.material and exp.objectproperty
         SQLFragment select = new SQLFragment("SELECT m.lsid AS lsid");
@@ -329,24 +326,23 @@ public class ExperimentUpgradeCode implements UpgradeCode
         int count = new SqlExecutor(scope).execute(insert);
         LOG.info("SampleSet '" + ss.getName() + "' (" + ss.getRowId() + ") inserted provisioned rows, count=" + count);
 
-        if (samplesetObjectId != null)
+
+        // delete objectproperty rows for samples in the SampleSet, but only for properties of the SampleSet domain
+        SQLFragment deleteObjectProperties = new SQLFragment("DELETE FROM exp.objectproperty\n");
+        deleteObjectProperties.append("WHERE objectid IN (SELECT objectid FROM exp.object WHERE objecturi IN (SELECT lsid FROM exp.material WHERE CpasType = ?))");
+        deleteObjectProperties.add(ss.getDataObject().getLSID());
+        deleteObjectProperties.append(" AND propertyId IN (");
+        comma = "";
+        for (DomainProperty dp : domain.getProperties())
         {
-            SQLFragment deleteObjectProperties = new SQLFragment("DELETE FROM exp.objectproperty\n");
-            deleteObjectProperties.append("WHERE objectid IN (SELECT objectid FROM exp.object WHERE objecturi IN (SELECT lsid FROM exp.material WHERE CpasType = ?))");
-            deleteObjectProperties.add(ss.getDataObject().getLSID());
-            deleteObjectProperties.append(" AND propertyId IN (");
-            comma = "";
-            for (DomainProperty dp : domain.getProperties())
-            {
-                deleteObjectProperties.append(comma).append(dp.getPropertyId());
-                comma = ",";
-            }
-            deleteObjectProperties.append(")");
-            if (!domain.getProperties().isEmpty())
-            {
-                new SqlExecutor(scope).execute(deleteObjectProperties);
-                LOG.info("SampleSet '" + ss.getName() + "' (" + ss.getRowId() + ") deleted ontology properties");
-            }
+            deleteObjectProperties.append(comma).append(dp.getPropertyId());
+            comma = ",";
+        }
+        deleteObjectProperties.append(")");
+        if (!domain.getProperties().isEmpty())
+        {
+            new SqlExecutor(scope).execute(deleteObjectProperties);
+            LOG.info("SampleSet '" + ss.getName() + "' (" + ss.getRowId() + ") deleted ontology properties");
         }
     }
 
