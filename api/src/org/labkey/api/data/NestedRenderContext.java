@@ -81,11 +81,13 @@ public class NestedRenderContext extends RenderContext
         }
     }
 
+    @Override
     public SimpleFilter buildFilter(TableInfo tinfo, List<ColumnInfo> displayColumns, ActionURL url, String name, int maxRows, long offset, Sort sort)
     {
         return buildFilter(tinfo, displayColumns, url, name, maxRows, offset, sort, false);
     }
 
+    /** @param skipFiltering whether to apply a WHERE clause that filters the nested data based on a "page" of data from the grouping option */
     public SimpleFilter buildFilter(TableInfo tinfo, List<ColumnInfo> displayColumns, ActionURL url, String name, int maxRows, long offset, Sort sort, boolean skipFiltering)
     {
         SimpleFilter result = super.buildFilter(tinfo, displayColumns, url, name, maxRows, offset, sort);

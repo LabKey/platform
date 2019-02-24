@@ -159,12 +159,6 @@ public class RenderContextDecorator extends RenderContext
     }
 
     @Override
-    public SimpleFilter buildFilter(TableInfo tinfo, ActionURL url, String name, int maxRows, long offset, Sort sort)
-    {
-        return _ctx.buildFilter(tinfo, url, name, maxRows, offset, sort);
-    }
-
-    @Override
     public SimpleFilter buildFilter(TableInfo tinfo, List<ColumnInfo> displayColumns, ActionURL url, String name, int maxRows, long offset, Sort sort)
     {
         return _ctx.buildFilter(tinfo, displayColumns, url, name, maxRows, offset, sort);

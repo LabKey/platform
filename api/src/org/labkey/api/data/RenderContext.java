@@ -416,11 +416,6 @@ public class RenderContext implements Map<String, Object>, Serializable
         return sort;
     }
 
-    public SimpleFilter buildFilter(TableInfo tinfo, ActionURL url, String name, int maxRows, long offset, Sort sort)
-    {
-        return buildFilter(tinfo, Collections.emptyList(), url, name, maxRows, offset, sort);
-    }
-
     public SimpleFilter buildFilter(TableInfo tinfo, List<ColumnInfo> displayColumns, ActionURL url, String name, int maxRows, long offset, Sort sort)
     {
         SimpleFilter filter = new SimpleFilter(getBaseFilter());
