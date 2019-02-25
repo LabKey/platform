@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.AbstractFileUploadAction;
+import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
@@ -31,14 +32,12 @@ import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
-import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainEditorServiceBase;
 import org.labkey.api.exp.property.DomainKind;
@@ -210,28 +209,28 @@ public class PropertyController extends SpringActionController
         }
     }
 
+    @Marshal(Marshaller.Jackson)
     @RequiresPermission(AdminPermission.class)
-    public class CreateDomainAction extends MutatingApiAction<SimpleApiJsonForm>
+    public class CreateDomainAction extends MutatingApiAction<DomainApiForm>
     {
-        public ApiResponse execute(SimpleApiJsonForm getForm, BindException errors) throws Exception
+        public ApiResponse execute(DomainApiForm form, BindException errors) throws Exception
         {
-            JSONObject jsonObj = getForm.getJsonObject();
             Map<String, Object> options = new HashMap<>();
             GWTDomain newDomain;
             Domain domain = null;
             List<Domain> domains = null;
 
-            String kindName = jsonObj.optString("kind", jsonObj.getString("domainKind"));
-            String domainGroup = jsonObj.getString("domainGroup");
-            String domainName = jsonObj.optString("domainName", null);
+            String kindName = form.getKind() == null ? form.getDomainKind() : form.getKind();
+            String domainGroup = form.getDomainGroup();
+            String domainName = form.getDomainName();
 
             if (domainGroup != null)
             {
-                String moduleName = jsonObj.optString("module", null);
-                String domainTemplate = jsonObj.optString("domainTemplate", null);
+                String moduleName = form.getModule();
+                String domainTemplate = form.getDomainTemplate();
 
-                boolean createDomain = jsonObj.optBoolean("createDomain", true);
-                boolean importData = jsonObj.optBoolean("importData", true);
+                boolean createDomain = form.isCreateDomain();
+                boolean importData = form.isImportData();
 
                 DomainTemplateGroup templateGroup;
                 if (moduleName != null)
@@ -275,8 +274,8 @@ public class PropertyController extends SpringActionController
             }
             else if (kindName != null)
             {
-                newDomain = ExperimentService.get().convertJsonToDomain(jsonObj);
-                JSONObject jsOptions = jsonObj.optJSONObject("options");
+                newDomain = form.getDomainDesign();
+                JSONObject jsOptions = form.getOptions();
                 if (jsOptions == null)
                     jsOptions = new JSONObject();
 
@@ -328,7 +327,7 @@ public class PropertyController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public class GetDomainAction extends ReadOnlyApiAction<GetForm>
+    public class GetDomainAction extends ReadOnlyApiAction<DomainApiForm>
     {
         @Override
         protected ObjectMapper createObjectMapper()
@@ -338,31 +337,26 @@ public class PropertyController extends SpringActionController
             return mapper;
         }
 
-        public Object execute(GetForm form, BindException errors)
+        public Object execute(DomainApiForm form, BindException errors)
         {
             String queryName = form.getQueryName();
             String schemaName = form.getSchemaName();
 
-            GWTDomain domain = getDomain(schemaName, queryName, getContainer(), getUser());
-            //return success(domain);
-            return domain;
+            return getDomain(schemaName, queryName, getContainer(), getUser());
         }
     }
 
+    @Marshal(Marshaller.Jackson)
     @RequiresPermission(AdminPermission.class)
-    public class SaveDomainAction extends MutatingApiAction<SimpleApiJsonForm>
+    public class SaveDomainAction extends MutatingApiAction<DomainApiForm>
     {
-        public Object execute(SimpleApiJsonForm getForm, BindException errors)
+        public Object execute(DomainApiForm form, BindException errors)
         {
-            JSONObject jsonObj = getForm.getJsonObject();
-            String schema = jsonObj.getString("schemaName");
-            String query = jsonObj.getString("queryName");
-
-            GWTDomain newDomain = ExperimentService.get().convertJsonToDomain(jsonObj);
+            GWTDomain newDomain = form.getDomainDesign();
             if (newDomain.getDomainId() == -1 || newDomain.getDomainURI() == null)
                 throw new IllegalArgumentException("Domain id and URI are required");
 
-            GWTDomain originalDomain = getDomain(schema, query, getContainer(), getUser());
+            GWTDomain originalDomain = getDomain(form.getSchemaName(), form.getQueryName(), getContainer(), getUser());
 
             List<String> updateErrors = updateDomain(originalDomain, newDomain, getContainer(), getUser());
             for (String msg : updateErrors)
@@ -374,15 +368,161 @@ public class PropertyController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public class DeleteDomainAction extends MutatingApiAction<GetForm>
+    public class DeleteDomainAction extends MutatingApiAction<DomainApiForm>
     {
-        public Object execute(GetForm form, BindException errors)
+        public Object execute(DomainApiForm form, BindException errors)
         {
             String queryName = form.getQueryName();
             String schemaName = form.getSchemaName();
 
             deleteDomain(schemaName, queryName, getContainer(), getUser());
             return success("Domain deleted");
+        }
+    }
+
+    public static class DomainApiForm {
+        private String kind;
+        private String domainKind;
+        private String domainName;
+        private String module;
+        private String domainGroup;
+        private String domainTemplate;
+        private boolean createDomain = true;
+        private boolean importData = true;
+        private GWTDomain domainDesign;
+        private JSONObject options;
+        private String containerPath;
+        private String schemaName;
+        private String queryName;
+
+        public String getSchemaName()
+        {
+            return schemaName;
+        }
+
+        public void setSchemaName(String schemaName)
+        {
+            this.schemaName = schemaName;
+        }
+
+        public String getQueryName()
+        {
+            return queryName;
+        }
+
+        public void setQueryName(String queryName)
+        {
+            this.queryName = queryName;
+        }
+
+        public String getKind()
+        {
+            return kind;
+        }
+
+        public void setKind(String kind)
+        {
+            this.kind = kind;
+        }
+
+        public String getDomainKind()
+        {
+            return domainKind;
+        }
+
+        public void setDomainKind(String domainKind)
+        {
+            this.domainKind = domainKind;
+        }
+
+        public String getDomainName()
+        {
+            return domainName;
+        }
+
+        public void setDomainName(String domainName)
+        {
+            this.domainName = domainName;
+        }
+
+        public String getModule()
+        {
+            return module;
+        }
+
+        public void setModule(String module)
+        {
+            this.module = module;
+        }
+
+        public String getDomainGroup()
+        {
+            return domainGroup;
+        }
+
+        public void setDomainGroup(String domainGroup)
+        {
+            this.domainGroup = domainGroup;
+        }
+
+        public String getDomainTemplate()
+        {
+            return domainTemplate;
+        }
+
+        public void setDomainTemplate(String domainTemplate)
+        {
+            this.domainTemplate = domainTemplate;
+        }
+
+        public boolean isCreateDomain()
+        {
+            return createDomain;
+        }
+
+        public void setCreateDomain(boolean createDomain)
+        {
+            this.createDomain = createDomain;
+        }
+
+        public boolean isImportData()
+        {
+            return importData;
+        }
+
+        public void setImportData(boolean importData)
+        {
+            this.importData = importData;
+        }
+
+        public GWTDomain getDomainDesign()
+        {
+            return domainDesign;
+        }
+
+        public void setDomainDesign(GWTDomain domainDesign)
+        {
+            this.domainDesign = domainDesign;
+        }
+
+        public JSONObject getOptions()
+        {
+            return options;
+        }
+
+        public void setOptions(JSONObject options)
+        {
+            this.options = options;
+        }
+
+        public String getContainerPath()
+        {
+            return containerPath;
+        }
+
+        public void setContainerPath(String containerPath)
+        {
+            this.containerPath = containerPath;
         }
     }
 

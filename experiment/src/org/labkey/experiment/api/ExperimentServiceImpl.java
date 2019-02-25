@@ -71,6 +71,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.exp.xar.XarConstants;
 import org.labkey.api.gwt.client.DefaultValueType;
+import org.labkey.api.gwt.client.model.GWTConditionalFormat;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -6368,6 +6369,23 @@ public class ExperimentServiceImpl implements ExperimentService
             }
             prop.setPropertyValidators(validators);
         }
+
+        //conditional formats
+        JSONArray conditionalFormats = obj.optJSONArray("conditionalFormats");
+        if (null != conditionalFormats)
+        {
+            List<GWTConditionalFormat> conditionalFormatters = new ArrayList<>();
+            for (int i = 0; i < conditionalFormats.length(); i++)
+            {
+                JSONObject conditionalFormatter = conditionalFormats.getJSONObject(i);
+                if (null != conditionalFormatter)
+                {
+                    conditionalFormatters.add(convertJsonToConditionalFormatter(conditionalFormatter));
+                }
+            }
+            prop.setConditionalFormats(conditionalFormatters);
+        }
+
         return prop;
     }
 
@@ -6382,6 +6400,20 @@ public class ExperimentServiceImpl implements ExperimentService
         validator.setErrorMessage(obj.optString("errorMessage"));
 
         return validator;
+    }
+
+    @Override
+    public GWTConditionalFormat convertJsonToConditionalFormatter(JSONObject obj) throws JSONException
+    {
+        GWTConditionalFormat formatter = new GWTConditionalFormat();
+        formatter.setFilter(obj.getString("filter"));
+        formatter.setBold(obj.optBoolean("bold"));
+        formatter.setBold(obj.optBoolean("italic"));
+        formatter.setBold(obj.optBoolean("strikethrough"));
+        formatter.setTextColor(obj.optString("textColor"));
+        formatter.setTextColor(obj.optString("backgroundColor"));
+
+        return formatter;
     }
 
     @Override

@@ -117,10 +117,12 @@ import org.labkey.study.assay.FileBasedModuleDataHandler;
 import org.labkey.study.assay.ModuleAssayProvider;
 import org.labkey.study.assay.TsvImportAction;
 import org.labkey.study.assay.query.AssayAuditProvider;
+import org.labkey.study.controllers.assay.actions.DeleteProtocolAction;
 import org.labkey.study.controllers.assay.actions.GetAssayBatchAction;
 import org.labkey.study.controllers.assay.actions.GetAssayBatchesAction;
+import org.labkey.study.controllers.assay.actions.GetProtocolAction;
 import org.labkey.study.controllers.assay.actions.ImportRunApiAction;
-import org.labkey.study.controllers.assay.actions.ProtocolAction;
+import org.labkey.study.controllers.assay.actions.SaveProtocolAction;
 import org.labkey.study.controllers.assay.actions.SaveAssayBatchAction;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -179,7 +181,9 @@ public class AssayController extends SpringActionController
             ShowSelectedDataAction.class,
             SetDefaultValuesAssayAction.class,
             AssayDetailRedirectAction.class,
-            ProtocolAction.class
+            SaveProtocolAction.class,
+            GetProtocolAction.class,
+            DeleteProtocolAction.class
         );
 
     public AssayController()

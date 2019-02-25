@@ -113,6 +113,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * User: brittp
@@ -861,6 +862,33 @@ public class AssayManager implements AssayService
             resolverType = new StudyParticipantVisitResolverType();
 
         return resolverType.createResolver(run, targetStudyContainer, user);
+    }
+
+    public ExpProtocol findExpProtocol(GWTProtocol protocol, Container c)
+    {
+        ExpProtocol expProtocol = null;
+        if (protocol.getProtocolId() != null)
+            expProtocol = ExperimentService.get().getExpProtocol(protocol.getProtocolId());
+        if (expProtocol == null && protocol.getName() != null)
+        {
+            AssayProvider provider = AssayService.get().getProvider(protocol.getProviderName());
+            if (provider == null)
+                throw new NotFoundException("Assay provider '" + protocol.getProviderName() + "' not found");
+
+            List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(c, provider);
+            if (protocols.isEmpty())
+                throw new NotFoundException("Assay protocol '" + protocol.getName() + "' not found");
+
+            protocols = protocols.stream().filter(p -> protocol.getName().equals(p.getName())).collect(Collectors.toList());
+            if (protocols.isEmpty())
+                throw new NotFoundException("Assay protocol '" + protocol.getName() + "' not found");
+
+            if (protocols.size() > 1)
+                throw new NotFoundException("More than one assay protocol named '" + protocol.getName() + "' was found.");
+
+            expProtocol = protocols.get(0);
+        }
+        return expProtocol;
     }
 
     public void clearProtocolCache()
