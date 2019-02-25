@@ -129,7 +129,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
     public double getVersion()
     {
-        return 18.35;
+        return 19.10;
     }
 
     @Nullable
