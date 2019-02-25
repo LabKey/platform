@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.module.JavaVersion;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
@@ -55,7 +56,9 @@ public class CoreWarningProvider implements WarningProvider
 
         getConnectionPoolSizeWarnings(warnings, labkeyScope);
 
-        getDeprecatedTomcatWarnings(warnings);
+        getJavaWarnings(warnings);
+
+        getTomcatWarnings(warnings);
     }
 
     @Override
@@ -125,7 +128,18 @@ public class CoreWarningProvider implements WarningProvider
         }
     }
 
-    private void getDeprecatedTomcatWarnings(Warnings warnings)
+    private void getJavaWarnings(Warnings warnings)
+    {
+        if (ModuleLoader.getInstance().getJavaVersion().isDeprecated())
+        {
+            String javaInfo = JavaVersion.getJavaVersionDescription();
+            HelpTopic topic = new HelpTopic("supported");
+            warnings.add("The deployed version of Java, " + javaInfo + ", is not supported. We recommend installing " + JavaVersion.getRecommendedJavaVersion() +
+                    ". See the " + topic.getSimpleLinkHtml("Supported Technologies page") + " for more information.");
+        }
+    }
+
+    private void getTomcatWarnings(Warnings warnings)
     {
         if (ModuleLoader.getInstance().getTomcatVersion().isDeprecated())
         {
