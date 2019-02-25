@@ -6897,7 +6897,7 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return null;
+            return root.addChild("Confirm " + getContainer().getContainerNoun() + " deletion");
         }
     }
 
