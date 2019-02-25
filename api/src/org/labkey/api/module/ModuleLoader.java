@@ -26,7 +26,6 @@ import org.apache.log4j.RollingFileAppender;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.UrlProvider;
-import org.labkey.api.annotations.JavaRuntimeVersion;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
@@ -152,6 +151,7 @@ public class ModuleLoader implements Filter
     private static Throwable _startupFailure = null;
     private static boolean _newInstall = false;
     private static TomcatVersion _tomcatVersion = null;
+    private static JavaVersion _javaVersion = null;
 
     private static final String BANNER = "\n" +
             "   __                                   \n" +
@@ -278,7 +278,7 @@ public class ModuleLoader implements Filter
 
         rollErrorLogFile(_log);
 
-        verifyJavaVersion();
+        setJavaVersion();
 
         // make sure ConvertHelper is initialized
         ConvertHelper.getPropertyEditorRegistrar();
@@ -914,40 +914,30 @@ public class ModuleLoader implements Filter
         return _webappDir;
     }
 
-    private static final int LOWEST_SUPPORTED_JAVA = 11;
-    private static final int HIGHEST_TESTED_JAVA = 11;
-
     /**
-     * Checks Java version and throws if it's not supported.
+     * Sets the current Java version, if it's supported. Otherwise, ConfigurationException is thrown and server fails to start.
      *
-     * Warnings for deprecated Java versions are usually added to CoreWarningProvider
+     * Warnings for deprecated Java versions are handled in CoreWarningProvider.
      *
      * @throws ConfigurationException if Java version is not supported
      */
-    @JavaRuntimeVersion
-    private void verifyJavaVersion() throws ConfigurationException
+    private void setJavaVersion()
     {
-        int version = getJavaVersion();
+        _javaVersion = JavaVersion.get();
 
-        if (version < LOWEST_SUPPORTED_JAVA)
-            throw new ConfigurationException("Unsupported Java runtime version: " + SystemUtils.JAVA_VERSION + ". LabKey Server requires Java 11.");
-        else if (version > HIGHEST_TESTED_JAVA)
-            _log.warn("LabKey Server has not been tested against Java runtime version " + SystemUtils.JAVA_VERSION + ".");
+        if (!_javaVersion.isTested())
+            _log.warn("LabKey Server has not been tested against Java runtime version " + JavaVersion.getJavaVersionDescription() + ".");
     }
 
-    // Return current Java specification version, normalized to an int (e.g., 6, 7, 8, 9, 10, 11...). Note that commons lang methods
-    // like SystemUtils.isJavaVersionAtLeast() aren't keeping up with the Java 6-month release cadence.
-    private int getJavaVersion()
+    public JavaVersion getJavaVersion()
     {
-        String[] version = SystemUtils.JAVA_SPECIFICATION_VERSION.split("\\.");
-
-        return Integer.parseInt("1".equals(version[0]) ? version[1] : version[0]);
+        return _javaVersion;
     }
 
     /**
      * Sets the running Tomcat version, if servlet container is recognized and supported. Otherwise, ConfigurationException is thrown and server fails to start.
      *
-     * Warnings for deprecated Tomcat versions are handled in CoreWarningProvider
+     * Warnings for deprecated Tomcat versions are handled in CoreWarningProvider.
      *
      * @throws ConfigurationException if Tomcat version is not recognized or supported
      */
