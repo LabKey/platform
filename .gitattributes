@@ -13,6 +13,7 @@ api/gwtsrc/org/labkey/api/gwt/client/assay/AssayService.java -text
 api/gwtsrc/org/labkey/api/gwt/client/assay/AssayServiceAsync.java -text
 api/gwtsrc/org/labkey/api/gwt/client/assay/SampleChooserUtils.java -text
 api/gwtsrc/org/labkey/api/gwt/client/assay/model/GWTBatch.java -text
+api/gwtsrc/org/labkey/api/gwt/client/assay/model/GWTPropertyDescriptorMixin.java -text
 api/gwtsrc/org/labkey/api/gwt/client/assay/model/GWTProtocol.java -text
 api/gwtsrc/org/labkey/api/gwt/client/assay/model/GWTRun.java -text
 api/gwtsrc/org/labkey/api/gwt/client/model/GWTComparisonGroup.java -text

@@ -55,6 +55,7 @@ import org.labkey.api.exp.query.ExpRunGroupMapTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSampleSetTable;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.gwt.client.model.GWTConditionalFormat;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -721,10 +722,20 @@ public interface ExperimentService extends ExperimentRunTypeSource
     @Nullable
     ExperimentRunType getExperimentRunType(@NotNull String description, @Nullable Container container);
 
+    // Opt to marshal JSON to GWTPropertyValidator bean directly
+    @Deprecated
     GWTPropertyValidator convertJsonToPropertyValidator(JSONObject obj) throws JSONException;
 
+    // Opt to marshal JSON to GWTConditionalFormat bean directly
+    @Deprecated
+    GWTConditionalFormat convertJsonToConditionalFormatter(JSONObject obj) throws JSONException;
+
+    // Opt to marshal JSON to GWTPropertyDescriptor bean directly
+    @Deprecated
     GWTPropertyDescriptor convertJsonToPropertyDescriptor(JSONObject obj) throws JSONException;
 
+    // Opt to marshal JSON to GWTDomain bean directly
+    @Deprecated
     GWTDomain convertJsonToDomain(JSONObject obj) throws JSONException;
 
     JSONObject convertPropertyDescriptorToJson(GWTPropertyDescriptor pd);
