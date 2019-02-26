@@ -21,14 +21,7 @@ public interface Warnings
 {
     static Warnings of(Collection<String> collection)
     {
-        return new Warnings()
-        {
-            @Override
-            public void add(String warning)
-            {
-                collection.add(warning);
-            }
-        };
+        return collection::add;
     }
 
     void add(String warning);
