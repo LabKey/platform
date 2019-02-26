@@ -216,6 +216,7 @@ import org.labkey.core.notification.NotificationServiceImpl;
 import org.labkey.core.portal.PortalJUnitTest;
 import org.labkey.core.portal.ProjectController;
 import org.labkey.core.portal.UtilController;
+import org.labkey.core.products.ProductController;
 import org.labkey.core.project.FolderNavigationForm;
 import org.labkey.core.query.AttachmentAuditProvider;
 import org.labkey.core.query.CoreQuerySchema;
@@ -327,6 +328,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         addController("mini-profiler", MiniProfilerController.class);
         addController("ldap", LdapController.class);
         addController("notification", NotificationController.class);
+        addController("product", ProductController.class);
 
         AuthenticationManager.registerProvider(new DbLoginAuthenticationProvider(), Priority.Low);
         AttachmentService.setInstance(new AttachmentServiceImpl());
