@@ -29,12 +29,6 @@ import org.labkey.study.assay.AssayManager;
 import org.labkey.study.assay.AssayServiceImpl;
 import org.springframework.validation.BindException;
 
-/**
- * API action to get, create, update, or delete an assay protocol.
- *
- * User: kevink
- * Date: 3/11/16
- */
 @Marshal(Marshaller.Jackson)
 @RequiresPermission(ReadPermission.class)
 public class SaveProtocolAction extends MutatingApiAction<GWTProtocol>

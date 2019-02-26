@@ -877,7 +877,7 @@ public class AssayManager implements AssayService
 
             List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(c, provider);
             if (protocols.isEmpty())
-                throw new NotFoundException("Assay protocol '" + protocol.getName() + "' not found");
+                throw new NotFoundException( "No assay protocols for '" + protocol.getName() + "' found in container '" + c.getPath() + "'");
 
             protocols = protocols.stream().filter(p -> protocol.getName().equals(p.getName())).collect(Collectors.toList());
             if (protocols.isEmpty())

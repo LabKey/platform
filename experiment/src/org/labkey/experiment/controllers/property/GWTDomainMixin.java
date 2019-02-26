@@ -18,7 +18,7 @@ package org.labkey.experiment.controllers.property;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /**
- * Configures the fields to be returned when serializing a GWTDomain.
+ * Configures the fields that are not returned when serializing a GWTDomain.
  * Ideally we would just add the @JsonIgnore annotations to GWTDomain directly,
  * but the GWT compiler would need to have jackson on the classpath which isn't
  * necessary.

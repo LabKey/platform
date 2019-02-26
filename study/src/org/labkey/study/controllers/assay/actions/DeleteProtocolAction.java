@@ -19,7 +19,7 @@ public class DeleteProtocolAction extends MutatingApiAction<GWTProtocol>
     {
         ExpProtocol expProtocol = AssayManager.get().findExpProtocol(protocol, getContainer());
         if (expProtocol == null)
-            throw new NotFoundException();
+            throw new NotFoundException("Protocol " + protocol.getName() + " not found");
 
         // user must have both design assay AND delete permission, as this will delete both the design and uploaded data
         if (!expProtocol.getContainer().hasPermission(getUser(), DesignAssayPermission.class))
