@@ -654,8 +654,6 @@ public class SampleSetServiceImpl implements SampleSetService
         YEARLY("yyyy");
 
         final DateTimeFormatter _formatter;
-        // we are totally 'leaking' these sequences, however a) they are small b) we leak < 2 a day, so...
-        static final HashMap<String, DbSequence> _sequences = new HashMap<>();
 
         SampleSequenceType(String pattern)
         {
@@ -676,16 +674,7 @@ public class SampleSetServiceImpl implements SampleSetService
         public int next(Date date)
         {
             String seqName = getSequenceName(date);
-            DbSequence seq;
-            synchronized (_sequences)
-            {
-                seq = _sequences.get(seqName);
-                if (seq == null)
-                {
-                    seq = DbSequenceManager.getPreallocatingSequence(ContainerManager.getRoot(), seqName);
-                    _sequences.put(seqName, seq);
-                }
-            }
+            DbSequence seq = DbSequenceManager.getPreallocatingSequence(ContainerManager.getRoot(), seqName);
             return seq.next();
         }
     }

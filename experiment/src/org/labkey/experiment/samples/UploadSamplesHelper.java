@@ -1451,6 +1451,8 @@ public class UploadSamplesHelper
 
     public static class PrepareDataIteratorBuilder implements DataIteratorBuilder
     {
+        private static final int BATCH_SIZE = 100;
+
         final ExpSampleSetImpl sampleset;
         final DataIteratorBuilder builder;
         final Lsid.LsidBuilder lsidBuilder;
@@ -1508,8 +1510,7 @@ public class UploadSamplesHelper
             addGenId.selectAll(Sets.newCaseInsensitiveHashSet("genId"));
 
             ColumnInfo genIdCol = new ColumnInfo(FieldKey.fromParts("genId"), JdbcType.INTEGER);
-            // TODO convert to DbSequenceManager.getPreallocatingSequence() for performance
-            final int batchSize = 1; // _context.getInsertOption().batch ? BATCH_SIZE : 1;
+            final int batchSize = context.getInsertOption().batch ? BATCH_SIZE : 1;
             addGenId.addSequenceColumn(genIdCol, sampleset.getContainer(), ExpSampleSetImpl.GENID_SEQUENCE_NAME, sampleset.getRowId(), batchSize);
             DataIterator logGenId = LoggingDataIterator.wrap(addGenId);
 

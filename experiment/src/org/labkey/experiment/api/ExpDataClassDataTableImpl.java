@@ -581,8 +581,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             // auto gen a sequence number for genId - reserve BATCH_SIZE numbers at a time so we don't select the next sequence value for every row
             ColumnInfo genIdCol = _dataClass.getTinfo().getColumn(FieldKey.fromParts("genId"));
-            // TODO convert to DbSequenceManager.getPreallocatingSequence() for performance
-            final int batchSize = 1; // _context.getInsertOption().batch ? BATCH_SIZE : 1;
+            final int batchSize = _context.getInsertOption().batch ? BATCH_SIZE : 1;
             step0.addSequenceColumn(genIdCol, _dataClass.getContainer(), ExpDataClassImpl.GENID_SEQUENCE_NAME, _dataClass.getRowId(), batchSize);
 
             // Ensure we have a dataClass column and it is of the right value
