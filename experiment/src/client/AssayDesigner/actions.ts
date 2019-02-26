@@ -3,7 +3,6 @@
  * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
  */
 import {Ajax, Utils} from "@labkey/api";
-import {SchemaQuery} from "@glass/models";
 import {buildURL} from "@glass/utils";
 
 import {AssayProtocolModel} from "./models";
@@ -11,8 +10,7 @@ import {AssayProtocolModel} from "./models";
 export function fetchProtocol(protocolId: number): Promise<AssayProtocolModel> {
     return new Promise((resolve, reject) => {
         Ajax.request({
-            url: buildURL('assay', 'protocol.api', { protocolId }),
-            method: 'GET',
+            url: buildURL('assay', 'getProtocol.api', { protocolId }),
             success: Utils.getCallbackWrapper((data) => {
                 if (data.data) {
                     resolve(new AssayProtocolModel(data.data));
@@ -22,7 +20,7 @@ export function fetchProtocol(protocolId: number): Promise<AssayProtocolModel> {
                 }
             }),
             failure: Utils.getCallbackWrapper((error) => {
-                reject(error.exception);
+                reject(error ? error.exception: 'An unknown error occurred getting the assay protocol data from the server.');
             })
         })
     });
