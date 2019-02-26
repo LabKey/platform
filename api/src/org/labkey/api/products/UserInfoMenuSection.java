@@ -1,6 +1,6 @@
 package org.labkey.api.products;
 
-import org.labkey.api.portal.ProjectUrls;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.security.UserUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -11,7 +11,7 @@ import java.util.List;
 
 public class UserInfoMenuSection extends MenuSection
 {
-    public static final String NAME = "User Info";
+    public static final String NAME = "Your Items";
 
     private ProductMenuProvider _provider;
 
@@ -28,23 +28,23 @@ public class UserInfoMenuSection extends MenuSection
     }
 
     @Override
+    @NotNull
     public List<MenuItem> getAllItems()
     {
         List<MenuItem> items = new ArrayList<>();
         UserUrls urlProvider =  PageFlowUtil.urlProvider(UserUrls.class);
         if (urlProvider != null)
-            // TODO would be nice to provide a return url here, I think
-            items.add(new MenuItem("Profile", getUser().getUserId(), urlProvider.getUserDetailsURL(getContainer(), getUser().getUserId(), null)));
-        ActionURL docUrl = _provider.getDocumentationUrl();
+            items.add(new MenuItem("Profile", urlProvider.getUserDetailsURL(getContainer(), getUser().getUserId(), getContext().getActionURL()), getUser().getUserId(), 0));
+        String docUrl = _provider.getDocumentationUrl();
         if (docUrl != null)
-            items.add(new MenuItem("Documentation", docUrl));
+            items.add(new MenuItem("Documentation", docUrl, null, 1));
         items.addAll(_provider.getUserMenuItems());
 
-        ProjectUrls projectUrls = PageFlowUtil.urlProvider(ProjectUrls.class);
-        if (projectUrls != null)
-            items.add(new MenuItem("Switch to LabKey", projectUrls.getBeginURL(getContainer())));
+//        ProjectUrls projectUrls = PageFlowUtil.urlProvider(ProjectUrls.class);
+//        if (projectUrls != null)
+//            items.add(new MenuItem("Switch to LabKey", projectUrls.getBeginURL(getContainer())));
+//        _totalCount = items.size();
         _totalCount = items.size();
-
         return items;
     }
 

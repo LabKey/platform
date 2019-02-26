@@ -2,7 +2,6 @@ package org.labkey.api.products;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
 import java.util.Collection;
@@ -12,7 +11,10 @@ import java.util.List;
 public abstract class ProductMenuProvider
 {
     @Nullable
-    public abstract ActionURL getDocumentationUrl();
+    public String getDocumentationUrl()
+    {
+        return "https://www.labkey.org/Documentation/wiki-page.view?name=default";
+    }
 
     public @NotNull List<MenuItem> getUserMenuItems()
     {

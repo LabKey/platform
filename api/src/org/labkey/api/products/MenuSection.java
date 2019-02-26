@@ -8,11 +8,11 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
+import java.util.Comparator;
 import java.util.List;
 
 public abstract class MenuSection
 {
-
     protected ViewContext _context;
     protected String _label;
     protected String _iconClass;
@@ -99,11 +99,13 @@ public abstract class MenuSection
         return null;
     }
 
-    protected abstract List<MenuItem> getAllItems();
+    @JsonIgnore
+    protected abstract @NotNull List<MenuItem> getAllItems();
 
-    protected List<MenuItem> getItems()
+    public List<MenuItem> getItems()
     {
         List<MenuItem> items = getAllItems();
+        items.sort(Comparator.comparing(MenuItem::getOrderNum).thenComparing(MenuItem::getLabel, String.CASE_INSENSITIVE_ORDER));
         if (_itemLimit != null && _itemLimit < items.size())
             return items.subList(0, _itemLimit);
         else

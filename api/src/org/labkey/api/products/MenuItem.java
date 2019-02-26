@@ -6,25 +6,31 @@ public class MenuItem
 {
     private String _label;
     private Integer _id;
-    private ActionURL _url;
-    private Integer _orderNum;
+    private String _url;
+    private Integer _orderNum = 0;
 
-    public MenuItem(String label, Integer id, ActionURL url, Integer orderNum)
+    public MenuItem(String label, String url, Integer id, Integer orderNum)
     {
         _label = label;
         _id = id;
         _url = url;
-        _orderNum = orderNum;
+        _orderNum = orderNum == null ? -1 : orderNum;
     }
 
-    public MenuItem(String label, Integer id, ActionURL url)
+
+    public MenuItem(String label, ActionURL url, Integer id, Integer orderNum)
     {
-        this(label, id, url, null);
+        this(label, url == null ? null : url.toString(), id, orderNum);
     }
 
-    public MenuItem(String label, ActionURL url)
+    public MenuItem(String label, String url, Integer orderNum)
     {
-        this(label, null, url, null);
+        this(label, url, null, orderNum);
+    }
+
+    public MenuItem(String label, ActionURL url, Integer id)
+    {
+        this(label, url, id, null);
     }
 
     public String getLabel()
@@ -47,12 +53,17 @@ public class MenuItem
         _id = id;
     }
 
-    public ActionURL getUrl()
+    public String getUrl()
     {
         return _url;
     }
 
     public void setUrl(ActionURL url)
+    {
+        _url = url.toString();
+    }
+
+    public void setUrl(String url)
     {
         _url = url;
     }
