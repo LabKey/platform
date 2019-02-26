@@ -16,13 +16,13 @@
 
 package org.labkey.experiment.controllers.property;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.AbstractFileUploadAction;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
@@ -46,6 +46,7 @@ import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
+import org.labkey.api.gwt.client.assay.model.GWTPropertyDescriptorMixin;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
@@ -113,6 +114,7 @@ public class PropertyController extends SpringActionController
     static void configureObjectMapper(ObjectMapper om)
     {
         om.addMixIn(GWTDomain.class, GWTDomainMixin.class);
+        om.addMixIn(GWTPropertyDescriptor.class, GWTPropertyDescriptorMixin.class);
     }
 
     @RequiresNoPermission
@@ -380,6 +382,7 @@ public class PropertyController extends SpringActionController
         }
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class DomainApiForm {
         private String kind;
         private String domainKind;
