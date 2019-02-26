@@ -119,6 +119,7 @@
             {
                 LABKEY.Ajax.request({
                     url: LABKEY.ActionURL.buildURL('notification', 'markNotificationAsRead.api'),
+                    method: 'POST',
                     params: {rowIds: [id]},
                     success: LABKEY.Utils.getCallbackWrapper(function (response)
                     {
@@ -156,6 +157,7 @@
             {
                 LABKEY.Ajax.request({
                     url: LABKEY.ActionURL.buildURL('notification', 'deleteNotification.api'),
+                    method: 'POST',
                     params: {rowIds: [id]},
                     success: LABKEY.Utils.getCallbackWrapper(function (response)
                     {

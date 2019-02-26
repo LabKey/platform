@@ -19,7 +19,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiVersion;
@@ -29,6 +28,7 @@ import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.provider.GroupAuditProvider;
@@ -122,7 +122,7 @@ public class SecurityApiActions
 
     @RequiresPermission(ReadPermission.class)
     @RequiresLogin
-    public static class GetGroupPermsAction extends ApiAction<GetGroupPermsForm>
+    public static class GetGroupPermsAction extends ReadOnlyApiAction<GetGroupPermsForm>
     {
         public ApiResponse execute(GetGroupPermsForm form, BindException errors)
         {
@@ -272,7 +272,7 @@ public class SecurityApiActions
     }
 
     @RequiresPermission(ReadPermission.class)
-    public static class GetUserPermsAction extends ApiAction<GetUserPermsForm>
+    public static class GetUserPermsAction extends ReadOnlyApiAction<GetUserPermsForm>
     {
         public ApiResponse execute(GetUserPermsForm form, BindException errors) throws Exception
         {
@@ -397,7 +397,7 @@ public class SecurityApiActions
     }
 
     @RequiresPermission(ReadPermission.class)
-    public static class GetGroupsForCurrentUserAction extends ApiAction
+    public static class GetGroupsForCurrentUserAction extends ReadOnlyApiAction
     {
         public ApiResponse execute(Object o, BindException errors)
         {
@@ -420,7 +420,7 @@ public class SecurityApiActions
 
     @RequiresLogin
     @IgnoresTermsOfUse
-    public static class EnsureLoginAction extends ApiAction
+    public static class EnsureLoginAction extends ReadOnlyApiAction
     {
         public ApiResponse execute(Object o, BindException errors)
         {
@@ -445,7 +445,7 @@ public class SecurityApiActions
     }
 
     @RequiresPermission(ReadPermission.class)
-    public static class GetRolesAction extends ApiAction
+    public static class GetRolesAction extends ReadOnlyApiAction
     {
         private Set<Permission> _allPermissions = new HashSet<>();
 
@@ -539,7 +539,7 @@ public class SecurityApiActions
     }
 
     @RequiresPermission(ReadPermission.class)
-    public static class GetSecurableResourcesAction extends ApiAction<GetSecurableResourcesForm>
+    public static class GetSecurableResourcesAction extends ReadOnlyApiAction<GetSecurableResourcesForm>
     {
         private boolean _includeSubfolders = false;
         private boolean _includePermissions = false;
@@ -628,7 +628,7 @@ public class SecurityApiActions
     }
 
     @RequiresPermission(AdminPermission.class)
-    public static class GetPolicyAction extends ApiAction<PolicyIdForm>
+    public static class GetPolicyAction extends ReadOnlyApiAction<PolicyIdForm>
     {
         public ApiResponse execute(PolicyIdForm form, BindException errors)
         {
@@ -2130,7 +2130,7 @@ public class SecurityApiActions
     }
 
     @RequiresPermission(UserManagementPermission.class)
-    public static class ListProjectGroupsAction extends ApiAction<ListGroupsForm>
+    public static class ListProjectGroupsAction extends ReadOnlyApiAction<ListGroupsForm>
     {
         @Override
         public ApiResponse execute(ListGroupsForm form, BindException errors)

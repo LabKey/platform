@@ -2444,7 +2444,7 @@ public class UserController extends SpringActionController
 
     @RequiresLogin
     @RequiresPermission(ReadPermission.class)
-    public class GetUsersAction extends ApiAction<GetUsersForm>
+    public class GetUsersAction extends ReadOnlyApiAction<GetUsersForm>
     {
         protected static final String PROP_USER_ID = "userId";
         protected static final String PROP_USER_NAME = "displayName";

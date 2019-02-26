@@ -22,7 +22,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.junit.Test;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ConfirmAction;
@@ -32,6 +31,7 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.FormattedError;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
@@ -889,7 +889,7 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class CompleteMemberAction extends ApiAction<CompleteMemberForm>
+    public class CompleteMemberAction extends ReadOnlyApiAction<CompleteMemberForm>
     {
         @Override
         public ApiResponse execute(CompleteMemberForm form, BindException errors)
@@ -928,7 +928,7 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class CompleteUserAction extends ApiAction<CompleteUserForm>
+    public class CompleteUserAction extends ReadOnlyApiAction<CompleteUserForm>
     {
         @Override
         public ApiResponse execute(CompleteUserForm completeUserForm, BindException errors)
@@ -946,7 +946,7 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class CompleteUserReadAction extends ApiAction<CompleteUserForm>
+    public class CompleteUserReadAction extends ReadOnlyApiAction<CompleteUserForm>
     {
         @Override
         public ApiResponse execute(CompleteUserForm completeUserForm, BindException errors)
@@ -1684,7 +1684,7 @@ public class SecurityController extends SpringActionController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class GroupDiagramAction extends ApiAction<GroupDiagramForm>
+    public class GroupDiagramAction extends ReadOnlyApiAction<GroupDiagramForm>
     {
         @Override
         public ApiResponse execute(GroupDiagramForm form, BindException errors) throws Exception

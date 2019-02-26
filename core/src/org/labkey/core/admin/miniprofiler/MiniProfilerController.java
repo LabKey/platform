@@ -17,7 +17,6 @@ package org.labkey.core.admin.miniprofiler;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.apache.log4j.Logger;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.IgnoresAllocationTracking;
@@ -119,33 +118,6 @@ public class MiniProfilerController extends SpringActionController
             return root;
         }
 
-    }
-
-    @RequiresSiteAdmin
-    public class SettingsAction extends ApiAction<MiniProfiler.Settings>
-    {
-        public SettingsAction()
-        {
-            setSupportedMethods(new String[] { "GET", "POST", "DELETE" });
-        }
-
-        @Override
-        public Object execute(MiniProfiler.Settings settings, BindException errors)
-        {
-            String msg = null;
-            if (isDelete())
-            {
-                MiniProfiler.resetSettings();
-                msg = "Reset mini-profiler settings";
-            }
-            else if (isPost())
-            {
-                MiniProfiler.saveSettings(settings);
-                msg = "Saved mini-profiler settings";
-            }
-
-            return success(msg, MiniProfiler.getSettings());
-        }
     }
 
     @AdminConsoleAction

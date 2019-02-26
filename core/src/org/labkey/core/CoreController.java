@@ -25,7 +25,6 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
@@ -33,6 +32,7 @@ import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.ExtFormAction;
 import org.labkey.api.action.FormApiAction;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -1086,7 +1086,7 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetExtContainerTreeAction extends ApiAction<ExtContainerTreeForm>
+    public class GetExtContainerTreeAction extends ReadOnlyApiAction<ExtContainerTreeForm>
     {
         protected Class<? extends Permission> _reqPerm = ReadPermission.class;
         protected boolean _move = false;
@@ -1298,7 +1298,7 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class GetContainerTreeRootInfoAction extends ApiAction<Object>
+    public class GetContainerTreeRootInfoAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object form, BindException errors)
@@ -1388,7 +1388,7 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetFolderTypesAction extends ApiAction<Object>
+    public class GetFolderTypesAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object form, BindException errors)
@@ -1432,7 +1432,7 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresPermission(UpdatePermission.class) @RequiresLogin
-    public class GetModulePropertiesAction extends ApiAction<ModulePropertiesForm>
+    public class GetModulePropertiesAction extends ReadOnlyApiAction<ModulePropertiesForm>
     {
         @Override
         public ApiResponse execute(ModulePropertiesForm form, BindException errors)
@@ -1653,7 +1653,7 @@ public class CoreController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class)
     @IgnoresTermsOfUse  // Used by folder management, which is used to configure important terms/compliance settings (e.g., active modules)
-    public class GetContainerInfoAction extends ApiAction<ContainerInfoForm>
+    public class GetContainerInfoAction extends ReadOnlyApiAction<ContainerInfoForm>
     {
         @Override
         public ApiResponse execute(ContainerInfoForm form, BindException errors)
@@ -1702,7 +1702,7 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetRegisteredFolderWritersAction extends ApiAction<FolderWriterForm>
+    public class GetRegisteredFolderWritersAction extends ReadOnlyApiAction<FolderWriterForm>
     {
         @Override
         public ApiResponse execute(FolderWriterForm form, BindException errors)
@@ -1792,7 +1792,7 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetRegisteredFolderImportersAction extends ApiAction<FolderImporterForm>
+    public class GetRegisteredFolderImportersAction extends ReadOnlyApiAction<FolderImporterForm>
     {
         @Override
         public ApiResponse execute(FolderImporterForm form, BindException errors) throws Exception
@@ -1943,7 +1943,7 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresNoPermission
-    public class LoadLibraryAction extends ApiAction<LoadLibraryForm>
+    public class LoadLibraryAction extends ReadOnlyApiAction<LoadLibraryForm>
     {
         @Override
         public void validateForm(LoadLibraryForm form, Errors errors)
@@ -2138,7 +2138,7 @@ public class CoreController extends SpringActionController
     }
 
     @AdminConsoleAction(AdminOperationsPermission.class)
-    public class ScriptEnginesSummaryAction extends ApiAction
+    public class ScriptEnginesSummaryAction extends ReadOnlyApiAction
     {
         public ApiResponse execute(Object o, BindException errors)
         {

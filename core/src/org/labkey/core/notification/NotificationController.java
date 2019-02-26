@@ -15,10 +15,11 @@
  */
 package org.labkey.core.notification;
 
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormHandlerAction;
+import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -98,7 +99,7 @@ public class NotificationController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class) @RequiresLogin
-    public class MarkNotificationAsReadAction extends ApiAction<RowIdsForm>
+    public class MarkNotificationAsReadAction extends MutatingApiAction<RowIdsForm>
     {
         private List<Notification> _notifications = new ArrayList<>();
 
@@ -137,7 +138,7 @@ public class NotificationController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class) @RequiresLogin
-    public class DeleteNotificationAction extends ApiAction<RowIdsForm>
+    public class DeleteNotificationAction extends MutatingApiAction<RowIdsForm>
     {
         private List<Notification> _notifications = new ArrayList<>();
 
@@ -230,7 +231,7 @@ public class NotificationController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class) @RequiresLogin
-    public class GetUserNotificationsAction extends ApiAction<Object>
+    public class GetUserNotificationsAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object form, BindException errors)
@@ -255,7 +256,7 @@ public class NotificationController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class) @RequiresLogin
-    public class GetUserNotificationsForPanelAction extends ApiAction<Object>
+    public class GetUserNotificationsForPanelAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object form, BindException errors)

@@ -22,7 +22,6 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiVersion;
@@ -32,6 +31,7 @@ import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -716,7 +716,7 @@ public class ProjectController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class)
     @ApiVersion(10.2)
-    public class GetWebPartsAction extends ApiAction<CustomizePortletApiForm>
+    public class GetWebPartsAction extends ReadOnlyApiAction<CustomizePortletApiForm>
     {
         @Override
         public ApiResponse execute(CustomizePortletApiForm movePortletForm, BindException errors)
@@ -1208,7 +1208,7 @@ public class ProjectController extends SpringActionController
     // webparts and defaulting to a state of ReadPermission.
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
-    public class GetWebPartAction extends ApiAction<GetWebPartForm>
+    public class GetWebPartAction extends ReadOnlyApiAction<GetWebPartForm>
     {
         public static final String PARAM_WEBPART = "webpart.name";
 
@@ -1264,7 +1264,7 @@ public class ProjectController extends SpringActionController
 
     @RequiresNoPermission
     @IgnoresTermsOfUse
-    public class GetNavigationPartAction extends ApiAction<GetWebPartForm>
+    public class GetNavigationPartAction extends ReadOnlyApiAction<GetWebPartForm>
     {
         String _webPartName;
 
@@ -1385,7 +1385,7 @@ public class ProjectController extends SpringActionController
      * THREE) list of containers as specified by container filter (not children)
      */
     @RequiresNoPermission
-    public class GetContainersAction extends ApiAction<GetContainersForm>
+    public class GetContainersAction extends ReadOnlyApiAction<GetContainersForm>
     {
         int _requestedDepth;
         boolean _includeEffectivePermissions = true;

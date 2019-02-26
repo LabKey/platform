@@ -712,7 +712,7 @@ public class AdminController extends SpringActionController
     @RequiresNoPermission
     @AllowedDuringUpgrade
     @IgnoresAllocationTracking
-    public class StartupStatusAction extends ApiAction
+    public class StartupStatusAction extends ReadOnlyApiAction
     {
         @Override
         public ApiResponse execute(Object o, BindException errors)
@@ -727,7 +727,7 @@ public class AdminController extends SpringActionController
 
     @RequiresSiteAdmin
     @IgnoresTermsOfUse
-    public class GetPendingRequestCountAction extends ApiAction
+    public class GetPendingRequestCountAction extends ReadOnlyApiAction
     {
         @Override
         public ApiResponse execute(Object o, BindException errors)
@@ -740,7 +740,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetModulesAction extends ApiAction<GetModulesForm>
+    public class GetModulesAction extends ReadOnlyApiAction<GetModulesForm>
     {
         public ApiResponse execute(GetModulesForm form, BindException errors)
         {
@@ -7259,7 +7259,7 @@ public class AdminController extends SpringActionController
     @RequiresLogin
     @AllowedDuringUpgrade
     @AllowedBeforeInitialUserIsSet
-    public class GetSessionLogEventsAction extends ApiAction
+    public class GetSessionLogEventsAction extends ReadOnlyApiAction
     {
         @Override
         public void checkPermissions()
@@ -7305,7 +7305,7 @@ public class AdminController extends SpringActionController
     @AllowedBeforeInitialUserIsSet
     @AllowedDuringUpgrade
     @IgnoresAllocationTracking  /* ignore so that we don't get an update in the UI for each time it requests the newest data */
-    public class GetTrackedAllocationsAction extends ApiAction
+    public class GetTrackedAllocationsAction extends ReadOnlyApiAction
     {
         @Override
         public void checkPermissions()
@@ -8920,7 +8920,7 @@ public class AdminController extends SpringActionController
 
     @SuppressWarnings("UnusedDeclaration")
     @RequiresPermission(AdminReadPermission.class)
-    public class TestMothershipReportAction extends ApiAction<MothershipReportSelectionForm>
+    public class TestMothershipReportAction extends ReadOnlyApiAction<MothershipReportSelectionForm>
     {
         @Override
         public Object execute(MothershipReportSelectionForm form, BindException errors) throws Exception
