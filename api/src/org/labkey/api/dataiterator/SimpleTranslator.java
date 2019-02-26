@@ -1201,7 +1201,12 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         }
     }
 
-    public int addSequenceColumn(ColumnInfo col, Container sequenceContainer, String sequenceName, @Nullable Integer sequenceId, int batchSize)
+    public int addSequenceColumn(ColumnInfo col, Container sequenceContainer, String sequenceName)
+    {
+        return addSequenceColumn(col, sequenceContainer, sequenceName, null, null);
+    }
+
+    public int addSequenceColumn(ColumnInfo col, Container sequenceContainer, String sequenceName, @Nullable Integer sequenceId, @Nullable Integer batchSize)
     {
         SequenceColumn seqCol = new SequenceColumn(sequenceContainer, sequenceName, sequenceId, batchSize);
         return addColumn(col, seqCol);
@@ -1210,15 +1215,13 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     protected class SequenceColumn implements Supplier
     {
         // sequence settings
-        private Container seqContainer;
-        private String seqName;
-        private int seqId;
-        private int batchSize;
+        private final Container seqContainer;
+        private final String seqName;
+        private final int seqId;
+        private final int batchSize;
 
         // sequence state
         private DbSequence sequence;
-        private int count = 0;
-        private Integer sequenceNum;
 
         public SequenceColumn(Container seqContainer, String seqName, @Nullable Integer seqId, @Nullable Integer batchSize)
         {
@@ -1228,34 +1231,18 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             this.batchSize = batchSize == null ? 1 : batchSize;
         }
 
-        // TODO convert to DbSequenceManager.getPreallocatingSequence() for performance
         private DbSequence getSequence()
         {
             if (sequence == null)
-                sequence = DbSequenceManager.get(seqContainer, seqName, seqId);
+                sequence = DbSequenceManager.getPreallocatingSequence(seqContainer, seqName, seqId, batchSize);
             return sequence;
         }
 
         @Override
         public Object get()
         {
-            int genId;
-            if (sequenceNum == null || ((count % batchSize) == 0))
-            {
-                DbSequence sequence = getSequence();
-                sequenceNum = sequence.next();
-                if (batchSize > 1)
-                    sequence.ensureMinimum(sequenceNum + batchSize - 1);
-                count = 1;
-                genId = sequenceNum;
-            }
-            else
-            {
-                count++;
-                genId = ++sequenceNum;
-            }
-
-            return genId;
+            DbSequence sequence = getSequence();
+            return sequence.next();
         }
     }
     

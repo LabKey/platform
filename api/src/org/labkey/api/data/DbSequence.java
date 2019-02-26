@@ -81,17 +81,19 @@ public class DbSequence
      *      just have to be thread safe is all, but how do we enforce the "exactly one per" rule?
      * NOTE: going with B
      */
-    public static class Preallocate extends DbSequence implements ShutdownListener
+    protected static class Preallocate extends DbSequence implements ShutdownListener
     {
+        private final int _batchSize;
         private Integer _currentValue = null;
         private Integer _lastReservedValue = null;
 
         // CONSIDER use a Lock instead of synchronization?  I don't think DbSequenceManager ever deadlocks...
         // private Lock _lock = new ReentrantLock();
 
-        Preallocate(Container c, String name, int rowId)
+        Preallocate(Container c, String name, int rowId, int batchSize)
         {
             super(c, name, rowId);
+            _batchSize = batchSize;
             ContextListener.addShutdownListener(this);
         }
 
@@ -112,7 +114,7 @@ public class DbSequence
         {
             if (null == _lastReservedValue || _currentValue >= _lastReservedValue)
             {
-                Pair<Integer, Integer> reserved = DbSequenceManager.reserve(this,100);
+                Pair<Integer, Integer> reserved = DbSequenceManager.reserve(this, _batchSize);
                 _currentValue = reserved.first;
                 _lastReservedValue = reserved.second;
             }

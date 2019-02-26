@@ -32,9 +32,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * User: adam
@@ -59,20 +58,18 @@ public class DbSequenceManager
         return new DbSequence(c, name, ensure(c, name, id));
     }
 
-    // assert that we don't create duplicate preallocating sequences
-    static final Set<String> allocatedSequences_debug = Collections.synchronizedSet(new HashSet<>());
-
+    // we are totally 'leaking' these sequences, however a) they are small b) we leak < 2 a day, so...
+    static final ConcurrentHashMap<String, DbSequence.Preallocate> _sequences = new ConcurrentHashMap<>();
 
     public static DbSequence getPreallocatingSequence(Container c, String name)
     {
-        return getPreallocatingSequence(c, name, 0);
+        return getPreallocatingSequence(c, name, 0, 100);
     }
 
-    public static DbSequence getPreallocatingSequence(Container c, String name, int id)
+    public static DbSequence getPreallocatingSequence(Container c, String name, int id, int batchSize)
     {
-        DbSequence.Preallocate ret = new DbSequence.Preallocate(c, name, ensure(c, name, id));
-        assert allocatedSequences_debug.add(c.getId() + "/" + ret.getName());
-        return ret;
+        String key = c.getId() + "/" + name + "/" + id;
+        return _sequences.computeIfAbsent(key, (k) -> new DbSequence.Preallocate(c, name, ensure(c, name, id), batchSize));
     }
 
 
