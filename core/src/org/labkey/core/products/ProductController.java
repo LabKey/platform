@@ -32,8 +32,10 @@ public class ProductController extends SpringActionController
         {
             if (StringUtils.isEmpty(menuItemsForm.getProductId()))
                 errors.reject(ERROR_REQUIRED, "'productId' is required");
-            if (!ProductRegistry.get().containsProductId(menuItemsForm.getProductId()))
+            else if (!ProductRegistry.get().containsProductId(menuItemsForm.getProductId()))
                 errors.reject(ERROR_MSG, "No such product: '" + menuItemsForm.getProductId() + "'");
+            if (menuItemsForm.getItemLimit() != null && menuItemsForm.getItemLimit() < 0)
+                errors.reject(ERROR_MSG, "'itemLimit' must be >= 0");
         }
 
         @Override
