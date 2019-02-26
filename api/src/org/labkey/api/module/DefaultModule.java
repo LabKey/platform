@@ -1051,8 +1051,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
         for (String script : dir.listNames())
         {
-            // TODO: Ignore case to work around EHR case inconsistencies
-            if ((script.endsWith(".sql") || script.endsWith(".jsp")) && StringUtils.startsWithIgnoreCase(script, schema.getResourcePrefix() + "-"))
+            if ((StringUtils.endsWithIgnoreCase(script, ".sql") || StringUtils.endsWithIgnoreCase(script, ".jsp")) && StringUtils.startsWithIgnoreCase(script, schema.getResourcePrefix() + "-"))
                 fileNames.add(script);
         }
 
