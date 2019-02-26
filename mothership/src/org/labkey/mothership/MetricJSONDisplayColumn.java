@@ -42,10 +42,8 @@ public class MetricJSONDisplayColumn extends DataColumn
                     JSONArray jsonArray = JsonPath.parse(json).read(checkPath.append("[?(@.['").append(_jsonProp).append("'])]").toString());
                     if (jsonArray.size() > 0)
                     {
-                        int count = JsonPath.parse(json).read(path.append("$.").append(_jsonProp).toString());
-                        return String.valueOf(count);
+                        return JsonPath.parse(json).read(path.append("$.").append(_jsonProp).toString());
                     }
-
                 }
                 else
                 {
