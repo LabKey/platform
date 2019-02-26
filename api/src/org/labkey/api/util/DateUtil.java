@@ -982,7 +982,7 @@ validNum:       {
      * Format date using ISO 8601 pattern. This is appropriate only for persisting dates in machine-readable form,
      * for example, for export or in filenames. Most callers should use formatDate(Container c, Date d) instead.
      */
-    public static String formatDateISO8601(Date date)
+    public static String formatDateISO8601(@Nullable Date date)
     {
         return formatDateTime(date, ISO_DATE_FORMAT_STRING);
     }
@@ -1057,7 +1057,7 @@ validNum:       {
      * Format date & time using specified pattern
      * Note: Unlike SimpleDateFormat, this implementation is thread-safe and reuses formatters
      */
-    public static String formatDateTime(Date date, String pattern)
+    public static String formatDateTime(@Nullable Date date, String pattern)
     {
         if (null == date)
             return null;

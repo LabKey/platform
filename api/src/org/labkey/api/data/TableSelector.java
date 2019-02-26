@@ -20,6 +20,7 @@ import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Aggregate.Result;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
@@ -32,7 +33,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -415,7 +415,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
         ResultSetFactory resultSetFactory = new ExecutingResultSetFactory(sqlFactory);
 
         return resultSetFactory.handleResultSet((rs, conn) -> {
-            Map<String, List<Result>> results = new HashMap<>();
+            Map<String, List<Result>> results = new CaseInsensitiveHashMap<>();
 
             // null == rs is the short-circuit case... SqlFactory didn't find any aggregate columns, so
             // query wasn't executed. Just return an empty map in this case.

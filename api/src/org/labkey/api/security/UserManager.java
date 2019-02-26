@@ -319,10 +319,13 @@ public class UserManager
     private enum LoggedInOrOut {in, out}
 
     @NotNull
-    private static TableSelector getRecentLoginOrOuts(LoggedInOrOut inOrOut, Date since, @Nullable TableInfo userAuditTable, @Nullable Collection<ColumnInfo> cols)
+    private static TableSelector getRecentLoginOrOuts(LoggedInOrOut inOrOut, @Nullable Date since, @Nullable TableInfo userAuditTable, @Nullable Collection<ColumnInfo> cols)
     {
         SimpleFilter f = new SimpleFilter(FieldKey.fromParts("Comment"), "logged " + inOrOut.toString(), CompareType.CONTAINS);
-        f.addCondition(FieldKey.fromParts("Created"), since, CompareType.GTE);
+        if (since != null)
+        {
+            f.addCondition(FieldKey.fromParts("Created"), since, CompareType.GTE);
+        }
         if (null == userAuditTable)
             userAuditTable = getUserAuditSchemaTableInfo();
         if (null == cols)
@@ -340,6 +343,19 @@ public class UserManager
     public static long getRecentLoginCount(Date since)
     {
         return getRecentLoginOrOuts(LoggedInOrOut.in, since, null, null).getRowCount();
+    }
+
+    @Nullable
+    public static Date getMostRecentLogin()
+    {
+        TableInfo uat = getUserAuditSchemaTableInfo();
+        FieldKey createdFk = FieldKey.fromParts("Created");
+        ColumnInfo createdCol = uat.getColumn(createdFk);
+        Aggregate maxLoginValue = new Aggregate(createdFk, Aggregate.BaseType.MAX, null, true);
+
+        TableSelector logins = getRecentLoginOrOuts(LoggedInOrOut.in, null, uat, Collections.singleton(createdCol));
+        Aggregate.Result result = logins.getAggregates(Collections.singletonList(maxLoginValue)).get(createdCol.getName()).get(0);
+        return (Date) result.getValue();
     }
 
     public static long getRecentLogOutCount(Date since)
