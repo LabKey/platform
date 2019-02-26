@@ -200,6 +200,7 @@ core/resources/schemas/dbscripts/postgresql/core-18.24-18.25.sql -text
 core/resources/schemas/dbscripts/postgresql/core-18.25-18.26.sql -text
 core/resources/schemas/dbscripts/postgresql/core-18.27-18.28.sql -text
 core/resources/schemas/dbscripts/postgresql/core-18.30-18.31.sql -text
+core/resources/schemas/dbscripts/postgresql/core-18.30-19.10.sql -text
 core/resources/schemas/dbscripts/postgresql/core-18.31-18.32.sql -text
 core/resources/schemas/dbscripts/postgresql/core-18.32-18.33.sql -text
 core/resources/schemas/dbscripts/postgresql/core-18.33-18.34.sql -text
@@ -277,6 +278,7 @@ core/resources/schemas/dbscripts/sqlserver/core-18.25-18.26.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-18.26-18.27.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-18.27-18.28.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-18.30-18.31.sql -text
+core/resources/schemas/dbscripts/sqlserver/core-18.30-19.10.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-18.31-18.32.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-18.32-18.33.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-18.33-18.34.sql -text
@@ -748,6 +750,7 @@ experiment/resources/schemas/dbscripts/postgresql/exp-18.20-18.21.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-18.20-18.30.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-18.21-18.22.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-18.30-18.31.sql -text
+experiment/resources/schemas/dbscripts/postgresql/exp-18.30-19.10.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-18.31-18.32.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-18.32-18.33.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-18.33-18.34.sql -text
@@ -815,6 +818,7 @@ experiment/resources/schemas/dbscripts/sqlserver/exp-18.20-18.21.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-18.20-18.30.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-18.21-18.22.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-18.30-18.31.sql -text
+experiment/resources/schemas/dbscripts/sqlserver/exp-18.30-19.10.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-18.31-18.32.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-18.32-18.33.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-18.33-18.34.sql -text
@@ -1182,6 +1186,7 @@ issues/resources/data/type.tsv -text
 issues/resources/domain-templates/issue-lookup.template.xml -text
 issues/resources/schemas/dbscripts/postgresql/issues-0.00-16.30.sql -text
 issues/resources/schemas/dbscripts/postgresql/issues-18.30-18.31.sql -text
+issues/resources/schemas/dbscripts/postgresql/issues-18.30-19.10.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-0.00-10.30.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-0.00-11.30.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-0.00-13.10.sql -text
@@ -1203,6 +1208,7 @@ issues/resources/schemas/dbscripts/postgresql/obsolete/issues-16.22-16.23.sql -t
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-16.23-16.24.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-0.00-16.30.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-18.30-18.31.sql -text
+issues/resources/schemas/dbscripts/sqlserver/issues-18.30-19.10.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/issues-0.00-10.30.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/issues-0.00-11.30.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/issues-0.00-13.10.sql -text
@@ -1333,6 +1339,7 @@ mothership/resources/schemas/dbscripts/postgresql/mothership-0.00-16.30.sql -tex
 mothership/resources/schemas/dbscripts/postgresql/mothership-16.30-17.10.sql -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-17.20-17.30.sql -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-18.30-18.31.sql -text
+mothership/resources/schemas/dbscripts/postgresql/mothership-18.30-19.10.sql -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-18.31-18.32.sql -text
 mothership/resources/schemas/dbscripts/postgresql/obsolete/mothership-0.00-11.30.sql -text
 mothership/resources/schemas/dbscripts/postgresql/obsolete/mothership-0.00-12.10.sql -text
@@ -1352,6 +1359,7 @@ mothership/resources/schemas/dbscripts/sqlserver/mothership-0.00-16.30.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/mothership-16.30-17.10.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/mothership-17.20-17.30.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/mothership-18.30-18.31.sql -text
+mothership/resources/schemas/dbscripts/sqlserver/mothership-18.30-19.10.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/mothership-18.31-18.32.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/obsolete/mothership-0.00-11.30.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/obsolete/mothership-0.00-12.10.sql -text
@@ -1585,6 +1593,7 @@ query/resources/schemas/dbscripts/postgresql/obsolete/query-17.20-17.21.sql -tex
 query/resources/schemas/dbscripts/postgresql/query-0.00-14.30.sql -text
 query/resources/schemas/dbscripts/postgresql/query-17.20-17.30.sql -text
 query/resources/schemas/dbscripts/postgresql/query-18.30-18.31.sql -text
+query/resources/schemas/dbscripts/postgresql/query-18.30-19.10.sql -text
 query/resources/schemas/dbscripts/sqlserver/obsolete/query-0.00-12.10.sql -text
 query/resources/schemas/dbscripts/sqlserver/obsolete/query-0.00-12.30.sql -text
 query/resources/schemas/dbscripts/sqlserver/obsolete/query-0.00-13.10.sql -text
@@ -1597,6 +1606,7 @@ query/resources/schemas/dbscripts/sqlserver/obsolete/query-17.20-17.21.sql -text
 query/resources/schemas/dbscripts/sqlserver/query-0.00-14.30.sql -text
 query/resources/schemas/dbscripts/sqlserver/query-17.20-17.30.sql -text
 query/resources/schemas/dbscripts/sqlserver/query-18.30-18.31.sql -text
+query/resources/schemas/dbscripts/sqlserver/query-18.30-19.10.sql -text
 query/resources/schemas/query.xml -text
 query/resources/views/QWPDemo.html -text
 query/resources/views/QWPDemo.view.xml -text
