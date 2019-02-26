@@ -1377,11 +1377,11 @@ public class ParticipantGroupController extends BaseStudyController
     // CONSIDER: Merge with UpdateParticipantGroupAction
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public class SessionParticipantGroupAction extends ReadOnlyApiAction<UpdateParticipantGroupForm>
+    public class SessionParticipantGroupAction extends MutatingApiAction<UpdateParticipantGroupForm>
     {
         public SessionParticipantGroupAction()
         {
-            setSupportedMethods(new String[] { "GET", "POST", "DELETE" });
+            setSupportedMethods(new String[] {"POST", "DELETE" });
         }
 
         @Override
@@ -1458,13 +1458,26 @@ public class ParticipantGroupController extends BaseStudyController
             }
             else
             {
-                group = ParticipantGroupManager.getInstance().getSessionParticipantGroup(getContainer(), getUser(), getViewContext().getRequest());
-                return success(group);
+                throw new UnsupportedOperationException("SessionParticipantGroup action only supports POST and DELETE.");
             }
         }
     }
 
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    public class GetSessionParticipantGroupAction extends ReadOnlyApiAction<UpdateParticipantGroupForm>
+    {
+        @Override
+        public Object execute(UpdateParticipantGroupForm form, BindException errors)
+        {
+            HttpSession session = getViewContext().getSession();
+            if (session == null)
+                throw new IllegalStateException("Session required");
 
+            ParticipantGroup group = ParticipantGroupManager.getInstance().getSessionParticipantGroup(getContainer(), getUser(), getViewContext().getRequest());
+            return success(group);
+        }
+    }
 
     //// Study manager wrappers
 

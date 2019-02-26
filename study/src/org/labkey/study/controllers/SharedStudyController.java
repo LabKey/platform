@@ -19,6 +19,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
+import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.data.Container;
@@ -137,13 +138,13 @@ public class SharedStudyController extends BaseStudyController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public class SharedStudyContainerFilterAction extends ReadOnlyApiAction<SharedStudyContainerFilterForm>
+    public class SharedStudyContainerFilterAction extends MutatingApiAction<SharedStudyContainerFilterForm>
     {
         private Study _study = null;
 
         public SharedStudyContainerFilterAction()
         {
-            setSupportedMethods(new String[] { "GET", "POST", "DELETE" });
+            setSupportedMethods(new String[] {"POST", "DELETE" });
         }
 
         @Override
@@ -201,21 +202,48 @@ public class SharedStudyController extends BaseStudyController
             }
             else
             {
-                SharedStudyContainerFilterForm data = new SharedStudyContainerFilterForm();
-                Object o = getViewContext().getSession().getAttribute(key);
-                if (o instanceof List)
-                {
-                    data.setContainers((List)o);
-                }
-                else
-                {
-                    DataspaceContainerFilter dcf = new DataspaceContainerFilter(getUser(), getContainer());
-                    Collection<GUID> c = dcf.getIds(getContainer());
-                    if (null != c)
-                        data.setContainers(new ArrayList<>(dcf.getIds(getContainer())));
-                }
-                return success(data);
+                throw new UnsupportedOperationException("SharedStudyContainerFilter action only supports POST and DELETE.");
             }
+        }
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    public class GetSharedStudyContainerFilterAction extends ReadOnlyApiAction<SharedStudyContainerFilterForm>
+    {
+        private Study _study = null;
+
+        @Override
+        public void validateForm(SharedStudyContainerFilterForm form, Errors errors)
+        {
+            if (getContainer().isRoot())
+                throw new UnsupportedOperationException();
+
+            // validate the current container is the project and has a shared study
+            _study = StudyManager.getInstance().getStudy(getContainer().getProject());
+            if (_study == null || !_study.getShareDatasetDefinitions())
+                errors.reject(ERROR_MSG, "Shared study project required");
+        }
+
+        @Override
+        public Object execute(SharedStudyContainerFilterForm form, BindException errors)
+        {
+            String key = DataspaceQuerySchema.SHARED_STUDY_CONTAINER_FILTER_KEY + getContainer().getProject().getRowId();
+
+            SharedStudyContainerFilterForm data = new SharedStudyContainerFilterForm();
+            Object o = getViewContext().getSession().getAttribute(key);
+            if (o instanceof List)
+            {
+                data.setContainers((List) o);
+            }
+            else
+            {
+                DataspaceContainerFilter dcf = new DataspaceContainerFilter(getUser(), getContainer());
+                Collection<GUID> c = dcf.getIds(getContainer());
+                if (null != c)
+                    data.setContainers(new ArrayList<>(dcf.getIds(getContainer())));
+            }
+            return success(data);
         }
     }
 }
