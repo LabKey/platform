@@ -93,7 +93,7 @@ public abstract class MenuSection
     }
 
     // Might be handy if we implement linking deep into LabKey server from application, but also for URLResolver
-    // Will there be one of these for each category?
+    // There won't be one of these for each category, though, so default is null.
     public @Nullable ActionURL getUrl()
     {
         return null;

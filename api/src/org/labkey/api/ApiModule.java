@@ -27,6 +27,7 @@ import org.labkey.api.exp.api.ExpRunAttachmentType;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.products.ProductRegistry;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.reports.report.ReportType;
@@ -83,7 +84,8 @@ public class ApiModule extends CodeOnlyModule
             DataIteratorUtil.TestCase.class,
             SqlScanner.TestCase.class,
             FieldKey.TestCase.class,
-            SchemaKey.TestCase.class
+            SchemaKey.TestCase.class,
+            ProductRegistry.TestCase.class
         );
     }
 
