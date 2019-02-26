@@ -54,11 +54,16 @@
                 var btn = $('#populatedata');
                 isShow ? btn.show() : btn.hide();
             }
+            function showPopulateSuccess(isShow) {
+                var msg = $('#populatemessage');
+                isShow ? msg.show() : msg.hide();
+            }
+
 
             LABKEY.Domain.get(function() {
                 LABKEY.Domain.get(function() {
                     LABKEY.Domain.get(function() {
-
+                        showPopulateSuccess(true);
                     }, function() {
                         showPopulateButton(true);
                     }, 'Samples', 'sampleDataTest3');
@@ -72,6 +77,9 @@
     }(jQuery);
 </script>
 <br><br>
+<div id="populatemessage" style="display:none; color:green;">
+    <b>Test data is populated!</b><br>
+</div>
 <div id="populatedata" style="display:none; color:red;">
     <b>Test data is not populated!</b><br>
     <button class="btn btn-primary" onclick="setUpDomains()">Populate test data</button><br>
