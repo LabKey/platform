@@ -64,6 +64,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
+
 /**
  * User: jeckels
  * Date: Mar 28, 2007
@@ -188,10 +190,10 @@ public class MothershipSchema extends UserSchema
         ColumnInfo earliestCol = result.getColumn("EarliestKnownTime");
         ColumnInfo latestCol = result.getColumn("LastKnownTime");
 
-        ExprColumn durationCol = new ExprColumn(result, "Duration", new SQLFragment(MothershipManager.get().getDialect().getDateDiff(Calendar.DATE, "LastKnownTime", "EarliestKnownTime")), JdbcType.INTEGER, earliestCol, latestCol);
+        ExprColumn durationCol = new ExprColumn(result, "Duration", new SQLFragment(MothershipManager.get().getDialect().getDateDiff(Calendar.DATE, STR_TABLE_ALIAS + ".LastKnownTime", STR_TABLE_ALIAS + ".EarliestKnownTime")), JdbcType.INTEGER, earliestCol, latestCol);
         result.addColumn(durationCol);
 
-        ExprColumn exceptionCountCol = new ExprColumn(result, "ExceptionCount", new SQLFragment("(SELECT COUNT(*) FROM " + MothershipManager.get().getTableInfoExceptionReport() + " WHERE ServerSessionId = " + ExprColumn.STR_TABLE_ALIAS + ".ServerSessionId)"), JdbcType.INTEGER);
+        ExprColumn exceptionCountCol = new ExprColumn(result, "ExceptionCount", new SQLFragment("(SELECT COUNT(*) FROM " + MothershipManager.get().getTableInfoExceptionReport() + " WHERE ServerSessionId = " + STR_TABLE_ALIAS + ".ServerSessionId)"), JdbcType.INTEGER);
         exceptionCountCol.setFormat("#.#");
         result.addColumn(exceptionCountCol);
 
@@ -229,14 +231,14 @@ public class MothershipSchema extends UserSchema
         SQLFragment firstPingSQL = new SQLFragment("(SELECT MIN(EarliestKnownTime) FROM ");
         firstPingSQL.append(MothershipManager.get().getTableInfoServerSession(), "ss");
         firstPingSQL.append(" WHERE ss.ServerInstallationId = ");
-        firstPingSQL.append(ExprColumn.STR_TABLE_ALIAS);
+        firstPingSQL.append(STR_TABLE_ALIAS);
         firstPingSQL.append(".ServerInstallationId)");
         result.addColumn(new ExprColumn(result, "FirstPing", firstPingSQL, JdbcType.TIMESTAMP));
 
         SQLFragment lastPing = new SQLFragment("(SELECT MAX(LastKnownTime) FROM ");
         lastPing.append(MothershipManager.get().getTableInfoServerSession(), "ss");
         lastPing.append(" WHERE ss.ServerInstallationId = ");
-        lastPing.append(ExprColumn.STR_TABLE_ALIAS);
+        lastPing.append(STR_TABLE_ALIAS);
         lastPing.append(".ServerInstallationId)");
         result.addColumn(new ExprColumn(result, "LastPing", lastPing, JdbcType.TIMESTAMP));
 
@@ -245,7 +247,7 @@ public class MothershipSchema extends UserSchema
         exceptionCount.append(",");
         exceptionCount.append(MothershipManager.get().getTableInfoExceptionReport(), "er");
         exceptionCount.append(" WHERE ss.ServerInstallationId = ");
-        exceptionCount.append(ExprColumn.STR_TABLE_ALIAS);
+        exceptionCount.append(STR_TABLE_ALIAS);
         exceptionCount.append(".ServerInstallationId AND ss.serversessionid = er.serversessionid)");
         ExprColumn exceptionCountCol = new ExprColumn(result, "ExceptionCount", exceptionCount, JdbcType.INTEGER);
         exceptionCountCol.setFormat("#.#");
@@ -258,7 +260,7 @@ public class MothershipSchema extends UserSchema
         daysActive.append(" FROM ");
         daysActive.append(MothershipManager.get().getTableInfoServerSession(), "ss");
         daysActive.append(" WHERE ss.ServerInstallationId = ");
-        daysActive.append(ExprColumn.STR_TABLE_ALIAS);
+        daysActive.append(STR_TABLE_ALIAS);
         daysActive.append(".ServerInstallationId)");
         ExprColumn daysActiveColumn = new ExprColumn(result, "DaysActive", daysActive, JdbcType.INTEGER);
         daysActiveColumn.setFormat("#.#");
@@ -267,14 +269,14 @@ public class MothershipSchema extends UserSchema
         SQLFragment versionCount = new SQLFragment("(SELECT COUNT(DISTINCT(softwarereleaseid)) FROM ");
         versionCount.append(MothershipManager.get().getTableInfoServerSession(), "ss");
         versionCount.append(" WHERE ss.ServerInstallationId = ");
-        versionCount.append(ExprColumn.STR_TABLE_ALIAS);
+        versionCount.append(STR_TABLE_ALIAS);
         versionCount.append(".ServerInstallationId)");
         result.addColumn(new ExprColumn(result, "VersionCount", versionCount, JdbcType.INTEGER));
 
         SQLFragment currentVersion = new SQLFragment("(SELECT MAX(ServerSessionID) FROM ");
         currentVersion.append(MothershipManager.get().getTableInfoServerSession(), "ss");
         currentVersion.append(" WHERE ss.ServerInstallationId = ");
-        currentVersion.append(ExprColumn.STR_TABLE_ALIAS);
+        currentVersion.append(STR_TABLE_ALIAS);
         currentVersion.append(".ServerInstallationId)");
         ExprColumn currentVersionColumn = new ExprColumn(result, "MostRecentSession", currentVersion, JdbcType.INTEGER);
         currentVersionColumn.setFk(new LookupForeignKey("ServerSessionID")
@@ -390,7 +392,7 @@ public class MothershipSchema extends UserSchema
                 MothershipManager.get().getTableInfoExceptionReport() + " er, " +
                 MothershipManager.get().getTableInfoSoftwareRelease() + " sr, " +
                 MothershipManager.get().getTableInfoServerSession() + " ss " +
-                " WHERE er.ExceptionStackTraceId = " + ExprColumn.STR_TABLE_ALIAS + ".ExceptionStackTraceId" +
+                " WHERE er.ExceptionStackTraceId = " + STR_TABLE_ALIAS + ".ExceptionStackTraceId" +
                 " AND ss.ServerSessionId = er.ServerSessionId AND ss.SoftwareReleaseId = sr.SoftwareReleaseId ORDER BY SVNRevision " + sort);
 
         // Then apply a limit so that we only get one row back

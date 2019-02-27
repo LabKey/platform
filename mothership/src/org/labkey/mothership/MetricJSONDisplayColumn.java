@@ -1,11 +1,14 @@
 package org.labkey.mothership;
 
+import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.JsonPathException;
-import net.minidev.json.JSONArray;
+import com.jayway.jsonpath.PathNotFoundException;
+import org.apache.log4j.Logger;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.util.PageFlowUtil;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -13,11 +16,17 @@ import java.util.Collection;
 
 public class MetricJSONDisplayColumn extends DataColumn
 {
+    private static final Logger _log = Logger.getLogger(MetricJSONDisplayColumn.class);
+
     private String _jsonProp;
 
     public MetricJSONDisplayColumn(ColumnInfo col, Collection<String> props)
     {
         super(col);
+        if(props.size() > 1)
+        {
+            _log.warn("Multiple properties specified for a column, only the last one will be used.");
+        }
         for(String pr: props)
         {
             _jsonProp = pr;
@@ -26,60 +35,33 @@ public class MetricJSONDisplayColumn extends DataColumn
 
     public String getOutput(RenderContext ctx)
     {
-        if(ctx.get("jsonMetrics") != null && ctx.get("jsonMetrics") != "")
+        String json = (String) getColumnInfo().getValue(ctx);
+
+        DocumentContext dc = JsonPath.parse(json);
+
+        StringBuilder path = new StringBuilder();
+
+        try
         {
-            String json = (String) ctx.get("jsonMetrics");
-
-            StringBuilder checkPath = new StringBuilder();
-            StringBuilder path = new StringBuilder();
-            String[] paths = _jsonProp.split("\\.");
-
-            checkPath.append("$.");
-            try
-            {
-                if (paths.length <= 1)
-                {
-                    JSONArray jsonArray = JsonPath.parse(json).read(checkPath.append("[?(@.['").append(_jsonProp).append("'])]").toString());
-                    if (jsonArray.size() > 0)
-                    {
-                        return JsonPath.parse(json).read(path.append("$.").append(_jsonProp).toString());
-                    }
-                }
-                else
-                {
-                    checkPath.append(paths[0]).append("[?(@.");
-                    path.append("$.");
-                    for (int i = 1; i < paths.length; i++)
-                    {
-                        checkPath.append("['").append(paths[i]).append("']");
-                    }
-                    checkPath.append(")]");
-
-                    for (String str : paths)
-                    {
-                        path.append("['").append(str).append("']");
-                    }
-
-                    JSONArray jsonArray = JsonPath.parse(json).read(checkPath.toString());
-                    if (jsonArray.size() > 0)
-                    {
-                        int folderTypeCount = JsonPath.parse(json).read(path.toString());
-                        return String.valueOf(folderTypeCount);
-                    }
-                }
-            }
-            catch (JsonPathException ex)
-            {
-                return "Invalid Json Path Exception";
-            }
+            Object val = dc.read(path.append("$").append(_jsonProp).toString());
+            return val == null ? "" : val.toString();
         }
-        return "";
+        catch (PathNotFoundException ex)
+        {
+            //no value found
+           return "";
+        }
+        catch (JsonPathException ex)
+        {
+            return "Invalid Json Path Exception - " + path.toString();
+        }
+
     }
 
     @Override
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
-        out.write(getOutput(ctx));
+        out.write(PageFlowUtil.encode(getOutput(ctx)));
     }
 
     @Override
@@ -109,6 +91,12 @@ public class MetricJSONDisplayColumn extends DataColumn
 
     @Override
     public boolean isFilterable()
+    {
+        return false;
+    }
+
+    @Override
+    public boolean isSortable()
     {
         return false;
     }
