@@ -61,7 +61,7 @@ Some of them incur overhead to track or take space in the UI, and are thus confi
             <td colspan="2">
                 The MiniProfiler is a simple profiler utility that shows at a glance how long actions and queries take
                 to execute. It's shown in the corner of each LabKey web page. The profiler is enabled when the server is
-                running in dev mode or if the current user is in the <%=helpLink("globalGroups", "site developer group")%>.
+                running in dev mode or if the current user has the <%=helpLink("devRoles#platformDeveloper", "Platform Developer")%> role.
                 <%=text(MiniProfiler.getHelpTopic().getLinkHtml("MiniProfiler Help"))%>
             </td>
         </tr>
