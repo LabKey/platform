@@ -201,6 +201,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.net.URISyntaxException;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -3838,7 +3839,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public class ResetPipelinePathForm extends PipelinePathForm
+    public static class ResetPipelinePathForm extends PipelinePathForm
     {
         private String _redirect;
 
@@ -3854,26 +3855,39 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class ResetPipelineAction extends SimpleRedirectAction<ResetPipelinePathForm>
+    public class ResetPipelineAction extends FormHandlerAction<ResetPipelinePathForm>
     {
-        public ActionURL getRedirectURL(ResetPipelinePathForm form)
+        public void validateCommand(ResetPipelinePathForm form, Errors errors)
         {
-            Container c = getContainer();
+        }
 
-            for (File f : form.getValidatedFiles(c))
+        public boolean handlePost(ResetPipelinePathForm form, BindException errors) throws Exception
+        {
+            for (File f : form.getValidatedFiles(getContainer()))
             {
                 if (f.isFile() && f.getName().endsWith(".lock"))
                 {
                     f.delete();
                 }
             }
+            return true;
+        }
 
+        public URLHelper getSuccessURL(ResetPipelinePathForm form)
+        {
             String redirect = form.getRedirect();
             if (null != redirect)
             {
-                throw new RedirectException(redirect);
+                try
+                {
+                    return new URLHelper(redirect);
+                }
+                catch (URISyntaxException e)
+                {
+                    _log.warn("ResetPipelineAction redirect string invalid: " + redirect);
+                }
             }
-            return PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(c);
+            return PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(getContainer());
         }
     }
 
@@ -4232,47 +4246,6 @@ public class StudyController extends BaseStudyController
         }
     }
 
-
-    @RequiresPermission(DeletePermission.class)
-    public class PurgeDatasetAction extends SimpleRedirectAction
-    {
-        public ActionURL getRedirectURL(Object o)
-        {
-            ViewContext context = getViewContext();
-            int datasetId = null == context.get(DatasetDefinition.DATASETKEY) ? 0 : Integer.parseInt((String) context.get(DatasetDefinition.DATASETKEY));
-
-            if ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
-            {
-                DatasetDefinition dataset = StudyManager.getInstance().getDatasetDefinition(getStudyRedirectIfNull(), datasetId);
-                if (null == dataset)
-                {
-                    throw new NotFoundException();
-                }
-
-                String typeURI = dataset.getTypeURI();
-                if (typeURI == null)
-                {
-                    return new ActionURL(TypeNotFoundAction.class, getContainer());
-                }
-
-                DbScope scope = StudySchema.getInstance().getSchema().getScope();
-                try (DbScope.Transaction transaction = scope.ensureTransaction())
-                {
-                    int numRowsDeleted = StudyManager.getInstance().purgeDataset(dataset, getUser());
-
-                    // Log the purge
-                    String comment = "Dataset purged. " + numRowsDeleted + " rows deleted";
-                    StudyServiceImpl.addDatasetAuditEvent(getUser(), getContainer(), dataset, comment, null);
-
-                    transaction.commit();
-                }
-                DataRegionSelection.clearAll(getViewContext());
-            }
-            ActionURL datasetURL = new ActionURL(DatasetAction.class, getContainer());
-            datasetURL.addParameter(DatasetDefinition.DATASETKEY, datasetId);
-            return datasetURL;
-        }
-    }
 
     @RequiresPermission(ReadPermission.class)
     public class TypeNotFoundAction extends SimpleViewAction
