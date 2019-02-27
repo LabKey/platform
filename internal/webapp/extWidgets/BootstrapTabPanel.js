@@ -177,7 +177,7 @@ Ext4.define("LABKEY.ext4.BootstrapTabPanel", {
                     this.removeContent();
 
                 this.activeTabId = target.href.substring(target.href.lastIndexOf('#')+1);
-                this.ensureContainerForActiveTab();
+                this.ensureContainerForActiveTab(evt);
             }, this);
         }, this);
     },
@@ -200,7 +200,7 @@ Ext4.define("LABKEY.ext4.BootstrapTabPanel", {
         active.tabCls = 'active';
     },
 
-    ensureContainerForActiveTab: function() {
+    ensureContainerForActiveTab: function(evt) {
         var item = this.findItemForActiveTabId();
         var initializing = false;
         if (item != null && !item.container) {
@@ -240,7 +240,7 @@ Ext4.define("LABKEY.ext4.BootstrapTabPanel", {
             } else {
                 scope = this.scope;
             }
-            this.changeHandler.call(scope, item, initializing);
+            this.changeHandler.call(scope, item, initializing, evt);
         }
 
         // if the item has an itemId, add to the hash
