@@ -111,6 +111,7 @@ public interface SampleSetService
     ExpSampleSet ensureDefaultSampleSet();
 
     String getDefaultSampleSetLsid();
+    String getDefaultSampleSetMaterialLsidPrefix();
 
     Lsid getSampleSetLsid(String name, Container container);
 
