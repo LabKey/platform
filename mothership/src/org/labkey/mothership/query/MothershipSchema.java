@@ -209,6 +209,7 @@ public class MothershipSchema extends UserSchema
         defaultCols.add(FieldKey.fromString("ContainerCount"));
         defaultCols.add(FieldKey.fromString("HeapSize"));
         defaultCols.add(FieldKey.fromString("ServletContainer"));
+        defaultCols.add(FieldKey.fromString("BuildTime"));
         result.setDefaultVisibleColumns(defaultCols);
 
         ActionURL base = new ActionURL(MothershipController.ShowServerSessionDetailAction.class, getContainer());
