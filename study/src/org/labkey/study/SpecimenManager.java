@@ -1067,9 +1067,12 @@ public class SpecimenManager implements ContainerManager.ContainerListener
                 container, "SpecimenRequestNotifications");
         if (settingsMap.get("ReplyTo") == null)
         {
-            RequestNotificationSettings defaults = RequestNotificationSettings.getDefaultSettings(container);
-            saveRequestNotificationSettings(container, defaults);
-            return defaults;
+            try (var ignore = SpringActionController.ignoreSqlUpdates())
+            {
+                RequestNotificationSettings defaults = RequestNotificationSettings.getDefaultSettings(container);
+                saveRequestNotificationSettings(container, defaults);
+                return defaults;
+            }
         }
         else
             return new RequestNotificationSettings(settingsMap);
@@ -1249,12 +1252,15 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         {
             if (createIfMissing)
             {
-                inputs = new SpecimenRequestInput[] {
-                        new SpecimenRequestInput("Assay Plan", "Please enter a description of or reference to the assay plan(s) that will be used for the requested specimens.", 0, true, true, false),
-                        new SpecimenRequestInput("Shipping Information", "Please enter your shipping address along with any special instructions.", 1, true, true, true),
-                        new SpecimenRequestInput("Comments", "Please enter any additional information regarding your request.", 2, true, false, false)
-                };
-                saveNewSpecimenRequestInputs(container, inputs);
+                try (var ignore = SpringActionController.ignoreSqlUpdates())
+                {
+                    inputs = new SpecimenRequestInput[] {
+                            new SpecimenRequestInput("Assay Plan", "Please enter a description of or reference to the assay plan(s) that will be used for the requested specimens.", 0, true, true, false),
+                            new SpecimenRequestInput("Shipping Information", "Please enter your shipping address along with any special instructions.", 1, true, true, true),
+                            new SpecimenRequestInput("Comments", "Please enter any additional information regarding your request.", 2, true, false, false)
+                    };
+                    saveNewSpecimenRequestInputs(container, inputs);
+                }
             }
             return inputs;
         }
@@ -1292,24 +1298,27 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
     private static String ensureOntologyManagerSetItem(Container container, String lsidBase, String uniqueItemId) throws ValidationException
     {
-        Integer listParentObjectId = OntologyManager.ensureObject(container, lsidBase);
-        String listItemReferenceLsidPrefix = lsidBase + "#objectResource.";
-        String listItemObjectLsid = lsidBase + "#" + uniqueItemId;
-        String listItemPropertyReferenceLsid = listItemReferenceLsidPrefix + uniqueItemId;
-
-        // ensure the object that corresponds to a single list item:
-        OntologyManager.ensureObject(container, listItemObjectLsid, listParentObjectId);
-
-        // check to make sure that the list item is wired up to the top-level list object via a property:
-        Map<String, ObjectProperty> properties = OntologyManager.getPropertyObjects(container, lsidBase);
-        if (!properties.containsKey(listItemPropertyReferenceLsid))
+        try (var ignore = SpringActionController.ignoreSqlUpdates())
         {
-            // create the resource property that links the parent object to the list item object:
-            ObjectProperty resourceProperty = new ObjectProperty(lsidBase, container,
-                    listItemPropertyReferenceLsid, listItemObjectLsid, PropertyType.RESOURCE);
-            OntologyManager.insertProperties(container, lsidBase, resourceProperty);
+            Integer listParentObjectId = OntologyManager.ensureObject(container, lsidBase);
+            String listItemReferenceLsidPrefix = lsidBase + "#objectResource.";
+            String listItemObjectLsid = lsidBase + "#" + uniqueItemId;
+            String listItemPropertyReferenceLsid = listItemReferenceLsidPrefix + uniqueItemId;
+
+            // ensure the object that corresponds to a single list item:
+            OntologyManager.ensureObject(container, listItemObjectLsid, listParentObjectId);
+
+            // check to make sure that the list item is wired up to the top-level list object via a property:
+            Map<String, ObjectProperty> properties = OntologyManager.getPropertyObjects(container, lsidBase);
+            if (!properties.containsKey(listItemPropertyReferenceLsid))
+            {
+                // create the resource property that links the parent object to the list item object:
+                ObjectProperty resourceProperty = new ObjectProperty(lsidBase, container,
+                        listItemPropertyReferenceLsid, listItemObjectLsid, PropertyType.RESOURCE);
+                OntologyManager.insertProperties(container, lsidBase, resourceProperty);
+            }
+            return listItemObjectLsid;
         }
-        return listItemObjectLsid;
     }
 
     public void saveNewSpecimenRequestInputs(Container container, SpecimenRequestInput[] inputs) throws SQLException
