@@ -25,7 +25,7 @@ public class ProductController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public static class MenuItemsAction extends ReadOnlyApiAction<MenuItemsForm>
+    public static class MenuSectionsAction extends ReadOnlyApiAction<MenuItemsForm>
     {
         @Override
         public void validateForm(MenuItemsForm menuItemsForm, Errors errors)
