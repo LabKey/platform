@@ -25,10 +25,9 @@
     }
   },
   "dependencies": {
-    "@glass/domainproperties": "0.0.1",
-    "@glass/grid": "0.0.2",
-    "@glass/models": "0.0.2",
-    "@glass/utils": "0.0.3",
+    "@glass/domainproperties": "0.0.2",
+    "@glass/models": "0.0.3",
+    "@glass/utils": "0.0.4",
     "@labkey/api": "0.0.9",
     "@types/react": "16.4.18",
     "@types/react-dom": "16.0.9",
