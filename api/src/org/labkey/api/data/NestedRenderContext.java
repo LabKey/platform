@@ -130,7 +130,7 @@ public class NestedRenderContext extends RenderContext
             // Add one to the limit so we can tell if there are more groups or not, and should therefore show pagination
             SQLFragment fullSQL = new SQLFragment(" " + groupColumn.getAlias() + " IN (SELECT " + groupColumn.getAlias() + " FROM (");
             fullSQL.append(tinfo.getSchema().getSqlDialect().limitRows(new SQLFragment("SELECT "  + groupColumn.getAlias() + " "),
-                    fromSQL, null, sortSQL, groupBySQL, maxRows == Table.ALL_ROWS || maxRows == Table.NO_ROWS ? maxRows : maxRows + 1, offset));
+                    fromSQL, null, maxRows != Table.ALL_ROWS || offset > 0 ? sortSQL : null, groupBySQL, maxRows == Table.ALL_ROWS || maxRows == Table.NO_ROWS ? maxRows : maxRows + 1, offset));
             fullSQL.append(" ) Limited )");
 
             // Apply a filter that restricts the group ids to the right "page" of data
