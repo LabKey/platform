@@ -39,13 +39,13 @@
 <labkey:form action="<%=h(new ActionURL(AnalyticsController.BeginAction.class, ContainerManager.getRoot()))%>" method="POST">
     <table>
         <tr>
-            <td valign=top nowrap><labkey:radio name="ff_trackingStatus" value="<%=AnalyticsServiceImpl.TrackingStatus.disabled%>" currentValue="<%=settingsForm.ff_trackingStatus%>"/>&nbsp;OFF</td>
-            <td><p style="margin-top:0">Do NOT add Google Analytics tracking script to pages on this web site.</p></td>
+            <td valign=top nowrap><labkey:radio name="ff_trackingStatus" value="<%=AnalyticsServiceImpl.TrackingStatus.disabled%>" currentValue="<%=settingsForm.ff_trackingStatus%>"/>&nbsp;Off</td>
+            <td style="padding-left: 1em;"><p>Do NOT add Google Analytics tracking script to pages on this web site.</p></td>
         </tr>
 
         <tr>
-            <td valign=top nowrap><labkey:radio name="ff_trackingStatus" value="<%=AnalyticsServiceImpl.TrackingStatus.enabled%>" currentValue="<%=settingsForm.ff_trackingStatus%>"/>&nbsp;ON</td>
-            <td><p style="margin-top:0">Add Google Analytics tracking script to pages on this web site.
+            <td valign=top nowrap><labkey:radio name="ff_trackingStatus" value="<%=AnalyticsServiceImpl.TrackingStatus.enabled%>" currentValue="<%=settingsForm.ff_trackingStatus%>"/>&nbsp;On</td>
+            <td style="padding-left: 1em;"><p>Add Google Analytics tracking script to pages on this web site.
                 <p>If you have opted to use Google Analytics, you must provide an Account ID.
                     If you use the Account ID <code><%=h(AnalyticsServiceImpl.DEFAULT_ACCOUNT_ID)%></code>,
                     your data will be sent to LabKey. They would love to see how your users are using your
@@ -59,8 +59,8 @@
         </tr>
 
         <tr>
-            <td valign=top nowrap><labkey:radio name="ff_trackingStatus" value="<%=AnalyticsServiceImpl.TrackingStatus.script%>" currentValue="<%=settingsForm.ff_trackingStatus%>"/>&nbsp;CUSTOM</td>
-            <td><p style="margin-top:0">Add custom script to the head of every  page.  Include required &lt;script&gt; tags.</p>
+            <td valign=top nowrap><labkey:radio name="ff_trackingStatus" value="<%=AnalyticsServiceImpl.TrackingStatus.script%>" currentValue="<%=settingsForm.ff_trackingStatus%>"/>&nbsp;Custom</td>
+            <td style="padding-left: 1em;"><p>Add custom script to the head of every  page.  Include required &lt;script&gt; tags.</p>
                 <p><b>NOTE:</b> You can mess up your site if you make a mistake here.  You may want to take this opportunity to bookmark this page.  Just in case.</p>
                 <p><textarea <%=text(hasAdminOpsPerms?"":"disabled=\"disabled\"")%> style="width:600px; height:400px;" name="ff_trackingScript"><%=h(settingsForm.ff_trackingScript)%></textarea></p></td>
         </tr>

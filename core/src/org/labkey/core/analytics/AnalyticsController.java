@@ -91,7 +91,7 @@ public class AnalyticsController extends SpringActionController
 
         public boolean handlePost(SettingsForm settingsForm, BindException errors)
         {
-            AnalyticsServiceImpl.get().setSettings(settingsForm.ff_trackingStatus, settingsForm.ff_accountId, settingsForm.ff_trackingScript);
+            AnalyticsServiceImpl.get().setSettings(settingsForm.ff_trackingStatus, settingsForm.ff_accountId, settingsForm.ff_trackingScript, getUser());
             return true;
         }
 

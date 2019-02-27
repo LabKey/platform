@@ -19,10 +19,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.analytics.AnalyticsService;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.settings.AbstractWriteableSettingsGroup;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.util.PageFlowUtil;
@@ -69,13 +72,45 @@ public class AnalyticsServiceImpl implements AnalyticsService
         return properties.get(property.toString());
     }
 
-    public void setSettings(TrackingStatus trackingStatus, String accountId, String script)
+    public void setSettings(TrackingStatus trackingStatus, String accountId, String script, User user)
     {
-        PropertyManager.PropertyMap properties = PropertyManager.getWritableProperties(PROP_CATEGORY, true);
-        properties.put(AnalyticsProperty.trackingStatus.toString(), trackingStatus.toString());
-        properties.put(AnalyticsProperty.accountId.toString(), StringUtils.trimToNull(accountId));
-        properties.put(AnalyticsProperty.trackingScript.toString(), StringUtils.trimToNull(script));
-        properties.save();
+        AnalyticsSettingsGroup g = new AnalyticsSettingsGroup();
+        g.store(trackingStatus, accountId, script, user);
+    }
+
+    /** Issue 36870 - an admittedly clunky way to hook into audit behavior */
+    private static class AnalyticsSettingsGroup extends AbstractWriteableSettingsGroup
+    {
+        @Override
+        protected String getType()
+        {
+            return "Analytics";
+        }
+
+        @Override
+        protected String getGroupName()
+        {
+            return PROP_CATEGORY;
+        }
+
+        @Override
+        protected User getPropertyConfigUser()
+        {
+            return PropertyManager.SHARED_USER;
+        }
+
+        public void store(TrackingStatus trackingStatus, String accountId, String script, User user)
+        {
+            Container c = ContainerManager.getRoot();
+            makeWriteable(c);
+
+            storeStringValue(AnalyticsProperty.trackingStatus.toString(), trackingStatus.toString());
+            storeStringValue(AnalyticsProperty.accountId.toString(), StringUtils.trimToNull(accountId));
+            storeStringValue(AnalyticsProperty.trackingScript.toString(), StringUtils.trimToNull(script));
+
+            save();
+            writeAuditLogEvent(c, user);
+        }
     }
 
     public TrackingStatus getTrackingStatus()
