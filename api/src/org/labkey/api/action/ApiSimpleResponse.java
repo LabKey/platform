@@ -107,7 +107,7 @@ public class ApiSimpleResponse implements ApiResponse, Map<String,Object>
             //noinspection unchecked
             ObjectFactory<T> f = ObjectFactory.Registry.getFactory((Class<T>)bean.getClass());
             if (null == f)
-                throw new IllegalArgumentException("Cound not find a matching object factory.");
+                throw new IllegalArgumentException("Could not find a matching object factory.");
             return f.toMap(bean, null);
         }
         else

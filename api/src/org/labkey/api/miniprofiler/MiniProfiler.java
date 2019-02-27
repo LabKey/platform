@@ -18,14 +18,12 @@ package org.labkey.api.miniprofiler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
-import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.MemTracker;
@@ -76,7 +74,7 @@ public class MiniProfiler
 
     public static HelpTopic getHelpTopic()
     {
-        return new HelpTopic("profiler");
+        return new HelpTopic("profiler#mini");
     }
 
     public static boolean isEnabled(ViewContext context)
