@@ -1,7 +1,6 @@
 package org.labkey.api.products;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -11,6 +10,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
@@ -126,23 +126,12 @@ public abstract class MenuSection
         return def.getTable(new ArrayList<>(), true);
     }
 
-    @NotNull
-    protected String getLabel(UserSchema schema, String queryName)
+    protected String getLabel(UserSchema schema, String queryName, boolean splitCamelCase)
     {
         TableInfo tableInfo = getTableInfo(schema, queryName);
         String label = tableInfo.getTitle();
         if (label == null)
             label = tableInfo.getName();
-        String[] parts = StringUtils.splitByCharacterTypeCamelCase(label);
-
-        StringBuilder labelBuilder = new StringBuilder();
-        String space = "";
-        for (String part : parts)
-        {
-            if (!part.isBlank())
-                labelBuilder.append(space).append(part);
-            space = " ";
-        }
-        return labelBuilder.toString();
+        return splitCamelCase ? StringUtilsLabKey.splitCamelCase(label) : label;
     }
 }
