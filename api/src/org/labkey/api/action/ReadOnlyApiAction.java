@@ -127,10 +127,15 @@ public abstract class ReadOnlyApiAction<FORM> extends BaseViewAction<FORM>
         return "DELETE".equals(getViewContext().getRequest().getMethod());
     }
 
+    protected boolean isPatch()
+    {
+        return "PATCH".equals(getViewContext().getRequest().getMethod());
+    }
+
 
     public ModelAndView handleRequest() throws Exception
     {
-        if (isPost())
+        if (isPost() || isPut() || isDelete() || isPatch())
             return handlePost();
         else
             return handleGet();
