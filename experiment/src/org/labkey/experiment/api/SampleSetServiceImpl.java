@@ -36,11 +36,14 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.defaults.DefaultValueService;
+import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleSet;
@@ -386,6 +389,11 @@ public class SampleSetServiceImpl implements SampleSetService
         return new Lsid.LsidBuilder("SampleSource", "Default").toString();
     }
 
+    public String getDefaultSampleSetMaterialLsidPrefix()
+    {
+        return new Lsid.LsidBuilder("Sample", ExperimentServiceImpl.DEFAULT_MATERIAL_SOURCE_NAME).toString() + "#";
+    }
+
 
     public DbScope.Transaction ensureTransaction()
     {
@@ -396,29 +404,45 @@ public class SampleSetServiceImpl implements SampleSetService
     @Override
     public ExpSampleSetImpl ensureDefaultSampleSet()
     {
-        ExpSampleSetImpl sampleSet = getSampleSet(getDefaultSampleSetLsid());
-
-        if (null == sampleSet)
-            return createDefaultSampleSet();
-        else
-            return sampleSet;
+        throw new UnsupportedOperationException("Default SampleSet only exists in your mind");
     }
 
-    private synchronized ExpSampleSetImpl createDefaultSampleSet()
+    public void deleteDefaultSampleSet()
     {
-        //might have been created on another thread, so check within synch block
-        ExpSampleSetImpl matSource = getSampleSet(getDefaultSampleSetLsid());
-        if (null == matSource)
-        {
-            matSource = createSampleSet();
-            matSource.setLSID(getDefaultSampleSetLsid());
-            matSource.setName(ExperimentServiceImpl.DEFAULT_MATERIAL_SOURCE_NAME);
-            matSource.setMaterialLSIDPrefix(new Lsid.LsidBuilder("Sample", ExperimentServiceImpl.DEFAULT_MATERIAL_SOURCE_NAME).toString() + "#");
-            matSource.setContainer(ContainerManager.getSharedContainer());
-            matSource.save(null);
-        }
+        SQLFragment sql = new SQLFragment()
+                .append("SELECT ms.rowId, dd.domainId\n")
+                .append("FROM ").append(ExperimentService.get().getTinfoMaterialSource(), "ms").append("\n")
+                .append("INNER JOIN ").append(OntologyManager.getTinfoDomainDescriptor(), "dd").append("\n")
+                .append("ON ms.lsid = dd.domainUri\n")
+                .append("WHERE ms.lsid = ?").add(getDefaultSampleSetLsid());
+        SqlSelector ss = new SqlSelector(ExperimentService.get().getSchema(), sql);
 
-        return matSource;
+        Map<String, Object> row = ss.getMap();
+        if (row != null)
+        {
+            try (DbScope.Transaction tx = ensureTransaction())
+            {
+                Integer rowId = (Integer) row.get("rowId");
+                Integer domainId = (Integer) row.get("domainId");
+
+                DbSequenceManager.delete(ContainerManager.getSharedContainer(), ExpSampleSetImpl.GENID_SEQUENCE_NAME, rowId);
+
+                Domain d = PropertyService.get().getDomain(domainId);
+                if (d != null)
+                {
+                    d.delete(null);
+                }
+
+                Table.delete(getTinfoMaterialSource(), rowId);
+
+                tx.commit();
+                LOG.info("Deleted the default " + ExperimentServiceImpl.DEFAULT_MATERIAL_SOURCE_NAME + " SampleSet");
+            }
+            catch (DomainNotFoundException e)
+            {
+                LOG.info("Failed to delete the default " + ExperimentServiceImpl.DEFAULT_MATERIAL_SOURCE_NAME + " SampleSet, domain not found");
+            }
+        }
     }
 
 

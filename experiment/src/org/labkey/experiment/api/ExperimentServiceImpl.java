@@ -600,8 +600,18 @@ public class ExperimentServiceImpl implements ExperimentService
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
-            if (sampleSet == null)
-                sampleSet = ensureDefaultSampleSet();
+            final String cpasType;
+            final String materialLsidPrefix;
+            if (sampleSet != null)
+            {
+                cpasType = sampleSet.getLSID();
+                materialLsidPrefix = sampleSet.getMaterialLSIDPrefix();
+            }
+            else
+            {
+                cpasType = SampleSetServiceImpl.get().getDefaultSampleSetLsid();
+                materialLsidPrefix = SampleSetServiceImpl.get().getDefaultSampleSetMaterialLsidPrefix();
+            }
 
             // Create materials directly using Name.
             for (String name : sampleNames)
@@ -614,12 +624,12 @@ public class ExperimentServiceImpl implements ExperimentService
                 }
                 else
                 {
-                    Lsid.LsidBuilder lsid = new Lsid.LsidBuilder(sampleSet.getMaterialLSIDPrefix() + "test");
+                    Lsid.LsidBuilder lsid = new Lsid.LsidBuilder(materialLsidPrefix + "test");
                     lsid.setObjectId(name);
                     String materialLsid = lsid.toString();
 
                     ExpMaterialImpl material = createExpMaterial(container, materialLsid, name);
-                    material.setCpasType(sampleSet.getLSID());
+                    material.setCpasType(cpasType);
                     material.save(user);
 
                     materials.add(material);

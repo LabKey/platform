@@ -238,10 +238,15 @@ public class ExperimentUpgradeCode implements UpgradeCode
         {
             // pass
         }
-        if (null == kind)
+        if (null == kind || null == kind.getStorageSchemaName())
         {
             return;
         }
+
+        // skip the 'Unspecified' SampleSet
+        if (ExperimentServiceImpl.get().getDefaultSampleSetLsid().equals(ss.getLSID()))
+            return;
+
         DbScope scope = ExperimentServiceImpl.get().getSchema().getScope();
         SqlDialect d = scope.getSqlDialect();
 
@@ -372,18 +377,24 @@ public class ExperimentUpgradeCode implements UpgradeCode
         {
             // pass
         }
-        if (null == kind)
+        if (null == kind || null == kind.getStorageSchemaName())
+            return;
+
+        // skip the 'Unspecified' SampleSet
+        if (ExperimentServiceImpl.get().getDefaultSampleSetLsid().equals(ss.getLSID()))
             return;
 
         DbSchema schema = kind.getSchema();
         DbScope scope = schema.getScope();
 
+        StorageProvisioner.ensureStorageTable(domain, kind, scope);
+        domain = PropertyService.get().getDomain(domain.getTypeId());
         assert(null != domain.getStorageTableName());
 
         SchemaTableInfo provisionedTable = schema.getTable(domain.getStorageTableName());
         if (provisionedTable == null)
         {
-            LOG.error("SampleSet '" + ss.getName() + "' (" + ss.getRowId() + ")  has no provisioned table");
+            LOG.error("SampleSet '" + ss.getName() + "' (" + ss.getRowId() + ") has no provisioned table");
             return;
         }
 

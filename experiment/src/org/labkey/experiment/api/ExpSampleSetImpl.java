@@ -33,10 +33,12 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ProtocolImplementation;
 import org.labkey.api.exp.api.SampleSetService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -507,6 +509,9 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     @Override
     public void save(User user)
     {
+        if (ExperimentService.get().getDefaultSampleSetLsid().equals(getLSID()))
+            throw new IllegalStateException("Can't create or update the default SampleSet");
+
         boolean isNew = _object.getRowId() == 0;
         save(user, ExperimentServiceImpl.get().getTinfoMaterialSource());
         if (isNew)
@@ -549,6 +554,9 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     public TableInfo getTinfo()
     {
         Domain d = getDomain();
+        DomainKind dk = d.getDomainKind();
+        if (null == dk || null == dk.getStorageSchemaName())
+            return null;
         return StorageProvisioner.createTableInfo(d);
     }
 

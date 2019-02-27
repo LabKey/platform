@@ -244,6 +244,9 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     protected void startupAfterSpringConfig(ModuleContext moduleContext)
     {
+        // delete the default "Unspecified" SampleSet TODO: move to an upgrade script in 19.2
+        SampleSetServiceImpl.get().deleteDefaultSampleSet();
+
         SearchService ss = SearchService.get();
         if (null != ss)
         {

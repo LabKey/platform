@@ -656,38 +656,35 @@ public class ExperimentController extends SpringActionController
 
             // Not all sample sets can be edited
             DomainKind domainKind = _source.getType().getDomainKind();
-            try (var ignore = SpringActionController.ignoreSqlUpdates())
+            if (domainKind != null && domainKind.canEditDefinition(getUser(), _source.getType()))
             {
-                if (!ExperimentService.get().ensureDefaultSampleSet().equals(_source) && domainKind != null && domainKind.canEditDefinition(getUser(), _source.getType()))
+                ActionURL editURL = domainKind.urlEditDefinition(_source.getType(), new ViewBackgroundInfo(_source.getContainer(), getUser(), getViewContext().getActionURL()));
+                if (editURL != null)
                 {
-                    ActionURL editURL = domainKind.urlEditDefinition(_source.getType(), new ViewBackgroundInfo(_source.getContainer(), getUser(), getViewContext().getActionURL()));
-                    if (editURL != null)
-                    {
-                        editURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
-                        ActionButton editTypeButton = new ActionButton(editURL, "Edit Fields", DataRegion.MODE_DETAILS);
-                        editTypeButton.setDisplayPermission(UpdatePermission.class);
-                        detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(editTypeButton);
-                    }
+                    editURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
+                    ActionButton editTypeButton = new ActionButton(editURL, "Edit Fields", DataRegion.MODE_DETAILS);
+                    editTypeButton.setDisplayPermission(UpdatePermission.class);
+                    detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(editTypeButton);
+                }
 
-                    if (domainKind instanceof SampleSetDomainKind)
-                    {
-                        ActionURL updateURL = new ActionURL(ShowUpdateMaterialSourceAction.class, _source.getContainer());
-                        updateURL.addParameter("RowId", _source.getRowId());
-                        updateURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
-                        ActionButton updateButton = new ActionButton(updateURL, "Edit Set", DataRegion.MODE_DETAILS, ActionButton.Action.LINK);
-                        updateButton.setDisplayPermission(UpdatePermission.class);
-                        detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(updateButton);
+                if (domainKind instanceof SampleSetDomainKind)
+                {
+                    ActionURL updateURL = new ActionURL(ShowUpdateMaterialSourceAction.class, _source.getContainer());
+                    updateURL.addParameter("RowId", _source.getRowId());
+                    updateURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
+                    ActionButton updateButton = new ActionButton(updateURL, "Edit Set", DataRegion.MODE_DETAILS, ActionButton.Action.LINK);
+                    updateButton.setDisplayPermission(UpdatePermission.class);
+                    detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(updateButton);
 
-                        ActionButton deleteButton = new ActionButton(ExperimentController.DeleteMaterialSourceAction.class, "Delete Set", DataRegion.MODE_DETAILS, ActionButton.Action.POST);
-                        deleteButton.setDisplayPermission(DeletePermission.class);
-                        ActionURL deleteURL = new ActionURL(ExperimentController.DeleteMaterialSourceAction.class, _source.getContainer());
-                        deleteURL.addParameter("singleObjectRowId", _source.getRowId());
-                        deleteURL.addParameter(ActionURL.Param.returnUrl, ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer()).toString());
+                    ActionButton deleteButton = new ActionButton(ExperimentController.DeleteMaterialSourceAction.class, "Delete Set", DataRegion.MODE_DETAILS, ActionButton.Action.POST);
+                    deleteButton.setDisplayPermission(DeletePermission.class);
+                    ActionURL deleteURL = new ActionURL(ExperimentController.DeleteMaterialSourceAction.class, _source.getContainer());
+                    deleteURL.addParameter("singleObjectRowId", _source.getRowId());
+                    deleteURL.addParameter(ActionURL.Param.returnUrl, ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer()).toString());
 
-                        deleteButton.setURL(deleteURL);
-                        deleteButton.setActionType(ActionButton.Action.LINK);
-                        detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(deleteButton);
-                    }
+                    deleteButton.setURL(deleteURL);
+                    deleteButton.setActionType(ActionButton.Action.LINK);
+                    detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(deleteButton);
                 }
             }
 
@@ -3185,8 +3182,8 @@ public class ExperimentController extends SpringActionController
         public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors)
         {
             List<ExpSampleSet> sampleSets = getSampleSets(deleteForm);
-            ExpSampleSet defaultSampleSet = ExperimentService.get().ensureDefaultSampleSet();
-            if (sampleSets.contains(defaultSampleSet))
+            String defaultSampleSet = ExperimentService.get().getDefaultSampleSetLsid();
+            if (sampleSets.stream().anyMatch(ss -> defaultSampleSet.equals(ss.getLSID())))
             {
                 throw new RedirectException(ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer(), "You cannot delete the default sample set."));
             }
@@ -3261,7 +3258,7 @@ public class ExperimentController extends SpringActionController
                 throw new NotFoundException("No matching sample set with RowId " + form.getBean().getRowId());
             }
 
-            if (_sampleSet.equals(ExperimentService.get().ensureDefaultSampleSet()))
+            if (ExperimentService.get().getDefaultSampleSetLsid().equals(_sampleSet.getLSID()))
             {
                 throw new UnauthorizedException("Cannot edit default sample set");
             }

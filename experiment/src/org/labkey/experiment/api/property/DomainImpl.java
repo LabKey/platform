@@ -17,8 +17,8 @@
 package org.labkey.experiment.api.property;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -672,11 +672,21 @@ public class DomainImpl implements Domain
             _new = false;
 
             // Do the call to add the new properties last, after deletes and renames of existing properties
-            if (propChanged && hasProvisioner && _enforceStorageProperties)
+            if (hasProvisioner)
             {
-                if (!propsAdded.isEmpty())
+                if (propChanged && _enforceStorageProperties)
                 {
-                    StorageProvisioner.addProperties(this, propsAdded, allowAddBaseProperty);
+                    if (!propsAdded.isEmpty())
+                    {
+                        StorageProvisioner.addProperties(this, propsAdded, allowAddBaseProperty);
+                    }
+                }
+
+                // ensure that the provisioned table is created if we have base properties.
+                // The domain may not have any non-base properties -- e.g. the "Study Specimens" SampleSets
+                if (!baseProperties.isEmpty())
+                {
+                    StorageProvisioner.ensureStorageTable(this, kind, exp.getSchema().getScope());
                 }
             }
 

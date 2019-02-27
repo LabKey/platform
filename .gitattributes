@@ -2685,6 +2685,7 @@ study/src/org/labkey/study/security/roles/SpecimenRequesterRole.java -text
 study/src/org/labkey/study/security/study.jsp -text
 study/src/org/labkey/study/security/studySecurity.jsp -text
 study/src/org/labkey/study/specimen/SpecimenCommentAuditProvider.java -text
+study/src/org/labkey/study/specimen/SpecimenSampleSetDomainKind.java -text
 study/src/org/labkey/study/specimen/SpecimenSearchBean.java -text
 study/src/org/labkey/study/specimen/SpecimenSearchWebPart.java -text
 study/src/org/labkey/study/specimen/SpecimenWebPart.java -text

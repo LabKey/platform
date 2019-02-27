@@ -505,9 +505,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
     private void addSampleSetColumns(ExpSampleSet ss, List<FieldKey> visibleColumns)
     {
+        TableInfo dbTable = ((ExpSampleSetImpl)ss).getTinfo();
+        if (null == dbTable)
+            return;
+
         UserSchema schema = getUserSchema();
         Domain domain = ss.getDomain();
-        TableInfo dbTable = ((ExpSampleSetImpl)ss).getTinfo();
         ColumnInfo lsidColumn = getColumn(Column.LSID);
 
         visibleColumns.remove(FieldKey.fromParts("Run"));

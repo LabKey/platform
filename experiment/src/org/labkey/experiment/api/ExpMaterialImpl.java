@@ -121,7 +121,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     public ExpSampleSet getSampleSet()
     {
         String type = _object.getCpasType();
-        if (!"Material".equals(type) && !"Sample".equals(type))
+        if (!ExpMaterialImpl.DEFAULT_CPAS_TYPE.equals(type) && !"Sample".equals(type))
         {
             // try current container first (uses cache)
             return SampleSetService.get().getSampleSetByType(type, getContainer());
