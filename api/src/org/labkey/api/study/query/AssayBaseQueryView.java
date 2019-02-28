@@ -39,6 +39,8 @@ public abstract class AssayBaseQueryView extends QueryView
         super(schema, settings);
         _protocol = protocol;
         _provider = AssayService.get().getProvider(_protocol);
+
+        addClientDependencies(AssayService.get().getClientDependenciesForImportButtons());
     }
 
     @Override

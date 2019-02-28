@@ -26,7 +26,6 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.PanelButton;
-import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Sort;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -51,8 +50,6 @@ import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.io.Writer;
 import java.util.Collections;
 import java.util.List;
 
@@ -80,6 +77,8 @@ public class ExperimentRunListView extends QueryView
         setShowExportButtons(true);
         // The file export panel that we add later requires record selectors
         setShowRecordSelectors(true);
+
+        addClientDependencies(AssayService.get().getClientDependenciesForImportButtons());
     }
 
     public static QuerySettings getRunListQuerySettings(UserSchema schema, ViewContext model, String tableName, boolean allowCustomizations)
@@ -224,16 +223,7 @@ public class ExperimentRunListView extends QueryView
                 if (!c.isContainerFor(ContainerType.DataType.assayData))
                 // the folder type may indicate that assays should be uploaded into a different container (a workbook)
                 {
-                    addRunsButton = new MenuButton("Upload Assay Runs"){
-                        public void render(RenderContext ctx, Writer out) throws IOException
-                        {
-                            out.write("<script type=\"text/javascript\">\n");
-                            out.write("LABKEY.requiresExt4ClientAPI()\n");
-                            out.write("LABKEY.requiresScript('extWidgets/ImportWizard.js')\n");
-                            out.write("</script>\n");
-                            super.render(ctx, out);
-                        }
-                    };
+                    addRunsButton = new MenuButton("Upload Assay Runs");
                 }
                 else
                 {

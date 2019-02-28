@@ -32,6 +32,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.template.ClientDependency;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -40,6 +41,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: jeckels
@@ -98,6 +100,9 @@ public interface AssayService
      * unless it already has assay data in it
      */
     @NotNull List<ActionButton> getImportButtons(ExpProtocol protocol, User user, Container currentContainer, boolean isStudyView);
+
+    @NotNull
+    public Set<ClientDependency> getClientDependenciesForImportButtons();
 
     /**
      * Creates a batch object but does not save it to the database

@@ -45,6 +45,8 @@ public class BatchListQueryView extends QueryView
         setShowDetailsColumn(false);
         setShowExportButtons(false);
         setShowDeleteButton(false); // issue 24216
+
+        addClientDependencies(AssayService.get().getClientDependenciesForImportButtons());
     }
 
     @Override
