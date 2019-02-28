@@ -25,19 +25,10 @@
     }
   },
   "dependencies": {
+    "@labkey/dependencies": "0.0.1",
     "@glass/domainproperties": "0.0.2",
     "@glass/models": "0.0.3",
-    "@glass/utils": "0.0.4",
-    "@labkey/api": "0.0.9",
-    "@types/react": "16.4.18",
-    "@types/react-dom": "16.0.9",
-    "font-awesome": "4.7.0",
-    "immutable": "3.8.2",
-    "jquery": "3.3.1",
-    "react": "16.7.0",
-    "react-bootstrap": "0.32.4",
-    "react-dom": "16.7.0",
-    "reactn": "1.0.0"
+    "@glass/utils": "0.0.4"
   },
   "devDependencies": {
     "@babel/core": "7.2.2",
