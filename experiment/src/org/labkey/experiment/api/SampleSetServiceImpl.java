@@ -401,12 +401,6 @@ public class SampleSetServiceImpl implements SampleSetService
     }
 
 
-    @Override
-    public ExpSampleSetImpl ensureDefaultSampleSet()
-    {
-        throw new UnsupportedOperationException("Default SampleSet only exists in your mind");
-    }
-
     public void deleteDefaultSampleSet()
     {
         SQLFragment sql = new SQLFragment()
