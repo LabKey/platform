@@ -523,12 +523,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
     TableInfo getTinfoMaterialAliasMap();
 
     @Deprecated
-    default ExpSampleSet ensureDefaultSampleSet()
-    {
-        return SampleSetService.get().ensureDefaultSampleSet();
-    }
-
-    @Deprecated
     default String getDefaultSampleSetLsid()
     {
         return SampleSetService.get().getDefaultSampleSetLsid();

@@ -108,8 +108,6 @@ public interface SampleSetService
      */
     ExpSampleSet getSampleSet(@NotNull Container scope, @NotNull User user, int rowId);
 
-    ExpSampleSet ensureDefaultSampleSet();
-
     String getDefaultSampleSetLsid();
     String getDefaultSampleSetMaterialLsidPrefix();
 
@@ -124,5 +122,5 @@ public interface SampleSetService
     void deleteSampleSet(int rowId, Container c, User user) throws ExperimentException;
 
     // used by DomainKind.invalidate()
-    public void indexSampleSet(ExpSampleSet sampleSet);
+    void indexSampleSet(ExpSampleSet sampleSet);
 }
