@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -141,7 +142,7 @@ public class ContainerScopedTable<SchemaType extends UserSchema> extends CustomP
         protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
         {
             ColumnInfo pkCol = getPkCol();
-            keys = new HashMap<>(keys);  //create copy
+            keys = new CaseInsensitiveHashMap<>(keys);  //create copy
             if (!keys.containsKey(pkCol.getName()) || keys.get(pkCol.getName()) == null)
             {
                 Object pseudoKey = keys.get(_pseudoPk);
