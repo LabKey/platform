@@ -78,6 +78,6 @@ public class MessageConfigServiceImpl implements MessageConfigService
 
     public MessageConfigService.ConfigTypeProvider getConfigType(String identifier)
     {
-        return _providers.get(identifier);
+        return null==identifier ? null : _providers.get(identifier);
     }
 }

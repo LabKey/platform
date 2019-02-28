@@ -5095,6 +5095,10 @@ public class StudyController extends BaseStudyController
             if (StudySnapshotForm.CANCEL.equals(form.getAction()))
                 return;
 
+            Study study = StudyManager.getInstance().getStudy(getContainer());
+            if (null == study)
+                throw new NotFoundException("No study in this folder");
+
             String name = StringUtils.trimToNull(form.getSnapshotName());
 
             if (name != null)
@@ -5107,7 +5111,7 @@ public class StudyController extends BaseStudyController
                 }
 
                 // check for a dataset with the same label/name unless it's one that we created
-                Dataset dataset = StudyManager.getInstance().getDatasetDefinitionByQueryName(StudyManager.getInstance().getStudy(getContainer()), name);
+                Dataset dataset = StudyManager.getInstance().getDatasetDefinitionByQueryName(study, name);
                 if (dataset != null)
                 {
                     if (dataset.getDatasetId() != form.getSnapshotDatasetId())

@@ -535,6 +535,9 @@ public class ReportsController extends BaseStudyController
         public Report getReport(ContainerUser cu) throws Exception
         {
             Report report = super.getReport(cu);
+            if (null == report)
+                return null;
+
             CrosstabReportDescriptor descriptor = (CrosstabReportDescriptor) report.getDescriptor();
 
             if (_visitRowId != -1) descriptor.setProperty(VisitImpl.VISITKEY, Integer.toString(_visitRowId));

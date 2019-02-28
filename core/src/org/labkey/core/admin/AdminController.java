@@ -4146,8 +4146,10 @@ public class AdminController extends SpringActionController
                         ExternalScriptEngineDefinition reportEngine = mgr.getEngineDefinition(rConfigForm.getReportEngine(), ExternalScriptEngineDefinition.Type.R);
                         ExternalScriptEngineDefinition pipelineEngine = mgr.getEngineDefinition(rConfigForm.getPipelineEngine(), ExternalScriptEngineDefinition.Type.R);
 
-                        mgr.setEngineScope(getContainer(), reportEngine, LabkeyScriptEngineManager.EngineContext.report);
-                        mgr.setEngineScope(getContainer(), pipelineEngine, LabkeyScriptEngineManager.EngineContext.pipeline);
+                        if (reportEngine != null)
+                            mgr.setEngineScope(getContainer(), reportEngine, LabkeyScriptEngineManager.EngineContext.report);
+                        if (pipelineEngine != null)
+                            mgr.setEngineScope(getContainer(), pipelineEngine, LabkeyScriptEngineManager.EngineContext.pipeline);
                     }
                     else
                     {
