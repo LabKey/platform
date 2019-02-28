@@ -17,6 +17,7 @@
 package org.labkey.experiment.controllers.property;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -115,6 +116,7 @@ public class PropertyController extends SpringActionController
     {
         om.addMixIn(GWTDomain.class, GWTDomainMixin.class);
         om.addMixIn(GWTPropertyDescriptor.class, GWTPropertyDescriptorMixin.class);
+        om.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
     }
 
     @RequiresNoPermission
@@ -215,6 +217,14 @@ public class PropertyController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class CreateDomainAction extends MutatingApiAction<DomainApiForm>
     {
+        @Override
+        protected ObjectMapper createObjectMapper()
+        {
+            ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
+            configureObjectMapper(mapper);
+            return mapper;
+        }
+
         public ApiResponse execute(DomainApiForm form, BindException errors) throws Exception
         {
             Map<String, Object> options = new HashMap<>();
@@ -352,6 +362,14 @@ public class PropertyController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class SaveDomainAction extends MutatingApiAction<DomainApiForm>
     {
+        @Override
+        protected ObjectMapper createObjectMapper()
+        {
+            ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
+            configureObjectMapper(mapper);
+            return mapper;
+        }
+
         public Object execute(DomainApiForm form, BindException errors)
         {
             GWTDomain newDomain = form.getDomainDesign();
@@ -533,9 +551,18 @@ public class PropertyController extends SpringActionController
      * Infer the fields from the uploaded file and return the array of fields in a format that can
      * be used in the CreateDomainAction.
      */
+    @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
     public class InferDomainAction extends ReadOnlyApiAction<Object>
     {
+        @Override
+        protected ObjectMapper createObjectMapper()
+        {
+            ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
+            configureObjectMapper(mapper);
+            return mapper;
+        }
+
         @Override
         public Object execute(Object o, BindException errors) throws Exception
         {
@@ -564,7 +591,7 @@ public class PropertyController extends SpringActionController
                         fields.add(prop);
                     }
                 }
-                response.putBeanList("fields", fields);
+                response.put("fields", fields);
             }
             return response;
         }
