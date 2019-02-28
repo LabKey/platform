@@ -1207,6 +1207,7 @@ public class ExperimentController extends SpringActionController
         private String _domainTemplate;
         private Set<String> _availableDomainTemplateNames;
         private Set<String> _xmlParseErrors;
+        private final ReturnUrlForm _returnUrlForm = new ReturnUrlForm();
 
         public boolean isUseTemplate()
         {
@@ -1246,6 +1247,17 @@ public class ExperimentController extends SpringActionController
         public void setXmlParseErrors(Set<String> xmlParseErrors)
         {
             _xmlParseErrors = xmlParseErrors;
+        }
+
+        @Nullable
+        public String getReturnUrl()
+        {
+            return _returnUrlForm.getReturnUrl();
+        }
+
+        public void setReturnUrl(String s)
+        {
+            _returnUrlForm.setReturnUrl(s);
         }
     }
 
@@ -3438,7 +3450,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    public static class CreateSampleSetForm
+    public static class CreateSampleSetForm extends ReturnUrlForm
     {
         private String name;
         private String nameExpression;

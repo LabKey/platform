@@ -1,12 +1,12 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
+<%@ page import="org.labkey.api.action.ReturnUrlForm" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<ExperimentController.CreateSampleSetForm> view = (JspView<ExperimentController.CreateSampleSetForm>) HttpView.currentView();
     ExperimentController.CreateSampleSetForm bean = view.getModelBean();
-    String returnUrl = getViewContext().getActionURL().getParameter("returnUrl");
     String helpText = "Used for generating unique sample IDs (" + helpLink("sampleIDs#expression", "more info") + ")";
 %>
 
@@ -23,7 +23,7 @@
     />
     <br/>
     <%=button("Create").submit(true)%>
-    <%=button("Cancel").href(returnUrl)%>
+    <%=button("Cancel").href(bean.getReturnURLHelper())%>
 </labkey:form>
 
 

@@ -29,10 +29,8 @@
 <%
     JspView<StudyController.VisitReorderForm> me = (JspView<StudyController.VisitReorderForm>) HttpView.currentView();
 
-    ActionURL returnURL;
-    if (getActionURL().getParameter("returnUrl") != null)
-        returnURL = new ActionURL(getActionURL().getParameter("returnUrl"));
-    else
+    ActionURL returnURL = (me.getModelBean()).getReturnActionURL();
+    if (null == returnURL)
         returnURL = new ActionURL(StudyController.ManageVisitsAction.class, getContainer());
 %>
 <script type="text/javascript">

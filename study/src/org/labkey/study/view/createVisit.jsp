@@ -35,10 +35,8 @@
     StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
     boolean isDateBased = study != null && study.getTimepointType() == TimepointType.DATE;
 
-    ActionURL returnURL;
-    if (getActionURL().getParameter("returnUrl") != null)
-        returnURL = new ActionURL(getActionURL().getParameter("returnUrl"));
-    else
+    ActionURL returnURL = form.getReturnActionURL();
+    if (null == returnURL)
         returnURL = new ActionURL(StudyController.ManageVisitsAction.class, getContainer());
 %>
 <labkey:errors/>

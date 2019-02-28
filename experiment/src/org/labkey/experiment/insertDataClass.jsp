@@ -17,7 +17,7 @@
 %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ page import="org.labkey.api.exp.api.ExpSampleSet" %>
-<%@ page import="org.labkey.api.exp.api.ExperimentService" %>
+<%@ page import="org.labkey.api.exp.api.SampleSetService" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -31,11 +31,11 @@
 <%
     JspView<ExperimentController.InsertDataClassForm> me = (JspView<ExperimentController.InsertDataClassForm>) HttpView.currentView();
     ExperimentController.InsertDataClassForm bean = me.getModelBean();
-    String returnUrl = getViewContext().getActionURL().getParameter("returnUrl");
+    String returnUrl = bean.getReturnUrl();
 
     List<String> templateNames = new ArrayList<>(bean.getAvailableDomainTemplateNames());
 
-    List<? extends ExpSampleSet> sets = ExperimentService.get().getSampleSets(getContainer(), getUser(), true);
+    List<? extends ExpSampleSet> sets = SampleSetService.get().getSampleSets(getContainer(), getUser(), true);
     Map<Integer, String> sampleSets = new LinkedHashMap<>();
     sampleSets.put(null, "");
     for (ExpSampleSet ss : sets)
