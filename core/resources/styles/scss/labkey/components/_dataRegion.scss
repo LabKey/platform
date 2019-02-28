@@ -10,6 +10,10 @@
 
   & > * {
     flex: 1 100%;
+    @media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {
+      /* HACK: IE10+ overrides go here */
+      flex: 1 1 auto; // 36802
+    }
   }
 
   .lk-region-section {
@@ -18,7 +22,14 @@
 
     // 12-based flex pattern
     &.west   { order: 1; flex: 1 auto; }
-    &.center { order: 2; flex: 10 0; }
+    &.center {
+      order: 2;
+      flex: 10 0;
+      @media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {
+        /* HACK: IE10+ overrides go here */
+        flex: 10 0 auto; // 36802
+      }
+    }
     &.east   { order: 3; flex: 1 auto; }
     &.south  { order: 4; }
 
