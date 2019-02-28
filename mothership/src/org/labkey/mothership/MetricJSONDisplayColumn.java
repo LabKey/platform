@@ -43,7 +43,7 @@ public class MetricJSONDisplayColumn extends DataColumn
 
         try
         {
-            Object val = dc.read(path.append("$").append(_jsonProp).toString());
+            Object val = dc.read(path.append("$.").append(_jsonProp).toString());
             return val == null ? "" : val.toString();
         }
         catch (PathNotFoundException ex)
@@ -61,7 +61,7 @@ public class MetricJSONDisplayColumn extends DataColumn
     @Override
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
-        out.write(PageFlowUtil.encode(getOutput(ctx)));
+        out.write(PageFlowUtil.filter(getOutput(ctx)));
     }
 
     @Override
