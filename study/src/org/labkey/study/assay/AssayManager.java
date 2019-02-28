@@ -30,7 +30,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerType;
 import org.labkey.api.data.MenuButton;
-import org.labkey.api.data.RenderContext;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.Lsid;
@@ -86,6 +85,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.study.assay.query.AssayListPortalView;
@@ -99,7 +99,6 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -505,6 +504,12 @@ public class AssayManager implements AssayService
         return new StudyGWTView(new StudyApplication.AssayImporter(), properties);
     }
 
+    @NotNull
+    public Set<ClientDependency> getClientDependenciesForImportButtons()
+    {
+        return PageFlowUtil.set(ClientDependency.fromPath("Ext4ClientApi"), ClientDependency.fromPath("extWidgets/ImportWizard.js"));
+    }
+
     public @NotNull
     List<ActionButton> getImportButtons(ExpProtocol protocol, User user, Container currentContainer, boolean isStudyView)
     {
@@ -584,20 +589,7 @@ public class AssayManager implements AssayService
 
         else
         {
-            ActionButton button = new ActionButton(AbstractAssayProvider.IMPORT_DATA_LINK_NAME)
-            {
-                public void render(RenderContext ctx, Writer out) throws IOException
-                {
-                    if (!shouldRender(ctx))
-                        return;
-
-                    out.write("<script type=\"text/javascript\">\n");
-                    out.write("LABKEY.requiresExt4ClientAPI()\n");
-                    out.write("LABKEY.requiresScript('extWidgets/ImportWizard.js')\n");
-                    out.write("</script>\n");
-                    super.render(ctx, out);
-                }
-            };
+            ActionButton button = new ActionButton(AbstractAssayProvider.IMPORT_DATA_LINK_NAME);
             button.setURL("javascript:void(0)");
             button.setActionType(ActionButton.Action.SCRIPT);
             button.setScript("Ext4.create('LABKEY.ext.ImportWizardWin', {" +

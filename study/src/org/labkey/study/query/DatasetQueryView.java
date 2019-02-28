@@ -161,6 +161,9 @@ public class DatasetQueryView extends StudyQueryView
         disableContainerFilterSelection();
 
         addSessionParticipantGroup(settings);
+
+        if (usesAssayButtons())
+            addClientDependencies(AssayService.get().getClientDependenciesForImportButtons());
     }
 
     private void addSessionParticipantGroup(DatasetQuerySettings settings)
@@ -353,6 +356,11 @@ public class DatasetQueryView extends StudyQueryView
     protected boolean canViewReport(User user, Container c, Report report)
     {
         return ReportManager.get().canReadReport(getUser(), getContainer(), report);
+    }
+
+    private boolean usesAssayButtons()
+    {
+        return _dataset.isAssayData() && !QueryService.get().isQuerySnapshot(getContainer(), StudySchema.getInstance().getSchemaName(), _dataset.getName());
     }
 
     @Override
