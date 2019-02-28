@@ -18,15 +18,27 @@
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView me = HttpView.currentView();
     ActionURL refreshURL = urlProvider(AdminUrls.class).getProjectSettingsMenuURL(getContainer());
+    boolean isAdminMode = PageFlowUtil.isPageAdminMode(getViewContext());
+    String toggleUrl = PageFlowUtil.urlProvider(ProjectUrls.class).getTogglePageAdminModeURL(getContainer(), getViewContext().getActionURL()).toString();
 %>
 <div style="padding-bottom: 40px;">
-    <p>The menu bar can be customized to provide quick access to LabKey features. It is populated by webparts, which can be added/removed here.</p>
+    <p>The menu bar can be customized to provide quick access to LabKey features. It is populated by webparts, which can be added or removed here.</p>
+    <%if (!isAdminMode) {%>
+        <p style="font-weight: bold"> Entering Page Admin Mode is necessary to change webparts.</p>
+    <%}%>
     <p>
+        <%if (!isAdminMode){%>
+            <a href="javascript:void(0)" class="btn btn-primary" onclick="<%=PageFlowUtil.postOnClickJavaScript(toggleUrl)%>">Enter Admin Mode</a>
+        <%} else {%>
+            <a href="javascript:void(0)" class="btn btn-primary" onclick="<%=PageFlowUtil.postOnClickJavaScript(toggleUrl)%>">Exit Admin Mode</a>
+        <%}%>
         <%= button("Refresh Menu Bar").href(refreshURL) %>
     </p>
     <div style="padding: 8px 0;">
