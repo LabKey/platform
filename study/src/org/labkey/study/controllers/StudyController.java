@@ -4262,21 +4262,41 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class UpdateParticipantVisitsAction extends SimpleViewAction
+    public class UpdateParticipantVisitsAction extends FormViewAction
     {
-        public ModelAndView getView(Object o, BindException errors)
+        private int _count;
+
+        @Override
+        public void validateCommand(Object target, Errors errors)
+        {
+        }
+
+        @Override
+        public ModelAndView getView(Object o, boolean reshow, BindException errors) throws Exception
+        {
+            return new HtmlView(
+                    "<div>" + _count + " rows were updated.<p/>" +
+                            PageFlowUtil.button("Done").href(new ActionURL(ManageVisitsAction.class,getContainer())) +
+                            "</div>");
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors) throws Exception
         {
             StudyManager.getInstance().getVisitManager(getStudyRedirectIfNull()).updateParticipantVisits(getUser(), getStudyRedirectIfNull().getDatasets());
 
             TableInfo tinfoParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
-            int count = new SqlSelector(StudySchema.getInstance().getSchema(),
+            _count = new SqlSelector(StudySchema.getInstance().getSchema(),
                     "SELECT COUNT(VisitDate) FROM " + tinfoParticipantVisit + "\nWHERE Container = ?",
                     getContainer()).getObject(Integer.class);
 
-            return new HtmlView(
-                    "<div>" + count + " rows were updated.<p/>" +
-                    PageFlowUtil.button("Done").href(new ActionURL(ManageVisitsAction.class,getContainer())) +
-                    "</div>");
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(Object o)
+        {
+            return null;
         }
 
         public NavTree appendNavTrail(NavTree root)

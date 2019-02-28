@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <labkey:errors />
@@ -49,7 +50,7 @@
     </tr>
     <tr>
         <td>Assign data to the correct timepoint</td>
-        <td><%= textLink("Recompute Timepoints", UpdateParticipantVisitsAction.class)%></td>
+        <td><a href="javascript:{}" onclick="<%=h(PageFlowUtil.postOnClickJavaScript(new ActionURL(UpdateParticipantVisitsAction.class, getContainer())))%>" class="labkey-text-link">Recompute Timepoints</a></td>
     </tr>
 <% if (timepoints.size() > 0) { %>
     <tr>
@@ -90,8 +91,8 @@
 
 <% if (timepoints.size() > 0) { %>
 <labkey:panel title="Timepoints" width="800">
-<p>NOTE: If you edit the day range of timepoints, use <%= textLink("Recompute Timepoints", UpdateParticipantVisitsAction.class)%> to
-assign dataset data to the correct timepoints.</p>
+<p>NOTE: If you edit the day range of timepoints, use <a href="javascript:{}" onclick="<%=h(PageFlowUtil.postOnClickJavaScript(new ActionURL(UpdateParticipantVisitsAction.class, getContainer())))%>" class="labkey-text-link">Recompute Timepoints</a>
+to assign dataset data to the correct timepoints.</p>
 <table class="labkey-data-region-legacy labkey-show-borders">
     <tr>
         <td class="labkey-column-header">&nbsp;</td>
