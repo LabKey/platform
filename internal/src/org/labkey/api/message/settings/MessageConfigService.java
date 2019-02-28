@@ -15,6 +15,7 @@
  */
 package org.labkey.api.message.settings;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -64,6 +65,7 @@ public interface MessageConfigService
     /**
      * returns a type provider by its unique type identifier
      */
+    @Nullable
     ConfigTypeProvider getConfigType(String type);
 
     /**

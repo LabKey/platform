@@ -134,6 +134,8 @@ public class JavaScriptReport extends ScriptReport
         private JavaScriptReportBean(ViewContext context) throws Exception
         {
             QueryView qv = createQueryView(context, getDescriptor());
+            if (null == qv)
+                throw new NotFoundException();
             model = new JavaScriptExportScriptModel(qv);
             script = getDescriptor().getProperty(ScriptReportDescriptor.Prop.script);
             if (getDescriptor().getProperty(ScriptReportDescriptor.Prop.useGetDataApi) != null)
