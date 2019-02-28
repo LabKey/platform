@@ -42,8 +42,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.labkey.api.data.ContainerType.DataType.protocol;
@@ -195,23 +193,14 @@ public class WorkbookContainerType implements ContainerType
         return containers;
     }
 
-    public static class TestCase extends Assert
+    public static class AbstractTestCase extends Assert
     {
         protected Container _project;
         protected TestContext _context;
         protected List<Container> _workbooks = new ArrayList<>();
 
-        private String LIST1 = "List1";
-        private String LIST2 = "List2";
-
-        private static final String PROJECT_NAME = "WorkbookIntegrationTest";
-
-        @Before
-        public void setUp() throws Exception
-        {
-            _context = TestContext.get();
-            doInitialSetUp(PROJECT_NAME);
-        }
+        protected String LIST1 = "List1";
+        protected String LIST2 = "List2";
 
         protected void doInitialSetUp(String projectName) throws Exception
         {
@@ -238,41 +227,25 @@ public class WorkbookContainerType implements ContainerType
             }
 
             _project = project;
-            for (String name : Arrays.asList("WB1", "WB2"))
-            {
-                Map<String, Container> children = project.getChildren().stream().collect(Collectors.toMap(Container::getName, Function.identity()));
-                if (children.containsKey(name))
-                {
-                    _workbooks.add(children.get(name));
-                }
-                else
-                {
-                    _workbooks.add(ContainerManager.createContainer(project, name, "Title1", null, WorkbookContainerType.NAME, _context.getUser()));
-                }
-            }
+
+            //create two workbooks, auto-named by system
+            _workbooks.add(ContainerManager.createContainer(project, null, "Title1", null, WorkbookContainerType.NAME, _context.getUser()));
+            _workbooks.add(ContainerManager.createContainer(project, null, "Title1", null, WorkbookContainerType.NAME, _context.getUser()));
         }
 
-        @Test
-        public void testCrossContainerBehaviorsForList() throws Exception
-        {
-            testCrossContainerBehaviors(_project, _workbooks, "Lists", LIST1, LIST2, "LookupField", Arrays.asList("Value1", "Value2", "Value3", "Value4"));
-        }
-        
-        protected void testCrossContainerBehaviors(Container project, List<Container> workbooks, String schemaName, String parentTable, String childTable, String lookupField, List<String> parentPKs) throws Exception
+        protected void testCrossContainerBehaviors(Container project, List<Container> workbooks, String schemaName, String parentTable, String childTable, String primaryChildField, String lookupField, List<String> parentPKs, Map<String, Object> extraRowValues) throws Exception
         {
             UserSchema usProject = QueryService.get().getUserSchema(_context.getUser(), project, schemaName);
-            TableInfo tiParent = usProject.getTable(parentTable);
             TableInfo tiChild = usProject.getTable(childTable);
-            String parentPK = tiParent.getPkColumnNames().get(0);
-            String childPK = tiChild.getPkColumnNames().get(0);
+            String parentField = tiChild.getColumn(lookupField).getFk().getLookupColumnName();
 
             assertTrue(parentPKs.size() >= 4);
 
             List<Map<String, Object>> toInsert = new ArrayList<>();
-            toInsert.add(createParentTableRow(project, parentPK, parentPKs.get(0)));
-            toInsert.add(createParentTableRow(workbooks.get(0), parentPK, parentPKs.get(1)));
-            toInsert.add(createParentTableRow(workbooks.get(1), parentPK, parentPKs.get(2)));
-            toInsert.add(createParentTableRow(workbooks.get(1), parentPK, parentPKs.get(3)));
+            toInsert.add(createParentTableRow(project, parentField, parentPKs.get(0)));
+            toInsert.add(createParentTableRow(workbooks.get(0), parentField, parentPKs.get(1)));
+            toInsert.add(createParentTableRow(workbooks.get(1), parentField, parentPKs.get(2)));
+            toInsert.add(createParentTableRow(workbooks.get(1), parentField, parentPKs.get(3)));
 
             BatchValidationException errors0 = new BatchValidationException();
             usProject.getTable(parentTable).getUpdateService().insertRows(_context.getUser(), project, toInsert, errors0, Collections.emptyMap(), null);
@@ -281,7 +254,7 @@ public class WorkbookContainerType implements ContainerType
                 throw errors0;
             }
 
-            validateRowsByContainer(usProject, parentTable, toInsert, parentPK);
+            validateRowsByContainer(usProject, parentTable, toInsert, parentField);
 
             //rows in second table.  one insert into the parent should allow these rows to go into the children, following the container prop
             int i = 0;
@@ -289,9 +262,9 @@ public class WorkbookContainerType implements ContainerType
 
             for (String pk : parentPKs)
             {
-                toInsert2.add(createChildRow(project, childPK, "Row" + (i++), lookupField, pk));
-                toInsert2.add(createChildRow(workbooks.get(0), childPK, "Row" + (i++), lookupField, pk));
-                toInsert2.add(createChildRow(workbooks.get(1), childPK, "Row" + (i++), lookupField, pk));
+                toInsert2.add(createChildRow(project, primaryChildField, "Row" + (i++), lookupField, pk, extraRowValues));
+                toInsert2.add(createChildRow(workbooks.get(0), primaryChildField, "Row" + (i++), lookupField, pk, extraRowValues));
+                toInsert2.add(createChildRow(workbooks.get(1), primaryChildField, "Row" + (i++), lookupField, pk, extraRowValues));
             }
 
             BatchValidationException errors = new BatchValidationException();
@@ -306,8 +279,8 @@ public class WorkbookContainerType implements ContainerType
             UserSchema usWorkbook1 = QueryService.get().getUserSchema(_context.getUser(), workbooks.get(1), schemaName);
 
             List<Map<String, Object>> toInsertWb = new ArrayList<>();
-            toInsertWb.add(createChildRow(null, childPK, "Row" + (i++), lookupField, parentPKs.get(0)));
-            toInsertWb.add(createChildRow(null, childPK, "Row" + (i++), lookupField, parentPKs.get(1)));
+            toInsertWb.add(createChildRow(null, primaryChildField, "Row" + (i++), lookupField, parentPKs.get(0), extraRowValues));
+            toInsertWb.add(createChildRow(null, primaryChildField, "Row" + (i++), lookupField, parentPKs.get(1), extraRowValues));
 
             BatchValidationException errors2 = new BatchValidationException();
             usWorkbook0.getTable(childTable).getUpdateService().insertRows(_context.getUser(), usWorkbook0.getContainer(), toInsertWb, errors2, Collections.emptyMap(), null);
@@ -321,28 +294,31 @@ public class WorkbookContainerType implements ContainerType
             List<Map<String, Object>> allChildRows = new ArrayList<>();
             allChildRows.addAll(toInsert2);
             allChildRows.addAll(toInsertWb);
-            validateRowsByContainer(usProject, childTable, allChildRows, childPK);
+            validateRowsByContainer(usProject, childTable, allChildRows, primaryChildField);
 
             List<Map<String, Object>> wbRows = new ArrayList<>(allChildRows);
             wbRows.removeIf(x -> !workbooks.get(0).getId().equals(x.get("container")));
-            validateRowsByContainer(usWorkbook0, childTable, wbRows, childPK);
+            validateRowsByContainer(usWorkbook0, childTable, wbRows, primaryChildField);
 
-            validateLookups(usProject, childTable, FieldKey.fromString(lookupField + "/" + parentPK));
-            validateLookups(usWorkbook0, childTable, FieldKey.fromString(lookupField + "/" + parentPK));
-            validateLookups(usWorkbook1, childTable, FieldKey.fromString(lookupField + "/" + parentPK));
+            validateLookups(usProject, childTable, FieldKey.fromString(lookupField + "/" + parentField));
+            validateLookups(usWorkbook0, childTable, FieldKey.fromString(lookupField + "/" + parentField));
+            validateLookups(usWorkbook1, childTable, FieldKey.fromString(lookupField + "/" + parentField));
 
             //make sure we cant double-insert duplicate PKs across containers
             //this PK was already used in WB1
-            List<Map<String, Object>> duplicateKeyRows = new ArrayList<>();
-            duplicateKeyRows.add(createChildRow(workbooks.get(0), childPK, "Row" + (i - 1), lookupField, null));
-            BatchValidationException errors3 = new BatchValidationException();
-            usWorkbook0.getTable(childTable).getUpdateService().insertRows(_context.getUser(), usWorkbook0.getContainer(), duplicateKeyRows, errors3, Collections.emptyMap(), null);
-            if (!errors3.hasErrors())
+            if (tiChild.getPkColumnNames().contains(primaryChildField))
             {
-                throw new Exception("This indicates the duplicate key insert was allowed");
-            }
+                List<Map<String, Object>> duplicateKeyRows = new ArrayList<>();
+                duplicateKeyRows.add(createChildRow(workbooks.get(0), primaryChildField, "Row" + (i - 1), lookupField, null, extraRowValues));
+                BatchValidationException errors3 = new BatchValidationException();
+                usWorkbook0.getTable(childTable).getUpdateService().insertRows(_context.getUser(), usWorkbook0.getContainer(), duplicateKeyRows, errors3, Collections.emptyMap(), null);
+                if (!errors3.hasErrors())
+                {
+                    throw new Exception("This indicates the duplicate key insert was allowed");
+                }
 
-            assertThat("Unexpected error message.  Message was: " + errors3.getRowErrors().get(0).getMessage(), errors3.getRowErrors().get(0).getMessage(), containsString("duplicate key"));
+                assertThat("Unexpected error message.  Message was: " + errors3.getRowErrors().get(0).getMessage(), errors3.getRowErrors().get(0).getMessage(), containsString("duplicate key"));
+            }
         }
 
         private static void validateLookups(UserSchema us, String tableName, FieldKey lookupPath)
@@ -376,23 +352,28 @@ public class WorkbookContainerType implements ContainerType
             assertEquals("Incorrect number of rows", allRows.size(), ts1.getRowCount());
         }
 
-        private static Map<String, Object> createParentTableRow(Container c, String pkFieldName, String pkVal)
+        private static Map<String, Object> createParentTableRow(Container c, String fieldName, String pkVal)
         {
             Map<String, Object> row = new CaseInsensitiveHashMap<>();
-            row.put(pkFieldName, pkVal);
+            row.put(fieldName, pkVal);
             row.put("container", c.getId());
 
             return row;
         }
 
-        private static Map<String, Object> createChildRow(Container c, String pkFieldName, String pkVal, String lookupField, String lookupVal)
+        private static Map<String, Object> createChildRow(Container c, String fieldName, String fieldVal, String lookupField, String lookupVal, Map<String, Object> extraRowValues)
         {
             Map<String, Object> row = new CaseInsensitiveHashMap<>();
-            row.put(pkFieldName, pkVal);
+            row.put(fieldName, fieldVal);
             row.put(lookupField, lookupVal);
 
             if (c != null)
                 row.put("container", c.getId());
+
+            if (extraRowValues != null)
+            {
+                row.putAll(extraRowValues);
+            }
 
             return row;
         }
@@ -404,6 +385,24 @@ public class WorkbookContainerType implements ContainerType
             {
                 ContainerManager.deleteAll(project, TestContext.get().getUser());
             }
+        }
+    }
+
+    public static class TestCase extends AbstractTestCase
+    {
+        private static final String PROJECT_NAME = "WorkbookIntegrationTest";
+
+        @Before
+        public void setUp() throws Exception
+        {
+            _context = TestContext.get();
+            doInitialSetUp(PROJECT_NAME);
+        }
+
+        @Test
+        public void testCrossContainerBehaviorsForList() throws Exception
+        {
+            testCrossContainerBehaviors(_project, _workbooks, "Lists", LIST1, LIST2, "PKField", "LookupField", Arrays.asList("Value1", "Value2", "Value3", "Value4"), null);
         }
 
         @After
