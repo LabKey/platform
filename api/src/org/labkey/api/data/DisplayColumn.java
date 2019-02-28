@@ -201,16 +201,7 @@ public abstract class DisplayColumn extends RenderColumn
 
     public @NotNull Set<ClientDependency> getClientDependencies()
     {
-        Set<ClientDependency> clientDependencies = _clientDependencies;
-        if (!_analyticsProviders.isEmpty())
-        {
-            clientDependencies = new LinkedHashSet<>(_clientDependencies);
-            for (ColumnAnalyticsProvider provider : _analyticsProviders)
-            {
-                provider.addClientDependencies(clientDependencies);
-            }
-        }
-        return clientDependencies;
+        return _clientDependencies;
     }
 
     public @NotNull List<ColumnAnalyticsProvider> getAnalyticsProviders()
