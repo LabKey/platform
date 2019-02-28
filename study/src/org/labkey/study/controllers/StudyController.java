@@ -4776,7 +4776,7 @@ public class StudyController extends BaseStudyController
             "   });\n" +
             "</script>";
 
-    public static class CustomizeParticipantViewForm
+    public static class CustomizeParticipantViewForm extends ReturnUrlForm
     {
         private String _returnUrl;
         private String _customScript;
@@ -4784,16 +4784,6 @@ public class StudyController extends BaseStudyController
         private boolean _useCustomView;
         private boolean _reshow;
         private boolean _editable = true;
-
-        public String getReturnUrl()
-        {
-            return _returnUrl;
-        }
-
-        public void setReturnUrl(String returnUrl)
-        {
-            _returnUrl = returnUrl;
-        }
 
         public boolean isEditable()
         {

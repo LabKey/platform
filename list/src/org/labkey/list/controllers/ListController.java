@@ -31,6 +31,7 @@ import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.ReadOnlyApiAction;
+import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -841,6 +842,13 @@ public class ListController extends SpringActionController
         }
     }
 
+    private String getUrlParam(Enum param)
+    {
+        String s = getViewContext().getActionURL().getParameter(param);
+        ReturnUrlForm form = new ReturnUrlForm();
+        form.setReturnUrl(s);
+        return form.getReturnUrl();
+    }
 
     @RequiresPermission(ReadPermission.class)
     public class ListItemDetailsAction extends SimpleViewAction
@@ -875,11 +883,11 @@ public class ListController extends SpringActionController
                 Map<String,String> oldData = ListAuditProvider.decodeFromDataMap(oldRecord);
                 Map<String,String> newData = ListAuditProvider.decodeFromDataMap(newRecord);
 
-                String srcUrl = getViewContext().getActionURL().getParameter(ActionURL.Param.redirectUrl);
+                String srcUrl = getUrlParam(ActionURL.Param.redirectUrl);
                 if (srcUrl == null)
-                    srcUrl = getViewContext().getActionURL().getParameter(ActionURL.Param.returnUrl);
+                    srcUrl = getUrlParam(ActionURL.Param.returnUrl);
                 if (srcUrl == null)
-                    srcUrl = getViewContext().getActionURL().getParameter(QueryParam.srcURL);
+                    srcUrl = getUrlParam(QueryParam.srcURL);
                 if (srcUrl == null)
                     srcUrl = _list.urlFor(ListController.HistoryAction.class, getContainer()).getLocalURIString();
                 AuditChangesView view = new AuditChangesView(comment, oldData, newData);

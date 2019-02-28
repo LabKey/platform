@@ -1615,7 +1615,7 @@ public class PipelineController extends SpringActionController
 
     public static class PipelineTriggerForm extends TriggerConfiguration implements CustomApiForm
     {
-        private String _returnUrl;
+        private final ReturnUrlForm urlForm = new ReturnUrlForm();
         private String _pipelineTask;
 
         @Override
@@ -1642,14 +1642,15 @@ public class PipelineController extends SpringActionController
             }
         }
 
+        @Nullable
         public String getReturnUrl()
         {
-            return _returnUrl;
+            return urlForm.getReturnUrl();
         }
 
         public void setReturnUrl(String returnUrl)
         {
-            _returnUrl = returnUrl;
+            urlForm.setReturnUrl(returnUrl);
         }
 
         public String getPipelineTask()
