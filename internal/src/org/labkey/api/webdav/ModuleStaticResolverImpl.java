@@ -115,6 +115,8 @@ public class ModuleStaticResolverImpl implements WebdavResolver
     public LookupResult lookupEx(Path path)
     {
         Path normalized = path.normalize();
+        if (null == normalized)
+            return null;
 
         WebdavResource r = _allStaticFiles.get(normalized);
         if (null != r)
