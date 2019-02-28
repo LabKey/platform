@@ -406,7 +406,7 @@ public class UserController extends SpringActionController
         }
     }
 
-    public static class UserIdForm
+    public static class UserIdForm extends ReturnUrlForm
     {
         private Integer[] _userId;
         private String _redirUrl;
@@ -422,16 +422,16 @@ public class UserController extends SpringActionController
             _userId = userId;
         }
 
-        // TODO: Switch to ReturnUrlForm and standard param
-        public String getRedirUrl()
+        // TODO: Switch to standard param
+        public ActionURL getRedirUrl()
         {
-            return _redirUrl;
+            return getReturnActionURL();
         }
 
         @SuppressWarnings({"UnusedDeclaration"})
         public void setRedirUrl(String redirUrl)
         {
-            _redirUrl = redirUrl;
+            setReturnUrl(redirUrl);
         }
     }
 
@@ -450,7 +450,7 @@ public class UserController extends SpringActionController
 
         public ModelAndView getView(UserIdForm form, boolean reshow, BindException errors)
         {
-            DeactivateUsersBean bean = new DeactivateUsersBean(_active, null == form.getRedirUrl() ? null : new ActionURL(form.getRedirUrl()));
+            DeactivateUsersBean bean = new DeactivateUsersBean(_active, form.getRedirUrl());
             if (null != form.getUserId())
             {
                 for (Integer userId : form.getUserId())
@@ -505,7 +505,7 @@ public class UserController extends SpringActionController
 
         public ActionURL getSuccessURL(UserIdForm form)
         {
-            return null != form.getRedirUrl() ? new ActionURL(form.getRedirUrl())
+            return null != form.getRedirUrl() ? form.getRedirUrl()
                     : new UserUrlsImpl().getSiteUsersURL();
         }
 
