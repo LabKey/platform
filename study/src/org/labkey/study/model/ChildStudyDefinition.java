@@ -365,7 +365,7 @@ public class ChildStudyDefinition
         logger.info("Specimens: " + (isIncludeSpecimens() ? (isSpecimenRefresh() ? "Nightly refresh" : "One-time snapshot") : "None"));
         logger.info("Study Objects: " + arrayToString(getStudyProps()));
         logger.info("Folder Objects: " + arrayToString(getFolderProps()));
-        logger.info("Publish Options: " + arrayToString(getPublishOptionsArr()));
+        logger.info("Publish Options: [" + String.join("; ", getPublishOptionsArr()) + "]");
         logger.info("----- End Selected Properties -----");
     }
 
@@ -376,11 +376,15 @@ public class ChildStudyDefinition
             publishOptions.add("Use Alternate Participant IDs");
         if (isShiftDates())
             publishOptions.add("Shift Participant Dates");
-        PHI phi = getExportPhiLevel();
-        String phiDescription = "Include Columns At This PHI Level" + (PHI.NotPHI == phi ? ": " : " And Lower: ") + phi.name();
-        publishOptions.add(phiDescription);
         if (isMaskClinic())
             publishOptions.add("Mask Clinic Names");
+        PHI phi = getExportPhiLevel();
+        String phiIncluded = PHI.NotPHI == phi ?         "Deidentified" :
+                             PHI.Limited == phi ?        "Deidentified or Limited PHI" :
+                             PHI.PHI == phi ?            "Deidentified, Limited PHI or Full PHI" :
+                             /* PHI.Restricted == phi */ "Deidentified, Limited PHI, Full PHI or Restricted";
+        String phiDescription = "Include columns marked as " + phiIncluded;
+        publishOptions.add(phiDescription);
         return publishOptions.toArray(new String[publishOptions.size()]);
     }
 
