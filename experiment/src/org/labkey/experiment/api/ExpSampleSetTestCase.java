@@ -38,13 +38,13 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.reader.DataLoader;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.test.TestWhen;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
-import org.labkey.experiment.samples.UploadMaterialSetForm;
-import org.labkey.experiment.samples.UploadSamplesHelper;
 
+import java.io.StringBufferInputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -463,29 +463,22 @@ public class ExpSampleSetTestCase
         //
 
         // data has three lines, one blank.  expect to insert only two samples
-        String data =
+        String dataTxt =
                 "age\n" +
                 "20\n" +
                 "\n" +
                 "30\n";
+        DataLoader tsv = DataLoader.get().createLoader("upload.txt", "text/plain", new StringBufferInputStream(dataTxt), true, c, TabLoader.TSV_FILE_TYPE);
+        var dataMaps = tsv.load();
 
-        UploadMaterialSetForm form = new UploadMaterialSetForm();
-        form.setContainer(c);
-        form.setUser(user);
-        form.setName(ss.getName());
-        form.setImportMoreSamples(true);
-        form.setParentColumn(-1);
-        form.setInsertUpdateChoice(UploadMaterialSetForm.InsertUpdateChoice.insertOnly.name());
-        form.setCreateNewSampleSet(false);
-        form.setCreateNewColumnsOnExistingSampleSet(false);
-        form.setData(data);
+        errors = new BatchValidationException();
+        var insertedRows = svc.insertRows(user, c, dataMaps, errors, null, null);
+        if (errors.hasErrors())
+            throw errors;
 
-        UploadSamplesHelper helper = new UploadSamplesHelper(form, ss.getDataObject());
-        Pair<MaterialSource, List<ExpMaterial>> pair = helper.uploadMaterials();
+        assertEquals("Expected to insert 2 samples, got: " + insertedRows.size(), 2, insertedRows.size());
 
-        assertEquals("Expected to insert 2 samples, got: " + pair.second, 2, pair.second.size());
-
-        ExpMaterial material1 = pair.second.get(0);
+        ExpMaterial material1 = ExperimentService.get().getExpMaterial((Integer)insertedRows.get(0).get("rowid"));
         Map<PropertyDescriptor, Object> map = material1.getPropertyValues();
         assertEquals("Expected to only have 'age' property, got: " + map, 1, map.size());
 
@@ -493,7 +486,7 @@ public class ExpSampleSetTestCase
         assertNotNull(age1);
         assertEquals("Expected to insert age of 20, got: " + age1, 20, age1.intValue());
 
-        ExpMaterial material2 = pair.second.get(1);
+        ExpMaterial material2 = ExperimentService.get().getExpMaterial((Integer)insertedRows.get(1).get("rowid"));
         Integer age2 = (Integer)material2.getPropertyValues().values().iterator().next();
         assertNotNull(age2);
         assertEquals("Expected to insert age of 30, got: " + age2, 30, age2.intValue());
