@@ -112,6 +112,7 @@ public abstract class MenuSection
     public List<MenuItem> getItems()
     {
         List<MenuItem> items = getAllItems();
+        _totalCount = items.size();
         items.sort(Comparator.comparing(MenuItem::getOrderNum).thenComparing(MenuItem::getLabel, String.CASE_INSENSITIVE_ORDER));
         if (_itemLimit != null && _itemLimit < items.size())
             return items.subList(0, _itemLimit);

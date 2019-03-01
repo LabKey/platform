@@ -44,7 +44,6 @@ public class UserInfoMenuSection extends MenuSection
 //        if (projectUrls != null)
 //            items.add(new MenuItem("Switch to LabKey", projectUrls.getBeginURL(getContainer())));
 //        _totalCount = items.size();
-        _totalCount = items.size();
         return items;
     }
 
