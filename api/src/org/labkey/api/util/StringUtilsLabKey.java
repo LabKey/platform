@@ -220,18 +220,48 @@ public class StringUtilsLabKey
         return Formats.commaf0.format(count) + " " + (1 == count ? singular : plural);
     }
 
-    // splits strings at camel case boundaries
-    // copied from http://stackoverflow.com/questions/2559759/how-do-i-convert-camelcase-into-human-readable-names-in-java
+    // splits strings at camel case boundaries and then joins back together without expanding the number of spaces
+    // Splits only on word characters.  Multiple spaces are collapsed into a single space.
     public static String splitCamelCase(String s)
     {
-        return s.replaceAll(
-                String.format("%s|%s|%s",
-                        "(?<=[A-Z])(?=[A-Z][a-z])",
-                        "(?<=[^A-Z])(?=[A-Z])",
-                        "(?<=[A-Za-z])(?=[^A-Za-z])"
-                ),
-                " "
-        );
+        List<String> stringList = new ArrayList<>();
+        boolean appending = false;
+        boolean hasSpace = false;
+        for (String part : StringUtils.splitByCharacterTypeCamelCase(s))
+        {
+            if (!StringUtils.isBlank(part))
+            {
+                if (part.matches("\\p{Alnum}+"))
+                {
+                    if (appending)
+                    {
+                        int lastIndex = stringList.size()-1;
+                        stringList.set(lastIndex, stringList.get(lastIndex) + part);
+                        appending = false;
+                    }
+                    else
+                        stringList.add(part);
+                }
+                else
+                {
+                    appending = true;
+                    int lastIndex = stringList.size()-1;
+                    if (lastIndex < 0 || hasSpace)
+                        stringList.add(part);
+                    else
+                    {
+                        stringList.set(lastIndex, stringList.get(lastIndex) + part);
+                    }
+                }
+                hasSpace = false;
+            }
+            else
+            {
+                hasSpace = true;
+                appending = false;
+            }
+        }
+        return StringUtils.join(stringList, " ");
     }
 
     public static int toInt(Object value)
@@ -360,6 +390,9 @@ public class StringUtilsLabKey
             assertEquals("99 Bottles", splitCamelCase("99Bottles"));
             assertEquals("May 5", splitCamelCase("May5"));
             assertEquals("BFG 9000", splitCamelCase("BFG9000"));
+            assertEquals("Preserve Spaces Don't Expand", splitCamelCase("Preserve SpacesDon't  Expand"));
+            assertEquals("Salt & Pepper", splitCamelCase("Salt & Pepper"));
+            assertEquals("with_underscores", splitCamelCase("with_underscores"));
         }
 
         @Test
