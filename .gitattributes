@@ -723,6 +723,7 @@ demo/src/org/labkey/demo/view/bindTest.jsp -text
 demo/src/org/labkey/demo/view/bulkUpdate.jsp -text
 demo/src/org/labkey/demo/view/demoWebPart.jsp -text
 experiment/.npmrc -text
+experiment/README.md -text
 experiment/build.gradle -text
 experiment/gwtsrc/org/labkey/experiment/property/Designer.gwt.xml -text
 experiment/gwtsrc/org/labkey/experiment/property/client/Designer.java -text
