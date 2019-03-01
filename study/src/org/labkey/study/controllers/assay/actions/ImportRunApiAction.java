@@ -16,6 +16,7 @@
 
 package org.labkey.study.controllers.assay.actions;
 
+import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
@@ -71,6 +72,8 @@ import static org.labkey.api.study.assay.AssayDataCollector.PRIMARY_FILE;
 @ApiVersion(12.3)
 public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.ImportRunApiForm>
 {
+    static Logger LOG = Logger.getLogger(ImportRunApiAction.class);
+
     @Override
     public ApiResponse execute(ImportRunApiForm form, BindException errors) throws Exception
     {
@@ -195,7 +198,8 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
                 .setRunProperties(runProperties)
                 .setBatchProperties(batchProperties)
                 .setTargetStudy(targetStudy)
-                .setReRunId(reRunId);
+                .setReRunId(reRunId)
+                .setLogger(LOG);
 
         if (file != null && rawData != null)
             throw new ExperimentException("Either file or " + AssayJSONConverter.DATA_ROWS + " is allowed, but not both");
@@ -223,7 +227,6 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
 
         try
         {
-
             Pair<ExpExperiment, ExpRun> result = provider.getRunCreator().saveExperimentRun(uploadContext, batchId);
             ExpRun run = result.second;
 

@@ -39,7 +39,6 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineProvider;
-import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.resource.FileResource;
@@ -774,12 +773,6 @@ public class ModuleAssayProvider extends TsvAssayProvider
         {
             throw getWrappedModuleAssayException(INVALID_SAVE_HANDLER_CLASS, e);
         }
-    }
-
-    @Override
-    public DataExchangeHandler createDataExchangeHandler()
-    {
-        return new ModuleDataExchangeHandler();
     }
 
     public PipelineProvider getPipelineProvider()
