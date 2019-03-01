@@ -243,7 +243,8 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
         if (!tempRoot.exists())
             tempRoot.mkdirs();
 
-        File tempFolder = new File(tempRoot.getAbsolutePath() + File.separator + "AssayId_" + protocol.getRowId(), String.valueOf(Thread.currentThread().getId()));
+        File tempParent = new File(tempRoot.getAbsolutePath() + File.separator + "AssayId_" + protocol.getRowId());
+        File tempFolder = AssayFileWriter.findUniqueFileName("work", tempParent);
         if (!tempFolder.exists())
             tempFolder.mkdirs();
 

@@ -64,13 +64,12 @@ import org.labkey.api.writer.PrintWriters;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
-import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.Types;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -211,12 +210,27 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
     /**
      * Called to write out any uploaded run data in preparation for a validation or transform script.
+     *
+     * assay wizard import: uploadedData is used and rawData is null.
+     * assay-saveAssayBatch.api: does not include uploadedData but may include an inputData file along with rawData rows.
+     * assay-importRun.api: may include uploadedData or rawData (with or without an inputData file).
      */
     protected Set<File> _writeRunData(AssayRunUploadContext context, ExpRun run, File scriptDir, PrintWriter pw) throws Exception
     {
-        List<File> dataFiles = new ArrayList<>();
+        List<File> result = new ArrayList<>();
 
-        dataFiles.addAll(context.getUploadedData().values());
+        Map<String, File> uploadedData = context.getUploadedData();
+        List<Map<String, Object>> rawData = context.getRawData();
+
+        // For now, only one of uploadedData or rawData is used, not both at the same time.
+        Collection<ExpData> dataInputs = Collections.emptyList();
+        if (uploadedData.isEmpty() && rawData != null && !rawData.isEmpty())
+        {
+            LOG.info("  rawData not null");
+            dataInputs = run.getDataInputs().keySet();
+        }
+
+        boolean hasRunDataUploadedFile = !uploadedData.isEmpty() || !dataInputs.isEmpty();
 
         ViewBackgroundInfo info = new ViewBackgroundInfo(context.getContainer(), context.getUser(), context.getActionURL());
         XarContext xarContext = new AssayUploadXarContext("Simple Run Creation", context);
@@ -231,12 +245,15 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             dataType = TsvDataHandler.RELATED_TRANSFORM_FILE_DATA_TYPE;
 
         String sep = "";
-        if (!dataFiles.isEmpty())  // this makes sure not to print this property unless we're sure we'll print a value, or the test parser will complain later
+        if (hasRunDataUploadedFile)  // this makes sure not to print this property unless we're sure we'll print a value, or the test parser will complain later
         {
             pw.append(Props.runDataUploadedFile.name()).append('\t');
         }
-        for (File data : dataFiles)
+
+        // include uploaded data files in the runProperties.tsv and read the data rows from the file
+        for (File data : uploadedData.values())
         {
+            result.add(data);
             ExpData expData = ExperimentService.get().createData(context.getContainer(), dataType, data.getName());
             expData.setRun(run);
 
@@ -257,26 +274,34 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 Map<DataType, List<Map<String, Object>>> dataMap = ((ValidationDataHandler)handler).getValidationDataMap(expData, data, info, LOG, xarContext, settings);
 
                 // Combine the rows of any of the same DataTypes into a single entry
-                for (Map.Entry<DataType, List<Map<String, Object>>> entry : dataMap.entrySet())
-                {
-                    if (mergedDataMap.containsKey(entry.getKey()))
-                    {
-                        mergedDataMap.get(entry.getKey()).addAll(entry.getValue());
-                    }
-                    else
-                    {
-                        mergedDataMap.put(entry.getKey(), entry.getValue());
-                    }
-
-                    if (handler instanceof TransformDataHandler)
-                    {
-                        transformDataTypes.add(entry.getKey());
-                    }
-                }
+                addToMergedMap(mergedDataMap, dataMap);
+                transformDataTypes.addAll(dataMap.keySet());
             }
         }
-        if (!dataFiles.isEmpty())  // this avoids printing empty lines, which the test parser will complain about later
+
+        // Issue 35262: when using assay-importRun.api with dataRows and there is a transform script, write out to a file
+        // include dataInput files in the runProperties.tsv (only if there is rawData rows)
+        for (ExpData inputData : dataInputs)
+        {
+            File file = inputData.getFile();
+            pw.append(sep).append(file.getAbsolutePath());
+            sep = ";";
+            result.add(file);
+        }
+
+        if (hasRunDataUploadedFile)  // this avoids printing empty lines, which the test parser will complain about later
             pw.println();
+
+
+        // Add rawData rows to mergedDataMap so it will be included as a runDataFile in the runProperties.tsv
+        if (rawData != null && !rawData.isEmpty())
+        {
+            File runData = new File(scriptDir, RUN_DATA_FILE);
+            result.add(runData);
+
+            addToMergedMap(mergedDataMap, Map.of(dataType, rawData));
+            transformDataTypes.add(dataType);
+        }
 
         File dir = AssayFileWriter.ensureUploadDirectory(context.getContainer());
 
@@ -305,7 +330,23 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             }
             pw.println();
         }
-        return new HashSet<>(dataFiles);
+
+        return new HashSet<>(result);
+    }
+
+    protected void addToMergedMap(Map<DataType, List<Map<String, Object>>> mergedDataMap, Map<DataType, List<Map<String, Object>>> dataMap)
+    {
+        for (Map.Entry<DataType, List<Map<String, Object>>> entry : dataMap.entrySet())
+        {
+            if (mergedDataMap.containsKey(entry.getKey()))
+            {
+                mergedDataMap.get(entry.getKey()).addAll(entry.getValue());
+            }
+            else
+            {
+                mergedDataMap.put(entry.getKey(), entry.getValue());
+            }
+        }
     }
 
     /**
@@ -315,18 +356,25 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     {
         assert (!transformResult.getTransformedData().isEmpty());
 
-        // the original uploaded data file(s)
-        pw.append(Props.runDataUploadedFile.name());
-        pw.append('\t');
-        List<File> originalFiles = transformResult.getUploadedFiles();
-        String originalFilesString = originalFiles.stream().map(File::getAbsolutePath).collect(Collectors.joining(";"));
-        pw.append(originalFilesString);
-        pw.println();
-
         Set<File> result = new HashSet<>();
-        result.addAll(originalFiles);
+
+        // the original uploaded data file(s)
+        List<File> originalFiles = transformResult.getUploadedFiles();
+        if (originalFiles != null && !originalFiles.isEmpty())
+        {
+            pw.append(Props.runDataUploadedFile.name());
+            pw.append('\t');
+            String originalFilesString = originalFiles.stream().map(File::getAbsolutePath).collect(Collectors.joining(";"));
+            pw.append(originalFilesString);
+            pw.println();
+
+            result.addAll(originalFiles);
+        }
+
 
         AssayFileWriter.ensureUploadDirectory(context.getContainer());
+        File workDir = getWorkingDirectory(context);
+
         for (Map.Entry<ExpData, List<Map<String, Object>>> entry : transformResult.getTransformedData().entrySet())
         {
             ExpData data = entry.getKey();
@@ -343,9 +391,12 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
             // Include an additional column for the location of a transformed data file that a transform script may create.
             // Get directory from first input file found
-            File transformedData = AssayFileWriter.createFile(context.getProtocol(), originalFiles.get(0).getParentFile(), "tsv");
-            pw.append('\t');
-            pw.append(transformedData.getAbsolutePath());
+            if (workDir != null)
+            {
+                File transformedData = AssayFileWriter.createFile(context.getProtocol(), workDir, "tsv");
+                pw.append('\t');
+                pw.append(transformedData.getAbsolutePath());
+            }
 
             pw.println();
         }
