@@ -195,7 +195,7 @@
 
             // now set the data.  If it is a server attachment type then set the serverFilePath
             // outherwise just set the uploadFileName
-            if (attachmentType == <%=q(form.getAttachmentType().server.toString())%>) {
+            if (attachmentType === <%=q(AttachmentReportForm.AttachmentReportType.server.toString())%>) {
                 serverFileTextField.setValue(serverFilePath);
             } else {
                 fileUploadTextField.setValue(uploadFileName);
