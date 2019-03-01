@@ -20,7 +20,6 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormViewAction;
@@ -194,7 +193,7 @@ public class UserController extends SpringActionController
         @Override
         public ActionURL getProjectUsersURL(Container container)
         {
-            return new ActionURL(ShowUsersAction.class, container);
+            return new ActionURL(ShowUsersAction.class, container.getProject());
         }
 
         @Override

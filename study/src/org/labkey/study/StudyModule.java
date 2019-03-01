@@ -29,6 +29,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ContainerType;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.SQLFragment;
@@ -465,7 +466,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             // Need only read permissions to view manage assays page
             if (container.hasPermission(user, ReadPermission.class))
             {
-                adminNavTree.addChild(new NavTree("Manage Assays", PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(container)));
+                Container targetContainer = container.getContainerFor(ContainerType.DataType.folderManagement);
+                adminNavTree.addChild(new NavTree("Manage Assays", PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(targetContainer)));
 
                 if (container.getActiveModules().contains(StudyModule.this) && container.hasPermission(user, ManageStudyPermission.class))
                     adminNavTree.addChild(new NavTree("Manage Study", PageFlowUtil.urlProvider(StudyUrls.class).getManageStudyURL(container)));
