@@ -106,9 +106,6 @@ public class PopupAdminView extends PopupMenuView
     {
         Container c = context.getContainer();
 
-        c = c.getContainerFor(ContainerType.DataType.folderManagement);
-        context.setContainer(c);
-
         if (!hasPermission(context))
             return null;
 
@@ -127,7 +124,7 @@ public class PopupAdminView extends PopupMenuView
             Container project = c.getProject();
             assert project != null;
 
-            if (isFolderAdmin(context) && c.canAdminFolder())
+            if (isFolderAdmin(context))
             {
                 NavTree folderAdmin = new NavTree("Folder");
                 folderAdmin.addChildren(FolderAdminMenu.getFolderElements(context, c));

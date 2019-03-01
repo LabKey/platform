@@ -18,6 +18,7 @@ package org.labkey.api.view.menu;
 
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerType;
 import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -51,9 +52,9 @@ public class FolderAdminMenu extends NavTreeMenu
     public static ArrayList<NavTree> getFolderElements(ViewContext context, Container c)
     {
         ArrayList<NavTree> admin = new ArrayList<>();
-        NavTree permissions = new NavTree("Permissions", PageFlowUtil.urlProvider(SecurityUrls.class).getPermissionsURL(c, context.getActionURL()));
+        NavTree permissions = new NavTree("Permissions", PageFlowUtil.urlProvider(SecurityUrls.class).getPermissionsURL(c.getContainerFor(ContainerType.DataType.permissions), context.getActionURL()));
         admin.add(permissions);
-        NavTree management = new NavTree("Management", PageFlowUtil.urlProvider(AdminUrls.class).getManageFoldersURL(c));
+        NavTree management = new NavTree("Management", PageFlowUtil.urlProvider(AdminUrls.class).getManageFoldersURL(c.getContainerFor(ContainerType.DataType.folderManagement)));
         admin.add(management);
         return admin;
     }

@@ -203,11 +203,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return targetContainer != null && targetContainer.getContainerType().allowRowMutationFromContainer(this, targetContainer);
     }
 
-    public boolean canAdminFolder()
-    {
-        return _containerType.canAdminFolder();
-    }
-
     public boolean requiresAdminToDelete()
     {
         return _containerType.requiresAdminToDelete();
