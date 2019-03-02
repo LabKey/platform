@@ -77,6 +77,7 @@ import org.labkey.api.notification.EmailService;
 import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.premium.PremiumService;
+import org.labkey.api.products.ProductRegistry;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
@@ -1137,7 +1138,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 Portal.TestCase.class,
                 MultiValuedMapCollectors.TestCase.class,
                 PostgreSql92Dialect.TestCase.class,
-                AdminController.SerializationTest.class
+                AdminController.SerializationTest.class,
+                ProductRegistry.TestCase.class
         ));
 
         testClasses.addAll(SqlDialectManager.getAllJUnitTests());
