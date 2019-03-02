@@ -45,6 +45,8 @@ public class FormatItem<DomainType extends GWTDomain<FieldType>, FieldType exten
     // Should match DateUtil.getSimpleDateFormatDocumentationURL()
     private static final String SIMPLE_DATE_FORMAT_DOCUMENTATION_LINK = JDK_JAVADOC_BASE_URL + "java/text/SimpleDateFormat.html";
 
+    public static final String REGEX_PATTERN_DOCUMENTATION_LINK = JDK_JAVADOC_BASE_URL + "java/util/regex/Pattern.html#sum";
+
     private static final String FORMAT_HELP_BOOLEAN = "Booleans can be formatted by specifying the text to show when the value is" +
             "true followed by a semicolon and the text for when the value is false, optionally followed by a semicolon and the " +
             "text to show for null values. Example: 'Yes;No;Blank'";
