@@ -86,6 +86,7 @@ import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FieldKey;
@@ -93,6 +94,7 @@ import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryForm;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateForm;
@@ -177,8 +179,6 @@ import org.labkey.experiment.api.SampleSetServiceImpl;
 import org.labkey.experiment.api.SampleSetUpdateServiceDI;
 import org.labkey.experiment.controllers.property.PropertyController;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
-import org.labkey.experiment.samples.UploadMaterialSetForm;
-import org.labkey.experiment.samples.UploadSamplesHelper;
 import org.labkey.experiment.types.TypesController;
 import org.labkey.experiment.xar.XarExportSelection;
 import org.springframework.validation.BindException;
@@ -743,30 +743,30 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(InsertPermission.class)
-    @ApiVersion(9.2)
-    @RequiresLogin
-    public class SaveMaterialsAction extends MutatingApiAction<SaveMaterialsForm>
-    {
-        public ApiResponse execute(SaveMaterialsForm form, BindException errors) throws Exception
-        {
-            UploadMaterialSetForm uploadForm = new UploadMaterialSetForm();
-            uploadForm.setContainer(getContainer());
-            uploadForm.setUser(getUser());
-            uploadForm.setName(form.getName());
-            uploadForm.setImportMoreSamples(true);
-            uploadForm.setParentColumn(-1);
-            uploadForm.setInsertUpdateChoice(UploadMaterialSetForm.InsertUpdateChoice.insertOrUpdate.name());
-            uploadForm.setCreateNewSampleSet(false);
-            uploadForm.setCreateNewColumnsOnExistingSampleSet(false);
-            uploadForm.setLoader(new MapLoader(form.getMaterials()));
-
-            UploadSamplesHelper helper = new UploadSamplesHelper(uploadForm);
-            helper.uploadMaterials();
-
-            return new ApiSimpleResponse();
-        }
-    }
+//    @RequiresPermission(InsertPermission.class)
+//    @ApiVersion(9.2)
+//    @RequiresLogin
+//    public class SaveMaterialsAction extends MutatingApiAction<SaveMaterialsForm>
+//    {
+//        public ApiResponse execute(SaveMaterialsForm form, BindException errors) throws Exception
+//        {
+//            UploadMaterialSetForm uploadForm = new UploadMaterialSetForm();
+//            uploadForm.setContainer(getContainer());
+//            uploadForm.setUser(getUser());
+//            uploadForm.setName(form.getName());
+//            uploadForm.setImportMoreSamples(true);
+//            uploadForm.setParentColumn(-1);
+//            uploadForm.setInsertUpdateChoice(UploadMaterialSetForm.InsertUpdateChoice.insertOrUpdate.name());
+//            uploadForm.setCreateNewSampleSet(false);
+//            uploadForm.setCreateNewColumnsOnExistingSampleSet(false);
+//            uploadForm.setLoader(new MapLoader(form.getMaterials()));
+//
+//            UploadSamplesHelper helper = new UploadSamplesHelper(uploadForm);
+//            helper.uploadMaterials();
+//
+//            return new ApiSimpleResponse();
+//        }
+//    }
 
     public static final class SaveMaterialsForm extends SimpleApiJsonForm
     {
