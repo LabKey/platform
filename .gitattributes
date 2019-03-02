@@ -1087,11 +1087,6 @@ api/src/org/labkey/api/portal/ProjectUrls.java -text
 api/src/org/labkey/api/premium/AntiVirusService.java -text
 api/src/org/labkey/api/premium/PremiumFeatureNotEnabledException.java -text
 api/src/org/labkey/api/premium/PremiumService.java -text
-api/src/org/labkey/api/products/MenuItem.java -text
-api/src/org/labkey/api/products/MenuSection.java -text
-api/src/org/labkey/api/products/ProductMenuProvider.java -text
-api/src/org/labkey/api/products/ProductRegistry.java -text
-api/src/org/labkey/api/products/UserInfoMenuSection.java -text
 api/src/org/labkey/api/protein/ProteinService.java -text
 api/src/org/labkey/api/protein/ProteomicsModule.java -text
 api/src/org/labkey/api/qc/DataExchangeHandler.java -text
