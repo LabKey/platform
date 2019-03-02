@@ -226,7 +226,6 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         Collection<ExpData> dataInputs = Collections.emptyList();
         if (uploadedData.isEmpty() && rawData != null && !rawData.isEmpty())
         {
-            LOG.info("  rawData not null");
             dataInputs = run.getDataInputs().keySet();
         }
 
