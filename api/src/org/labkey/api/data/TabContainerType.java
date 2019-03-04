@@ -63,7 +63,6 @@ public class TabContainerType extends NormalContainerType implements ContainerTy
         switch (dataType)
         {
             case fileRoot:
-            case folderManagement:
             case tabParent:
                 return currentContainer.getParent();
             default:
