@@ -18,7 +18,6 @@ package org.labkey.api.view;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerType;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -31,7 +30,6 @@ import org.labkey.api.view.menu.FolderAdminMenu;
 import org.labkey.api.view.menu.ProjectAdminMenu;
 import org.labkey.api.view.menu.SiteAdminMenu;
 
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -43,36 +41,8 @@ import java.util.TreeSet;
  * User: Mark Igra
  * Date: Jun 21, 2007
  */
-public class PopupAdminView extends PopupMenuView
+public class PopupAdminView
 {
-    private boolean visible;
-
-    protected void renderInternal(PopupMenu model, PrintWriter out) throws Exception
-    {
-        if (visible)
-            super.renderInternal(model, out);
-        else
-            out.write("&nbsp;");
-    }
-
-    public PopupAdminView(final ViewContext context)
-    {
-        Container c = context.getContainer();
-        c = c.getContainerFor(ContainerType.DataType.folderManagement);
-        context.setContainer(c);
-
-        NavTree tree = createNavTree(context);
-
-        visible = tree != null;
-        if (!visible)
-            return;
-
-        setNavTree(tree);
-        setAlign(PopupMenu.Align.RIGHT);
-        setButtonStyle(PopupMenu.ButtonStyle.TEXT);
-
-        getModelBean().setIsSingletonMenu(true);
-    }
 
     private static void addModulesToMenu(ViewContext context, SortedSet<Module> modules, Module defaultModule, NavTree menu)
     {
