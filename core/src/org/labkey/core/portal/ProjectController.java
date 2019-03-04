@@ -1262,38 +1262,6 @@ public class ProjectController extends SpringActionController
         }
     }
 
-    @RequiresNoPermission
-    @IgnoresTermsOfUse
-    public class GetNavigationPartAction extends ReadOnlyApiAction<GetWebPartForm>
-    {
-        String _webPartName;
-
-        public GetNavigationPartAction()
-        {
-            setUnauthorizedType(UnauthorizedException.Type.sendUnauthorized);
-        }
-
-        @Override
-        public void validateForm(GetWebPartForm form, Errors errors)
-        {
-            HttpServletRequest request = getViewContext().getRequest();
-            _webPartName = request.getParameter(GetWebPartAction.PARAM_WEBPART);
-
-            if (!"foldernav".equals(_webPartName))
-                errors.reject("You must provide a valid navigation part value for the " + GetWebPartAction.PARAM_WEBPART + " parameter!");
-        }
-
-        @Override
-        public ApiResponse execute(GetWebPartForm form, BindException errors)
-        {
-            WebPartFactory factory = Portal.getPortalPartCaseInsensitive(_webPartName);
-            Portal.WebPart part = factory.createWebPart();
-            WebPartView view = Portal.getWebPartViewSafe(factory, getViewContext(), part);
-
-            return view.renderToApiResponse();
-        }
-    }
-
     public static class GetContainersForm
     {
         private Container[] _container;
