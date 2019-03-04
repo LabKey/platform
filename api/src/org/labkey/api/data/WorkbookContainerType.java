@@ -100,12 +100,6 @@ public class WorkbookContainerType implements ContainerType
     }
 
     @Override
-    public boolean canAdminFolder()
-    {
-        return false;
-    }
-
-    @Override
     public boolean requiresAdminToDelete()
     {
         return false;

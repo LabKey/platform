@@ -102,11 +102,6 @@ public interface ContainerType extends Serializable
     boolean allowRowMutationFromContainer(Container primaryContainer, Container targetContainer);
 
     /**
-     * @return indication of whether this container should show up in folder management
-     */
-    boolean canAdminFolder();
-
-    /**
      * @return indication of whether a user needs to have admin permissions on this container to delete the container
      */
     boolean requiresAdminToDelete();

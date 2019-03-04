@@ -76,12 +76,6 @@ public class NormalContainerType implements ContainerType
     }
 
     @Override
-    public boolean canAdminFolder()
-    {
-        return true;
-    }
-
-    @Override
     public boolean requiresAdminToDelete()
     {
         return true;
