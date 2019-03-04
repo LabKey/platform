@@ -4,10 +4,7 @@
     </permissions>
     <dependencies>
         <% if (htmlWebpackPlugin.options.mode !== 'dev') { %>
-         <% var publicPath = './'; var labkeyPath = 'experiment/gen/'; %>
-         <% for (var chunk in htmlWebpackPlugin.files.chunks) { %>
-          <dependency path="<%= htmlWebpackPlugin.files.chunks[chunk].entry.replace(publicPath, labkeyPath) %>"/>
-         <% } %>
+         <dependency path="experiment/gen/<%= htmlWebpackPlugin.options.name %>.js"/>
         <% } %>
     </dependencies>
 </view>
