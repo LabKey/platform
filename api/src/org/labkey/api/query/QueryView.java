@@ -700,7 +700,7 @@ public class QueryView extends WebPartView<Object>
         {
             ret.deleteFilterParameters(key);
         }
-        assert null == ret.getParameter(DataRegion.LAST_FILTER_PARAM);
+        ret.deleteParameter(DataRegion.LAST_FILTER_PARAM);
         return ret;
     }
 
