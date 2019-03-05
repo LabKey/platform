@@ -766,6 +766,11 @@ public class SearchController extends SpringActionController
                 throw new NotFoundException("Search service is not registered");
             }
 
+            if (null == _scope || null == _scope.getRoot(getContainer()))
+            {
+                throw new NotFoundException();
+            }
+
             form.setPrint(isPrint());
 
             audit(form);
