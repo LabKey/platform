@@ -87,7 +87,6 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
     protected boolean _print = false;
     protected Class _commandClass;
     protected String _commandName = "form";
-    protected String[] _supportedMethods = {"GET", "HEAD", "POST"};
 
     protected BaseViewAction()
     {
@@ -663,18 +662,4 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         return _commandName;
     }
 
-    /**
-     * Set the HTTP methods that this content generator should support.
-     * Default is GET, HEAD and POST
-     * @param methods
-     */
-    public void setSupportedMethods(String[] methods)
-    {
-        _supportedMethods = methods;
-    }
-
-    public String[] getSupportedMethods()
-    {
-        return _supportedMethods;
-    }
 }
