@@ -65,7 +65,9 @@ public interface SearchResultTemplate
                 title += " site";
                 break;
             case Project:
-                title += " project '" + c.getProject().getName() + "'";
+                Container project = c.getProject();
+                if (null != project)
+                    title += " project '" + project.getName() + "'";
                 break;
             case Folder:
             case FolderAndSubfolders:
