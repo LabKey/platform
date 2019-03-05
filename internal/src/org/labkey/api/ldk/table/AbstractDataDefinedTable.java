@@ -27,7 +27,6 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
-import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FieldKey;
@@ -243,18 +242,17 @@ abstract public class AbstractDataDefinedTable extends CustomPermissionsTable
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
-            _context = context;
             DataIterator input = _in.getDataIterator(context);
             if (null == input)
                 return null;           // Can happen if context has errors
 
             final SimpleTranslator it = new SimpleTranslator(input, context);
-            configureTranslator(input, it);
+            configureTranslator(input, it, context);
 
-            return LoggingDataIterator.wrap(it);
+            return it;
         }
 
-        protected void configureTranslator(DataIterator input, final SimpleTranslator it)
+        protected void configureTranslator(DataIterator input, final SimpleTranslator it, final DataIteratorContext context)
         {
             final Map<String, Integer> inputColMap = new HashMap<>();
             for (int idx = 1; idx <= input.getColumnCount(); idx++)
@@ -297,12 +295,12 @@ abstract public class AbstractDataDefinedTable extends CustomPermissionsTable
                     String value = (String)it.getInputColumnValue(inputColMap.get(_valueColumn));
                     if (value == null)
                     {
-                        _context.getErrors().addRowError(new ValidationException("Missing value for column: " + _valueColumn));
+                        context.getErrors().addRowError(new ValidationException("Missing value for column: " + _valueColumn));
                     }
 
                     if (vm.testIfRowExists(value))
                     {
-                        _context.getErrors().addRowError(new ValidationException("There is already a record in the table " + getName() + " where " + _valueColumn + " equals " + value));
+                        context.getErrors().addRowError(new ValidationException("There is already a record in the table " + getName() + " where " + _valueColumn + " equals " + value));
                     }
 
                     return value;
