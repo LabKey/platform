@@ -1379,11 +1379,6 @@ public class ParticipantGroupController extends BaseStudyController
     @RequiresPermission(ReadPermission.class)
     public class SessionParticipantGroupAction extends MutatingApiAction<UpdateParticipantGroupForm>
     {
-        public SessionParticipantGroupAction()
-        {
-            setSupportedMethods(new String[] {"POST", "DELETE" });
-        }
-
         @Override
         public Object execute(UpdateParticipantGroupForm form, BindException errors)
         {

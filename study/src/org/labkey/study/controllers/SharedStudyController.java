@@ -142,11 +142,6 @@ public class SharedStudyController extends BaseStudyController
     {
         private Study _study = null;
 
-        public SharedStudyContainerFilterAction()
-        {
-            setSupportedMethods(new String[] {"POST", "DELETE" });
-        }
-
         @Override
         public void validateForm(SharedStudyContainerFilterForm form, Errors errors)
         {
