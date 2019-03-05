@@ -7087,6 +7087,7 @@ internal/src/org/labkey/api/ldk/table/AbstractDataDefinedTable.java -text
 internal/src/org/labkey/api/ldk/table/ContainerScopedTable.java -text
 internal/src/org/labkey/api/ldk/table/CustomPermissionsTable.java -text
 internal/src/org/labkey/api/ldk/table/SharedDataTable.java -text
+internal/src/org/labkey/api/ldk/test/AbstractIntegrationTest.java -text
 internal/src/org/labkey/api/message/digest/DailyMessageDigest.java -text
 internal/src/org/labkey/api/message/digest/MessageDigest.java -text
 internal/src/org/labkey/api/message/digest/PeriodicMessageDigest.java -text
