@@ -38,6 +38,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.util.Button;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -150,12 +151,13 @@ public class ListManagerSchema extends UserSchema
                     return btnCreate;
                 }
 
-                private ActionButton createImportListArchiveButton()
+                private Button createImportListArchiveButton()
                 {
                     ActionURL urlImport = new ActionURL(ListController.ImportListArchiveAction.class, getContainer());
                     urlImport.addReturnURL(getReturnURL());
-                    ActionButton btnImport = new ActionButton(urlImport, "Import List Archive");
-                    btnImport.setActionType(ActionButton.Action.GET);
+                    Button btnImport = new Button.ButtonBuilder("Import List Archive")
+                            .href(urlImport)
+                            .build();
                     btnImport.setDisplayPermission(DesignListPermission.class);
                     return btnImport;
                 }
