@@ -205,7 +205,7 @@ public class ListImporter
                             for (ValidationException v : batchErrors.getRowErrors())
                                 errors.add(v.getMessage());
 
-                            if (supportAI)
+                            if (supportAI && errors.isEmpty())
                             {
                                 SqlDialect dialect = ti.getSqlDialect();
 
@@ -232,11 +232,6 @@ public class ListImporter
                                         keyupdate.append("), 1), false);");
                                         new SqlExecutor(ti.getSchema()).execute(keyupdate);
                                     }
-                                }
-                                else if (dialect.isSqlServer())
-                                {
-                                    SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(tableName).append(" OFF\n");
-                                    new SqlExecutor(ti.getSchema()).execute(check);
                                 }
                             }
 
