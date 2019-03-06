@@ -277,6 +277,9 @@ public class IssueValidation
     private static Set<Role> getContextualRoles(User user, Issue issue, Container c)
     {
         Set<Role> roles = new HashSet<>();
+
+        // we can't support AuthorRoles until we address issue: 36942
+/*
         SecurityPolicy policy = SecurityPolicyManager.getPolicy(c);
 
         //36525
@@ -286,6 +289,7 @@ public class IssueValidation
         {
             roles.add(RoleManager.getRole(OwnerRole.class));
         }
+*/
 
         return roles;
     }

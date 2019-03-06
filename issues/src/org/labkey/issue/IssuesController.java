@@ -1074,7 +1074,12 @@ public class IssuesController extends SpringActionController
             issue.setProperties(form.getTypedColumns());
 
             Issue prevIssue = (Issue)form.getOldValues();
-            IssueValidation.requiresUpdatePermission(user, issue, getContainer());
+
+            if (InsertAction.class.equals(form.getAction()))
+                IssueValidation.requiresInsertPermission(user, issue, getContainer());
+            else
+                IssueValidation.requiresUpdatePermission(user, issue, getContainer());
+
             ActionURL detailsUrl;
 
             // check for no op
