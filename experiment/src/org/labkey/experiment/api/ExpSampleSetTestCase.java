@@ -30,6 +30,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpLineage;
 import org.labkey.api.exp.api.ExpLineageOptions;
 import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -53,6 +54,7 @@ import java.util.Map;
 import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -536,11 +538,21 @@ public class ExpSampleSetTestCase
         rows.add(CaseInsensitiveHashMap.of("name", "B", "data", 11, "parent", "A"));
         rows.add(CaseInsensitiveHashMap.of("name", "C", "data", 12, "parent", null, "MaterialInputs/Samples", "B"));
         rows.add(CaseInsensitiveHashMap.of("name", "D", "data", 12, "parent", "B", "MaterialInputs/Samples", "C"));
+        rows.add(CaseInsensitiveHashMap.of("name", "E", "data", 12, "parent", null, "MaterialInputs/Samples", "B,C"));
+        rows.add(CaseInsensitiveHashMap.of("name", "F", "data", 12, "parent", null));
+
+        // lineage graph:
+        // A
+        // B <- A
+        // C <- B
+        // D <- B,C
+        // E <- B,C
+        // F
 
         BatchValidationException errors = new BatchValidationException();
         List<Map<String, Object>> inserted = svc.insertRows(user, c, rows, errors, null, null);
         assertFalse(errors.hasErrors());
-        assertEquals(4, inserted.size());
+        assertEquals(6, inserted.size());
 
         // verify
         ExpLineageOptions opts = new ExpLineageOptions();
@@ -552,12 +564,14 @@ public class ExpSampleSetTestCase
         assertNotNull(A);
         ExpLineage lineage = ExperimentService.get().getLineage(A, opts);
         assertTrue(lineage.getMaterials().isEmpty());
+        assertNull(A.getRunId());
 
         ExpMaterial B = ss.getSample(c, "B");
         assertNotNull(B);
         lineage = ExperimentService.get().getLineage(B, opts);
         assertEquals(1, lineage.getMaterials().size());
         assertTrue("Expected 'B' to be derived from 'A'", lineage.getMaterials().contains(A));
+        assertNotNull(B.getRunId());
 
         ExpMaterial C = ss.getSample(c, "C");
         assertNotNull(C);
@@ -571,6 +585,58 @@ public class ExpSampleSetTestCase
         assertEquals(2, lineage.getMaterials().size());
         assertTrue("Expected 'D' to be derived from 'B'", lineage.getMaterials().contains(B));
         assertTrue("Expected 'D' to be derived from 'C'", lineage.getMaterials().contains(C));
+
+        ExpMaterial E = ss.getSample(c, "E");
+        assertNotNull(E);
+        lineage = ExperimentService.get().getLineage(E, opts);
+        assertEquals(2, lineage.getMaterials().size());
+        assertTrue("Expected 'E' to be derived from 'B'", lineage.getMaterials().contains(B));
+        assertTrue("Expected 'E' to be derived from 'C'", lineage.getMaterials().contains(C));
+
+        // verify that 'E' is derived in the same run as 'D' since they share the same parents
+        assertEquals("Expected 'E' and 'D' to be derived in the same run since they share 'B' and 'C' as parents",
+                E.getRowId(), E.getRowId());
+        ExpRun derivationRun = E.getRun();
+
+        assertTrue(derivationRun.getMaterialInputs().keySet().contains(B));
+        assertTrue(derivationRun.getMaterialInputs().keySet().contains(C));
+        assertTrue(derivationRun.getMaterialOutputs().contains(D));
+        assertTrue(derivationRun.getMaterialOutputs().contains(E));
+
+
+        // update 'D' to derive from 'B' and 'E'
+        rows = new ArrayList<>();
+        rows.add(CaseInsensitiveHashMap.of("rowId", D.getRowId(), "MaterialInputs/Samples", "B,E"));
+
+        List<Map<String, Object>> updated = svc.updateRows(user, c, rows, null, null, null);
+        assertEquals(1, updated.size());
+
+        ExpMaterial D2 = ss.getSample(c, "D");
+        lineage = ExperimentService.get().getLineage(D2, opts);
+        assertEquals(2, lineage.getMaterials().size());
+        assertTrue("Expected 'D' to be derived from 'B'", lineage.getMaterials().contains(B));
+        assertTrue("Expected 'D' to be derived from 'E'", lineage.getMaterials().contains(E));
+        assertFalse("Expected 'D' to not be derived from 'C'", lineage.getMaterials().contains(C));
+
+        // D is no longer attached as an output of derivationRun
+        ExpRun derivationRun2 = D2.getRun();
+        assertNotEquals("Updating 'D' lineage should create new derivation run", derivationRun.getRowId(), derivationRun2.getRowId());
+
+        assertTrue(derivationRun2.getMaterialInputs().keySet().contains(B));
+        assertTrue(derivationRun2.getMaterialInputs().keySet().contains(E));
+        assertFalse(derivationRun2.getMaterialInputs().keySet().contains(C));
+        assertTrue(derivationRun2.getMaterialOutputs().contains(D));
+        assertFalse(derivationRun2.getMaterialOutputs().contains(E));
+
+        ExpRun oldDerivationRun = ExperimentService.get().getExpRun(derivationRun.getRowId());
+        assertEquals(oldDerivationRun.getRowId(), derivationRun.getRowId());
+
+        assertTrue(derivationRun2.getMaterialInputs().keySet().contains(B));
+        assertTrue(derivationRun2.getMaterialInputs().keySet().contains(C));
+        assertFalse(derivationRun2.getMaterialInputs().keySet().contains(E));
+        assertFalse(derivationRun2.getMaterialOutputs().contains(D));
+        assertTrue(derivationRun2.getMaterialOutputs().contains(E));
+
     }
 
 
