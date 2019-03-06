@@ -24,6 +24,6 @@ declare const module: any;
 $(() => {
     render();
     if (module.hot) {
-        module.hot.accept('./app', render);
+        module.hot.accept();
     }
 });
