@@ -288,4 +288,15 @@ public interface FileContentService
      * @param container container
      */
     void ensureFileData(QueryUpdateService qus, @NotNull User user, @NotNull Container container);
+
+    /**
+     * Add a recognizer for the directory pattern in order to zip the matching directory before uploading to files webpart.
+     * @param directoryPattern DirectoryPattern
+     * */
+    void addZipUploadRecognizer(DirectoryPattern directoryPattern);
+
+    /**
+     * Returns the Map of moduleNames and DirectoryPattern
+     * */
+    List<DirectoryPattern> getZiploaderPattern(Container container);
 }

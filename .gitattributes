@@ -858,10 +858,12 @@ api/src/org/labkey/api/exp/xar/LsidUtils.java -text
 api/src/org/labkey/api/exp/xar/MapReplacer.java -text
 api/src/org/labkey/api/exp/xar/Replacer.java -text
 api/src/org/labkey/api/exp/xar/XarConstants.java -text
+api/src/org/labkey/api/files/DirectoryPattern.java -text
 api/src/org/labkey/api/files/FileContentDefaultEmailPref.java -text
 api/src/org/labkey/api/files/FileContentEmailPref.java -text
 api/src/org/labkey/api/files/FileContentService.java -text
 api/src/org/labkey/api/files/FileListener.java -text
+api/src/org/labkey/api/files/FilePattern.java -text
 api/src/org/labkey/api/files/FileRoot.java -text
 api/src/org/labkey/api/files/FileSystemDirectoryListener.java -text
 api/src/org/labkey/api/files/FileSystemWatcher.java -text
