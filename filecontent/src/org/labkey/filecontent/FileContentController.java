@@ -57,6 +57,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.files.DirectoryPattern;
 import org.labkey.api.files.FileContentDefaultEmailPref;
 import org.labkey.api.files.FileContentEmailPref;
 import org.labkey.api.files.FileContentService;
@@ -1372,6 +1373,35 @@ public class FileContentController extends SpringActionController
             });
             response.put("rows", rows);
             response.put("success", true);
+            return response;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class GetZipUploadRecognizerAction extends ReadOnlyApiAction
+    {
+
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            FileContentService svc = FileContentService.get();
+            List<DirectoryPattern> directoryPattern = new ArrayList<>();
+            List<JSONObject> directoryPatternsJson = new ArrayList<>();
+
+            if(null != svc)
+            {
+                directoryPattern = svc.getZiploaderPattern(getContainer());
+            }
+
+            for(DirectoryPattern directory: directoryPattern)
+            {
+                directoryPatternsJson.add(directory.toJSON());
+            }
+
+            response.put("rows", directoryPatternsJson);
+            response.put("success", true);
+
             return response;
         }
     }

@@ -49,6 +49,7 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.files.DirectoryPattern;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.FileListener;
 import org.labkey.api.files.FileRoot;
@@ -56,6 +57,7 @@ import org.labkey.api.files.FilesAdminOptions;
 import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.files.UnsetRootDirectoryException;
 import org.labkey.api.files.view.FilesWebPart;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
@@ -114,6 +116,8 @@ public class FileContentServiceImpl implements FileContentService
 
     private final ContainerListener _containerListener = new FileContentServiceContainerListener();
     private final List<FileListener> _fileListeners = new CopyOnWriteArrayList<>();
+
+    private List<DirectoryPattern> _ziploaderPattern = new ArrayList<>();
 
     enum Props
     {
@@ -1390,6 +1394,27 @@ public class FileContentServiceImpl implements FileContentService
                 _log.error("Error listing content of directory: " + file.getAbsolutePath());
             }
         }
+    }
+
+
+    @Override
+    public void addZipUploadRecognizer(DirectoryPattern directoryPattern)
+    {
+       _ziploaderPattern.add(directoryPattern);
+    }
+
+    @Override
+    public List<DirectoryPattern> getZiploaderPattern(Container container)
+    {
+        List<DirectoryPattern> registeredPatterns = new ArrayList<>();
+        for(Module module : container.getActiveModules())
+        {
+            _ziploaderPattern.forEach(p -> {
+                if(p.getModule().getName().equalsIgnoreCase(module.getName()))
+                    registeredPatterns.add(p);
+            });
+        }
+        return registeredPatterns;
     }
 
     public List<String> getDataFileUrls(Container container)
