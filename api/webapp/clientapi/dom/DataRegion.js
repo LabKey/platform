@@ -3350,7 +3350,7 @@ if (!LABKEY.DataRegions) {
     var _showSelectMessage = function(region, msg) {
         if (region.showRecordSelectors) {
             if (region.totalRows && region.totalRows != region.selectedCount) {
-                msg += "&nbsp;<span class='labkey-button select-all'>Select All Selectable Rows</span>";
+                msg += "&nbsp;<span class='labkey-button select-all'>Select All Rows</span>";
             }
 
             msg += "&nbsp;" + "<span class='labkey-button select-none'>Select None</span>";
