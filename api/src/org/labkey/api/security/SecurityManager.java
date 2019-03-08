@@ -3323,7 +3323,9 @@ public class SecurityManager
                             Role role = RoleManager.getRole(roleName);
                             if (null == role)
                             {
-                                throw new ConfigurationException("Invalid role for group specified in startup properties GroupRoles: " + prop.getValue());
+                                // Issue 36611: The provisioner startup properties break deployment of older products
+                                _log.error("Invalid role for group specified in startup properties GroupRoles: " + roleName);
+                                continue;
                             }
                             policy.addRoleAssignment(group, role);
                         }
@@ -3355,7 +3357,9 @@ public class SecurityManager
                             Role role = RoleManager.getRole(roleName);
                             if (null == role)
                             {
-                                throw new ConfigurationException("Invalid role for user specified in startup properties UserRoles: " + prop.getValue());
+                                // Issue 36611: The provisioner startup properties break deployment of older products
+                                _log.error("Invalid role for user specified in startup properties UserRoles: " + roleName);
+                                continue;
                             }
                             policy.addRoleAssignment(user, role);
                         }
