@@ -455,6 +455,11 @@ public class PropertyManager
             _store.validateStore();
             _store.validatePropertyMap(this);
 
+            // Flag all property map saves here to catch the unmodified case (those code paths are likely to mutate in
+            // other scenarios). Also, we want to flag updates to existing property maps, but that path invokes a stored
+            // procedure that StatementWrapper doesn't recognize as mutating SQL.
+            SpringActionController.executingMutatingSql("Saving a PropertyMap");
+
             if (!isModified())
             {
                 // No changes, so it's safe to bail out immediately
@@ -483,7 +488,13 @@ public class PropertyManager
                     insertMap.put("ObjectId", _objectId);
                     insertMap.put("Category", _category);
                     insertMap.put("Encryption", _propertyEncryption.getSerializedName());
-                    insertMap = Table.insert(_user, SCHEMA.getTableInfoPropertySets(), insertMap);
+
+                    // Skip because we already flagged this mutating operation above
+                    try (var ignored = SpringActionController.ignoreSqlUpdates())
+                    {
+                        insertMap = Table.insert(_user, SCHEMA.getTableInfoPropertySets(), insertMap);
+                    }
+
                     _set = (Integer) insertMap.get("Set");
                 }
                 else
@@ -492,8 +503,6 @@ public class PropertyManager
                     // This is true even if we'd thought it was new, or had a value for "set" coming in; another thread may have
                     // changed this state prior to this thread's call to save().
                     _set = existingMap.getSet();
-                    // Updating an existing property map invokes a stored procedure that StatementWrapper doesn't recognize as mutating SQL.
-                    SpringActionController.executingMutatingSql("UPDATE to an existing PropertyMap");
                 }
 
                 // delete removed properties

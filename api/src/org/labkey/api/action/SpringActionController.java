@@ -1183,14 +1183,23 @@ public abstract class SpringActionController implements Controller, HasViewConte
         Class c = getActionForThread();
         if (null == c)
             return;
+
         ViewContext vc = HttpView.currentContext();
         boolean readonly = false;
-        if (null != vc && "GET".equals(vc.getRequest().getMethod()))
+
+        if (ReadOnlyApiAction.class.isAssignableFrom(c) && !MutatingApiAction.class.isAssignableFrom(c))
+        {
             readonly = true;
-        else if (ReadOnlyApiAction.class.isAssignableFrom(c) && !MutatingApiAction.class.isAssignableFrom(c))
-            readonly = true;
+        }
         else if (SimpleRedirectAction.class.isAssignableFrom(c) || RedirectAction.class.isAssignableFrom(c) || SimpleViewAction.class.isAssignableFrom(c))
+        {
             readonly = true;
+        }
+        else if (null != vc && "GET".equals(vc.getRequest().getMethod()))
+        {
+            readonly = true;
+            _log.warn("Action " + c.getName() + " accepted GET unexpectedly... might need to update executingMutatingSql()");
+        }
 
         if (readonly)
         {
@@ -1199,7 +1208,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
             boolean verbose = _log.isDebugEnabled() || mutatingActionsWarned.add(c.getName());
             _log.warn("MUTATING SQL executed as part of handling action: " +
-                    (null==vc ? "" : vc.getRequest().getMethod()) + " " +
+                    (null == vc ? "" : vc.getRequest().getMethod()) + " " +
                     c.getName() + (verbose ? ("\n" + sql) : ""),
                     verbose ? new Throwable() : null);
         }
@@ -1212,8 +1221,8 @@ public abstract class SpringActionController implements Controller, HasViewConte
         @Override
         void close();
     }
-    /** use this AutoCloseable to mark a section of code as allowing UPDATES even within a read-only action (e.g. for auditing) */
 
+    /** use this AutoCloseable to mark a section of code as allowing UPDATES even within a read-only action (e.g. for auditing) */
     public static _AutoCloseable ignoreSqlUpdates()
     {
         final Boolean prevValue = ignoreUpdates.get();
