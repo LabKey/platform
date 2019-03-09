@@ -34,7 +34,7 @@ public class UserInfoMenuSection extends MenuSection
         List<MenuItem> items = new ArrayList<>();
         UserUrls urlProvider =  PageFlowUtil.urlProvider(UserUrls.class);
         if (urlProvider != null)
-            items.add(new MenuItem("Profile", urlProvider.getUserDetailsURL(getContainer(), getUser().getUserId(), getContext().getActionURL()), getUser().getUserId(), 0));
+            items.add(new MenuItem("Profile", urlProvider.getUserDetailsURL(getContainer(), getUser().getUserId(), null), getUser().getUserId(), 0));
         String docUrl = _provider.getDocumentationUrl();
         if (docUrl != null)
             items.add(new MenuItem("Documentation", docUrl, null, 1));
