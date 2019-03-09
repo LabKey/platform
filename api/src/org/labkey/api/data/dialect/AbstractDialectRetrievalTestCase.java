@@ -31,22 +31,22 @@ public abstract class AbstractDialectRetrievalTestCase extends Assert
     @Test
     public abstract void testDialectRetrieval();
 
-    protected void good(String databaseName, double beginVersion, double endVersion, String jdbcDriverVersion, String jdbcConnectionUrl, Class<? extends SqlDialect> expectedDialectClass)
+    protected void good(String databaseName, double beginVersion, double endVersion, String jdbcDriverVersion, String jdbcConnectionUrl, String driverName, Class<? extends SqlDialect> expectedDialectClass)
     {
-        testRange(databaseName, beginVersion, endVersion, jdbcDriverVersion, jdbcConnectionUrl, expectedDialectClass, null);
+        testRange(databaseName, beginVersion, endVersion, jdbcDriverVersion, jdbcConnectionUrl, driverName, expectedDialectClass, null);
     }
 
     protected void badProductName(String databaseName, double beginVersion, double endVersion, String jdbcDriverVersion, String jdbcConnectionUrl)
     {
-        testRange(databaseName, beginVersion, endVersion, jdbcDriverVersion, jdbcConnectionUrl, null, SqlDialectNotSupportedException.class);
+        testRange(databaseName, beginVersion, endVersion, jdbcDriverVersion, jdbcConnectionUrl, null, null, SqlDialectNotSupportedException.class);
     }
 
     protected void badVersion(String databaseName, double beginVersion, double endVersion, String jdbcDriverVersion, String jdbcConnectionUrl)
     {
-        testRange(databaseName, beginVersion, endVersion, jdbcDriverVersion, jdbcConnectionUrl, null, DatabaseNotSupportedException.class);
+        testRange(databaseName, beginVersion, endVersion, jdbcDriverVersion, jdbcConnectionUrl, null, null, DatabaseNotSupportedException.class);
     }
 
-    protected void testRange(String databaseName, double beginVersion, double endVersion, String jdbcDriverVersion, String jdbcConnectionUrl, @Nullable Class<? extends SqlDialect> expectedDialectClass, @Nullable Class<? extends ConfigurationException> expectedExceptionClass)
+    private void testRange(String databaseName, double beginVersion, double endVersion, String jdbcDriverVersion, String jdbcConnectionUrl, String driverName, @Nullable Class<? extends SqlDialect> expectedDialectClass, @Nullable Class<? extends ConfigurationException> expectedExceptionClass)
     {
         int begin = (int)Math.round(beginVersion * 10);
         int end = (int)Math.round(endVersion * 10);
@@ -60,7 +60,7 @@ public abstract class AbstractDialectRetrievalTestCase extends Assert
 
             try
             {
-                SqlDialect dialect = SqlDialectManager.getFromMetaData(getMockedMetadata(databaseName, majorVersion + "." + minorVersion, jdbcDriverVersion, jdbcConnectionUrl), false, false);
+                SqlDialect dialect = SqlDialectManager.getFromMetaData(getMockedMetadata(databaseName, majorVersion + "." + minorVersion, jdbcDriverVersion, jdbcConnectionUrl, driverName), false, false);
                 assertNotNull(description + " returned " + dialect.getClass().getSimpleName() + "; expected failure", expectedDialectClass);
                 assertEquals(description, expectedDialectClass, dialect.getClass());
             }
@@ -72,7 +72,7 @@ public abstract class AbstractDialectRetrievalTestCase extends Assert
         }
     }
 
-    protected DatabaseMetaData getMockedMetadata(String databaseProductName, String databaseProductVersion, String jdbcDriverVersion, String jdbcConnectionUrl) throws SQLException
+    protected DatabaseMetaData getMockedMetadata(String databaseProductName, String databaseProductVersion, String jdbcDriverVersion, String jdbcConnectionUrl, String driverName) throws SQLException
     {
         Mockery mocker = new Mockery();
         final DatabaseMetaData md = mocker.mock(DatabaseMetaData.class);
@@ -90,6 +90,9 @@ public abstract class AbstractDialectRetrievalTestCase extends Assert
 
                 allowing(md).getDriverVersion();
                 will(returnValue(jdbcDriverVersion));
+
+                allowing(md).getDriverName();
+                will(returnValue(driverName));
             }
         });
         return md;
