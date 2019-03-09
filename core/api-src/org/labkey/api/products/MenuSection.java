@@ -22,18 +22,17 @@ public abstract class MenuSection
 {
     protected ViewContext _context;
     protected String _label;
-    protected String _iconClass;
     protected int _totalCount;
     protected Integer _itemLimit;
+    protected String _key;
 
-    public MenuSection(@NotNull ViewContext context, @NotNull String label, @Nullable String iconClass, @Nullable Integer itemLimit)
+    public MenuSection(@NotNull ViewContext context, @NotNull String label, @NotNull String key, @Nullable Integer itemLimit)
     {
         _context = context;
         _label = label;
-        _iconClass = iconClass;
+        _key = key;
         _itemLimit = itemLimit;
     }
-
 
     public String getLabel()
     {
@@ -45,16 +44,15 @@ public abstract class MenuSection
         _label = label;
     }
 
-    public String getIconClass()
+    public String getKey()
     {
-        return _iconClass;
+        return _key;
     }
 
-    public void setIconClass(String iconClass)
+    public void setKey(String key)
     {
-        _iconClass = iconClass;
+        _key = key;
     }
-
 
     public void setTotalCount(int totalCount)
     {
