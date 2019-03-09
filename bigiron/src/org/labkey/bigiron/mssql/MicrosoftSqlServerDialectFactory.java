@@ -175,23 +175,25 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
             // < 10.5 should result in bad version error
             badVersion("Microsoft SQL Server", 0.0, 10.0, null, null);
 
+            String driverName = "jTDS Type 4 JDBC Driver for MS SQL Server and Sybase";
+
             // >= 10.0 and < 11.0 should result in MicrosoftSqlServer2008R2Dialect
-            good("Microsoft SQL Server", 10.0, 11.0, "", null, MicrosoftSqlServer2008R2Dialect.class);
+            good("Microsoft SQL Server", 10.0, 11.0, "", null, driverName, MicrosoftSqlServer2008R2Dialect.class);
 
             // >= 11.0 and < 12.0 should result in MicrosoftSqlServer2012Dialect
-            good("Microsoft SQL Server", 11.0, 12.0, "", null, MicrosoftSqlServer2012Dialect.class);
+            good("Microsoft SQL Server", 11.0, 12.0, "", null, driverName, MicrosoftSqlServer2012Dialect.class);
 
             // >= 12.0 and < 13.0 should result in MicrosoftSqlServer2014Dialect
-            good("Microsoft SQL Server", 12.0, 13.0, "", null, MicrosoftSqlServer2014Dialect.class);
+            good("Microsoft SQL Server", 12.0, 13.0, "", null, driverName, MicrosoftSqlServer2014Dialect.class);
 
             // >= 13.0 and < 14.0 should result in MicrosoftSqlServer2016Dialect
-            good("Microsoft SQL Server", 13.0, 14.0, "", null, MicrosoftSqlServer2016Dialect.class);
+            good("Microsoft SQL Server", 13.0, 14.0, "", null, driverName, MicrosoftSqlServer2016Dialect.class);
 
             // >= 14.0 and < 15.0 should result in MicrosoftSqlServer2017Dialect
-            good("Microsoft SQL Server", 14.0, 15.0, "", null, MicrosoftSqlServer2017Dialect.class);
+            good("Microsoft SQL Server", 14.0, 15.0, "", null, driverName, MicrosoftSqlServer2017Dialect.class);
 
             // >= 15.0 should result in MicrosoftSqlServer2019Dialect
-            good("Microsoft SQL Server", 15.0, 17.0, "", null, MicrosoftSqlServer2019Dialect.class);
+            good("Microsoft SQL Server", 15.0, 17.0, "", null, driverName, MicrosoftSqlServer2019Dialect.class);
         }
     }
 

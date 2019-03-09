@@ -163,12 +163,12 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
             badVersion("PostgreSQL", 9.7, 10.0, null, connectionUrl);
 
             // Test good versions
-            good("PostgreSQL", 9.4, 9.5, "", connectionUrl, PostgreSql94Dialect.class);
-            good("PostgreSQL", 9.5, 9.6, "", connectionUrl, PostgreSql95Dialect.class);
-            good("PostgreSQL", 9.6, 9.7, "", connectionUrl, PostgreSql96Dialect.class);
-            good("PostgreSQL", 10.0, 11.0, "", connectionUrl, PostgreSql_10_Dialect.class);
-            good("PostgreSQL", 11.0, 12.0, "", connectionUrl, PostgreSql_11_Dialect.class);
-            good("PostgreSQL", 12.0, 13.0, "", connectionUrl, PostgreSql_11_Dialect.class);
+            good("PostgreSQL", 9.4, 9.5, "", connectionUrl, null, PostgreSql94Dialect.class);
+            good("PostgreSQL", 9.5, 9.6, "", connectionUrl, null, PostgreSql95Dialect.class);
+            good("PostgreSQL", 9.6, 9.7, "", connectionUrl, null, PostgreSql96Dialect.class);
+            good("PostgreSQL", 10.0, 11.0, "", connectionUrl, null, PostgreSql_10_Dialect.class);
+            good("PostgreSQL", 11.0, 12.0, "", connectionUrl, null, PostgreSql_11_Dialect.class);
+            good("PostgreSQL", 12.0, 13.0, "", connectionUrl, null, PostgreSql_11_Dialect.class);
         }
     }
 

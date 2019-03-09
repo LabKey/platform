@@ -135,7 +135,7 @@ public class OracleDialectFactory implements SqlDialectFactory
         {
             try
             {
-                assertEquals(expectedDialectClass, SqlDialectManager.getFromMetaData(getMockedMetadata("Oracle", version, null, null), false, false).getClass());
+                assertEquals(expectedDialectClass, SqlDialectManager.getFromMetaData(getMockedMetadata("Oracle", version, null, null, null), false, false).getClass());
             }
             catch (Exception e)
             {
