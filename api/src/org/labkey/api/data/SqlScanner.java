@@ -193,7 +193,7 @@ public class SqlScanner
      * @param fromIndex index from which to start the scan
      * @param handler Handler whose methods will be invoked
      */
-    private void scan(int fromIndex, Handler handler)
+    public void scan(int fromIndex, Handler handler)
     {
         int i = fromIndex;
 
@@ -259,7 +259,7 @@ public class SqlScanner
         }
     }
 
-    private interface Handler
+    public interface Handler
     {
         /**
          * Called for every character outside of comments and quoted strings.
