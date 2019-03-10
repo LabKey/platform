@@ -46,7 +46,7 @@ public abstract class AbstractDialectRetrievalTestCase extends Assert
         testRange(databaseName, beginVersion, endVersion, jdbcDriverVersion, jdbcConnectionUrl, null, null, DatabaseNotSupportedException.class);
     }
 
-    private void testRange(String databaseName, double beginVersion, double endVersion, String jdbcDriverVersion, String jdbcConnectionUrl, String driverName, @Nullable Class<? extends SqlDialect> expectedDialectClass, @Nullable Class<? extends ConfigurationException> expectedExceptionClass)
+    protected void testRange(String databaseName, double beginVersion, double endVersion, String jdbcDriverVersion, String jdbcConnectionUrl, String driverName, @Nullable Class<? extends SqlDialect> expectedDialectClass, @Nullable Class<? extends ConfigurationException> expectedExceptionClass)
     {
         int begin = (int)Math.round(beginVersion * 10);
         int end = (int)Math.round(endVersion * 10);
