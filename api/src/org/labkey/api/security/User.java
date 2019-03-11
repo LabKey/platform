@@ -258,7 +258,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
      */
     public boolean hasApplicationAdminPermission()
     {
-        return isAllowedGlobalRoles() && hasRootPermission(SiteAdminPermission.class);
+        return isAllowedGlobalRoles() && hasRootPermission(ApplicationAdminPermission.class);
     }
 
     /**
