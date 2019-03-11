@@ -12,6 +12,7 @@ import java.util.List;
 public class UserInfoMenuSection extends MenuSection
 {
     public static final String NAME = "Your Items";
+    public static final String DOCS_KEY = "docs";
 
     private ProductMenuProvider _provider;
 
@@ -34,16 +35,21 @@ public class UserInfoMenuSection extends MenuSection
         List<MenuItem> items = new ArrayList<>();
         UserUrls urlProvider =  PageFlowUtil.urlProvider(UserUrls.class);
         if (urlProvider != null)
-            items.add(new MenuItem("Profile", urlProvider.getUserDetailsURL(getContainer(), getUser().getUserId(), null), getUser().getUserId(), 0));
+        {
+            MenuItem profileItem = new MenuItem("Profile", urlProvider.getUserDetailsURL(getContainer(), getUser().getUserId(), null), getUser().getUserId(), 0);
+            profileItem.setRequiresLogin(true);
+            profileItem.setKey("profile");
+            items.add(profileItem);
+        }
         String docUrl = _provider.getDocumentationUrl();
         if (docUrl != null)
-            items.add(new MenuItem("Documentation", docUrl, null, 1));
+        {
+            MenuItem docsItem = new MenuItem("Documentation", docUrl, null, 1);
+            docsItem.setKey(DOCS_KEY);
+            items.add(docsItem);
+        }
         items.addAll(_provider.getUserMenuItems());
 
-//        ProjectUrls projectUrls = PageFlowUtil.urlProvider(ProjectUrls.class);
-//        if (projectUrls != null)
-//            items.add(new MenuItem("Switch to LabKey", projectUrls.getBeginURL(getContainer())));
-//        _totalCount = items.size();
         return items;
     }
 

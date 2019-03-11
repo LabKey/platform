@@ -6,13 +6,16 @@ public class MenuItem
 {
     private String _label;
     private Integer _id;
+    private String _key;
     private String _url;
     private Integer _orderNum = 0;
+    private Boolean _requiresLogin = false;
 
     public MenuItem(String label, String url, Integer id, Integer orderNum)
     {
         _label = label;
         _id = id;
+        _key = String.valueOf(id);
         _url = url;
         _orderNum = orderNum == null ? -1 : orderNum;
     }
@@ -53,6 +56,16 @@ public class MenuItem
         _id = id;
     }
 
+    public String getKey()
+    {
+        return _key;
+    }
+
+    public void setKey(String key)
+    {
+        _key = key;
+    }
+
     public String getUrl()
     {
         return _url;
@@ -76,5 +89,15 @@ public class MenuItem
     public void setOrderNum(Integer orderNum)
     {
         _orderNum = orderNum;
+    }
+
+    public Boolean getRequiresLogin()
+    {
+        return _requiresLogin;
+    }
+
+    public void setRequiresLogin(Boolean requiresLogin)
+    {
+        _requiresLogin = requiresLogin;
     }
 }
