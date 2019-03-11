@@ -78,7 +78,9 @@ public class ExperimentRunListView extends QueryView
         // The file export panel that we add later requires record selectors
         setShowRecordSelectors(true);
 
-        addClientDependencies(AssayService.get().getClientDependenciesForImportButtons());
+        AssayService svc = AssayService.get();
+        if (svc != null)
+            addClientDependencies(svc.getClientDependenciesForImportButtons());
     }
 
     public static QuerySettings getRunListQuerySettings(UserSchema schema, ViewContext model, String tableName, boolean allowCustomizations)
