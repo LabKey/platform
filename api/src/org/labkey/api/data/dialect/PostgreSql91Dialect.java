@@ -392,6 +392,24 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     }
 
     @Override
+    public String getStdDevPopFunction()
+    {
+        return "stddev_pop";
+    }
+
+    @Override
+    public String getVarianceFunction()
+    {
+        return "variance";
+    }
+
+    @Override
+    public String getVarPopFunction()
+    {
+        return "var_pop";
+    }
+
+    @Override
     public String getClobLengthFunction()
     {
         return "length";
