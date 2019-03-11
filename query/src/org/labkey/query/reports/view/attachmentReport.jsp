@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.api.view.template.ClientDependencies"%>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.query.reports.ReportsController" %>
 <%@ page import="org.labkey.query.reports.ReportsController.AttachmentReportForm" %>
-<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -179,7 +179,7 @@
         extraItems = [ attachmentTypeField, fileUploadTextField, fileUploadButton, thumbnailInfo ];
         <% } %>
 
-       <% if (form.isUpdate()) { %>
+       <% if (form.isUpdate() && form.getAttachmentType() != null) { %>
             var attachmentType = <%=q(form.getAttachmentType().toString())%>;
             var serverFilePath = <%=q(form.getFilePath())%>;
             var uploadFileName = <%=q(form.getUploadFileName())%>;
