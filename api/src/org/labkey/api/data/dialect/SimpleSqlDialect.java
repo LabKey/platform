@@ -250,6 +250,30 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
+    public String getStdDevPopFunction()
+    {
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    @Override
+    public String getVarianceFunction()
+    {
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    @Override
+    public String getVarPopFunction()
+    {
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    @Override
+    public String getMedianFunction()
+    {
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    @Override
     public String getClobLengthFunction()
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");

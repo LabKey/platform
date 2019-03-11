@@ -541,6 +541,10 @@ public abstract class SqlDialect
     public abstract String getVarcharLengthFunction();
 
     public abstract String getStdDevFunction();
+    public abstract String getStdDevPopFunction();
+    public abstract String getVarianceFunction();
+    public abstract String getVarPopFunction();
+    public abstract String getMedianFunction();
 
     public abstract String getClobLengthFunction();
 
