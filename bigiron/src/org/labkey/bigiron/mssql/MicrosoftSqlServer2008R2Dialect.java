@@ -50,4 +50,22 @@ public class MicrosoftSqlServer2008R2Dialect extends BaseMicrosoftSqlServerDiale
 
         return sql;
     }
+
+    @Override
+    public String getStdDevPopFunction()
+    {
+        return "stdevp";
+    }
+
+    @Override
+    public String getVarianceFunction()
+    {
+        return "var";
+    }
+
+    @Override
+    public String getVarPopFunction()
+    {
+        return "varp";
+    }
 }

@@ -43,4 +43,11 @@ public class MicrosoftSqlServer2012Dialect extends MicrosoftSqlServer2008R2Diale
 
         return sql;
     }
+
+    @Override
+    public String getMedianFunction()
+    {
+        return "percentile_cont";
+    }
+
 }

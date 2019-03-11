@@ -97,6 +97,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
     // shim tableinfo used for creating expression columninfo
     private SQLTableInfo _sti;
     private AliasManager _aliasManager;
+//    private List<SelectColumn> _medianColumns = new ArrayList<>();                  // Possible way to support SQL Server Median
 
     /**
      * If this node has exactly one FROM table, it may be occasionally possible to skip
@@ -560,7 +561,17 @@ groupByLoop:
         return _parsedTables.keySet();
     }
 
+    /* ** Possible way to support SQL Server Median
+    public List<SelectColumn> getMedianColumns()
+    {
+        return _medianColumns;
+    }
 
+    public void addMedianColumn(SelectColumn col)
+    {
+        _medianColumns.add(col);
+    }
+    */
 
 
     private class FromParser
@@ -1482,7 +1493,7 @@ groupByLoop:
 
         for (SelectColumn col : _columns.values())
         {
-            if (0 == col.ref.count())
+            if (0 == col.ref.count())                        // TODO: may need change for possible way to support SQL Server Median
                 continue;
             String colAlias = col.getAlias();
             assert null != colAlias;
@@ -1518,6 +1529,34 @@ groupByLoop:
             }
             sql.popPrefix();
         }
+
+        /* ** Possible way to support SQL Server Median
+        String wrapAlias = null;
+        if (getMedianColumns().size() > 0)
+        {
+            wrapAlias = this._aliasManager.decideAlias("_MedianWrap");
+            SQLFragment wrapSelect = new SQLFragment("SELECT ");
+            String sep = "";
+            for (SelectColumn selectColumn : _columns.values())
+            {
+                String sqlAlias = aliasMap.get(selectColumn.getAlias());
+                if (null != sqlAlias)
+                {
+                    boolean isMedian = getMedianColumns().contains(selectColumn);
+                    wrapSelect.append(sep)
+                            .append(isMedian ? "MAX(" : "")
+                            .append(wrapAlias).append(".").append(sqlAlias)
+                            .append(isMedian ? ")" : "")
+                            .append(" AS ").append(sqlAlias);
+                    sep = ", ";
+                }
+            }
+            wrapSelect.append("\nFROM (\n");
+            sql.prepend(wrapSelect);
+            sql.append("\n) ").append(wrapAlias).append("\n");
+        }
+        */
+
         if (_groupBy != null)
         {
             sql.pushPrefix("\nGROUP BY ");
@@ -1528,7 +1567,21 @@ groupByLoop:
                 // check here again for constants, after resolveFields()
                 if (gbExpr.isConstant())
                     parseError("Expression in Group By clause must not be a constant", expr);
-                gbExpr.appendSql(sql, _query);
+
+                /* ** Possible way to support SQL Server Median
+                if (null != wrapAlias)
+                {
+                    if (gbExpr instanceof QField)
+                        sql.append(wrapAlias).append(".").append(getSqlDialect().makeLegalIdentifier(((QField) gbExpr).getName()));
+                    else
+                        parseError("Cannot generate SQL for Median", expr);
+                }
+                else
+                */
+
+                {
+                    gbExpr.appendSql(sql, _query);
+                }
                 sql.append(")");
                 sql.nextPrefix(",");
             }
@@ -2128,7 +2181,7 @@ groupByLoop:
                 return b;
             }
 
-            expr.appendSql(b, _query);
+            expr.appendSql(b, _query); //, QuerySelect.this, this);  // Possible way to support SQL Server Median
             return b;
         }
 

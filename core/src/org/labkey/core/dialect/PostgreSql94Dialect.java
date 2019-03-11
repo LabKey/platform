@@ -51,4 +51,29 @@ public class PostgreSql94Dialect extends PostgreSql93Dialect
     {
         // Override the 9.3 override... no warnings for 9.4+
     }
+
+    @Override
+    public String getStdDevPopFunction()
+    {
+        return "stddev_pop";
+    }
+
+    @Override
+    public String getVarianceFunction()
+    {
+        return "variance";
+    }
+
+    @Override
+    public String getVarPopFunction()
+    {
+        return "var_pop";
+    }
+
+    @Override
+    public String getMedianFunction()
+    {
+        return "percentile_cont";
+    }
+
 }

@@ -129,11 +129,28 @@ tokens
 ALL : 'all';
 ANY : 'any';
 AND : 'and';
+ARRAY_AGG : 'array_agg';
 AS : 'as';
 AVG : 'avg';
 BETWEEN : 'between';
+BOOL_AND : 'bool_and';
+BOOL_OR : 'bool_or';
+BIT_AND_AGG : 'bit_and';
+BIT_OR_AGG : 'bit_or';
 CASE : 'case';
 CAST : 'cast';
+CORR : 'corr';
+COVAR_POP : 'covar_pop';
+COVAR_SAMP : 'covar_samp';
+REGR_AVGX : 'regr_avgx';
+REGR_AVGY : 'regr_avgy';
+REGR_COUNT : 'regr_count';
+REGR_INTERCEPT : 'regr_intercept';
+REGR_SLOPE : 'regr_slope';
+REGR_SXX : 'regr_sxx';
+REGR_R2 : 'regr_r2';
+REGR_SXY : 'regr_sxy';
+REGR_SYY : 'regr_syy';
 COUNT : 'count';
 CROSS : 'cross';
 DELETE : 'delete';
@@ -142,6 +159,7 @@ DOT : '.';
 ELSE : 'else';
 END : 'end';
 ESCAPE : 'escape';
+EVERY : 'every';
 EXCEPT : 'except';
 EXISTS : 'exists';
 FALSE : 'false';
@@ -161,6 +179,8 @@ LEFT : 'left';
 LIKE : 'like';
 LIMIT : 'limit';
 MAX : 'max';
+MEDIAN : 'median';
+MODE : 'mode';
 GROUP_CONCAT : 'group_concat';
 MIN : 'min';
 NOT : 'not';
@@ -175,12 +195,17 @@ SELECT : 'select';
 SET : 'set';
 SOME : 'some';
 STDDEV : 'stddev';
+STDDEV_POP : 'stddev_pop';
+STDDEV_SAMP : 'stddev_samp';
 STDERR : 'stderr';
 SUM : 'sum';
 THEN : 'then';
 TRUE : 'true';
 UNION : 'union';
 UPDATE : 'update';
+VARIANCE: 'variance';
+VAR_POP: 'var_pop';
+VAR_SAMP: 'var_samp';
 WHERE : 'where';
 WHEN : 'when';
 WITH : 'with';
@@ -666,7 +691,12 @@ escapeFn
 
 
 aggregate
-	: (a=( SUM^ | AVG^ | MAX^ | MIN^ | STDDEV^ | STDERR^ ) {$a.setType(AGGREGATE);} OPEN! (additiveExpression) CLOSE!)
+	: (a=( SUM^ | AVG^ | MAX^ | MIN^ | STDDEV^ | STDERR^ | ARRAY_AGG^ | BIT_AND_AGG^ | BIT_OR_AGG^ | BOOL_AND^ | BOOL_OR^ | EVERY^ |
+	       MEDIAN^ | MODE^ | STDDEV_POP^ | STDDEV_SAMP^ | VARIANCE^ | VAR_POP^ | VAR_SAMP^ )
+	       {$a.setType(AGGREGATE);} OPEN! (additiveExpression) CLOSE!)
+	| (a=( CORR^ | COVAR_POP^ | COVAR_SAMP^ | REGR_AVGX^ | REGR_AVGY^ | REGR_COUNT^ | REGR_INTERCEPT^ |
+	       REGR_R2^ | REGR_SLOPE^ | REGR_SXX^ | REGR_SXY^ | REGR_SYY^ )
+	       {$a.setType(AGGREGATE);} OPEN! (additiveExpression) (COMMA! primaryExpression) CLOSE!)
 	| (a=COUNT^ {$a.setType(AGGREGATE);} OPEN! d=DISTINCT? (additiveExpression | starAtom) CLOSE!)
 	| (a=GROUP_CONCAT^ {$a.setType(AGGREGATE);} OPEN! d=DISTINCT? (additiveExpression) (COMMA! primaryExpression)? CLOSE!)
 	;

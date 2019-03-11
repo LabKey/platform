@@ -830,6 +830,13 @@ public class SqlParser
             }
             case AGGREGATE:
             {
+                QAggregate qAggregate = (QAggregate)qnode(node, children);
+                if (!qAggregate.getType().dialectSupports(_dialect))
+                {
+                    _parseErrors.add(new QueryParseException(null != _dialect ? (_dialect.getProductName() + " does not support aggregate function " + qAggregate.getType().name()) : "Unknown SQL dialect", null, node.getLine(), node.getCharPositionInLine()));
+                    return null;
+                }
+
                 if (QAggregate.GROUP_CONCAT.equalsIgnoreCase(node.getText()) || QAggregate.COUNT.equalsIgnoreCase(node.getText()))
                 {
                     boolean distinct = false;
@@ -840,12 +847,10 @@ public class SqlParser
                         distinct = true;
                     }
 
-                    QAggregate result = (QAggregate)qnode(node, children);
-                    result.setDistinct(distinct);
+                    qAggregate.setDistinct(distinct);
 
-                    return result;
                 }
-                break;
+                return qAggregate;
             }
             case TIMESTAMP_LITERAL:
             case DATE_LITERAL:

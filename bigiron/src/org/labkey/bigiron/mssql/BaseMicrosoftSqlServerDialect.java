@@ -547,6 +547,12 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     @Override
+    public String getMedianFunction()
+    {
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    @Override
     public String getClobLengthFunction()
     {
         return "datalength";

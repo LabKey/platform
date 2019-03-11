@@ -17,6 +17,7 @@
 package org.labkey.query.sql;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
@@ -61,6 +62,13 @@ abstract public class QExpr extends QNode
      * be removed if some work (container context) could be evaluated at run-time instead of compile/parse.
      */
     abstract public void appendSql(SqlBuilder builder, Query query);
+
+    /* ** Possible way to support SQL Server Median
+    public void appendSql(SqlBuilder builder, Query query, @Nullable QuerySelect querySelect, @Nullable QuerySelect.SelectColumn selectColumn)
+    {
+        appendSql(builder, query);          // if not overridden, ignore QuerySelect and SelectColumn
+    }
+    */
 
     public String getValueString()
     {

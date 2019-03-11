@@ -17,6 +17,7 @@
 package org.labkey.query.sql;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
@@ -25,6 +26,7 @@ import org.labkey.api.data.MultiValuedDisplayColumn;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
@@ -35,7 +37,7 @@ public class QAggregate extends QExpr
 
     public enum Type
     {
-        COUNT, SUM, MIN, MAX, AVG, GROUP_CONCAT ,
+        COUNT, SUM, MIN, MAX, AVG, GROUP_CONCAT,
         STDDEV
             {
                 @Override
@@ -51,13 +53,216 @@ public class QAggregate extends QExpr
                 {
                     return null;
                 }
+            },
+
+        BOOL_AND
+            {
+                @Override
+                boolean dialectSupports(@Nullable SqlDialect d)
+                {
+                    return null != d && d.isPostgreSQL();
+                }
+            },
+        BOOL_OR
+            {
+                @Override
+                boolean dialectSupports(@Nullable SqlDialect d)
+                {
+                    return null != d && d.isPostgreSQL();
+                }
+            },
+        BIT_AND
+            {
+                @Override
+                boolean dialectSupports(@Nullable SqlDialect d)
+                {
+                    return null != d && d.isPostgreSQL();
+                }
+            },
+        BIT_OR
+            {
+                @Override
+                boolean dialectSupports(@Nullable SqlDialect d)
+                {
+                    return null != d && d.isPostgreSQL();
+                }
+            },
+        CORR
+            {
+                @Override
+                boolean dialectSupports(@Nullable SqlDialect d)
+                {
+                    return null != d && d.isPostgreSQL();
+                }
+            },
+        COVAR_POP
+            {
+                @Override
+                boolean dialectSupports(@Nullable SqlDialect d)
+                {
+                    return null != d && d.isPostgreSQL();
+                }
+            },
+        COVAR_SAMP
+            {
+                @Override
+                boolean dialectSupports(@Nullable SqlDialect d)
+                {
+                    return null != d && d.isPostgreSQL();
+                }
+            },
+        REGR_AVGX
+            {
+                @Override
+                boolean dialectSupports(@Nullable SqlDialect d)
+                {
+                    return null != d && d.isPostgreSQL();
+                }
+            },
+        REGR_AVGY
+            {
+                @Override
+                boolean dialectSupports(@Nullable SqlDialect d)
+                {
+                    return null != d && d.isPostgreSQL();
+                }
+            },
+        REGR_COUNT
+            {
+                @Override
+                boolean dialectSupports(@Nullable SqlDialect d)
+                {
+                    return null != d && d.isPostgreSQL();
+                }
+            },
+        REGR_INTERCEPT
+            {
+                @Override
+                boolean dialectSupports(@Nullable SqlDialect d)
+                {
+                    return null != d && d.isPostgreSQL();
+                }
+            },
+        REGR_SLOPE
+            {
+                @Override
+                boolean dialectSupports(@Nullable SqlDialect d)
+                {
+                    return null != d && d.isPostgreSQL();
+                }
+            },
+        REGR_SXX
+            {
+                @Override
+                boolean dialectSupports(@Nullable SqlDialect d)
+                {
+                    return null != d && d.isPostgreSQL();
+                }
+            },
+        REGR_R2
+            {
+                @Override
+                boolean dialectSupports(@Nullable SqlDialect d)
+                {
+                    return null != d && d.isPostgreSQL();
+                }
+            },
+        REGR_SXY
+            {
+                @Override
+                boolean dialectSupports(@Nullable SqlDialect d)
+                {
+                    return null != d && d.isPostgreSQL();
+                }
+            },
+        REGR_SYY
+            {
+                @Override
+                boolean dialectSupports(@Nullable SqlDialect d)
+                {
+                    return null != d && d.isPostgreSQL();
+                }
+            },
+        EVERY
+            {
+                @Override
+                boolean dialectSupports(@Nullable SqlDialect d)
+                {
+                    return null != d && d.isPostgreSQL();
+                }
+            },
+        MEDIAN               // Only Postgres so far
+            {
+                @Override
+                String getFunction(SqlDialect d)
+                {
+                    return d.getMedianFunction();
+                }
+
+                @Override
+                boolean dialectSupports(SqlDialect d)
+                {
+                    return null != d && d.isPostgreSQL();
+                }
+            },
+        MODE                // Only Postgres so far
+            {
+                @Override
+                boolean dialectSupports(SqlDialect d)
+                {
+                    return null != d && d.isPostgreSQL();
+                }
+            },
+        STDDEV_POP
+            {
+                @Override
+                String getFunction(SqlDialect d)
+                {
+                    return d.getStdDevPopFunction();
+                }
+            },
+        STDDEV_SAMP
+            {
+                @Override
+                boolean dialectSupports(@Nullable SqlDialect d)
+                {
+                    return null != d && d.isPostgreSQL();
+                }
+            },
+        VARIANCE
+            {
+                @Override
+                String getFunction(SqlDialect d)
+                {
+                    return d.getVarianceFunction();
+                }
+            },
+        VAR_POP
+            {
+                @Override
+                String getFunction(SqlDialect d)
+                {
+                    return d.getVarPopFunction();
+                }
+            },
+        VAR_SAMP
+            {
+                @Override
+                boolean dialectSupports(@Nullable SqlDialect d)
+                {
+                    return null != d && d.isPostgreSQL();
+                }
             }
-        // CONSIDER STDDEVP, VAR, VARP
         ;
 
         String getFunction(SqlDialect d)
         {
             return name();
+        }
+
+        boolean dialectSupports(@Nullable SqlDialect d)
+        {
+            return true;
         }
     }
 
@@ -79,9 +284,19 @@ public class QAggregate extends QExpr
         }
         return _type;
     }
-    
 
+    @Override
     public void appendSql(SqlBuilder builder, Query query)
+
+    /* ** Possible for SQL Server Median
+    {
+        appendSql(builder, query, null, null);
+    }
+
+    @Override
+    public void appendSql(SqlBuilder builder, Query query, @Nullable QuerySelect querySelect, @Nullable QuerySelect.SelectColumn selectColumn)
+    */
+
     {
         Type type = getType();
 
@@ -128,6 +343,35 @@ public class QAggregate extends QExpr
                 ((QExpr)child).appendSql(builder, query);
             builder.append(")))");
         }
+        else if (type == Type.MEDIAN)
+        {
+            if (builder.getDialect().isSqlServer()) //  && null == querySelect)       // Possible way to support SQL Server Median
+            {
+                query.reportError("Cannot construct Median query in this context.");
+            }
+            else
+            {
+                assert !_distinct;
+                builder.append(" (").append(type.getFunction(builder.getDialect())).append("(0.5) WITHIN GROUP (ORDER BY (");
+                for (QNode child : children())
+                {
+                    ((QExpr) child).appendSql(builder, query);
+                }
+                builder.append("))");
+                extraForSqlServerMedian(builder);
+                builder.append(")");
+            }
+        }
+        else if (type == Type.MODE)
+        {
+            assert !_distinct;
+            builder.append(" (").append(type.getFunction(builder.getDialect())).append("() WITHIN GROUP (ORDER BY (");
+            for (QNode child : children())
+            {
+                ((QExpr)child).appendSql(builder, query);
+            }
+            builder.append(")))");
+        }
         else
         {
             String function = type.getFunction(builder.getDialect());
@@ -136,12 +380,39 @@ public class QAggregate extends QExpr
             {
                 builder.append("DISTINCT ");
             }
+            String sep = "";
             for (QNode child : children())
             {
+                builder.append(sep);
                 ((QExpr)child).appendSql(builder, query);
+                sep = ", ";
             }
             builder.append(")");
         }
+    }
+
+    private void extraForSqlServerMedian(SqlBuilder builder)
+    {
+        /* ** Possible way to support SQL Server Median
+        if (builder.getDialect().isSqlServer() && null != querySelect && null != selectColumn)
+        {
+            querySelect.addMedianColumn(selectColumn);
+            builder.append(" OVER(");
+            Collection<QuerySelect.SelectColumn> groupByColumns = querySelect.getGroupByColumns().values();
+            if (groupByColumns.size() > 0)
+            {
+                builder.append("PARTITION BY ");
+                String sep = "";
+                for (QuerySelect.SelectColumn col : querySelect.getGroupByColumns().values())
+                {
+                    builder.append(sep);
+                    col.getResolvedField().appendSql(builder, query);
+                    sep = ", ";
+                }
+            }
+            builder.append(")");
+        }
+        */
     }
 
     public void appendSource(SourceBuilder builder)

@@ -1569,6 +1569,11 @@ public class Query
             // TODO: week
             // TODO: year
 
+        new SqlTest("SELECT stddev(d), day FROM R GROUP BY day", 2, 7),
+        new SqlTest("SELECT stddev_pop(d), day FROM R GROUP BY day", 2, 7),
+        new SqlTest("SELECT variance(d), day FROM R GROUP BY day", 2, 7),
+        new SqlTest("SELECT var_pop(d), day FROM R GROUP BY day", 2, 7),
+
         // LIMIT
         new SqlTest("SELECT R.day, R.month, R.date FROM R LIMIT 10", 3, 10),
         new SqlTest("SELECT R.day, R.month, R.date FROM R ORDER BY R.date LIMIT 10", 3, 10),
@@ -1633,6 +1638,33 @@ public class Query
 		new SqlTest("SELECT R.day, R.month, R.date FROM R ORDER BY R.date", 3, Rsize),
         new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R ORDER BY date"),
         new SqlTest("SELECT R.guid FROM R WHERE overlaps(CAST('2001-01-01' AS DATE), CAST('2001-01-10' AS DATE), CAST('2001-01-05' AS DATE), CAST('2001-01-15' AS DATE))", 1, Rsize)
+    };
+
+
+    static SqlTest[] postgresOnlyFunctions = new SqlTest[]
+    {
+        new SqlTest("SELECT stddev_samp(d), day FROM R GROUP BY day", 2, 7),
+        new SqlTest("SELECT var_samp(d), day FROM R GROUP BY day", 2, 7),
+        new SqlTest("SELECT bool_and((d < 0)), day FROM R GROUP BY day", 2, 7),
+        new SqlTest("SELECT bool_or((d < 0)), day FROM R GROUP BY day", 2, 7),
+        new SqlTest("SELECT every((d > 0)), day FROM R GROUP BY day", 2, 7),
+        new SqlTest("SELECT bit_or(seven), day FROM R GROUP BY day", 2, 7),
+        new SqlTest("SELECT bit_and(seven), day FROM R GROUP BY day", 2, 7),
+        new SqlTest("SELECT median(seven), day FROM R GROUP BY day", 2, 7),
+        new SqlTest("SELECT mode(seven), day FROM R GROUP BY day", 2, 7),
+        new SqlTest("SELECT corr(seven, d), day FROM R GROUP BY day", 2, 7),
+        new SqlTest("SELECT corr(seven, d), day FROM R GROUP BY day", 2, 7),
+        new SqlTest("SELECT covar_pop(seven, d), day FROM R GROUP BY day", 2, 7),
+        new SqlTest("SELECT covar_samp(seven, d), day FROM R GROUP BY day", 2, 7),
+        new SqlTest("SELECT regr_avgx(seven, d), day FROM R GROUP BY day", 2, 7),
+        new SqlTest("SELECT regr_avgy(seven, d), day FROM R GROUP BY day", 2, 7),
+        new SqlTest("SELECT regr_count(seven, d), day FROM R GROUP BY day", 2, 7),
+        new SqlTest("SELECT regr_intercept(seven, d), day FROM R GROUP BY day", 2, 7),
+        new SqlTest("SELECT regr_r2(seven, d), day FROM R GROUP BY day", 2, 7),
+        new SqlTest("SELECT regr_slope(seven, d), day FROM R GROUP BY day", 2, 7),
+        new SqlTest("SELECT regr_sxx(seven, d), day FROM R GROUP BY day", 2, 7),
+        new SqlTest("SELECT regr_sxy(seven, d), day FROM R GROUP BY day", 2, 7),
+        new SqlTest("SELECT regr_syy(seven, d), day FROM R GROUP BY day", 2, 7),
     };
 
 
@@ -1913,6 +1945,14 @@ public class Query
 			if (dialect.allowSortOnSubqueryWithoutLimit())
 			{
 				for (SqlTest test : postgres)
+                {
+					test.validate(this, null);
+                }
+			}
+
+			if (dialect.isPostgreSQL())
+			{
+				for (SqlTest test : postgresOnlyFunctions)
                 {
 					test.validate(this, null);
                 }
