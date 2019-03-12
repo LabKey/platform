@@ -246,6 +246,8 @@ LABKEY.vis.Geom.Path = function(config){
     this.opacity = ('opacity' in config && config.opacity != null && config.opacity != undefined) ? config.opacity : 1;
     this.dashed = ('dashed' in config && config.dashed != null && config.dashed != undefined) ? config.dashed : false;
 
+    this._dataspaceBoxPlot = ('dataspaceBoxPlot' in config && config.dataspaceBoxPlot != null && config.dataspaceBoxPlot != undefined) ? config.dataspaceBoxPlot : false;
+
     return this;
 };
 LABKEY.vis.Geom.Path.prototype = new LABKEY.vis.Geom.XY();
@@ -260,7 +262,8 @@ LABKEY.vis.Geom.Path.prototype.render = function(renderer, grid, scales, data, l
     this.pathColorAes = layerAes.pathColor ? layerAes.pathColor : parentAes.pathColor;
     this.sizeScale = scales.size;
 
-    renderer.renderPathGeom(data, this);
+    this._dataspaceBoxPlot ? renderer.renderDataspaceBoxPlotPathGeom(data, this) : renderer.renderPathGeom(data, this);
+
     return true;
 };
 
@@ -436,6 +439,7 @@ LABKEY.vis.Geom.DataspaceBoxPlot = function(config){
     this.pointOpacity = ('outlierOpacity' in config && config.outlierOpacity != null && config.outlierOpacity != undefined) ? config.outlierOpacity : .5;
     this.pointSize = ('outlierSize' in config && config.outlierSize != null && config.outlierSize != undefined) ? config.outlierSize : 3;
     this.size = ('binSize' in config && config.binSize != null && config.binSize != undefined) ? config.binSize : 5;
+    this.skipJitter = ('skipJitter' in config && config.skipJitter != null && config.skipJitter != undefined) ? config.skipJitter : false;
 
     // binning geom specific
     this.binRowLimit = ('binRowLimit' in config && config.binRowLimit != null && config.binRowLimit != undefined) ? config.binRowLimit : 5000;

@@ -73,6 +73,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.ContainerUser;
 
 import java.io.File;
 import java.io.IOException;
@@ -415,8 +416,15 @@ public interface ExperimentService extends ExperimentRunTypeSource
      */
     Set<ExpData> getNearestParentDatas(ExpMaterial start);
 
+    /**
+     * @deprecated : use the variant which takes a ContainerUser parameter
+     */
     @NotNull
+    @Deprecated
     ExpLineage getLineage(@NotNull ExpRunItem start, @NotNull ExpLineageOptions options);
+
+    @NotNull
+    ExpLineage getLineage(@Nullable ContainerUser context, @NotNull ExpRunItem start, @NotNull ExpLineageOptions options);
 
     /**
      * The following methods return TableInfo's suitable for using in queries.

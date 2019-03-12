@@ -444,7 +444,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
         // Certain provisioned tables (Lists and Datasets) always get the Import/Infer Fields buttons. All others only get the
         // button on initial creation.
-        if (_alwaysAllowImportSchema || domain.getDomainId() == 0)
+        if (_alwaysAllowImportSchema || domain.getDomainId() == 0 || domain.getFields().isEmpty())
         {
             _importSchemaButton.setVisible(true);
             _inferSchemaButton.setVisible(true);

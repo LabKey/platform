@@ -2386,8 +2386,12 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     };
 
     var renderPaths = function(layer, data, geom) {
-        var xAcc = function(d) {return geom.getX(d);},
-            yAcc = function(d) {var val = geom.getY(d); return val == null ? null : val;},
+        var xAcc = function(d) {return geom.getX(d);};
+        _renderPath.call(this, layer, data, geom, xAcc);
+    };
+
+    var _renderPath = function(layer, data, geom, xAcc) {
+        var yAcc = function(d) {var val = geom.getY(d); return val == null ? null : val;},
             size = geom.sizeAes && geom.sizeScale ? geom.sizeScale.scale(geom.sizeAes.getValue(data)) : function() {return geom.size},
             color = geom.color,
             line = function(d) {
@@ -2418,7 +2422,31 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         }
     };
 
-    var renderPathGeom = function(data, geom) {
+    var renderDataspaceBoxPlotPaths = function(layer, data, geom) {
+        var xBinWidth = ((plot.grid.rightEdge - plot.grid.leftEdge) / (geom.xScale.scale.domain().length)) / 2;
+        var padding = Math.max(xBinWidth * .05, 5);
+
+        var xAcc = function(row) {
+            var x, offset;
+            x = geom.getX(row) + padding;
+            offset = xBinWidth / 4;
+
+            if (x == null) {return null;}
+
+            var originalVal = row.x;
+            if (yLogGutter && !isNaN(parseFloat(originalVal)) && originalVal != null && originalVal <= 0) {
+                x = geom.xScale.range[0] + logGutterPointsOffset;
+            }
+
+            // Points uses Math.random()*offset.
+            // Since line and points are rendered separately, use 0.5 so that line edge falls in acceptable range of randomly jittered point position
+            return x + 0.5*offset;
+        };
+
+        _renderPath.call(this, layer, data, geom, xAcc);
+    };
+
+    var _renderPathGeom = function(data, geom, renderPathsFn) {
         var layer = getLayer.call(this, geom);
         var renderableData = [];
 
@@ -2443,11 +2471,19 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             }
         }
 
-        layer.call(renderPaths, renderableData, geom);
+        layer.call(renderPathsFn, renderableData, geom);
 
         if (plot.clipRect) {
             applyClipRect.call(this, layer);
         }
+    };
+
+    var renderPathGeom = function(data, geom) {
+        _renderPathGeom.call(this, data, geom, renderPaths)
+    };
+
+    var renderDataspaceBoxPlotPathGeom = function(data, geom) {
+        _renderPathGeom.call(this, data, geom, renderDataspaceBoxPlotPaths)
     };
 
     var getMaxBinPointCount = function(data) {
@@ -2671,7 +2707,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             if (yLogGutter && !isNaN(parseFloat(originalVal)) && originalVal != null && originalVal <= 0) {
                 x = geom.xScale.range[0] + logGutterPointsOffset;
             }
-            return x + (Math.random() * offset);
+            return x + ((geom.skipJitter ? 0.5 : Math.random()) * offset);
         };
 
         yAcc = function(row) {
@@ -3358,6 +3394,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         renderErrorBarGeom: renderErrorBarGeom,
         renderBoxPlotGeom: renderBoxPlotGeom,
         renderDataspaceBoxPlotGeom: renderDataspaceBoxPlotGeom,
+        renderDataspaceBoxPlotPathGeom: renderDataspaceBoxPlotPathGeom,
         renderBinGeom: renderBinGeom,
         renderBarPlotGeom: renderBarPlotGeom,
         renderTimelinePlotGeom: renderTimelinePlotGeom,
