@@ -253,6 +253,12 @@ public class ClientDependency
 
         Path filePath = Path.parse(path).normalize();
 
+        if (filePath == null)
+        {
+            _log.warn("Invalid client dependency path: " + path);
+            return null;
+        }
+
         String key = getCacheKey(filePath.toString(), mode);
         if (!AppProps.getInstance().isDevMode())
         {
