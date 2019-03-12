@@ -1015,7 +1015,7 @@ public class VisualizationController extends SpringActionController
                 errors.reject(ERROR_MSG, "Visualization \"" + form.getName() + "\" does not exist in " + getContainer().getPath() + ".");
             }
 
-            if (report == null || !report.getDescriptor().getContainerId().equals(getContainer().getId()))
+            if (report == null || report.getDescriptor().getContainerId() == null || !report.getDescriptor().getContainerId().equals(getContainer().getId()))
             {
                 errors.reject(ERROR_MSG, "Visualization \"" + form.getName() + "\" does not exist in " + getContainer().getPath() + ".");
                 return;
