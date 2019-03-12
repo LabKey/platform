@@ -60,6 +60,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.SeeGroupDetailsPermission;
 import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
@@ -120,8 +121,7 @@ public class SecurityApiActions
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
-    @RequiresLogin
+    @RequiresPermission(SeeGroupDetailsPermission.class)
     public static class GetGroupPermsAction extends ReadOnlyApiAction<GetGroupPermsForm>
     {
         public ApiResponse execute(GetGroupPermsForm form, BindException errors)
@@ -2178,7 +2178,6 @@ public class SecurityApiActions
 
             // @RequiresPermission(ReadPermission.class)
             assertForReadPermission(user,
-                new GetGroupPermsAction(),
                 new GetUserPermsAction(),
                 new GetGroupsForCurrentUserAction(),
                 new GetRolesAction(),
@@ -2187,6 +2186,7 @@ public class SecurityApiActions
 
             // @RequiresPermission(AdminPermission.class)
             assertForAdminPermission(user,
+                new GetGroupPermsAction(),
                 new GetPolicyAction(),
                 new SavePolicyAction(),
                 new DeletePolicyAction(),

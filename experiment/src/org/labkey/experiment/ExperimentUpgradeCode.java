@@ -25,6 +25,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.DeferredUpgrade;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
@@ -258,6 +259,13 @@ public class ExperimentUpgradeCode implements UpgradeCode
             if (propertyDescriptor.getStorageColumnName() == null)
             {
                 ((DomainImpl)domain).generateStorageColumnName(propertyDescriptor);
+                updated = true;
+            }
+            // migrate REAL->DOUBLE to correctly handle upgrade of special values, see ResultSetUtil.mapJavaDoubleToDatabaseDouble()
+            if (propertyDescriptor.getJdbcType() == JdbcType.REAL)
+            {
+                propertyDescriptor.setJdbcType(JdbcType.DOUBLE, 0);
+                propertyDescriptor.setPropertyType(PropertyType.DOUBLE);
                 updated = true;
             }
 

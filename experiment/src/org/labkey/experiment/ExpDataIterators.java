@@ -329,7 +329,7 @@ public class ExpDataIterators
                 return hasNext;
 
             // For each iteration, collect the parent col values
-            if (!_parentCols.isEmpty())
+            if (hasNext && !_parentCols.isEmpty())
             {
                 String lsid = (String) get(_lsidCol);
                 Set<Pair<String, String>> allParts = new HashSet<>();

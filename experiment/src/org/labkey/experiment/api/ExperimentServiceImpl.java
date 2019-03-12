@@ -120,6 +120,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.experiment.ExperimentAuditProvider;
 import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.XarExportType;
@@ -2097,6 +2098,13 @@ public class ExperimentServiceImpl implements ExperimentService
     @NotNull
     public ExpLineage getLineage(@NotNull ExpRunItem start, @NotNull ExpLineageOptions options)
     {
+        return getLineage(null, start, options);
+    }
+
+    @Override
+    @NotNull
+    public ExpLineage getLineage(@Nullable ContainerUser context, @NotNull ExpRunItem start, @NotNull ExpLineageOptions options)
+    {
         if (isUnknownMaterial(start))
             return new ExpLineage(start);
 
@@ -2159,18 +2167,27 @@ public class ExperimentServiceImpl implements ExperimentService
 
         Set<ExpData> datas = new HashSet<>();
         List<ExpDataImpl> expDatas = getExpDatas(dataids);
-        if (null != expDatas)
-            datas.addAll(expDatas);
+        if (expDatas != null)
+        {
+            if (context != null)
+                datas = expDatas.stream().filter(data -> data.getContainer().hasPermission(context.getUser(), ReadPermission.class)).collect(Collectors.toSet());
+            else
+                datas.addAll(expDatas);
+        }
 
-        Set<ExpMaterial> materials = new HashSet<>();
+        Set<ExpMaterial> materials;
         List<ExpMaterialImpl> expMaterials = getExpMaterials(materialids);
-        if (null != expMaterials)
-            materials.addAll(expMaterials);
+        if (context != null)
+            materials = expMaterials.stream().filter(material -> material.getContainer().hasPermission(context.getUser(), ReadPermission.class)).collect(Collectors.toSet());
+        else
+            materials = new HashSet<>(expMaterials);
 
-        Set<ExpRun> runs = new HashSet<>();
+        Set<ExpRun> runs;
         List<ExpRunImpl> expRuns = getExpRuns(runids);
-        if (null != expRuns)
-            runs.addAll(expRuns);
+        if (context != null)
+            runs = expRuns.stream().filter(run -> run.getContainer().hasPermission(context.getUser(), ReadPermission.class)).collect(Collectors.toSet());
+        else
+            runs = new HashSet<>(expRuns);
 
         if (start instanceof ExpData)
             datas.remove(start);
@@ -3656,10 +3673,14 @@ public class ExperimentServiceImpl implements ExperimentService
                 for (ExpSampleSet ss : sss)
                 {
                     TableInfo dbTinfo = ((ExpSampleSetImpl)ss).getTinfo();
-                    SQLFragment samplesetSQL = new SQLFragment("DELETE FROM " + dbTinfo + " WHERE lsid IN (SELECT lsid FROM exp.Material WHERE RowId ");
-                    samplesetSQL.append(rowIdInFrag);
-                    samplesetSQL.append(")");
-                    executor.execute(samplesetSQL);
+                    // NOTE: study specimens don't have a domain for their samples, so no table
+                    if (null != dbTinfo)
+                    {
+                        SQLFragment samplesetSQL = new SQLFragment("DELETE FROM " + dbTinfo + " WHERE lsid IN (SELECT lsid FROM exp.Material WHERE RowId ");
+                        samplesetSQL.append(rowIdInFrag);
+                        samplesetSQL.append(")");
+                        executor.execute(samplesetSQL);
+                    }
                 }
             }
 

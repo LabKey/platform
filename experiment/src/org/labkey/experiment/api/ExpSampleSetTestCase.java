@@ -631,11 +631,11 @@ public class ExpSampleSetTestCase
         ExpRun oldDerivationRun = ExperimentService.get().getExpRun(derivationRun.getRowId());
         assertEquals(oldDerivationRun.getRowId(), derivationRun.getRowId());
 
-        assertTrue(derivationRun2.getMaterialInputs().keySet().contains(B));
-        assertTrue(derivationRun2.getMaterialInputs().keySet().contains(C));
-        assertFalse(derivationRun2.getMaterialInputs().keySet().contains(E));
-        assertFalse(derivationRun2.getMaterialOutputs().contains(D));
-        assertTrue(derivationRun2.getMaterialOutputs().contains(E));
+        assertTrue(oldDerivationRun.getMaterialInputs().keySet().contains(B));
+        assertTrue(oldDerivationRun.getMaterialInputs().keySet().contains(C));
+        assertFalse(oldDerivationRun.getMaterialInputs().keySet().contains(E));
+        assertFalse(oldDerivationRun.getMaterialOutputs().contains(D));
+        assertTrue(oldDerivationRun.getMaterialOutputs().contains(E));
 
     }
 

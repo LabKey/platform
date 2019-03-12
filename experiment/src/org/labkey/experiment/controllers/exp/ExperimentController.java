@@ -6036,12 +6036,16 @@ public class ExperimentController extends SpringActionController
             {
                 throw new ApiUsageException("One of rowId or lsid required");
             }
+
+            // ensure that the protocol output lineage is in the same container as the request
+            if (!getContainer().equals(_output.getContainer()))
+                throw new ApiUsageException("Protocol requested must be in the same folder that the request originates. Protocol folder : " + _output.getContainer().getPath());
         }
 
         @Override
         public Object execute(ExpLineageOptions options, BindException errors)
         {
-            ExpLineage lineage = ExperimentService.get().getLineage(_output, options);
+            ExpLineage lineage = ExperimentService.get().getLineage(getViewContext(), _output, options);
             return new ApiSimpleResponse(lineage.toJSON());
         }
     }
@@ -6056,10 +6060,14 @@ public class ExperimentController extends SpringActionController
             if (form.getRowId() != 0 || form.getLsid() != null)
             {
                 ExpRunImpl run = form.lookupRun();
+                if (!run.getContainer().hasPermission(getUser(), ReadPermission.class))
+                    throw new UnauthorizedException("Not permitted");
+
                 ExperimentServiceImpl.get().syncRunEdges(run);
             }
             else
             {
+                // should this require site admin permissions?
                 ExperimentServiceImpl.get().rebuildAllEdges();
             }
             return success();

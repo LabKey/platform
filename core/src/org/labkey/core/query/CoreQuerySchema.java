@@ -29,7 +29,6 @@ import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
@@ -42,6 +41,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.SeeGroupDetailsPermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
@@ -109,10 +109,13 @@ public class CoreQuerySchema extends UserSchema
     {
         Set<String> names = PageFlowUtil.set(
             USERS_TABLE_NAME, SITE_USERS_TABLE_NAME, PRINCIPALS_TABLE_NAME, MODULES_TABLE_NAME, MEMBERS_TABLE_NAME,
-            GROUPS_TABLE_NAME, USERS_AND_GROUPS_TABLE_NAME, CONTAINERS_TABLE_NAME, WORKBOOKS_TABLE_NAME, QCSTATE_TABLE_NAME, VIEW_CATEGORY_TABLE_NAME);
+            USERS_AND_GROUPS_TABLE_NAME, CONTAINERS_TABLE_NAME, WORKBOOKS_TABLE_NAME, QCSTATE_TABLE_NAME, VIEW_CATEGORY_TABLE_NAME);
 
         if (getUser().hasRootPermission(UserManagementPermission.class))
             names.add(API_KEYS_TABLE_NAME);
+
+        if (getContainer().hasPermission(getUser(), SeeGroupDetailsPermission.class))
+            names.add(GROUPS_TABLE_NAME);
 
         return names;
     }
@@ -130,7 +133,7 @@ public class CoreQuerySchema extends UserSchema
             return getModules();
         if (MEMBERS_TABLE_NAME.equalsIgnoreCase(name))
             return getMembers();
-        if (GROUPS_TABLE_NAME.equalsIgnoreCase(name))
+        if (GROUPS_TABLE_NAME.equalsIgnoreCase(name) && getContainer().hasPermission(getUser(), SeeGroupDetailsPermission.class))
             return getGroups();
         if (USERS_AND_GROUPS_TABLE_NAME.equalsIgnoreCase(name))
             return getUsersAndGroupsTable();
@@ -222,8 +225,8 @@ public class CoreQuerySchema extends UserSchema
         if (getUser().isGuest())
             addNullSetFilter(groups);
 
-        groups.setDescription("Contains all groups defined in the current project." +
-        " The data in this table are available only to users who are signed-in (not guests). Guests will see no rows.");
+        groups.setDescription("Contains all site groups and groups defined in the current project." +
+        " This table is available only to administrators plus users who have been granted the \"See User and Group Details\" site role.");
         
         return groups;
     }

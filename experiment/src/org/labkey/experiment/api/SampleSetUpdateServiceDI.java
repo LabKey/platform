@@ -29,8 +29,10 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.ExpMaterialTable;
@@ -43,6 +45,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.SampleSetAuditProvider;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 
@@ -158,6 +161,17 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
     public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
         var ret = super.updateRows(user, container, rows, oldKeys, configParameters, extraScriptContext);
+
+        /* setup mini dataiterator pipeline to process lineage */
+        DataIterator di = _toDataIterator("updateRows.lineage", ret);
+        ExpDataIterators.DerivationDataIteratorBuilder ddib = new ExpDataIterators.DerivationDataIteratorBuilder(DataIteratorBuilder.wrap(di), container, user, true);
+        DataIteratorContext context = new DataIteratorContext();
+        context.setInsertOption(InsertOption.MERGE);
+        DataIterator derive = ddib.getDataIterator(context);
+        new Pump(derive, context).run();
+        if (context.getErrors().hasErrors())
+            throw context.getErrors();
+
         auditUpdate(ret.size());
         return ret;
     }
@@ -227,6 +241,7 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
             sample.index(null);
         }
 
+        ret.put("lsid", lsid);
         return ret;
     }
 

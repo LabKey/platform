@@ -55,6 +55,8 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.writer.ContainerUser;
+import org.labkey.api.writer.DefaultContainerUser;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -451,6 +453,7 @@ public class LineagePerfTest extends Assert
         final ViewBackgroundInfo info = new ViewBackgroundInfo(_container, _user, null);
 
         Integer maxMaterialId = new SqlSelector(ExperimentService.get().getSchema(), "SELECT MAX(rowId) FROM exp.material").getObject(Integer.class);
+        ContainerUser context = new DefaultContainerUser(_container, _user);
 
         for (int i = 0; i < 10; i++)
         {
@@ -496,12 +499,12 @@ public class LineagePerfTest extends Assert
 
             LOG.info("  lineage graph 1");
             lineageGraph.start();
-            ExperimentService.get().getLineage(sample, opt);
+            ExperimentService.get().getLineage(context, sample, opt);
             lineageGraph.stop();
 
             LOG.info("  lineage graph 2");
             lineageGraph.start();
-            ExperimentService.get().getLineage(sample, opt);
+            ExperimentService.get().getLineage(context, sample, opt);
             lineageGraph.stop();
         }
     }

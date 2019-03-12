@@ -401,7 +401,7 @@ public class CohortManager
                 "  LEFT OUTER JOIN ").append(cohortDatasetTinfo.getFromSQL("D")).append(" ON " +
                     "\tP.ParticipantId = ").append(subjectCol.getValueSql("D")).append("\n" +
                 "WHERE P.Container = ? " + "\n" +
-                "ORDER BY P.ParticipantId" + (!dsd.isDemographicData() ? ", D.SequenceNumMin" : ""));
+                "ORDER BY P.ParticipantId" + (!dsd.isDemographicData() ? ", D.SequenceNum" : ""));
         pCohortSql.add(study.getContainer());
         return pCohortSql;
     }

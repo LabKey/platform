@@ -135,15 +135,6 @@ Ext4.define('File.panel.Upload', {
             },
 
             accept: function (file, done) {
-                // NOTE: this only covers the case that the error message is from the server-side
-                // Filter out folder drag-drop on unsupported browsers (Firefox)
-                // See: https://github.com/enyo/dropzone/issues/528
-                if ( (!file.type && file.size == 0 && file.fullPath == undefined)) {
-                    // Note: we test for string "Drag-and-drop upload" below
-                    done("Drag-and-drop upload of folders is not supported by your browser. Please upgrade to a current version or consider using an external WebDAV client.");
-                    return;
-                }
-
                 var record = this.uploadPanel.getWorkingDirectory('model');
                 var path = this.uploadPanel.getWorkingDirectory('path');
 
@@ -156,7 +147,7 @@ Ext4.define('File.panel.Upload', {
                     return;
                 }
 
-                if (file.fullPath && file.fullPath.indexOf('/') != -1 && !canMkdir) {
+                if (file.fullPath && file.fullPath.indexOf('/') !== -1 && !canMkdir) {
                     done("You don't have permission to create folders in '" + path + "'.");
                     return;
                 }

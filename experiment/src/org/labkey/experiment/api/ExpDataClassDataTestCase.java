@@ -73,6 +73,8 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConceptURIProperties;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.writer.ContainerUser;
+import org.labkey.api.writer.DefaultContainerUser;
 
 import java.io.StringWriter;
 import java.sql.Clob;
@@ -497,15 +499,16 @@ public class ExpDataClassDataTestCase
         options.setParents(true);
         options.setChildren(false);
 
+        ContainerUser context = new DefaultContainerUser(c, user);
         final ExpData bob = ExperimentService.get().getExpData(firstDataClass, "bob");
-        ExpLineage lineage = ExperimentService.get().getLineage(bob, options);
+        ExpLineage lineage = ExperimentService.get().getLineage(context, bob, options);
         Assert.assertTrue(lineage.getDatas().isEmpty());
         assertEquals(1, lineage.getMaterials().size());
         Assert.assertTrue(lineage.getMaterials().contains(s1));
 
         final ExpData jimbo = ExperimentService.get().getExpData(secondDataClass, "jimbo");
         final ExpData sally = ExperimentService.get().getExpData(firstDataClass, "sally");
-        lineage = ExperimentService.get().getLineage(sally, options);
+        lineage = ExperimentService.get().getLineage(context, sally, options);
         assertEquals(2, lineage.getDatas().size());
         Assert.assertTrue(lineage.getDatas().contains(bob));
         Assert.assertTrue(lineage.getDatas().contains(jimbo));
@@ -513,7 +516,7 @@ public class ExpDataClassDataTestCase
         Assert.assertTrue(lineage.getMaterials().contains(s2));
 
         final ExpData mike = ExperimentService.get().getExpData(firstDataClass, "mike");
-        lineage = ExperimentService.get().getLineage(mike, options);
+        lineage = ExperimentService.get().getLineage(context, mike, options);
         assertEquals("Expected 2 data, found: " + lineage.getDatas().stream().map(ExpData::getName).collect(joining(", ")),
                 2, lineage.getDatas().size());
         Assert.assertTrue(lineage.getDatas().contains(bob));

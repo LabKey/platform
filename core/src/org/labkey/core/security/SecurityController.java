@@ -66,6 +66,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
+import org.labkey.api.security.permissions.SeeGroupDetailsPermission;
 import org.labkey.api.security.permissions.SeeUserDetailsPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
@@ -2009,6 +2010,7 @@ public class SecurityController extends SpringActionController
                 AdminPermission.class,
                 EditSharedViewPermission.class,
                 SeeUserDetailsPermission.class,
+                SeeGroupDetailsPermission.class,
                 CanSeeAuditLogPermission.class,
                 FolderExportPermission.class,
                 QCAnalystPermission.class
