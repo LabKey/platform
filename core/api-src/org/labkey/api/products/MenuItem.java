@@ -4,22 +4,26 @@ import org.labkey.api.view.ActionURL;
 
 public class MenuItem
 {
-    private String _label;
-    private Integer _id;
-    private String _key;
-    private String _url;
-    private Integer _orderNum = 0;
-    private Boolean _requiresLogin = false;
+    private String _label; // the display text for the UI
+    private Integer _id; // generally, the row id of the item being linked to
+    private String _key; // to be used in routing to the item within the application
+    private String _url; // the URL on the server side
+    private Integer _orderNum; // ordinal for producing the primary sort order of the items
+    private Boolean _requiresLogin = false; // indicates if link should be shown if not logged in.
 
-    public MenuItem(String label, String url, Integer id, Integer orderNum)
+    public MenuItem(String label, String url, Integer id, String key, Integer orderNum)
     {
         _label = label;
         _id = id;
-        _key = String.valueOf(id);
+        _key = key;
         _url = url;
         _orderNum = orderNum == null ? -1 : orderNum;
     }
 
+    public MenuItem(String label, String url, Integer id, Integer orderNum)
+    {
+        this(label, url, id, String.valueOf(id), orderNum);
+    }
 
     public MenuItem(String label, ActionURL url, Integer id, Integer orderNum)
     {
