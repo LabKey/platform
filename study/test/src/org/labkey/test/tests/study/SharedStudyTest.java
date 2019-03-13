@@ -35,6 +35,7 @@ import org.labkey.test.components.studydesigner.ManageAssaySchedulePage;
 import org.labkey.test.pages.DatasetInsertPage;
 import org.labkey.test.pages.EditDatasetDefinitionPage;
 import org.labkey.test.pages.study.ManageVisitPage;
+import org.labkey.test.util.Crawler;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.Maps;
@@ -591,5 +592,11 @@ public class SharedStudyTest extends BaseWebDriverTest
         clickProject(projectName);
         goToManageStudy();
         return isElementPresent(Locator.lkButton("Publish Study"));
+    }
+
+    @Override
+    protected List<Crawler.ControllerActionId> getUncrawlableActions()
+    {
+        return Arrays.asList(new Crawler.ControllerActionId("dataset", "insert")); // Tested explicitly. Responds with a 403
     }
 }
