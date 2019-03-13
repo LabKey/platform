@@ -22,9 +22,9 @@ public abstract class MenuSection
 {
     protected ViewContext _context;
     protected String _label;
-    protected int _totalCount;
     protected Integer _itemLimit;
     protected String _key;
+    private List<MenuItem> _allItems;
 
     public MenuSection(@NotNull ViewContext context, @NotNull String label, @NotNull String key, @Nullable Integer itemLimit)
     {
@@ -54,14 +54,9 @@ public abstract class MenuSection
         _key = key;
     }
 
-    public void setTotalCount(int totalCount)
-    {
-        _totalCount = totalCount;
-    }
-
     public int getTotalCount()
     {
-        return _totalCount;
+        return ensureAllItems().size();
     }
 
     @JsonIgnore
@@ -107,15 +102,20 @@ public abstract class MenuSection
     @JsonIgnore
     protected abstract @NotNull List<MenuItem> getAllItems();
 
+    private @NotNull List<MenuItem> ensureAllItems()
+    {
+        if (_allItems == null)
+            _allItems = getAllItems();
+        return _allItems;
+    }
+
     public List<MenuItem> getItems()
     {
-        List<MenuItem> items = getAllItems();
-        _totalCount = items.size();
-        items.sort(Comparator.comparing(MenuItem::getOrderNum).thenComparing(MenuItem::getLabel, String.CASE_INSENSITIVE_ORDER));
-        if (_itemLimit != null && _itemLimit < items.size())
-            return items.subList(0, _itemLimit);
+        ensureAllItems().sort(Comparator.comparing(MenuItem::getOrderNum).thenComparing(MenuItem::getLabel, String.CASE_INSENSITIVE_ORDER));
+        if (_itemLimit != null && _itemLimit < _allItems.size())
+            return _allItems.subList(0, _itemLimit);
         else
-            return items;
+            return _allItems;
     }
 
     protected TableInfo getTableInfo(UserSchema schema, String queryName)
