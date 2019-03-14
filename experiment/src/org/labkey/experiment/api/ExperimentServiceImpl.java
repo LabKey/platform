@@ -3605,19 +3605,14 @@ public class ExperimentServiceImpl implements ExperimentService
                 beforeDeleteMaterials(user, container, materials);
             }
 
-            List<String> materialLsids = new ArrayList<>(materials.size());
-            for (ExpMaterialImpl material : materials)
+            List<String> materialLsids = materials.stream().map(ExpMaterial::getLSID).collect(Collectors.toList());
+            try (Timing t = MiniProfiler.step("deleteRunsUsingInput"))
             {
                 // Delete any runs using the material if the ProtocolImplementation allows deleting the run when an input is deleted.
                 if (deleteRunsUsingMaterials)
                 {
-                    try (Timing t = MiniProfiler.step("deleteRunsUsingInput"))
-                    {
-                        deleteRunsUsingInput(user, material.getDataObject());
-                    }
+                    deleteRunsUsingInputs(user, null, materials.stream().map(ExpIdentifiableBaseImpl::getDataObject).collect(Collectors.toList()));
                 }
-
-                materialLsids.add(material.getLSID());
             }
 
             // generate in clause for the Material LSIDs
@@ -3719,10 +3714,13 @@ public class ExperimentServiceImpl implements ExperimentService
             throw new IllegalArgumentException("Expected Data or Material");
 
         List<? extends ExpRun> runsToDelete = runsDeletedWithInput(runsUsingItem);
-        if (runsToDelete.isEmpty())
-            LOG.debug("No runs to delete for item '" + item.getName() + "'");
-        else
-            LOG.debug("Deleting runs using input item '" + item.getName() + "': " + runsToDelete.stream().map(ExpRun::getName).collect(Collectors.joining(", ")));
+        if (LOG.isDebugEnabled())
+        {
+            if (runsToDelete.isEmpty())
+                LOG.debug("No runs to delete for item '" + item.getName() + "'");
+            else
+                LOG.debug("Deleting runs using input item '" + item.getName() + "': " + runsToDelete.stream().map(ExpRun::getName).collect(Collectors.joining(", ")));
+        }
         for (ExpRun run : runsToDelete)
         {
             Container runContainer = run.getContainer();
@@ -3732,6 +3730,62 @@ public class ExperimentServiceImpl implements ExperimentService
             deleteExperimentRunsByRowIds(run.getContainer(), user, run.getRowId());
         }
     }
+
+
+    private void deleteRunsUsingInputs(User user, Collection<Data> dataItems, Collection<Material> materialItems)
+    {
+//        var dataRowIds = new
+//
+//        List<? extends ExpRun> runsUsingItem;
+//        if (item instanceof Data)
+//            runsUsingItem = getRunsUsingDataIds(Arrays.asList(item.getRowId()));
+//        else if (item instanceof Material)
+//            runsUsingItem = getRunsUsingMaterials(item.getRowId());
+//        else
+//            throw new IllegalArgumentException("Expected Data or Material");
+
+        var runsUsingItems = new ArrayList<ExpRun>();
+        if (null != dataItems && !dataItems.isEmpty())
+            runsUsingItems.addAll(getRunsUsingDataIds(dataItems.stream().map(RunItem::getRowId).collect(Collectors.toList())));
+        if (null != materialItems && !materialItems.isEmpty())
+            runsUsingItems.addAll(getRunsUsingMaterials(materialItems.stream().map(RunItem::getRowId).collect(Collectors.toList())));
+
+        List<? extends ExpRun> runsToDelete = runsDeletedWithInput(runsUsingItems);
+        if (runsToDelete.isEmpty())
+            return;
+
+        var containers = new HashSet<Container>();
+        for (ExpRun run : runsToDelete)
+        {
+            Container runContainer = run.getContainer();
+            if (containers.add(runContainer))
+            {
+                if (!runContainer.hasPermission(user, DeletePermission.class))
+                    throw new UnauthorizedException();
+            }
+        }
+
+        // do this the fast way if there is only one container involved
+        if (containers.size() == 1)
+        {
+            Container runContainer = containers.iterator().next();
+            deleteExperimentRunsByRowIds(runContainer, user, runsToDelete.stream().map(ExpRun::getRowId).collect(Collectors.toList()));
+        }
+        else
+        {
+            // the slow way
+            for (ExpRun run : runsToDelete)
+            {
+                Container runContainer = run.getContainer();
+                if (!runContainer.hasPermission(user, DeletePermission.class))
+                    throw new UnauthorizedException();
+
+                deleteExperimentRunsByRowIds(run.getContainer(), user, run.getRowId());
+            }
+
+        }
+    }
+
 
     public void deleteDataByRowIds(User user, Container container, Collection<Integer> selectedDataIds)
     {
@@ -3759,17 +3813,17 @@ public class ExperimentServiceImpl implements ExperimentService
             List<ExpDataImpl> expDatas = ExpDataImpl.fromDatas(datas);
             beforeDeleteData(user, container, expDatas);
 
+            // Delete any runs using the data if the ProtocolImplementation allows it
+            if (deleteRunsUsingData)
+            {
+                deleteRunsUsingInputs(user, datas, null);
+            }
+
             for (Data data : datas)
             {
                 if (!data.getContainer().equals(container))
                 {
                     throw new SQLException("Attempting to delete a Data from another container");
-                }
-
-                // Delete any runs using the data if the ProtocolImplementation allows it
-                if (deleteRunsUsingData)
-                {
-                    deleteRunsUsingInput(user, data);
                 }
 
                 SQLFragment deleteSql = new SQLFragment()
@@ -4164,19 +4218,24 @@ public class ExperimentServiceImpl implements ExperimentService
         if (materials.isEmpty())
             return Collections.emptyList();
 
-        int[] ids = materials.stream().mapToInt(ExpMaterial::getRowId).toArray();
+        var ids = materials.stream().map(ExpMaterial::getRowId).collect(Collectors.toList());
         return getRunsUsingMaterials(ids);
     }
 
     @Override
     public List<ExpRunImpl> getRunsUsingMaterials(int... ids)
     {
-        if (ids.length == 0)
+        return getRunsUsingMaterials(Arrays.asList(ArrayUtils.toObject(ids)));
+    }
+
+    public List<ExpRunImpl> getRunsUsingMaterials(Collection<Integer> ids)
+    {
+        if (ids.isEmpty())
         {
             return Collections.emptyList();
         }
 
-        return ExpRunImpl.fromRuns(getRunsForMaterialList(getExpSchema().getSqlDialect().appendInClauseSql(new SQLFragment(), Arrays.asList(ArrayUtils.toObject(ids)))));
+        return ExpRunImpl.fromRuns(getRunsForMaterialList(getExpSchema().getSqlDialect().appendInClauseSql(new SQLFragment(), ids)));
     }
 
     // Get a map of run LSIDs to Roles used by the Material ids.
