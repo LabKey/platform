@@ -1,7 +1,7 @@
 {table}
 Filename|Component|Version|Source|License|LabKey Dev|Purpose
 annotations-15.0.jar|Compiler annotations|1.0|{link:JetBrains|http://www.jetbrains.com/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Annotations to enable compile-time checking for null
-batik-1.7.jar|Apache Batik|1.7|{link:Apache|http://xmlgraphics.apache.org/batik/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Used for exporting SVG visualizations to image and PDF formats. This jar includes dependencies.
+batik-codec-1.10.jar|Apache Batik Codec|1.10|{link:Apache|http://xmlgraphics.apache.org/batik/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|FOP dependency
 cglib-nodep-2.2.3.jar|Code Generation Library|2.2.3|{link:SourceForge|http://sourceforge.net/projects/cglib/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Used by Spring Framework and jMock
 commons-beanutils-1.7.0.jar|Commons Beanutils|1.7.0|{link:Apache|http://jakarta.apache.org/commons/beanutils/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Reading/writing beans
 commons-codec-1.10.jar|Commons Codec|1.10|{link:Apache|http://jakarta.apache.org/commons/codec/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Provides implementations of common encoders and decoders such as Base64, Hex, Phonetic and URLs
@@ -19,6 +19,7 @@ commons-pool-1.6.jar|Commons Pool|1.6|{link:Apache|http://commons.apache.org/poo
 commons-validator-1.5.0.jar|Commons Validator|1.5.0|{link:Apache|http://jakarta.apache.org/commons/validator/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Data validation and error messages
 core-renderer-R8.jar|FlyingSaucer|R8|{link:FlyingSaucer|http://code.google.com/p/flying-saucer/}|{link:LGPL|http://www.gnu.org/copyleft/lesser.html}|kevink|XHTML/CSS rendering library
 ehcache-core-2.6.8.jar|Ehcache|2.6.8|{link:Terracotta|http://ehcache.org/documentation/overview.html}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Caching library
+fop-2.3.jar|Formatting Objects Processor (FOP)|2.3|{link:Apache|http://xmlgraphics.apache.org/fop/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Used to export SVG visualizations to image and PDF formats
 guava-24.0-jre.jar|Guava: Google Core Libraries for Java|17.0|{link:guava-libraries|http://code.google.com/p/guava-libraries/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|kevink|Collections Library
 gwt-dnd-3.3.4.jar|Drag-and-Drop Library for Google Web-Toolkit|3.2.0|{link:gwt-dnd|http://code.google.com/p/gwt-dnd/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Library to make it easier to add drag-and-drop to GWT
 gwt-servlet-2.8.2.jar|Server Support for Google Web Toolkit|2.8.2|{link:Google|http://code.google.com/webtoolkit/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Support for rich web apps

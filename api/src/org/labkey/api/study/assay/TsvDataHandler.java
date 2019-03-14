@@ -19,6 +19,8 @@ package org.labkey.api.study.assay;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.labkey.api.data.ColumnHeaderType;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -40,7 +42,10 @@ import org.labkey.api.util.FileUtil;
 import java.io.File;
 import java.io.OutputStream;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 /**
  * User: brittp
@@ -138,7 +143,10 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
                     if (dataTable != null)
                     {
                         // Filter to get rows just from that one file
-                        Results rs = new TableSelector(dataTable, new SimpleFilter(FieldKey.fromParts("DataId"), data.getRowId()), new Sort("RowId")).getResults();
+                        TableSelector ts = new TableSelector(dataTable, new SimpleFilter(FieldKey.fromParts("DataId"), data.getRowId()), new Sort("RowId"));
+                        // Be sure to request lookup values and other renderer-required info, see issue 36746
+                        ts.setForDisplay(true);
+                        Results rs = ts.getResults();
                         if (rs.getSize() == 0)
                             return;
 
@@ -146,7 +154,18 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
                         {
                             File tempFile = File.createTempFile(FileUtil.getBaseName(FileUtil.getFileName(dataFile)), ".tsv");
 
-                            try (TSVGridWriter writer = new TSVGridWriter(rs))
+                            // Figure out the subset of columns to actually export in the TSV, see issue 36746
+                            Set<FieldKey> ignored = Set.of(FieldKey.fromParts("Run"), FieldKey.fromParts("RowId"), FieldKey.fromParts("DataId"), FieldKey.fromParts("Folder"));
+                            List<DisplayColumn> displayColumns = new ArrayList<>();
+                            for (ColumnInfo column : dataTable.getColumns())
+                            {
+                                if (!ignored.contains(column.getFieldKey()))
+                                {
+                                    displayColumns.add(column.getRenderer());
+                                }
+                            }
+
+                            try (TSVGridWriter writer = new TSVGridWriter(rs, displayColumns))
                             {
                                 writer.setColumnHeaderType(ColumnHeaderType.FieldKey);
                                 writer.write(tempFile);

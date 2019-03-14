@@ -733,7 +733,7 @@ quickScan:
     }
 
 
-    private static String encodeForURL(String str) 
+    public static String encodeForURL(String str)
     {
         // str is unencoded; we need certain special chars encoded for it to become a URL
         // % & # @ ~ {} []
@@ -748,6 +748,7 @@ quickScan:
             else if ('}' == str.charAt(i)) res.append("%7D");
             else if ('[' == str.charAt(i)) res.append("%5B");
             else if (']' == str.charAt(i)) res.append("%5D");
+            else if ('+' == str.charAt(i)) res.append("%2B");
             else if (' ' == str.charAt(i)) res.append("%20");   // space also
             else res.append(str.charAt(i));
         }

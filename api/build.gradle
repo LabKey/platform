@@ -79,7 +79,8 @@ List test = [
 List others = [
         "gov.nist.math:jama:${jamaVersion}",
         "org.jetbrains:annotations:${annotationsVersion}",
-        "org.apache.xmlgraphics:batik:${batikVersion}",
+        "org.apache.xmlgraphics:batik-codec:${batikVersion}",
+        "org.apache.xmlgraphics:fop:${fopVersion}",
         "flyingsaucer:core-renderer:${flyingsaucerVersion}",
         "com.google.guava:guava:${guavaVersion}",
         "net.sf.jtidy:jtidy:${jtidyVersion}",
