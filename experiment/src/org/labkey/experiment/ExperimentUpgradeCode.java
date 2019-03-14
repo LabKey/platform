@@ -37,6 +37,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -339,6 +340,43 @@ public class ExperimentUpgradeCode implements UpgradeCode
         int count = new SqlExecutor(scope).execute(insert);
         LOG.info("SampleSet '" + ss.getName() + "' (" + ss.getRowId() + ") inserted provisioned rows, count=" + count);
 
+
+        // handle migration of Description column from property to exp.Material.Description column
+        DomainProperty desc = domain.getPropertyByName("Description");
+        if (null != desc)
+        {
+            String columnSelectName = d.getColumnSelectName(desc.getPropertyDescriptor().getStorageColumnName().toLowerCase());
+            SQLFragment update;
+            if (scope.getSqlDialect().isSqlServer())
+            {
+                update = new SQLFragment(
+                        "UPDATE exp.material\n"+
+                                "SET Description = (SELECT " + columnSelectName + " FROM expsampleset." + domain.getStorageTableName() +" ss WHERE ss.lsid = m.lsid)\n"+
+                                "FROM exp.material m\n" +
+                                "WHERE m.CpasType = ?",
+                        domain.getTypeURI());
+            }
+            else
+            {
+                update = new SQLFragment(
+                        "UPDATE exp.material m\n"+
+                                "SET Description = (SELECT " + columnSelectName + " FROM expsampleset." + domain.getStorageTableName() +" ss WHERE ss.lsid = m.lsid)\n"+
+                                "WHERE m.CpasType = ?",
+                        domain.getTypeURI());
+            }
+            new SqlExecutor(scope).execute(update);
+
+            // delete the property
+            try
+            {
+                desc.delete();
+                domain.save(null);
+            }
+            catch (ChangePropertyDescriptorException x)
+            {
+                log.warn("unexpected error during upgrade", x);
+            }
+        }
 
         // delete objectproperty rows for samples in the SampleSet, but only for properties of the SampleSet domain
         SQLFragment deleteObjectProperties = new SQLFragment("DELETE FROM exp.objectproperty\n");
