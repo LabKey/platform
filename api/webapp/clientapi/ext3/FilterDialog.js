@@ -465,7 +465,7 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
                         }
                     }
 
-                    this.inputs[f].setValue(filter.getValue());
+                    this.inputs[f].setValue(filter.getURLParameterValue());
                 }
             }
         }
@@ -927,23 +927,19 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
                     filter = LABKEY.Filter.create(columnName, val, type);
                 }
                 else
-                    filter = LABKEY.Filter.create(columnName, this.delimitValues(unselected), LABKEY.Filter.Types.NOT_IN);
+                    filter = LABKEY.Filter.create(columnName, this.selectedToValues(unselected), LABKEY.Filter.Types.NOT_IN);
             }
             else {
-                filter = LABKEY.Filter.create(columnName, this.delimitValues(selected), LABKEY.Filter.Types.IN);
+                filter = LABKEY.Filter.create(columnName, this.selectedToValues(selected), LABKEY.Filter.Types.IN);
             }
         }
 
         return filter;
     },
 
-    delimitValues : function(valueArray) {
-        var value = '', sep = '';
-        for (var s=0; s < valueArray.length; s++) {
-            value += sep + valueArray[s].get('value');
-            sep = ';';
-        }
-        return value;
+    // get array of values from the selected store item array
+    selectedToValues : function(valueArray) {
+        return valueArray.map(function (i) { return i.get('value'); });
     },
 
     // Implement interface LABKEY.FilterDialog.ViewPanel

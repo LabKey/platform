@@ -610,11 +610,17 @@ LABKEY.Filter = new function()
                             var filterName = paramName.substring(tilde + 1);
                             var filterType = LABKEY.Filter.getFilterTypeForURLSuffix(filterName);
                             var values = params[paramName];
-                            if (!LABKEY.Utils.isArray(values))
+                            // Create separate Filter objects if the filter parameter appears on the URL more than once.
+                            if (LABKEY.Utils.isArray(values))
                             {
-                                values = [values];
+                                for (var i = 0; i < values.length; i++) {
+                                    filterArray.push(LABKEY.Filter.create(columnName, values[i], filterType));
+                                }
                             }
-                            filterArray.push(LABKEY.Filter.create(columnName, values, filterType));
+                            else
+                            {
+                                filterArray.push(LABKEY.Filter.create(columnName, values, filterType));
+                            }
                         }
                     }
                 }

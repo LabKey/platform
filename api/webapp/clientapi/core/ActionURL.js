@@ -174,7 +174,7 @@ LABKEY.ActionURL = new function()
 
         /**
         * Gets a URL parameter by name. Note that if the given parameter name is present more than once
-        * in the query string, the returned value will be the first occurance of that parameter name. To get all
+        * in the query string, the returned value will be the first occurrence of that parameter name. To get all
         * instances of the parameter, use getParameterArray().
         * @param {String} parameterName The name of the URL parameter.
         * @return {String} The value of the named parameter, or undefined of the parameter is not present.

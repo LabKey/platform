@@ -1476,6 +1476,23 @@ LABKEY.Query.Filter = function (columnName, value, filterType)
         columnName = '*';
     }
 
+    // If the filter is multi-valued and we were constructed with a single
+    // string value, parse the string into the individual parts.
+    if (filterType.isMultiValued() && LABKEY.Utils.isString(value))
+    {
+        if (value.indexOf("{json:") === 0 && value.indexOf("}") === value.length-1)
+        {
+            value = JSON.parse(value.substring("{json:".length, value.length - 1));
+        }
+        else
+        {
+            value = value.split(filterType.getMultiValueSeparator());
+        }
+    }
+
+    if (!filterType.isMultiValued() && LABKEY.Utils.isArray(value))
+        throw new Error("Creating single-value filter '" + filterType.getDisplayText() + "' with array of values: " + values);
+
     /**
      * @private
      */
@@ -1527,19 +1544,16 @@ LABKEY.Query.Filter.prototype.getURLParameterValue = function ()
 {
     if (!this.filterType.isDataValueRequired())
         return '';
-    if (LABKEY.Utils.isArray(this.value))
+    if (this.filterType.isMultiValued() && LABKEY.Utils.isArray(this.value))
     {
-        if (this.filterType === LABKEY.Filter.Types.IN || this.filterType === LABKEY.Filter.Types.NOT_IN)
-        {
-            var containsSemi = false;
-            this.value.forEach(function (v) {
-                if (LABKEY.Utils.isString(v) && v.indexOf(';') !== -1) containsSemi = true;
-            });
-            if (containsSemi)
-                return "{json:" + JSON.stringify(this.value) + "}";
-            else
-                return this.value.join(";");
-        }
+        var sep = this.filterType.getMultiValueSeparator();
+        var containsSep = this.value.some(function (v) {
+            return LABKEY.Utils.isString(v) && v.indexOf(sep) !== -1;
+        });
+        if (containsSep)
+            return "{json:" + JSON.stringify(this.value) + "}";
+        else
+            return this.value.join(sep);
     }
     return this.value;
 };
