@@ -281,10 +281,10 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
         Ext4.iterate(filterMap, function(column, values) {
             var filter;
             if (values.length > 1) {
-                filter = LABKEY.Filter.create(column, values.join(';'), LABKEY.Filter.Types.IN);
+                filter = LABKEY.Filter.create(column, values, LABKEY.Filter.Types.IN);
             }
             else if (values.length === 1) {
-                filter = LABKEY.Filter.create(column, values);
+                filter = LABKEY.Filter.create(column, values[0]);
             }
             else {
                 // Not in any cohort/group

@@ -1491,7 +1491,7 @@ LABKEY.Query.Filter = function (columnName, value, filterType)
     }
 
     if (!filterType.isMultiValued() && LABKEY.Utils.isArray(value))
-        throw new Error("Creating single-value filter '" + filterType.getDisplayText() + "' with array of values: " + values);
+        throw new Error("Can't create '" + filterType.getDisplayText() + "' filter for column '" + columnName + "' with an array of values: " + value);
 
     /**
      * @private
