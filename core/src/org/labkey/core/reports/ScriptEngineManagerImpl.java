@@ -21,9 +21,11 @@ import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
@@ -64,7 +66,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static java.util.Collections.unmodifiableList;
 
 /*
 * User: Karl Lum
@@ -77,6 +83,43 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
 
     public static final String SCRIPT_ENGINE_MAP = "ExternalScriptEngineMap";
     private static final String ENGINE_DEF_MAP_PREFIX = "ScriptEngineDefinition_";
+
+    private static final String ALL_ENGINES = "ALL";
+
+    // cache engine definitions by:
+    // - "ALL" -> all engines
+    // - container+context -> engines scoped to a single container and context enum
+    private static final BlockingStringKeyCache<List<ExternalScriptEngineDefinition>> ENGINE_DEFINITION_CACHE = CacheManager.getBlockingStringKeyCache(100, CacheManager.DAY, "script engine defs", (key, argument) -> {
+        if (key == ALL_ENGINES)
+        {
+            // fetch all script engine definitions
+            return unmodifiableList(new TableSelector(CoreSchema.getInstance().getTableInfoReportEngines()).getArrayList(ExternalScriptEngineDefinitionImpl.class));
+        }
+        else
+        {
+            // strip the engine context off of the end of the containerId
+            int colon = key.indexOf(':');
+            String containerId = key.substring(0, colon);
+            String context = key.substring(colon + 1);
+
+            // fetch script engine definitions scoped to the container
+            SQLFragment sql = new SQLFragment("SELECT * FROM ")
+                    .append(CoreSchema.getInstance().getTableInfoReportEngines(), "")
+                    .append(" WHERE RowId IN (SELECT EngineId FROM ")
+                    .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
+                    .append(" WHERE Container = ? AND EngineContext = ?)")
+                    .add(containerId)
+                    .add(context);
+
+            return unmodifiableList(new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getArrayList(ExternalScriptEngineDefinitionImpl.class));
+        }
+    });
+
+    private static String makeCacheKey(@NotNull Container c, @NotNull EngineContext context)
+    {
+        return c.getId() + ":" + context.toString();
+    }
+
 
     enum Props
     {
@@ -154,7 +197,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
         {
             factories.add(new ExternalScriptEngineFactory(def));
         }
-        return Collections.unmodifiableList(factories);
+        return unmodifiableList(factories);
     }
 
     @Override
@@ -274,34 +317,41 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
     {
         if (def.getRowId() != null)
         {
-            SQLFragment sql = new SQLFragment("SELECT EngineId FROM ")
-                    .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
-                    .append(" WHERE Container = ? AND EngineContext = ?")
-                    .add(container)
-                    .add(context);
-
-            if (!new SqlSelector(CoreSchema.getInstance().getSchema(), sql).exists())
+            try (DbScope.Transaction tx = CoreSchema.getInstance().getScope().ensureTransaction())
             {
-                SQLFragment insert = new SQLFragment("INSERT INTO ")
-                        .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
-                        .append(" (EngineId, Container, EngineContext) VALUES(?,?,?)")
-                        .add(def.getRowId())
-                        .add(container)
-                        .add(context);
+                tx.addCommitTask(ENGINE_DEFINITION_CACHE::clear, DbScope.CommitTaskOption.POSTCOMMIT);
 
-                new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(insert);
-            }
-            else
-            {
-                SQLFragment update = new SQLFragment("UPDATE ")
+                SQLFragment sql = new SQLFragment("SELECT EngineId FROM ")
                         .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
-                        .append(" SET EngineId = ? ")
                         .append(" WHERE Container = ? AND EngineContext = ?")
-                        .add(def.getRowId())
                         .add(container)
                         .add(context);
 
-                new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(update);
+                if (!new SqlSelector(CoreSchema.getInstance().getSchema(), sql).exists())
+                {
+                    SQLFragment insert = new SQLFragment("INSERT INTO ")
+                            .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
+                            .append(" (EngineId, Container, EngineContext) VALUES(?,?,?)")
+                            .add(def.getRowId())
+                            .add(container)
+                            .add(context);
+
+                    new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(insert);
+                }
+                else
+                {
+                    SQLFragment update = new SQLFragment("UPDATE ")
+                            .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
+                            .append(" SET EngineId = ? ")
+                            .append(" WHERE Container = ? AND EngineContext = ?")
+                            .add(def.getRowId())
+                            .add(container)
+                            .add(context);
+
+                    new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(update);
+                }
+
+                tx.commit();
             }
         }
     }
@@ -309,78 +359,81 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
     @Override
     public void removeEngineScope(Container container, ExternalScriptEngineDefinition def, EngineContext context)
     {
-        SQLFragment sql = new SQLFragment("DELETE FROM ")
-                .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
-                .append(" WHERE Container = ? AND EngineContext = ?")
-                .add(container)
-                .add(context);
+        try (DbScope.Transaction tx = CoreSchema.getInstance().getScope().ensureTransaction())
+        {
+            tx.addCommitTask(ENGINE_DEFINITION_CACHE::clear, DbScope.CommitTaskOption.POSTCOMMIT);
 
-        new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(sql);
+            SQLFragment sql = new SQLFragment("DELETE FROM ")
+                    .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
+                    .append(" WHERE Container = ? AND EngineContext = ?")
+                    .add(container)
+                    .add(context);
+
+            new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(sql);
+
+            tx.commit();
+        }
     }
 
     /**
      * Returns the list of engines scoped to the specified container
      */
-    public List<ExternalScriptEngineDefinition> getScopedEngines(Container container, EngineContext context)
+    public List<ExternalScriptEngineDefinition> getScopedEngines(@NotNull Container container, @NotNull EngineContext context)
     {
-        SimpleFilter.createContainerFilter(container);
-        SQLFragment sql = new SQLFragment("SELECT * FROM ")
-                .append(CoreSchema.getInstance().getTableInfoReportEngines(), "")
-                .append(" WHERE RowId IN (SELECT EngineId FROM ")
-                .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
-                .append(" WHERE Container = ? AND EngineContext = ?)")
-                .add(container)
-                .add(context);
-
-        return new ArrayList<>(new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getCollection(ExternalScriptEngineDefinitionImpl.class));
+        return ENGINE_DEFINITION_CACHE.get(makeCacheKey(container, context));
     }
 
     @Override
     public List<ExternalScriptEngineDefinition> getEngineDefinitions()
     {
-        return new ArrayList<>(new TableSelector(CoreSchema.getInstance().getTableInfoReportEngines()).getCollection(ExternalScriptEngineDefinitionImpl.class));
+        return ENGINE_DEFINITION_CACHE.get(ALL_ENGINES);
     }
 
     @Override
     public List<ExternalScriptEngineDefinition> getEngineDefinitions(ExternalScriptEngineDefinition.Type type)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Type"), type);
-        return new ArrayList<>(new TableSelector(CoreSchema.getInstance().getTableInfoReportEngines(), filter, null).getCollection(ExternalScriptEngineDefinitionImpl.class));
+        return ENGINE_DEFINITION_CACHE.get(ALL_ENGINES)
+                .stream()
+                .filter(e -> e.getType() == type)
+                .collect(Collectors.toList());
     }
 
     @Override
     public List<ExternalScriptEngineDefinition> getEngineDefinitions(ExternalScriptEngineDefinition.Type type, boolean enabled)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Type"), type);
-        filter.addCondition(FieldKey.fromParts("Enabled"), enabled);
-        List<ExternalScriptEngineDefinition> engines = new ArrayList<>(new TableSelector(CoreSchema.getInstance().getTableInfoReportEngines(), filter, null).getCollection(ExternalScriptEngineDefinitionImpl.class));
+        Stream<ExternalScriptEngineDefinition> stream = ENGINE_DEFINITION_CACHE.get(ALL_ENGINES)
+                .stream()
+                .filter(e -> e.getType() == type)
+                .filter(ExternalScriptEngineDefinition::isEnabled);
 
         if (type == ExternalScriptEngineDefinition.Type.R)
         {
-            engines = engines.stream().filter(e -> !e.isRemote() || PremiumService.get().isRemoteREnabled()).collect(Collectors.toList());
+            stream = stream.filter(e -> !e.isRemote() || PremiumService.get().isRemoteREnabled());
         }
 
-        return engines;
+        return stream.collect(Collectors.toList());
     }
 
     @Override
     @Nullable
     public ExternalScriptEngineDefinition getEngineDefinition(String name, ExternalScriptEngineDefinition.Type type)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Name"), name);
-        filter.addCondition(FieldKey.fromParts("Type"), type);
-
-        return new TableSelector(CoreSchema.getInstance().getTableInfoReportEngines(), filter, null).getObject(ExternalScriptEngineDefinitionImpl.class);
+        return ENGINE_DEFINITION_CACHE.get(ALL_ENGINES)
+                .stream()
+                .filter(e -> Objects.equals(e.getName(), name))
+                .filter(e -> e.getType() == type)
+                .findFirst().orElse(null);
     }
 
     @Override
     @Nullable
     public ExternalScriptEngineDefinition getEngineDefinition(int rowId, ExternalScriptEngineDefinition.Type type)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), rowId);
-        filter.addCondition(FieldKey.fromParts("Type"), type);
-
-        return new TableSelector(CoreSchema.getInstance().getTableInfoReportEngines(), filter, null).getObject(ExternalScriptEngineDefinitionImpl.class);
+        return ENGINE_DEFINITION_CACHE.get(ALL_ENGINES)
+                .stream()
+                .filter(e -> Objects.equals(e.getRowId(), rowId))
+                .filter(e -> e.getType() == type)
+                .findFirst().orElse(null);
     }
 
     /**
@@ -422,14 +475,16 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
     {
         if (def.getRowId() != null)
         {
-            try (DbScope.Transaction transaction = CoreSchema.getInstance().getScope().ensureTransaction())
+            try (DbScope.Transaction tx = CoreSchema.getInstance().getScope().ensureTransaction())
             {
+                tx.addCommitTask(ENGINE_DEFINITION_CACHE::clear, DbScope.CommitTaskOption.POSTCOMMIT);
+
                 // delete any folder scoped mappings
                 SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("EngineId"), def.getRowId());
                 Table.delete(CoreSchema.getInstance().getTableInfoReportEngineMap(), filter);
                 Table.delete(CoreSchema.getInstance().getTableInfoReportEngines(), def.getRowId());
 
-                transaction.commit();
+                tx.commit();
             }
         }
         else
@@ -443,10 +498,17 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
         {
             if (def.isExternal())
             {
-                if (def.getRowId() != null)
-                    Table.update(user, CoreSchema.getInstance().getTableInfoReportEngines(), def, def.getRowId());
-                else
-                    Table.insert(user, CoreSchema.getInstance().getTableInfoReportEngines(), def);
+                try (DbScope.Transaction tx = CoreSchema.getInstance().getScope().ensureTransaction())
+                {
+                    tx.addCommitTask(ENGINE_DEFINITION_CACHE::clear, DbScope.CommitTaskOption.POSTCOMMIT);
+
+                    if (def.getRowId() != null)
+                        Table.update(user, CoreSchema.getInstance().getTableInfoReportEngines(), def, def.getRowId());
+                    else
+                        Table.insert(user, CoreSchema.getInstance().getTableInfoReportEngines(), def);
+
+                    tx.commit();
+                }
             }
             else
             {
