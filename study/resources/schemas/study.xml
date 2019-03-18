@@ -1734,7 +1734,7 @@
               <description>Subtype of the target type. For example, "CD4" or "CD8".</description>
           </column>
           <column columnName="Platform">
-              <description>Platform on which the assay was performed. For example, ""ELISpot", “ELISA”, “Luminex” or "Flow Cytometry".</description>
+              <description>Platform on which the assay was performed. For example, "ELISpot", "ELISA", "Luminex" or "Flow Cytometry".</description>
           </column>
           <column columnName="Category">
               <description>Type of experiment that the assay represents.  For example, "Immunogenicity", "Epidemiology", or "Cell Engineering".</description>
