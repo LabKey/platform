@@ -2279,6 +2279,7 @@ public class QueryView extends WebPartView<Object>
 
     public Results getResults(ShowRows showRows, boolean async, boolean cache) throws SQLException, IOException
     {
+        _initializeButtonBar = false;
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
         ShowRows prevShowRows = getSettings().getShowRows();
