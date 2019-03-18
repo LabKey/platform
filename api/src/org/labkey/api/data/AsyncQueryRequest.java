@@ -219,11 +219,21 @@ public class AsyncQueryRequest<T>
     {
         try
         {
-            _rootResponse.getWriter().write(" ");
-            _rootResponse.flushBuffer();
+            // Issue 37051: don't write to the response unless committed (status code and http headers have been written)
+            if (_rootResponse.isCommitted())
+            {
+                _rootResponse.getWriter().write(" ");
+                _rootResponse.flushBuffer();
+                _log.debug("ping client: success");
+            }
+            else
+            {
+                _log.debug("ping client: skipped, not yet committed");
+            }
         }
         catch (IOException ioe)
         {
+            _log.debug("ping client: failure: " + ioe.getMessage());
             cancel();
             return ioe;
         }
