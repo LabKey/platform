@@ -21,6 +21,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.collections.ResultSetRowMapFactory;
+import org.labkey.api.miniprofiler.MiniProfiler;
+import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
@@ -261,19 +263,27 @@ public class DataRegionSelection
 
     public static int selectAll(QueryView view, String key) throws IOException
     {
+        // Turn off features of QueryView
+        view.setPrintView(true);
+        view.setShowConfiguredButtons(false);
+        view.setShowPagination(false);
+        view.setShowPaginationCount(false);
+        view.setShowDetailsColumn(false);
+        view.setShowUpdateColumn(false);
+
         ViewContext context = view.getViewContext();
 
         TableInfo table = view.getTable();
 
         DataView v = view.createDataView();
         DataRegion rgn = v.getDataRegion();
-        rgn.setShowPaginationCount(false);
 
         // Include all rows
-        rgn.getSettings().setShowRows(ShowRows.ALL);
-        rgn.getSettings().setOffset(Table.NO_OFFSET);
+        view.getSettings().setShowRows(ShowRows.ALL);
+        view.getSettings().setOffset(Table.NO_OFFSET);
 
-        //force the pk column(s) into the default list of columns
+        // remove unnecessary columns and force the pk column(s) into the default list of columns
+        rgn.clearColumns();
         List<String> colNames = rgn.getRecordSelectorValueColumns();
         if (colNames == null)
             colNames = table.getPkColumnNames();
@@ -286,7 +296,8 @@ public class DataRegionSelection
         RenderContext rc = v.getRenderContext();
         rc.setCache(false);
 
-        try (ResultSet rs = rgn.getResultSet(rc))
+        try (Timing t = MiniProfiler.step("selectAll");
+             ResultSet rs = rgn.getResultSet(rc))
         {
             List<String> selection = createSelectionList(rc, rgn, rs, colNames);
             return setSelected(context, key, selection, true);

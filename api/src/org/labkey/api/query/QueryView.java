@@ -181,7 +181,6 @@ public class QueryView extends WebPartView<Object>
     private List<QueryException> _parseErrors = new ArrayList<>();
     private QuerySettings _settings;
     private boolean _showRecordSelectors = false;
-    private boolean _initializeButtonBar = true;
 
     private boolean _shadeAlternatingRows = true;
     private boolean _showFilterDescription = true;
@@ -2140,7 +2139,7 @@ public class QueryView extends WebPartView<Object>
         DataRegion rgn = ret.getDataRegion();
         ret.setFrame(WebPartView.FrameType.NONE);
         rgn.setAllowAsync(true);
-        if (_initializeButtonBar)
+        if (!isPrintView() && !isExportView())
         {
             ButtonBar bb = new ButtonBar();
             populateButtonBar(ret, bb);
@@ -2244,7 +2243,7 @@ public class QueryView extends WebPartView<Object>
 
     protected TSVGridWriter getTsvWriter(ColumnHeaderType headerType) throws IOException
     {
-        _initializeButtonBar = false;
+        _exportView = true;
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
         rgn.setAllowAsync(false);
@@ -2279,7 +2278,7 @@ public class QueryView extends WebPartView<Object>
 
     public Results getResults(ShowRows showRows, boolean async, boolean cache) throws SQLException, IOException
     {
-        _initializeButtonBar = false;
+        _exportView = true;
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
         ShowRows prevShowRows = getSettings().getShowRows();
@@ -2641,7 +2640,7 @@ public class QueryView extends WebPartView<Object>
         TableInfo table = getTable();
         if (table != null)
         {
-            _initializeButtonBar = false;
+            _exportView = true;
             setShowDetailsColumn(response.isIncludeDetailsColumn());
             setShowUpdateColumn(response.isIncludeUpdateColumn());
             DataView view = createDataView();
