@@ -43,14 +43,7 @@ import java.util.Stack;
 public class WebPartSubstitutionHandler implements HtmlRenderer.SubstitutionHandler
 {
     private static final Logger LOG = Logger.getLogger(WebPartSubstitutionHandler.class);
-    private static final ThreadLocal<Stack<Map>> _paramsStack = new ThreadLocal<Stack<Map>>()
-    {
-        @Override
-        protected Stack<Map> initialValue()
-        {
-            return new Stack<>();
-        }
-    };
+    private static final ThreadLocal<Stack<Map>> _paramsStack = ThreadLocal.withInitial(Stack::new);
 
 
     @NotNull
@@ -80,9 +73,6 @@ public class WebPartSubstitutionHandler implements HtmlRenderer.SubstitutionHand
                 part.setLocation(partLocation);
             part.getPropertyMap().putAll(params);
 
-            StringWriter sw = new StringWriter();
-            LinkedHashSet<ClientDependency> dependencies = new LinkedHashSet<>();
-
             try
             {
                 ViewContext ctx = HttpView.currentContext();
@@ -108,9 +98,12 @@ public class WebPartSubstitutionHandler implements HtmlRenderer.SubstitutionHand
                 view.addAllObjects(params);
 
                 //Issue 15609: we need to include client dependencies for embedded webparts
-                dependencies.addAll(view.getClientDependencies());
+                LinkedHashSet<ClientDependency> dependencies = new LinkedHashSet<>(view.getClientDependencies());
 
+                StringWriter sw = new StringWriter();
                 view.include(view, sw);
+
+                return new FormattedHtml(sw.toString(), true, dependencies);  // All webparts are considered volatile... CONSIDER: Be more selective (e.g., query & messages, but not search)
             }
             catch (Throwable e)
             {
@@ -121,8 +114,6 @@ public class WebPartSubstitutionHandler implements HtmlRenderer.SubstitutionHand
                 // Return HTML with error
                 return new FormattedHtml("<br><font class='error' color='red'>Error substituting " + partName + ": " + e.getMessage() + "</font>");
             }
-
-            return new FormattedHtml(sw.toString(), true, dependencies);  // All webparts are considered volatile... CONSIDER: Be more selective (e.g., query & messages, but not search)
         }
         finally
         {
