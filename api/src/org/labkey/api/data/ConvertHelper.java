@@ -200,13 +200,14 @@ public class ConvertHelper implements PropertyEditorRegistrar
 
     public static class NullSafeConverter implements Converter
     {
-        Converter _converter;
+        private Converter _converter;
 
         public NullSafeConverter(Converter converter)
         {
             _converter = converter;
         }
 
+        @Override
         public Object convert(Class clss, Object o)
         {
             if (o instanceof String)
@@ -225,7 +226,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
     // For example, array_to_string(array_agg(array[true, false]), '|') ==> returns 't|f'
     public static class BooleanConverter implements Converter
     {
-        org.apache.commons.beanutils.converters.BooleanConverter nested = new org.apache.commons.beanutils.converters.BooleanConverter();
+        private org.apache.commons.beanutils.converters.BooleanConverter _nested = new org.apache.commons.beanutils.converters.BooleanConverter();
 
         @Override
         public Object convert(Class type, Object value)
@@ -242,7 +243,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
             else if (str.equalsIgnoreCase("f"))
                 return Boolean.FALSE;
 
-            return nested.convert(type, value);
+            return _nested.convert(type, value);
         }
     }
 
@@ -254,6 +255,8 @@ public class ConvertHelper implements PropertyEditorRegistrar
     public static class LenientTimeOnlyConverter implements Converter
     {
         private static final String[] VALID_FORMATS = {"H:mm", "H:mm:ss"};
+
+        @Override
         public Object convert(Class clss, Object o)
         {
             if (null == o)
@@ -290,6 +293,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
     {
         private LenientDateConverter _dateConverter = new LenientDateConverter();
 
+        @Override
         public Object convert(Class clss, Object o)
         {
             if (o instanceof String)
@@ -320,6 +324,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
      */
     public static class LenientDateConverter implements Converter
     {
+        @Override
         public Object convert(Class clss, Object o)
         {
             if (null == o || "".equals(o))
@@ -336,6 +341,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
     /* Date-only sql type */
     public static class LenientSqlDateConverter implements Converter
     {
+        @Override
         public Object convert(Class clss, Object o)
         {
             if (o instanceof String)
@@ -358,6 +364,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
     {
         private static Converter _stringConverter = new StringConverter();
 
+        @Override
         public Object convert(Class clss, Object o)
         {
             if (o instanceof String)
@@ -408,6 +415,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
 
     public static class ContainerConverter implements Converter
     {
+        @Override
         public Object convert(Class clss, Object o)
         {
             if (null == o)
@@ -474,6 +482,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
             _converter = new ByteArrayConverter();
         }
 
+        @Override
         public Object convert(Class clazz, Object o)
         {
             if (clazz != byte[].class)
@@ -558,9 +567,9 @@ public class ConvertHelper implements PropertyEditorRegistrar
          * @throws ConversionException if conversion cannot be performed
          *                             successfully
          */
+        @Override
         public Object convert(Class type, Object value)
         {
-
             if (value == null)
             {
                 if (useDefault)
@@ -621,22 +630,23 @@ public class ConvertHelper implements PropertyEditorRegistrar
 
     public static class ConvertUtilsEditor extends PropertyEditorSupport
     {
-        Class _class;
+        private Class _class;
 
         ConvertUtilsEditor(Class c)
         {
             _class = c;
         }
 
+        @Override
         public void setAsText(String text) throws IllegalArgumentException
         {
             try
             {
-            text = StringUtils.trimToNull(text);
-            if (null == text)
-                setValue(null);
-            else
-                setValue(ConvertUtils.convert(text, _class));
+                text = StringUtils.trimToNull(text);
+                if (null == text)
+                    setValue(null);
+                else
+                    setValue(ConvertUtils.convert(text, _class));
             }
             catch (ConversionException x)
             {
@@ -644,6 +654,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
             }
         }
 
+        @Override
         public String getAsText()
         {
             Object v = getValue();
@@ -654,6 +665,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
 
     public static class ColorConverter implements Converter
     {
+        @Override
         public Object convert(Class type, Object value)
         {
             if (value == null)
@@ -671,6 +683,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
         private org.apache.commons.beanutils.converters.StringArrayConverter _nested =
                 new org.apache.commons.beanutils.converters.StringArrayConverter();
 
+        @Override
         public Object convert(Class type, Object value)
         {
             if (value == null)
@@ -707,6 +720,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
 
     public static class FacetingBehaviorTypeConverter implements Converter
     {
+        @Override
         public Object convert(Class type, Object value)
         {
             if (value == null || value.equals("null") || !type.equals(FacetingBehaviorType.class))
@@ -720,6 +734,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
 
     public static class DefaultScaleConverter implements Converter
     {
+        @Override
         public Object convert(Class type, Object value)
         {
             if (value == null || value.equals("null") || !type.equals(DefaultScaleType.class))
@@ -801,6 +816,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
     public static class EnumConverter implements Converter
     {
         @SuppressWarnings("unchecked")
+        @Override
         public Object convert(Class type, Object value)
         {
             if (!type.isEnum())
@@ -830,8 +846,6 @@ public class ConvertHelper implements PropertyEditorRegistrar
                 throw new ConversionException(e);
             }
         }
-
-
     }
 
     public static class TestCase extends Assert
@@ -839,7 +853,6 @@ public class ConvertHelper implements PropertyEditorRegistrar
         @Test
         public void testConvertDate()
         {
-
             Object convertedDate = new LenientTimestampConverter().convert(Timestamp.class, "+1d");
             Calendar cal = Calendar.getInstance();
             cal.setTime(new Date());
@@ -855,10 +868,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
 
             convertedDate = new LenientTimestampConverter().convert(Timestamp.class, "Thu Jun 10 00:00:00 PDT 1999");
             cal.set(1999, Calendar.JUNE,10,0,0,0);
-            assertEquals("Wrong date", DateUtil.getDateOnly(cal.getTime()),
-                     DateUtil.getDateOnly((Timestamp)convertedDate));
-
+            assertEquals("Wrong date", DateUtil.getDateOnly(cal.getTime()), DateUtil.getDateOnly((Timestamp)convertedDate));
         }
-
     }
 }

@@ -57,7 +57,6 @@ public class CacheManager
     // Set useCache = false to completely disable all caching... and slow your server to a near halt. Possibly useful for
     // reproducing CacheLoader re-entrancy problems, but not much else.
     private static final boolean useCache = true;
-    @SuppressWarnings("ConstantConditions")
     private static final CacheProvider PROVIDER = useCache ? EhCacheProvider.getInstance() : new NoopCacheProvider();
 
     private static final List<TrackingCache> KNOWN_CACHES = new LinkedList<>();
@@ -179,7 +178,6 @@ public class CacheManager
         if (null != value && value.getClass().isArray())
             return;
 
-        //noinspection ConstantConditions
         if (null != description)
         {
             LOG.warn(loader.toString() + " returned " + description + ", which could be mutated by callers!");
