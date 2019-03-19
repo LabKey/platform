@@ -16,6 +16,7 @@
 
 package org.labkey.api.cache;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.Filter;
 
@@ -29,18 +30,18 @@ import java.util.Set;
 
 public interface Cache<K, V>
 {
-    void put(K key, V value);
+    void put(@NotNull K key, V value);
 
-    void put(K key, V value, long timeToLive);
+    void put(@NotNull K key, V value, long timeToLive);
 
-    V get(K key);
+    V get(@NotNull K key);
 
     /**
      * The wrapped calls to get() and put() are not guaranteed synchronous (see subclass/wrapper impl)
      */
-    V get(K key, @Nullable Object arg, CacheLoader<K,V> loader);
+    V get(@NotNull K key, @Nullable Object arg, CacheLoader<K,V> loader);
 
-    void remove(K key);
+    void remove(@NotNull K key);
 
     /** Removes every element in the cache where filter.accept(K key) evaluates to true.
      * Returns the number of elements that were removed.

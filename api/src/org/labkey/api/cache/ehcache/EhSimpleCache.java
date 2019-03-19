@@ -18,6 +18,7 @@ package org.labkey.api.cache.ehcache;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.Element;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheType;
 import org.labkey.api.cache.SimpleCache;
@@ -44,14 +45,14 @@ class EhSimpleCache<K, V> implements SimpleCache<K, V>
     }
 
     @Override
-    public void put(K key, V value)
+    public void put(@NotNull K key, V value)
     {
         Element element = new Element(key, value);
         _cache.put(element);
     }
 
     @Override
-    public void put(K key, V value, long timeToLive)
+    public void put(@NotNull K key, V value, long timeToLive)
     {
         Element element = new Element(key, value);
         element.setTimeToLive((int)timeToLive / 1000);
@@ -59,14 +60,14 @@ class EhSimpleCache<K, V> implements SimpleCache<K, V>
     }
 
     @Override
-    public @Nullable V get(K key)
+    public @Nullable V get(@NotNull K key)
     {
         Element e = _cache.get(key);
         return null == e ? null : (V)e.getObjectValue();
     }
 
     @Override
-    public void remove(K key)
+    public void remove(@NotNull K key)
     {
         _cache.remove(key);
     }

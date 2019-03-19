@@ -15,6 +15,7 @@
  */
 package org.labkey.api.cache;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
@@ -75,7 +76,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
     }
 
 
-    public V get(K key, @Nullable Object argument)
+    public V get(@NotNull K key, @Nullable Object argument)
     {
         if (null == _loader)
             throw new IllegalStateException("Set loader before calling this method");
@@ -84,7 +85,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
 
 
     @Override
-    public V get(K key, @Nullable Object argument, CacheLoader<K, V> loader)
+    public V get(@NotNull K key, @Nullable Object argument, CacheLoader<K, V> loader)
     {
         Wrapper<V> w;
 
@@ -173,7 +174,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
      * and leaves existing value in place if load fails for any reason. This helps in cases of long-running and/or unreliable
      * loads. Most callers would want to refresh() on a background thread.
      */
-    public void refresh(K key, @Nullable Object argument)
+    public void refresh(@NotNull K key, @Nullable Object argument)
     {
         if (null == _loader)
             throw new IllegalStateException("cache loader is not set");
@@ -185,7 +186,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
 
 
     @Override
-    public void put(K key, final V value)
+    public void put(@NotNull K key, final V value)
     {
         // Perhaps a better approach would be to create a private version of get() that takes a "force" flag, but doesn't seem worth it
         remove(key);
@@ -194,21 +195,21 @@ public class BlockingCache<K, V> implements Cache<K, V>
 
 
     @Override
-    public void put(K key, V value, long timeToLive)
+    public void put(@NotNull K key, V value, long timeToLive)
     {
         throw new UnsupportedOperationException("use get(loader)");
     }
 
 
     @Override
-    public V get(K key)
+    public V get(@NotNull K key)
     {
         return get(key, null);
     }
 
 
     @Override
-    public void remove(K key)
+    public void remove(@NotNull K key)
     {
         _cache.remove(key);
     }

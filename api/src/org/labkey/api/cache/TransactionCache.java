@@ -16,6 +16,7 @@
 
 package org.labkey.api.cache;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.Filter;
 
 import java.util.Set;
@@ -44,7 +45,7 @@ public class TransactionCache<K, V> implements Cache<K, V>
     }
 
     @Override
-    public V get(K key)
+    public V get(@NotNull K key)
     {
         V v;
 
@@ -58,7 +59,7 @@ public class TransactionCache<K, V> implements Cache<K, V>
 
 
     @Override
-    public V get(K key, Object arg, CacheLoader<K, V> loader)
+    public V get(@NotNull K key, Object arg, CacheLoader<K, V> loader)
     {
         V v;
 
@@ -86,21 +87,21 @@ public class TransactionCache<K, V> implements Cache<K, V>
     }
 
     @Override
-    public void put(K key, V value)
+    public void put(@NotNull K key, V value)
     {
         _hasWritten = true;
         _privateCache.put(key, value);
     }
 
     @Override
-    public void put(K key, V value, long timeToLive)
+    public void put(@NotNull K key, V value, long timeToLive)
     {
         _hasWritten = true;
         _privateCache.put(key, value, timeToLive);
     }
 
     @Override
-    public void remove(K key)
+    public void remove(@NotNull K key)
     {
         _hasWritten = true;
         _privateCache.remove(key);
