@@ -24,6 +24,6 @@ public class SeeUserDetailsPermission extends AbstractPermission
 {
     public SeeUserDetailsPermission()
     {
-        super("See User Details", "Allows non-administrators to see email addresses and contact information of other users.");
+        super("See User Details", "Allows viewing email addresses and contact information of other users.");
     }
 }

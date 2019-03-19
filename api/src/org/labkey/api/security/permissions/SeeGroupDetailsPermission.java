@@ -19,6 +19,6 @@ public class SeeGroupDetailsPermission extends AbstractPermission
 {
     public SeeGroupDetailsPermission()
     {
-        super("See Group Details", "Allows users to see information about site and project security groups.");
+        super("See Group Details", "Allows viewing information about site and project security groups.");
     }
 }

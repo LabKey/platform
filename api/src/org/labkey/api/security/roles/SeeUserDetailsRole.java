@@ -27,9 +27,11 @@ import org.labkey.api.security.permissions.SeeUserDetailsPermission;
 */
 public class SeeUserDetailsRole extends AbstractRootContainerRole
 {
+    public static final String NAME = "See User and Group Details";
+
     public SeeUserDetailsRole()
     {
-        super("See User and Group Details", "Allows non-administrators to see email addresses and contact information of other users as well as information about security groups.",
+        super(NAME, "Allows viewing email addresses and contact information of other users as well as information about security groups.",
                 SeeUserDetailsPermission.class, SeeGroupDetailsPermission.class);
 
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupGuests));
