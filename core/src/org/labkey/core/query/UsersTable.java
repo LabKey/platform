@@ -49,6 +49,7 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UserManagementPermission;
+import org.labkey.api.security.roles.SeeUserDetailsRole;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
@@ -92,9 +93,10 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
         super(schema, table);
 
         setDescription("Contains all users who are members of the current project." +
-                " The data in this table are available only to users who are signed-in (not guests). Guests will see no rows." +
-                " All signed-in users will see the columns UserId, EntityId, and DisplayName." +
-                " Users with the : 'See User Details' permission will see all standard and custom columns.");
+            " The data in this table are available only to users who are signed-in (not guests). Guests see no rows." +
+            " Signed-in users see the columns UserId, EntityId, and DisplayName." +
+            " Users granted the '" + SeeUserDetailsRole.NAME + "' role see all standard and custom columns.");
+
         setImportURL(LINK_DISABLER);
         if (schema.getUser().hasRootPermission(UserManagementPermission.class))
         {

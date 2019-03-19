@@ -43,6 +43,7 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.SeeGroupDetailsPermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
+import org.labkey.api.security.roles.SeeUserDetailsRole;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
 import org.labkey.core.workbook.WorkbookQueryView;
@@ -109,13 +110,16 @@ public class CoreQuerySchema extends UserSchema
     {
         Set<String> names = PageFlowUtil.set(
             USERS_TABLE_NAME, SITE_USERS_TABLE_NAME, PRINCIPALS_TABLE_NAME, MODULES_TABLE_NAME, MEMBERS_TABLE_NAME,
-            USERS_AND_GROUPS_TABLE_NAME, CONTAINERS_TABLE_NAME, WORKBOOKS_TABLE_NAME, QCSTATE_TABLE_NAME, VIEW_CATEGORY_TABLE_NAME);
+            CONTAINERS_TABLE_NAME, WORKBOOKS_TABLE_NAME, QCSTATE_TABLE_NAME, VIEW_CATEGORY_TABLE_NAME);
 
         if (getUser().hasRootPermission(UserManagementPermission.class))
             names.add(API_KEYS_TABLE_NAME);
 
         if (getContainer().hasPermission(getUser(), SeeGroupDetailsPermission.class))
+        {
             names.add(GROUPS_TABLE_NAME);
+            names.add(USERS_AND_GROUPS_TABLE_NAME);
+        }
 
         return names;
     }
@@ -135,13 +139,13 @@ public class CoreQuerySchema extends UserSchema
             return getMembers();
         if (GROUPS_TABLE_NAME.equalsIgnoreCase(name) && getContainer().hasPermission(getUser(), SeeGroupDetailsPermission.class))
             return getGroups();
-        if (USERS_AND_GROUPS_TABLE_NAME.equalsIgnoreCase(name))
+        if (USERS_AND_GROUPS_TABLE_NAME.equalsIgnoreCase(name) && getContainer().hasPermission(getUser(), SeeGroupDetailsPermission.class))
             return getUsersAndGroupsTable();
         if (WORKBOOKS_TABLE_NAME.equalsIgnoreCase(name))
             return getWorkbooks();
         if (CONTAINERS_TABLE_NAME.equalsIgnoreCase(name))
             return getContainers();
-        if (USERS_MSG_SETTINGS_TABLE_NAME.equalsIgnoreCase(name))
+        if (USERS_MSG_SETTINGS_TABLE_NAME.equalsIgnoreCase(name) && getContainer().hasPermission(getUser(), AdminPermission.class))
             return new UsersMsgPrefTable(this, CoreSchema.getInstance().getSchema().getTable(USERS_TABLE_NAME)).init();
         // Files table is not visible
         if (FILES_TABLE_NAME.equalsIgnoreCase(name))
@@ -169,7 +173,7 @@ public class CoreQuerySchema extends UserSchema
     {
         TableInfo principalsBase = CoreSchema.getInstance().getTableInfoPrincipals();
         // We apply a special filter for containers below, so don't filter here too
-        FilteredTable groups = new FilteredTable<CoreQuerySchema>(principalsBase, this)
+        FilteredTable groups = new FilteredTable<>(principalsBase, this)
         {
             @Override
             public boolean supportsContainerFilter()
@@ -226,7 +230,7 @@ public class CoreQuerySchema extends UserSchema
             addNullSetFilter(groups);
 
         groups.setDescription("Contains all site groups and groups defined in the current project." +
-        " This table is available only to administrators plus users who have been granted the \"See User and Group Details\" site role.");
+            " This table is available only to administrators plus users who have been granted the '" + SeeUserDetailsRole.NAME + "' site role.");
         
         return groups;
     }
@@ -252,7 +256,7 @@ public class CoreQuerySchema extends UserSchema
         }
         users.setName(SITE_USERS_TABLE_NAME);
         users.setDescription("Contains all users who have accounts on the server regardless of whether they are members of the current project or not." +
-        " The data in this table are available only to site administrators. All other users will see only the row for their own account.");
+            " The data in this table are available only to site administrators. All other users see only the row for their own account.");
 
         addGroupsColumn(users);
         addAvatarColumn(users);
@@ -330,7 +334,7 @@ public class CoreQuerySchema extends UserSchema
             addNullSetFilter(principals);
 
         principals.setDescription("Contains all principals (users and groups) who are members of the current project." +
-        " The data in this table are available only to users with administrator permission in the current folder. All other users will see no rows.");
+            " The data in this table are available only to users with administrator permission in the current folder. All other users see no rows.");
 
         return principals;
     }
@@ -438,11 +442,6 @@ public class CoreQuerySchema extends UserSchema
             addGroupsColumn(users);
             addAvatarColumn(users);
         }
-
-        users.setDescription("Contains all users who are members of the current project, based on being added to a project group or assigned permission directly within the project." +
-        " The data in this table are available only to users who are signed-in (not guests). Guests will see no rows." +
-        " All signed-in users will see the columns UserId, EntityId, and DisplayName." +
-        " Users with the : 'See User Details' permission will see all standard and custom columns.");
 
         return users;
     }

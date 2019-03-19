@@ -19,8 +19,6 @@ import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
@@ -40,10 +38,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/**
- * User: klum
- * Date: Feb 2, 2011
- * Time: 1:38:38 PM
+/*
+  User: klum
+  Date: Feb 2, 2011
+  Time: 1:38:38 PM
  */
 
 /**
@@ -65,20 +63,10 @@ public class UsersMsgPrefTable extends UsersTable
         super.addColumns();
 
         ColumnInfo msgCol = addColumn(new EmailSettingsColumn("MessageSettings", "messages", this));
-        msgCol.setDisplayColumnFactory(new DisplayColumnFactory(){
-            public DisplayColumn createRenderer(ColumnInfo col)
-            {
-                return new NotificationSettingColumn(col);
-            }
-        });
+        msgCol.setDisplayColumnFactory(NotificationSettingColumn::new);
 
         ColumnInfo fileCol = addColumn(new EmailSettingsColumn("FileSettings", "files", this));
-        fileCol.setDisplayColumnFactory(new DisplayColumnFactory(){
-            public DisplayColumn createRenderer(ColumnInfo col)
-            {
-                return new NotificationSettingColumn(col);
-            }
-        });
+        fileCol.setDisplayColumnFactory(NotificationSettingColumn::new);
 
         // add all of the active users who have read permission to this container to an in clause, this avoids
         // having to do the permission checking at render time and fixes the pagination display issues
@@ -122,13 +110,12 @@ public class UsersMsgPrefTable extends UsersTable
 
     public static class EmailSettingsColumn extends ExprColumn
     {
-        private String EMAIL_PREFS_JOIN = "EmailPrefsJoin$";
-        private String EMAIL_OPTIONS_JOIN = "EmailOptionsJoin$";
-
-        private TableInfo _emailPrefsTable;
-        private TableInfo _emailOptionsTable;
-        private Container _container;
-        private String _type;
+        private final String _emailPrefsJoin;
+        private final String _emailOptionsJoin;
+        private final TableInfo _emailPrefsTable;
+        private final TableInfo _emailOptionsTable;
+        private final Container _container;
+        private final String _type;
 
         public EmailSettingsColumn(String name, String type, FilteredTable parent)
         {
@@ -140,11 +127,11 @@ public class UsersMsgPrefTable extends UsersTable
             _emailOptionsTable = CommSchema.getInstance().getTableInfoEmailOptions();
 
             // set up the join aliases
-            EMAIL_PREFS_JOIN = name + "$" + "EmailPrefsJoin$";
-            EMAIL_OPTIONS_JOIN = name + "$" + "EmailOptionsJoin$";
+            _emailPrefsJoin = name + "$" + "EmailPrefsJoin$";
+            _emailOptionsJoin = name + "$" + "EmailOptionsJoin$";
 
             SQLFragment sql = new SQLFragment();
-            sql.append(ExprColumn.STR_TABLE_ALIAS).append("$").append(EMAIL_OPTIONS_JOIN).append(".EmailOption\n");
+            sql.append(ExprColumn.STR_TABLE_ALIAS).append("$").append(_emailOptionsJoin).append(".EmailOption\n");
             setValueSQL(sql);
         }
 
@@ -153,8 +140,8 @@ public class UsersMsgPrefTable extends UsersTable
         {
             super.declareJoins(parentAlias, map);
 
-            String tableAlias = parentAlias + "$" + EMAIL_PREFS_JOIN;
-            String tableOptionsAlias = parentAlias + "$" + EMAIL_OPTIONS_JOIN;
+            String tableAlias = parentAlias + "$" + _emailPrefsJoin;
+            String tableOptionsAlias = parentAlias + "$" + _emailOptionsJoin;
             if (map.containsKey(tableAlias))
                 return;
 
