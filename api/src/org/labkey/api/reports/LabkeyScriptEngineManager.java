@@ -15,6 +15,7 @@
  */
 package org.labkey.api.reports;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.premium.PremiumFeatureNotEnabledException;
@@ -32,21 +33,21 @@ public interface LabkeyScriptEngineManager
         report,                 // basic report rendering
         pipeline                // pipeline job or transform script
     }
-    ScriptEngine getEngineByName(String name);
+    ScriptEngine getEngineByName(@NotNull String name);
     List<ScriptEngineFactory> getEngineFactories();
 
     /**
      * Return a script engine appropriate for the specified extension.
      */
     @Nullable
-    ScriptEngine getEngineByExtension(Container c, String extension) throws PremiumFeatureNotEnabledException;
+    ScriptEngine getEngineByExtension(@NotNull Container c, @NotNull String extension) throws PremiumFeatureNotEnabledException;
 
     /**
      * Return a script engine appropriate for the specified extension and for a specific engine context. Folder and
      * project level mappings can be set for specific engine configurations and contexts.
      */
     @Nullable
-    ScriptEngine getEngineByExtension(Container c, String extension, EngineContext context) throws PremiumFeatureNotEnabledException;
+    ScriptEngine getEngineByExtension(@NotNull Container c, @NotNull String extension, @NotNull EngineContext context) throws PremiumFeatureNotEnabledException;
 
     /**
      * Returns an engine (if any) that is scoped to a specific folder or project level. If there is no specific override then
@@ -54,20 +55,20 @@ public interface LabkeyScriptEngineManager
      * @param includeProject look in both the folder and project
      */
     @Nullable
-    ExternalScriptEngineDefinition getScopedEngine(Container container, String extension, EngineContext context, boolean includeProject);
+    ExternalScriptEngineDefinition getScopedEngine(@NotNull Container container, @NotNull String extension, @NotNull EngineContext context, boolean includeProject);
 
-    void setEngineScope(Container c, ExternalScriptEngineDefinition def, EngineContext context);
-    void removeEngineScope(Container c, ExternalScriptEngineDefinition def, EngineContext context);
+    void setEngineScope(@NotNull Container c, @NotNull ExternalScriptEngineDefinition def, @NotNull EngineContext context);
+    void removeEngineScope(@NotNull Container c, @NotNull ExternalScriptEngineDefinition def, @NotNull EngineContext context);
 
-    void deleteDefinition(User user, ExternalScriptEngineDefinition def);
-    ExternalScriptEngineDefinition saveDefinition(User user, ExternalScriptEngineDefinition def);
-    boolean isFactoryEnabled(ScriptEngineFactory factory);
+    void deleteDefinition(@NotNull User user, @NotNull ExternalScriptEngineDefinition def);
+    ExternalScriptEngineDefinition saveDefinition(@NotNull User user, @NotNull ExternalScriptEngineDefinition def);
+    boolean isFactoryEnabled(@NotNull ScriptEngineFactory factory);
 
     List<ExternalScriptEngineDefinition> getEngineDefinitions();
-    List<ExternalScriptEngineDefinition> getEngineDefinitions(ExternalScriptEngineDefinition.Type type);
-    List<ExternalScriptEngineDefinition> getEngineDefinitions(ExternalScriptEngineDefinition.Type type, boolean enabled);
-    ExternalScriptEngineDefinition getEngineDefinition(String name, ExternalScriptEngineDefinition.Type type);
-    ExternalScriptEngineDefinition getEngineDefinition(int rowId, ExternalScriptEngineDefinition.Type type);
+    List<ExternalScriptEngineDefinition> getEngineDefinitions(@NotNull ExternalScriptEngineDefinition.Type type);
+    List<ExternalScriptEngineDefinition> getEngineDefinitions(@NotNull ExternalScriptEngineDefinition.Type type, boolean enabled);
+    ExternalScriptEngineDefinition getEngineDefinition(@NotNull String name, @NotNull ExternalScriptEngineDefinition.Type type);
+    ExternalScriptEngineDefinition getEngineDefinition(int rowId, @NotNull ExternalScriptEngineDefinition.Type type);
 
     ExternalScriptEngineDefinition createEngineDefinition();
 }
