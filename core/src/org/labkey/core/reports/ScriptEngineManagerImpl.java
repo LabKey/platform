@@ -201,13 +201,13 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
     }
 
     @Override
-    public @Nullable ScriptEngine getEngineByExtension(Container container, String extension) throws PremiumFeatureNotEnabledException
+    public @Nullable ScriptEngine getEngineByExtension(@NotNull Container container, @NotNull String extension) throws PremiumFeatureNotEnabledException
     {
         return getEngineByExtension(container, extension, EngineContext.report);
     }
 
     @Override
-    public @Nullable ScriptEngine getEngineByExtension(Container container, String extension, EngineContext context) throws PremiumFeatureNotEnabledException
+    public @Nullable ScriptEngine getEngineByExtension(@NotNull Container container, @NotNull String extension, @NotNull EngineContext context) throws PremiumFeatureNotEnabledException
     {
         ScriptEngine engine = super.getEngineByExtension(extension);
         assert engine == null || !engine.getClass().getSimpleName().equals("com.sun.script.javascript.RhinoScriptEngine") : "Should not use jdk bundled script engine";
@@ -260,7 +260,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
 
     // Locates any specific engines scoped at either the container or project level for an engine context
     @Nullable
-    public ExternalScriptEngineDefinition getScopedEngine(Container container, String extension, EngineContext context, boolean includeProject)
+    public ExternalScriptEngineDefinition getScopedEngine(@NotNull Container container, @NotNull String extension, @NotNull EngineContext context, boolean includeProject)
     {
         // look for a folder level override
         for (ExternalScriptEngineDefinition def : getScopedEngines(container, context))
@@ -272,9 +272,10 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
         }
 
         // check project level override
-        if (includeProject && !container.isProject())
+        Container project = container.getProject();
+        if (includeProject && project != null)
         {
-            for (ExternalScriptEngineDefinition def : getScopedEngines(container.getProject(), context))
+            for (ExternalScriptEngineDefinition def : getScopedEngines(project, context))
             {
                 if (def.isEnabled() && Arrays.asList(def.getExtensions()).contains(extension))
                 {
@@ -313,7 +314,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
     }
 
     @Override
-    public void setEngineScope(Container container, ExternalScriptEngineDefinition def, EngineContext context)
+    public void setEngineScope(@NotNull Container container, @NotNull ExternalScriptEngineDefinition def, @NotNull EngineContext context)
     {
         if (def.getRowId() != null)
         {
@@ -357,7 +358,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
     }
 
     @Override
-    public void removeEngineScope(Container container, ExternalScriptEngineDefinition def, EngineContext context)
+    public void removeEngineScope(@NotNull Container container, @NotNull ExternalScriptEngineDefinition def, @NotNull EngineContext context)
     {
         try (DbScope.Transaction tx = CoreSchema.getInstance().getScope().ensureTransaction())
         {
@@ -390,7 +391,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
     }
 
     @Override
-    public List<ExternalScriptEngineDefinition> getEngineDefinitions(ExternalScriptEngineDefinition.Type type)
+    public List<ExternalScriptEngineDefinition> getEngineDefinitions(@NotNull ExternalScriptEngineDefinition.Type type)
     {
         return ENGINE_DEFINITION_CACHE.get(ALL_ENGINES)
                 .stream()
@@ -399,7 +400,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
     }
 
     @Override
-    public List<ExternalScriptEngineDefinition> getEngineDefinitions(ExternalScriptEngineDefinition.Type type, boolean enabled)
+    public List<ExternalScriptEngineDefinition> getEngineDefinitions(@NotNull ExternalScriptEngineDefinition.Type type, boolean enabled)
     {
         Stream<ExternalScriptEngineDefinition> stream = ENGINE_DEFINITION_CACHE.get(ALL_ENGINES)
                 .stream()
@@ -416,7 +417,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
 
     @Override
     @Nullable
-    public ExternalScriptEngineDefinition getEngineDefinition(String name, ExternalScriptEngineDefinition.Type type)
+    public ExternalScriptEngineDefinition getEngineDefinition(@NotNull String name, @NotNull ExternalScriptEngineDefinition.Type type)
     {
         return ENGINE_DEFINITION_CACHE.get(ALL_ENGINES)
                 .stream()
@@ -427,7 +428,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
 
     @Override
     @Nullable
-    public ExternalScriptEngineDefinition getEngineDefinition(int rowId, ExternalScriptEngineDefinition.Type type)
+    public ExternalScriptEngineDefinition getEngineDefinition(int rowId, @NotNull ExternalScriptEngineDefinition.Type type)
     {
         return ENGINE_DEFINITION_CACHE.get(ALL_ENGINES)
                 .stream()
@@ -471,7 +472,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
     }
 
     @Override
-    public void deleteDefinition(User user, ExternalScriptEngineDefinition def)
+    public void deleteDefinition(@NotNull User user, @NotNull ExternalScriptEngineDefinition def)
     {
         if (def.getRowId() != null)
         {
@@ -492,7 +493,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
     }
 
     @Override
-    public ExternalScriptEngineDefinition saveDefinition(User user, ExternalScriptEngineDefinition def)
+    public ExternalScriptEngineDefinition saveDefinition(@NotNull User user, @NotNull ExternalScriptEngineDefinition def)
     {
         if (def instanceof ExternalScriptEngineDefinition)
         {
@@ -529,7 +530,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
     }
 
     @Override
-    public boolean isFactoryEnabled(ScriptEngineFactory factory)
+    public boolean isFactoryEnabled(@NotNull ScriptEngineFactory factory)
     {
         if (factory instanceof ExternalScriptEngineFactory)
         {
