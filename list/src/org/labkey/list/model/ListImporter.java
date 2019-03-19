@@ -205,38 +205,47 @@ public class ListImporter
                             for (ValidationException v : batchErrors.getRowErrors())
                                 errors.add(v.getMessage());
 
-                            if (supportAI && errors.isEmpty())
-                            {
-                                SqlDialect dialect = ti.getSqlDialect();
-
-                                // If auto-increment based need to reset the sequence counter on the DB
-                                if (dialect.isPostgreSQL())
-                                {
-                                    String src = ti.getColumn(def.getKeyName()).getJdbcDefaultValue();
-                                    if (null != src)
-                                    {
-                                        String sequence = "";
-
-                                        int start = src.indexOf('\'');
-                                        int end = src.lastIndexOf('\'');
-
-                                        if (end > start)
-                                        {
-                                            sequence = src.substring(start + 1, end);
-                                            if (!sequence.toLowerCase().startsWith("list."))
-                                                sequence = "list." + sequence;
-                                        }
-
-                                        SQLFragment keyupdate = new SQLFragment("SELECT setval('").append(sequence).append("'");
-                                        keyupdate.append(", coalesce((SELECT MAX(").append(dialect.quoteIdentifier(def.getKeyName().toLowerCase())).append(")+1 FROM ").append(tableName);
-                                        keyupdate.append("), 1), false);");
-                                        new SqlExecutor(ti.getSchema()).execute(keyupdate);
-                                    }
-                                }
-                            }
 
                             if (errors.isEmpty())
+                            {
+                                if (supportAI)
+                                {
+                                    SqlDialect dialect = ti.getSqlDialect();
+
+                                    // If auto-increment based need to reset the sequence counter on the DB
+                                    if (dialect.isPostgreSQL())
+                                    {
+                                        String src = ti.getColumn(def.getKeyName()).getJdbcDefaultValue();
+                                        if (null != src)
+                                        {
+                                            String sequence = "";
+
+                                            int start = src.indexOf('\'');
+                                            int end = src.lastIndexOf('\'');
+
+                                            if (end > start)
+                                            {
+                                                sequence = src.substring(start + 1, end);
+                                                if (!sequence.toLowerCase().startsWith("list."))
+                                                    sequence = "list." + sequence;
+                                            }
+
+                                            SQLFragment keyupdate = new SQLFragment("SELECT setval('").append(sequence).append("'");
+                                            keyupdate.append(", coalesce((SELECT MAX(").append(dialect.quoteIdentifier(def.getKeyName().toLowerCase())).append(")+1 FROM ").append(tableName);
+                                            keyupdate.append("), 1), false);");
+                                            new SqlExecutor(ti.getSchema()).execute(keyupdate);
+                                        }
+
+                                    }
+                                    else if (dialect.isSqlServer())
+                                    {
+                                        SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(tableName).append(" OFF\n");
+                                        new SqlExecutor(ti.getSchema()).execute(check);
+                                    }
+                                }
+
                                 transaction.commit();
+                            }
                         }
                         finally
                         {
