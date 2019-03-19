@@ -238,7 +238,7 @@
                 data : {
                     name: <%=q(form.getViewName())%>,
                     authorUserId: <%=form.getAuthor()%>,
-                    status: <%=q(form.getStatus().name())%>,
+                    status: <%=q(form.getStatus() != null ? form.getStatus().name() : "")%>,
                     refreshDate: refreshDateStr ? new Date(refreshDateStr) : null,
                     category: {rowid : <%=form.getCategory()%>},
                     description: <%=q(form.getDescription())%>,
