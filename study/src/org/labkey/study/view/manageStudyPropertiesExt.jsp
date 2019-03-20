@@ -157,7 +157,7 @@ function showSuccessMessage(message, after)
 
 function onSaveSuccess_updateRows()
 {
-    // if you want to stay on page, you need to refresh anyway to udpate attachments
+    // if you want to stay on page, you need to refresh anyway to update attachments
     var msgbox = Ext4.Msg.show({
         title:'Status',
         msg: '<span class="labkey-message">Changes saved successfully.</span>',
@@ -170,14 +170,14 @@ function onSaveSuccess_updateRows()
 function onSaveSuccess_formSubmit()
 {
 
-    // if you want to stay on page, you need to refresh anyway to udpate attachments
+    // if you want to stay on page, you need to refresh anyway to update attachments
     LABKEY.setSubmit(true);
     var msgbox = Ext4.Msg.show({
         title:'Status',
         msg: '<span class="labkey-message">Changes saved successfully.</span>',
         buttons: false
     });
-    window.location = <%=q(cancelLink.getLocalURIString())%>;;
+    window.location = <%=q(cancelLink.getLocalURIString())%>;
     var el = msgbox.getEl();
     el.pause(1).fadeOut({callback:cancelButtonHandler});
 }

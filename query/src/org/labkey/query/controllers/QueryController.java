@@ -4709,11 +4709,6 @@ public class QueryController extends SpringActionController
     public class DeleteViewAction extends MutatingApiAction<DeleteViewForm>
     {
         @Override
-        protected ModelAndView handleGet()
-        {
-            throw new UnauthorizedException();
-        }
-
         public ApiResponse execute(DeleteViewForm form, BindException errors)
         {
             CustomView view = form.getCustomView();
