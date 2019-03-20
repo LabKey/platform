@@ -55,17 +55,25 @@ public class ZipUtil
         return unzipToDirectory(zipFile, unzipDir, null);
     }
 
-
-    // Unzip an archive to the specified directory; log each file if Logger is non-null
     public static List<File> unzipToDirectory(File zipFile, File unzipDir, @Nullable Logger log) throws IOException
     {
-        InputStream is = new FileInputStream(zipFile);
-        return unzipToDirectory(is, unzipDir, log);
+        return unzipToDirectory(zipFile, unzipDir, log, false);
     }
 
+    // Unzip an archive to the specified directory; log each file if Logger is non-null
+    public static List<File> unzipToDirectory(File zipFile, File unzipDir, @Nullable Logger log, boolean includeFolder) throws IOException
+    {
+        InputStream is = new FileInputStream(zipFile);
+        return unzipToDirectory(is, unzipDir, log, includeFolder);
+    }
+
+    public static List<File> unzipToDirectory(InputStream is, File unzipDir, @Nullable Logger log) throws IOException
+    {
+        return unzipToDirectory(is, unzipDir, log, false);
+    }
 
     // Unzips an input stream to the specified directory; logs each file if Logger is non-null.
-    public static List<File> unzipToDirectory(InputStream is, File unzipDir, @Nullable Logger log) throws IOException
+    public static List<File> unzipToDirectory(InputStream is, File unzipDir, @Nullable Logger log, boolean includeFolder) throws IOException
     {
         List<File> files = new ArrayList<>();
 
@@ -89,6 +97,8 @@ public class ZipUtil
                     {
                         throw new IOException("Failed to create directory: " + destFile.getName());
                     }
+                    if (includeFolder)
+                        files.add(destFile);
                     continue;
                 }
 
