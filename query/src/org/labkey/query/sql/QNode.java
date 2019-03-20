@@ -48,6 +48,7 @@ abstract public class QNode implements Cloneable
 	private String _tokenText;
 	private int _line;
 	private int _column;
+	private boolean _hasTransformableAggregate = false;     // Children have an aggregate, such as Median, that may require the tree to be transformed
 
 	private Class _validChildrenClass = QNode.class;
 	private LinkedList<QNode> _children = new LinkedList<>();
@@ -92,6 +93,12 @@ abstract public class QNode implements Cloneable
     public void setTokenType(int type)
     {
         _tokenType = type;
+    }
+
+    public void setTokenTypeAndText(int type)
+    {
+        setTokenType(type);
+        setTokenText(SqlParser.tokenName(type));
     }
 
     public Iterable<QNode> children()
@@ -140,12 +147,19 @@ abstract public class QNode implements Cloneable
     {
 		assert isValidChild(child);
 		_children.add(child);
+		setHasTransformableAggregate(hasTransformableAggregate() || child.hasTransformableAggregate());
     }
 
 	void _replaceChildren(LinkedList<QNode> list)
 	{
-		for (QNode n : list) assert isValidChild(n);
+	    boolean hasTransformableAggregate = false;
+		for (QNode n : list)
+        {
+            assert isValidChild(n);
+            hasTransformableAggregate = hasTransformableAggregate || n.hasTransformableAggregate();
+        }
 	   	_children = list;
+        setHasTransformableAggregate(hasTransformableAggregate() || hasTransformableAggregate);
 	}
 
     protected boolean isValidChild(QNode n)
@@ -166,7 +180,10 @@ abstract public class QNode implements Cloneable
 	public void removeChildren()
 	{
 		if (!_children.isEmpty())
-			_children = new LinkedList<>();
+        {
+            _children = new LinkedList<>();
+            setHasTransformableAggregate(false);
+        }
 	}
 
     public String getTokenText()
@@ -227,6 +244,7 @@ abstract public class QNode implements Cloneable
         {
             QNode ret = (QNode) super.clone();
 			ret._children = new LinkedList<>();
+			ret.setHasTransformableAggregate(false);
             return ret;
         }
         catch (CloneNotSupportedException e)
@@ -239,7 +257,8 @@ abstract public class QNode implements Cloneable
     {
         QNode ret = clone();
         for (QNode c : children())
-            ret._children.add(c.copyTree());
+            ret.appendChild(c.copyTree());
+
         return ret;
     }
 
@@ -344,6 +363,16 @@ abstract public class QNode implements Cloneable
     {
         for (QNode child : childList())
             child.releaseFieldRefs(referant);
+    }
+
+    public boolean hasTransformableAggregate()
+    {
+        return _hasTransformableAggregate;
+    }
+
+    public void setHasTransformableAggregate(boolean hasTransformableAggregate)
+    {
+        _hasTransformableAggregate = hasTransformableAggregate;
     }
 
 

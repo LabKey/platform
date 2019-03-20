@@ -40,7 +40,9 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleProperty;
+import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryParseWarning;
 import org.labkey.api.query.QuerySchema;
@@ -65,6 +67,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -897,6 +901,15 @@ public class SqlParser
                 }
                 return substituteModuleProperty(((QString) args.get(0)).getValue(), ((QString)args.get(1)).getValue());
             }
+            case QUERY:
+            {
+                QQuery query = (QQuery)qnode(node, children);
+                if (query.hasTransformableAggregate() && null != _dialect && _dialect.isSqlServer())
+                {
+                    return makeTransformedAggregateQuery(query);
+                }
+                return query;
+            }
 			default:
 				break;
 		}
@@ -904,6 +917,237 @@ public class SqlParser
 		return qnode(node, children);
 	}
 
+	private QQuery makeTransformedAggregateQuery(QQuery query)
+    {
+        // Split Select into two selects:
+        // -- inner will do percentile_cont to calculate median, but not aggregate other aggregates in select
+        // -- outer aggregates other aggregates, does MAX on the result of percentile_cont, and does groupBy
+        //
+        // Transform
+        // (Query (SelectFrom (Select (As(Agg:MEDIAN(x))) <other non-Agg As's> (As(Agg:nonMEDIAN(y))))
+        //                    (From <from>))
+        //        (Where <where>)
+        //        (GroupBy <groupBy's>))
+        //
+        // (Query (SelectFrom (Select [medAlias.] (As(Agg:MAX(x))) <other non-Agg As's> (As(Agg:nonMEDIAN(y))))
+        //                    (From (Range (Query (SelectFrom (Select (As(Agg:MEDIANPrime(x) (Partition <groupBy's>))
+        //                                                             <other non-Agg As's> (As y))
+        //                                                    (From <from>))
+        //                                        (Where <where>))
+        //                                 (Id medAlias))))
+        //        (GroupBy [medAlias.] <groupBy>))
+        QWhere where = query.getWhere();
+        QGroupBy groupBy = query.getGroupBy();
+        QLimit limit = query.getLimit();
+        QOrder orderBy = query.getOrderBy();
+
+        String medAlias = "medAlias_";
+        Map<FieldKey, QExpr> groupByAliasMap = new HashMap<>();        // Need to replace groupBys with aliases
+        QSelectFrom transformedSelectFrom = makeInnerSelectFrom(query.getSelect(), query.getFrom(), groupBy, groupByAliasMap);
+
+        QSelectFrom selectFrom = new QSelectFrom();
+        selectFrom.setTokenTypeAndText(SELECT_FROM);
+        selectFrom.appendChildren(
+                transformSelect(query.getSelect(), transformedSelectFrom.getSelect()),
+                makeTransformedFrom(transformedSelectFrom, where, medAlias));
+
+        QQuery queryNew = new QQuery();
+        queryNew.setTokenTypeAndText(QUERY);
+        queryNew.appendChild(selectFrom);
+        if (null != groupBy)
+        {
+            List<QNode> groupChildren = groupBy.childList();
+            groupBy.removeChildren();
+            for (QNode groupChild : groupChildren)
+            {
+                QExpr expr = groupByAliasMap.get(((QExpr) groupChild).getFieldKey());
+                if (null == expr)
+                    _parseErrors.add(new QueryParseException("Group By field not found: " + ((QExpr) groupChild).getFieldKey(), null, groupChild.getLine(), groupChild.getLine()));
+                else
+                    groupBy.appendChild(expr);
+            }
+            queryNew.appendChild(groupBy);
+        }
+        if (null != limit)
+            queryNew.appendChild(limit);
+        if (null != orderBy)
+            queryNew.appendChild(orderBy);
+
+        queryNew.setHasTransformableAggregate(false);      // clear since we've processed it here
+        return queryNew;
+    }
+
+    private QFrom makeTransformedFrom(QSelectFrom transformedSelectFrom, QWhere qWhere, String medAlias)
+    {
+        QQuery qQuery = new QQuery();
+        qQuery.setTokenTypeAndText(QUERY);
+        qQuery.appendChild(transformedSelectFrom);
+        if (null != qWhere)
+            qQuery.appendChild(qWhere);
+        QUnknownNode unknownNode = new QUnknownNode();
+        unknownNode.setTokenTypeAndText(RANGE);
+        unknownNode.appendChildren(qQuery, new QIdentifier(medAlias));
+        QFrom from = new QFrom();
+        from.setTokenTypeAndText(FROM);
+        from.appendChild(unknownNode);
+        return from;
+    }
+
+    private QSelectFrom makeInnerSelectFrom(QSelect select, QFrom from, QGroupBy groupBy, @NotNull Map<FieldKey, QExpr> groupByAliasMap)
+    {
+        AliasManager aliasManager = new AliasManager(_dialect);     // Need to assign unique names to selected fields for them to be used in outer select
+
+        if (null != groupBy)
+        {
+            for (QNode groupChild : groupBy.children())
+            {
+                // populate map keys so we can find them and put the aliases as we go thru the Select
+                groupByAliasMap.put(((QExpr) groupChild).getFieldKey(), null);
+            }
+        }
+
+        QSelect innerSelect = new QSelect();
+        innerSelect.setTokenTypeAndText(SELECT);
+        for (QNode child : select.children())
+        {
+            if (child instanceof QAs)
+            {
+                QAs as = (QAs)child;
+                QIdentifier identifier = as.childList().size() > 1 ? as.getAlias() : null;
+                if (as.getExpression() instanceof QAggregate)
+                {
+                    QAggregate aggregate = (QAggregate) as.getExpression();
+
+                    if (QAggregate.Type.MEDIAN.equals(aggregate.getType()))
+                    {
+                        QPartitionBy partitionBy = new QPartitionBy();
+                        if (null != groupBy)
+                        {
+                            for (QNode groupChild : groupBy.children())
+                                partitionBy.appendChild(groupChild.copyTree());
+                        }
+
+                        aggregate.appendChild(partitionBy);     // Append as last child
+                        if (null != identifier)
+                            identifier.setTokenText(aliasManager.decideAlias(identifier.getIdentifier()));
+                        else
+                            as.appendChild(new QIdentifier(aliasManager.decideAlias("aggexpr")));
+
+                        innerSelect.appendChild(as);
+                    }
+                    else
+                    {
+                        // Don't aggregate here; if Agg has only 1 arg, use the alias for its result to bubble up;
+                        // If > 1 arg.... TODO -- currently for SQL Server, there are none (other than group_concat)
+                        // For other aggregates, including group_concat, just evaluate first child and alias that
+                        QNode aggChild = aggregate.getFirstChild();
+                        QAs nonAgg = new QAs();
+                        nonAgg.appendChild(aggChild);
+                        if (null != identifier)
+                            identifier.setTokenText(aliasManager.decideAlias(identifier.getIdentifier()));
+                        else
+                            nonAgg.appendChild(new QIdentifier(aliasManager.decideAlias("aggexpr")));
+
+                        innerSelect.appendChild(nonAgg);
+                    }
+                }
+                else
+                {
+                    if (groupByAliasMap.containsKey(as.getExpression().getFieldKey()))
+                        groupByAliasMap.put(as.getExpression().getFieldKey(), null != identifier ? identifier : as.getExpression());
+
+                    innerSelect.appendChild(child.copyTree());
+                }
+            }
+            else
+            {   // TODO: Is this possible?  I don't think so
+                innerSelect.appendChild(child);
+            }
+        }
+        QSelectFrom selectFrom = new QSelectFrom();
+        selectFrom.setTokenTypeAndText(SELECT_FROM);
+        selectFrom.appendChildren(innerSelect, from);
+        return selectFrom;
+    }
+
+
+    private QSelect transformSelect(QSelect origSelect, QSelect transformedSelect)
+    {
+        QSelect selectNew = new QSelect();
+        selectNew.setTokenTypeAndText(SELECT);
+        Iterator<QNode> origIter = origSelect.children().iterator();
+        Iterator<QNode> transformedIter = transformedSelect.children().iterator();
+        for (; origIter.hasNext();)
+        {
+            assert transformedIter.hasNext();
+            QNode child = origIter.next();
+            QNode transformedChild = transformedIter.next();
+            if (child instanceof QAs)
+            {
+                QAs as = (QAs)child;
+                if (!(transformedChild instanceof QAs))
+                {
+                    _parseErrors.add(new QueryParseException("Median transformation error", null, child.getLine(), 0));
+                }
+                else
+                {
+                    if (!(transformedChild.getLastChild() instanceof QIdentifier))
+                    {
+                        _parseErrors.add(new QueryParseException("Median transformation error", null, child.getLine(), 0));
+                    }
+                    else
+                    {
+                        QIdentifier identifier = (QIdentifier) transformedChild.getLastChild();
+                        if (as.getExpression() instanceof QAggregate)
+                        {
+                            QAggregate aggregate = (QAggregate) as.getExpression();
+                            if (QAggregate.Type.MEDIAN.equals(aggregate.getType()))
+                            {
+                                // Transformed MEDIAN is still MEDIAN and should have an alias
+                                QAggregate aggregateNew = new QAggregate();
+                                aggregateNew.appendChildren(aggregate.childList());
+                                aggregateNew.setTokenTypeAndText(MAX);
+                                aggregateNew.appendChild(identifier);
+                                selectNew.appendChild(makeAs(as, aggregateNew));
+                            }
+                            else
+                            {
+                                // Other Aggregates happen here; inner just evaluated arguments
+                                // GROUP_CONCAT: Should have 1 or 2 children, 2nd is separator; replace first child with identifier from transformedChild
+                                // Other aggs are the same
+                                List<QNode> children = aggregate.childList();
+                                aggregate.removeChildren();
+                                aggregate.appendChild(identifier);
+                                if (children.size() > 1)
+                                    aggregate.appendChild(children.get(1));
+                                selectNew.appendChild(makeAs(as, aggregate));
+                            }
+                        }
+                        else
+                        {
+                            // Inner has already evaluated, so just QAs here
+                            selectNew.appendChild(makeAs(as, identifier));
+                        }
+                    }
+                }
+            }
+            else
+            {   // TODO: Is this possible?
+                selectNew.appendChild(child.copyTree());
+            }
+        }
+        return selectNew;
+    }
+
+    private QAs makeAs(QAs as, QNode expr)
+    {
+        QAs asNew = new QAs();
+        asNew.setTokenTypeAndText(ALIAS);
+        asNew.appendChild(expr);
+        if (as.childList().size() > 1)
+            asNew.appendChild(as.getLastChild());
+        return asNew;
+    }
 
     private QFieldKey substituteModuleProperty(String moduleName, String propertyName)
     {

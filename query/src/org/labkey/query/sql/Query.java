@@ -1573,6 +1573,7 @@ public class Query
         new SqlTest("SELECT stddev_pop(d), day FROM R GROUP BY day", 2, 7),
         new SqlTest("SELECT variance(d), day FROM R GROUP BY day", 2, 7),
         new SqlTest("SELECT var_pop(d), day FROM R GROUP BY day", 2, 7),
+        new SqlTest("SELECT median(seven), day FROM R GROUP BY day", 2, 7),
 
         // LIMIT
         new SqlTest("SELECT R.day, R.month, R.date FROM R LIMIT 10", 3, 10),
@@ -1650,7 +1651,6 @@ public class Query
         new SqlTest("SELECT every((d > 0)), day FROM R GROUP BY day", 2, 7),
         new SqlTest("SELECT bit_or(seven), day FROM R GROUP BY day", 2, 7),
         new SqlTest("SELECT bit_and(seven), day FROM R GROUP BY day", 2, 7),
-        new SqlTest("SELECT median(seven), day FROM R GROUP BY day", 2, 7),
         new SqlTest("SELECT mode(seven), day FROM R GROUP BY day", 2, 7),
         new SqlTest("SELECT corr(seven, d), day FROM R GROUP BY day", 2, 7),
         new SqlTest("SELECT corr(seven, d), day FROM R GROUP BY day", 2, 7),

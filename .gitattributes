@@ -1829,6 +1829,7 @@ query/src/org/labkey/query/sql/QNumber.java -text
 query/src/org/labkey/query/sql/QOperator.java -text
 query/src/org/labkey/query/sql/QOrder.java -text
 query/src/org/labkey/query/sql/QParameter.java -text
+query/src/org/labkey/query/sql/QPartitionBy.java -text
 query/src/org/labkey/query/sql/QPivot.java -text
 query/src/org/labkey/query/sql/QQuery.java -text
 query/src/org/labkey/query/sql/QRowStar.java -text

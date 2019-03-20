@@ -91,7 +91,7 @@ public class RolapCubeDef
     protected final Map<String,String> annotations = new TreeMap<>();
     protected final Map<String,Object> uniqueNameMap = new TreeMap<>();
 
-    private final AliasManager columnAliases = new AliasManager(null);
+    private final AliasManager columnAliases = new AliasManager((SqlDialect) null);
 
 
     public String getName()

@@ -16,6 +16,7 @@
 
 package org.labkey.query.sql;
 
+import org.antlr.runtime.tree.CommonTree;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
@@ -198,12 +199,6 @@ public class QAggregate extends QExpr
                 {
                     return d.getMedianFunction();
                 }
-
-                @Override
-                boolean dialectSupports(SqlDialect d)
-                {
-                    return null != d && d.isPostgreSQL();
-                }
             },
         MODE                // Only Postgres so far
             {
@@ -286,17 +281,15 @@ public class QAggregate extends QExpr
     }
 
     @Override
-    public void appendSql(SqlBuilder builder, Query query)
-
-    /* ** Possible for SQL Server Median
+    protected void from(CommonTree n)
     {
-        appendSql(builder, query, null, null);
+        super.from(n);
+        if (Type.MEDIAN.equals(getType()))
+            setHasTransformableAggregate(true);
     }
 
     @Override
-    public void appendSql(SqlBuilder builder, Query query, @Nullable QuerySelect querySelect, @Nullable QuerySelect.SelectColumn selectColumn)
-    */
-
+    public void appendSql(SqlBuilder builder, Query query)
     {
         Type type = getType();
 
@@ -345,22 +338,21 @@ public class QAggregate extends QExpr
         }
         else if (type == Type.MEDIAN)
         {
-            if (builder.getDialect().isSqlServer()) //  && null == querySelect)       // Possible way to support SQL Server Median
+            assert !_distinct;
+            QNode partitionBy = builder.getDialect().isSqlServer() ? getLastChild() : null;
+
+            builder.append(" (").append(type.getFunction(builder.getDialect())).append("(0.5) WITHIN GROUP (ORDER BY (");
+            for (QNode child : children())
             {
-                query.reportError("Cannot construct Median query in this context.");
-            }
-            else
-            {
-                assert !_distinct;
-                builder.append(" (").append(type.getFunction(builder.getDialect())).append("(0.5) WITHIN GROUP (ORDER BY (");
-                for (QNode child : children())
-                {
+                if (partitionBy != child)
                     ((QExpr) child).appendSql(builder, query);
-                }
-                builder.append("))");
-                extraForSqlServerMedian(builder);
-                builder.append(")");
             }
+            builder.append(")) ");
+            if (builder.getDialect().isSqlServer() && partitionBy instanceof QPartitionBy)
+            {
+                ((QPartitionBy)partitionBy).appendSql(builder, query);
+            }
+            builder.append(")");
         }
         else if (type == Type.MODE)
         {
@@ -389,30 +381,6 @@ public class QAggregate extends QExpr
             }
             builder.append(")");
         }
-    }
-
-    private void extraForSqlServerMedian(SqlBuilder builder)
-    {
-        /* ** Possible way to support SQL Server Median
-        if (builder.getDialect().isSqlServer() && null != querySelect && null != selectColumn)
-        {
-            querySelect.addMedianColumn(selectColumn);
-            builder.append(" OVER(");
-            Collection<QuerySelect.SelectColumn> groupByColumns = querySelect.getGroupByColumns().values();
-            if (groupByColumns.size() > 0)
-            {
-                builder.append("PARTITION BY ");
-                String sep = "";
-                for (QuerySelect.SelectColumn col : querySelect.getGroupByColumns().values())
-                {
-                    builder.append(sep);
-                    col.getResolvedField().appendSql(builder, query);
-                    sep = ", ";
-                }
-            }
-            builder.append(")");
-        }
-        */
     }
 
     public void appendSource(SourceBuilder builder)
