@@ -35,10 +35,10 @@ import org.labkey.api.gwt.client.util.PropertyUtil;
 public class FormatItem<DomainType extends GWTDomain<FieldType>, FieldType extends GWTPropertyDescriptor> extends PropertyPaneItem<DomainType, FieldType>
 {
     // @JavaRuntimeVersion
-    // Update the below constant whenever we require a new major Java version so we always point at the current docs.
+    // Update the below constant whenever we add support for a new major Java version so we always point at the current docs.
     // Why is this global constant defined in such an obscure class? Ideally, we would define it in HelpTopic, but that class
     // is not available to GWT client code. Defining it here allows us to use it in both GWT and server code.
-    public static final String JDK_JAVADOC_BASE_URL = "https://docs.oracle.com/en/java/javase/11/docs/api/java.base/";
+    public static final String JDK_JAVADOC_BASE_URL = "https://docs.oracle.com/en/java/javase/12/docs/api/java.base/";
 
     // Should match Formats.getDecimalFormatDocumentationURL()
     private static final String DECIMAL_FORMAT_DOCUMENTATION_LINK = JDK_JAVADOC_BASE_URL + "java/text/DecimalFormat.html";
