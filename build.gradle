@@ -1,8 +1,13 @@
+import org.labkey.gradle.util.BuildUtils
 import org.labkey.gradle.util.ModuleFinder
 
 subprojects {
   Project p ->
-    if (p.projectDir.exists() && ModuleFinder.isPotentialModule(p))
+    if (p.projectDir.exists() && 
+            ModuleFinder.isPotentialModule(p) && 
+            !p.path.equals(BuildUtils.getApiProjectPath(p.gradle)) && 
+            !p.path.equals(BuildUtils.getInternalProjectPath(p.gradle))
+    )
     {
       apply plugin: 'java'
       apply plugin: 'org.labkey.module'
