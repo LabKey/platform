@@ -96,6 +96,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DetailsView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
@@ -771,7 +772,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 return type;
             }
         }
-        throw new IllegalArgumentException("Unexpected resolver type: " + name);
+        throw new NotFoundException("Unexpected resolver type: " + name);
     }
 
     private Set<String> getPropertyDomains(ExpProtocol protocol)
