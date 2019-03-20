@@ -180,7 +180,7 @@ public class SQLFragment implements Appendable, CharSequence
         StringBuilder ret = new StringBuilder("WITH" + (recursive ? " RECURSIVE" : ""));
 
         // generate final aliases for each CTE */
-        AliasManager am = new AliasManager(null);
+        AliasManager am = new AliasManager((SqlDialect)null);
         List<Pair<String,CTE>> ctes = commonTableExpressionsMap.values().stream()
                 .map(cte -> new Pair<>(am.decideAlias(cte.preferredName),cte))
                 .collect(Collectors.toList());

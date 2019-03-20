@@ -36,7 +36,7 @@ public class AliasManager
     SqlDialect _dialect;
     Map<String, String> _aliases = new CaseInsensitiveHashMap<>();
 
-    private AliasManager(SqlDialect d)
+    public AliasManager(SqlDialect d)
     {
         _dialect = d;
     }
