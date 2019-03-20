@@ -87,6 +87,7 @@ public interface PipeRoot extends SecurableResource
 
     /** @return relative path to the file from the root. null if the file isn't under the root. Does not include a leading slash */
     String relativePath(File file);
+    String relativePath(Path file);
 
     /** @return whether the file specified is a child of the pipeline root */
     boolean isUnderRoot(File file);

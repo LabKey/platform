@@ -17,7 +17,10 @@
 package org.labkey.api.exp.query;
 
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.exp.api.*;
+import org.labkey.api.exp.api.DataType;
+import org.labkey.api.exp.api.ExpExperiment;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpSampleSet;
 
 public interface ExpDataTable extends ExpTable<ExpDataTable.Column>
 {
@@ -50,6 +53,8 @@ public interface ExpDataTable extends ExpTable<ExpDataTable.Column>
         FileExists,
         FileExtension,
         ViewOrDownload,
+        WebDavUrl,
+        WebDavUrlRelative,
         Generated,
         LastIndexed,
         Inputs,

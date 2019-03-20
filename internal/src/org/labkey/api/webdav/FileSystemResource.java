@@ -58,7 +58,6 @@ import org.labkey.api.writer.DefaultContainerUser;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Proxy;
@@ -279,7 +278,8 @@ public class FileSystemResource extends AbstractWebdavResource
             }
             catch (IOException x)
             {
-                throw new ConfigurationException("Couldn't create file on server.", x);
+                _log.error("Couldn't create file on server: " + file.getPath(), x);
+                throw new ConfigurationException("Couldn't create file on server", x);
             }
             resetMetadata();
         }
