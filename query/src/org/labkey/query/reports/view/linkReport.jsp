@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.reports.model.ViewInfo"%>
 <%@ page import="org.labkey.api.util.DateUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -134,7 +135,7 @@
                 data : {
                     name: <%=q(form.getViewName())%>,
                     authorUserId: <%=form.getAuthor()%>,
-                    status: <%=q(form.getStatus() != null ? form.getStatus().name() : "")%>,
+                    status: <%=q(form.getStatus() != null ? form.getStatus().name() : ViewInfo.Status.None.name())%>,
                     refreshDate: <%=q(DateUtil.formatDate(getContainer(), form.getRefreshDate()))%>,
                     category: {rowid : <%=form.getCategory()%>},
                     description: <%=q(form.getDescription())%>,
