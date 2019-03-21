@@ -18,6 +18,7 @@ package org.labkey.api.util;
 import org.labkey.api.security.User;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
 
 /**
  * User: mbellew
@@ -30,13 +31,13 @@ public class TestContext
 
     private HttpServletRequest _request;
     private User _user;
+    ArrayList<CPUTimer> _perfResults = new ArrayList<>();
 
 
     public static TestContext get()
     {
         return local.get();
     }
-
 
     public static void setTestContext(HttpServletRequest request, User user)
     {
@@ -68,5 +69,20 @@ public class TestContext
     public void setRequest(HttpServletRequest request)
     {
         _request = request;
+    }
+
+    public void logPerfResult(CPUTimer timer)
+    {
+        _perfResults.add(timer);
+    }
+
+    public ArrayList<CPUTimer> getPerfResults()
+    {
+        return _perfResults;
+    }
+
+    public void clearPerfResults()
+    {
+        _perfResults.clear();
     }
 }

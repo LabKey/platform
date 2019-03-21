@@ -25,9 +25,11 @@ import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.BaseSelector.ResultSetHandler;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.test.TestWhen;
+import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.TestContext;
 import org.springframework.dao.DataIntegrityViolationException;
 
 import java.sql.Connection;
@@ -385,25 +387,29 @@ public class DbSequenceManager
             _testBasicOperations(_sequenceBulk);
         }
 
-        void _testPerformance(DbSequence seq)
+        void _testPerformance(DbSequence seq, String name)
         {
             final int n = 1000;
-            final long start = System.currentTimeMillis();
+            CPUTimer timer = new CPUTimer(name);
 
+            timer.start();
             for (int i = 0; i < n; i++)
                 assertEquals(i + 1, seq.next());
+            timer.stop();
 
-            final long elapsed = System.currentTimeMillis() - start;
-            final double perSecond = n / (elapsed / 1000.0);
+            TestContext.get().logPerfResult(timer);
 
 // TODO: Restore this check once we fix or trash lkwin03 agent01, which fails because it's slow
+//            final long elapsed = timer.getTotalMilliseconds();
+//            final double perSecond = n / (elapsed / 1000.0);
 //            assertTrue("Less than 100 iterations per second: " + perSecond, perSecond > 100);   // A very low bar
         }
 
+        @Test
         public void testPerformance()
         {
-            _testPerformance(_sequence);
-            _testPerformance(_sequenceBulk);
+            _testPerformance(_sequence, "DbSequence.next");
+            _testPerformance(_sequenceBulk, "DbSequence.preallocate");
         }
 
         void _multiThreadIncrementStressTest(DbSequence seq) throws Throwable
