@@ -19,11 +19,13 @@ package org.labkey.api.study.actions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.RenderContext;
@@ -47,12 +49,16 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayColumnInfoRenderer;
 import org.labkey.api.study.assay.AssayDataCollector;
 import org.labkey.api.study.assay.AssayDataCollectorDisplayColumn;
 import org.labkey.api.study.assay.AssayHeaderLinkProvider;
 import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.assay.AssayWarningsDisplayColumn;
@@ -96,7 +102,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
+import static org.labkey.api.action.SpringActionController.ERROR_MSG;
+
+    /**
  * User: brittp
 * Date: Jul 26, 2007
 * Time: 7:01:17 PM
@@ -145,6 +153,25 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         String currentStep = form.getUploadStep();
         setHelpTopic(new HelpTopic("uploadAssayRuns"));
 
+        if (null != form.getTargetStudy())
+        {
+            Container container = ContainerManager.getForId(form.getTargetStudy());
+            if (null == container)
+            {
+                errors.reject(ERROR_MSG, "Target study container not found: " + form.getTargetStudy());
+                return new SimpleErrorView(errors);
+            }
+            else
+            {
+                Set<Study> targets = AssayPublishService.get().getValidPublishTargets(getUser(), ReadPermission.class);
+                Study study = StudyService.get().getStudy(container);
+                if (null == study || !targets.contains(study))
+                {
+                    errors.reject(ERROR_MSG, "Target study not found or you do not have permission for study container: " + form.getTargetStudy());
+                    return new SimpleErrorView(errors);
+                }
+            }
+        }
         if (currentStep == null)
         {
             //FIX: 4014. ensure that the pipeline root path actually exists before starting the first
@@ -791,7 +818,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     public static boolean validateColumnProperties(ContainerUser context, Map<ColumnInfo, String> properties, Errors errors)
     {
         for (ValidationError error : DefaultAssayRunCreator.validateColumnProperties(context, properties))
-            errors.reject(SpringActionController.ERROR_MSG, error.getMessage());
+            errors.reject(ERROR_MSG, error.getMessage());
 
         return errors.getErrorCount() == 0;
     }
@@ -799,7 +826,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     public static boolean validatePostedProperties(ContainerUser context, Map<DomainProperty, String> properties, Errors errors)
     {
         for (ValidationError error : DefaultAssayRunCreator.validateProperties(context, properties))
-            errors.reject(SpringActionController.ERROR_MSG, error.getMessage());
+            errors.reject(ERROR_MSG, error.getMessage());
 
         return errors.getErrorCount() == 0;
     }
@@ -821,7 +848,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             }
             catch (ExperimentException e)
             {
-                errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                errors.reject(ERROR_MSG, e.getMessage());
             }
         }
 
@@ -926,7 +953,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             }
             catch (ExperimentException e)
             {
-                errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                errors.reject(ERROR_MSG, e.getMessage());
             }
         }
 
@@ -943,14 +970,14 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                 {
                     if (error instanceof PropertyValidationError)
                         errors.addError(new FieldError("AssayUploadForm", ((PropertyValidationError)error).getProperty(), null, false,
-                                new String[]{SpringActionController.ERROR_MSG}, new Object[0], error.getMessage() == null ? error.toString() : error.getMessage()));
+                                new String[]{ERROR_MSG}, new Object[0], error.getMessage() == null ? error.toString() : error.getMessage()));
                     else
-                        errors.reject(SpringActionController.ERROR_MSG, error.getMessage() == null ? error.toString() : error.getMessage());
+                        errors.reject(ERROR_MSG, error.getMessage() == null ? error.toString() : error.getMessage());
                 }
             }
             catch (ExperimentException e)
             {
-                errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                errors.reject(ERROR_MSG, e.getMessage());
             }
 
             return !errors.hasErrors();

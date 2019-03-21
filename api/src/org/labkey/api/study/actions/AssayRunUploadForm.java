@@ -428,10 +428,13 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
             }
             Set<Study> targets = AssayPublishService.get().getValidPublishTargets(getUser(), ReadPermission.class);
             Container container = ContainerManager.getForId(value);
-            Study study = StudyService.get().getStudy(container);
-            if (study != null && targets.contains(study))
+            if (null != container)
             {
-                return container.getPath() + " (" + study.getLabel() + ")";
+                Study study = StudyService.get().getStudy(container);
+                if (study != null && targets.contains(study))
+                {
+                    return container.getPath() + " (" + study.getLabel() + ")";
+                }
             }
         }
         else if (AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME.equals(key.getName()))
