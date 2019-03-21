@@ -21,8 +21,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONArray;
 import org.json.JSONObject;
-import org.junit.runner.Result;
 import org.junit.runner.notification.Failure;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -43,6 +43,7 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
@@ -74,53 +75,69 @@ public class JunitController extends SpringActionController
         setActionResolver(_resolver);
     }
 
+
+    class JUnitView extends WebPartView
+    {
+        final Map<String, List<Class>> testCases;
+        final boolean showRunButtons;
+
+        JUnitView(Map<String, List<Class>> tests, boolean buttons)
+        {
+            super(FrameType.DIV);
+            this.testCases = tests;
+            this.showRunButtons = buttons;
+        }
+
+        @Override
+        protected void renderView(Object model, PrintWriter out)
+        {
+            out.println("<div><table class=\"labkey-data-region\">");
+
+            for (String module : testCases.keySet())
+            {
+                ActionURL moduleURL = new ActionURL(RunAction.class, getContainer()).addParameter("module", module);
+
+                out.println("<tr><td colspan=3>");
+                out.println("<a href=\"" + PageFlowUtil.filter(moduleURL.getLocalURIString()) + "\">" + module + "</a>");
+                out.println("</td></tr>");
+
+                for (Class clazz : testCases.get(module))
+                {
+                    ActionURL testCaseURL = new ActionURL(RunAction.class, getContainer()).addParameter("testCase", clazz.getName());
+                    out.println("<tr>");
+                    out.println("<td style=\"min-width:60px;\">&nbsp;</td>");
+                    if (showRunButtons)
+                    {
+                        out.println("<td style=\"font-size:66%; color:gray;\">" + getWhen(clazz) + "&nbsp;&nbsp;</td>");
+                    }
+                    out.println("<td> <a href=\"" + PageFlowUtil.filter(testCaseURL.getLocalURIString()) + "\">" + clazz.getName() + "</a></td>");
+                    out.println("</tr>");
+                }
+                out.println("<tr><td colspan=3>&nbsp;</td></tr>");
+            }
+
+            out.println("</table></div>");
+
+            if (showRunButtons)
+            {
+                out.print("<p><br>" + PageFlowUtil.button("Run All").href(new ActionURL(RunAction.class, getContainer())) + "</p>");
+                out.print("<p><br>" + PageFlowUtil.button("Run BVT").href(new ActionURL(RunAction.class, getContainer()).addParameter("when","BVT")) + "</p>");
+                out.print("<p><br>" + PageFlowUtil.button("Run DRT").href(new ActionURL(RunAction.class, getContainer()).addParameter("when","DRT")) + "</p>");
+
+                out.print("<form name=\"run2\" action=\"" +  new ActionURL(Run2Action.class, getContainer()) + "\" method=\"post\">" + PageFlowUtil.button("Run In Background #1 (Experimental)").submit(true) + "</form>");
+                out.print("<br>" + PageFlowUtil.button("Run In Background #2 (Experimental)").href(new ActionURL(Run3Action.class, getContainer())));
+            }
+        }
+    }
+
+
     @RequiresSiteAdmin
     public class BeginAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors)
         {
-            HttpView junitView = new HttpView()
-            {
-                @Override
-                public void renderInternal(Object model, PrintWriter out)
-                {
-                    Map<String, List<Class>> testCases = JunitManager.getTestCases();
-
-                    out.println("<div><table class=\"labkey-data-region\">");
-
-                    for (String module : testCases.keySet())
-                    {
-                        ActionURL moduleURL = new ActionURL(RunAction.class, getContainer()).addParameter("module", module);
-
-                        out.println("<tr><td colspan=3>");
-                        out.println("<a href=\"" + PageFlowUtil.filter(moduleURL.getLocalURIString()) + "\">" + module + "</a>");
-                        out.println("</td></tr>");
-
-                        for (Class clazz : testCases.get(module))
-                        {
-                            ActionURL testCaseURL = new ActionURL(RunAction.class, getContainer()).addParameter("testCase", clazz.getName());
-                            out.println("<tr>");
-                            out.println("<td style=\"min-width:60px;\">&nbsp;</td>");
-                            out.println("<td style=\"font-size:66%; color:gray;\">" + getWhen(clazz) + "&nbsp;&nbsp;</td>");
-                            out.println("<td> <a href=\"" + PageFlowUtil.filter(testCaseURL.getLocalURIString()) + "\">" + clazz.getName() + "</a></td>");
-                            out.println("</tr>");
-                        }
-                        out.println("<tr><td colspan=3>&nbsp;</td></tr>");
-                    }
-
-                    out.println("</table></div>");
-
-                    out.print("<p><br>" + PageFlowUtil.button("Run All").href(new ActionURL(RunAction.class, getContainer())) + "</p>");
-                    out.print("<p><br>" + PageFlowUtil.button("Run BVT").href(new ActionURL(RunAction.class, getContainer()).addParameter("when","BVT")) + "</p>");
-                    out.print("<p><br>" + PageFlowUtil.button("Run DRT").href(new ActionURL(RunAction.class, getContainer()).addParameter("when","DRT")) + "</p>");
-
-                    out.print("<form name=\"run2\" action=\"" +  new ActionURL(Run2Action.class, getContainer()) + "\" method=\"post\">" + PageFlowUtil.button("Run In Background #1 (Experimental)").submit(true) + "</form>");
-                    out.print("<br>" + PageFlowUtil.button("Run In Background #2 (Experimental)").href(new ActionURL(Run3Action.class, getContainer())));
-                }
-            };
-
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
-            return junitView;
+            return new JUnitView(JunitManager.getTestCases(), true);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -146,7 +163,7 @@ public class JunitController extends SpringActionController
         {
             List<Class> testClasses = getTestClasses(form);
             TestContext.setTestContext(getViewContext().getRequest(), getUser());
-            List<Result> results = new LinkedList<>();
+            List<JunitRunner.RunnerResult> results = new LinkedList<>();
 
             for (Class testClass : testClasses)
             {
@@ -210,7 +227,7 @@ public class JunitController extends SpringActionController
         {
             HttpSession session = getViewContext().getRequest().getSession(true);
             @SuppressWarnings({"unchecked"})
-            List<Result> results = (List<Result>)session.getAttribute(RESULTS_SESSION_KEY);
+            List<JunitRunner.RunnerResult> results = (List<JunitRunner.RunnerResult>)session.getAttribute(RESULTS_SESSION_KEY);
             ModelAndView view;
 
             if (null != results)
@@ -313,7 +330,7 @@ public class JunitController extends SpringActionController
         protected StatusReportingRunnable newStatusReportingRunnable()
         {
             List<Class> testClasses = getTestClasses(new TestForm());
-            List<Result> results = new LinkedList<>();
+            List<JunitRunner.RunnerResult> results = new LinkedList<>();
             return new JunitRunnable(testClasses, results, getViewContext().getRequest(), getUser());
         }
     }
@@ -324,10 +341,10 @@ public class JunitController extends SpringActionController
         private final StatusAppender _appender;
         private final Logger _log;
         private final List<Class> _testClasses;
-        private final List<Result> _results;
+        private final List<JunitRunner.RunnerResult> _results;
         private volatile boolean _running = true;
 
-        private JunitRunnable(List<Class> testClasses, List<Result> results, HttpServletRequest request, User user) // TODO: Make this a Callable instead?
+        private JunitRunnable(List<Class> testClasses, List<JunitRunner.RunnerResult> results, HttpServletRequest request, User user) // TODO: Make this a Callable instead?
         {
             _testClasses = testClasses;
             _results = results;
@@ -418,20 +435,31 @@ public class JunitController extends SpringActionController
                 throw new RuntimeException("testCase parameter required");
 
             Class clazz = Class.forName(testCase);
-            Result result = JunitRunner.run(clazz);
+            JunitRunner.RunnerResult result = JunitRunner.run(clazz);
 
             int status = HttpServletResponse.SC_OK;
-            if (!result.wasSuccessful())
+            if (!result.junitResult.wasSuccessful())
                 status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 
             Map<String, Object> map = new HashMap<>();
 
-            map.put("runCount", result.getRunCount());
-            map.put("failureCount", result.getFailureCount());
-            map.put("wasSuccessful", result.wasSuccessful());
-            map.put("failures", toList(result.getFailures()));
-            if (result.getIgnoreCount() > 0)
-                map.put("ignored", result.getIgnoreCount());
+            map.put("runCount", result.junitResult.getRunCount());
+            map.put("failureCount", result.junitResult.getFailureCount());
+            map.put("wasSuccessful", result.junitResult.wasSuccessful());
+            map.put("failures", toList(result.junitResult.getFailures()));
+            if (result.junitResult.getIgnoreCount() > 0)
+                map.put("ignored", result.junitResult.getIgnoreCount());
+            JSONArray timers = new JSONArray();
+            if (null != result.perfResults && !result.perfResults.isEmpty())
+            {
+                result.perfResults.forEach(cputimer -> {
+                    var t = new JSONObject();
+                    t.put("name", cputimer.getName());
+                    t.put("ms", cputimer.getTotalMilliseconds());
+                    timers.put(t);
+                });
+            }
+            map.put("timers", timers);
 
             JSONObject json = new JSONObject(map);
 
@@ -549,13 +577,13 @@ public class JunitController extends SpringActionController
                 TestContext.setTestContext(request, (User) request.getUserPrincipal());
 
                 Class clazz = findTestClass("org.labkey.api.data.DbSchema$TestCase");
-                Result result = new Result();
+                JunitRunner.RunnerResult result = new JunitRunner.RunnerResult();
 
                 if (null != clazz)
                     result = JunitRunner.run(clazz);
 
                 int status = HttpServletResponse.SC_OK;
-                if (result.getFailureCount() != 0 || 0 == result.getRunCount())
+                if (result.junitResult.getFailureCount() != 0 || 0 == result.junitResult.getRunCount())
                     status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 
                 String time = format.format(new Date());
@@ -591,20 +619,20 @@ public class JunitController extends SpringActionController
     private static class TestResultView extends HttpView
     {
         private final List<Class> _tests;
-        private final List<Result> _results;
+        private final List<JunitRunner.RunnerResult> _results;
         private final List<Failure> _failures = new LinkedList<>();
         private int _runCount = 0;
         private int _failureCount = 0;
 
-        TestResultView(List<Class> tests, List<Result> results)
+        TestResultView(List<Class> tests, List<JunitRunner.RunnerResult> results)
         {
             _tests = tests;
             _results = results;
-            for (Result result : results)
+            for (JunitRunner.RunnerResult result : results)
             {
-                _runCount += result.getRunCount();
-                _failureCount += result.getFailureCount();
-                _failures.addAll(result.getFailures());
+                _runCount += result.junitResult.getRunCount();
+                _failureCount += result.junitResult.getFailureCount();
+                _failures.addAll(result.junitResult.getFailures());
             }
 
             assert _failureCount == _failures.size();
@@ -656,17 +684,30 @@ public class JunitController extends SpringActionController
             }
 
             out.println("<p></p><p></p>");
-            out.println("<table>");
+            out.println("<table class=\"table\">");
             for (int i=0 ; i<_results.size() && i<_tests.size() ; i++)
             {
-                out.print("<tr><td align=left>");
-                out.println(PageFlowUtil.filter(_tests.get(i).getName()));
-                out.println("</td><td align=right>");
-                long time = _results.get(i).getRunTime();
+                final String testName = _tests.get(i).getName();
+                out.print("<tr><th align=left valign=top>");
+                out.println(PageFlowUtil.filter(testName));
+                out.println("</th><td align=right>");
+                long time = _results.get(i).junitResult.getRunTime();
                 if (time < 10_000)
-                    out.println(time/1000.0);
+                    out.println(time/1000.0 + "s");
                 else
-                    out.println(time/1000);
+                    out.println(time/1000 + "s");
+                var timers = _results.get(i).perfResults;
+                if (!timers.isEmpty())
+                {
+                    out.println("<table class=\"table-condensed\">");
+                    _results.get(i).perfResults.forEach(timer ->
+                    {
+                        out.println("<tr><td>" + PageFlowUtil.filter(timer.getName()) + "</td>");
+                        out.println("<td align=right class=\"TIMER\" data-test=\"" + PageFlowUtil.filter(testName) + "\" data-name=\"" + PageFlowUtil.filter(timer.getName()) + "\" data-ms=\"" + timer.getTotalMilliseconds() + "\">" + timer.getTotalMilliseconds() + "ms</td>");
+                        out.println("</tr>");
+                    });
+                    out.println("</table>");
+                }
                 out.println("</td></tr>");
             }
             out.println("</table>");

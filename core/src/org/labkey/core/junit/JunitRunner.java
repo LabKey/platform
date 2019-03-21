@@ -20,6 +20,10 @@ import junit.framework.TestCase;
 import org.apache.log4j.Logger;
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
+import org.labkey.api.util.CPUTimer;
+import org.labkey.api.util.TestContext;
+
+import java.util.ArrayList;
 
 /*
 * User: adam
@@ -30,7 +34,13 @@ public class JunitRunner
 {
     private static final Logger LOG = Logger.getLogger(JunitRunner.class);
 
-    static Result run(Class clazz)
+    public static class RunnerResult
+    {
+        Result junitResult = new Result();
+        ArrayList<CPUTimer> perfResults = new ArrayList<>();
+    }
+
+    static RunnerResult run(Class clazz)
     {
         assert !TestCase.class.isAssignableFrom(clazz);
 
@@ -38,10 +48,16 @@ public class JunitRunner
 
         try
         {
-            return JUnitCore.runClasses(clazz);
+            TestContext.get().clearPerfResults();
+            RunnerResult r = new RunnerResult();
+            r.junitResult = JUnitCore.runClasses(clazz);
+            if (r.junitResult.wasSuccessful())
+                r.perfResults.addAll(TestContext.get().getPerfResults());
+            return r;
         }
         finally
         {
+            TestContext.get().clearPerfResults();
             LOG.info("Completed " + clazz.getName());
         }
     }
