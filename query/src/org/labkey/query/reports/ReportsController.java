@@ -3646,7 +3646,7 @@ public class ReportsController extends SpringActionController
                 response.put("success", true);
             }
             else
-                throw new IllegalStateException("Unable to find specified report");
+                throw new NotFoundException("Unable to find specified report");
 
             return response;
         }
