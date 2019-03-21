@@ -177,7 +177,6 @@ api/src/org/labkey/api/action/AbstractFileUploadAction.java -text
 api/src/org/labkey/api/action/Action.java -text
 api/src/org/labkey/api/action/ActionType.java -text
 api/src/org/labkey/api/action/AntiVirusException.java -text
-api/src/org/labkey/api/action/ApiAction.java -text
 api/src/org/labkey/api/action/ApiJsonWriter.java -text
 api/src/org/labkey/api/action/ApiQueryResponse.java -text
 api/src/org/labkey/api/action/ApiResponse.java -text
