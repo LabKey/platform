@@ -3,6 +3,7 @@
         <permission name="<%= htmlWebpackPlugin.options.permission %>"/>
     </permissions>
     <dependencies>
+        <dependency path="experiment/gen/experiment-styles.css" />
         <% if (htmlWebpackPlugin.options.mode !== 'dev') { %>
          <dependency path="experiment/gen/<%= htmlWebpackPlugin.options.name %>.js"/>
         <% } %>

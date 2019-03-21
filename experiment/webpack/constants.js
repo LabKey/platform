@@ -3,6 +3,7 @@
  * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
  */
 const path = require('path');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 module.exports = {
     context: function(dir) {
@@ -12,6 +13,55 @@ module.exports = {
         TYPESCRIPT: [ '.jsx', '.js', '.tsx', '.ts' ]
     },
     loaders: {
+        STYLE_LOADERS: [
+            {
+                test: /\.css$/,
+                use: [
+                    MiniCssExtractPlugin.loader,
+                    'css-loader'
+                ]
+            },
+            {
+                test: /\.scss$/,
+                use: [
+                    MiniCssExtractPlugin.loader,
+                    {
+                        loader: 'css-loader',
+                        options: {
+                            importLoaders: 1
+                        }
+                    },{
+                        loader: 'postcss-loader',
+                        options: {
+                            sourceMap: 'inline'
+                        }
+                    },{
+                        loader: 'resolve-url-loader'
+                    },{
+                        loader: 'sass-loader',
+                        options: {
+                            sourceMap: true
+                        }
+                    }]
+            },
+
+            { test: /\.woff(\?v=\d+\.\d+\.\d+)?$/, loader: "url-loader?limit=10000&mimetype=application/font-woff" },
+            { test: /\.woff2(\?v=\d+\.\d+\.\d+)?$/, loader: "url-loader?limit=10000&mimetype=application/font-woff" },
+            { test: /\.ttf(\?v=\d+\.\d+\.\d+)?$/, loader: "url-loader?limit=10000&mimetype=application/octet-stream" },
+            { test: /\.eot(\?v=\d+\.\d+\.\d+)?$/, loader: "file-loader" },
+            { test: /\.svg(\?v=\d+\.\d+\.\d+)?$/, loader: "url-loader?limit=10000&mimetype=image/svg+xml" },
+            { test: /\.png(\?v=\d+\.\d+\.\d+)?$/, loader: "url-loader?limit=10000&mimetype=image/png" },
+
+            {
+                test: /style.js/,
+                loaders: [{
+                    loader: 'babel-loader',
+                    options: {
+                        cacheDirectory: true
+                    }
+                }]
+            }
+        ],
         TYPESCRIPT_LOADERS: [
             {
                 test: /^(?!.*spec\.tsx?$).*\.tsx?$/,
