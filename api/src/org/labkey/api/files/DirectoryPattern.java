@@ -3,17 +3,15 @@ package org.labkey.api.files;
 import org.json.JSONObject;
 import org.labkey.api.module.Module;
 
-import java.util.ArrayList;
-import java.util.List;
 
 public class DirectoryPattern
 {
     /**
     *Regular expression for Directory name including the extension.
     * */
-    String ext;
-    List<DirectoryPattern> subDirectories;
-    FilePattern _filePattern;
+    String _ext;
+    DirectoryPattern _subDirectory;
+    String _fileExt;
     Module module;
 
     public DirectoryPattern(Module module)
@@ -23,34 +21,32 @@ public class DirectoryPattern
 
     public String getExt()
     {
-        return ext;
+        return _ext;
     }
-    /**
-     * This should be set as an actual JAVA Regular Expression.
-    * */
+
     public void setExt(String ext)
     {
-        this.ext = ext;
+        _ext = ext;
     }
 
-    public List<DirectoryPattern> getSubDirectories()
+    public DirectoryPattern getSubDirectory()
     {
-        return subDirectories;
+        return _subDirectory;
     }
 
-    public void setSubDirectories(List<DirectoryPattern> subDirectories)
+    public void setSubDirectory(DirectoryPattern subDirectory)
     {
-        this.subDirectories = subDirectories;
+        _subDirectory = subDirectory;
     }
 
-    public FilePattern getFilePattern()
+    public String getFileExt()
     {
-        return _filePattern;
+        return _fileExt;
     }
 
-    public void setFilePattern(FilePattern filePattern)
+    public void setFileExt(String fileExt)
     {
-        this._filePattern = filePattern;
+        _fileExt = fileExt;
     }
 
     public Module getModule()
@@ -61,20 +57,17 @@ public class DirectoryPattern
     public JSONObject toJSON()
     {
         JSONObject json = new JSONObject();
-        List<JSONObject> subDirs = new ArrayList<>();
 
-        json.put("DirectoryName", ext);
-
-        if(subDirectories != null)
+        json.put("DirectoryName", this.getExt());
+        if(this.getSubDirectory() != null)
         {
-            for (DirectoryPattern dir : subDirectories)
-            {
-                subDirs.add(dir.toJSON());
-            }
+            json.put("SubDirectory", this.getSubDirectory().toJSON());
         }
 
-        json.put("SubDirectory", subDirs);
-        json.put("File", _filePattern.toJSON());
+        if(this.getFileExt() != null)
+        {
+            json.put("File", this.getFileExt());
+        }
 
         return json;
     }
