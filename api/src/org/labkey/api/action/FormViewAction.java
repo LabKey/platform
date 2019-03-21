@@ -109,6 +109,13 @@ public abstract class FormViewAction<FORM> extends BaseViewAction<FORM> implemen
         {
             return getView(form, getReshow(), errors);
         }
+        catch (Exception e)
+        {
+            // If there are errors that can get reported, report them; otherwise rethrow
+            if (null != errors && errors.hasErrors())
+                return new SimpleErrorView(errors);
+            throw e;
+        }
     }
 
 
