@@ -892,6 +892,7 @@ experiment/src/client/AssayDesigner/models.ts -text
 experiment/src/client/DomainDesigner/DomainDesigner.tsx -text
 experiment/src/client/DomainDesigner/app.tsx -text
 experiment/src/client/DomainDesigner/dev.tsx -text
+experiment/src/client/theme/Main.scss -text
 experiment/src/client/theme/style.js -text
 experiment/src/org/labkey/experiment/ArchiveURLRewriter.java -text
 experiment/src/org/labkey/experiment/ChooseExperimentTypeBean.java -text
