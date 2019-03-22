@@ -26,10 +26,10 @@ import javax.servlet.http.HttpServletResponse;
  * User: Dave
  * Date: May 25, 2009
  */
-public abstract class MutatingApiAction<FORM> extends ReadOnlyApiAction<FORM>
+public abstract class MutatingApiAction<FORM> extends BaseApiAction<FORM>
 {
     @Override
-    protected ModelAndView handleGet() throws Exception
+    protected final ModelAndView handleGet() throws Exception
     {
         int status = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
         String message = "You must use the POST method when calling this action.";

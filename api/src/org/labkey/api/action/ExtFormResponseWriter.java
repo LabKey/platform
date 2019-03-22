@@ -85,7 +85,7 @@ public class ExtFormResponseWriter extends ApiJsonWriter
         response.setContentType(sendHtmlJsonResponse ? "text/html" : CONTENT_TYPE_JSON);
     }
 
-    public  ExtFormResponseWriter(HttpServletRequest request, HttpServletResponse response, String contentTypeOverride) throws IOException
+    public ExtFormResponseWriter(HttpServletRequest request, HttpServletResponse response, String contentTypeOverride) throws IOException
     {
         this(request, response);
         if (!sendHtmlJsonResponse && null != contentTypeOverride)

@@ -15,6 +15,9 @@
  */
 package org.labkey.api.action;
 
+import org.springframework.web.servlet.ModelAndView;
+
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 /**
@@ -24,9 +27,21 @@ import java.io.IOException;
  * User: Dave
  * Date: Sep 3, 2008
  */
-public abstract class ExtFormAction<FORM> extends MutatingApiAction<FORM>
+public abstract class ExtFormAction<FORM> extends BaseApiAction<FORM>
 {
-    public ApiResponseWriter createResponseWriter() throws IOException
+    // ExtFormAction previously extended MutatingApiAction... this override mimics the previous behavior while making for a saner hierarchy.
+    // TODO: Migrate the three concrete children of this class to MutatingApiAction (??), and fold this class into FormApiAction
+    @Override
+    protected ModelAndView handleGet() throws Exception
+    {
+        int status = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
+        String message = "You must use the POST method when calling this action.";
+        createResponseWriter().writeAndCloseError(status, message);
+        return null;
+    }
+
+    @Override
+    protected ApiResponseWriter createResponseWriter() throws IOException
     {
         return new ExtFormResponseWriter(getViewContext().getRequest(), getViewContext().getResponse(), getContentTypeOverride());
     }

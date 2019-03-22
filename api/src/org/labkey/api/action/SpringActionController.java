@@ -1187,7 +1187,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         ViewContext vc = HttpView.currentContext();
         boolean readonly = false;
 
-        if (ReadOnlyApiAction.class.isAssignableFrom(c) && !MutatingApiAction.class.isAssignableFrom(c))
+        if (ReadOnlyApiAction.class.isAssignableFrom(c))
         {
             readonly = true;
         }

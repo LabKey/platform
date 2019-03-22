@@ -428,7 +428,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     }
 
     @Override
-    public ApiResponseWriter createResponseWriter() throws IOException
+    protected ApiResponseWriter createResponseWriter() throws IOException
     {
         return new ExtFormResponseWriter(getViewContext().getRequest(), getViewContext().getResponse());
     }
