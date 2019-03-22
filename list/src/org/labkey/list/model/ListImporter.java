@@ -241,12 +241,15 @@ public class ListImporter
                                     {
                                         SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(tableName).append(" OFF\n");
                                         new SqlExecutor(ti.getSchema()).execute(check);
+                                        supportAI = false; // reset in order to avoid setting IDENTITY_INSERT to OFF again in the finally block below.
                                     }
                                 }
 
                                 transaction.commit();
                             }
                         }
+                        // any errors during an insert in the above block will keep IDENTITY_INSERT set to ON - so setting it to OFF in the finally block.
+                        // Refer to Issue 32667 for more details.
                         finally
                         {
                             if (supportAI)
