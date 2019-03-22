@@ -793,7 +793,7 @@ public class FileContentController extends SpringActionController
         }
 
         @Override
-        public ApiResponseWriter createResponseWriter() throws IOException
+        protected ApiResponseWriter createResponseWriter() throws IOException
         {
             return new ApiJsonWriter(getViewContext().getResponse(), getContentTypeOverride())
             {
