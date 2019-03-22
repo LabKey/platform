@@ -1,0 +1,258 @@
+/*
+ * Copyright (c) 2005-2007 Fred Hutchinson Cancer Research Center
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.fhcrc.cpas.data;
+
+import org.apache.log4j.Category;
+import org.hibernate.*;
+import org.hibernate.cfg.AnnotationConfiguration;
+import org.hibernate.cfg.Environment;
+import org.hibernate.classic.Session;
+import org.hibernate.metadata.ClassMetadata;
+import org.hibernate.metadata.CollectionMetadata;
+import org.hibernate.stat.Statistics;
+
+import javax.naming.NamingException;
+import javax.naming.Reference;
+import javax.sql.DataSource;
+import java.io.Serializable;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+
+/**
+ * User: mbellew
+ * Date: Feb 16, 2005
+ * Time: 10:06:53 AM
+ */
+public class DataSourceSessionFactory implements SessionFactory
+    {
+    private static Category _log = Category.getInstance(DataSourceSessionFactory.class);
+    private SessionFactory _f = null;
+    private DataSource _ds = null;
+    private CacheMode _mode = CacheMode.NORMAL;
+
+
+    public static SessionFactory create(DbSchema schema, Class[] cls, CacheMode mode)
+        {
+        try
+            {
+            Class clsDialect = schema.getSqlDialect().getClass();
+            String dialect;
+            if (clsDialect == org.fhcrc.cpas.data.SqlDialectMicrosoftSQLServer.class)
+                dialect = "org.hibernate.dialect.SQLServerDialect";
+            else if (clsDialect == org.fhcrc.cpas.data.SqlDialectPostgreSQL.class)
+                dialect = "org.hibernate.dialect.PostgreSQLDialect";
+            else
+                throw new java.lang.UnsupportedOperationException();
+
+            AnnotationConfiguration cfg = makeConfiguration(cls);
+            cfg.setProperty("hibernate.dialect", dialect);
+            cfg.setProperty("hibernate.connection.datasource", schema.getDataSourceName());
+            SessionFactory f = cfg.buildSessionFactory();
+            return new DataSourceSessionFactory(null, f, mode);
+            }
+        catch (Throwable ex)
+            {
+            _log.error(ex);
+            ex.printStackTrace();
+            throw new Error(ex);
+            }
+        }
+
+
+    public static SessionFactory create(DataSource ds, Class[] cls, CacheMode mode)
+        {
+        AnnotationConfiguration cfg = makeConfiguration(cls);
+        // UNDONE dialect;
+        SessionFactory f = cfg.buildSessionFactory();
+        return new DataSourceSessionFactory(ds, f, mode);
+        }
+
+
+    protected DataSourceSessionFactory(DataSource ds, SessionFactory f, CacheMode mode)
+        {
+        _f = f;
+        _ds = ds;
+        _mode = mode;
+        }
+
+
+    protected static AnnotationConfiguration makeConfiguration(Class[] cls)
+        {
+        AnnotationConfiguration cfg = new AnnotationConfiguration();
+
+        Set t = new HashSet();
+//        t.add("org.fhcrc.cpas.data");
+//        cfg.addAnnotatedClass(org.fhcrc.cpas.data.CpasEntity.class);
+        for (int i = 0; i < cls.length; i++)
+            {
+            Class cl = cls[i];
+            String pkg = cl.getPackage().getName();
+            if (t.add(pkg))
+                cfg.addPackage(pkg);
+            cfg.addAnnotatedClass(cl);
+            }
+
+        boolean debug = false;
+        assert debug = true;
+        if (_log.isDebugEnabled() || debug)
+            cfg.setProperty(Environment.SHOW_SQL, "true");
+        return cfg;
+        }
+
+    //
+    // SessionFactory
+    //
+
+    public Session openSession(Connection connection)
+        {
+        Session session =  _f.openSession(connection);
+        session.setCacheMode(_mode);
+        return session;
+        }
+
+    public Session openSession(org.hibernate.Interceptor interceptor) throws HibernateException
+        {
+        Session session;
+        if (null == _ds)
+            session = _f.openSession(interceptor);
+        else
+            {
+            try
+                {
+                Connection c = _ds.getConnection();
+                session = _f.openSession(c, interceptor);
+                }
+            catch (SQLException x)
+                {
+                throw new HibernateException(x);
+                }
+            }
+        session.setCacheMode(_mode);
+        return session;
+        }
+
+
+    public Session openSession(Connection connection, Interceptor interceptor)
+        {
+        Session session = _f.openSession(connection, interceptor);
+        session.setCacheMode(_mode);
+        return session;
+        }
+
+
+    public Session openSession() throws HibernateException
+        {
+        Session session;
+
+        if (null == _ds)
+            session = _f.openSession();
+        else
+            {
+            try
+                {
+                Connection c = _ds.getConnection();
+                session = _f.openSession(c);
+                }
+            catch (SQLException x)
+                {
+                throw new HibernateException(x);
+                }
+            }
+        session.setCacheMode(_mode);
+        return session;
+        }
+
+
+    public Databinder openDatabinder() throws HibernateException
+        {
+        return _f.openDatabinder();
+        }
+
+    public ClassMetadata getClassMetadata(Class aClass) throws HibernateException
+        {
+        return _f.getClassMetadata(aClass);
+        }
+
+    public ClassMetadata getClassMetadata(String s) throws HibernateException
+        {
+        return _f.getClassMetadata(s);
+        }
+
+    public CollectionMetadata getCollectionMetadata(String s) throws HibernateException
+        {
+        return _f.getCollectionMetadata(s);
+        }
+
+    public Map getAllClassMetadata() throws HibernateException
+        {
+        return _f.getAllClassMetadata();
+        }
+
+    public Map getAllCollectionMetadata() throws HibernateException
+        {
+        return _f.getAllCollectionMetadata();
+        }
+
+    public Statistics getStatistics()
+        {
+        return _f.getStatistics();
+        }
+
+    public void close() throws HibernateException
+        {
+        _f.close();
+        }
+
+    public void evict(Class aClass) throws HibernateException
+        {
+        _f.evict(aClass);
+        }
+
+    public void evict(Class aClass, Serializable serializable) throws HibernateException
+        {
+        _f.evict(aClass, serializable);
+        }
+
+    public void evictCollection(String s) throws HibernateException
+        {
+        _f.evictCollection(s);
+        }
+
+    public void evictCollection(String s, Serializable serializable) throws HibernateException
+        {
+        _f.evictCollection(s, serializable);
+        }
+
+    public void evictQueries() throws HibernateException
+        {
+        _f.evictQueries();
+        }
+
+    public void evictQueries(String s) throws HibernateException
+        {
+        _f.evictQueries(s);
+        }
+
+    public Reference getReference() throws NamingException
+        {
+        return _f.getReference();
+        }
+    }

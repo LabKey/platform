@@ -1,0 +1,8 @@
+<libraries xmlns="http://labkey.org/clientLibrary/xml/">
+    <library compileInProductionMode="false">
+        <script path="internal/jQuery/jquery-1.12.4.js" mode="dev"/>
+        <script path="internal/jQuery/jquery-1.12.4.min.js" mode="production"/>
+        <script path="internal/jQuery/jquery-dateFormat.js" mode="dev"/>
+        <script path="internal/jQuery/jquery-dateFormat.min.js" mode="production"/>
+    </library>
+</libraries>

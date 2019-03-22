@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:q="http://labkey.org/data/xml/query" targetNamespace="http://labkey.org/data/xml/query"
+        elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <xsd:element name="query" type="q:queryType"/>
+
+    <xsd:complexType name="queryType">
+        <xsd:all>
+            <xsd:element name="description" type="xsd:string" nillable="true" minOccurs="0"/>
+            <xsd:element name="metadata" type="xsd:anyType" minOccurs="0"/>
+        </xsd:all>
+        <xsd:attribute name="name" type="xsd:string"/>
+        <xsd:attribute name="schemaName" type="xsd:string"/>
+        <xsd:attribute name="hidden" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="schemaVersion" type="xsd:double"/>
+    </xsd:complexType>
+</xsd:schema>
+

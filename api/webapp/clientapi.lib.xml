@@ -1,0 +1,24 @@
+<libraries xmlns="http://labkey.org/clientLibrary/xml/">
+    <library compileInProductionMode="true">
+        <script path="clientapi/dom/Utils.js"/>
+        <script path="clientapi/dom/Assay.js"/>
+        <script path="clientapi/dom/Tour.js"/>
+        <script path="clientapi/dom/Form.js"/>
+        <script path="clientapi/dom/NavTrail.js"/>
+
+        <script path="clientapi/dom/Portal.js"/>
+        <script path="clientapi/dom/Query.js"/>
+        <script path="clientapi/dom/Security.js"/>
+        <script path="clientapi/dom/GetData.js"/> <!-- TODO: REQUIRES FIX: Depends on LABKEY.QueryWebPart -->
+        <script path="clientapi/dom/WebPart.js"/>
+
+        <script path="clientapi/dom/DataRegion.js"/>
+    </library>
+    <dependencies>
+        <dependency path="clientapi_core"/>
+        <dependency path="internal/jQuery"/>
+    </dependencies>
+</libraries>
+
+
+

@@ -1,0 +1,236 @@
+$font-family: 'Roboto', Arial, Helvetica, sans serif;
+
+//layout
+$accordion-header-background-color: $webpart-color;
+
+
+//panel
+$panel-base-color: $panel-base-color;
+$panel-header-background-color: $base-color;
+$panel-header-color: #ffffff;
+$panel-body-background-color: #ffffff;
+$panel-border-color: #B4B4B4 !default;
+$panel-header-inner-border: false;
+$panel-header-background-gradient: color-stops($base-color, $base-color);
+
+
+//buttons
+$button-default-color: $base-color;
+$button-default-color-over: #000;
+$button-default-color-focus: #000;
+$button-default-color-pressed: #000;
+$button-default-color-disabled: #808080;
+
+$button-small-font-weight: bold;
+$button-small-border-radius: 3px;
+
+$button-default-base-color: #fff;
+$button-default-base-color-over: #fff;
+$button-default-base-color-focus: $button-default-base-color-over;
+$button-default-base-color-pressed: #c0c0c0;
+$button-default-base-color-disabled: adjust-color($base-color, $hue: 0deg, $saturation: -55.556%, $lightness: 12.745%) !default;
+
+$button-default-border-color: #b4b4b4;
+$button-default-border-color-over: #676767;
+$button-default-border-color-focus: #676767;
+$button-default-border-color-pressed: #b4b4b4;
+$button-default-border-color-disabled: #DDDDDD;
+
+$button-default-background-gradient: color-stops(#fff, #e4e4e4);
+$button-default-background-gradient-over: color-stops(#fff, #e4e4e4);
+$button-default-background-gradient-focus: color-stops(#fff, #e4e4e4);
+$button-default-background-gradient-pressed: color-stops(#c0c0c0, #ddd);
+$button-default-background-gradient-disabled: color-stops(#fff, #e4e4e4);
+
+$button-default-background-gradient-color-stops: null;
+$button-default-background-gradient-color-stops-over: null;
+$button-default-background-gradient-color-stops-focus: null;
+$button-default-background-gradient-color-stops-pressed: null;
+$button-default-background-gradient-color-stops-disabled: null;
+
+$button-toolbar-base-color: $button-default-base-color;
+
+$button-toolbar-border-color: transparent !default;
+$button-toolbar-border-color-over: $button-default-border-color-over;
+$button-toolbar-border-color-focus: $button-default-border-color-focus;
+$button-toolbar-border-color-pressed: $button-default-border-color-pressed;
+$button-toolbar-border-color-disabled: $button-default-border-color-disabled;
+
+$button-toolbar-background-color: transparent !default;
+$button-toolbar-background-color-over: $button-default-base-color-over;
+$button-toolbar-background-color-focus: $button-default-base-color-focus;
+$button-toolbar-background-color-pressed: $button-default-base-color-pressed;
+$button-toolbar-background-color-disabled: transparent;
+
+$button-toolbar-background-gradient: null;
+$button-toolbar-background-gradient-over: color-stops(#fff, #e4e4e4);
+$button-toolbar-background-gradient-focus: color-stops(#fff, #e4e4e4);
+$button-toolbar-background-gradient-pressed: null;
+$button-toolbar-background-gradient-disabled: null;
+
+$button-toolbar-background-gradient-color-stops: null;
+$button-toolbar-background-gradient-color-stops-over: null;
+$button-toolbar-background-gradient-color-stops-focus: null;
+$button-toolbar-background-gradient-color-stops-pressed: null;
+$button-toolbar-background-gradient-color-stops-disabled: null;
+
+
+//menus
+$menu-background-color: #fff !default;
+$menu-item-active-background-color: #EAEAEA !default;
+$menu-padding: 0;
+
+
+//menu borders
+$menu-item-active-border-color: #B4B4B4 !default;
+$menu-item-active-border-radius: 0;
+
+
+//window
+$window-background-color: $base-color;
+$window-header-color: #ffffff;
+$window-body-background-color: #ffffff;
+
+
+//grids
+$grid-header-background-color: #ffffff;
+$grid-header-over-background-color: $grid-color;
+$grid-row-cell-selected-background-color: #C5C5C5 !default;
+$grid-row-cell-selected-border-style: none;
+
+//grid grouping
+$grid-grouped-header-padding: 4px;
+$grid-grouped-header-border-width: 0;
+
+//toolbars
+$toolbar-background-color: #eeeeee;
+
+
+//qtips
+$tip-base-color: #eeeeee;
+$tip-background-color: #ffffff;
+
+
+// combo box drop down
+$boundlist-item-over-background-color: #e0e0e0;
+
+
+// date picker
+$datepicker-base-color: #C0D4ED;
+
+
+// darken load mask
+$loadmask-opacity: 0.25 !default;
+$loadmask-backgorund: #000 !default;
+
+
+// ext tabpanel
+
+// the tabs themselves
+$tab-base-color: $primary-bg-color;
+$tab-base-color-active: $primary-bg-color;
+$tab-base-color-over: $primary-bg-color;
+$tab-background-gradient-over: color-stops($primary-bg-color, $primary-bg-color);
+
+$tab-background-gradient-active: color-stops($primary-bg-color, $primary-bg-color);
+$tab-background-gradient: color-stops($webpart-color, $webpart-color);
+
+// 1x borders around the tabs
+$tab-border-color-active: #B4B4B4;  //grey
+$tab-border-color: #B4B4B4;  //grey
+
+// text
+$tab-color: $text-color;
+
+$tabbar-base-color: transparent;  //no background behind tabs
+$tabbar-border-color: transparent; //no background around tabbar
+
+// NOTE: The following adjustment was made manually to the ext-all/ext-all-debug.css directly,
+// should be incorporated in the next scss build. This patch fixes icons from "jumping" within the
+// menus due to the active state border being applied on hover. Formerly, ExtJS accounted for this
+// by swapping padding 1px for border 1px, however, with inline icons this strategy still results in "jumping".
+/*
+.x4-menu-item {
+  padding: 1px;
+  cursor: pointer;
+}
+
+became:
+
+.x4-menu-item {
+  padding: 1px;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+Then the active state was update from:
+
+.x4-menu-item-active {
+   ...
+   padding: 0;
+}
+
+became:
+
+.x4-menu-item-active {
+   ...
+   // padding: 0; removed
+}
+
+Adjusted font size
+
+.x4-panel-header-text-container-default {
+  color: white;
+  font-size: 11px;
+  font-weight: bold;
+  font-family: 'Roboto', Arial, Helvetica, sans serif;
+  line-height: 15px;
+  padding: 0 2px 1px;
+  text-transform: none;
+}
+
+became:
+
+.x4-panel-header-text-container-default {
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+  font-family: 'Roboto', Arial, Helvetica, sans serif;
+  line-height: 15px;
+  padding: 0 2px 1px;
+  text-transform: none;
+}
+
+Removed font def:
+.x4-form-item-label {
+  color: black;
+  font: normal 12px/14px 'Roboto', Arial, Helvetica, sans serif;
+  margin-top: 4px;
+}
+
+became:
+
+.x4-form-item-label {
+  color: black;
+  margin-top: 4px;
+}
+
+Removed font-weight:
+.x4-btn-default-small .x4-btn-inner {
+  font-size: 11px;
+  font-weight: bold;
+  font-family: 'Roboto', Arial, Helvetica, sans serif;
+  color: #682b16;
+  padding: 0 4px;
+}
+
+became:
+
+.x4-btn-default-small .x4-btn-inner {
+  font-size: 11px;
+  font-family: 'Roboto', Arial, Helvetica, sans serif;
+  color: #682b16;
+  padding: 0 4px;
+}
+
+*/

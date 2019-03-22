@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            elementFormDefault="qualified"
+            targetNamespace="http://labkey.org/data/xml/folderType"
+            xmlns:ft="http://labkey.org/data/xml/folderType"
+            xmlns:mp="http://labkey.org/moduleProperties/xml/"
+            xmlns:wp="http://labkey.org/data/xml/webpart">
+  <xsd:import namespace="http://labkey.org/data/xml/webpart" schemaLocation="webpart.xsd"/>
+  <xsd:element name="folderType" type="ft:folderType" />
+
+    <xsd:complexType name="folderType">
+      <xsd:sequence>
+        <xsd:element ref="ft:name"/>
+        <xsd:element ref="ft:description" minOccurs="0"/>
+        <xsd:element name="startURL" type="xsd:string" minOccurs="0" maxOccurs="1"/>
+          <!--TODO-->
+        <xsd:element ref="ft:requiredWebParts" minOccurs="0" maxOccurs="1"/>
+        <xsd:element ref="ft:preferredWebParts" minOccurs="0" maxOccurs="1"/>
+        <xsd:element ref="ft:folderTabs" minOccurs="0" maxOccurs="1"/>
+        <xsd:element ref="ft:modules"  minOccurs="1" maxOccurs="1"/>
+        <xsd:element ref="ft:defaultModule" minOccurs="1" maxOccurs="1"/>
+        <xsd:element ref="ft:workbookType" minOccurs="0" maxOccurs="1" />
+        <xsd:element ref="ft:forceAssayUploadIntoWorkbooks" minOccurs="0" maxOccurs="1"/>
+        <xsd:element ref="ft:folderIconPath" minOccurs="0" maxOccurs="1"/>
+        <xsd:element ref="ft:menubarEnabled" minOccurs="0" maxOccurs="1"/>
+      </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:element name="folderTabs">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element minOccurs="0" maxOccurs="unbounded" ref="ft:folderTab"/>
+          </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:element name="folderTab">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element ref="ft:name" minOccurs="1" maxOccurs="1"/>
+            <xsd:element ref="ft:caption" minOccurs="1" maxOccurs="1"/>
+            <xsd:element ref="ft:description" minOccurs="0" maxOccurs="1"/>
+            <xsd:element ref="ft:selectors" minOccurs="0" maxOccurs="unbounded "/>
+            <xsd:element ref="ft:requiredWebParts" minOccurs="0" maxOccurs="1"/>
+            <xsd:element ref="ft:preferredWebParts" minOccurs="0" maxOccurs="1"/>
+            <xsd:element ref="ft:url" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="permissions" type="ft:permissionClassListType" minOccurs="0"/>
+          </xsd:sequence>
+          <xsd:attribute name="tabType" type="xsd:string"/>
+          <xsd:attribute name="folderType" type="xsd:string"/>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:element name="selectors">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element ref="ft:selector" minOccurs="0" maxOccurs="unbounded"/>
+          </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:element name="selector">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element ref="ft:view" minOccurs="0" maxOccurs="1"/>
+            <xsd:element ref="ft:controller" minOccurs="0" maxOccurs="1"/>
+            <xsd:element ref="ft:regex" minOccurs="0" maxOccurs="1"/>
+          </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+  <xsd:element name="description" type="xsd:string"/>
+
+  <xsd:element name="menubarEnabled" type="xsd:boolean"/>
+
+  <xsd:element name="caption" type="xsd:string"/>
+
+  <xsd:element name="displayOrder" type="xsd:int"/>
+
+  <xsd:element name="forceAssayUploadIntoWorkbooks" type="xsd:boolean"/>
+
+  <xsd:element name="folderIconPath" type="xsd:string"/>
+
+  <xsd:element name="controller" type="xsd:string"/>
+
+  <xsd:element name="view" type="xsd:string"/>
+
+  <xsd:element name="regex" type="xsd:string"/>
+
+  <xsd:element name="requiredWebParts">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element minOccurs="0" maxOccurs="unbounded" ref="ft:webPart"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+
+  <xsd:element name="preferredWebParts">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element minOccurs="0" maxOccurs="unbounded" ref="ft:webPart"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+
+  <xsd:element name="modules">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element minOccurs="1" maxOccurs="unbounded" ref="ft:moduleName"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+
+  <xsd:element name="moduleName" type="xsd:string"/>
+  <xsd:element name="defaultModule" type="xsd:string"/>
+  <xsd:element name="name" type="xsd:string"/>
+  <xsd:element name="url" type="xsd:string"/>
+  <xsd:element name="workbookType" type="xsd:boolean" />
+  <xsd:element name="webPart">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element ref="ft:name"/>
+        <xsd:element ref="ft:location"/>
+        <xsd:element name="property" type="ft:property" minOccurs="0" maxOccurs="unbounded"/>
+        <xsd:element name="permission" type="xsd:string" minOccurs="0" maxOccurs="1" />
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="location" type="wp:locationEnum"/>
+
+  <xsd:complexType name="property">
+    <xsd:attribute name="name" type="xsd:string"/>
+    <xsd:attribute name="value" type="xsd:string"/>
+  </xsd:complexType>
+
+  <xsd:complexType name="permissionClassListType">
+    <xsd:sequence>
+      <xsd:element name="permission" type="ft:permissionClassType" minOccurs="0" maxOccurs="unbounded"/>
+    </xsd:sequence>
+  </xsd:complexType>
+
+  <xsd:complexType name="permissionClassType">
+    <xsd:attribute name="name" type="xsd:string"/>
+  </xsd:complexType>
+
+</xsd:schema>

@@ -1,0 +1,10 @@
+<libraries xmlns="http://labkey.org/clientLibrary/xml/">
+    <library compileInProductionMode="false">
+        <script path="ux/CheckCombo/CheckCombo.css"/>
+        <script path="ux/CheckCombo/CheckCombo.js"/>
+        <script path="sqv/Selector.js"/>
+    </library>
+    <dependencies>
+        <dependency path="clientapi/ext4"/>
+    </dependencies>
+</libraries>

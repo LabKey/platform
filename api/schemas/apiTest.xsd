@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://labkey.org/query/xml" targetNamespace="http://labkey.org/query/xml" elementFormDefault="qualified" attributeFormDefault="unqualified">
+    <xs:annotation>
+        <xs:documentation xml:lang="en">LabKey API test data</xs:documentation>
+    </xs:annotation>
+    <xs:element name="ApiTests">
+        <xs:complexType>
+            <xs:sequence minOccurs="0" maxOccurs="unbounded">
+                <xs:element name="test" type="TestCaseType"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:complexType name="TestCaseType">
+        <xs:annotation>
+            <xs:documentation>Describes a serialized HTTP API test case.</xs:documentation>
+        </xs:annotation>
+        <xs:all minOccurs="0">
+            <xs:element name="url" type="xs:string" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="response" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="formData" type="xs:string" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
+        <xs:attribute name="name" type="xs:string"/>
+        <xs:attribute name="type" type="xs:string"/>
+        <xs:attribute name="failOnMatch" type="xs:boolean"/>
+    </xs:complexType>
+</xs:schema>

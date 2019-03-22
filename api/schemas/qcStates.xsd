@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+            targetNamespace="http://labkey.org/study/xml/qcStates"
+            elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+	<xs:annotation>
+        <xs:documentation xml:lang="en">
+            Describes the study QC states manifest. Contains all QC states information for the study.
+        </xs:documentation>
+	</xs:annotation>
+	<xs:element name="studyqc">
+		<xs:complexType>
+			<xs:all>
+                <xs:element name="showPrivateDataByDefault" type="xs:boolean">
+                    <xs:annotation>
+                        <xs:documentation>
+                            This setting determines whether users see non-public data by default. Users can
+                            always explicitly choose to see data in any QC state.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="blankQCStatePublic" type="xs:boolean" default="false">
+                    <xs:annotation>
+                        <xs:documentation>
+                            This setting determines whether users see non-public data by default for data
+                            that has not been assigned a QC state.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="pipelineImportDefault" type="xs:string" minOccurs="0">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Specifies the default QC state for data imported through the pipeline.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="assayDataDefault" type="xs:string" minOccurs="0">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Specifies the default QC state for data copied from assays.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="insertUpdateDefault" type="xs:string" minOccurs="0">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Specifies the default QC state for data inserted or updated directly into a dataset.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+				<xs:element name="qcstates" minOccurs="0">
+					<xs:complexType>
+						<xs:sequence minOccurs="0" maxOccurs="unbounded">
+							<xs:element name="qcstate">
+								<xs:complexType>
+									<xs:attribute name="name" type="xs:string" use="required">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                 The name of the dataset.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+									<xs:attribute name="description" type="xs:string">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                 Each dataset can belong to one category. Datasets are grouped together
+                                                 by category in the UI.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+									<xs:attribute name="public" type="xs:boolean" default="false">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                 Indicates whether this dataset contains demographic data.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+								</xs:complexType>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>

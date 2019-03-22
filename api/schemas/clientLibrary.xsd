@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+           xmlns:lib="http://labkey.org/clientLibrary/xml/"
+           targetNamespace="http://labkey.org/clientLibrary/xml/"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified">
+	<xsd:annotation>
+
+    <xsd:documentation xml:lang="en">
+        Describes client libraries, which includes JS and CSS files, or packages composed of them.  Currently experimental.
+    </xsd:documentation>
+	</xsd:annotation>
+
+    <xsd:element name="libraries" type="lib:librariesType"/>
+
+    <xsd:complexType name="librariesType">
+        <xsd:all>
+            <xsd:element name="library" type="lib:libraryType" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="dependencies" type="lib:dependenciesType" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="requiredModuleContext" type="lib:moduleContextType" minOccurs="0" maxOccurs="1"/>
+            <!--<xsd:element name="compilerSettings" type="lib:compilerSettingsType" minOccurs="0" maxOccurs="1"/>-->
+        </xsd:all>
+    </xsd:complexType>
+
+    <xsd:complexType name="libraryType">
+        <xsd:sequence minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="script" type="lib:dependencyType"/>
+        </xsd:sequence>
+        <xsd:attribute name="compileInProductionMode" type="xsd:boolean"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="dependencyType">
+        <xsd:attribute name="path" type="xsd:string" use="required"/>
+        <xsd:attribute name="mode" type="lib:modeTypeEnum" use="optional"/>
+    </xsd:complexType>
+
+    <xsd:simpleType name="modeTypeEnum">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="production"/>
+            <xsd:enumeration value="dev"/>
+            <xsd:enumeration value="both"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name="compilerSettingsType">
+        <xsd:attribute name="strict" type="xsd:boolean"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="dependenciesType">
+        <xsd:sequence minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="dependency" type="lib:dependencyType"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="moduleContextType">
+        <xsd:sequence minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="module" type="lib:requiredModuleType"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="requiredModuleType">
+        <xsd:attribute name="name" type="xsd:string" use="required"/>
+    </xsd:complexType>
+</xsd:schema>

@@ -1,0 +1,28 @@
+<libraries xmlns="http://labkey.org/clientLibrary/xml/">
+    <library compileInProductionMode="true">
+        <script path="clientapi/core/Utils.js"/>
+        <script path="clientapi/core/ActionURL.js"/> <!-- still references window object -->
+        <script path="clientapi/core/Ajax.js"/>
+        <script path="clientapi/core/Assay.js"/> <!-- still references window and document object -->
+        <script path="clientapi/core/Domain.js"/>
+        <script path="clientapi/core/Experiment.js"/>
+        <script path="clientapi/core/FieldKey.js"/>
+        <script path="clientapi/core/Filter.js"/>
+        <script path="clientapi/core/List.js"/>
+        <script path="clientapi/core/Message.js"/>
+        <script path="clientapi/core/MultiRequest.js"/>
+        <script path="clientapi/core/ParticipantGroup.js"/>
+        <script path="clientapi/core/Pipeline.js"/>
+        <script path="clientapi/core/Specimen.js"/>
+        <script path="clientapi/core/Query.js"/>
+        <script path="clientapi/core/GetData.js"/>
+        <script path="clientapi/core/Report.js"/>
+        <script path="clientapi/core/Security.js"/>
+        <script path="clientapi/core/Visualization.js"/>
+    </library>
+    <dependencies>
+    </dependencies>
+</libraries>
+
+
+

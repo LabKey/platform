@@ -1,0 +1,104 @@
+<schema xmlns="http://www.w3.org/2001/XMLSchema" xmlns:ns="http://query.labkey.org/design"
+           xmlns:dat="http://labkey.org/data/xml"
+           targetNamespace="http://query.labkey.org/design" elementFormDefault="qualified"
+           attributeFormDefault="unqualified">
+    <element name="errors" type="ns:Errors" />
+    <element name="query" type="ns:DgQuery"/>
+    <element name="view" type="ns:DgQuery" />
+    <complexType name="DgQuery">
+        <sequence>
+            <element name="select">
+                <complexType>
+                    <choice maxOccurs="unbounded">
+                        <element name="column" type="ns:DgColumn"/>
+                    </choice>
+                </complexType>
+            </element>
+            <element name="from" minOccurs="0">
+                <complexType>
+                    <choice maxOccurs="unbounded">
+                        <element name="table" type="ns:DgTable"/>
+                    </choice>
+                </complexType>
+            </element>
+            <element name="where">
+                <complexType>
+                    <choice minOccurs="0" maxOccurs="unbounded">
+                        <element name="compare" type="ns:DgCompare" minOccurs="0"/>
+                        <element name="sql" type="string" minOccurs="0"/>
+                    </choice>
+                </complexType>
+            </element>
+            <element name="orderBy">
+                <complexType>
+                    <choice minOccurs="0" maxOccurs="unbounded">
+                        <element name="field" type="ns:DgOrderByString"/>
+                        <element name="sql" type="ns:DgOrderByString"/>
+                    </choice>
+                </complexType>
+            </element>
+        </sequence>
+        <attribute name="name" type="string" />
+        <attribute name="containerFilterName" type="string" use="optional"/>
+    </complexType>
+    <complexType name="DgTable">
+        <all>
+            <element name="metadata" type="dat:TableType"/>
+        </all>
+        <attribute name="alias" type="string"/>
+    </complexType>
+    <complexType name="DgColumn">
+        <all>
+            <element name="value" type="ns:DgValue"/>
+            <element minOccurs="0" name="metadata" type="dat:ColumnType"/>
+        </all>
+        <attribute name="alias" type="string"/>
+    </complexType>
+    <complexType name="DgValue">
+        <choice>
+            <element name="field" type="ns:DgFieldString"/>
+            <element name="sql" type="string"/>
+        </choice>
+    </complexType>
+    <complexType name="DgCompare">
+        <sequence>
+            <element name="field" type="string"/>
+            <element name="datatype" type="string" minOccurs="0" maxOccurs="1"/>
+            <element name="op" type="string"/>
+            <choice minOccurs="0">
+                <element name="literal" type="string"/>
+            </choice>
+        </sequence>
+    </complexType>
+    <complexType name="DgFieldString">
+        <simpleContent>
+            <extension base="string">
+                <attribute name="aggregate"/>
+            </extension>
+        </simpleContent>
+    </complexType>
+    <complexType name="DgOrderByString">
+        <simpleContent>
+            <extension base="string">
+                <attribute name="dir" type="string" />
+            </extension>
+        </simpleContent>
+    </complexType>
+    <complexType name="Errors">
+        <choice minOccurs="0" maxOccurs="unbounded">
+            <element name="error" type="ns:DgMessage" />
+            <element name="warning" type="ns:DgMessage" />
+        </choice>
+    </complexType>
+    <complexType name="DgMessage">
+        <simpleContent>
+            <extension base="string">
+                <attribute name="line" type="int" />
+            </extension>
+        </simpleContent>
+    </complexType>
+</schema>
+
+
+
+

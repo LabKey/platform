@@ -1,0 +1,1594 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:dat="http://labkey.org/data/xml"
+           xmlns:cv="http://labkey.org/data/xml/queryCustomView"
+           targetNamespace="http://labkey.org/data/xml"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified">
+	<xs:annotation>
+		<xs:documentation  xmlns="http://www.w3.org/1999/xhtml">
+            Describes metadata for any database table in LabKey Server, including lists and datasets.
+            A subset of this schema's elements are used to serialize lists for import/export.
+            Similarly, a subset of this schema's elements are used to generate the datasets_metadata.xml file for dataset import/export.
+            Note that a complementary schema file, datasets.xsd, contains additional, dataset-specific properties and is used to generate
+            and read datasets_manifest.xml during dataset import/export. These properties are not included in tableInfo.xsd because of
+            their specificity to datasets. Please see
+               https://www.labkey.org/Documentation/wiki-page.view?name=tableInfoExport
+            for a summary of the fields in tableInfo.xsd that are used for dataset and list import/export.
+        </xs:documentation>
+	</xs:annotation>
+
+    <xs:import namespace="http://labkey.org/data/xml/queryCustomView" schemaLocation="queryCustomView.xsd"/>
+
+    <xs:element name="tables" type="dat:TablesType"/>
+    <xs:complexType name="MultiTablesType">
+        <xs:choice>
+            <xs:element name="tables" type="dat:TablesType"/>
+        </xs:choice>
+    </xs:complexType>
+
+    <xs:complexType name="TablesType">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="sharedConfig" type="dat:SharedConfigType" minOccurs="0" maxOccurs="1">
+                <xs:unique name="uniqueSharedColumns">
+                    <xs:selector xpath="./dat:columns/dat:column"/>
+                    <xs:field xpath="@columnName"/>
+                </xs:unique>
+            </xs:element>
+            <xs:element name="description" minOccurs="0" maxOccurs="1" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        Short description about the schema itself.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="schemaCustomizer" type="dat:SchemaCustomizerType"/>
+            <xs:element name="table" type="dat:TableType">
+                <xs:unique name="uniqueColumns">
+                    <xs:selector xpath="./dat:columns/dat:column"/>
+                    <xs:field xpath="@columnName"/>
+                </xs:unique>
+            </xs:element>
+            <xs:element name="filters" type="cv:namedFiltersType"/>
+        </xs:choice>
+    </xs:complexType>
+
+    <xs:complexType name="ColumnList">
+        <xs:sequence>
+            <xs:element name="column" type="xs:string" minOccurs="1" maxOccurs="unbounded" />
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="IndicesType">
+        <xs:sequence>
+            <xs:element name="index" type="dat:IndexType" minOccurs="1" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="IndexType">
+        <xs:complexContent>
+            <xs:extension base="dat:ColumnList">
+                <xs:attribute name="type" use="required">
+                    <xs:simpleType>
+                        <xs:restriction base="xs:token">
+                            <xs:enumeration value="primary"/>
+                            <xs:enumeration value="unique"/>
+                            <xs:enumeration value="non-unique"/>
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="PropertiesType">
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="property">
+                <xs:complexType>
+                    <xs:simpleContent>
+                        <xs:extension base="xs:string">
+                            <xs:attribute name="name" type="xs:string"/>
+                        </xs:extension>
+                    </xs:simpleContent>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="SharedConfigType">
+        <xs:all minOccurs="0">
+            <xs:element name="columns" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The collection of column objects used by all tables.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:sequence minOccurs="1" maxOccurs="unbounded">
+                        <xs:element name="column" type="dat:ColumnType"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="indices" type="dat:IndicesType" minOccurs="0" maxOccurs="1" />
+        </xs:all>
+    </xs:complexType>
+
+	<xs:complexType name="TableType">
+		<xs:annotation>
+			<xs:documentation>A SQL table or object treated like a table in the underlying relational database.</xs:documentation>
+		</xs:annotation>
+		<xs:all minOccurs="0">
+
+            <xs:element name="includeColumnsList" type="xs:string"  minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>For linked schemas only: Columns to be included by name in linked tables. This is a comma separated list of column names.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+
+			<xs:element name="tableTitle" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>A preferred title for this table. Used in dataset import/export, and will also be displayed in very limited part of the UI, including the page title of executeQuery</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+            <xs:element name="description" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>A description of the meaning of the table. Used in dataset import/export and list import/export.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+			<xs:element name="tableGroup" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Not currently used.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="manageTableAllowed" type="xs:boolean" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Not currently used.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="dbTableName" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Not currently used.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+            <xs:element name="manageTables" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>Not currently used.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="nextStep" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>Not currently used.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+			<xs:element name="pkColumnName" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+                        A comma-separated ordered list of the column name values that comprise the primary
+                        key of the table. Used for list import/export.
+                    </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="versionColumnName" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The column in the table that acts as a row version stamp for detecting changes to
+                        the row. Its value is expected to change when any column within the row is changed. Used for
+                        detecting unanticipated changes to a row between the time a user selects a row and the time the
+                        same user updates or deletes the row. If the versionColumn detects a change, the user's update
+                        or delete fails. If not specified in the table xml, LabKey Server will look for a column named
+                        "_ts" which is assumed to be a database-managed row version column, or a  column named "Modified",
+                        which LabKey Server will update when any row update is made by the LabKey API methods.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+            <xs:element name="gridUrl" type="dat:StringExpressionType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>URL string expression used to render the default grid view link for this table. see ColumnType.url.</xs:documentation>
+                </xs:annotation>
+
+            </xs:element>
+            <xs:element name="importUrl" type="dat:StringExpressionType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>URL string expression used to render the import data link for this table. see ColumnType.url.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="insertUrl" type="dat:StringExpressionType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        URL string expression used to render the default insert view link for this table. May be set to
+                        a blank value to prevent a table's default URL from being used. see ColumnType.url.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="deleteUrl" type="dat:StringExpressionType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        URL string expression used to render the default delete link for this table. May be set to
+                        a blank value to prevent a table's default URL from being used. Do not include key values as
+                        substitutions, they will automatically be POSTed. see ColumnType.url.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="updateUrl" type="dat:StringExpressionType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        URL string expression used to render the default update view link for this table. May be set to
+                        a blank value to prevent a table's default URL from being used. see ColumnType.url.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+			<xs:element name="tableUrl" type="dat:StringExpressionType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+                        URL string expression used to render the details link for each row in the table. May be set to
+                        a blank value to remove the details column. see ColumnType.url.
+                    </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="titleColumn" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+                        Specifies the name of the column to display when this table is used as a "lookup table" (i.e., when
+                        it is the "references" target of a foreign key relationship). The value of the titleColumn will
+                        appear in grid views, details views, and in the drop down controls that appear in insert/update
+                        views. The titleColumn is typically used to display a human readable name, label, or description
+                        instead of the key value. For example in a table with RowId and Label columns, Label might be set
+                        as the titleColumn. Used in list import/export.
+                    </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+            <xs:element name="cacheSize" type="xs:int" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Optional maximum number of items from this table to cache in the application.
+                        Supported for external schema tables and module tables.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="importMessage" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        A message that will be displayed on the default import page and will be appended to the top of the default
+                        excel import template.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="importTemplates" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        A list of import templates that will be available for download on the default excel upload page.
+                        Each template can have a label and a URL. This should should either point to a static file or an action that
+                        will generate the template.
+                    </xs:documentation>
+                </xs:annotation>
+				<xs:complexType>
+					<xs:sequence minOccurs="0" maxOccurs="unbounded">
+						<xs:element name="template" type="dat:ImportTemplateType"/>
+					</xs:sequence>
+				</xs:complexType>
+            </xs:element>
+			<xs:element name="columns" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+                        The collection of column objects within this table object. Used for dataset import/export and list import/export.</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:sequence minOccurs="0" maxOccurs="unbounded">
+						<xs:element name="column" type="dat:ColumnType"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+            <xs:element name="indices" type="dat:IndicesType" minOccurs="0" maxOccurs="1" />
+            <xs:element name="viewOptions" type="dat:ViewOptions" minOccurs="0"/>
+            <xs:element name="buttonBarOptions" type="dat:ButtonBarOptions" minOccurs="0" maxOccurs="1" />
+            <xs:element name="aggregateRowOptions" type="dat:AggregateRowOptions" minOccurs="0" maxOccurs="1" />
+            <xs:element name="javaCustomizer" minOccurs="0" maxOccurs="1" type="dat:TableCustomizerType">
+                <xs:annotation>
+                    <xs:documentation>
+                        An implementation of org.labkey.api.data.TableCustomizer. Must have a no-argument constructor.
+                        The value should be the fully qualified Java class name.
+                        Used to allow further customization of the table and its columns via Java code.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="auditLogging" type="dat:AuditType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Defaults to 'NONE'. Determines the level of auditing on this table for insert, update, and
+                        delete operations. Other options are 'SUMMARY' and 'DETAILED'.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="filters" minOccurs="0" type="cv:localOrRefFiltersType">
+                <xs:annotation>
+                    <xs:documentation>
+                        Apply filters to the table underlying table.
+                        Only applicable to external schema tables, linked schema tables, and query metadata overrides (??).
+                        Filter may be defined locally or by reference to a filter defined in the &lt;tables&gt; element.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+		</xs:all>
+		<xs:attribute name="tableName" type="xs:string" use="required">
+			<xs:annotation>
+				<xs:documentation>
+                    The name attribute is required, and corresponds in a case-insensitive way to the name of the object
+                    in the database, not including schema or catalog qualifiers. The schema qualifier for a table object
+                    is determined by the registerProvider method of the DefaultSchema. Used for dataset import/export and
+                    list import/export.
+                </xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="tableDbType" use="required">
+			<xs:annotation>
+				<xs:documentation>
+                    The four recognized values for the tableDbType attribute are TABLE, VIEW, NOT_IN_DB, UNKNOWN.
+                    The TABLE and VIEW values correspond to their SQL definitions.
+                    NOT_IN_DB type is used for objects that are defined by SQL strings in code, rather than by named objects in the database.
+                    UNKNOWN is used in cases where the type differs between database types.
+                    Supported for SQL metadata.
+                </xs:documentation>
+			</xs:annotation>
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:pattern value="TABLE|VIEW|NOT_IN_DB|UNKNOWN"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+        <xs:attribute name="useColumnOrder" type="xs:boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    If set to true, the columns will be presented in the order in which they are specified in the XML.
+                    Any columns in the underlying query/table that are not included in the XML will be kept in their
+                    original order and listed after the columns that are included in the XML. If set to false,
+                    the columns will be shown based on their "natural" order as determined by the underlying database.
+                 </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="hidden" type="xs:boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    When true, hide the table from the list of tables in the Query drop down and schema browser. Queries or lookups using columns from this table will still resolve.
+                    Supported for external schema tables and module tables.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+	</xs:complexType>
+
+	<xs:complexType name="ColumnType">
+		<xs:annotation>
+			<xs:documentation>The definition of column within the table, view or result set.</xs:documentation>
+		</xs:annotation>
+		<xs:all>
+			<xs:element name="columnIndex" type="xs:int" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+                        Not currently in use. Deprecated, will be removed in the future.
+                    </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="datatype" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+                        The name of the SQL datatype of this column as would be specified in a CREATE TABLE statement.
+                        See also the &lt;rangeURI&gt; property.
+                        Supported for SQL metadata (inferred from database if not specified), dataset import/export and list import/export.
+                    </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="nullable" type="xs:boolean" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+                        Whether or not the column accepts NULLs.
+                        Supported for SQL metadata (inferred from database if not specified),
+                        dataset import/export and list import/export.
+                    </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="required" type="xs:boolean" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+                        Whether or not the column is required on insert and update.
+                        Supported for SQL metadata (inferred from database if not specified),
+                        dataset import/export and list import/export.
+                    </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="columnTitle" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+                        The column heading for this column in a data region. If not present, the columnName is used.
+                        Supported for SQL metadata, dataset import/export and list import/export.
+                    </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="scale" type="xs:int" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+                        The defined maximum or fixed length of the data values in this column.
+                        Supported for SQL metadata (inferred from database if not specified).
+                        For string columns, a value of '-1' indicates the max column size.
+                    </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="precision" type="xs:int" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+                        For numeric columns only, describes the defined number of digits to the right of the decimal
+                        place for values in this column.
+                        Supported for SQL metadata (inferred from database if not specified).
+                    </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="defaultValue" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+                        The value that this column will take on if a value is not specified for
+                        the column in a data insert (add record) operation.
+                        Supported for SQL metadata and import/export.
+                    </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="defaultValueType" type="dat:DefaultValueEnumType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+                        The default value behavior of this column.
+                    </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="autoFillValue" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+                        Not currently in use.
+                    </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="isAutoInc" type="xs:boolean" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+                        True if the column is assigned an automatically incrementing value by the database for every
+                        new row inserted.
+                        Supported for SQL metadata (if not specified, LabKey looks for "identity" or "serial" columns),
+                        dataset import/export and list import/export.
+                    </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="isDisplayColumn" type="xs:boolean" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+                        Not currently in use.
+                    </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="isReadOnly" type="xs:boolean" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+                        If true, column is assumed to be non-editable and is skipped during any update or insert
+                        operations. Used at the system level. Key values that are not auto-generated are described as
+                        isReadOnly=False and isUserEditable=False.
+                        Supported for SQL metadata.
+                    </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="isUserEditable" type="xs:boolean" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+                        True if the column should be shown as editable by a user with appropriate permissions.
+                        If the column is readOnly, this property has no effect.
+                        Supported for SQL metadata.
+                    </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="isHidden" type="xs:boolean" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+                        Defaults to false. Set to true if the column should not normally be displayed in a grid view,
+                        but is sent with the form data as a hidden attribute. In the Customize View UI, isHidden fields
+                        are only shown if the "Show Hidden" textbox is selected. Supported for SQL metadata, dataset
+                        import/export and list import/export.
+                    </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+            <xs:element name="shownInInsertView" type="xs:boolean" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Defaults to true. Set to false if the column should not shown in insert views.
+                        Supported for SQL metadata, dataset import/export and list import/export.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="shownInUpdateView" type="xs:boolean" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Defaults to true. Set to false if the column should not shown in update views.
+                        Supported for SQL metadata, dataset import/export and list import/export.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="shownInDetailsView" type="xs:boolean" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Defaults to true. Set to false if the column should not shown in details views.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="measure" type="xs:boolean" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Defaults to false. Measures are fields that contain data subject to charting and other analysis.
+                        Measures are typically numeric results/observations, like weight, or CD4 count.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="dimension" type="xs:boolean" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Defaults to false. Data dimensions define logical groupings of measures. For example, 'Gender'
+                        could be a dimension for a dataset containing a 'Height' measure, since it may be desirable
+                        to study height by gender.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="keyVariable" type="xs:boolean" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>Deprecated. See recommendedVariable.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="recommendedVariable" type="xs:boolean" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Defaults to false. Define which fields in this table/query/etc. are important variables.
+                        These variables may be displayed as recommended variables when creating new charts/reports/etc.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="defaultScale" type="dat:DefaultScaleType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Defaults to 'LINEAR'. For numeric field types, defines whether linear or log scales will be
+                        used by default for this measure.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="facetingBehavior" type="dat:FacetingBehaviorType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Defaults to 'AUTOMATIC'. Determines when faceted filtering options are displayed for
+                        columns. Other options are 'ALWAYS_ON' and 'ALWAYS_OFF'.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="protected" type="xs:boolean" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Defaults to false. Protected columns are those that contain protected or identifiable information
+                        about participants, such as internal participant IDs, transplant dates, birth dates, etc.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="excludeFromShifting" type="xs:boolean" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Defaults to false. Participant date columns with this property checked will not be shifted on export/publication when
+                        the "Shift Participant Dates" option is selected.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="phi" type="dat:PHIType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Defaults to "Not PHI". Annotates a column with one of four PHI levels (Not PHI, Limited PHI, Full PHI, or Resticted PHI).
+                        Using the Compliance module, administrators can configure the server to control access and logging for PHI annotated fields.
+                        For example, requiring users to have specific PHI security roles and/or to sign terms of use in order to view the annotated fields.
+                        Without additional configuration provided by the Compliance module, LabKey Server ignores this setting.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="shouldLog" type="xs:boolean" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Defaults to true. Using the Compliance module, administrators can configure logging behavior for
+                        PHI annotated fields. For example, the server can record the terms of use signed by the user, the PHI level declared
+                        at sign on, the SQL queries invoked, a list of Participant Ids accessed, and the PHI annotated fields accessed.
+                        Without additional configuration provided by the Compliance module, LabKey Server ignores this flag.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+			<xs:element name="isUnselectable" type="xs:boolean" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+                        Determines whether the column can be selected in the Query column chooser.
+                        For example, the "Properties" entry cannot be selected.
+                        Supported for SQL metadata.
+                    </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="isMvEnabled" type="xs:boolean" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation xmlns="http://www.w3.org/1999/xhtml">
+                        Determines whether the column supports missing value indicators. See the
+                        <a href="https://www.labkey.org/Documentation/wiki-page.view?name=manageMissing" target="_top">
+                        Missing Value Indicator</a> documentation page.
+                        Supported for dataset import/export and list import/export.
+                    </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="sortDescending" type="xs:boolean" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+                        True if the column values should normally be sorted in Descending order on first click.
+                        Used for scoring columns where the high-scoring values are most interesting and therefore
+                        should appear first when the column title sort link is clicked.
+                        If sortDescending is false or not present, the first click on the column title sort
+                        link sorts in Ascending order on the column.
+                        Supported for SQL metadata.
+                    </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="inputType" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+                        The HTML control type to use for data insert or edit into this column.
+                        Valid values are "select", "hidden", "textarea", "file", "checkbox", and "text".
+                        Supported for SQL metadata, dataset import/export and list import/export.
+                    </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="inputLength" type="xs:int" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+                        The width of a text or select input control, in number of characters.
+                        Supported for SQL metadata.
+                    </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="inputRows" type="xs:int" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+                        The number of rows of text to display if inputType = "textarea".
+                        Supported for SQL metadata.
+                    </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="onChange" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+                        Not currently in use.
+                    </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="isKeyField" type="xs:boolean" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+                        True if the column is the Primary Key or part of the Primary Key.
+                        Supported for SQL metadata (inferred from database if not specified), dataset import/export and list import/export.
+                    </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="description" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+                        A description of the meaning of the column, appears as hovertext in insert, update, and details views.
+                        Supported for SQL metadata, dataset import/export and list import/export.
+                    </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="optionlistQuery" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+                        Not currently in use.
+                    </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="url" type="dat:StringExpressionType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation xmlns="http://www.w3.org/1999/xhtml">
+                            A URL template to use when rendering this column's value. Use the syntax ${ColumnName} to substitute values.
+                              Example: http://www.google.com/search?q=${SearchTerm}.
+                            You may also use an abbreviated syntax for built in urls which omits the context path and folder path.
+                              Example: /wiki/page.view?name=details&amp;id=${Key}
+                            See the full URL documentation for more information:
+                              https://www.labkey.org/Documentation/wiki-page.view?name=propertyFields
+                            Supported for SQL metadata, dataset import/export and list import/export.
+                    </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+            <xs:element name="urlTarget" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The target attribute for URL links. For example, use "_blank" to open the link in a new window or tab.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+			<xs:element name="displayWidth" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+                        The width in pixels to reserve for data values form this column
+                        Supported for SQL metadata.
+                    </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="formatString" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+                        A template that specifies how to format a value from the column on display output (or on export
+                        if the corresponding excel- and tsvFormatString values are not set. Follows the same format
+                        patterns as the following objects in the java.text package: DecimalFormat DateFormat. In
+                        addition to these standard java format patterns, boolean values can be formatted using a template
+                        of the form positive;negative;null, where "positive" is the string to display when true, "negative"
+                        is the string to display when false, and "null" is the string to display when null. For date and
+                        datetime columns the values Date and DateTime can be used to display as
+                        either date or date and time with the currently configured display formats for this folder.
+                        Supported for SQL metadata, dataset import/export and list import/export.
+                    </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+            <xs:element name="conditionalFormats" type="dat:ConditionalFormatsType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Conditional formats apply formatting options, such text and background colors, or bold text,
+                        selectively based on the value of the cell.
+                        Supported for SQL metadata, dataset import/export and list import/export.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="validators" type="dat:ValidatorsType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Validators are tested at insert and update time.
+                        Supported for SQL metadata and import/export of datasets, lists, and SND.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+			<xs:element name="excelFormatString" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+                        Format string for the column, used when exporting to Excel.
+                        If not present the formatString is used, if present.
+                        Supported for SQL metadata.
+                    </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="tsvFormatString" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+                        Format string for the column, used when exporting in TSV format.
+                        If not present, the formatString is used, if present.
+                        Supported for SQL metadata.
+                    </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+            <xs:element name="textExpression" type="dat:StringExpressionType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Expression string for the column used when rendering the column value for display.
+                        If not present, the formatString is used, if present.
+                        Supported for SQL metadata.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+			<xs:element name="textAlign" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+                        The horizontal alignment of a data value from this column in a grid.
+                        Valid values are "left", "center" and "right". By default, text values are left-aligned and numeric columns are right-aligned.
+                        Supported for SQL metadata.
+                    </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="propertyURI" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+                        An internal identifier for the definition of this column. Valid within the context of the server.
+                        Supported for dataset import/export and list import/export.
+                    </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+            <xs:element name="conceptURI" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        An internal identifier for the concept of this column. Concepts extend the column's type to identify columns that are
+                        participant IDs, user IDs, etc. Valid within the context of the server.
+                        Supported for dataset import/export and list import/export.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="redactedText" type="xs:string" minOccurs="0" >
+                <xs:annotation>
+                    <xs:documentation>
+                        Replacement string for redacted text. Supported for SND import.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="rangeURI" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The rangeURI identifies the range of values that this column can accept which
+                        can be more specific than the &lt;datatype&gt; property.
+                        For example, a file attachment column has a rangeURI of "http://www.labkey.org/exp/xml#attachment"
+                        and implies a datatype of VARCHAR.
+                        Not all possible sql types can be expressed via rangeURI -- for example, the sql REAL type.
+                        See PropertyType for set of the allowed rangeURI values.
+                        Supported for dataset import/export and list import/export.
+                    </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+            <xs:element name="sortColumn" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        If provided, the value of the provided column will be used when sorting this column instead of the actual value
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+			<xs:element name="fk" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+                        A structure that describes a foreign key relationship between a column in the current table and
+                        a target column in another table.
+                        Supported for SQL metadata, dataset import/export and list import/export.
+                    </xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:all>
+						<xs:element name="fkFolderPath" type="xs:string" minOccurs="0">
+							<xs:annotation>
+								<xs:documentation>
+                                    Absolute path to the folder containing the target table of the relationship.
+                                    Example: /Home/support/lists.
+                                    Supported for SQL metadata, dataset import/export and list import/export.
+                                </xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name="fkTable" type="xs:string">
+							<xs:annotation>
+								<xs:documentation>
+                                    The name of the target table of the relationship, the "one" side of the many-to-one
+                                    relationship.
+                                    Supported for SQL metadata, dataset import/export and list import/export.
+                                </xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name="fkColumnName" type="xs:string" minOccurs="0">
+							<xs:annotation>
+								<xs:documentation>
+                                    The name of the target column in the target table of the fk relationship. If not
+                                    specified, defaults to primary key of the target.
+                                    Must be a column that contains 0 or 1 row for any particular value (usually
+                                    a primary key or column with a UNIQUE constraint) to prevent row multiplication
+                                    when joining.
+                                    Supported for SQL metadata.
+                                </xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name="fkDbSchema" type="xs:string" minOccurs="0">
+							<xs:annotation>
+								<xs:documentation>
+                                    The name of the schema in which the foreign key target is defined. If empty, the
+                                    target ("one" side) table is assumed to exist in the same schema as the "many" side
+                                    table.
+                                    Supported for SQL metadata, dataset import/export and list import/export.
+                                </xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name="fkMultiValued" type="xs:string" minOccurs="0">
+							<xs:annotation>
+								<xs:documentation>
+                                    Use to specify a multi-valued column. Currently, "junction" is the only legal value.
+                                </xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name="fkJunctionLookup" type="xs:string" minOccurs="0">
+							<xs:annotation>
+								<xs:documentation>
+                                    Specify the junction lookup column in a many-to-many relationship.
+                                </xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name="fkDisplayColumnName" type="dat:FkDisplayColumnNameType" minOccurs="0">
+							<xs:annotation>
+								<xs:documentation>
+                                    The name of the column in the lookup's target that should be shown as the value.
+                                    If not specified, defaults to the lookup target's title column. 
+                                </xs:documentation>
+							</xs:annotation>
+						</xs:element>
+                        <xs:element name="filters" minOccurs="0">
+                            <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element name="filterGroup" type="dat:FilterGroupType" minOccurs="0" maxOccurs="unbounded"/>
+                                </xs:sequence>
+                            </xs:complexType>
+                        </xs:element>
+					</xs:all>
+				</xs:complexType>
+			</xs:element>
+            <xs:element name="importAliases" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        A collection of aliases by which this column may be named when importing from external files.
+                        Supported for dataset import/export and list import/export.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:sequence minOccurs="0" maxOccurs="unbounded">
+                        <xs:element name="importAlias" type="xs:string"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+			<xs:element name="Ontology" type="dat:OntologyType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+                        The identifier for an external semantic definition of this column.
+                        Not currently shown in the UI.
+                        Supported for SQL metadata.
+                    </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+            <xs:element name="displayColumnFactory" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Fully qualified class name and properties for the org.labkey.api.data.DisplayColumnFactory that
+                        this column uses. It needs to have a no-arg constructor as it will be created via reflection.
+                        The following special className values can also be used: 'NOWRAP' (prevents a value from
+                        line-wrapping in the HTML UI), 'NOLOOKUP' (for lookup columns, show the raw FK value instead of
+                        the title column of the lookup's target, and 'DEFAULT' (the standard display behavior).
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="className" type="xs:string" minOccurs="1" maxOccurs="1"/>
+                        <xs:element name="properties" minOccurs="0" maxOccurs="1" type="dat:PropertiesType"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+		</xs:all>
+		<xs:attribute name="columnName" type="xs:string" use="required">
+			<xs:annotation>
+				<xs:documentation>
+                    The columnName attribute is required and corresponds in a case-insensitive way to the name of the
+                    underlying column in the table or view.
+                    Required, and supported for SQL metadata, dataset import/export and list import/export.
+                </xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+        <xs:attribute name="mvColumnName" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>DEPRECATED: Do not use this attribute; use isMvEnabled element instead.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+		<xs:attribute name="wrappedColumnName" type="xs:string" use="optional">
+			<xs:annotation>
+				<xs:documentation>
+                    The name of the column to wrap. This allows, for example, adding a new, user-specified
+                    lookup based on the value of an existing column without replacing the existing lookup.
+                    Supported only for SQL metadata on custom queries.
+                </xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+        <xs:anyAttribute processContents="lax" namespace="##any"/>
+	</xs:complexType>
+
+    <xs:complexType name="StringExpressionType">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="replaceMissing">
+                    <xs:simpleType>
+                        <xs:restriction base="xs:token">
+                            <xs:enumeration value="nullResult">
+                                <xs:annotation>
+                                    <xs:documentation>If any field in the expression results in null, the entire URL will be null.</xs:documentation>
+                                </xs:annotation>
+                            </xs:enumeration>
+                             <xs:enumeration value="blankValue">
+                                <xs:annotation>
+                                    <xs:documentation>Null or missing fields will be replaced with the empty string.</xs:documentation>
+                                </xs:annotation>
+                            </xs:enumeration>
+                            <xs:enumeration value="nullValue">
+                                <xs:annotation>
+                                    <xs:documentation>Null or missing fields will be replaced with the string "null".</xs:documentation>
+                                </xs:annotation>
+                            </xs:enumeration>
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:attribute>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+	<xs:complexType name="OntologyType">
+		<xs:simpleContent>
+			<xs:extension base="xs:string">
+				<xs:attribute name="refId" type="xs:string">
+					<xs:annotation>
+						<xs:documentation>A unique identifier for the column definition within the ontology source.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="source" type="xs:string" use="optional">
+					<xs:annotation>
+						<xs:documentation>A Uri that identifies the source of a particular ontology term.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+
+	<xs:complexType name="FkDisplayColumnNameType">
+		<xs:simpleContent>
+			<xs:extension base="xs:string">
+				<xs:attribute name="useRawValue" type="xs:boolean" use="optional" default="false">
+					<xs:annotation>
+						<xs:documentation>If false, show the display field on the lookup target. If true,
+                        show the raw value of the foreign key value.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+
+    <xs:complexType name="ConditionalFormatsType">
+        <xs:sequence>
+            <xs:annotation>
+                <xs:documentation>
+                    Many conditional formats may be specified for a single column. The criteria for each will be evaluated
+                    in order. As soon as one criteria is met, its format will be applied and the other formats will be ignored.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:element name="conditionalFormat" type="dat:ConditionalFormatType" minOccurs="0" maxOccurs="unbounded" />
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="ConditionalFormatType">
+        <xs:annotation>
+            <xs:documentation>Supported for SQL metadata, assays import/export, dataset import/export and list import/export.</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="filters" type="dat:ConditionalFormatFiltersType" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        All filters must be satisfied to activate the formatting option - they are AND'd together.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="bold" type="xs:boolean" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>Whether the value should be rendered in bold text</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="italics" type="xs:boolean" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>Whether the value should be rendered in italicized text</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="strikethrough" type="xs:boolean" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>Whether the value should be rendered with a line through it</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="textColor" type="dat:rbgColor" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>The six digit RBG color value for the foreground (text)</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="backgroundColor" type="dat:rbgColor" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>The six digit RBG color value for the background</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    
+    <xs:simpleType name="rbgColor">
+        <xs:restriction base="xs:token">
+            <xs:pattern value="[0-9A-Fa-f]{6}"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="ConditionalFormatFiltersType">
+        <xs:sequence>
+            <xs:element name="filter" type="dat:ConditionalFormatFilterType" minOccurs="1" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>
+                        All filters must be satisfied to activate the formatting option - they are AND'd together.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="ConditionalFormatFilterType">
+        <xs:attribute name="operator" type="cv:operatorType">
+            <xs:annotation>
+                <xs:documentation>The type of filter for this clause</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="value" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>The string representation for the value. Not required for unary operators, such as isblank</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="ViewOptions">
+        <xs:sequence>
+            <xs:element name="viewFilterItem" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>
+                        Describes a report builder configuration for a query table.
+                        Supported for SQL metadata.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:attribute name="type" type="xs:string"/>
+                    <xs:attribute name="enabled" type="xs:boolean"/>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="ButtonBarOptions">
+        <xs:annotation>
+            <xs:documentation>Supported for SQL metadata</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="includeScript" type="xs:string" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>
+                        Path to a client dependency that should be included as part of rendering this button bar.
+                        Should start with slash and not include the context path. This can be an individual
+                        JavaScript or CSS file, or it can be the name of a client dependency library that's been provided
+                        by a module, such as "Ext4" or "clientapi".
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="onRender" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>Name of a JavaScript function to be invoked when the button bar is rendered.
+                        Typically the function itself is defined in a client dependency pointed at by the includeScript
+                        tag. The function  will be passed one argument,
+                        the LABKEY.DataRegion object for the grid attached to the button bar.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="item" type="dat:ButtonBarItem" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>The buttons to be added to the bar.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="position" type="dat:PositionTypeEnum">
+            <xs:annotation>
+                <xs:documentation>Where to render the button bar relative to the grid.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="includeStandardButtons" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation>If true, all of the default buttons will be included. If not, only
+                the buttons defined in the XML metadata will be shown.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="alwaysShowRecordSelectors" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation>If true, record selectors will always be shown, instead of calculating based on the available buttons.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="AggregateRowOptions">
+        <xs:annotation>
+            <xs:documentation>Supported for SQL metadata</xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="position" type="dat:PositionTypeEnum">
+            <xs:annotation>
+                <xs:documentation>Where to render the aggregate row relative to the grid.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:simpleType name="PositionTypeEnum">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="top">
+                <xs:annotation>
+                    <xs:documentation>Render only at the top of the grid.</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="bottom">
+                <xs:annotation>
+                    <xs:documentation>Render only at the bottom of the grid.</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="none">
+                <xs:annotation>
+                    <xs:documentation>Do not render the button bar at all.</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="both">
+                <xs:annotation>
+                    <xs:documentation>Render on both the top and bottom of the grid.</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="MethodType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="LINK">
+                <xs:annotation>
+                    <xs:documentation>Rendered as a standard HTML link, with an &lt;a&gt; tag.</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="GET">
+                <xs:annotation>
+                    <xs:documentation>Rendered to perform an HTTP GET form submission</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="POST">
+                <xs:annotation>
+                    <xs:documentation>Rendered to perform an HTTP POST form submission</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="PermissionType">
+        <xs:annotation>
+            <xs:documentation>Standard permission types for easy referencing.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="READ">
+                <xs:annotation>
+                    <xs:documentation>User must have read permission in the current container</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="INSERT">
+                <xs:annotation>
+                    <xs:documentation>User must have insert permission in the current container</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="UPDATE">
+                <xs:annotation>
+                    <xs:documentation>User must have update permission in the current container</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="DELETE">
+                <xs:annotation>
+                    <xs:documentation>User must have delete permission in the current container</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="ADMIN">
+                <xs:annotation>
+                    <xs:documentation>User must have admin permission in the current container</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="DefaultValueEnumType">
+        <xs:annotation>
+            <xs:documentation>Standard default value types corresponding to enum DefaultValueType.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="FIXED_EDITABLE" />
+            <xs:enumeration value="FIXED_NON_EDITABLE" />
+            <xs:enumeration value="LAST_ENTERED" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="TargetType">
+      <xs:simpleContent>
+        <xs:extension base="xs:string">
+          <xs:attribute name="method" default="LINK" type="dat:MethodType" />
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:complexType name="ButtonBarItem">
+        <xs:annotation>
+            <xs:documentation>Supported for SQL metadata</xs:documentation>
+        </xs:annotation>
+        <xs:choice>
+            <xs:element name="target" type="dat:TargetType" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>URL to hit when the user selects the item.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="onClick" type="xs:string" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        onClick JavaScript handler to be invoked when the user selects the item. This code will be wrapped
+                        in an anonymous function, and will have two variables in scope: dataRegionName, a string with the
+                        name of the DataRegion attached to this grid; dataRegion, a LABKEY.DataRegion object for the
+                        DataRegion attached to this grid.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="item" type="dat:ButtonMenuItem" minOccurs="1" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>Cascading submenu items to attach to the button.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="originalText" type="xs:string" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        If specified, the name of the default button to be renamed and added to the button bar. Its
+                        behavior will be unaffected.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:choice>
+        <xs:attribute name="permission" type="dat:PermissionType">
+            <xs:annotation>
+                <xs:documentation>If specified, a permission that the current user must have to view this button.
+                    If not specified, permissionClass is used.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="permissionClass" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>If specified and the "permission" attribute is not specified, the fully qualified Java class name
+                    of the permission that the current user must have to view this button.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="text" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>Name of the button to be shown in the UI.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="iconCls" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>A font awesome (http://fontawesome.io/) CSS class to apply to this item.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="hidden" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation>If true, don't include the button in the bar. Useful for hiding selected built-in buttons.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="requiresSelection" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation>Whether this item should only be enabled if there are no records selected in the grid. Defaults to false.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="requiresSelectionMinCount" type="xs:int">
+            <xs:annotation>
+                <xs:documentation>The minimum number of selections required to be made for this item to be enabled.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="requiresSelectionMaxCount" type="xs:int">
+            <xs:annotation>
+                <xs:documentation>The maximum number of selections required to be made for this item to be enabled.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="insertPosition">
+            <xs:annotation>
+                <xs:documentation>If specified, add this button at the position index or at the beginning or back of the button bar. Not compatible with insertBefore or insertAfter attributes.</xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:union memberTypes="xs:int">
+                    <xs:simpleType>
+                        <xs:restriction base="xs:token">
+                            <xs:enumeration value="beginning"/>
+                            <xs:enumeration value="end"/>
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:union>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="insertBefore" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>If specified, add this button before the button named by this attribute. Not compatible with insertAfter or insertPosition attributes.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="insertAfter" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>If specified, add this button after the button named by this attribute. Not compatible with insertBefore or insertPosition attributes.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="suppressWarning" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation>If true, suppress the warning message when originalText references to buttons that don't exist.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="ButtonMenuItem">
+        <xs:annotation>
+            <xs:documentation>Supported for SQL metadata</xs:documentation>
+        </xs:annotation>
+        <xs:choice>
+            <xs:element name="target"  type="xs:string" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>URL to hit when the user selects the item.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="onClick" type="xs:string" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        onClick JavaScript handler to be invoked when the user selects the item. This code will be wrapped
+                        in an anonymous function, and will have two variables in scope: dataRegionName, a string with the
+                        name of the DataRegion attached to this grid; dataRegion, a LABKEY.DataRegion object for the
+                        DataRegion attached to this grid
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="item" type="dat:ButtonMenuItem" minOccurs="1" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>Cascading submenu items to attach to this item menu.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:choice>
+        <xs:attribute name="text" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>Name of the menu item to be shown in the UI.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="icon" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>Path to the icon to be rendered as part of the menu item. Should start with / and
+                not include the context path.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:simpleType name="FacetingBehaviorType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="AUTOMATIC">
+                <xs:annotation>
+                    <xs:documentation>If the column is a lookup, dimension or of type: (boolean, int, date, or text)
+                        then it will be considered for faceted filtering.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="ALWAYS_ON">
+                <xs:annotation>
+                    <xs:documentation>The column is always a candidate for faceted filtering.</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="ALWAYS_OFF">
+                <xs:annotation>
+                    <xs:documentation>The column is never a candidate for faceted filtering.</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="PHIType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="NotPHI">
+                <xs:annotation>
+                    <xs:documentation>Column does not contain protected health information</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="Limited">
+                <xs:annotation>
+                    <xs:documentation>Column may include protected health information such as dates and zip codes</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="PHI">
+                <xs:annotation>
+                    <xs:documentation>Column may include other protected health information</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="Restricted">
+                <xs:annotation>
+                    <xs:documentation>Column may include personal health information subject to additional privacy laws, such as drivers license or social security numbers</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="ImportTemplateType">
+        <xs:attribute name="label" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>The label associated with this template.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="url" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>URL string expression used to download this template. It can either point to a static file or an action that will generate the template.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:simpleType name="AuditType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="NONE">
+                <xs:annotation>
+                    <xs:documentation>No audit logging is performed.</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="DETAILED">
+                <xs:annotation>
+                    <xs:documentation>Differences between the new and old row data is logged.</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="SUMMARY">
+                <xs:annotation>
+                    <xs:documentation>Minimal logging is performed.</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="SchemaCustomizerType">
+        <xs:complexContent mixed="true">
+            <xs:restriction base="xs:anyType">
+                <xs:sequence>
+                    <xs:any processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+                </xs:sequence>
+                <xs:attribute name="class" type="xs:string" use="optional"/>
+                <xs:anyAttribute processContents="lax"/>
+            </xs:restriction>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="TableCustomizerType">
+        <xs:complexContent mixed="true">
+            <xs:restriction base="xs:anyType">
+                <xs:sequence>
+                    <xs:element name="properties" minOccurs="0" maxOccurs="1" type="dat:PropertiesType"/>
+                </xs:sequence>
+                <xs:attribute name="class" type="xs:string" use="optional"/>
+                <xs:anyAttribute processContents="lax"/>
+            </xs:restriction>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:simpleType name="DefaultScaleType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="LINEAR">
+                <xs:annotation>
+                    <xs:documentation>Default to using a linear scale for this measure.</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="LOG">
+                <xs:annotation>
+                    <xs:documentation>Default to using a log scale for this measure.</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="ValidatorsType">
+        <xs:sequence>
+            <xs:element name="validator" type="dat:ValidatorType" minOccurs="1" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>
+                        Many validators may be specified for a column. They are evaluated on insert and update.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="ValidatorType">
+        <xs:sequence>
+            <xs:element name="name" type="xs:string" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="description" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="typeURI" type="xs:string" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="expression" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="errorMessage" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="property" type="dat:ValidatorPropertyType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="ValidatorPropertyType">
+        <xs:sequence>
+            <xs:element name="name" type="xs:string" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="value" type="xs:string" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="FilterGroupType">
+        <xs:annotation>
+            <xs:documentation>
+                A filter to be applied to target table results, which populate the selection list for this column,
+                the operation attribute determines when to apply the filters for the lookup. Valid values are 'insert' or
+                'update' and multiple comma delimited values can be specified. If the attribute is omitted then it is the
+                equivalent of : 'insert,update'. Multiple filter elements can be specified and if so will be combined when
+                the table is queried.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="filter" type="cv:filterType"/>
+        </xs:sequence>
+        <xs:attribute name="operation" type="xs:string"/>
+    </xs:complexType>
+
+</xs:schema>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            elementFormDefault="qualified"
+            attributeFormDefault="unqualified"
+            targetNamespace="http://labkey.org/data/xml/reportProps"
+            xmlns:rp="http://labkey.org/data/xml/reportProps">
+
+    <xsd:complexType name="propertyList">
+        <xsd:sequence>
+            <xsd:element ref="rp:property" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:element name="property">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element ref="rp:propDef" minOccurs="1" maxOccurs="1"/>
+                <xsd:element ref="rp:propValue" minOccurs="1" maxOccurs="1"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:element name="propDef">
+        <xsd:complexType>
+            <xsd:attribute name="name" type="xsd:string"/>
+            <xsd:attribute name="label" type="xsd:string"/>
+            <xsd:attribute name="type" type="xsd:string"/>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:element name="propValue">
+        <xsd:complexType>
+            <xsd:attribute name="entityId" type="xsd:string"/>
+            <xsd:attribute name="value" type="xsd:string"/>
+        </xsd:complexType>
+    </xsd:element>
+</xsd:schema>

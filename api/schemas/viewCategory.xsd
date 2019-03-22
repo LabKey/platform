@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            xmlns:vc="http://labkey.org/study/xml/viewCategory"
+            targetNamespace="http://labkey.org/study/xml/viewCategory"
+            elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <xsd:annotation>
+        <xsd:documentation xml:lang="en">View Categories</xsd:documentation>
+    </xsd:annotation>
+
+    <xsd:element name="categories" type="vc:viewCategoryType"/>
+
+    <xsd:complexType name="viewCategoryType">
+        <xsd:sequence minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="category" type="vc:categoryType"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="categoryType">
+        <xsd:attribute name="label" type="xsd:string"/>
+        <xsd:attribute name="displayOrder" type="xsd:int"/>
+        <xsd:attribute name="parent" type="xsd:string"/>
+    </xsd:complexType>
+</xsd:schema>

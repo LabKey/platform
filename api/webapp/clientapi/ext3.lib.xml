@@ -1,0 +1,25 @@
+<libraries xmlns="http://labkey.org/clientLibrary/xml/">
+    <library compileInProductionMode="true">
+        <script path="clientapi/ext3/EditorGridPanel.js"/>
+        <script path="clientapi/ext3/ExtendedJsonReader.js"/>
+        <script path="clientapi/ext3/FieldKey.js"/>
+        <script path="clientapi/ext3/FileSystem.js"/>
+        <script path="clientapi/ext3/FilterDialog.js"/>
+        <script path="clientapi/ext3/FormPanel.js"/>
+        <script path="clientapi/ext3/GridView.js"/>
+        <script path="clientapi/ext3/HoverPopup.js"/>
+        <script path="clientapi/ext3/LongTextEditor.js"/>
+        <script path="clientapi/ext3/PersistentToolTip.js"/>
+        <script path="clientapi/ext3/SecurityPolicy.js"/>
+        <script path="clientapi/ext3/Store.js"/>
+        <script path="clientapi/ext3/Utils.js"/>
+    </library>
+    <dependencies>
+        <dependency path="Ext3" />
+        <dependency path="GuidedTip.js"/> <!-- depended on by FormPanel.js -->
+        <dependency path="GuidedTip.css"/>
+    </dependencies>
+</libraries>
+
+
+

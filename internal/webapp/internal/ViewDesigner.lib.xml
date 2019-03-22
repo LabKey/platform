@@ -1,0 +1,18 @@
+<libraries xmlns="http://labkey.org/clientLibrary/xml/">
+    <library compileInProductionMode="true">
+        <script path="internal/ViewDesigner/data/Cache.js" />
+        <script path="internal/ViewDesigner/ux/ComponentDataView.js" />
+        <script path="internal/ViewDesigner/field/FilterOpCombo.js" />
+        <script path="internal/ViewDesigner/field/FilterTextValue.js" />
+        <script path="internal/ViewDesigner/tab/BaseTab.js" />
+        <script path="internal/ViewDesigner/tab/ColumnsTab.js" />
+        <script path="internal/ViewDesigner/tab/FilterTab.js" />
+        <script path="internal/ViewDesigner/tab/SortTab.js" />
+        <script path="internal/ViewDesigner/FieldMetaRecord.js" />
+        <script path="internal/ViewDesigner/FieldMetaStore.js" />
+        <script path="internal/ViewDesigner/Designer.js" />
+    </library>
+    <dependencies>
+        <dependency path="Ext4" />
+    </dependencies>
+</libraries>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            targetNamespace="http://labkey.org/study/xml/studyViews"
+            elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <xsd:annotation>
+        <xsd:documentation xml:lang="en">Study Views Configuration</xsd:documentation>
+    </xsd:annotation>
+
+    <xsd:element name="views">
+   		<xsd:complexType>
+   			<xsd:all>
+                <xsd:element name="participantView" minOccurs="0">
+                    <xsd:complexType>
+                        <xsd:attribute name="file" type="xsd:string"/>
+                        <xsd:attribute name="active" type="xsd:boolean"/>
+                    </xsd:complexType>
+                </xsd:element>
+            </xsd:all>
+        </xsd:complexType>
+    </xsd:element>
+</xsd:schema>

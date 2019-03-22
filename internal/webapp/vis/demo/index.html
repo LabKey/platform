@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Demo LabKey Plots</title>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+    <script type="text/javascript" src="../lib/patches.js"></script>
+    <script type="text/javascript" src="../lib/d3-3.5.17.min.js"></script>
+    <script type="text/javascript" src="../lib/raphael-min-2.1.0.js"></script>
+    <script type="text/javascript" src="../lib/hexbin.min.js"></script>
+    <script type="text/javascript" src="../lib/sqbin.min.js"></script>
+    <script type="text/javascript" src="../lib/d3pie.min.js"></script>
+    <style type="text/css">
+        .example {
+            width: 900px;
+            border:  1px solid #000;
+            margin-top: 20px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        #stats {
+            padding: 0 10px 0 10px;
+            width: 880px;
+            vertical-align:text-top;
+        }
+
+        svg .p1_segmentMainLabel-outer, svg .p2_segmentMainLabel-outer,
+        svg .p1_segmentPercentage-inner, svg .p2_segmentPercentage-inner,
+        svg .p1_arc, svg .p2_arc {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="example" id="chart">
+</div>
+
+<div class="example" id="coffeePlot">
+</div>
+
+<div class="example" id="box">
+</div>
+
+<div class="example" id="discreteScatter">
+</div>
+
+<div class="example" id="scatter">
+</div>
+
+<div class="example" id="colorScatter">
+</div>
+
+<div class="example" id="binScatter">
+</div>
+
+<div class="example" id="binScatter2">
+</div>
+
+<div class="example" id="brushing">
+</div>
+
+<div class="example" id="mouseEvents">
+</div>
+
+<div class="example" id="errorChart">
+</div>
+
+<div class="example" id="statFn">
+</div>
+
+<div class="example" id="bar">
+</div>
+
+<div class="example" id="bar2">
+</div>
+
+<div class="example" id="bar3">
+</div>
+
+<div class="example">
+    <table><tr>
+        <td><div id="pie"></div></td>
+        <td><div id="pie2"></div></td>
+        <td><div id="pie3"></div></td>
+    </tr></table>
+</div>
+
+<div class="example" id="leveyJennings">
+</div>
+
+<div class="example" id="meanCUSUM">
+</div>
+
+<div class="example" id="survivalCurve">
+</div>
+
+<div class="example" id="timeline">
+</div>
+
+<div class="example" id="javaReleases">
+</div>
+
+<div class="example" id="stats">
+</div>
+
+<script type="text/javascript" src="../src/utils.js"></script>
+<script type="text/javascript" src="../src/geom.js"></script>
+<script type="text/javascript" src="../src/stat.js"></script>
+<script type="text/javascript" src="../src/scale.js"></script>
+<script type="text/javascript" src="../src/layer.js"></script>
+<script type="text/javascript" src="../src/internal/RaphaelRenderer.js"></script>
+<script type="text/javascript" src="../src/internal/D3Renderer.js"></script>
+<script type="text/javascript" src="../src/plot.js"></script>
+<script type="text/javascript" src="demo_data.js"></script>
+<script type="text/javascript" src="demo_script.js"></script>
+</body>
+</html>

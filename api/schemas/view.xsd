@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            xmlns:cl="http://labkey.org/clientLibrary/xml/"
+            xmlns:vw="http://labkey.org/data/xml/view"
+            targetNamespace="http://labkey.org/data/xml/view"
+        elementFormDefault="qualified" attributeFormDefault="unqualified">
+    <xsd:annotation>
+        <xsd:documentation xml:lang="en">File-based View Metadata file</xsd:documentation>
+    </xsd:annotation>
+    
+    <xsd:element name="view" type="vw:viewType"/>
+
+    <xsd:complexType name="viewType">
+        <xsd:sequence>
+            <xsd:element name="permissions" type="vw:permissionsListType" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="permissionClasses" type="vw:permissionClassListType" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="dependencies" type="vw:dependenciesType" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="requiredModuleContext" type="vw:moduleContextType" minOccurs="0" maxOccurs="1"/>
+        </xsd:sequence>
+        <xsd:attribute name="title" type="xsd:string"/>
+        <xsd:attribute name="frame" type="vw:frameType"/>
+        <xsd:attribute name="template" type="vw:templateType"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="dependenciesType">
+        <xsd:sequence minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="dependency" type="cl:dependencyType"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="permissionsListType">
+        <xsd:sequence>
+            <xsd:element name="permission" type="vw:permissionType" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="permissionClassListType">
+        <xsd:sequence>
+            <xsd:element name="permissionClass" type="vw:permissionClassType" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="permissionType">
+        <xsd:attribute name="name" type="vw:permissionEnum"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="permissionClassType">
+        <xsd:attribute name="name" type="xsd:string"/>
+    </xsd:complexType>
+
+    <xsd:simpleType name="permissionEnum">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="login"/>
+            <xsd:enumeration value="read"/>
+            <xsd:enumeration value="insert"/>
+            <xsd:enumeration value="update"/>
+            <xsd:enumeration value="delete"/>
+            <xsd:enumeration value="admin"/>
+            <xsd:enumeration value="none"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="frameType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="portal"/>
+            <xsd:enumeration value="title"/>
+            <xsd:enumeration value="dialog"/>
+            <xsd:enumeration value="div"/>
+            <xsd:enumeration value="left_navigation"/>
+            <xsd:enumeration value="none"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="templateType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="body"/>
+            <xsd:enumeration value="home"/>
+            <xsd:enumeration value="none"/>
+            <xsd:enumeration value="print"/>
+            <xsd:enumeration value="dialog"/>
+            <xsd:enumeration value="wizard"/>
+            <xsd:enumeration value="app"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name="moduleContextType">
+        <xsd:sequence minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="requiredModule" type="vw:requiredModuleType"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="requiredModuleType">
+        <xsd:attribute name="name" type="xsd:string" use="required"/>
+    </xsd:complexType>
+
+</xsd:schema>

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="http://labkey.org/query/xml"
+           xmlns:props="http://labkey.org/data/xml/reportProps"
+           xmlns:ra="http://labkey.org/security/xml/roleAssignment"
+           xmlns:cl="http://labkey.org/clientLibrary/xml/"
+           targetNamespace="http://labkey.org/query/xml"
+           elementFormDefault="qualified" attributeFormDefault="unqualified">
+    <xs:annotation>
+        <xs:documentation xml:lang="en">Report</xs:documentation>
+    </xs:annotation>
+
+    <xs:complexType name="ReportDescriptorType">
+        <xs:sequence>
+            <xs:element name="label" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="category" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="description" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="attachmentDir" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="hidden" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="Properties" type="reportPropertyList" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="reportType" type="ReportType" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="tags" type="props:propertyList" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="roleAssignments" minOccurs="0" maxOccurs="1" type="ra:roleAssignmentsType"/>
+            <xs:element name="displayOrder" type="xs:int" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute name="descriptorType" type="xs:string"/>
+        <xs:attribute name="reportName" type="xs:string"/>
+        <xs:attribute name="reportKey" type="xs:string"/>
+    </xs:complexType>
+
+    <xs:complexType name="ReportType">
+        <xs:choice>
+            <xs:element name="JavaScript" type="JavaScriptReportDescriptorType"/>
+            <xs:element name="R" type="RReportDescriptorType"/>
+            <xs:element name="Query" type="QueryReportDescriptorType"/>
+        </xs:choice>
+    </xs:complexType>
+
+    <xs:complexType name="JavaScriptReportDescriptorType">
+        <xs:sequence>
+            <xs:element name="dependencies" type="dependenciesType" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="QueryReportDescriptorType">
+        <xs:sequence>
+            <xs:element name="schemaName" type="xs:string" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="queryName" type="xs:string" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="viewName" type="xs:string" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="RReportDescriptorType">
+        <xs:sequence>
+            <xs:element name="dependencies" type="dependenciesType" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="functions" type="functionsType" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="scriptEngine" type="scriptEngineType" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="dependenciesType">
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="dependency" type="cl:dependencyType"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="functionsType">
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="function" type="functionType"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="scriptEngineType">
+        <xs:attribute name="remote" type="xs:boolean"/>
+    </xs:complexType>
+
+    <xs:complexType name="functionType">
+        <xs:attribute name="name" type="xs:string"/>
+    </xs:complexType>
+
+    <xs:complexType name="reportPropertyList">
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="Prop">
+                <xs:complexType>
+                    <xs:simpleContent>
+                        <xs:extension base="xs:string">
+                            <xs:attribute name="name" type="xs:string"/>
+                        </xs:extension>
+                    </xs:simpleContent>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:element name="ReportDescriptor" type="ReportDescriptorType"/>
+</xs:schema>

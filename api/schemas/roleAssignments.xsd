@@ -1,0 +1,45 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="http://labkey.org/security/xml/roleAssignment"
+           xmlns:sec="http://labkey.org/security/xml"
+           targetNamespace="http://labkey.org/security/xml/roleAssignment"
+           attributeFormDefault="unqualified"
+           elementFormDefault="qualified">
+
+   <xs:import namespace="http://labkey.org/security/xml" schemaLocation="security.xsd"/>
+
+   <xs:complexType name="roleAssignmentsType">
+      <xs:annotation>
+         <xs:documentation xml:lang="en">
+            List of role assignments.
+         </xs:documentation>
+      </xs:annotation>
+      <xs:sequence>
+         <xs:element name="roleAssignment" type="roleAssignmentType" minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:attribute name="inherited" type="xs:boolean" default="false"/>
+   </xs:complexType>
+
+   <xs:complexType name="roleAssignmentType">
+	   <xs:annotation>
+		   <xs:documentation xml:lang="en">
+               Role assignment definition. Describes the set of users and groups, if any, that are assigned to a role.
+         </xs:documentation>
+	   </xs:annotation>
+      <xs:sequence>
+         <xs:element name="role" type="roleRefType" minOccurs="1"/>
+         <xs:element name="groups" type="sec:groupRefsType" minOccurs="0"/>
+         <xs:element name="users" type="sec:userRefsType" minOccurs="0"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <xs:complexType name="roleRefType">
+	   <xs:annotation>
+		   <xs:documentation xml:lang="en">
+               Reference to a role definition. 
+         </xs:documentation>
+	   </xs:annotation>
+      <xs:attribute name="name" type="xs:string"/>
+   </xs:complexType>
+
+
+</xs:schema>

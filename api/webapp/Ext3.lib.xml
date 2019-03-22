@@ -1,0 +1,14 @@
+<libraries xmlns="http://labkey.org/clientLibrary/xml/">
+    <library compileInProductionMode="false">
+        <!-- TODO: Style dependency is explicitly included in PageFlowUtil -->
+        <!--<script path="ext-3.4.1/resources/css/ext-all.css" mode="both"/>-->
+
+        <script path="ext-3.4.1/adapter/ext/ext-base-debug.js" mode="dev"/>
+        <script path="ext-3.4.1/adapter/ext/ext-base.js" mode="production"/>
+
+        <script path="ext-3.4.1/ext-all-debug.js" mode="dev"/>
+        <script path="ext-3.4.1/ext-all.js" mode="production"/>
+
+        <script path="ext-3.4.1/ext-patches.js" mode="both"/>
+    </library>
+</libraries>

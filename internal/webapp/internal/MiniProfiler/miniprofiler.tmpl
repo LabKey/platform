@@ -1,0 +1,233 @@
+<script id="profilerTemplate" type="text/x-dot-template">
+/*
+ * Copyright (c) 2014 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Port of MiniProfiler: https://github.com/MiniProfiler/ui
+ */
+
+  <div class="profiler-result">
+    <div class="profiler-button {{= it.hasDuplicateCustomTimings ? 'profiler-warning' : '' }}" title="{{! it.name }}">
+      <span class="profiler-number">
+        {{= this.formatDuration(it.duration) }} <span class="profiler-unit">ms</span>
+      </span>
+      {{? it.hasDuplicateCustomTimings }}<span class="profiler-nuclear">!</span>{{?}}
+    </div>
+
+    <div class="profiler-popup">
+      <div class="profiler-info">
+        <span class="profiler-id">{{= it.id }}:</span>
+        <span class="profiler-name">
+          {{! it.name.replace(" ", "&nbsp;") }} <span class="profiler-overall-duration">({{= this.formatDuration(it.duration)}} ms)</span>
+        </span>
+        <span class="profiler-server-time">{{= it.date ? this.formatDateTime(it.date) : '&nbsp;' }}</span>
+      </div>
+
+      <div class="profiler-output">
+        <table class="profiler-timings">
+          <thead>
+            <tr>
+              <th></th>
+              <th title="in milliseconds">duration</th>
+              <th class="profiler-show-more" title="in milliseconds">inclusive</th>
+              <th class="time-from-start profiler-show-more" title="in milliseconds">from start</th>
+              {{ for (var name in it.customTimingStats) { }}
+              <th title="in milliseconds (call count)">{{! name }}</th>
+              {{ } }}
+              {{? it.hasAllocations }}
+              <th class="profiler-allocatons" title="tracked object allocation count">obj</th>
+              {{?}}
+            </tr>
+          </thead>
+          <tbody>
+            {{= this.tmpl('#timingTemplate', {timing: it.root, page: it}) }}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td></td>
+              <td class="profiler-duration">
+              {{= this.formatDuration(it.duration) }}
+              </td>
+              <td class="profiler-show-more" colspan="2"></td>
+              {{ for (var name in it.customTimingStats) {
+                   var stat = it.customTimingStats[name];
+              }}
+              <td class="profiler-duration" title="{{= stat.count }} {{= name.toLowerCase() }} calls spent {{= this.formatDuration(stat.duration) }} ms of total request time">
+                {{= this.formatDuration(it.customTimingStats[name].duration / it.duration * 100) }} <span class="profiler-unit">%</span>
+              </td>
+              {{ } }}
+              {{? it.hasAllocations }}
+              <td class="profiler-duration" title="{{! this.formatAllocations(it.objects, true) }}">{{= it.allocationCount }}</td>
+              {{?}}
+            </tr>
+          </tfoot>
+        </table>
+
+        <!-- todo: if (hasClientTimings) -->
+
+        <!-- note: original implementation
+        {{? it.hasCustomTimings }}
+        <table class="profiler-custom-timing-overview">
+          {{ for (var name in it.customTimingStats) {
+                var stat = it.customTimingStats[name];
+          }}
+          <tr title="{{= stat.count }} {{= name.toLowerCase() }} calls spent {{= this.formatDuration(stat.duration) }} ms of total request time">
+            <td class="profiler-number">
+              {{! name }}:
+            </td>
+            <td class="profiler-number profiler-duration">
+              {{= this.formatDuration(stat.duration / it.duration * 100) }} <span class="profiler-unit">%</span>
+            </td>
+          {{ } }}
+        </table>
+        {{?}}
+        -->
+
+        <div class="profiler-links">
+          <!--
+          <a href="{{= this.shareUrl(it.id) }}" class="profiler-share-profiler-results" target="_blank">share</a>
+          -->
+          {{ for (var link in it.customLinks) { }}
+            <a href="{{! link }}" class="profiler-custom-link" target="_blank">{{! it.customLinks[link] }}</a>
+          {{ } }}
+          </tpl>
+          <span class="profiler-toggleable-links">
+            <a href="{{= this.settingsUrl() }}">settings</a>
+            <a class="profiler-toggle-hidden-columns" data-toggleclass="profiler-show-more" data-hidetext="fewer columns">
+              more columns
+            </a>
+            {{? it.hasTrivialTimings }}
+              <a class="profiler-toggle-trivial" data-toggleclass="profiler-trivial" data-hidetext="hide trivial" title="toggles any rows with &lt; {{= it.trivialMilliseconds }} ms duration">
+                show trivial
+              </a>
+            {{?}}
+          </span>
+        </div>
+
+      </div>
+
+    </div>
+
+    {{? it.hasCustomTimings || it.hasAllocations }}
+    <div class='profiler-queries'>
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align:right">step<br />from start<br />call type<br />duration</th>
+            <th style="text-align:left">call<br />call stack</th>
+          </tr>
+        </thead>
+        <tbody>
+        {{? it.hasCustomTimings }}
+        {{ this.getCustomTimings(it.root).forEach(function (customTiming, i) {
+            out += this.tmpl('#customTimingTemplate', {i: i, customTiming: customTiming});
+        }, this); }}
+        {{?}}
+        {{? it.hasAllocations }}
+        <tr>
+          <td class="profiler-info">
+            <div>Object allocations</div>
+            <div>
+              <a href="{{! this.allocationsUrl(it.id) }}" target="_blank">
+                details
+              </a>
+            </div>
+          </td>
+          <td>
+            <pre>{{! this.formatAllocations(it.objects, false) }}</pre>
+          </td>
+        </tr>
+        {{?}}
+        </tbody>
+      </table>
+      <!--
+      <p class="profiler-trivial-gap-container">
+        <a class="profiler-toggle-trivial-gaps" href="#">show trivial gaps</a>
+      </p>
+      -->
+    </div>
+    {{?}}
+
+  </div>
+
+</script>
+
+<script id='timingTemplate' type='text/x-dot-template'>
+
+{{
+    var renderIndent = function (depth) {
+        var result = '';
+        for (var i = 0; i < depth; i++) {
+            result += '&nbsp;';
+        }
+        return result;
+    };
+}}
+
+  <tr class="{{? it.timing.isTrivial }}profiler-trivial{{?}}">
+    <td class="profiler-label" {{? it.timing.name && it.timing.name.length > 45 }}title="{{! it.timing.name }}"{{?}}>
+      <span class="profiler-indent">{{! renderIndent(it.timing.depth) }}</span>{{= it.timing.name.slice(0,45) }}{{? it.timing.name && it.timing.name.length > 45 }}...{{?}}{{? it.timing.overflow }}<span class="profiler-warning" title="Too many timings captured for this step. Results are limited to only include the most recent timings.">*</span>{{?}}
+    </td>
+    <td class="profiler-duration" title="duration of this step without any children's durations">
+      {{= this.formatDuration(it.timing.durationExclusive) }}
+    </td>
+    <td class="profiler-duration profiler-show-more" title="duration of this step and its children">
+      {{= this.formatDuration(it.timing.duration) }}
+    </td>
+    <td class="profiler-duration profiler-show-more time-from-start" title="time elapsed since profiling started">
+      <span class="profiler-unit">+</span>{{= this.formatDuration(it.timing.startOffset) }}
+    </td>
+    {{ for (var stat in it.page.customTimingStats) { }}
+    {{? it.timing.customTimings && it.timing.customTimings[stat] }}
+    <td class="profiler-duration {{? it.timing.hasDuplicateCustomTimings[stat] }}profiler-warning{{?}}">
+      <a class="profiler-queries-show" title="{{= this.formatDuration(it.timing.customTimingStats[stat].duration) }} ms in {{= it.timing.customTimings[stat].length }} {{! stat }} calls{{? it.timing.hasDuplicateCustomTimings[stat] }}; duplicate calls detected!{{?}}">
+        {{= this.formatDuration(it.timing.customTimingStats[stat].duration) }}
+        ({{= it.timing.customTimings[stat].length }}{{? it.timing.hasDuplicateCustomTimings[stat]}}<span class="profiler-nuclear">!</span>{{?}})
+      </a>
+    </td>
+    {{??}}
+    <td>&nbsp;</td>
+    {{?}}
+    {{ } }}
+    {{? it.timing.hasAllocations }}
+    <td class="profiler-duration" title="{{! this.formatAllocations(it.timing.objects, true) }}">{{= it.timing.allocationCount }}</td>
+    {{?}}
+  </tr>
+
+  {{ it.timing.children.forEach(function (val, i) {
+    out += this.tmpl('#timingTemplate', {timing: val, page: it.page});
+  }, this); }}
+
+</script>
+
+<script id="customTimingTemplate" type="text/x-dot-template">
+
+  <tr class="{{? it.i % 2 == 1 }}profiler-odd{{?}}" data-timingid="{{= it.customTiming.parentTimingId }}">
+    <td class="profiler-info">
+      <div>{{! it.customTiming.parentTimingName }}</div>
+      <div class="profiler-number"><span class="profiler-unit">T+</span>{{= this.formatDuration(it.customTiming.startOffset) }} <span class="profiler-unit">ms</span></div>
+      <div>
+        {{? it.customTiming.isDuplicate }}<span class="profiler-warning">DUPLICATE</span>{{?}}
+        {{= it.customTiming.callType }}
+      </div>
+      <div>{{= this.formatDuration(it.customTiming.duration) }} <span class="profiler-unit">ms</span></div>
+      {{? it.customTiming.detailsURL }}
+      <div><a href="{{= it.customTiming.detailsURL }}" target="_blank">details</a></div>
+      {{?}}
+    </td>
+    <td>
+      <span class="profiler-toggle-custom" data-hidetext="&#9660;">&#9654;</span>
+      <pre class="profiler-custom-message profiler-custom-min">{{! it.customTiming.message }}</pre>
+      <br><br>
+      <span class="profiler-toggle-custom" data-hidetext="&#9660;">&#9654;</span>
+      <pre class="profiler-custom-stack profiler-custom-min">{{! it.customTiming.stackTrace }}</pre>
+    </td>
+  </tr>
+
+</script>
+
+<script id="customGapTemplate" type="text/x-dot-template">
+
+</script>
+

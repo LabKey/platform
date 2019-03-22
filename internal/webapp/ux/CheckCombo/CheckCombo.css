@@ -1,0 +1,16 @@
+/* check combo */
+.x4-combo-checker {
+    background-position: 50% -2px;
+    margin-left: 1px;
+    background-color: transparent;
+    background-image: url("../../ext-4.2.1/resources/ext-theme-classic-sandbox/images/menu/unchecked.gif");
+    background-position: -1px -1px;
+    background-repeat: no-repeat;
+    height: 14px;
+    width: 14px;
+    display: inline-block;
+}
+
+.x4-boundlist-selected .x4-combo-checker {
+    background-image: url("../../ext-4.2.1/resources/ext-theme-classic-sandbox/images/menu/checked.gif");
+}

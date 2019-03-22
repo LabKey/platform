@@ -1,0 +1,5 @@
+{table}
+Filename|Component|Version|Source|License|LabKey Dev|Purpose
+rhino-1.7R3.jar|Mozilla Rhino|1.7R3 PRERELEASE 2010/12/16|{link:Mozilla Rhino|http://www.mozilla.org/rhino/}|{link:MPL 1.1|http://www.mozilla.org/MPL}|kevink|Embedded JavaScript engine
+jsr223-js-engine-Aug2008.jar|JSR-223 ScriptEngine for Rhino|Aug. 8th, 2008|{link:Scripting Project|https://scripting.dev.java.net/}|{link:BSD|http://www.opensource.org/licenses/bsd-license.php}|kevink|JSR-223 ScriptEngine APIs for Rhino
+{table}

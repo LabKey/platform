@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:dat="http://labkey.org/data/xml"
+    xmlns:t="http://labkey.org/data/xml/domainTemplate"
+    xmlns="http://labkey.org/data/xml/domainTemplate"
+    targetNamespace="http://labkey.org/data/xml/domainTemplate"
+    elementFormDefault="qualified"
+    attributeFormDefault="unqualified">
+
+    <xs:import namespace="http://labkey.org/data/xml" schemaLocation="tableInfo.xsd"/>
+
+    <xs:annotation>
+        <xs:documentation xml:lang="en">
+            Describes the module resource domain templates (i.e. DataClass) as a set of options and the table definition.
+            Files should end with '.template.xml'.
+        </xs:documentation>
+    </xs:annotation>
+
+    <xs:element name="templates">
+        <xs:complexType>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element name="template" type="DomainTemplateType"/>
+            </xs:choice>
+        </xs:complexType>
+        <!-- Name must be unique within the domain kind: list, dataclass, or sampleset
+        <xs:unique name="uniqueTemplate">
+            <xs:selector xpath="./t:template/t:table"/>
+            <xs:field xpath="@tableName"/>
+        </xs:unique>
+        -->
+    </xs:element>
+
+    <xs:element name="template" type="DomainTemplateType"/>
+
+    <xs:complexType name="DomainTemplateType" abstract="true">
+        <xs:annotation>
+            <xs:documentation xml:lang="en">
+                Deprecated Element -
+                Indices is now intended to be used as a child of &lt;table&gt; in tableInfo.xsd
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="table" type="dat:TableType" minOccurs="1" maxOccurs="1" >
+                <xs:unique name="uniqueColumns">
+                    <xs:selector xpath="./dat:columns/dat:column"/>
+                    <xs:field xpath="@columnName"/>
+                </xs:unique>
+            </xs:element>
+            <xs:element name="indices" type="IndicesType" minOccurs="0" maxOccurs="1" />
+            <xs:element name="initialData" type="InitialDataType" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="ColumnList">
+        <xs:sequence>
+            <xs:element name="column" type="xs:string" minOccurs="1" maxOccurs="unbounded" />
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="IndicesType">
+        <xs:sequence>
+            <xs:element name="index" type="IndexType" minOccurs="1" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="IndexType">
+        <xs:complexContent>
+            <xs:extension base="ColumnList">
+                <xs:attribute name="type" use="required">
+                    <xs:simpleType>
+                        <xs:restriction base="xs:token">
+                            <xs:enumeration value="primary"/>
+                            <xs:enumeration value="unique"/>
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="InitialDataType">
+        <xs:sequence>
+            <xs:element name="file" type="xs:string" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute name="hasColumnHeaders" type="xs:boolean"/>
+        <xs:attribute name="importIdentity" type="xs:boolean"/>
+        <xs:attribute name="importLookupByAlternateKey" type="xs:boolean"/>
+    </xs:complexType>
+
+    <xs:complexType name="OptionsType">
+        <xs:sequence>
+            <!--<xs:any processContents="skip" minOccurs="0" maxOccurs="unbounded"/>-->
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="DataClassTemplateType">
+        <xs:complexContent>
+            <xs:extension base="DomainTemplateType">
+                <xs:sequence>
+                    <xs:element name="options" type="DataClassOptionsType" minOccurs="0" maxOccurs="1"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="DataClassOptionsType">
+        <xs:complexContent>
+            <xs:extension base="OptionsType">
+                <xs:sequence>
+                    <xs:element name="nameExpression" type="xs:string" minOccurs="0" maxOccurs="1" />
+                    <xs:element name="sampleSet" type="xs:string" minOccurs="0" maxOccurs="1" />
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="SampleSetTemplateType">
+        <xs:complexContent>
+            <xs:extension base="DomainTemplateType">
+                <xs:sequence>
+                    <xs:element name="options" type="SampleSetOptionsType" minOccurs="0" maxOccurs="1"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="SampleSetOptionsType">
+        <xs:complexContent>
+            <xs:extension base="OptionsType">
+                <xs:sequence>
+                    <xs:element name="nameExpression" type="xs:string" minOccurs="0" maxOccurs="1" />
+                    <xs:element name="keyCol" type="xs:string" minOccurs="0" maxOccurs="3" />
+                    <xs:element name="parentCol" type="xs:string" minOccurs="0" maxOccurs="1" />
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="ListTemplateType">
+        <xs:complexContent>
+            <xs:extension base="DomainTemplateType">
+                <xs:sequence>
+                    <xs:element name="options" type="ListOptionsType" minOccurs="0" maxOccurs="1"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="ListOptionsType">
+        <xs:complexContent>
+            <xs:extension base="OptionsType">
+                <xs:sequence>
+                    <xs:element name="keyCol" type="xs:string" minOccurs="1" maxOccurs="1"/>
+                    <xs:element name="keyType" type="xs:string" minOccurs="0" maxOccurs="1"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="SNDTemplateType">
+        <xs:complexContent>
+            <xs:extension base="DomainTemplateType"/>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="EHRTemplateType">
+        <xs:complexContent>
+            <xs:extension base="DomainTemplateType">
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="EHRBillingTemplateType">
+        <xs:complexContent>
+            <xs:extension base="DomainTemplateType">
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="EHRLookupsTemplateType">
+        <xs:complexContent>
+            <xs:extension base="DomainTemplateType">
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+</xs:schema>

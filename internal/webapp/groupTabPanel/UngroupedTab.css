@@ -1,0 +1,38 @@
+.vertical-tabs.x-grouptabs-panel {
+    background: transparent;
+    border:none;
+}
+
+.vertical-tabs.x-grouptabs-panel .x-grouptabs-panel-body {
+    border-color:#ccc;
+}
+
+.vertical-tabs.x-grouptabs-panel .x-grouptabs-corner {
+    background-image:none;
+}
+
+.vertical-tabs .x-grouptabs-expand {
+    display:none;
+}
+
+.vertical-tabs.x-tab-panel-left ul.x-grouptabs-strip li.x-grouptabs-strip-active,
+.vertical-tabs.x-tab-panel-right ul.x-grouptabs-strip li.x-grouptabs-strip-active {
+    -moz-border-radius:5px 0 0 5px;
+    border-radius:5px 0 0 5px;
+    border-color:#ccc;
+}
+
+.vertical-tabs.x-tab-panel-right ul.x-grouptabs-strip li.x-grouptabs-strip-active {
+    -moz-border-radius:0 5px 5px 0;
+    border-radius:0 5px 5px 0;
+}
+
+.vertical-tabs.x-grouptabs-panel .x-tab-panel-header ul.x-grouptabs-strip a.x-grouptabs-text {
+    font-size:11px;
+    padding:0 2px; /* if you don't expect to use icons for the tabs */
+    color:#555;
+}
+
+.vertical-tabs.x-tab-panel-right .x-tab-panel-header ul.x-grouptabs-strip a.x-grouptabs-text {
+    text-align: left;
+}

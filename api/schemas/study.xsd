@@ -1,0 +1,612 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="http://labkey.org/study/xml"
+           targetNamespace="http://labkey.org/study/xml"
+           elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xs:annotation>
+		<xs:documentation xml:lang="en">
+            Describes a file-based study. This is the top-level file in a study archive.  It defines the top-level study
+            settings and points to the other files in the archive.
+        </xs:documentation>
+	</xs:annotation>
+
+	<xs:element name="study">
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="visits" minOccurs="0">
+					<xs:complexType>
+						<xs:attribute name="file" type="xs:string">
+                            <xs:annotation>
+                                <xs:documentation xml:lang="en">
+                                    Indicates the "file" (string) that lists the study's visits. The file must follow the visit map XML format.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="qcStates" minOccurs="0">
+					<xs:complexType>
+						<xs:attribute name="showPrivateDataByDefault" type="xs:boolean">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    This setting determines whether users see non-public data by default. Users can
+                                    always explicitly choose to see data in any QC state.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="file" type="xs:string">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Names the file that stores qc state configuration information.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="cohorts" minOccurs="0">
+					<xs:complexType>
+                        <xs:attribute name="mode" type="cohortMode">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Indicates the mode of assignment.
+                                    "SIMPLE": Subjects are assigned to a single cohort throughout the study.
+                                    "ADVANCED": Subjects may change cohorts mid-study. Note that advanced cohort
+                                    management requires automatic assignment via a study dataset.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="type" type="cohortType">
+                            <xs:annotation>
+                                <xs:documentation xmlns="http://www.w3.org/1999/xhtml">
+                                    Indicates the method of cohort assignment used in the study.
+                                    Can either be "AUTOMATIC" or "MANUAL". See
+                                    <a href="https://www.labkey.org/Documentation/wiki-page.view?name=manageCohorts"  target="_top">Manage Cohorts</a>.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+						<xs:attribute name="datasetId" type="xs:int">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    If the "AUTOMATIC" method of cohort assignment is used the datasetID indicates
+                                    the dataset used to describe cohorts.
+                                </xs:documentation>
+                            </xs:annotation>
+						</xs:attribute>
+						<xs:attribute name="datasetProperty" type="xs:string">
+                            <xs:annotation>
+                                <xs:documentation>
+                                       Names the column used to assign cohorts in the dataset indicated by the datasetID
+                                       for "AUTOMATIC" cohort assignment.
+                                </xs:documentation>
+                            </xs:annotation>
+						</xs:attribute>
+						<xs:attribute name="file" type="xs:string">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Names the XML file that records how cohorts are assigned if the "MANUAL" method of
+                                    cohort assignment is used.
+                                </xs:documentation>
+                            </xs:annotation>
+						</xs:attribute>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="participantAliasDataset" minOccurs="0" maxOccurs="1">
+					<xs:complexType>
+                        <xs:attribute name="datasetId" type="xs:int" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The name of the dataset that contains the participant/alias mapping information.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="sourceProperty" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The name of the column/field in the dataset that contains the "source" value for the alias.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="aliasProperty" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The name of the column/field in the dataset that contains the value of the participant's alias.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="datasets" minOccurs="0">
+                    <xs:annotation>
+                        <xs:documentation>
+                             Provides information on the files that contain and describe the datasets in the study.
+                        </xs:documentation>
+                    </xs:annotation>
+					<xs:complexType>
+						<xs:all>
+							<xs:element name="schema" minOccurs="0">
+								<xs:complexType>
+									<xs:attribute name="file" type="xs:string">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                Names the file where the schema can be found. The file can follow either
+                                                the new, XML format, or the old, schema.tsv format.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+									<xs:attribute name="labelColumn" type="xs:string">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                Names the column where labels are found.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+									<xs:attribute name="typeNameColumn" type="xs:string">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                Names the column where type names are found.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+									<xs:attribute name="typeIdColumn" type="xs:string">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                Names the column where type IDs are found.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+								</xs:complexType>
+							</xs:element>
+							<xs:element name="definition">
+								<xs:complexType>
+									<xs:attribute name="file" type="xs:string">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                Names the file that determines what happens during study reload (e.g.,
+                                                whether to replace or delete datasets). Typically named STUDYNAME.dataset,
+                                                where STUDYNAME is the shortened label of the study.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+								</xs:complexType>
+							</xs:element>
+						</xs:all>
+						<xs:attribute name="dir" type="xs:string">
+                            <xs:annotation>
+                                <xs:documentation>
+                                      Names the directory that stores the relevant file.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+						<xs:attribute name="file" type="xs:string">
+                             <xs:annotation>
+                                <xs:documentation>
+                                     Names the file manifest for datasets.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="specimens" minOccurs="0">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Provides information on the files that describe the specimens in the study.
+                        </xs:documentation>
+                    </xs:annotation>
+					<xs:complexType>
+                        <xs:complexContent>
+                            <xs:extension base="legacySpecimenSettingsType">
+                                <xs:attribute name="file" type="xs:string">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Names the directory that contains the file that contains specimen information.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="dir" type="xs:string">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Names the file that stores specimen information.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="settings" type="xs:string">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Names the file that stores specimen settings information.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                            </xs:extension>
+                        </xs:complexContent>
+                    </xs:complexType>
+				</xs:element>
+                <xs:element name="studyViews" minOccurs="0">
+                    <xs:complexType>
+                        <xs:attribute name="dir" type="xs:string">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Names the folder that stores study specific views.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="settings" type="xs:string">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Names the file that stores view settings information.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+				<xs:element name="reports" minOccurs="0" type="exportDirType" />
+				<xs:element name="queries" minOccurs="0" type="exportDirType" />
+				<xs:element name="views" minOccurs="0" type="exportDirType" />
+                <xs:element name="lists" minOccurs="0" type="exportDirType" />
+				<xs:element name="missingValueIndicators" type="missingValueIndicatorsType" minOccurs="0" />
+                <xs:element name="comments" minOccurs="0">
+                    <xs:complexType>
+                        <xs:attribute name="participantCommentDatasetId" type="xs:int">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The ID of the dataset that includes comments about participants.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="participantCommentDatasetProperty" type="xs:string">
+                            <xs:annotation>
+                                <xs:documentation>
+                                     The property name that includes the participant comments.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="participantVisitCommentDatasetId" type="xs:int">
+                            <xs:annotation>
+                                <xs:documentation>
+                                     The ID of the dataset that includes comments about participant visits.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="participantVisitCommentDatasetProperty" type="xs:string">
+                            <xs:annotation>
+                                <xs:documentation>
+                                     The property name that includes the participant visit comments.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="protocolDocs" minOccurs="0" type="exportDirType" />
+                <xs:element name="studyDescription" minOccurs="0">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="description" type="xs:string" minOccurs="0" maxOccurs="1" nillable="true">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        The descriptive text for this study.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+                        </xs:sequence>
+                        <xs:attribute name="rendererType" type="xs:string">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The render type of the description (HTML, wiki, or text).
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="assayPlan" type="xs:string" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The description of the assay plan for the study.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="treatmentData" minOccurs="0" type="exportDirType">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The directory that contains the export data for Treatment data.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="assaySchedule" minOccurs="0" type="exportDirType">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The directory that contains the export data for Assay schedule information.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="properties" minOccurs="0" type="exportDirType">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The directory that contains the export data for study properties.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+            </xs:all>
+            <xs:attribute name="allowDataspace" type="xs:boolean" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        Allow this study to be imported into a Dataspace project. Warning! This does not support all study configurations.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+			<xs:attribute name="importDelay" type="xs:int">
+                <xs:annotation>
+                    <xs:documentation>
+                        For testing/debugging purposes only. The number of seconds to delay the import after the job has started. 
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+			<xs:attribute name="archiveVersion" type="xs:double">
+                <xs:annotation>
+                    <xs:documentation>
+                        The version number of the LabKey Server that produced this archive.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+			<xs:attribute name="label" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        The label used for naming the study in the UI.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+			<xs:attribute name="subjectNounSingular" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        The singular noun used to identify subjects.  Examples include "Participant", "Mouse", or "Yeast".
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+			<xs:attribute name="subjectNounPlural" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        The plural noun used to identify subjects.  Examples include "Participants", "Mice", or "Yeasts".
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+			<xs:attribute name="subjectColumnName" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        The column header for subject IDs.  Examples include "ParticipantId", "MouseId", or "YeastId".
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+			<xs:attribute name="dateBased" type="xs:boolean">
+                <xs:annotation>
+                    <xs:documentation>
+                        Deprecated in favor of 'timepointType' attribute.
+                        Indicates whether this study is date-based (vs. time-based).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="timepointType" type="timepointType">
+                <xs:annotation>
+                    <xs:documentation>
+                        The timepoint type of the study.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+			<xs:attribute name="startDate" type="xs:date">
+                <xs:annotation>
+                    <xs:documentation>
+                         The start date of the study.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="endDate" type="xs:date">
+                <xs:annotation>
+                    <xs:documentation>
+                        The end date of the study.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+			<xs:attribute name="defaultTimepointDuration" type="xs:int">
+                <xs:annotation>
+                    <xs:documentation>
+                         For date-based studies, the default duration for timepoints, in days.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+			<xs:attribute name="securityType" type="securityType">
+                <xs:annotation>
+                    <xs:documentation>
+                        Indicates the type of security used for the study. Must be one of the following four options:
+                        "BASIC_READ", "BASIC_WRITE", "ADVANCED_READ" or "ADVANCED_WRITE".
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="description" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        The descriptive text for this study.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="descriptionRendererType" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        The render type of the description (HTML, wiki, or text).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="investigator" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        The investigator for the study.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="grant" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        The grant associated with the study.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="species" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        The species of the subjects in the study.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="alternateIdPrefix" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        The alternate ID prefix for the study.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="alternateIdDigits" type="xs:int">
+                <xs:annotation>
+                    <xs:documentation>
+                        The number of digits with which to generate an alternate ID for the study.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:anyAttribute processContents="lax"/>
+        </xs:complexType>
+	</xs:element>
+
+    <xs:simpleType name="timepointType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="VISIT"/>
+            <xs:enumeration value="DATE"/>
+            <xs:enumeration value="CONTINUOUS"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+	<xs:simpleType name="securityType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="BASIC_READ"/>
+			<xs:enumeration value="BASIC_WRITE"/>
+			<xs:enumeration value="ADVANCED_READ"/>
+			<xs:enumeration value="ADVANCED_WRITE"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="cohortType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="AUTOMATIC"/>
+			<xs:enumeration value="MANUAL"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+    <xs:simpleType name="cohortMode">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="ADVANCED"/>
+            <xs:enumeration value="SIMPLE"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="legacySpecimenSettingsType">
+        <xs:annotation>
+            <xs:documentation>
+                Legacy specimen settings in study.xml are superseded by specimen_settings.xml (&gt;= version 13.2).
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="specimenWebPartGroupings" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence minOccurs="0" maxOccurs="unbounded">
+                        <xs:element name="grouping">
+                            <xs:complexType>
+                                <xs:sequence minOccurs="0" maxOccurs="unbounded">
+                                    <xs:element name="groupBy" type="xs:string"/>
+                                </xs:sequence>
+                            </xs:complexType>
+                        </xs:element>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="repositoryType" type="specimenRepositoryType">
+            <xs:annotation>
+                <xs:documentation xmlns="http://www.w3.org/1999/xhtml">
+                    Indicates the type of repository.
+                    See <a href="https://www.labkey.org/Documentation/wiki-page.view?name=manageSpecimens" target="_top">Manage Specimens</a>.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="allowReqLocRepository" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation>
+                    Indicates whether Repository locations are allowed to be Requesting Locations.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="allowReqLocClinic" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation>
+                    Indicates whether Clinic locations are allowed to be Requesting Locations.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="allowReqLocSal" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation>
+                    Indicates whether Site Affiliated Lab locations are allowed to be Requesting Locations.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="allowReqLocEndpoint" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation>
+                    Indicates whether Endpoint Lab locations are allowed to be Requesting Locations.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+	<xs:simpleType name="specimenRepositoryType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="STANDARD"/>
+			<xs:enumeration value="ADVANCED"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+    <xs:complexType name="exportDirType">
+        <xs:attribute name="dir" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                      Names the directory that contains exported resource.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="missingValueIndicatorsType">
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="missingValueIndicator">
+                <xs:complexType>
+                    <xs:attribute name="indicator" type="xs:string">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The indicator to use for a certain type of missing values (e.g., "N").
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="label" type="xs:string">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The text to use in association with this indicator in the UI
+                                (e.g., "Required field marked by site as 'data not available'.").
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="file" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                      The file that contains the list of missing value indicators.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+</xs:schema>

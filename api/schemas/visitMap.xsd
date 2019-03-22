@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://labkey.org/study/xml" targetNamespace="http://labkey.org/study/xml" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xs:annotation>
+		<xs:documentation xml:lang="en">Describes the study visit map. It is used to generate the visitMap.xml file, which
+            describes the study's visits and includes all of the information that can be set within the "Manage Visit" UI
+            within "Manage Study."
+        </xs:documentation>
+	</xs:annotation>
+	<xs:element name="visitMap">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="visit" minOccurs="0" maxOccurs="unbounded">
+					<xs:complexType>
+						<xs:all minOccurs="0">
+							<xs:element name="datasets" minOccurs="0">
+								<xs:complexType>
+									<xs:sequence minOccurs="0" maxOccurs="unbounded">
+										<xs:element name="dataset">
+											<xs:complexType>
+												<xs:attribute name="id" type="xs:int">
+													<xs:annotation>
+														<xs:documentation>
+                                                            The ID of a dataset associated with the visit.
+                                                            </xs:documentation>
+													</xs:annotation>
+												</xs:attribute>
+												<xs:attribute name="type" type="datasetType">
+													<xs:annotation>
+														<xs:documentation>
+                                                            Indicates whether the
+                                                            dataset is required or optional for that visit.
+                                                            </xs:documentation>
+													</xs:annotation>
+												</xs:attribute>
+											</xs:complexType>
+										</xs:element>
+									</xs:sequence>
+								</xs:complexType>
+							</xs:element>
+                            <xs:element name="visitTags" minOccurs="0">
+                                <xs:complexType>
+                                <xs:sequence minOccurs="0" maxOccurs="unbounded">
+                                    <xs:element name="visitTag">
+                                        <xs:complexType>
+                                            <xs:attribute name="name" type="xs:string">
+                                                <xs:annotation>
+                                                    <xs:documentation>
+                                                        The visit tag associated with this visit.
+                                                    </xs:documentation>
+                                                </xs:annotation>
+                                            </xs:attribute>
+                                            <xs:attribute name="cohort" type="xs:string">
+                                                <xs:annotation>
+                                                    <xs:documentation>
+                                                        The cohort associated with this visit tag and visit.
+                                                    </xs:documentation>
+                                                </xs:annotation>
+                                            </xs:attribute>
+                                        </xs:complexType>
+                                    </xs:element>
+                                </xs:sequence>
+                                </xs:complexType>
+                            </xs:element>
+                            <xs:element name="description" type="xs:string">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        A short description of the visit, appears as hovertext on visit headers in study navigator and visit column in datasets.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+						</xs:all>
+						<xs:attribute name="label" type="xs:string">
+							<xs:annotation>
+								<xs:documentation>
+                                    The visit label used for display in the UI.
+                                    </xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+						<xs:attribute name="sequenceNum" type="xs:double">
+							<xs:annotation>
+								<xs:documentation>
+                                    The sequence number of the visit, or, if a maxSequenceNum is listed, the first
+                                    sequence number in the range of visits
+                                    </xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+						<xs:attribute name="maxSequenceNum" type="xs:double">
+							<xs:annotation>
+								<xs:documentation>
+                                    When included, visit sequence numbers can range from sequenceNum to maxSequenceNum, inclusive.
+                                    </xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+                        <xs:attribute name="protocolDay" type="xs:double">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The expected day for the visit.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+						<xs:attribute name="displayOrder" type="xs:int">
+							<xs:annotation>
+								<xs:documentation>
+                                    The order that this visit will be displayed in the list of visits.
+                                    </xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+						<xs:attribute name="chronologicalOrder" type="xs:int">
+							<xs:annotation>
+								<xs:documentation>
+                                    The chronological order of the visit, which is used to determine cohort assignments
+                                    when your study uses the advanced cohort assignment type.
+                                    </xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+						<xs:attribute name="cohort" type="xs:string">
+							<xs:annotation>
+								<xs:documentation>
+                                   The cohort associated with the visit.
+                                    </xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+						<xs:attribute name="typeCode" type="xs:string">
+							<xs:annotation>
+								<xs:documentation>
+                                   The type of the visit.
+                                    </xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+						<xs:attribute name="showByDefault" type="xs:boolean" default="true">
+							<xs:annotation>
+								<xs:documentation>
+                                   Indicates whether the visit is shown by default. 
+                                    </xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+						<xs:attribute name="visitDateDatasetId" type="xs:int" default="-1">
+							<xs:annotation>
+								<xs:documentation>
+                                    Indicates the dataset used to provide dates, if one is used.
+                                </xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+                        <xs:attribute name="sequenceNumHandling" type="xs:string" default="normal">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Specifies special handling of sequence numbers on import.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="importAliases" minOccurs="0" maxOccurs="1">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="alias" minOccurs="1" maxOccurs="unbounded">
+								<xs:complexType>
+									<xs:attribute name="name" type="xs:string"/>
+									<xs:attribute name="sequenceNum" type="xs:double"/>
+								</xs:complexType>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+                <xs:element name="visitTag" minOccurs="0" maxOccurs="unbounded">
+                    <xs:complexType>
+                        <xs:all minOccurs="0" maxOccurs="1">
+                            <xs:element name="description" type="xs:string">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        The visit tag's description.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+                        </xs:all>
+                        <xs:attribute name="name" type="xs:string">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The visit tag's name.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="caption" type="xs:string">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The visit tag's caption.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="singleUse" type="xs:boolean">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Whether the visit tag is single use.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:simpleType name="datasetType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="OPTIONAL"/>
+			<xs:enumeration value="REQUIRED"/>
+		</xs:restriction>
+	</xs:simpleType>
+</xs:schema>
+

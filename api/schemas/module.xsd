@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            xmlns:mp="http://labkey.org/moduleProperties/xml/"
+            xmlns:dat="http://labkey.org/data/xml"
+            xmlns:cl="http://labkey.org/clientLibrary/xml/"
+            targetNamespace="http://labkey.org/moduleProperties/xml/"
+            elementFormDefault="qualified"
+            attributeFormDefault="unqualified">
+	<xsd:annotation>
+
+    <xsd:documentation xml:lang="en">
+        Describes module properties.  Currently experimental and not in active use.
+    </xsd:documentation>
+	</xsd:annotation>
+
+    <xsd:element name="module" type="mp:moduleType"/>
+
+    <xsd:complexType name="moduleType">
+        <xsd:all>
+            <xsd:element name="properties" type="mp:propertiesType" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="clientDependencies" type="mp:dependenciesType" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="requiredModuleContext" type="mp:moduleContextType" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="enableOptions" type="mp:enableOptionsType" minOccurs="0" maxOccurs="1"/>
+        </xsd:all>
+    </xsd:complexType>
+
+    <xsd:complexType name="propertyType">
+        <xsd:all>
+            <xsd:element name="label" type="xsd:string" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="canSetPerContainer" type="xsd:boolean" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="excludeFromClientContext" type="xsd:boolean" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="defaultValue" type="xsd:string" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="description" type="xsd:string" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="showDescriptionInline" type="xsd:boolean" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="inputFieldWidth" minOccurs="0" maxOccurs="1">
+                <xsd:simpleType>
+                    <xsd:restriction base="xsd:int">
+                        <xsd:minInclusive value="0"/>
+                    </xsd:restriction>
+                </xsd:simpleType>
+            </xsd:element>
+            <xsd:element name="inputType" type="mp:inputTypeType" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="options" type="mp:optionsListType" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="editPermissions" type="mp:permissionsListType" minOccurs="0"/>
+        </xsd:all>
+        <xsd:attribute name="name" type="xsd:string"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="propertiesType">
+        <xsd:sequence minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="propertyDescriptor" type="mp:propertyType"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:simpleType name="inputTypeType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="text"/>
+            <xsd:enumeration value="textArea"/>
+            <xsd:enumeration value="select"/>
+            <xsd:enumeration value="combo"/>
+            <xsd:enumeration value="checkbox"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name="optionsListType">
+        <xsd:sequence>
+            <xsd:element name="option" minOccurs="1" maxOccurs="unbounded">
+                <xsd:complexType>
+                    <xsd:attribute name="display" type="xsd:string"/>
+                    <xsd:attribute name="value" type="xsd:string"/>
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="permissionsListType">
+        <xsd:sequence>
+            <xsd:element name="permission" type="dat:PermissionType" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="dependenciesType">
+        <xsd:sequence minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="dependency" type="cl:dependencyType"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="moduleContextType">
+        <xsd:sequence minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="requiredModule" type="mp:requiredModuleType"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="requiredModuleType">
+        <xsd:attribute name="name" type="xsd:string" use="required"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="enableOptionsType">
+        <xsd:attribute name="requireSitePermission" type="xsd:boolean"/>
+    </xsd:complexType>
+
+</xsd:schema>

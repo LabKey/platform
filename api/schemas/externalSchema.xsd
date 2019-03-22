@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            xmlns:esd="http://labkey.org/data/xml/externalSchema"
+            xmlns:qd="http://query.labkey.org/design"
+            xmlns:cv="http://labkey.org/data/xml/queryCustomView"
+            xmlns:tableinfo="http://labkey.org/data/xml"
+            targetNamespace="http://labkey.org/data/xml/externalSchema"
+        elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <xsd:import namespace="http://labkey.org/data/xml" schemaLocation="tableInfo.xsd"/>
+    <xsd:import namespace="http://query.labkey.org/design" schemaLocation="queryDesign.xsd"/>
+    <xsd:import namespace="http://labkey.org/data/xml/queryCustomView" schemaLocation="queryCustomView.xsd"/>
+
+    <xsd:element name="externalSchema" type="esd:externalSchemaType"/>
+    <xsd:element name="linkedSchema" type="esd:linkedSchemaType"/>
+
+    <xsd:element name="templateSchema" type="esd:templateSchemaType"/>
+
+    <xsd:complexType name="templateSchemaType">
+        <xsd:all>
+            <xsd:element name="tables" minOccurs="0" maxOccurs="1">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="tableName" minOccurs="1" maxOccurs="unbounded" type="xsd:string" />
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="metadata" type="tableinfo:MultiTablesType" minOccurs="0"/>
+        </xsd:all>
+        <xsd:attribute name="sourceSchemaName" type="xsd:string"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="exportedSchemaType" abstract="true">
+        <xsd:complexContent>
+            <xsd:extension base="esd:templateSchemaType">
+                <xsd:attribute name="userSchemaName" type="xsd:string"/>
+                <xsd:attribute name="schemaTemplate" type="xsd:string"/>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="externalSchemaType">
+        <xsd:complexContent>
+            <xsd:extension base="esd:exportedSchemaType">
+                <xsd:attribute name="dbSchemaName" type="xsd:string">
+                    <xsd:annotation>
+                        <xsd:documentation xml:lang="en">
+                            Deprecated.  Replaced by 'sourceSchemaName' attribute.
+                        </xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
+                <xsd:attribute name="dataSource" type="xsd:string"/>
+                <xsd:attribute name="editable" type="xsd:boolean" default="false"/>
+                <xsd:attribute name="indexable" type="xsd:boolean" default="true"/>
+                <xsd:attribute name="fastCacheRefresh" type="xsd:boolean" default="false"/>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="linkedSchemaType">
+        <xsd:complexContent>
+            <xsd:extension base="esd:exportedSchemaType">
+                <xsd:attribute name="sourceContainer" type="xsd:string"/>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+</xsd:schema>
+

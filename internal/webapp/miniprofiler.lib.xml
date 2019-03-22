@@ -1,0 +1,7 @@
+<libraries xmlns="http://labkey.org/clientLibrary/xml/">
+    <library compileInProductionMode="false">
+        <script path="internal/MiniProfiler/miniprofiler.css"/>
+        <!-- NOTE: template is requested directly in MiniProfiler.js: <script path="internal/MiniProfiler/miniprofiler.tmpl"/>-->
+        <script path="internal/MiniProfiler/miniprofiler.js"/>
+    </library>
+</libraries>

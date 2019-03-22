@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://cpas.fhcrc.org/pipeline/protocol/xml" targetNamespace="http://cpas.fhcrc.org/pipeline/protocol/xml" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xs:element name="pipeline-protocol-props">
+		<xs:annotation>
+			<xs:documentation>Stored properties for a pipeline protocol</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="property" minOccurs="0" maxOccurs="unbounded">
+					<xs:complexType>
+						<xs:simpleContent>
+							<xs:extension base="xs:string">
+								<xs:attribute name="name" use="required" type="xs:string"/>
+							</xs:extension>
+						</xs:simpleContent>
+					</xs:complexType>
+				</xs:element>
+			</xs:sequence>
+			<xs:attribute name="type" use="required" type="xs:string"/>
+            <xs:attribute name="template" use="optional" type="xs:string" />
+        </xs:complexType>
+	</xs:element>
+</xs:schema>
