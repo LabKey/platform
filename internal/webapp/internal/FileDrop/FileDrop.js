@@ -212,7 +212,7 @@ LABKEY.internal.FileDrop = new function () {
         });
 
         /**
-         *  overriding drop method of Dropzone.js to zip matching directory patterns before upload.
+         *  overriding drop method of dropzone.js to zip matching directory patterns before upload.
          * */
 
         Dropzone.prototype.drop = function (e) {
@@ -347,7 +347,7 @@ LABKEY.internal.FileDrop = new function () {
                                     var _holder = _filesToZip[_ftz];
 
                                     for (var _h = 0; _h < _holder.length; _h++) {
-                                        sum = +_holder[_h].file.size;
+                                        sum += _holder[_h].file.size;
                                     }
 
                                     if (sum > limit) { //create parts
@@ -368,13 +368,13 @@ LABKEY.internal.FileDrop = new function () {
                                             filesToUpload.push(_holder[_s]);
                                         }
                                         else if (sum >= limit) {
+                                            _holder[_s-1].dir = _holder[_s-1].dir + ind;
                                             _filezToZip.push(_temp);
                                             ind++;
                                             _temp = [];
                                             sum = 0;
                                         }
                                         else {
-                                            _holder[_s].dir = _holder[_s].dir + ind;
                                             _temp.push(_holder[_s]);
                                         }
                                     }
@@ -384,31 +384,128 @@ LABKEY.internal.FileDrop = new function () {
                                     }
                                 }
 
+
+                                function getCurrentZipFile() {
+                                    this.currentZipFileText = Ext4.create('Ext.form.Label', {
+                                        text: '',
+                                        style: 'display: inline-block ;text-align: left',
+                                        width: 250,
+                                        border: false
+                                    });
+                                    return this.currentZipFileText;
+                                }
+
+                                function getCurrentFileNumber() {
+                                    this.currentFileNumber = Ext4.create('Ext.form.Label', {
+                                        text: '',
+                                        style: 'display: inline-block ;text-align: right',
+                                        width: 250,
+                                        border: false
+                                    });
+                                    return this.currentFileNumber;
+                                }
+
+                                function setStatusText(text) {
+                                    this.statusText = Ext4.create('Ext.form.Label', {
+                                        text: text,
+                                        style: 'display: inline-block ;text-align: center',
+                                        width: 500,
+                                        margin: 4,
+                                        border: false
+                                    });
+                                    return this.statusText;
+                                }
+
+                                function getStatusText() {
+                                    return this.statusText;
+                                }
+
+                                function getProgressBar() {
+                                    this.progressBar = Ext4.create('Ext.ProgressBar', {
+                                        width: 500,
+                                        height: 25,
+                                        border: false,
+                                        autoRender : true,
+                                        style: 'background-color: transparent; -moz-border-radius: 5px; -webkit-border-radius: 5px; -o-border-radius: 5px; -ms-border-radius: 5px; -khtml-border-radius: 5px; border-radius: 5px;'
+                                    });
+                                    return this.progressBar;
+                                }
+
+                                function getZipProgressWindow() {
+
+                                    var zipFileAndDirectoryContainer = Ext4.create('Ext.container.Container', {
+                                        width: 500,
+                                        margin: 4,
+                                        layout: 'hbox',
+                                        items: [getCurrentZipFile(),getCurrentFileNumber()]
+                                    });
+
+                                    var progressBarContainer = Ext4.create('Ext.container.Container', {
+                                        width: 500,
+                                        margin: 4,
+                                        items: [getProgressBar()]
+                                    });
+
+                                    this.zipProgressWindow = Ext4.create('Ext.window.Window', {
+                                        title: 'Zip Progress',
+                                        layout: 'vbox',
+                                        bodyPadding: 5,
+                                        closable: false,
+                                        border: false,
+                                        items: [getStatusText(), zipFileAndDirectoryContainer, progressBarContainer]
+                                    });
+
+                                    return this.zipProgressWindow;
+                                }
+
+                                this.showZipProgressWindow = function(text) {
+                                    setStatusText(text);
+                                    getZipProgressWindow().show();
+                                };
+
+                                function hideZipProgressWindow() {
+                                    setStatusText('');
+                                    this.zipProgressWindow.hide();
+                                }
+
                                 var zC = _filezToZip.length - 1;
-                                console.time("ZIP_START");
+                                console.time("ZIP DONE IN");
                                 _zipFiles(_filezToZip[zC], me);
 
                                 //zip each directory
                                 function _zipFiles(files, me) {
-                                    console.log("zipping",_filezToZip[zC][0].dir);
-                                    console.time(_filezToZip[zC][0].dir);
-                                    zipFiles(files, me, function (zippedBlob) {
-                                        console.timeEnd(_filezToZip[zC][0].dir);
+                                    var totalSize = 0;
+                                    for(var s=0; s<files.length; s++) {
+                                        totalSize += files[s].file.size;
+                                    }
+
+                                    this.showZipProgressWindow("Zipping directory " + _filezToZip[zC][0].dir );
+                                    var totalDone = 0;
+                                    var prevDone = 0;
+                                    zipFiles(files, me, function (current, total) {
+                                        totalDone = (current - prevDone) + totalDone ;
+                                        this.progressBar.updateProgress(totalDone / totalSize);
+                                        prevDone = current;
+                                        if(current===total) {
+                                            prevDone = 0;
+                                        }
+                                    }, function (zippedBlob) {
+                                        hideZipProgressWindow();
                                         var dirName = _filezToZip[zC][0].dir;
                                         var nameToUse = '';
-                                        var _name = _filesToZip[zC][0].file.name;
+                                        var _name = _filezToZip[zC][0].file.name;
                                         var _nameParts = _name.split('/');
                                         _nameParts.shift();
                                         var _np = 1;
                                         var flag = false;
 
-                                        for (var _nps=1; _nps<_nameParts.length; _nps++) {
-                                            if(_nameParts[_nps] === dirName) {
+                                        for (var _nps = 1; _nps < _nameParts.length; _nps++) {
+                                            if (_nameParts[_nps] === dirName) {
                                                 flag = true;
                                             }
                                         }
 
-                                        if(entry.name === _nameParts[0] && flag) {
+                                        if (entry.name === _nameParts[0] && flag) {
                                             while (_nameParts[_np] !== dirName) {
                                                 nameToUse = nameToUse + _nameParts[_np] + '/';
                                                 _np++;
@@ -419,11 +516,9 @@ LABKEY.internal.FileDrop = new function () {
                                         var _path = '';
                                         if (entry.name === dirName) {
                                             _path = entry.name;
-                                            console.log("Zipped - " + _path);
                                         }
                                         else {
                                             _path = entry.name + '/' + nameToUse;
-                                            console.log("Zipped - " + _path);
                                         }
                                         me.addFile(new File([zippedBlob], _path + '.zip', {
                                             type: 'application/zip',
@@ -433,7 +528,7 @@ LABKEY.internal.FileDrop = new function () {
                                         zC--;
 
                                         if (zC < 0) { //no more files/directories to zip
-                                            console.timeEnd("ZIP_START");
+                                            console.timeEnd("ZIP DONE IN");
                                             for (var _up = 0; _up < filesToUpload.length; _up++) {
                                                 me.addFile(filesToUpload[_up].file);
                                             }
@@ -629,7 +724,7 @@ LABKEY.internal.FileDrop = new function () {
                     return tree;
                 }
 
-                function zipFiles(files, scope, callback) {
+                function zipFiles(files, scope, onprogress, callback) {
                     var zipWriter, writer;
 
                     var addIndex = 0;
@@ -645,9 +740,10 @@ LABKEY.internal.FileDrop = new function () {
                                 newFileName += '/';
                             }
                         }
-                        console.time(newFileName);
+                        var zipProgressName = filePath[filePath.length-1];
+                        this.currentZipFileText.update("Adding file - " + zipProgressName);
+                        this.currentFileNumber.update(addIndex + '/' + files.length);
                         zipWriter.add(newFileName, new zip.BlobReader(file), function () {
-                            console.timeEnd(newFileName);
                             addIndex++;
                             if (addIndex < files.length)
                                 nextFile();
