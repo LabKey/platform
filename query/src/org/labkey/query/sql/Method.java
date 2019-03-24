@@ -119,7 +119,7 @@ public abstract class Method
                 @Override
                 public MethodInfo getMethodInfo()
                 {
-                    return new PassthroughInfo("coalesce", JdbcType.OTHER);
+                    return new PassthroughInfo("coalesce", null, JdbcType.OTHER);
                 }
             });
         labkeyMethod.put("concat", new JdbcMethod("concat", JdbcType.VARCHAR, 2, 2));
@@ -460,9 +460,9 @@ public abstract class Method
         }
     }
 
-    public static void addPassthroughMethod(String name, JdbcType returnType, int minArguments, int maxArguments, SqlDialect dialect)
+    public static void addPassthroughMethod(String name, String declaringSchemaName, JdbcType returnType, int minArguments, int maxArguments, SqlDialect dialect)
     {
-        PassthroughMethod m = new PassthroughMethod(name, returnType, minArguments, maxArguments);
+        PassthroughMethod m = new PassthroughMethod(name, declaringSchemaName, returnType, minArguments, maxArguments);
         if (dialect.isPostgreSQL())
         {
             postgresMethods.put(name, m);
@@ -661,12 +661,14 @@ public abstract class Method
 
     static class PassthroughInfo extends AbstractQueryMethodInfo
     {
-        String _name;
+        private final String _name;
+        private final String _declaringSchemaName;
 
-        public PassthroughInfo(String method, JdbcType jdbcType)
+        public PassthroughInfo(String method, @Nullable String declaringSchemaName, JdbcType jdbcType)
         {
             super(jdbcType);
             _name = method;
+            _declaringSchemaName = declaringSchemaName;
         }
 
         @Override
@@ -690,6 +692,11 @@ public abstract class Method
         public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment();
+            if (_declaringSchemaName != null)
+            {
+                ret.append(_declaringSchemaName);
+                ret.append(".");
+            }
             ret.append(_name).append("(");
             String comma = "";
             for (SQLFragment arg : arguments)
@@ -1180,15 +1187,23 @@ public abstract class Method
 
     private static class PassthroughMethod extends Method
     {
+        private final String _declaringSchemaName;
+
         PassthroughMethod(String name, JdbcType jdbcType, int min, int max)
         {
+            this(name, null, jdbcType, min, max);
+        }
+
+        PassthroughMethod(String name, @Nullable String declaringSchemaName, JdbcType jdbcType, int min, int max)
+        {
             super(name, jdbcType, min, max);
+            _declaringSchemaName = declaringSchemaName;
         }
 
         @Override
         public MethodInfo getMethodInfo()
         {
-            return new PassthroughInfo(_name, _jdbcType);
+            return new PassthroughInfo(_name, _declaringSchemaName, _jdbcType);
         }
     }
 
@@ -1245,7 +1260,7 @@ public abstract class Method
     {
         public GreatestAndLeastInfo(String method)
         {
-            super(method, JdbcType.OTHER);
+            super(method, null, JdbcType.OTHER);
         }
 
         @Override
