@@ -2036,15 +2036,15 @@ public class QueryServiceImpl implements QueryService
     }
 
     @Override
-    public void registerPassthroughMethod(String name, JdbcType returnType, int minArguments, int maxArguments)
+    public void registerPassthroughMethod(String name, String declaringSchemaName, JdbcType returnType, int minArguments, int maxArguments)
     {
-        registerPassthroughMethod(name, returnType, minArguments, maxArguments, QueryManager.get().getDbSchema().getSqlDialect());
+        registerPassthroughMethod(name, declaringSchemaName, returnType, minArguments, maxArguments, QueryManager.get().getDbSchema().getSqlDialect());
     }
 
     @Override
-    public void registerPassthroughMethod(String name, JdbcType returnType, int minArguments, int maxArguments, SqlDialect dialect)
+    public void registerPassthroughMethod(String name, String declaringSchemaName, JdbcType returnType, int minArguments, int maxArguments, SqlDialect dialect)
     {
-        Method.addPassthroughMethod(name, returnType, minArguments, maxArguments, dialect);
+        Method.addPassthroughMethod(name, declaringSchemaName, returnType, minArguments, maxArguments, dialect);
     }
 
     @Override

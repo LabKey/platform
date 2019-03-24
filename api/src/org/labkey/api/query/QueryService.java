@@ -438,11 +438,11 @@ public interface QueryService
      * Add a passthrough method to the whitelist for the primary LabKey database type. This enables modules to create
      * and enable custom database functions, for example.
      */
-    void registerPassthroughMethod(String name, JdbcType returnType, int minArguments, int maxArguments);
+    void registerPassthroughMethod(String name, String declaringSchemaName, JdbcType returnType, int minArguments, int maxArguments);
 
     /**
      * Add a passthrough method to the whitelist for a particular database type. This enables modules to create
      * and enable custom database functions, for example.
      */
-    void registerPassthroughMethod(String name, JdbcType returnType, int minArguments, int maxArguments, SqlDialect dialect);
+    void registerPassthroughMethod(String name, String declaringSchemaName, JdbcType returnType, int minArguments, int maxArguments, SqlDialect dialect);
 }
