@@ -41,6 +41,7 @@ public class ObjectProperty extends OntologyManager.PropertyRow
     private String objectURI;
     private Integer objectOwnerId;
 
+    // todo
     // PropertyDescriptor
 	private String propertyURI;
     private String name;
