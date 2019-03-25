@@ -758,16 +758,20 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
     public NavTree appendNavTrail(NavTree root)
     {
-        ActionURL helper = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol);
-        NavTree result = root.addChild("Assay List", PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(getContainer()));
-        result.addChild(_protocol.getName(), PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
-        String finalChild = "Data Import";
-        if (_stepDescription != null)
+        if (null != _protocol)
         {
-            finalChild = finalChild + ": " + _stepDescription;
+            ActionURL helper = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol);
+            NavTree result = root.addChild("Assay List", PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(getContainer()));
+            result.addChild(_protocol.getName(), PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
+            String finalChild = "Data Import";
+            if (_stepDescription != null)
+            {
+                finalChild = finalChild + ": " + _stepDescription;
+            }
+            result.addChild(finalChild, helper);
+            return result;
         }
-        result.addChild(finalChild, helper);
-        return result;
+        return null;
     }
 
     protected DataRegion createDataRegionForInsert(TableInfo baseTable, String lsidCol, List<? extends DomainProperty> domainProperties, Map<String, String> columnNameToPropertyName)
