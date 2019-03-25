@@ -97,6 +97,7 @@ import java.util.Set;
  */
 public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentDataHandler implements ValidationDataHandler
 {
+    // test
     protected static final Object ERROR_VALUE = new Object() {
         @Override
         public String toString()
