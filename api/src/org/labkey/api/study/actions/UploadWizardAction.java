@@ -756,6 +756,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         // Don't add any inputs in the base case
     }
 
+    @Nullable
     public NavTree appendNavTrail(NavTree root)
     {
         if (null != _protocol)
