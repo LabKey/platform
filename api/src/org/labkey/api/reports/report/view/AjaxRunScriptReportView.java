@@ -35,11 +35,11 @@ public class AjaxRunScriptReportView extends AjaxScriptReportView
 
     public AjaxRunScriptReportView(Report report, Mode mode) throws Exception
     {
-        super(report, new ScriptReportBean(), mode);
+        super(report, new ScriptReportDesignBean(), mode);
     }
 
     @Override
-    protected void init(ScriptReportBean bean, Mode mode) throws Exception
+    protected void init(ScriptReportDesignBean bean, Mode mode) throws Exception
     {
         bean.setReportId(_reportId);
         bean.setViewContext(getViewContext());
