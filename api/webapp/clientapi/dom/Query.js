@@ -18,34 +18,6 @@
  */
 LABKEY.Query = new function(impl, $) {
 
-    // Insert a hidden html FORM into to page, put the JSON into it, and submit it - the server's response
-    // will make the browser pop up a dialog
-    function submitForm(url, formData) {
-        if (!formData['X-LABKEY-CSRF'])
-            formData['X-LABKEY-CSRF'] = LABKEY.CSRF;
-
-        var formId = LABKEY.Utils.generateUUID();
-
-        var html = [];
-        html.push('<f'); html.push('orm method="POST" id="' + formId + '"action="' + url + '">');   // avoid form tag, it causes skipfish false positive
-        for (var name in formData)
-        {
-            if (!formData.hasOwnProperty(name))
-                continue;
-
-            var value = formData[name];
-            if (value === undefined)
-                continue;
-
-            html.push( '<input type="hidden"' +
-                    ' name="' + LABKEY.Utils.encodeHtml(name) + '"' +
-                    ' value="' + LABKEY.Utils.encodeHtml(value) + '" />');
-        }
-        html.push("</form>");
-
-        $('body').append(html.join(''));
-        $('form#' + formId).submit();
-    }
 
     /**
      * Documentation specified in core/Query.js -- search for "@name exportSql"
@@ -60,7 +32,7 @@ LABKEY.Query = new function(impl, $) {
             containerFilter: config.containerFilter
         };
 
-        submitForm(url, formData);
+        LABKEY.Utils.postToAction(url, formData);
     };
 
     /**
@@ -125,7 +97,7 @@ LABKEY.Query = new function(impl, $) {
         formData.schemas = JSON.stringify(schemas);
 
         var url = LABKEY.ActionURL.buildURL("query", "exportTables.view");
-        submitForm(url, formData);
+        LABKEY.Utils.postToAction(url, formData);
     };
 
     function loadingSelect(select) {
