@@ -31,6 +31,7 @@ import org.springframework.validation.BindException;
 // TODO: Eliminate that other class
 public class AjaxRunScriptReportView extends AjaxScriptReportView
 {
+    // comment
     protected BindException _errors;
 
     public AjaxRunScriptReportView(Report report, Mode mode) throws Exception
