@@ -30,6 +30,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Table;
 import org.labkey.api.issues.IssuesListDefProvider;
 import org.labkey.api.issues.IssuesListDefService;
 import org.labkey.api.issues.IssuesSchema;
@@ -41,7 +42,6 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -62,9 +62,9 @@ import org.labkey.issue.model.IssueManager;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -75,6 +75,13 @@ import java.util.Set;
 public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
 {
     private static final Logger LOG = Logger.getLogger(IssuesListDefTable.class);
+
+    private final static Set<String> _AUTOPOPULATED_COLUMN_NAMES;
+    static
+    {
+        _AUTOPOPULATED_COLUMN_NAMES = new HashSet<>(Table.AUTOPOPULATED_COLUMN_NAMES);
+        _AUTOPOPULATED_COLUMN_NAMES.add("Name");
+    }
 
     public IssuesListDefTable(IssuesQuerySchema schema)
     {
@@ -256,6 +263,14 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
                 return null;
 
             return ObjectFactory.Registry.getFactory(IssueListDef.class).toMap(def, new CaseInsensitiveHashMap<>());
+        }
+
+        @Override
+        protected Set<String> getAutoPopulatedColumns()
+        {
+            Set<String> defCols = new HashSet<>(super.getAutoPopulatedColumns());
+            defCols.add("Name");
+            return Collections.unmodifiableSet(defCols);
         }
 
         @Override

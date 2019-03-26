@@ -281,13 +281,9 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
                     throw x;
                 errors.reject(SpringActionController.ERROR_MSG, x.getMessage());
             }
-            catch (InvalidKeyException | DuplicateKeyException | DataIntegrityViolationException | RuntimeSQLException x)
+            catch (InvalidKeyException | DuplicateKeyException | DataIntegrityViolationException | RuntimeSQLException | BatchValidationException x)
             {
                 errors.reject(SpringActionController.ERROR_MSG, x.getMessage());
-            }
-            catch (BatchValidationException x)
-            {
-                x.addToErrors(errors);
             }
             return ret;
         }
