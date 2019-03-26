@@ -185,6 +185,7 @@ public class JunitController extends SpringActionController
             if (!StringUtils.isEmpty(form.getModule()))
             {
                 testClasses.addAll(JunitManager.getTestCases().get(form.getModule()));
+                form._when = TestWhen.When.WEEKLY;
             }
             else if (!StringUtils.isEmpty(form.getTestCase()))
             {
@@ -194,10 +195,12 @@ public class JunitController extends SpringActionController
                         .filter((test) -> test.getName().equals(form.getTestCase()))
                         .forEach(testClasses::add);
                 }
+                form._when = TestWhen.When.PERFORMANCE;
             }
             else
             {
                 JunitManager.getTestCases().values().forEach(testClasses::addAll);
+                form._when = TestWhen.When.WEEKLY;
             }
 
             // filter by TestWhen
@@ -505,7 +508,7 @@ public class JunitController extends SpringActionController
     {
         private String _module;
         private String _testCase;
-        private TestWhen.When _when = TestWhen.When.PERFORMANCE;
+        private TestWhen.When _when = TestWhen.When.WEEKLY;
 
         public String getTestCase()
         {
