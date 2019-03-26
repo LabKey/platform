@@ -251,7 +251,7 @@ LABKEY.internal.FileDrop = new function () {
                 zipLoad(this.entries[itemCount]);
 
                 function zipLoad(entry) {
-                    if (entry.isDirectory) {
+                    if (entry && entry.isDirectory) {
                         files = [];
                         me.cbCount = 0; //to keep track of directory level callbacks
                         me.fileCbCount = 0; //to keep track of file level callbacks
@@ -472,9 +472,9 @@ LABKEY.internal.FileDrop = new function () {
                                     this.zipProgressWindow.hide();
                                 }
 
-                                var zC = filesToZipPerDirectoryParts.length - 1;
+                                var zipDirectoryCount = filesToZipPerDirectoryParts.length - 1;
                                 console.time("ZIP DONE IN");
-                                zipDirectory(filesToZipPerDirectoryParts[zC], me);
+                                zipDirectory(filesToZipPerDirectoryParts[zipDirectoryCount], me);
 
                                 //zip each directory
                                 function zipDirectory(files, me) {
@@ -483,7 +483,7 @@ LABKEY.internal.FileDrop = new function () {
                                         totalSize += files[s].file.size;
                                     }
 
-                                    this.showZipProgressWindow("Zipping directory " + filesToZipPerDirectoryParts[zC][0].dir );
+                                    this.showZipProgressWindow("Zipping directory " + filesToZipPerDirectoryParts[zipDirectoryCount][0].dir );
                                     var totalDone = 0;
                                     var prevDone = 0;
                                     zipFiles(files, me, function (current, total) {
@@ -495,24 +495,24 @@ LABKEY.internal.FileDrop = new function () {
                                         }
                                     }, function (zippedBlob) {
                                         hideZipProgressWindow();
-                                        var dirName = filesToZipPerDirectoryParts[zC][0].dir;
+                                        var dirName = files[0].dir;
                                         var nameToUse = '';
-                                        var filename = filesToZipPerDirectoryParts[zC][0].file.name;
+                                        var filename = files[0].file.name; //used for getting correct zip path
                                         var filenameParts = filename.split('/');
                                         filenameParts.shift();
-                                        var np = 1;
-                                        var flag = false;
+                                        var fileNamePartsIndex = 1;
+                                        var foundDirectoryName = false;
 
                                         for (var nps = 1; nps < filenameParts.length; nps++) {
                                             if (filenameParts[nps] === dirName) {
-                                                flag = true;
+                                                foundDirectoryName = true;
                                             }
                                         }
 
-                                        if (entry.name === filenameParts[0] && flag) {
-                                            while (filenameParts[np] !== dirName) {
-                                                nameToUse = nameToUse + filenameParts[np] + '/';
-                                                np++;
+                                        if (entry.name === filenameParts[0] && foundDirectoryName) {
+                                            while (filenameParts[fileNamePartsIndex] !== dirName) {
+                                                nameToUse = nameToUse + filenameParts[fileNamePartsIndex] + '/';
+                                                fileNamePartsIndex++;
                                             }
                                         }
                                         nameToUse = nameToUse + dirName;
@@ -529,22 +529,28 @@ LABKEY.internal.FileDrop = new function () {
                                             lastModified: Date.now()
                                         }));
 
-                                        zC--;
+                                        moveToNextDirectory();
+                                    }, function () {
+                                        moveToNextDirectory();
+                                    });
 
-                                        if (zC < 0) { //no more files/directories to zip
+
+                                    function moveToNextDirectory() {
+                                        zipDirectoryCount--;
+                                        if (zipDirectoryCount < 0) { //no more files/directories to zip
                                             console.timeEnd("ZIP DONE IN");
                                             for (var _up = 0; _up < filesToUpload.length; _up++) {
                                                 me.addFile(filesToUpload[_up].file);
                                             }
                                             itemCount--;
-                                            if (itemCount >= 0) {
+                                            if (itemCount >= 0) { //move to next dropped item
                                                 zipLoad(me.entries[itemCount]);
                                             }
                                         }
                                         else {
-                                            zipDirectory(filesToZipPerDirectoryParts[zC], me);
+                                            zipDirectory(filesToZipPerDirectoryParts[zipDirectoryCount], me);
                                         }
-                                    });
+                                    }
                                 }
                             }
                             else { //no zip files
@@ -559,7 +565,7 @@ LABKEY.internal.FileDrop = new function () {
 
                         });
                     }
-                    else {//file
+                    else if(entry) {//file
                         entry.file(function (_file) {
                             me.addFile(_file);
                             itemCount--;
@@ -650,6 +656,14 @@ LABKEY.internal.FileDrop = new function () {
                 function buildTree(files) {
                     var tree = {name: 'root', nodes: []};
 
+                    for (var f = 0; f < files.length; f++) {
+                        var parts = files[f].name.split('/');
+                        parts.shift();
+                        _buildTree(parts, files[f]);
+                    }
+
+                    return tree;
+
                     function _buildTree(parts, file) {
                         for (var j = 0; j < parts.length; j++) {
                             //var lastDir;
@@ -718,23 +732,32 @@ LABKEY.internal.FileDrop = new function () {
 
                         return tmp;
                     }
-
-                    for (var f = 0; f < files.length; f++) {
-                        var parts = files[f].name.split('/');
-                        parts.shift();
-                        _buildTree(parts, files[f]);
-                    }
-
-                    return tree;
                 }
 
-                function zipFiles(files, scope, onprogress, callback) {
+                function zipFiles(files, scope, onprogress, callback, onZipFail) {
                     var zipWriter, writer;
 
                     var addIndex = 0;
 
+                    this.zipProgressName = '';
+                    this.directoryBeingZipped = '';
+
+                    var onerror = function () {
+                        this.zipProgressWindow.hide();
+                        onZipFail();
+                        scope.uploadPanel.showErrorMsg("Zip Error", "Error zipping file - " + this.zipProgressName + " in directory - " + this.directoryBeingZipped);
+                    };
+
+                    if (zipWriter)
+                        nextFile();
+                    else {
+                        writer = new zip.BlobWriter();
+                        createZipWriter();
+                    }
+
                     function nextFile() {
                         var file = files[addIndex].file;
+                        this.directoryBeingZipped = files[addIndex].dir;
                         var filePath = file.name.split('/');
                         filePath.shift();
                         var newFileName = '';
@@ -744,7 +767,7 @@ LABKEY.internal.FileDrop = new function () {
                                 newFileName += '/';
                             }
                         }
-                        var zipProgressName = filePath[filePath.length-1];
+                        this.zipProgressName = filePath[filePath.length-1];
                         this.currentZipFileText.update("Adding file - " + zipProgressName);
                         this.currentFileNumber.update(addIndex + '/' + files.length);
                         zipWriter.add(newFileName, new zip.BlobReader(file), function () {
@@ -762,13 +785,6 @@ LABKEY.internal.FileDrop = new function () {
 
                             nextFile();
                         }, onerror);
-                    }
-
-                    if (zipWriter)
-                        nextFile();
-                    else {
-                        writer = new zip.BlobWriter();
-                        createZipWriter();
                     }
 
                 }
