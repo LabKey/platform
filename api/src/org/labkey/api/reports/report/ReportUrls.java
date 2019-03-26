@@ -33,6 +33,7 @@ import java.util.Map;
  */
 public interface ReportUrls extends UrlProvider
 {
+    // need some better docs
     ActionURL urlDownloadData(Container c);
     ActionURL urlRunReport(Container c);
     ActionURL urlAjaxSaveScriptReport(Container c);
