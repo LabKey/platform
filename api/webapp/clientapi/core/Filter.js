@@ -53,19 +53,29 @@
  */
 LABKEY.Filter = new function()
 {
-    function validateMultiple(type, value, colName, sep, minOccurs, maxOccurs)
+    // validate the component items of the value
+    // returns the string representation of the filter value (see .getURLParameterValue)
+    function validateMultiple(filterType, type, value, colName, sep, minOccurs, maxOccurs)
     {
-        var values = value.split(sep);
-        var result = '';
-        var separator = '';
+        var values;
+        try
+        {
+            values = filterType.parseValue(value);
+        }
+        catch (x)
+        {
+            alert("Failed to validate filter: " + x.toString());
+            return undefined;
+        }
+
+        var result = [];
         for (var i = 0; i < values.length; i++)
         {
-            var value = validate(type, values[i].trim(), colName);
+            value = validate(type, values[i].trim(), colName);
             if (value == undefined)
                 return undefined;
 
-            result = result + separator + value;
-            separator = sep;
+            result.push(value);
         }
 
         if (minOccurs !== undefined && minOccurs > 0)
@@ -86,17 +96,9 @@ LABKEY.Filter = new function()
             }
         }
 
-        return result;
+        return filterType.getURLParameterValue(values);
     }
 
-    /**
-     * Note: this is an experimental API that may change unexpectedly in future releases.
-     * Validate a form value against the json type.  Error alerts will be displayed.
-     * @param type The json type ("int", "float", "date", or "boolean")
-     * @param value The value to test.
-     * @param colName The column name to use in error messages.
-     * @return undefined if not valid otherwise a normalized string value for the type.
-     */
     function validate(type, value, colName)
     {
         if (type == "int")
@@ -281,6 +283,61 @@ LABKEY.Filter = new function()
             getOpposite : function() {return oppositeMap[urlSuffix] ? urlMap[oppositeMap[urlSuffix]] : null},
             getSingleValueFilter : function() {return this.isMultiValued() ? urlMap[multiValueToSingleMap[urlSuffix]] : this},
             getMultiValueFilter : function() {return this.isMultiValued() ? null : urlMap[singleValueToMultiMap[urlSuffix]]},
+
+            /**
+             * Note: this is an experimental API that may change unexpectedly in future releases.
+             * Parse a filter String or Array value appropriately for this filter type.
+             * @return {String|Array} For multi-valued filter types, an Array of values, otherwise the filter value.
+             */
+            parseValue: function (value) {
+                if (this.isMultiValued() && LABKEY.Utils.isString(value))
+                {
+                    if (value.indexOf("{json:") === 0 && value.indexOf("}") === value.length-1) {
+                        value = JSON.parse(value.substring("{json:".length, value.length - 1));
+                    }
+                    else {
+                        value = value.split(this.getMultiValueSeparator());
+                    }
+                }
+
+                if (!this.isMultiValued() && LABKEY.Utils.isArray(value))
+                    throw new Error("Array of values not supported for '" + this.getDisplayText() + "' filter: " + value);
+
+                return value;
+            },
+
+            /**
+             * Note: this is an experimental API that may change unexpectedly in future releases.
+             * Returns the (unencoded) value that will be put on URL.
+             * @returns {String}
+             */
+            getURLParameterValue: function (value) {
+                if (!this.isDataValueRequired())
+                    return '';
+
+                if (this.isMultiValued() && LABKEY.Utils.isArray(value))
+                {
+                    var sep = this.getMultiValueSeparator();
+                    var containsSep = value.some(function (v) {
+                        return LABKEY.Utils.isString(v) && v.indexOf(sep) !== -1;
+                    });
+                    if (containsSep)
+                        return "{json:" + JSON.stringify(value) + "}";
+                    else
+                        return value.join(sep);
+                }
+
+                return value;
+            },
+
+            /**
+             * Note: this is an experimental API that may change unexpectedly in future releases.
+             * Validate a form value against the json type.  Error alerts will be displayed.
+             * @param type The json type ("int", "float", "date", or "boolean")
+             * @param value The value to test.
+             * @param colName The column name to use in error messages.
+             * @return undefined if not valid otherwise a normalized string value for the type.
+             */
             validate : function (value, type, colName) {
                 if (!dataValueRequired)
                     return true;
@@ -298,7 +355,7 @@ LABKEY.Filter = new function()
                 }
 
                 if (this.isMultiValued())
-                    return validateMultiple(type, value, colName, multiValueSeparator, minOccurs, maxOccurs);
+                    return validateMultiple(this, type, value, colName, multiValueSeparator, minOccurs, maxOccurs);
                 else
                     return validate(type, value, colName);
             }
