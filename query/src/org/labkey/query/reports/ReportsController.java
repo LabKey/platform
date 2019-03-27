@@ -101,6 +101,7 @@ import org.labkey.api.reports.report.view.RenderBackgroundRReportView;
 import org.labkey.api.reports.report.view.ReportDesignBean;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ScriptReportBean;
+import org.labkey.api.reports.report.view.ScriptReportDesignBean;
 import org.labkey.api.resource.FileResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.RequiresNoPermission;
@@ -113,6 +114,7 @@ import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.reports.CrosstabReport;
@@ -223,6 +225,12 @@ public class ReportsController extends SpringActionController
         public ActionURL urlViewScriptReport(Container c)
         {
             return new ActionURL(ViewScriptReportAction.class, c);
+        }
+
+        @Override
+        public ActionURL urlDesignScriptReport(Container c)
+        {
+            return new ActionURL(DesignScriptReportAction.class, c);
         }
 
         @Override
@@ -776,15 +784,15 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermission(InsertPermission.class)  // Need insert AND developer (checked below)
-    public class CreateScriptReportAction extends FormViewAction<ScriptReportBean>
+    public class CreateScriptReportAction extends FormViewAction<ScriptReportDesignBean>
     {
         private Report _report;
 
-        public void validateCommand(ScriptReportBean form, Errors errors)
+        public void validateCommand(ScriptReportDesignBean form, Errors errors)
         {
         }
 
-        public ModelAndView getView(ScriptReportBean form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ScriptReportDesignBean form, boolean reshow, BindException errors) throws Exception
         {
             _report = form.getReport(getViewContext());
             List<ValidationError> reportErrors = new ArrayList<>();
@@ -803,12 +811,12 @@ public class ReportsController extends SpringActionController
             }
         }
 
-        public boolean handlePost(ScriptReportBean form, BindException errors)
+        public boolean handlePost(ScriptReportDesignBean form, BindException errors)
         {
             return true;
         }
 
-        public ActionURL getSuccessURL(ScriptReportBean form)
+        public ActionURL getSuccessURL(ScriptReportDesignBean form)
         {
             return null;
         }
@@ -824,12 +832,10 @@ public class ReportsController extends SpringActionController
     }
 
 
-    @RequiresPermission(ReadPermission.class)
-    @Action(ActionType.SelectData.class)
-    public class ViewScriptReportAction extends ReadOnlyApiAction<ScriptReportBean>
+    abstract class BaseViewScriptReportAction<BEAN extends ScriptReportBean> extends MutatingApiAction<BEAN>
     {
         @Override
-        public ApiResponse execute(ScriptReportBean bean, BindException errors) throws Exception
+        public ApiResponse execute(BEAN bean, BindException errors) throws Exception
         {
             // TODO: Do something with errors?
 
@@ -895,6 +901,27 @@ public class ReportsController extends SpringActionController
 
             // add these to our client dependencies
             clientDependencies.addAll(scriptDependencies);
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    @Action(ActionType.SelectData.class)
+    public class ViewScriptReportAction extends BaseViewScriptReportAction<ScriptReportBean>
+    {
+    }
+
+    @RequiresPermission(UpdatePermission.class)  // At least update; canEdit() will perform additional permissions checks
+    @Action(ActionType.Configure.class)
+    public class DesignScriptReportAction extends BaseViewScriptReportAction<ScriptReportDesignBean>
+    {
+        @Override
+        public ApiResponse execute(ScriptReportDesignBean bean, BindException errors) throws Exception
+        {
+            Report report = bean.getReport(getViewContext());
+            if (null == report || !report.canEdit(getUser(), getContainer()))
+                throw new UnauthorizedException();
+
+            return super.execute(bean, errors);
         }
     }
 
@@ -1226,10 +1253,10 @@ public class ReportsController extends SpringActionController
 
 
     @RequiresNoPermission
-    public class AjaxSaveScriptReportAction extends MutatingApiAction<RReportBean>
+    public class AjaxSaveScriptReportAction extends MutatingApiAction<ScriptReportDesignBean>
     {
         @Override
-        public void validateForm(RReportBean form, Errors errors)
+        public void validateForm(ScriptReportDesignBean form, Errors errors)
         {
             try
             {
@@ -1270,7 +1297,7 @@ public class ReportsController extends SpringActionController
         }
 
         @Override
-        public ApiResponse execute(RReportBean form, BindException errors) throws Exception
+        public ApiResponse execute(ScriptReportDesignBean form, BindException errors) throws Exception
         {
             Report report = null;
 
@@ -1334,7 +1361,7 @@ public class ReportsController extends SpringActionController
             return createResponse(form, report, errors);
         }
 
-        protected ApiSimpleResponse createResponse(RReportBean form, Report report, BindException errors)
+        protected ApiSimpleResponse createResponse(ScriptReportDesignBean form, Report report, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("success", true);
@@ -1363,7 +1390,7 @@ public class ReportsController extends SpringActionController
         }
 
         @Override
-        protected ApiSimpleResponse createResponse(RReportBean form, Report report, BindException errors)
+        protected ApiSimpleResponse createResponse(ScriptReportDesignBean form, Report report, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             Pair<String, String> externalEditor = report.startExternalEditor(getViewContext(), form.getScript(), errors);
