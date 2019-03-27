@@ -21,6 +21,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
@@ -36,7 +37,10 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> implements ExpQCFlagTable
 {
@@ -129,6 +133,7 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
                 AssayProvider provider = AssayService.get().getProvider(_assayProtocol);
                 return provider.createProtocolSchema(_userSchema.getUser(), _userSchema.getContainer(), _assayProtocol, null).createRunsTable();
             }
+
         });
         SQLFragment protocolSQL = new SQLFragment("RunId IN (SELECT er.RowId FROM ");
         protocolSQL.append(ExperimentService.get().getTinfoExperimentRun(), "er");
@@ -168,6 +173,14 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
         public UpdateService(TableInfo queryTable)
         {
             super(queryTable, ExperimentService.get().getTinfoAssayQCFlag(), _columnMapping);
+        }
+
+        @Override
+        protected Set<String> getAutoPopulatedColumns()
+        {
+            Set<String> defCols = new HashSet<>(super.getAutoPopulatedColumns());
+            defCols.add("Run");
+            return Collections.unmodifiableSet(defCols);
         }
     }
 }
