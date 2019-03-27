@@ -580,6 +580,11 @@ LABKEY.internal.ZipLoad = new function () {
             for (var up = 0; up < filesToUpload.length; up++) {
                 dropZone.addFile(filesToUpload[up].file);
             }
+            itemCount--;
+            if (itemCount >= 0) { //move to next dropped item
+                parentItemName = itemsDropped[itemCount];
+                _zipLoad(itemsDropped[itemCount]);
+            }
         }
     }
 

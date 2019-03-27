@@ -200,6 +200,7 @@ LABKEY.internal.FileDrop = new function () {
             }
         };
 
+        // could be moved elsewhere ?
         LABKEY.Ajax.request({
             url: LABKEY.ActionURL.buildURL("fileContent", "getZipUploadRecognizer.api"),
             success: function (response) {
@@ -219,44 +220,21 @@ LABKEY.internal.FileDrop = new function () {
             if (!e.dataTransfer) {
                 return;
             }
-           var patterns = Dropzone.patterns;
-           var items = e.dataTransfer.items;
+            var patterns = Dropzone.patterns;
+            var items = e.dataTransfer.items;
 
-            if (!patterns) { // no registered patterns
-                this._originalDrop(e, this);
-            }
-            else {
-                this.emit("drop", e);
-                zip.useWebWorkers = false;
-                var me = this;
-                this.entries = [];
+            this.emit("drop", e);
+            zip.useWebWorkers = false;
+            var me = this;
+            this.entries = [];
 
-                for (var it = 0; it < items.length; it++) {
-                    if (items[it].webkitGetAsEntry != null) {
-                        this.entries.push(items[it].webkitGetAsEntry())
-                    }
-                }
-                LABKEY.internal.ZipLoad.zipLoad(this.entries, me, patterns);
-            }
-        };
-
-        Dropzone.prototype._originalDrop = function (e, scope) {
-            var files, items;
-            if (!e.dataTransfer) {
-                return;
-            }
-            scope.emit("drop", e);
-            files = e.dataTransfer.files;
-            scope.emit("addedfiles", files);
-            if (files.length) {
-                items = e.dataTransfer.items;
-                if (items && items.length && (items[0].webkitGetAsEntry != null)) {
-                    scope._addFilesFromItems(items);
-                }
-                else {
-                    scope.handleFiles(files);
+            for (var it = 0; it < items.length; it++) {
+                if (items[it].webkitGetAsEntry != null) {
+                    this.entries.push(items[it].webkitGetAsEntry())
                 }
             }
+            LABKEY.internal.ZipLoad.zipLoad(this.entries, me, patterns);
+
         };
 
         var dropzone = new Dropzone(el, config);
