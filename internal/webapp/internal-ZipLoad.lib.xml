@@ -1,0 +1,10 @@
+<libraries xmlns="http://labkey.org/clientLibrary/xml/">
+    <library compileInProductionMode="true">
+        <script path="internal/ZipLoad/ZipLoad.js"/>
+    </library>
+    <dependencies>
+        <dependency path="Ext4"/>
+        <dependency path="Dropzone"/>
+        <dependency path="zipjs"/>
+    </dependencies>
+</libraries>
