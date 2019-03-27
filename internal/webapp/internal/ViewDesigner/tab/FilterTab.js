@@ -74,7 +74,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.FilterTab', {
             var fieldKeyGroups = {},
                 filters = [],
                 TYPES = LABKEY.Filter.Types;
-            
+
             for (var i = 0; i < this.customView.filter.length; i++) {
                 var filter = this.customView.filter[i];
                 var g = fieldKeyGroups[filter.fieldKey];
