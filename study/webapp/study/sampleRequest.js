@@ -160,9 +160,9 @@ function requestSelected(requestRecord)
     if (!_detailsPanel)
     {
         var createdLabel = new Ext.form.Label({ html: Ext.util.Format.date(new Date(requestData.created), "Y-m-d H:i:s") });
-        var createdByLabel = new Ext.form.Label({ html: requestData.createdBy });
-        var destinationLabel = new Ext.form.Label({ html: requestData.destination });
-        var statusLabel = new Ext.form.Label({ html: requestData.status });
+        var createdByLabel = new Ext.form.Label({ html: Ext.util.Format.htmlEncode(requestData.createdBy) });
+        var destinationLabel = new Ext.form.Label({ html: Ext.util.Format.htmlEncode(requestData.destination) });
+        var statusLabel = new Ext.form.Label({ html: Ext.util.Format.htmlEncode(requestData.status) });
         _detailsPanel = new Ext.Panel({
             title: "Request " + requestData.requestId,
             layout:'table',
