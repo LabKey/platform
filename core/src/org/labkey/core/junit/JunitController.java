@@ -182,15 +182,20 @@ public class JunitController extends SpringActionController
         {
             List<Class> testClasses = new LinkedList<>();
 
+            System.out.println("************ Start JunitController.getTestClasses ************");
             if (!StringUtils.isEmpty(form.getModule()))
             {
+                System.out.println("************ form.getModule() is not empty ************");
                 testClasses.addAll(JunitManager.getTestCases().get(form.getModule()));
+                System.out.println("************ Added " + testClasses.size() + " tests to the list. ************");
 
                 // Exclude performance tests.
                 form._scope = TestWhen.When.WEEKLY;
             }
             else if (!StringUtils.isEmpty(form.getTestCase()))
             {
+
+                System.out.println("************ form.getTestCase() is not empty ************");
                 for (List<Class> list : JunitManager.getTestCases().values())
                 {
                     list.stream()
@@ -198,23 +203,34 @@ public class JunitController extends SpringActionController
                         .forEach(testClasses::add);
                 }
 
+                System.out.println("************ Added " + testClasses.size() + " tests to the list. ************");
+
                 // This is the branch taken when you select a unit test from the UI,
                 // allow performance tests to be selected.
                 form._scope = TestWhen.When.PERFORMANCE;
             }
             else
             {
+
+                System.out.println("************ In the else statement. ************");
                 JunitManager.getTestCases().values().forEach(testClasses::addAll);
+                System.out.println("************ Added " + testClasses.size() + " tests to the list. ************");
 
                 // Exclude performance tests from "All" tests.
                 form._scope = TestWhen.When.WEEKLY;
             }
+
+            System.out.println("************ List of tests to consider run: " + testClasses + " ************");
 
             // filter by scope
             List<Class> ret;
             ret = testClasses.stream()
                     .filter((test)->getScope(test).ordinal()<=form._scope.ordinal())
                     .collect(Collectors.toList());
+
+            System.out.println("************ List of tests in scope (will run): " + ret + " ************");
+            System.out.println("************ End JunitController.getTestClasses ************");
+
             return ret;
         }
 
