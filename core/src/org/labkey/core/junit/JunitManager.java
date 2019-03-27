@@ -42,8 +42,6 @@ public class JunitManager
 
         _testCases = new TreeMap<>();
 
-        System.out.println("************ Start JunitManager ************");
-
         for (Module module : ModuleLoader.getInstance().getModules())
         {
             List<Class> moduleClazzes = new ArrayList<>();
@@ -57,8 +55,6 @@ public class JunitManager
                 moduleClazzes.add(clazz);
             }
 
-            System.out.println("************ Looked at Integration Tests. Added " + allCases.size() + " cases and " + moduleClazzes.size() + " module classes ************");
-
             for (Class clazz : module.getUnitTests())
             {
                 if (allCases.contains(clazz))
@@ -68,20 +64,13 @@ public class JunitManager
                 moduleClazzes.add(clazz);
             }
 
-            System.out.println("************ Looked at Unit Tests. Added " + allCases.size() + " cases and " + moduleClazzes.size() + " module classes ************");
-
             if (!moduleClazzes.isEmpty())
             {
                 moduleClazzes.sort(Comparator.comparing(Class::getName));
 
                 _testCases.put(module.getName(), moduleClazzes);
             }
-
         }
-
-        System.out.println("************ Test Cases now contains: " + _testCases + " ************");
-
-        System.out.println("************ End JunitManager ************");
     }
 
     public static Map<String, List<Class>> getTestCases()
