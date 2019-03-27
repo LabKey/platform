@@ -1575,6 +1575,11 @@ public class Query
         new SqlTest("SELECT var_pop(d), day FROM R GROUP BY day", 2, 7),
         new SqlTest("SELECT median(seven), day FROM R GROUP BY day", 2, 7),
 
+        // Median on SQL server is tricky, so some  more tests...
+        new SqlTest("SELECT avg(seven), median(seven), day FROM R GROUP BY day", 3, 7),   // with mixed aggregates
+//        new SqlTest("SELECT 1+median(seven), day FROM R GROUP BY day", 2, 7),             // not top-level expression
+        new SqlTest("SELECT median(d), median(seven), day FROM R GROUP BY day", 3, 7),
+
         // LIMIT
         new SqlTest("SELECT R.day, R.month, R.date FROM R LIMIT 10", 3, 10),
         new SqlTest("SELECT R.day, R.month, R.date FROM R ORDER BY R.date LIMIT 10", 3, 10),
