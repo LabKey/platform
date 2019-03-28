@@ -603,7 +603,7 @@ public class ModuleLoader implements Filter
         if (null != System.getProperty("project.root"))
             possibleRoots.add(System.getProperty("project.root"));
         if (null != core.getSourcePath() && !core.getSourcePath().isEmpty())
-            possibleRoots.add(core.getSourcePath() + "/../../..");
+            possibleRoots.add(core.getSourcePath() + "/../../../.."); // assuming core source path is trunk/server/platform/core and we want labkey home path
 
         for (String root : possibleRoots)
         {
