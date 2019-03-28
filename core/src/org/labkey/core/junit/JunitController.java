@@ -108,7 +108,7 @@ public class JunitController extends SpringActionController
                     out.println("<td style=\"min-width:60px;\">&nbsp;</td>");
                     if (showRunButtons)
                     {
-                        out.println("<td style=\"font-size:66%; color:gray;\">" + getWhen(clazz) + "&nbsp;&nbsp;</td>");
+                        out.println("<td style=\"font-size:66%; color:gray;\">" + getScope(clazz) + "&nbsp;&nbsp;</td>");
                     }
                     out.println("<td> <a href=\"" + PageFlowUtil.filter(testCaseURL.getLocalURIString()) + "\">" + clazz.getName() + "</a></td>");
                     out.println("</tr>");
@@ -147,7 +147,7 @@ public class JunitController extends SpringActionController
     }
 
 
-    static private TestWhen.When getWhen(Class cls)
+    static private TestWhen.When getScope(Class cls)
     {
         TestWhen ann = (TestWhen)cls.getAnnotation(TestWhen.class);
         if (null == ann)
@@ -185,6 +185,9 @@ public class JunitController extends SpringActionController
             if (!StringUtils.isEmpty(form.getModule()))
             {
                 testClasses.addAll(JunitManager.getTestCases().get(form.getModule()));
+
+                // Exclude performance tests.
+                form._scope = TestWhen.When.WEEKLY;
             }
             else if (!StringUtils.isEmpty(form.getTestCase()))
             {
@@ -194,16 +197,23 @@ public class JunitController extends SpringActionController
                         .filter((test) -> test.getName().equals(form.getTestCase()))
                         .forEach(testClasses::add);
                 }
+
+                // This is the branch taken when you select a unit test from the UI,
+                // allow performance tests to be selected.
+                form._scope = TestWhen.When.PERFORMANCE;
             }
             else
             {
                 JunitManager.getTestCases().values().forEach(testClasses::addAll);
+
+                // Exclude performance tests from "All" tests.
+                form._scope = TestWhen.When.WEEKLY;
             }
 
-            // filter by TestWhen
+            // filter by scope
             List<Class> ret;
             ret = testClasses.stream()
-                    .filter((test)->getWhen(test).ordinal()<=form._when.ordinal())
+                    .filter((test)->getScope(test).ordinal()<=form._scope.ordinal())
                     .collect(Collectors.toList());
             return ret;
         }
@@ -407,14 +417,14 @@ public class JunitController extends SpringActionController
                     {
                         timeout = testTimeout.value();
                     }
-                    TestWhen.When when = getWhen(clazz);
+                    TestWhen.When scope = getScope(clazz);
 
                     // Send back both the class name and the timeout
                     Map<String, Object> testClass = new HashMap<>();
                     testClass.put("module", module);
                     testClass.put("className", clazz.getName());
                     testClass.put("timeout", timeout);
-                    testClass.put("when", when.name());
+                    testClass.put("when", scope.name());
                     tests.add(testClass);
                 }
             }
@@ -505,7 +515,7 @@ public class JunitController extends SpringActionController
     {
         private String _module;
         private String _testCase;
-        private TestWhen.When _when = TestWhen.When.WEEKLY;
+        private TestWhen.When _scope = TestWhen.When.WEEKLY;
 
         public String getTestCase()
         {
@@ -534,7 +544,7 @@ public class JunitController extends SpringActionController
             try
             {
                 TestWhen.When w = TestWhen.When.valueOf(when);
-                _when = w;
+                _scope = w;
             }
             catch (IllegalArgumentException e)
             {
