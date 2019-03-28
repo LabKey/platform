@@ -515,7 +515,7 @@ public class JunitController extends SpringActionController
     {
         private String _module;
         private String _testCase;
-        private TestWhen.When _scope = TestWhen.When.PERFORMANCE;
+        private TestWhen.When _scope = TestWhen.When.WEEKLY;
 
         public String getTestCase()
         {
