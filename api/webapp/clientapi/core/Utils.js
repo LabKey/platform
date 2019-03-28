@@ -930,35 +930,6 @@ LABKEY.Utils = new function()
             }
         },
 
-        /**
-         * POSTs to the given href, including CSRF token. Taken from PageFlowUtil.postOnClickJavascript .
-         * @param href containing action and parameters to be POSTed
-         */
-
-        postToAction : function (href) {
-            var form = document.createElement('form');
-            form.setAttribute('method', 'post');
-            form.setAttribute('action', href);
-            var input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'X-LABKEY-CSRF';
-            input.value = LABKEY.CSRF;
-            form.appendChild(input);
-            form.style.display = 'hidden';
-            document.body.appendChild(form);
-            form.submit();
-        },
-
-        /**
-         * Displays a confirmation dialog with the specified message and then, if confirmed, POSTs to the href, using the method above
-         */
-        confirmAndPost : function (message, href) {
-            if (confirm(message))
-                this.postToAction(href);
-
-            return false;
-        },
-
         // private
         collapseExpand: collapseExpand,
         notifyExpandCollapse: notifyExpandCollapse,
@@ -1029,13 +1000,13 @@ LABKEY.Utils = new function()
  * @param {Object} config.  The config object
  * @param {String} config.fileNamePrefix name to suggest to the browser for saving the file. The appropriate extension (either ".txt" or ".csv", will be appended based on the delim character used (see below).  Defaults to 'Export'
  * @param {String} config.delim The separator between fields.  Allowable values are 'COMMA' or 'TAB'.
- * @param {String} config.quoteChar The character that will be used to quote each field.  Allowable values are 'DOUBLE' (ie. double-quote character), 'SINLGE' (ie. single-quote character) or 'NONE' (ie. no character used).  Defaults to none.
+ * @param {String} config.quoteChar The character that will be used to quote each field.  Allowable values are 'DOUBLE' (ie. double-quote character), 'SINGLE' (ie. single-quote character) or 'NONE' (ie. no character used).  Defaults to none.
  * @param {String} config.newlineChar The character that will be used to separate each line.  Defaults to '\n'
  * @param {String} config.rows array of rows, which are arrays with values for each cell.
  * @example &lt;script type="text/javascript"&gt;
  LABKEY.Utils.convertToTable(
  {
-     fileName: 'output.csv',
+     fileNamePrefix: 'output',
      rows:
      [
          ['Row1Col1', 'Row1Col2'],
@@ -1166,4 +1137,25 @@ LABKEY.Utils = new function()
                     });
                 });
  &lt;/script&gt;
+ */
+
+/**
+ * POSTs to the given href, including CSRF token. Taken from PageFlowUtil.postOnClickJavascript .
+ * @memberOf LABKEY.Utils
+ * @function
+ * @static
+ * @name postToAction
+ * @param {String} href containing action and parameters to be POSTed.
+ * @param {Object} formData values to include on the hidden form
+ */
+
+/**
+ * Displays a confirmation dialog with the specified message and then, if confirmed, POSTs to the href, using the method above
+ * @memberOf LABKEY.Utils
+ * @function
+ * @static
+ * @name confirmAndPost
+ * @param {String} message confirmation message to display.
+ * @param {String} href containing action and parameters to be POSTed.
+ * @param {Object} formData values to include on the hidden form
  */
