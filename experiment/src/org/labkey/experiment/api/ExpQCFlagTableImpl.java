@@ -175,12 +175,12 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
             super(queryTable, ExperimentService.get().getTinfoAssayQCFlag(), _columnMapping);
         }
 
-        @Override
-        protected Set<String> getAutoPopulatedColumns()
-        {
-            Set<String> defCols = new HashSet<>(super.getAutoPopulatedColumns());
-            defCols.add("Run");
-            return Collections.unmodifiableSet(defCols);
-        }
+//        @Override
+//        protected Set<String> getAutoPopulatedColumns()
+//        {
+//            Set<String> defCols = new HashSet<>(super.getAutoPopulatedColumns());
+//            defCols.add("Run");
+//            return Collections.unmodifiableSet(defCols);
+//        }
     }
 }
