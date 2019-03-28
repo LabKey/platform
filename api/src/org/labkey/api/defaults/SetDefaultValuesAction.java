@@ -17,7 +17,6 @@ package org.labkey.api.defaults;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
@@ -259,7 +258,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
                 overrideHtml.append("These values override defaults set in the following folder:");
             overrideHtml.append("</span><br>");
             Container container = overridees.get(overridees.size() - 1);
-            appendEditURL(overrideHtml, container, domain, domainIdForm.getReturnURLHelper());
+            appendEditURL(overrideHtml, container, domainIdForm);
         }
         List<Container> overriders = DefaultValueService.get().getDefaultValueOverriders(domainIdForm.getContainer(), domain);
         if (!overriders.isEmpty())
@@ -273,18 +272,25 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
                 overrideHtml.append("These values are overridden by defaults set in the following folder(s):");
             overrideHtml.append("</span><br>");
             for (Container container : overriders)
-                appendEditURL(overrideHtml, container, domain, domainIdForm.getReturnURLHelper());
+                appendEditURL(overrideHtml, container, domainIdForm);
         }
 
         return new VBox(headerView, view, new HtmlView(overrideHtml.toString()));
     }
 
-    protected ActionURL buildSetInheritedDefaultsURL(Domain domain, FormType domainIdForm)
+    private ActionURL buildSetInheritedDefaultsURL(Domain domain, FormType domainIdForm)
+    {
+        return buildSetInheritedDefaultsURL(domain.getContainer(), domainIdForm);
+    }
+
+    protected ActionURL buildSetInheritedDefaultsURL(Container container, FormType domainIdForm)
     {
         // Overrides to this method should call super, and then add any additional url parameters the entity type may need.
-        ActionURL url = new ActionURL(this.getClass(), domain.getContainer());
-        url.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().getLocalURIString());
-        url.addParameter("domainId", domain.getTypeId());
+        ActionURL url = new ActionURL(this.getClass(), container);
+        URLHelper returnUrl = domainIdForm.getReturnURLHelper();
+        if (returnUrl != null)
+            url.addReturnURL(returnUrl);
+        url.addParameter("domainId", domainIdForm.getDomainId());
         return url;
     }
 
@@ -310,12 +316,9 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         formDefaults.put(propName, stringValue);
     }
 
-    private void appendEditURL(StringBuilder builder, Container container, Domain domain, URLHelper returnUrl)
+    private void appendEditURL(StringBuilder builder, Container container, FormType domainIdForm)
     {
-        ActionURL editURL = new ActionURL(this.getClass(), container);
-        editURL.addParameter("domainId", domain.getTypeId());
-        if (returnUrl != null)
-            editURL.addReturnURL(returnUrl);
+        ActionURL editURL = buildSetInheritedDefaultsURL(container, domainIdForm);
         builder.append("<a href=\"").append(PageFlowUtil.filter(editURL.getLocalURIString())).append("\">");
         builder.append(PageFlowUtil.filter(container.getPath()));
         builder.append("</a><br>");
