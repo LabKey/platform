@@ -66,14 +66,11 @@ public interface SearchService
     Logger _packageLogger = Logger.getLogger(SearchService.class.getPackage().getName());
     Logger _log = Logger.getLogger(SearchService.class);
 
-    @Deprecated //Use getFileSizeLimit() method instead
-    long FILE_SIZE_LIMIT = 100L*(1024*1024); // 100 MB  //Keeping in case this is used in non-managed code
-
     long DEFAULT_FILE_SIZE_LIMIT = 100L; // 100 MB
 
     /**
-     * Returns the max file size indexed (in bytes)
-     * @return
+     * Returns the max file size indexed
+     * @return Maximum file size in bytes
      */
     default long getFileSizeLimit()
     {
@@ -355,9 +352,7 @@ public interface SearchService
 
     void deleteContainer(String id);
 
-    void deleteIndex();          // delete the index directory and reset lastIndexed values. must be called before start() has been called.
-    void clear();                // clear index and reset lastIndexed values. must be callable before (and after) start() has been called.
-
+    void deleteIndex();          // close the index if it's been initialized, then delete the index directory and reset lastIndexed values
     void clearLastIndexed();     // just reset lastIndexed values. must be callable before (and after) start() has been called.
     void maintenance();
 
@@ -429,10 +424,10 @@ public interface SearchService
 
     class LastIndexedClause extends SimpleFilter.FilterClause
     {
-        SQLFragment _sqlf = new SQLFragment();
-        private Set<FieldKey> _fieldKeys = new HashSet<>();
+        private static final java.util.Date oldDate = new java.sql.Timestamp(DateUtil.parseISODateTime("1967-10-04"));
 
-        final static java.util.Date oldDate = new java.sql.Timestamp(DateUtil.parseISODateTime("1967-10-04"));
+        private final SQLFragment _sqlf = new SQLFragment();
+        private final Set<FieldKey> _fieldKeys = new HashSet<>();
 
         public LastIndexedClause(TableInfo info, java.util.Date modifiedSince, String tableAlias)
         {
@@ -488,11 +483,13 @@ public interface SearchService
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
             return _sqlf;
         }
 
+        @Override
         public List<FieldKey> getFieldKeys()
         {
             return new ArrayList<>(_fieldKeys);

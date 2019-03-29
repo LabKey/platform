@@ -260,11 +260,6 @@ public class NoopSearchService implements SearchService
     }
 
     @Override
-    public void clear()
-    {
-    }
-
-    @Override
     public void clearLastIndexed()
     {
     }
