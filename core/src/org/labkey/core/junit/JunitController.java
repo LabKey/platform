@@ -718,7 +718,7 @@ public class JunitController extends SpringActionController
                         if(str.trim().length()==0)
                             out.println("<td align=left>Name</td>");
                         else
-                            out.println("<td align=right>" + str.trim() + "</td>");
+                            out.println("<td align=right>" + PageFlowUtil.filter(str.trim()) + "</td>");
                     });
                     out.println("</tr>");
 
