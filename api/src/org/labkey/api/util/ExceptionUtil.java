@@ -257,67 +257,7 @@ public class ExceptionUtil
         if (requestURL != null && MothershipReport.isMothershipExceptionReport(requestURL))
             return null;
 
-        String errorCode = null;
-        try
-        {
-            // Once to labkey.org, if so configured
-            errorCode = sendReport(createReportFromThrowable(request, ex, requestURL, MothershipReport.Target.remote, getExceptionReportingLevel(), null));
-
-            // And once to the local server, if so configured. If submitting to both labkey.org and the local server, the errorCode will be the same.
-            if (isSelfReportExceptions())
-            {
-                String newErrorCode = sendReport(createReportFromThrowable(request, ex, requestURL, MothershipReport.Target.local, ExceptionReportingLevel.HIGH, errorCode));
-                if (null == errorCode)
-                    errorCode = newErrorCode; // which may still be null, if server is configured to not send reports to either location.
-            }
-        }
-        finally
-        {
-            if (writeToLog4J)
-            {
-                String message = "Exception detected";
-                if (null != errorCode)
-                    message += " and logged to mothership with error code: " + errorCode;
-                LOG.error(message, ex);
-            }
-        }
-
-        return errorCode;
-    }
-
-    private static String sendReport(MothershipReport report)
-    {
-        if (null != report)
-        {
-            JOB_RUNNER.execute(report);
-            return report.getErrorCode();
-        }
-        return null;
-    }
-
-    /** Figure out exactly what text for the stack trace and other details we should submit */
-    public static MothershipReport createReportFromThrowable(@Nullable HttpServletRequest request, Throwable ex, String requestURL, MothershipReport.Target target, ExceptionReportingLevel level, @Nullable String errorCode)
-    {
-        if (!shouldSend(level, target.isLocal()))
-            return null;
-
-        Map<Enum, String> decorations = getExceptionDecorations(ex);
-
-        String exceptionMessage = null;
-        if (!decorations.isEmpty() && (level == ExceptionReportingLevel.MEDIUM || level == ExceptionReportingLevel.HIGH))
-            exceptionMessage = getExtendedMessage(ex);
-
-        StringWriter stringWriter = new StringWriter();
-        PrintWriter printWriter = new PrintWriter(stringWriter, true);
-        ex.printStackTrace(printWriter);
-        if (ex instanceof ServletException && ((ServletException)ex).getRootCause() != null)
-        {
-            printWriter.println("Nested ServletException cause is:");
-            ((ServletException)ex).getRootCause().printStackTrace(printWriter);
-        }
-        String browser = request == null ? null : request.getHeader("User-Agent");
-
-        String stackTrace = stringWriter.getBuffer().toString();
+        String extraInfo = null;
         String sqlState = null;
         for (Throwable t = ex ; t != null ; t = t.getCause())
         {
@@ -341,10 +281,10 @@ public class ExceptionUtil
                     return null;
                 }
                 sqlState = sqlException.getSQLState();
-                String extraInfo = CoreSchema.getInstance().getSqlDialect().getExtraInfo(sqlException);
-                if (extraInfo != null)
+                String extraSqlInfo = CoreSchema.getInstance().getSqlDialect().getExtraInfo(sqlException);
+                if (extraSqlInfo != null)
                 {
-                    stackTrace = stackTrace + "\n" + extraInfo;
+                    extraInfo = extraSqlInfo;
                 }
             }
 
@@ -352,6 +292,75 @@ public class ExceptionUtil
                 break;
         }
 
+        String errorCode = null;
+        try
+        {
+            // Once to labkey.org, if so configured
+            errorCode = sendReport(createReportFromThrowable(request, ex, requestURL, MothershipReport.Target.remote, getExceptionReportingLevel(), null, sqlState, extraInfo));
+
+            // And once to the local server, if so configured. If submitting to both labkey.org and the local server, the errorCode will be the same.
+            if (isSelfReportExceptions())
+            {
+                String newErrorCode = sendReport(createReportFromThrowable(request, ex, requestURL, MothershipReport.Target.local, ExceptionReportingLevel.HIGH, errorCode, sqlState, extraInfo));
+                if (null == errorCode)
+                    errorCode = newErrorCode; // which may still be null, if server is configured to not send reports to either location.
+            }
+        }
+        finally
+        {
+            if (writeToLog4J)
+            {
+                String message = "Exception detected";
+                if (null != errorCode)
+                    message += " and logged to mothership with error code: " + errorCode;
+                LOG.error(message, ex);
+                if (extraInfo != null)
+                {
+                    LOG.error("Additional exception info:\n" + extraInfo);
+                }
+            }
+        }
+
+        return errorCode;
+    }
+
+    private static String sendReport(MothershipReport report)
+    {
+        if (null != report)
+        {
+            JOB_RUNNER.execute(report);
+            return report.getErrorCode();
+        }
+        return null;
+    }
+
+    /** Figure out exactly what text for the stack trace and other details we should submit */
+    public static MothershipReport createReportFromThrowable(@Nullable HttpServletRequest request, Throwable ex, String requestURL, MothershipReport.Target target, ExceptionReportingLevel level, @Nullable String errorCode, @Nullable String sqlState, @Nullable String extraInfo)
+    {
+        if (!shouldSend(level, target.isLocal()))
+            return null;
+
+        Map<Enum, String> decorations = getExceptionDecorations(ex);
+
+        String exceptionMessage = null;
+        if (!decorations.isEmpty() && (level == ExceptionReportingLevel.MEDIUM || level == ExceptionReportingLevel.HIGH))
+            exceptionMessage = getExtendedMessage(ex);
+
+        StringWriter stringWriter = new StringWriter();
+        PrintWriter printWriter = new PrintWriter(stringWriter, true);
+        ex.printStackTrace(printWriter);
+        if (ex instanceof ServletException && ((ServletException)ex).getRootCause() != null)
+        {
+            printWriter.println("Nested ServletException cause is:");
+            ((ServletException)ex).getRootCause().printStackTrace(printWriter);
+        }
+        String browser = request == null ? null : request.getHeader("User-Agent");
+
+        String stackTrace = stringWriter.getBuffer().toString();
+        if (extraInfo != null)
+        {
+            stackTrace += "\n" + extraInfo;
+        }
         String referrerURL = null;
         String username = "NOT SET";
         if (request != null)
