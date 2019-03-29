@@ -533,8 +533,11 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     @Nullable
     public String getWebDavURL(@NotNull PathType type)
     {
-        if (getFilePath() == null)
+        java.nio.file.Path path = getFilePath();
+        if (path == null)
+        {
             return null;
+        }
 
         if (getContainer() == null)
         {
@@ -547,12 +550,6 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
 
         try
         {
-            java.nio.file.Path path = getFilePath();
-            if (path == null)
-            {
-                return null;
-            }
-
             path = path.toAbsolutePath();
 
             //currently only report if the file is under the container for this ExpData
