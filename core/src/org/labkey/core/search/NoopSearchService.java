@@ -32,7 +32,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.WebdavResource;
 
-import java.io.IOException;
 import java.io.Reader;
 import java.util.Collections;
 import java.util.Date;
@@ -49,100 +48,106 @@ public class NoopSearchService implements SearchService
 {
     IndexTask _dummyTask = new IndexTask()
     {
+        @Override
         public void addRunnable(@NotNull Runnable r, @NotNull PRIORITY pri)
         {
         }
 
+        @Override
         public void addResource(@NotNull String identifier, PRIORITY pri)
         {
         }
 
+        @Override
         public void addResource(@NotNull WebdavResource r, PRIORITY pri)
         {
         }
 
+        @Override
         public void setReady()
         {
         }
 
-        protected void checkDone()
-        {
-        }
-
+        @Override
         public String getDescription()
         {
             return "Dummy Search Service";
         }
 
-        public void cancel()
-        {
-        }
-
+        @Override
         public boolean isCancelled()
         {
             return false;
         }
 
+        @Override
         public int getDocumentCountEstimate()
         {
             return 0;
         }
 
+        @Override
         public int getIndexedCount()
         {
             return 0;
         }
 
+        @Override
         public int getFailedCount()
         {
             return 0;
         }
 
+        @Override
         public long getStartTime()
         {
             return 0;
         }
 
+        @Override
         public long getCompleteTime()
         {
             return 0;
         }
 
+        @Override
         public void log(String message)
         {
         }
 
+        @Override
         public Reader getLog()
         {
             return null;
         }
 
+        @Override
         public void addToEstimate(int i)
         {
         }
 
+        @Override
         public boolean cancel(boolean mayInterruptIfRunning)
         {
             return false;
         }
 
+        @Override
         public boolean isDone()
         {
             return false;
         }
 
+        @Override
         public IndexTask get()
         {
             return null;
         }
 
+        @Override
         public IndexTask get(long timeout, @NotNull TimeUnit unit)
         {
             return null;
-        }
-
-        public void onSuccess(Runnable r)
-        {
         }
     };
 
@@ -256,11 +261,6 @@ public class NoopSearchService implements SearchService
 
     @Override
     public void clear()
-    {
-    }
-
-    @Override
-    public void upgradeIndex()
     {
     }
 

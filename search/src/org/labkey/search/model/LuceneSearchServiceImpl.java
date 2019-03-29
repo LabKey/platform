@@ -29,10 +29,8 @@ import org.apache.lucene.document.SortedDocValuesField;
 import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
-import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexFormatTooNewException;
 import org.apache.lucene.index.IndexFormatTooOldException;
-import org.apache.lucene.index.IndexUpgrader;
 import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
@@ -49,7 +47,6 @@ import org.apache.lucene.search.SortField;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.WildcardQuery;
-import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.BytesRef;
 import org.apache.tika.config.LoadErrorHandler;
 import org.apache.tika.config.ServiceLoader;
@@ -116,7 +113,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.FileSystemException;
-import java.nio.file.Files;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -1200,7 +1196,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         try
         {
             TopDocs docs = searcher.search(query, 1);
-            return docs.totalHits;
+            return docs.totalHits.value;
         }
         finally
         {
@@ -1271,27 +1267,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             // the IndexManager unusable.  Attempt to reset the index.
             ExceptionUtil.logExceptionToMothership(null, t);
             initializeIndex();
-        }
-    }
-
-
-    // Upgrade index to the latest version. This must be called BEFORE start() and initializeIndex() are called, otherwise upgrade will fail to obtain the lock.
-    @Override
-    public final void upgradeIndex()
-    {
-        try
-        {
-            Directory directory = WritableIndexManagerImpl.openDirectory(SearchPropertyManager.getIndexDirectory().toPath());
-
-            if (DirectoryReader.indexExists(directory))
-            {
-                IndexUpgrader upgrader = new IndexUpgrader(directory);
-                upgrader.upgrade();
-            }
-        }
-        catch (IOException e)
-        {
-            ExceptionUtil.logExceptionToMothership(null, e);
         }
     }
 
@@ -1535,7 +1510,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
 
         SearchResult result = new SearchResult();
-        result.totalHits = topDocs.totalHits;
+        result.totalHits = topDocs.totalHits.value;
         result.hits = ret;
         return result;
     }
