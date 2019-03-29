@@ -393,7 +393,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
                     if (c.getPropertyURI() == null || StringUtils.equalsIgnoreCase("lsid",c.getName()))
                         continue;
                     Object value = c.getValue(rs);
-                    var prop = new ObjectProperty(getLSID(), getContainer(), c.getPropertyURI(), value, null==c.getPropertyType()? PropertyType.getFromJdbcType(c.getJdbcType()) : c.getPropertyType());
+                    var prop = new ObjectProperty(getLSID(), getContainer(), c.getPropertyURI(), value, null==c.getPropertyType()? PropertyType.getFromJdbcType(c.getJdbcType()) : c.getPropertyType(), c.getName());
                     ret.put(c.getPropertyURI(), prop);
                 }
             });
