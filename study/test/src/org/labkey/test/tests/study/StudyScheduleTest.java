@@ -267,7 +267,7 @@ public class StudyScheduleTest extends StudyBaseTest
         log("adding dataset: " + name + " type: " + type);
 
         clickButton("Add Dataset", 0);
-        waitForElement(Locator.xpath("//span[text() = 'New Dataset']"), WAIT_FOR_JAVASCRIPT);
+        WebElement dialogHeader = waitForElement(Locator.xpath("//span[text() = 'New Dataset']"), WAIT_FOR_JAVASCRIPT);
         setFormElement(Locator.xpath("//label[text() = 'Name:']/../..//input"), name);
 
         if (category != null)
@@ -308,6 +308,7 @@ public class StudyScheduleTest extends StudyBaseTest
             case placeholder:
                 click(Ext4Helper.Locators.ext4Radio("do this later"));
                 clickButton("Done", 0);
+                shortWait().until(ExpectedConditions.invisibilityOf(dialogHeader));
 
                 break;
         }
