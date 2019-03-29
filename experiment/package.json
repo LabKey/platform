@@ -3,7 +3,7 @@
   "scripts": {
     "setup": "npm install",
     "build": "npm run clean && better-npm-run build:prod && better-npm-run build:style",
-    "start": "better-npm-run build:watch",
+    "start": "better-npm-run build:watch && better-npm-run build:style",
     "build-style": "better-npm-run build:style",
     "build-prod": "npm run build",
     "clean": "better-npm-run clean"
