@@ -38,6 +38,7 @@ import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.test.TestTimeout;
 import org.labkey.api.test.TestWhen;
+import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
@@ -55,6 +56,7 @@ import java.io.PrintWriter;
 import java.text.DateFormat;
 import java.text.Format;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -710,10 +712,25 @@ public class JunitController extends SpringActionController
                 if (!timers.isEmpty())
                 {
                     out.println("<table class=\"table-condensed\">");
+                    List<String> strOut = new ArrayList<>(Arrays.asList(CPUTimer.header().split("\t")));
+                    out.println("<tr>");
+                    strOut.forEach((str)->{
+                        if(str.trim().length()==0)
+                            out.println("<td align=left>Name</td>");
+                        else
+                            out.println("<td align=right>" + PageFlowUtil.filter(str.trim()) + "</td>");
+                    });
+                    out.println("</tr>");
+
                     _results.get(i).perfResults.forEach(timer ->
                     {
-                        out.println("<tr><td>" + PageFlowUtil.filter(timer.getName()) + "</td>");
-                        out.println("<td align=right class=\"TIMER\" data-test=\"" + PageFlowUtil.filter(testName) + "\" data-name=\"" + PageFlowUtil.filter(timer.getName()) + "\" data-ms=\"" + timer.getTotalMilliseconds() + "\">" + timer.getTotalMilliseconds() + "ms</td>");
+                        String[] strTmp = timer.toString().split("\t");
+                        out.println("<tr><td>" + PageFlowUtil.filter(strTmp[0].trim()) + "</td>");
+                        out.println("<td align=right class=\"TIMER\" data-test=\"" + PageFlowUtil.filter(testName) + "\" data-name=\"" + PageFlowUtil.filter(strTmp[0].trim()) + "_cumulative\" data-ms=\"" + strTmp[1].trim() + "\">" + strTmp[1].trim() + "ms</td>");
+                        out.println("<td align=right class=\"TIMER\" data-test=\"" + PageFlowUtil.filter(testName) + "\" data-name=\"" + PageFlowUtil.filter(strTmp[0].trim()) + "_min\" data-ms=\"" + strTmp[2].trim() + "\">" + strTmp[2].trim() + "ms</td>");
+                        out.println("<td align=right class=\"TIMER\" data-test=\"" + PageFlowUtil.filter(testName) + "\" data-name=\"" + PageFlowUtil.filter(strTmp[0].trim()) + "_max\" data-ms=\"" + strTmp[3].trim() + "\">" + strTmp[3].trim() + "ms</td>");
+                        out.println("<td align=right class=\"TIMER\" data-test=\"" + PageFlowUtil.filter(testName) + "\" data-name=\"" + PageFlowUtil.filter(strTmp[0].trim()) + "_avg\" data-ms=\"" + strTmp[4].trim() + "\">" + strTmp[4].trim() + "ms</td>");
+                        out.println("<td align=right class=\"TIMER\" data-test=\"" + PageFlowUtil.filter(testName) + "\" data-name=\"" + PageFlowUtil.filter(strTmp[0].trim()) + "_calls\" data-ms=\"" + strTmp[5].trim() + "\">" + strTmp[5].trim() + "</td>");
                         out.println("</tr>");
                     });
                     out.println("</table>");
