@@ -818,6 +818,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 dataIndex: 'authorDisplayName',
                 menuDisabled : true,
                 sortable : false,
+                renderer : Ext4.htmlEncode,
                 scope    : this
             });
         }

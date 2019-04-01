@@ -38,6 +38,7 @@ public interface ReportUrls extends UrlProvider
     ActionURL urlAjaxSaveScriptReport(Container c);
     ActionURL urlCreateScriptReport(Container c);
     ActionURL urlViewScriptReport(Container c);
+    ActionURL urlDesignScriptReport(Container c);
     ActionURL urlViewBackgroundScriptReport(Container c);
     ActionURL urlStreamFile(Container c);
     ActionURL urlReportSections(Container c);

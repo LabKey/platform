@@ -234,11 +234,14 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
             rootURL = new ActionURL(StudyController.BeginAction.class, container);
         }
         root.addChild(study.getLabel(), rootURL);
-        ActionURL grid = new ActionURL(StudyController.DatasetAction.class, getContainer());
-        grid.addParameter(DatasetDefinition.DATASETKEY, _ds.getDatasetId());
-        grid.addParameter(DataRegion.LAST_FILTER_PARAM, "true");
-        root.addChild(_ds.getLabel(), grid);
-        appendExtraNavTrail(root);
+        if (null != _ds)
+        {
+            ActionURL grid = new ActionURL(StudyController.DatasetAction.class, getContainer());
+            grid.addParameter(DatasetDefinition.DATASETKEY, _ds.getDatasetId());
+            grid.addParameter(DataRegion.LAST_FILTER_PARAM, "true");
+            root.addChild(_ds.getLabel(), grid);
+            appendExtraNavTrail(root);
+        }
         return root;
     }
 

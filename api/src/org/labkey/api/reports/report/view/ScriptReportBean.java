@@ -15,32 +15,7 @@
  */
 package org.labkey.api.reports.report.view;
 
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.JdbcType;
 import org.labkey.api.query.QuerySettings;
-import org.labkey.api.reports.Report;
-import org.labkey.api.reports.model.ReportPropsManager;
-import org.labkey.api.reports.report.RReportDescriptor;
-import org.labkey.api.reports.report.ReportDescriptor;
-import org.labkey.api.reports.report.ScriptReport;
-import org.labkey.api.reports.report.ScriptReportDescriptor;
-import org.labkey.api.reports.report.view.AjaxScriptReportView.Mode;
-import org.labkey.api.util.Pair;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.template.ClientDependency;
-import org.labkey.api.writer.ContainerUser;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-
-import static org.labkey.api.reports.RScriptEngine.PANDOC_DEFAULT_OUTPUT_OPTIONS_LIST;
 
 /*
 * User: Karl Lum
@@ -49,22 +24,9 @@ import static org.labkey.api.reports.RScriptEngine.PANDOC_DEFAULT_OUTPUT_OPTIONS
 */
 public class ScriptReportBean extends ReportDesignBean
 {
-    private String _script;
     protected boolean _runInBackground;
     protected boolean _isDirty;
     protected String _scriptExtension;
-    private boolean _isReadOnly;
-    private ActionURL _renderURL;
-    private boolean _inherited;
-    private List<String> _includedReports = Collections.emptyList();
-    private Mode _mode = Mode.create;  // TODO: setting value for backward compatibility -- remove
-    private boolean _sourceTabVisible;
-    private String _thumbnailType;
-    private String _knitrFormat;
-    private Boolean _useDefaultOutputFormat = null; // pandoc only
-    private String _rmarkdownOutputOptions = null; // pandoc only
-    private Boolean _useGetDataApi;
-    private LinkedHashSet<ClientDependency> _clientDependencies;
     private String _scriptDependencies;
 
     public ScriptReportBean()
@@ -74,40 +36,6 @@ public class ScriptReportBean extends ReportDesignBean
     public ScriptReportBean(QuerySettings settings)
     {
         super(settings);
-    }
-
-    // Bean has been populated and is about to be used in a view... initialize unset values and properties.
-    // This is redundant with RunScriptReportView.populateReportForm(), but we're trying to move all this handling into
-    // the bean.
-    public void init(ContainerUser cu, Mode mode) throws Exception
-    {
-        setMode(mode);
-        ScriptReport report = (ScriptReport)getReport(cu); // TODO: Should use generics (ScriptReportBean<ScriptReport>)
-
-        if (null == _script)
-        {
-            _script = report.getDefaultScript();
-        }
-    }
-
-    public String getScript()
-    {
-        return _script;
-    }
-
-    public void setScript(String script)
-    {
-        _script = script;
-    }
-
-    public LinkedHashSet<ClientDependency> getClientDependencies()
-    {
-        return _clientDependencies;
-    }
-
-    public void setClientDependencies(LinkedHashSet<ClientDependency> clientDependencies)
-    {
-        _clientDependencies = clientDependencies;
     }
 
     public String getScriptDependencies()
@@ -140,143 +68,6 @@ public class ScriptReportBean extends ReportDesignBean
         _isDirty = dirty;
     }
 
-    public Report getReport(ContainerUser cu) throws Exception
-    {
-        Report report = super.getReport(cu);
-
-        if (report != null)
-        {
-            report = report.clone();
-            ReportDescriptor reportDescriptor = report.getDescriptor();
-
-            // This check fails if CreateScriptReportAction is called with a non-script report ID. The crawler enjoys doing this.
-            if (reportDescriptor instanceof ScriptReportDescriptor)
-            {
-                ScriptReportDescriptor scriptReportDescriptor = (ScriptReportDescriptor) reportDescriptor;
-
-                if (getScript() != null)
-                    scriptReportDescriptor.setProperty(ScriptReportDescriptor.Prop.script, getScript());
-
-                if (getScriptExtension() != null)
-                    scriptReportDescriptor.setProperty(ScriptReportDescriptor.Prop.scriptExtension, getScriptExtension());
-
-                scriptReportDescriptor.setProperty(ScriptReportDescriptor.Prop.sourceTabVisible, isSourceTabVisible());
-
-                if (!isShareReport() && !scriptReportDescriptor.hasCustomAccess())
-                    scriptReportDescriptor.setOwner(getUser().getUserId());
-                else
-                    scriptReportDescriptor.setOwner(null);
-
-                if (getRedirectUrl() != null)
-                    scriptReportDescriptor.setProperty(ReportDescriptor.Prop.redirectUrl, getRedirectUrl());
-
-                scriptReportDescriptor.setProperty(ScriptReportDescriptor.Prop.runInBackground, _runInBackground);
-
-                if (getKnitrFormat() != null)
-                    scriptReportDescriptor.setProperty(ScriptReportDescriptor.Prop.knitrFormat, getKnitrFormat());
-
-                scriptReportDescriptor.setProperty(ScriptReportDescriptor.Prop.useDefaultOutputFormat, isUseDefaultOutputFormat());
-                scriptReportDescriptor.setProperty(ScriptReportDescriptor.Prop.rmarkdownOutputOptions, getRmarkdownOutputOptions());
-
-                if (isUseGetDataApi() != null)
-                    scriptReportDescriptor.setProperty(ScriptReportDescriptor.Prop.useGetDataApi, isUseGetDataApi());
-
-                scriptReportDescriptor.setIncludedReports(_includedReports);
-
-                scriptReportDescriptor.setScriptDependencies(getScriptDependencies());
-            }
-            else
-            {
-                throw new NotFoundException("Specified report is not a script report");
-            }
-        }
-
-        return report;
-    }
-
-    public List<Pair<String, String>> getParameters()
-    {
-        List<Pair<String, String>> list = super.getParameters();
-
-        if (!StringUtils.isEmpty(_script))
-            list.add(new Pair<>(ScriptReportDescriptor.Prop.script.toString(), _script));
-        if (_runInBackground)
-            list.add(new Pair<>(ScriptReportDescriptor.Prop.runInBackground.toString(), String.valueOf(_runInBackground)));
-        if (_isDirty)
-            list.add(new Pair<>("isDirty", String.valueOf(_isDirty)));
-        if (_sourceTabVisible)
-            list.add(new Pair<>(ScriptReportDescriptor.Prop.sourceTabVisible.toString(), String.valueOf(_sourceTabVisible)));
-        if (!(getKnitrFormat().equalsIgnoreCase(RReportDescriptor.KnitrFormat.None.name())))
-            list.add(new Pair<>(ScriptReportDescriptor.Prop.knitrFormat.toString(), getKnitrFormat()));
-
-        list.add(new Pair<>(ScriptReportDescriptor.Prop.scriptExtension.toString(), _scriptExtension));
-
-        for (String report : getIncludedReports())
-            list.add(new Pair<>(ScriptReportDescriptor.Prop.includedReports.toString(), report));
-
-        list.add(new Pair<>(ScriptReportDescriptor.Prop.useDefaultOutputFormat.toString(), isUseDefaultOutputFormat()?"true":"false"));
-        if (getRmarkdownOutputOptions() != null)
-            list.add(new Pair<>(ScriptReportDescriptor.Prop.rmarkdownOutputOptions.toString(), getRmarkdownOutputOptions()));
-
-
-        return list;
-    }
-
-    void populateFromDescriptor(ReportDescriptor descriptor)
-    {
-        super.populateFromDescriptor(descriptor);
-
-        setScriptExtension(descriptor.getProperty(ScriptReportDescriptor.Prop.scriptExtension));
-        setScript(descriptor.getProperty(ScriptReportDescriptor.Prop.script));
-        setSourceTabVisible(BooleanUtils.toBoolean(descriptor.getProperty(ScriptReportDescriptor.Prop.sourceTabVisible)));
-
-        ScriptReportDescriptor srDescriptor = (ScriptReportDescriptor)descriptor;
-
-        setRunInBackground(BooleanUtils.toBoolean(descriptor.getProperty(ScriptReportDescriptor.Prop.runInBackground)));
-        setKnitrFormat(descriptor.getProperty(ScriptReportDescriptor.Prop.knitrFormat));
-        String v = descriptor.getProperty(ScriptReportDescriptor.Prop.useDefaultOutputFormat);
-        setUseDefaultOutputFormat(null==v ? true : (Boolean)JdbcType.BOOLEAN.convert(v));
-        setRmarkdownOutputOptions(descriptor.getProperty(ScriptReportDescriptor.Prop.rmarkdownOutputOptions));
-
-        if (descriptor.getProperty(ScriptReportDescriptor.Prop.useGetDataApi) != null && descriptor.getProperty(ScriptReportDescriptor.Prop.useGetDataApi).equals("true"))
-        {
-            setUseGetDataApi(true);
-        }
-        else
-        {
-            setUseGetDataApi(false);
-        }
-
-        setIncludedReports(srDescriptor.getIncludedReports());
-        setClientDependencies(srDescriptor.getClientDependencies());
-        setScriptDependencies(srDescriptor.getScriptDependencies());
-
-        // Module-based report won't have a thumbnail (nor a container)
-        if (!descriptor.isModuleBased())
-        {
-            Container c = descriptor.getResourceContainer();
-            if (ReportPropsManager.get().getPropertyValue(descriptor.getEntityId(), c, "thumbnailType") != null)
-                setThumbnailType(ReportPropsManager.get().getPropertyValue(descriptor.getEntityId(), c, "thumbnailType").toString());
-        }
-    }
-
-    Map<String, Object> getCacheableMap()
-    {
-        // saves report editing state in session
-        Map<String, Object> map = new HashMap<>();
-
-        for (Pair<String, String> param : getParameters())
-            map.put(param.getKey(), param.getValue());
-
-        // bad, need a better way to handle the bean type mismatch
-        List<String> includedReports = getIncludedReports();
-
-        if (!includedReports.isEmpty())
-            map.put(ScriptReportDescriptor.Prop.includedReports.name(), includedReports);
-
-        return map;
-    }
-
     public String getScriptExtension()
     {
         return _scriptExtension;
@@ -285,118 +76,5 @@ public class ScriptReportBean extends ReportDesignBean
     public void setScriptExtension(String scriptExtension)
     {
         _scriptExtension = scriptExtension;
-    }
-
-    public boolean isReadOnly()
-    {
-        return _isReadOnly || _mode.isReadOnly();
-    }
-
-    public void setReadOnly(boolean readOnly)
-    {
-        _isReadOnly = readOnly;
-    }
-
-    public ActionURL getRenderURL()
-    {
-        return _renderURL;
-    }
-
-    public void setRenderURL(ActionURL renderURL)
-    {
-        _renderURL = renderURL;
-    }
-
-    public boolean isInherited()
-    {
-        return _inherited;
-    }
-
-    public void setInherited(boolean inherited)
-    {
-        _inherited = inherited;
-    }
-
-    public void setIncludedReports(List<String> includedReports)
-    {
-        _includedReports = includedReports;
-    }
-
-    public List<String> getIncludedReports()
-    {
-        return _includedReports;
-    }
-
-    public Mode getMode()
-    {
-        return _mode;
-    }
-
-    public void setMode(Mode mode)
-    {
-        _mode = mode;
-    }
-
-    public boolean isSourceTabVisible()
-    {
-        return _sourceTabVisible;
-    }
-
-    public void setSourceTabVisible(boolean sourceTabVisible)
-    {
-        _sourceTabVisible = sourceTabVisible;
-    }
-
-    @Nullable
-    public String getThumbnailType()
-    {
-        return _thumbnailType;
-    }
-
-    public void setThumbnailType(String thumbnailType)
-    {
-        _thumbnailType = thumbnailType;
-    }
-
-    public String getKnitrFormat()
-    {
-        return _knitrFormat;
-    }
-
-    public void setKnitrFormat(String knitrFormat)
-    {
-        _knitrFormat = knitrFormat;
-    }
-
-    public boolean isUseDefaultOutputFormat()
-    {
-        return null==_useDefaultOutputFormat?true:_useDefaultOutputFormat;
-    }
-
-    public void setUseDefaultOutputFormat(boolean useDefaultOutputFormat)
-    {
-        _useDefaultOutputFormat = useDefaultOutputFormat;
-    }
-
-    public Boolean isUseGetDataApi()
-    {
-        return _useGetDataApi;
-    }
-
-    public void setUseGetDataApi(Boolean useGetDataApi)
-    {
-        _useGetDataApi = useGetDataApi;
-    }
-
-    public String getRmarkdownOutputOptions()
-    {
-        if (!isUseDefaultOutputFormat())
-            return StringUtils.isEmpty(_rmarkdownOutputOptions) ? PANDOC_DEFAULT_OUTPUT_OPTIONS_LIST : _rmarkdownOutputOptions;
-        return null;
-    }
-
-    public void setRmarkdownOutputOptions(String rmarkdownOutputOptions)
-    {
-        _rmarkdownOutputOptions = rmarkdownOutputOptions;
     }
 }
