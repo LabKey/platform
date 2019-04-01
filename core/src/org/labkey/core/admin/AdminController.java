@@ -8957,7 +8957,7 @@ public class AdminController extends SpringActionController
                         new SQLException("Intentional exception for testing purposes", "400"),
                         (String)getViewContext().getRequest().getAttribute(ViewServlet.ORIGINAL_URL_STRING),
                         target,
-                        ExceptionReportingLevel.valueOf(form.getLevel()), null);
+                        ExceptionReportingLevel.valueOf(form.getLevel()), null, null, null);
             }
             Map<String, Object> result = new LinkedHashMap<>();
             if (null != report)
