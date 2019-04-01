@@ -784,47 +784,10 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         @Override
         public Object getJsonValue(ExpData data)
         {
-            if (data == null || data.getFile() == null)
+            if (data == null)
                 return null;
 
-            Container c = data.getContainer();
-            if (c == null)
-            {
-                return null;
-            }
-
-            PipeRoot root = PipelineService.get().getPipelineRootSetting(c);
-            if (root == null)
-                return null;
-
-            try
-            {
-                java.nio.file.Path path = data.getFilePath();
-                if (path == null)
-                {
-                    return null;
-                }
-
-                path = path.toAbsolutePath();
-
-                //currently only report if the file is under the container for this ExpData
-                if (root.isUnderRoot(path))
-                {
-                    String relPath = root.relativePath(path);
-                    if (relPath == null)
-                        return null;
-
-                    relPath = Path.parse(FilenameUtils.separatorsToUnix(relPath)).encode();
-                    return _relative ? relPath : root.getWebdavURL() + relPath;
-                }
-            }
-            catch (InvalidPathException e)
-            {
-                _log.error("Invalid path for expData: " + data.getRowId(), e);
-            }
-
-            //NOTE: should we try to see if this is under the site root and resolve across folders?
-            return null;
+            return data.getWebDavURL(_relative ? ExpData.PathType.folderRelative : ExpData.PathType.serverRelative);
         }
 
         @Override

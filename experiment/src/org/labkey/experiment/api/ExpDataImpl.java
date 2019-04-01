@@ -16,7 +16,9 @@
 
 package org.labkey.experiment.api;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
@@ -71,6 +73,7 @@ import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -88,8 +91,9 @@ import java.util.stream.Collectors;
 
 public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
 {
-    public static final SearchService.SearchCategory expDataCategory = new SearchService.SearchCategory("data", "ExpData");
+    private static final Logger LOG = Logger.getLogger(ExpDataImpl.class);
 
+    public static final SearchService.SearchCategory expDataCategory = new SearchService.SearchCategory("data", "ExpData");
 
     /**
      * Temporary mapping until experiment.xml contains the mime type
@@ -524,6 +528,53 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             return ExperimentServiceImpl.get().getExpData(dc, rowId);
         else
             return ExperimentServiceImpl.get().getExpData(rowId);
+    }
+
+    @Nullable
+    public String getWebDavURL(@NotNull PathType type)
+    {
+        java.nio.file.Path path = getFilePath();
+        if (path == null)
+        {
+            return null;
+        }
+
+        if (getContainer() == null)
+        {
+            return null;
+        }
+
+        PipeRoot root = PipelineService.get().getPipelineRootSetting(getContainer());
+        if (root == null)
+            return null;
+
+        try
+        {
+            path = path.toAbsolutePath();
+
+            //currently only report if the file is under the container for this ExpData
+            if (root.isUnderRoot(path))
+            {
+                String relPath = root.relativePath(path);
+                if (relPath == null)
+                    return null;
+
+                relPath = Path.parse(FilenameUtils.separatorsToUnix(relPath)).encode();
+                switch (type)
+                {
+                    case folderRelative: return relPath;
+                    case serverRelative: return root.getWebdavURL() + relPath;
+                    case full: return AppProps.getInstance().getBaseServerUrl() + root.getWebdavURL() + relPath;
+                    default:
+                        throw new IllegalArgumentException("Unexpected path type: " + type);
+                }
+            }
+        }
+        catch (InvalidPathException e)
+        {
+            LOG.error("Invalid path for expData: " + getRowId(), e);
+        }
+        return null;
     }
 
     public void index(SearchService.IndexTask task)
