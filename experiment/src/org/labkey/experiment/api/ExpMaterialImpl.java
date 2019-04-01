@@ -405,7 +405,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
                         continue;
                     if (null != mvIndicator)
                         value = null;
-                    var prop = new ObjectProperty(getLSID(), getContainer(), c.getPropertyURI(), value, null==c.getPropertyType()? PropertyType.getFromJdbcType(c.getJdbcType()) : c.getPropertyType());
+                    var prop = new ObjectProperty(getLSID(), getContainer(), c.getPropertyURI(), value, null==c.getPropertyType()? PropertyType.getFromJdbcType(c.getJdbcType()) : c.getPropertyType(), c.getName());
                     if (null != mvIndicator)
                         prop.setMvIndicator(mvIndicator);
                     ret.put(c.getPropertyURI(), prop);
