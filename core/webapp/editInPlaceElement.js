@@ -148,7 +148,7 @@ Ext4.define('LABKEY.ext.EditInPlaceElement', {
         this.growFactor = this.sizingDiv.getHeight() * 1.5;
 
         //set the start text
-        var startText = Ext4.String.trim(this.el.dom.innerHTML);
+        var startText = Ext4.String.trim(this.getCurrentElementValue());
         this.oldText = startText;
         if (this.multiLine)
             this.editor.update(startText);
@@ -202,18 +202,29 @@ Ext4.define('LABKEY.ext.EditInPlaceElement', {
         }
     },
 
-    getValue : function () {
+    //Returns un-encoded raw value
+    getEditorValue: function () {
         if (this.editor) {
-            this.currentValue = Ext4.util.Format.htmlEncode(this.editor.getValue());
+            return this.editor.getValue();
         }
-        return this.currentValue;
+
+        return null;
+    },
+
+    //Returns un-encoded raw value
+    getCurrentElementValue: function(){
+        return Ext4.String.trim(Ext4.util.Format.htmlDecode(this.el.dom.innerHTML));
+    },
+
+    setElementValue: function(unencodedValue) {
+        this.el.update(Ext4.util.Format.htmlEncode(unencodedValue));
     },
 
     completeEdit: function(){
-        var value = this.getValue();
+        var value = this.getEditorValue();
         this.endEdit();
 
-        if (value != this.oldText && this.validate() && false !== this.fireEvent("beforecomplete", value, this.oldText))
+        if (value !== this.oldText && this.validate() && false !== this.fireEvent("beforecomplete", value, this.oldText))
             this.processChange(value, this.oldText);
         else
             this.onUpdateCancel(this.oldText);
@@ -250,7 +261,7 @@ Ext4.define('LABKEY.ext.EditInPlaceElement', {
 
             //set jsonData and handlers
             reqConfig.jsonData = {};
-            reqConfig.jsonData[this.updateConfig.jsonDataPropName || "newValue"] = Ext4.util.Format.htmlDecode(value);
+            reqConfig.jsonData[this.updateConfig.jsonDataPropName || "newValue"] = value;
             reqConfig.success = function(){
                 this.onUpdateComplete(value);
             };
@@ -261,7 +272,7 @@ Ext4.define('LABKEY.ext.EditInPlaceElement', {
 
             //update the el and add the updating class
             this.el.addCls("labkey-edit-in-place-updating");
-            this.el.update(value);
+            this.setElementValue(value);
 
             //do the Ajax request
             Ext4.Ajax.request(reqConfig);
@@ -290,8 +301,8 @@ Ext4.define('LABKEY.ext.EditInPlaceElement', {
      *
      * @return {String[]} All error messages for this field; an empty Array if none.
      */
-    getErrors : function () {
-        var value = this.getValue();
+    getErrors: function () {
+        var value = this.editor ? this.getEditorValue() : this.getCurrentElementValue();
 
         var errors = [];
         var msg;
@@ -335,7 +346,7 @@ Ext4.define('LABKEY.ext.EditInPlaceElement', {
 
     onUpdateCancel: function (value) {
         this.el.removeCls("labkey-edit-in-place-updating");
-        this.el.update(value);
+        this.setElementValue(value);
         this.checkForEmpty();
         this.editIcon.alignTo(this.el, 'tr-tr');
         this.fireEvent("canceledit", this.oldText);
@@ -343,7 +354,7 @@ Ext4.define('LABKEY.ext.EditInPlaceElement', {
 
     onUpdateComplete: function(value){
         this.el.removeCls("labkey-edit-in-place-updating");
-        this.el.update(value);
+        this.setElementValue(value);
         this.checkForEmpty();
         this.editIcon.alignTo(this.el, 'tr-tr');
         this.fireEvent("complete");
@@ -352,7 +363,7 @@ Ext4.define('LABKEY.ext.EditInPlaceElement', {
     onUpdateFailure: function(value, oldValue) {
         alert("There was an error while updating the value!");
         this.el.removeCls("labkey-edit-in-place-updating");
-        this.el.update(oldValue);
+        this.setElementValue(oldValue);
         this.checkForEmpty();
         this.fireEvent("updatefail");
     }
