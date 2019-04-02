@@ -67,6 +67,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.PageFlowUtil;
+import org.springframework.dao.DeadlockLoserDataAccessException;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -650,15 +651,34 @@ public class SampleSetServiceImpl implements SampleSetService
             source.setParentCol(parentUri);
 
         ExpSampleSetImpl ss = new ExpSampleSetImpl(source);
-        try (DbScope.Transaction transaction = ensureTransaction())
-        {
-            domain.save(u);
-            ss.save(u);
-            DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
 
-            transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
-            transaction.commit();
+        // don't retry if we're already in a transaction, it won't help
+        int tries = getExpSchema().getScope().isTransactionActive() ? 1 : 3;
+        long delay = 100;
+        DeadlockLoserDataAccessException lastException = null;
+        for (var tri=0 ; tri < tries ; tri++ )
+        {
+            lastException = null;
+            try (DbScope.Transaction transaction = ensureTransaction())
+            {
+                domain.save(u);
+                ss.save(u);
+                DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
+
+                transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
+                transaction.commit();
+                break;
+            }
+            catch (DeadlockLoserDataAccessException dldae)
+            {
+                lastException = dldae;
+                try { Thread.sleep((tri+1)*delay); } catch (InterruptedException ie) {}
+                LOG.info("Retrying create sample set after deadlock: " + ss.getName());
+            }
         }
+
+        if (null != lastException)
+            throw lastException;
 
         return ss;
     }

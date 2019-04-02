@@ -477,8 +477,18 @@ public class DomainImpl implements Domain
         // NOTE: the synchronization here does not remove the need to add better synchronization in StorageProvisioner, but it helps
         Lock domainLock = getLock(_dd);
 
-        try (DbScope.Transaction transaction = exp.getSchema().getScope().ensureTransaction(domainLock))
+        TableInfo tableDD = OntologyManager.getTinfoDomainDescriptor();
+        DbSchema schema = tableDD.getSchema();
+        DbScope scope = schema.getScope();
+
+        try (DbScope.Transaction transaction = scope.ensureTransaction(domainLock))
         {
+            if (scope.getSqlDialect().isSqlServer())
+            {
+                String sql = " SELECT * FROM " + OntologyManager.getTinfoDomainDescriptor() + " WITH (UPDLOCK)";
+                new SqlSelector(schema, sql).getArrayList(DomainDescriptor.class);
+            }
+
             List<DomainProperty> checkRequiredStatus = new ArrayList<>();
             boolean isDomainNew = false;         // #32406 Need to capture because _new changes during the process
             if (isNew())
