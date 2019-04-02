@@ -368,7 +368,15 @@
                     //NOTE: supported for non-combo components
                     initialValue    : field.value,
                     showValueInList : meta.showValueInList,
-                    nullCaption     : meta.nullCaption
+                    nullCaption     : meta.nullCaption,
+
+                    // explicit usages can override this to display HTML in their combo list items,
+                    // but the default should be to HTML encode the display value
+                    listConfig: {
+                        getInnerTpl: function(displayField) {
+                            return '{[LABKEY.Utils.encodeHtml(values.' + displayField + ')]}';
+                        }
+                    }
                 });
             }
             else {
