@@ -24,6 +24,7 @@ import org.apache.lucene.search.ConstantScoreScorer;
 import org.apache.lucene.search.ConstantScoreWeight;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreMode;
 import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.Weight;
 import org.apache.lucene.util.BitSetIterator;
@@ -102,7 +103,7 @@ class SecurityQuery extends Query
 
 
     @Override
-    public Weight createWeight(IndexSearcher searcher, boolean needsScores, float boost)
+    public Weight createWeight(IndexSearcher searcher, ScoreMode scoreMode, float boost)
     {
         return new ConstantScoreWeight(this, boost)
         {
@@ -160,7 +161,7 @@ class SecurityQuery extends Query
                         }
                     }
 
-                    return new ConstantScoreScorer(this, score(), new BitSetIterator(bits, bits.approximateCardinality()));
+                    return new ConstantScoreScorer(this, score(), scoreMode, new BitSetIterator(bits, bits.approximateCardinality()));
                 }
                 finally
                 {
