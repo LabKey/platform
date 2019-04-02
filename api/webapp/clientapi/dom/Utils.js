@@ -19,18 +19,37 @@
 
 LABKEY.Utils = new function(impl, $) {
 
-    // Insert a hidden html FORM into to page, put the JSON into it, and submit it - the server's response will
+    // Insert a hidden html FORM into to page, put the form values into it, and submit it - the server's response will
     // make the browser pop up a dialog
-    var formSubmit = function(url, value)
+    var formSubmit = function(url, formData)
     {
+        if (!formData)
+            formData = {};
+        if (!formData['X-LABKEY-CSRF'])
+            formData['X-LABKEY-CSRF'] = LABKEY.CSRF;
+
         var formId = LABKEY.Utils.generateUUID();
-        var formHTML = '<f' +       // avoid form tag, it causes skipfish false positive
-                'orm method="POST" id="' + formId + '" action="' + url + '">' +
-                '<input type="hidden" name="json" value="' + LABKEY.Utils.encodeHtml(LABKEY.Utils.encode(value)) + '" />' +
-                '<input type="hidden" name="X-LABKEY-CSRF" value="' + LABKEY.CSRF + '" />' +
-                '</form>';
-        $('body').append(formHTML);
-        $('#'+formId).submit();
+
+        var html = [];
+        html.push('<f');   // avoid form tag, it causes skipfish false positive
+        html.push('orm method="POST" id="' + formId + '"action="' + url + '">');
+        for (var name in formData)
+        {
+            if (!formData.hasOwnProperty(name))
+                continue;
+
+            var value = formData[name];
+            if (value === undefined)
+                continue;
+
+            html.push( '<input type="hidden"' +
+                    ' name="' + LABKEY.Utils.encodeHtml(name) + '"' +
+                    ' value="' + LABKEY.Utils.encodeHtml(value) + '" />');
+        }
+        html.push("</form>");
+
+        $('body').append(html.join(''));
+        $('form#' + formId).submit();
     };
 
     var displayModalAlert = function(title, msg) {
@@ -94,14 +113,33 @@ LABKEY.Utils = new function(impl, $) {
      * Documentation available in core/Utils.js -- search for "@name convertToExcel"
      */
     impl.convertToExcel = function(spreadsheet) {
-        formSubmit(LABKEY.ActionURL.buildURL("experiment", "convertArraysToExcel"), spreadsheet);
+        var formData = { 'json': JSON.stringify(spreadsheet) };
+        formSubmit(LABKEY.ActionURL.buildURL("experiment", "convertArraysToExcel"), formData);
     };
 
     /**
      * Documentation available in core/Utils.js -- search for "@name convertToTable"
      */
     impl.convertToTable = function(config) {
-        formSubmit(LABKEY.ActionURL.buildURL("experiment", "convertArraysToTable"), config);
+        var formData = { 'json': JSON.stringify(config) };
+        formSubmit(LABKEY.ActionURL.buildURL("experiment", "convertArraysToTable"), formData);
+    };
+
+    /**
+     * Documentation available in core/Util.js -- search for "@name postToAction"
+     */
+    impl.postToAction = function (href, formData) {
+        formSubmit(href, formData);
+    };
+
+    /**
+     * Documentation available in core/Util.js -- search for "@name confirmAndPost"
+     */
+    impl.confirmAndPost = function (message, href, formData) {
+        if (confirm(message))
+            formSubmit(href, formData);
+
+        return false;
     };
 
     /**

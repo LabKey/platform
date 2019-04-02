@@ -63,6 +63,7 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
@@ -116,7 +117,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.FileSystemException;
-import java.nio.file.Files;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -212,18 +212,19 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     {
         try
         {
-            File indexDir = SearchPropertyManager.getIndexDirectory();
-            _indexManager = WritableIndexManagerImpl.get(indexDir.toPath(), getAnalyzer());
-            setConfigurationError(null);  // Clear out any previous error
-        }
-        catch (IndexFormatTooOldException | IndexFormatTooNewException e)    // Lucene used to throw "TooOld" in this case; now throws "TooNew"... either way, suppress mothership logging
-        {
-            MinorConfigurationException mce = new MinorConfigurationException(
-                "Index format is not supported; the configured index directory may have been created by a more recent version of LabKey Server", e);
-
-            _log.error("Full-text search index format error", mce);
-
-            throw mce;
+            try
+            {
+                attemptInitialize();
+            }
+            catch (IndexFormatTooOldException | IndexFormatTooNewException | IllegalArgumentException e)
+            {
+                // We delete the search index after every major upgrade, but we can still encounter a "future" index format when
+                // developers switch to a previous release branch that uses an older version of Lucene... and then encounter an
+                // "old" index format when they switch back. In either case, just delete the index and retry once.
+                _log.info("Deleting existing full-text search index due to exception: " + e.getMessage());
+                deleteIndex();
+                attemptInitialize();
+            }
         }
         catch (Throwable t)
         {
@@ -238,6 +239,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
     }
 
+    private void attemptInitialize() throws IOException
+    {
+        File indexDir = SearchPropertyManager.getIndexDirectory();
+        _indexManager = WritableIndexManagerImpl.get(indexDir.toPath(), getAnalyzer());
+        setConfigurationError(null);  // Clear out any previous error
+    }
 
     @Override
     public Map<String, String> getIndexFormatProperties()

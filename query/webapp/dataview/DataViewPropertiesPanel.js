@@ -95,6 +95,9 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                 emptyText: 'None',
                 labelWidth : 120,
                 width      : 400,
+                tpl : new Ext4.XTemplate(
+                        '<tpl for="."><div class="x4-boundlist-item">{DisplayName:htmlEncode}</div></tpl>'
+                ),
                 validator  : function(){
                     return storeLoaded;
                 }

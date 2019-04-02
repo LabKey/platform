@@ -2932,15 +2932,30 @@ public class DavController extends SpringActionController
             if (StringUtils.trim(path.getName()).length() != path.getName().length())
                 throw new DavException(WebdavStatus.SC_CONFLICT, "Folder name may not have leading or trailing whitespace: '" + path.getName() + "'");
 
+            // MKCOL with missing intermediate should fail (RFC2518:8.3.1)
+            Resource parent = resource.parent();
+            Boolean createIntermediates = getBooleanParameter("createIntermediates");
+            createIntermediates = createIntermediates != null ? createIntermediates : false;
+            if (!createIntermediates && (null == parent || !parent.isCollection()))
+                throw new DavException(WebdavStatus.SC_CONFLICT, String.valueOf(path.getParent()) + " is not a collection");
+
             boolean exists = resource.exists();
 
             // Can't create a collection if a resource already exists at the given path
             if (exists)
             {
-                // Get allowed methods
-                StringBuilder methodsAllowed = determineMethodsAllowed(resource);
-                getResponse().setMethodsAllowed(methodsAllowed);
-                throw new DavException(WebdavStatus.SC_METHOD_NOT_ALLOWED, "Failed to create directory on server. This directory already exists.");
+                if (createIntermediates)
+                {
+                    // issue 36970 : the collection may have already been created by a previous request
+                    return WebdavStatus.SC_CREATED;
+                }
+                else
+                {
+                    // Get allowed methods
+                    StringBuilder methodsAllowed = determineMethodsAllowed(resource);
+                    getResponse().setMethodsAllowed(methodsAllowed);
+                    throw new DavException(WebdavStatus.SC_METHOD_NOT_ALLOWED, "Failed to create directory on server. This directory already exists.");
+                }
             }
 
             checkAllowedFileName(resource.getName());
@@ -2963,13 +2978,6 @@ public class DavController extends SpringActionController
                     }
                 }
             }
-
-            // MKCOL with missing intermediate should fail (RFC2518:8.3.1)
-            Resource parent = resource.parent();
-            Boolean createIntermediates = getBooleanParameter("createIntermediates");
-            createIntermediates = createIntermediates != null ? createIntermediates : false;
-            if (!createIntermediates && (null == parent || !parent.isCollection()))
-                throw new DavException(WebdavStatus.SC_CONFLICT, String.valueOf(path.getParent()) + " is not a collection");
 
             if (!resource.canCreate(getUser(),true))
                 return unauthorized(resource);

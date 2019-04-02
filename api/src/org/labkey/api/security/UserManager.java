@@ -935,7 +935,7 @@ public class UserManager
                 if (showEmailAddresses)
                     builder.append(" (").append(user.getEmail()).append(")");
 
-                completions.add(new AjaxCompletion(PageFlowUtil.filter(builder.toString()), completionValue));
+                completions.add(new AjaxCompletion(builder.toString(), completionValue));
             }
             else if (!user.getDisplayName(currentUser).equalsIgnoreCase(user.getEmail()))
             {
@@ -945,7 +945,7 @@ public class UserManager
                 if (showEmailAddresses)
                     builder.append(" (").append(user.getEmail()).append(")");
 
-                completions.add(new AjaxCompletion(PageFlowUtil.filter(builder.toString()), completionValue));
+                completions.add(new AjaxCompletion(builder.toString(), completionValue));
             }
             else if (completionValue != null) // Note the only way to get here is if the displayName is the same as the email address
             {
