@@ -1305,11 +1305,11 @@ public class SecurityController extends SpringActionController
                     final ValidEmail emailToClone = new ValidEmail(cloneUser);
                     userToClone = UserManager.getUser(emailToClone);
                     if (userToClone == null)
-                        errors.addError(new FormattedError("Failed to clone user permissions " + emailToClone + ": User email does not exist in the system"));
+                        errors.addError(new FormattedError("Failed to clone user permissions " + PageFlowUtil.filter(emailToClone) + ": User email does not exist in the system"));
                 }
                 catch (ValidEmail.InvalidEmailException e)
                 {
-                    errors.addError(new FormattedError("Failed to clone user permissions " + cloneUser.trim() + ": Invalid email address"));
+                    errors.addError(new FormattedError("Failed to clone user permissions " + PageFlowUtil.filter(cloneUser.trim()) + ": Invalid email address"));
                 }
             }
 
@@ -1345,14 +1345,14 @@ public class SecurityController extends SpringActionController
                 if (result == null && user != null)
                 {
                     ActionURL url = PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(getContainer(), user.getUserId(), returnURL);
-                    result = email + " was already a registered system user.  Click <a href=\"" + url.getEncodedLocalURIString() + "\">here</a> to see this user's profile and history.";
+                    result = PageFlowUtil.filter(email) + " was already a registered system user.  Click <a href=\"" + url.getEncodedLocalURIString() + "\">here</a> to see this user's profile and history.";
                 }
                 else if (userToClone != null)
                 {
                     clonePermissions(userToClone, email);
                 }
                 if (user != null)
-                    form.addMessage(String.format("%s<meta userId='%d' email='%s'/>", result, user.getUserId(), user.getEmail()));
+                    form.addMessage(String.format("%s<meta userId='%d' email='%s'/>", result, user.getUserId(), PageFlowUtil.filter(user.getEmail())));
                 else
                     form.addMessage(result);
             }

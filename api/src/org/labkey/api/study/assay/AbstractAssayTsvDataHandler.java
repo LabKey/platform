@@ -17,6 +17,7 @@
 package org.labkey.api.study.assay;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -670,7 +671,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 Object o = map.get(pd.getName());
                 if (o instanceof String)
                 {
-                    o = ((String) o).trim();
+                    o = StringUtils.trimToNull((String) o);
                     map.put(pd.getName(), o);
                     iter.set(map);
                 }

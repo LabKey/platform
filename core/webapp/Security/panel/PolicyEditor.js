@@ -273,7 +273,7 @@ Ext4.define('Security.panel.PolicyEditor', {
                 border : false,
                 defaults: {border: false},
                 items: [{
-                    html: '<div><h3 class="rn">' + role.displayName + '</h3><div class="rd">' + role.description +
+                    html: '<div><h3 class="rn">' + Ext4.String.htmlEncode(role.displayName) + '</h3><div class="rd">' + Ext4.String.htmlEncode(role.description) +
                         (isDeveloper?'<br><a target="_blank" href="https://www.labkey.org/devPermInfo.url">read about developer permissions</a>':'') +
                         '</div></div>',
                     bodyStyle : 'background-color: transparent;',
@@ -577,7 +577,7 @@ Ext4.define('Security.panel.PolicyEditor', {
             iconCls   : 'closeicon',
             iconAlign : 'right',
             margin  : '2 5 5 0',
-            text    : group.Type == 'u' && group.DisplayName ? group.Name + ' (' + group.DisplayName + ')' : group.Name,
+            text    : Ext4.String.htmlEncode(group.Type == 'u' && group.DisplayName ? group.Name + ' (' + group.DisplayName + ')' : group.Name),
             itemId  : btnId,
             groupId : ids.groupId,
             roleId  : ids.roleId,

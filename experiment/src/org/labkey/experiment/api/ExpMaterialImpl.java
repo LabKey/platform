@@ -392,8 +392,22 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
                 {
                     if (c.getPropertyURI() == null || StringUtils.equalsIgnoreCase("lsid",c.getName()))
                         continue;
+                    if (c.isMvIndicatorColumn())
+                        continue;
                     Object value = c.getValue(rs);
-                    var prop = new ObjectProperty(getLSID(), getContainer(), c.getPropertyURI(), value, null==c.getPropertyType()? PropertyType.getFromJdbcType(c.getJdbcType()) : c.getPropertyType());
+                    String mvIndicator = null;
+                    if (null != c.getMvColumnName())
+                    {
+                        ColumnInfo mv = ti.getColumn(c.getMvColumnName());
+                        mvIndicator = null==mv ? null : (String)mv.getValue(rs);
+                    }
+                    if (null == value && null == mvIndicator)
+                        continue;
+                    if (null != mvIndicator)
+                        value = null;
+                    var prop = new ObjectProperty(getLSID(), getContainer(), c.getPropertyURI(), value, null==c.getPropertyType()? PropertyType.getFromJdbcType(c.getJdbcType()) : c.getPropertyType(), c.getName());
+                    if (null != mvIndicator)
+                        prop.setMvIndicator(mvIndicator);
                     ret.put(c.getPropertyURI(), prop);
                 }
             });
@@ -428,21 +442,29 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         ExpSampleSetImpl ss = (ExpSampleSetImpl)getSampleSet();
         Map<String, Object> values = new HashMap<>(values_);
         Map<String,Object> converted = new HashMap<>();
-        Domain d = ss.getDomain();
 
-        TableInfo ti = ss.getTinfo();
+        TableInfo ti = null==ss ? null : ss.getTinfo();
         if (null != ti)
         {
+            Domain d = ss.getDomain();
             for (DomainProperty dp : d.getProperties())
             {
                 String key = null;
                 Object value;
+                String mvIndicator = null;
                 if (values.containsKey(dp.getName()))
                     value = values.get(key = dp.getName());
                 else if (values.containsKey(dp.getPropertyURI()))
                     value = values.get(key = dp.getPropertyURI());
                 else
                     continue;
+                if (value instanceof ObjectProperty)
+                {
+                    // NOTE: ExpObjectImpl.setProperty() does not support MvIndicator and neither does Table.update().
+                    // we could handle it here if we need to
+                    mvIndicator = ((ObjectProperty) value).getMvIndicator();
+                    value = ((ObjectProperty) value).value();
+                }
                 try
                 {
                     value = dp.getJdbcType().convert(value);

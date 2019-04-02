@@ -450,8 +450,10 @@ public class IssuesController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return new ListAction(getViewContext()).appendNavTrail(root).
-                    addChild(getSingularEntityName() + " " + _issue.getIssueId() + ": " + StringUtils.trimToEmpty(_issue.getTitle()), getURL());
+            NavTree nav = new ListAction(getViewContext()).appendNavTrail(root);
+            if (null != _issue)
+                nav.addChild(getSingularEntityName() + " " + _issue.getIssueId() + ": " + StringUtils.trimToEmpty(_issue.getTitle()), getURL());
+            return nav;
         }
 
         public ActionURL getURL()

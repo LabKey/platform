@@ -505,7 +505,8 @@ public class XarExporter
         xMaterial.setCpasType(material.getCpasType() == null ? ExpMaterial.DEFAULT_CPAS_TYPE : _relativizedLSIDs.relativize(material.getCpasType()));
         xMaterial.setName(material.getName());
 
-        PropertyCollectionType materialProperties = getProperties(material.getLSID(), material.getContainer());
+        Map<String, ObjectProperty> objectProperties = material.getObjectProperties();
+        PropertyCollectionType materialProperties = getProperties(objectProperties, material.getContainer());
         if (materialProperties != null)
         {
             xMaterial.setProperties(materialProperties);
@@ -541,9 +542,12 @@ public class XarExporter
         {
             xSampleSet.setDescription(sampleSet.getDescription());
         }
-        for (DomainProperty keyCol : sampleSet.getIdCols())
+        if (!sampleSet.hasNameExpression())
         {
-            xSampleSet.addKeyField(getPropertyName(keyCol));
+            for (DomainProperty keyCol : sampleSet.getIdCols())
+            {
+                xSampleSet.addKeyField(getPropertyName(keyCol));
+            }
         }
         if (sampleSet.getParentCol() != null)
         {
@@ -1055,10 +1059,16 @@ public class XarExporter
         }
     }
 
+
     private PropertyCollectionType getProperties(String lsid, Container parentContainer, String... ignoreProperties) throws ExperimentException
     {
         Map<String, ObjectProperty> properties = getObjectProperties(parentContainer, lsid);
+        return getProperties(properties, parentContainer, ignoreProperties);
+    }
 
+
+    private PropertyCollectionType getProperties(Map<String, ObjectProperty> properties, Container parentContainer, String... ignoreProperties) throws ExperimentException
+    {
         Set<String> ignoreSet = new HashSet<>(Arrays.asList(ignoreProperties));
 
         PropertyCollectionType result = PropertyCollectionType.Factory.newInstance();
@@ -1087,6 +1097,21 @@ public class XarExporter
             }
             else
             {
+                // check for NULL numbers
+                // NOTE this code does not handle Missing Value indicators!
+                switch(value.getPropertyType())
+                {
+                    case DOUBLE: case INTEGER: case BOOLEAN:
+                        if (null == value.getFloatValue())
+                            continue;
+                        break;
+                    case DATE_TIME:
+                        if (null == value.getDateTimeValue())
+                            continue;
+                        break;
+                    default:
+                }
+
                 SimpleValueType simpleValue = result.addNewSimpleVal();
                 simpleValue.setName(value.getName());
                 simpleValue.setOntologyEntryURI(_relativizedLSIDs.relativize(value.getPropertyURI()));

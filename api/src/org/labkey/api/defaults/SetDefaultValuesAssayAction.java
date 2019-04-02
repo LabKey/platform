@@ -16,9 +16,9 @@
 package org.labkey.api.defaults;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.actions.ParticipantVisitResolverChooser;
@@ -171,9 +171,9 @@ public class SetDefaultValuesAssayAction extends SetDefaultValuesAction<SetDefau
     }
 
     @Override
-    protected ActionURL buildSetInheritedDefaultsURL(Domain domain, AssayDomainIdForm domainIdForm)
+    protected ActionURL buildSetInheritedDefaultsURL(Container container, AssayDomainIdForm domainIdForm)
     {
-        ActionURL url = super.buildSetInheritedDefaultsURL(domain, domainIdForm);
+        ActionURL url = super.buildSetInheritedDefaultsURL(container, domainIdForm);
         url.addParameter("providerName", domainIdForm.getProviderName());
         return url;
     }

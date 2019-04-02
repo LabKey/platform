@@ -181,9 +181,9 @@
                 {header:'Label',       dataIndex:'label',    width: 270, renderer: Ext4.htmlEncode},
                 {header:'Category',    dataIndex:'category', width: 270, renderer: categoryRenderer},
                 {header:'Shared',      dataIndex:'shared'},
-                {header:'Created By',  dataIndex:'createdBy'},
-                {header:'Modified By', dataIndex:'modifiedBy'},
-                {header:'Category Owner', dataIndex:'categoryOwner', flex : 1}
+                {header:'Created By',  dataIndex:'createdBy', renderer: Ext4.htmlEncode},
+                {header:'Modified By', dataIndex:'modifiedBy', renderer: Ext4.htmlEncode},
+                {header:'Category Owner', dataIndex:'categoryOwner', renderer: Ext4.htmlEncode, flex : 1}
             ],
             dockedItems : [{
                 xtype: 'toolbar',
