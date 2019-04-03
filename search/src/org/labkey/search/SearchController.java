@@ -329,7 +329,8 @@ public class SearchController extends SpringActionController
             }
             else if (form.isDelete())
             {
-                ss.clear();
+                ss.deleteIndex();
+                ss.start();
                 _msgid = 1;
                 audit(getUser(), null, "(admin action)", "Index Deleted");
             }
