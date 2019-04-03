@@ -483,6 +483,9 @@ public class DomainImpl implements Domain
 
         try (DbScope.Transaction transaction = scope.ensureTransaction(domainLock))
         {
+            // This is a pretty heavy-handed way to fix a deadlock problem, but it works
+            // CONSIDER: another approach might be to fine tune the filters/indexes used in the Table.insert/OntologyManager.getDomainDescriptor calls
+            // or using LSID as the primary key on DomainDescriptor?
             if (scope.getSqlDialect().isSqlServer())
             {
                 String sql = " SELECT * FROM " + OntologyManager.getTinfoDomainDescriptor() + " WITH (UPDLOCK)";

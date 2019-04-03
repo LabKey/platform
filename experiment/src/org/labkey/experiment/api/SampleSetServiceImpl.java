@@ -652,6 +652,7 @@ public class SampleSetServiceImpl implements SampleSetService
 
         ExpSampleSetImpl ss = new ExpSampleSetImpl(source);
 
+        /* CONSIDER making a DbScope helper out of this pattern and use for other domain create/save usages */
         // don't retry if we're already in a transaction, it won't help
         int tries = getExpSchema().getScope().isTransactionActive() ? 1 : 3;
         long delay = 100;
