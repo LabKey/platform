@@ -559,8 +559,19 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         if (lookup == null)
             return false;
 
-        if (!(ExpSchema.SCHEMA_NAME.equalsIgnoreCase(lookup.getSchemaName()) && ExpSchema.TableType.Materials.name().equalsIgnoreCase(lookup.getQueryName())))
+        String schemaName = lookup.getSchemaName();
+        String queryName = lookup.getQueryName();
+        boolean isExpSchema = ExpSchema.SCHEMA_NAME.equalsIgnoreCase(schemaName);
+        boolean isMaterialsQuery = ExpSchema.TableType.Materials.name().equalsIgnoreCase(queryName);
+        boolean isExpMaterialsLookup = isExpSchema && isMaterialsQuery;
+        boolean isExpMaterialsSchema = "exp.materials".equalsIgnoreCase(schemaName);
+        boolean isSamplesQuery = "samples".equalsIgnoreCase(queryName);
+        boolean isExpMaterialsSamplesLookup = isExpMaterialsSchema && isSamplesQuery;
+
+        if (!(isExpMaterialsLookup || isExpMaterialsSamplesLookup))
+        {
             return false;
+        }
 
         JdbcType type = dp.getPropertyType().getJdbcType();
         if (!(type.isText() || type.isInteger()))
