@@ -217,6 +217,10 @@ LABKEY.internal.FileDrop = new function () {
          * */
 
         Dropzone.prototype.drop = function (e) {
+            if(window.navigator.userAgent.indexOf("Edge") > -1 ) {
+                Dropzone.prototype._originalDrop(e);
+            }
+
             if (!e.dataTransfer) {
                 return;
             }
@@ -235,6 +239,24 @@ LABKEY.internal.FileDrop = new function () {
             }
             LABKEY.internal.ZipLoad.zipLoad(this.entries, me, patterns);
 
+        };
+
+        Dropzone.prototype._originalDrop = function(e) {
+            var files, items;
+            if (!e.dataTransfer) {
+                return;
+            }
+            this.emit("drop", e);
+            files = e.dataTransfer.files;
+            this.emit("addedfiles", files);
+            if (files.length) {
+                items = e.dataTransfer.items;
+                if (items && items.length && (items[0].webkitGetAsEntry != null)) {
+                    this._addFilesFromItems(items);
+                } else {
+                    this.handleFiles(files);
+                }
+            }
         };
 
         var dropzone = new Dropzone(el, config);
