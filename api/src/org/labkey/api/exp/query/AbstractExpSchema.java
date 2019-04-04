@@ -43,6 +43,9 @@ public abstract class AbstractExpSchema extends UserSchema
 
     protected <T extends ExpTable> T setupTable(T table)
     {
+        // Note, this is 'legal' since a schema can modify its own tables during construction
+        // Then again, if the CF is not set during TableInfo construction, we may not be able to set of construct FK's correctly
+        // TODO ContainerFilter -- is this still necessary, or is CF set up in constructor in all cases?
         if (_containerFilter != null)
             table.setContainerFilter(_containerFilter);
         table.populate();

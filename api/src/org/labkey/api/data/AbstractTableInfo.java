@@ -788,7 +788,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     }
 
 
-    public static ForeignKey makeForeignKey(QuerySchema fromSchema, ColumnType.Fk fk)
+    public static ForeignKey makeForeignKey(QuerySchema fromSchema, ContainerFilter cf, ColumnType.Fk fk)
     {
         ForeignKey ret = null;
 
@@ -819,7 +819,12 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             if (!fromSchema.getSchemaName().equals(fk.getFkDbSchema()) || !effectiveTargetContainer.equals(fromSchema.getContainer()))
             {
                 // Let the QueryForeignKey lazily create the schema on demand
-                ret = new QueryForeignKey(fk.getFkDbSchema(), effectiveTargetContainer, lookupContainer, fromSchema.getUser(), fk.getFkTable(), fk.getFkColumnName(), displayColumnName, useRawFKValue);
+                ret = QueryForeignKey.from(fromSchema, cf)
+                        .schema(fk.getFkDbSchema(), effectiveTargetContainer)
+                        .container(lookupContainer)
+                        .to(fk.getFkTable(), fk.getFkColumnName(), displayColumnName)
+                        .raw(useRawFKValue)
+                        .build();
             }
         }
         else
@@ -830,7 +835,11 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         if (ret == null)
         {
             // We can reuse the same schema object
-            ret = new QueryForeignKey(fromSchema, lookupContainer, fk.getFkTable(), fk.getFkColumnName(), displayColumnName, useRawFKValue);
+            ret = QueryForeignKey.from(fromSchema, cf)
+                    .container(lookupContainer)
+                    .to(fk.getFkTable(), fk.getFkColumnName(), displayColumnName)
+                    .raw(useRawFKValue)
+                    .build();
         }
 
         if (fk.isSetFkMultiValued())
@@ -854,7 +863,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         if (xbColumn.getFk() != null)
         {
             ColumnType.Fk columnFk = xbColumn.getFk();
-            ForeignKey qfk = makeForeignKey(schema, columnFk);
+            ForeignKey qfk = makeForeignKey(schema, getContainerFilter(), columnFk);
             if (qfk == null)
             {
                 //noinspection ThrowableInstanceNeverThrown

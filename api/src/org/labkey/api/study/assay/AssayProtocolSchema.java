@@ -26,12 +26,11 @@ import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DelegatingContainerFilter;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
@@ -94,6 +93,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static java.util.Objects.requireNonNullElse;
 
 /**
  * A child schema of AssayProviderSchema. Scoped to a single assay design (AKA ExpProtocol).
@@ -224,7 +225,13 @@ public abstract class AssayProtocolSchema extends AssaySchema
     @Override
     public TableInfo createTable(String name)
     {
-        TableInfo table = createProviderTable(name);
+        throw new IllegalStateException();
+    }
+
+    @Override
+    public TableInfo createTable(String name, ContainerFilter cf)
+    {
+        TableInfo table = createProviderTable(name, cf);
         if (table == null)
         {
             // Issue 16787: SQL parse error when resolving legacy assay table names in new assay provider schema.
@@ -232,7 +239,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
             if (name.toLowerCase().startsWith(protocolPrefix))
             {
                 name = name.substring(protocolPrefix.length());
-                table = createProviderTable(name);
+                table = createProviderTable(name, cf);
             }
         }
 
@@ -242,31 +249,41 @@ public abstract class AssayProtocolSchema extends AssaySchema
         return table;
     }
 
+
     // NOTE: Subclasses should override to add any additional provider specific tables.
     protected TableInfo createProviderTable(String name)
     {
+        throw new IllegalStateException();
+    }
+
+
+    // NOTE: Subclasses should override to add any additional provider specific tables.
+    protected TableInfo createProviderTable(String name, ContainerFilter cf)
+    {
         if (name.equalsIgnoreCase(BATCHES_TABLE_NAME))
-            return createBatchesTable();
+            return createBatchesTable(cf);
         else if (name.equalsIgnoreCase(RUNS_TABLE_NAME))
-            return createRunsTable();
+            return createRunsTable(cf);
         else if (name.equalsIgnoreCase(DATA_TABLE_NAME))
-            return createDataTable();
+            return createDataTable(cf);
         else if (name.equalsIgnoreCase(QC_FLAGS_TABLE_NAME))
-            return createQCFlagTable();
+            return createQCFlagTable(cf);
 
         return null;
     }
 
-    public TableInfo createBatchesTable()
+    public TableInfo createBatchesTable(ContainerFilter cf)
     {
-        return createBatchesTable(getProtocol(), getProvider(), null);
+        return createBatchesTable(getProtocol(), getProvider(), cf);
     }
 
-    /** @return may return null if no results/data are tracked by this assay type */
+    /**
+     * @return may return null if no results/data are tracked by this assay type
+     */
     @Nullable
-    public ContainerFilterable createDataTable()
+    public TableInfo createDataTable(ContainerFilter cf)
     {
-        ContainerFilterable table = createDataTable(true);
+        TableInfo table = createDataTable(cf, true);
         if (null != table)
         {
             ColumnInfo columnInfo = table.getColumn("Properties");
@@ -276,9 +293,9 @@ public abstract class AssayProtocolSchema extends AssaySchema
         return table;
     }
 
-    public ExpQCFlagTable createQCFlagTable()
+    public ExpQCFlagTable createQCFlagTable(ContainerFilter cf)
     {
-        ExpQCFlagTable table = ExperimentService.get().createQCFlagsTable(QC_FLAGS_TABLE_NAME, this);
+        ExpQCFlagTable table = ExperimentService.get().createQCFlagsTable(QC_FLAGS_TABLE_NAME, this, cf);
         table.populate();
         table.setAssayProtocol(getProtocol());
         return table;
@@ -308,14 +325,10 @@ public abstract class AssayProtocolSchema extends AssaySchema
     }
 
 
-    private ExpExperimentTable createBatchesTable(ExpProtocol protocol, AssayProvider provider, final ContainerFilter containerFilter)
+    private ExpExperimentTable createBatchesTable(ExpProtocol protocol, AssayProvider provider, ContainerFilter containerFilter)
     {
-        final ExpExperimentTable result = ExperimentService.get().createExperimentTable(BATCHES_TABLE_NAME, this);
+        final ExpExperimentTable result = ExperimentService.get().createExperimentTable(BATCHES_TABLE_NAME, this, containerFilter);
         result.populate();
-        if (containerFilter != null)
-        {
-            result.setContainerFilter(containerFilter);
-        }
         ActionURL runsURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), protocol, result.getContainerFilter());
 
         // Unfortunately this seems to be the best way to figure out the name of the URL parameter to filter by batch id
@@ -354,24 +367,43 @@ public abstract class AssayProtocolSchema extends AssaySchema
         return result;
     }
 
-    @Nullable
     /** Implementations may return null if they don't have any data associated with them */
-    public abstract ContainerFilterable createDataTable(boolean includeCopiedToStudyColumns);
+    /* TODO ContainerFilter implementations that override this method still need to be upgraded to use createDataTable(ContainerFilter cf) */
+    @Nullable
+    @Deprecated
+    public TableInfo createDataTable(boolean includeCopiedToStudyColumns)
+    {
+        throw new IllegalStateException();
+    }
 
+    /** Implementations may return null if they don't have any data associated with them */
+    // TODO ContainerFilter update Assay's that don't override this method
+    @Nullable
+    public TableInfo createDataTable(ContainerFilter cf, boolean includeCopiedToStudyColumns)
+    {
+        return createDataTable(includeCopiedToStudyColumns);
+    }
+
+    /* TODO ContainerFilter implementations that override this method still need to be upgraded to use createDataTable(ContainerFilter cf) */
     public ExpRunTable createRunsTable()
     {
-        final ExpRunTable runTable = ExperimentService.get().createRunTable(RUNS_TABLE_NAME, this);
+        return createRunsTable(null);
+    }
+
+    public ExpRunTable createRunsTable(ContainerFilter cf)
+    {
+        final ExpRunTable runTable = ExperimentService.get().createRunTable(RUNS_TABLE_NAME, this, cf);
         if (getProvider().isEditableRuns(getProtocol()))
         {
             runTable.addAllowablePermission(UpdatePermission.class);
         }
         runTable.populate();
-        LookupForeignKey assayRunFK = new LookupForeignKey()
+        LookupForeignKey assayRunFK = new LookupForeignKey(cf, null, null)
         {
             @Override
             public TableInfo getLookupTableInfo()
             {
-                return getTable(RUNS_TABLE_NAME);
+                return getTable(RUNS_TABLE_NAME, getLookupContainerFilter());
             }
         };
         runTable.getColumn(ExpRunTable.Column.ReplacedByRun).setFk(assayRunFK);
@@ -400,21 +432,15 @@ public abstract class AssayProtocolSchema extends AssaySchema
 
         // Add the batch column, but replace the lookup with one to the assay's Batches table.
         ColumnInfo batchColumn = runTable.addColumn(AssayService.BATCH_COLUMN_NAME, ExpRunTable.Column.Batch);
-        batchColumn.setFk(new QueryForeignKey(this, null, AssayProtocolSchema.BATCHES_TABLE_NAME, "RowId", null)
-        {
-            // Issue 23399: Batch properties not accessible from copy to study Nab assay.
-            // Propagate run table's container filter to batch table
-            @Override
-            public TableInfo getLookupTableInfo()
-            {
-                TableInfo result = super.getLookupTableInfo();
-                if (result instanceof ContainerFilterable)
-                {
-                    ((ContainerFilterable)result).setContainerFilter(new DelegatingContainerFilter(runTable));
-                }
-                return result;
-            }
-        });
+        // Issue 23399: Batch properties not accessible from copy to study Nab assay.
+        // Propagate run table's container filter to batch table
+        batchColumn.setFk(
+
+                QueryForeignKey
+                        .from(this, runTable.getContainerFilter())
+                        .to(AssayProtocolSchema.BATCHES_TABLE_NAME, "RowId", null)
+
+        );
 
         visibleColumns.add(FieldKey.fromParts(batchColumn.getName()));
         FieldKey batchPropsKey = FieldKey.fromParts(batchColumn.getName());
@@ -751,8 +777,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
             {
                 public TableInfo getLookupTableInfo()
                 {
-                    FilteredTable table = new FilteredTable<>(DbSchema.get("study").getTable("study"), AssayProtocolSchema.this);
-                    table.setContainerFilter(new StudyContainerFilter(AssayProtocolSchema.this));
+                    FilteredTable table = new FilteredTable<>(DbSchema.get("study", DbSchemaType.Module).getTable("study"), AssayProtocolSchema.this, getLookupContainerFilter());
                     ExprColumn col = new ExprColumn(table, "Folder", new SQLFragment("CAST (" + ExprColumn.STR_TABLE_ALIAS + ".Container AS VARCHAR(200))"), JdbcType.VARCHAR);
                     col.setKeyField(true);
                     ContainerForeignKey.initColumn(col, AssayProtocolSchema.this);
@@ -760,6 +785,12 @@ public abstract class AssayProtocolSchema extends AssaySchema
                     table.addWrapColumn(table.getRealTable().getColumn("Label"));
                     table.setPublic(false);
                     return table;
+                }
+
+                @Override
+                protected ContainerFilter getLookupContainerFilter()
+                {
+                    return new StudyContainerFilter(AssayProtocolSchema.this);
                 }
             });
         }
@@ -795,7 +826,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
     {
         public AssayPropertyForeignKey(Domain domain)
         {
-            super(domain, AssayProtocolSchema.this);
+            super(AssayProtocolSchema.this, null, domain);
         }
 
         @Override

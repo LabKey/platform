@@ -992,7 +992,7 @@ public class ExperimentController extends SpringActionController
                 throw new NotFoundException("exp.dataclass schema not found");
             QueryView queryView = dataClassSchema.createView(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, _dataClass.getName(), errors);
 
-            TableInfo table = ExpSchema.TableType.DataClasses.createTable(expSchema, null);
+            TableInfo table = ExpSchema.TableType.DataClasses.createTable(expSchema, null, null);
             QueryUpdateForm tvf = new QueryUpdateForm(table, getViewContext(), null);
             tvf.setPkVal(_dataClass.getRowId());
             DetailsView detailsView = new DetailsView(tvf);

@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExperimentService;
@@ -81,22 +82,31 @@ public class DataClassUserSchema extends AbstractExpSchema
         return getDataClasses().keySet();
     }
 
+    @Override
+    public TableInfo getTable(String name, @Nullable ContainerFilter cf)
+    {
+        return super.getTable(name, cf);
+    }
+
     @Nullable
     @Override
     public TableInfo createTable(String name)
+    {
+        return createTable(name, getDefaultContainerFilter());
+    }
+
+    public TableInfo createTable(String name, ContainerFilter cf)
     {
         ExpDataClass dataClass = getDataClasses().get(name);
         if (dataClass == null)
             return null;
 
-        return createTable(dataClass);
+        return createTable(dataClass, cf);
     }
 
-    public ExpDataClassDataTable createTable(@NotNull ExpDataClass dataClass)
+    public ExpDataClassDataTable createTable(@NotNull ExpDataClass dataClass, ContainerFilter cf)
     {
-        ExpDataClassDataTable ret = ExperimentService.get().createDataClassDataTable(dataClass.getName(), this, dataClass);
-        if (_containerFilter != null)
-            ret.setContainerFilter(_containerFilter);
+        ExpDataClassDataTable ret = ExperimentService.get().createDataClassDataTable(dataClass.getName(), this, cf, dataClass);
         ret.populate();
         ret.overlayMetadata(ret.getPublicName(), DataClassUserSchema.this, new ArrayList<>());
         return ret;

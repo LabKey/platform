@@ -60,6 +60,7 @@ import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
@@ -1369,7 +1370,11 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                 // DatasetSchemaTableInfos aren't cached, so it's safe to include the current user
                 PropertyDescriptor pd = p.getPropertyDescriptor();
                 if (null != pd && (pd.getLookupQuery() != null || pd.getConceptURI() != null))
-                    wrapped.setFk(new PdLookupForeignKey(user, pd, getContainer()));
+                {
+                    // TODO ContainerFilter
+                    // I think this may be  redundant with DatasetTableImpl -- remove?
+                    wrapped.setFk(PdLookupForeignKey.create(DefaultSchema.get(user, getContainer()), pd));
+                }
 
                 if (p.isMvEnabled())
                 {

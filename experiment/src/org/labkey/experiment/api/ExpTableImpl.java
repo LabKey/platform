@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
@@ -66,9 +67,9 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
     // The populated flag indicates all standard columns have been added to the table, but metadata override have not yet been added
     protected boolean _populated;
 
-    protected ExpTableImpl(String name, TableInfo rootTable, UserSchema schema, @Nullable ExpObjectImpl objectType)
+    protected ExpTableImpl(String name, TableInfo rootTable, UserSchema schema, @Nullable ExpObjectImpl objectType, ContainerFilter cf)
     {
-        super(rootTable, schema);
+        super(rootTable, schema, cf);
         _objectType = objectType;
         setName(name);
         _allowablePermissions.add(DeletePermission.class);
@@ -250,7 +251,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
     public ColumnInfo createUserColumn(String name, ColumnInfo userIdColumn)
     {
         ColumnInfo ret = wrapColumn(name, userIdColumn);
-        UserIdQueryForeignKey.initColumn(getUserSchema().getUser(), getContainer(), ret, true);
+        UserIdQueryForeignKey.initColumn(getUserSchema(), ret, true);
         ret.setShownInInsertView(false);
         ret.setShownInUpdateView(false);
         ret.setUserEditable(false);
@@ -272,7 +273,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
     protected ColumnInfo createFlagColumn(String alias)
     {
         ColumnInfo ret = wrapColumn(alias, getLSIDColumn());
-        ret.setFk(new FlagForeignKey(urlFlag(true), urlFlag(false), _userSchema));
+        ret.setFk(new FlagForeignKey(_userSchema, urlFlag(true), urlFlag(false)));
         ret.setDisplayColumnFactory(FlagColumnRenderer::new);
         ret.setDescription("Contains a reference to a user-editable comment about this row");
         ret.setNullable(true);
@@ -318,7 +319,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
         if (legacyName != null && !domain.getProperties().isEmpty())
         {
             colProperty = wrapColumn(legacyName, getLSIDColumn());
-            colProperty.setFk(new PropertyForeignKey(domain, _userSchema));
+            colProperty.setFk(new PropertyForeignKey(_userSchema, getContainerFilter(), _domain));
             // Hide because the preferred way to get to these values is to add them directly to the table, instead of having
             // them under the legacyName node
             colProperty.setHidden(true);

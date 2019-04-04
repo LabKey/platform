@@ -16,7 +16,6 @@
 package org.labkey.api.query;
 
 import org.labkey.api.data.*;
-import org.labkey.api.security.User;
 
 /**
  * Foreign key class for use with Query and the 'core'
@@ -28,17 +27,17 @@ public class UserIdQueryForeignKey extends QueryForeignKey
 {
     private final boolean _includeAllUsers;
 
-    public UserIdQueryForeignKey(User user, Container container)
+    public UserIdQueryForeignKey(QuerySchema sourceSchema)
     {
-        this(user, container, false);
+        this(sourceSchema, false);
     }
 
     /** @param includeAllUsers if true, don't filter to users who are members of the current project, etc. Useful for
      * automatically-populated columns like CreatedBy and ModifiedBy, where you want to see if the user even if they
      * no longer have permission to access the container */
-    public UserIdQueryForeignKey(User user, Container container, boolean includeAllUsers)
+    public UserIdQueryForeignKey(QuerySchema sourceSchema, boolean includeAllUsers)
     {
-        super("core", container, null, user, includeAllUsers ? "SiteUsers" : "Users", "UserId", "DisplayName");
+        super(sourceSchema, null,"core", sourceSchema.getContainer(), null, sourceSchema.getUser(), includeAllUsers ? "SiteUsers" : "Users", "UserId", "DisplayName");
         _includeAllUsers = includeAllUsers;
     }
 
@@ -61,10 +60,10 @@ public class UserIdQueryForeignKey extends QueryForeignKey
     }
 
     /* set foreign key and display column */
-    static public ColumnInfo initColumn(User user, Container container, ColumnInfo column, boolean guestAsBlank)
+    static public ColumnInfo initColumn(QuerySchema sourceSchema, ColumnInfo column, boolean guestAsBlank)
     {
         boolean showAllUsers = column.getName().equalsIgnoreCase("createdby") || column.getName().equalsIgnoreCase("modifiedby");
-        column.setFk(new UserIdQueryForeignKey(user, container, showAllUsers));
+        column.setFk(new UserIdQueryForeignKey(sourceSchema, showAllUsers));
         column.setDisplayColumnFactory(guestAsBlank ? _factoryBlank : _factoryGuest);
         return column;
     }

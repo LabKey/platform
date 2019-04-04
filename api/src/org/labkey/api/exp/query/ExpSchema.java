@@ -53,6 +53,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -71,39 +72,44 @@ public class ExpSchema extends AbstractExpSchema
     {
         Runs
         {
-            public TableInfo createTable(ExpSchema expSchema, String queryName)
+            @Override
+            public TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf)
             {
-                ExpRunTable ret = ExperimentService.get().createRunTable(Runs.toString(), expSchema);
+                ExpRunTable ret = ExperimentService.get().createRunTable(Runs.toString(), expSchema, cf);
                 return expSchema.setupTable(ret);
             }
         },
         Data
         {
-            public TableInfo createTable(ExpSchema expSchema, String queryName)
+            @Override
+            public TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf)
             {
-                ExpDataTable ret = ExperimentService.get().createDataTable(Data.toString(), expSchema);
+                ExpDataTable ret = ExperimentService.get().createDataTable(Data.toString(), expSchema, cf);
                 return expSchema.setupTable(ret);
             }
         },
         DataInputs
         {
-            public TableInfo createTable(ExpSchema expSchema, String queryName)
+            @Override
+            public TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf)
             {
-                ExpDataInputTable ret = ExperimentService.get().createDataInputTable(DataInputs.toString(), expSchema);
+                ExpDataInputTable ret = ExperimentService.get().createDataInputTable(DataInputs.toString(), expSchema, cf);
                 return expSchema.setupTable(ret);
             }
         },
         DataProtocolInputs
         {
-            public TableInfo createTable(ExpSchema expSchema, String queryName)
+            @Override
+            public TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf)
             {
-                ExpDataProtocolInputTable ret = ExperimentService.get().createDataProtocolInputTable(DataProtocolInputs.toString(), expSchema);
+                ExpDataProtocolInputTable ret = ExperimentService.get().createDataProtocolInputTable(DataProtocolInputs.toString(), expSchema, cf);
                 return expSchema.setupTable(ret);
             }
         },
         Materials
         {
-            public TableInfo createTable(ExpSchema expSchema, String queryName)
+            @Override
+            public TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf)
             {
                 SamplesSchema schema = new SamplesSchema(expSchema.getPath(), expSchema.getUser(), expSchema.getContainer());
                 schema.setContainerFilter(expSchema._containerFilter);
@@ -113,85 +119,95 @@ public class ExpSchema extends AbstractExpSchema
         },
         MaterialInputs
         {
-            public TableInfo createTable(ExpSchema expSchema, String queryName)
+            @Override
+            public TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf)
             {
-                ExpMaterialInputTable ret = ExperimentService.get().createMaterialInputTable(MaterialInputs.toString(), expSchema);
+                ExpMaterialInputTable ret = ExperimentService.get().createMaterialInputTable(MaterialInputs.toString(), expSchema, cf);
                 return expSchema.setupTable(ret);
             }
         },
         MaterialProtocolInputs
         {
-            public TableInfo createTable(ExpSchema expSchema, String queryName)
+            @Override
+            public TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf)
             {
-                ExpMaterialProtocolInputTable ret = ExperimentService.get().createMaterialProtocolInputTable(MaterialProtocolInputs.toString(), expSchema);
+                ExpMaterialProtocolInputTable ret = ExperimentService.get().createMaterialProtocolInputTable(MaterialProtocolInputs.toString(), expSchema, cf);
                 return expSchema.setupTable(ret);
             }
         },
         Protocols
         {
-            public TableInfo createTable(ExpSchema expSchema, String queryName)
+            @Override
+            public TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf)
             {
-                ExpProtocolTable ret = ExperimentService.get().createProtocolTable(Protocols.toString(), expSchema);
+                ExpProtocolTable ret = ExperimentService.get().createProtocolTable(Protocols.toString(), expSchema, cf);
                 return expSchema.setupTable(ret);
             }
         },
         SampleSets
         {
-            public TableInfo createTable(ExpSchema expSchema, String queryName)
+            @Override
+            public TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf)
             {
-                ExpSampleSetTable ret = ExperimentService.get().createSampleSetTable(SampleSets.toString(), expSchema);
+                ExpSampleSetTable ret = ExperimentService.get().createSampleSetTable(SampleSets.toString(), expSchema, cf);
                 return expSchema.setupTable(ret);
             }
         },
         DataClasses
         {
-            public TableInfo createTable(ExpSchema expSchema, String queryName)
+            @Override
+            public TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf)
             {
-                ExpDataClassTable ret = ExperimentService.get().createDataClassTable(DataClasses.toString(), expSchema);
+                ExpDataClassTable ret = ExperimentService.get().createDataClassTable(DataClasses.toString(), expSchema, cf);
                 return expSchema.setupTable(ret);
             }
         },
         RunGroups
         {
-            public TableInfo createTable(ExpSchema expSchema, String queryName)
+            @Override
+            public TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf)
             {
-                ExpExperimentTable ret = ExperimentService.get().createExperimentTable(RunGroups.toString(), expSchema);
+                ExpExperimentTable ret = ExperimentService.get().createExperimentTable(RunGroups.toString(), expSchema, cf);
                 return expSchema.setupTable(ret);
             }
         },
         RunGroupMap
         {
-            public TableInfo createTable(ExpSchema expSchema, String queryName)
+            @Override
+            public TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf)
             {
-                ExpRunGroupMapTable ret = ExperimentService.get().createRunGroupMapTable(RunGroupMap.toString(), expSchema);
+                ExpRunGroupMapTable ret = ExperimentService.get().createRunGroupMapTable(RunGroupMap.toString(), expSchema, cf);
                 return expSchema.setupTable(ret);
             }
         },
         ProtocolApplications
         {
-            public TableInfo createTable(ExpSchema expSchema, String queryName)
+            @Override
+            public TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf)
             {
-                ExpProtocolApplicationTable result = ExperimentService.get().createProtocolApplicationTable(ProtocolApplications.toString(), expSchema);
+                ExpProtocolApplicationTable result = ExperimentService.get().createProtocolApplicationTable(ProtocolApplications.toString(), expSchema, cf);
                 return expSchema.setupTable(result);
             }
         },
         QCFlags
         {
-            public TableInfo createTable(ExpSchema expSchema, String queryName)
+            @Override
+            public TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf)
             {
-                ExpQCFlagTable result = ExperimentService.get().createQCFlagsTable(QCFlags.toString(), expSchema);
+                ExpQCFlagTable result = ExperimentService.get().createQCFlagsTable(QCFlags.toString(), expSchema, cf);
                 return expSchema.setupTable(result);
             }
         },
         Files
         {
-            public TableInfo createTable(ExpSchema expSchema, String queryName)
+            @Override
+            public TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf)
             {
-                ExpDataTable result = ExperimentService.get().createFilesTable(Files.toString(), expSchema);
+                ExpDataTable result = ExperimentService.get().createFilesTable(Files.toString(), expSchema, cf);
                 return expSchema.setupTable(result);
             }
         };
-        public abstract TableInfo createTable(ExpSchema expSchema, String queryName);
+        public abstract TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf);
     }
 
     public ExpTable getTable(TableType tableType)
@@ -199,14 +215,17 @@ public class ExpSchema extends AbstractExpSchema
         return (ExpTable)getTable(tableType.toString());
     }
 
-    public ExpExperimentTable createExperimentsTableWithRunMemberships(ExpRun run)
+    public ExpTable getTable(TableType tableType, ContainerFilter cf)
     {
-        ExpExperimentTable ret = ExperimentService.get().createExperimentTable(EXPERIMENTS_MEMBERSHIP_FOR_RUN_TABLE_NAME, this);
+        return (ExpTable)getTable(tableType.toString(), cf);
+    }
+
+    public ExpExperimentTable createExperimentsTableWithRunMemberships(ExpRun run, ContainerFilter cf)
+    {
+        ExpExperimentTable ret = ExperimentService.get().createExperimentTable(EXPERIMENTS_MEMBERSHIP_FOR_RUN_TABLE_NAME, this, cf);
         setupTable(ret);
         // Don't include exp.experiment rows that are assay batches
         ret.setBatchProtocol(null);
-        if (_containerFilter != null)
-            ret.setContainerFilter(_containerFilter);
         ret.getColumn(ExpExperimentTable.Column.RunCount).setHidden(true);
 
         ret.addExperimentMembershipColumn(run);
@@ -266,35 +285,35 @@ public class ExpSchema extends AbstractExpSchema
         return tableNames;
     }
 
-    public TableInfo createTable(String name)
+    public TableInfo createTable(String name, ContainerFilter cf)
     {
         for (TableType tableType : TableType.values())
         {
             if (tableType.name().equalsIgnoreCase(name))
             {
-                return tableType.createTable(this, tableType.name());
+                return tableType.createTable(this, tableType.name(), cf);
             }
         }
 
         // Support "Experiments" as a legacy name for the RunGroups table
         if ("Experiments".equalsIgnoreCase(name))
         {
-            ExpExperimentTable ret = ExperimentService.get().createExperimentTable(name, this);
+            ExpExperimentTable ret = ExperimentService.get().createExperimentTable(name, this, cf);
             return setupTable(ret);
         }
         if ("Experiments".equalsIgnoreCase(name))
         {
             // Support "Experiments" as a legacy name for the RunGroups table
-            return TableType.RunGroups.createTable(this, name);
+            return TableType.RunGroups.createTable(this, name, cf);
         }
         if ("Datas".equalsIgnoreCase(name))
         {
             /// Support "Datas" as a legacy name for the Data table
-            return TableType.Data.createTable(this, name);
+            return TableType.Data.createTable(this, name, cf);
         }
         if (EXPERIMENTS_MEMBERSHIP_FOR_RUN_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return createExperimentsTableWithRunMemberships(null);
+            return createExperimentsTableWithRunMemberships(null, cf);
         }
 
         return null;
@@ -354,13 +373,13 @@ public class ExpSchema extends AbstractExpSchema
         };
     }
 
-    public ForeignKey getProtocolForeignKey(String targetColumnName)
+    public ForeignKey getProtocolForeignKey(ContainerFilter cf, String targetColumnName)
     {
         return new LookupForeignKey(targetColumnName)
         {
             public TableInfo getLookupTableInfo()
             {
-                ExpProtocolTable protocolTable = (ExpProtocolTable)TableType.Protocols.createTable(ExpSchema.this, TableType.Protocols.toString());
+                ExpProtocolTable protocolTable = (ExpProtocolTable)TableType.Protocols.createTable(ExpSchema.this, TableType.Protocols.toString(), cf);
                 protocolTable.setContainerFilter(ContainerFilter.EVERYTHING);
                 return protocolTable;
             }
@@ -375,6 +394,10 @@ public class ExpSchema extends AbstractExpSchema
             {
                 return getTable(TableType.MaterialProtocolInputs);
             }
+            public TableInfo getLookupTableInfo(ContainerFilter cf)
+            {
+                return getTable(TableType.MaterialProtocolInputs, cf);
+            }
         };
     }
 
@@ -385,6 +408,10 @@ public class ExpSchema extends AbstractExpSchema
             public TableInfo getLookupTableInfo()
             {
                 return getTable(TableType.DataProtocolInputs);
+            }
+            public TableInfo getLookupTableInfo(ContainerFilter cf)
+            {
+                return getTable(TableType.DataProtocolInputs, cf);
             }
         };
     }
@@ -413,6 +440,10 @@ public class ExpSchema extends AbstractExpSchema
             {
                 return getTable(TableType.Runs);
             }
+            public TableInfo getLookupTableInfo(ContainerFilter cf)
+            {
+                return getTable(TableType.Runs, cf);
+            }
         };
     }
 
@@ -423,8 +454,12 @@ public class ExpSchema extends AbstractExpSchema
         {
             public TableInfo getLookupTableInfo()
             {
-                ExpExperimentTable result = (ExpExperimentTable)getTable(TableType.RunGroups);
-                result.setContainerFilter(new ContainerFilter.CurrentPlusProjectAndShared(getUser()));
+                return getLookupTableInfo(null);
+            }
+            public TableInfo getLookupTableInfo(ContainerFilter cf)
+            {
+                ExpExperimentTable result = (ExpExperimentTable)getTable(TableType.RunGroups,
+                        Objects.requireNonNullElse(cf, new ContainerFilter.CurrentPlusProjectAndShared(getUser())));
                 if (!includeBatches)
                 {
                     result.setBatchProtocol(null);
@@ -457,20 +492,14 @@ public class ExpSchema extends AbstractExpSchema
             {
                 public TableInfo getLookupTableInfo()
                 {
+                    // UNDONE ContainerFilter
+//                    ContainerFilterable t = (ContainerFilterable)table;
+//                    // Merge the special container filter set above with whatever else might have been requested in the parent table's
+//                    t.setContainerFilter(new UnionContainerFilter(t.getContainerFilter(), parent.getParentTable().getContainerFilter()));
+
                     ExpTable result = getTable(TableType.Materials);
                     result.setContainerFilter(new ContainerFilter.SimpleContainerFilter(getSearchContainers(getContainer(), targetSampleSet, domainProperty, getUser())));
                     return result;
-                }
-
-                @Override
-                public void propagateContainerFilter(ColumnInfo parent, TableInfo table)
-                {
-                    if (parent.getParentTable().getContainerFilter() != null)
-                    {
-                        ContainerFilterable t = (ContainerFilterable)table;
-                        // Merge the special container filter set above with whatever else might have been requested in the parent table's
-                        t.setContainerFilter(new UnionContainerFilter(t.getContainerFilter(), parent.getParentTable().getContainerFilter()));
-                    }
                 }
             };
         }

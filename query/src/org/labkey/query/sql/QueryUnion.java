@@ -18,6 +18,7 @@ package org.labkey.query.sql;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -495,7 +496,7 @@ public class QueryUnion extends QueryRelation
         void copyColumnAttributesTo(ColumnInfo to)
         {
             _first.copyColumnAttributesTo(to);
-            to.setFk(null);
+            to.clearFk();
             to.setKeyField(false);
         }
     }

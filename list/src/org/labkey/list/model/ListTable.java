@@ -121,7 +121,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                         colKey.setName(pd.getName());
                         colKey.setLabel(pd.getLabel());
                         if (null != pd.getLookupQuery() || null != pd.getConceptURI())
-                            colKey.setFk(new PdLookupForeignKey(schema.getUser(), pd, schema.getContainer()));
+                            colKey.setFk(PdLookupForeignKey.create(schema, pd));
                     }
                     else
                     {
@@ -154,7 +154,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                     ColumnInfo c = wrapColumn(baseColumn);
                     if (name.equalsIgnoreCase("CreatedBy") || name.equalsIgnoreCase("ModifiedBy"))
                     {
-                        UserIdQueryForeignKey.initColumn(schema.getUser(), schema.getContainer(), c, true);
+                        UserIdQueryForeignKey.initColumn(schema, c, true);
                         if (name.equalsIgnoreCase("CreatedBy"))
                         {
                             c.setName("CreatedBy");

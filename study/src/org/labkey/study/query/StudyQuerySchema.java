@@ -253,15 +253,15 @@ public class StudyQuerySchema extends UserSchema
     Map<Pair<String,Boolean>,Object> pivotCache = new HashMap<>();
 
     @Override
-    public Object _getTableOrQuery(String name, boolean includeExtraMetadata, boolean forWrite, Collection<QueryException> errors)
+    public Object _getTableOrQuery(String name, ContainerFilter cf, boolean includeExtraMetadata, boolean forWrite, Collection<QueryException> errors)
     {
         if (null == name)
             return null;
         Pair<String, Boolean> key = new Pair<>(name.toLowerCase(),includeExtraMetadata);
-        Object torq = forWrite ? pivotCache.get(key) : null;
+        Object torq = forWrite && cf==null ? pivotCache.get(key) : null;
         if (null != torq)
             return torq;
-        Object o = super._getTableOrQuery(name, includeExtraMetadata, forWrite, errors);
+        Object o = super._getTableOrQuery(name, cf, includeExtraMetadata, forWrite, errors);
         if (o instanceof BaseSpecimenPivotTable && errors.isEmpty() && !forWrite)
         {
             ((TableInfo)o).setLocked(true);

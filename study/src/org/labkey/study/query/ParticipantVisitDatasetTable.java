@@ -231,7 +231,8 @@ public class ParticipantVisitDatasetTable extends VirtualTable<StudyQuerySchema>
         {
             ret = new AliasedColumn(name, _colParticipantId);
         }
-        ret.setFk(new AbstractForeignKey() {
+        // TODO ContainerFilter
+        ret.setFk(new AbstractForeignKey(getUserSchema(), null) {
             public ColumnInfo createLookupColumn(ColumnInfo parent, String displayFieldName)
             {
                 TableInfo table = getLookupTableInfo();

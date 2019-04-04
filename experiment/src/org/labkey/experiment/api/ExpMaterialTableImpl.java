@@ -85,9 +85,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 {
     ExpSampleSetImpl _ss;
 
-    public ExpMaterialTableImpl(String name, UserSchema schema)
+    public ExpMaterialTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoMaterial(), schema, new ExpMaterialImpl(new Material()));
+        super(name, ExperimentServiceImpl.get().getTinfoMaterial(), schema, new ExpMaterialImpl(new Material()), cf);
         setDetailsURL(new DetailsURL(new ActionURL(ExperimentController.ShowMaterialAction.class, schema.getContainer()), Collections.singletonMap("rowId", "rowId")));
         setName(ExpSchema.TableType.Materials.name());
         setPublicSchemaName(ExpSchema.SCHEMA_NAME);
@@ -123,11 +123,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             case SampleSet:
             {
                 ColumnInfo columnInfo = wrapColumn(alias, _rootTable.getColumn("CpasType"));
-                columnInfo.setFk(new LookupForeignKey(null, (String)null, "LSID", "Name")
+                columnInfo.setFk(new LookupForeignKey(getContainerFilter(), null, null, null, (String)null, "LSID", "Name")
                 {
                     public TableInfo getLookupTableInfo()
                     {
-                        ExpSampleSetTable sampleSetTable = ExperimentService.get().createSampleSetTable(ExpSchema.TableType.SampleSets.toString(), _userSchema);
+                        ExpSampleSetTable sampleSetTable = ExperimentService.get().createSampleSetTable(ExpSchema.TableType.SampleSets.toString(), _userSchema, getLookupContainerFilter());
                         sampleSetTable.populate();
                         return sampleSetTable;
                     }
@@ -147,7 +147,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                         "(SELECT ProtocolLSID FROM " + ExperimentServiceImpl.get().getTinfoProtocolApplication() + " pa " +
                         " WHERE pa.RowId = " + ExprColumn.STR_TABLE_ALIAS + ".SourceApplicationId)"), JdbcType.VARCHAR);
                 columnInfo.setSqlTypeName("lsidtype");
-                columnInfo.setFk(getExpSchema().getProtocolForeignKey("LSID"));
+                columnInfo.setFk(getExpSchema().getProtocolForeignKey(getContainerFilter(),"LSID"));
                 columnInfo.setLabel("Source Protocol");
                 columnInfo.setDescription("Contains a reference to the protocol for the protocol application that created this sample");
                 columnInfo.setUserEditable(false);

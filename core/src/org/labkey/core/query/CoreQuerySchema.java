@@ -125,7 +125,7 @@ public class CoreQuerySchema extends UserSchema
     }
 
 
-    public TableInfo createTable(String name)
+    public TableInfo createTable(String name, ContainerFilter cf)
     {
         if (USERS_TABLE_NAME.equalsIgnoreCase(name))
             return getUsers();
@@ -142,9 +142,9 @@ public class CoreQuerySchema extends UserSchema
         if (USERS_AND_GROUPS_TABLE_NAME.equalsIgnoreCase(name) && getContainer().hasPermission(getUser(), SeeGroupDetailsPermission.class))
             return getUsersAndGroupsTable();
         if (WORKBOOKS_TABLE_NAME.equalsIgnoreCase(name))
-            return getWorkbooks();
+            return getWorkbooks(cf);
         if (CONTAINERS_TABLE_NAME.equalsIgnoreCase(name))
-            return getContainers();
+            return getContainers(cf);
         if (USERS_MSG_SETTINGS_TABLE_NAME.equalsIgnoreCase(name) && getContainer().hasPermission(getUser(), AdminPermission.class))
             return new UsersMsgPrefTable(this, CoreSchema.getInstance().getSchema().getTable(USERS_TABLE_NAME)).init();
         // Files table is not visible
@@ -159,14 +159,14 @@ public class CoreQuerySchema extends UserSchema
         return null;
     }
 
-    public TableInfo getWorkbooks()
+    public TableInfo getWorkbooks(ContainerFilter cf)
     {
-        return new WorkbooksTableInfo(this);
+        return new WorkbooksTableInfo(this, cf);
     }
 
-    public TableInfo getContainers()
+    public TableInfo getContainers(ContainerFilter cf)
     {
-        return new ContainerTable(this);
+        return new ContainerTable(this, cf);
     }
 
     public TableInfo getGroups()

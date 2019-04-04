@@ -44,6 +44,7 @@ public class ParticipantGroupTable extends BaseStudyTable
 {
     public ParticipantGroupTable(StudyQuerySchema schema)
     {
+        // TODO ContainerFilter
         super(schema, StudySchema.getInstance().getTableInfoParticipantGroup());
         setName(StudyService.get().getSubjectGroupTableName(schema.getContainer()));
         setDescription("This table contains one row for each " + StudyService.get().getSubjectTableName(schema.getContainer()).toLowerCase() + " group");
@@ -62,7 +63,7 @@ public class ParticipantGroupTable extends BaseStudyTable
         rowIdColumn.setKeyField(true);
 
         ColumnInfo categoryIdColumn = new AliasedColumn(this, "CategoryId", _rootTable.getColumn("CategoryId"));
-        categoryIdColumn.setFk(new QueryForeignKey(_userSchema, null, StudyService.get().getSubjectCategoryTableName(getContainer()), "RowId", "Label"));
+        categoryIdColumn.setFk( QueryForeignKey.from(_userSchema, null).to(StudyService.get().getSubjectCategoryTableName(getContainer()), "RowId", "Label") );
         addColumn(categoryIdColumn);
 
         addWrapColumn(_rootTable.getColumn("Label"));

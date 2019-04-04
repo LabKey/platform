@@ -77,7 +77,7 @@ public class DefaultStudyDesignTable extends FilteredTable<UserSchema>
                     if (pd != null)
                     {
                         if (pd.getLookupQuery() != null || pd.getConceptURI() != null)
-                            col.setFk(new PdLookupForeignKey(schema.getUser(), pd, schema.getContainer()));
+                            col.setFk(PdLookupForeignKey.create(schema, pd));
 
                         if (pd.getPropertyType() == PropertyType.MULTI_LINE)
                         {

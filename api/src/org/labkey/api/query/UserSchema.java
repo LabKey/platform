@@ -149,27 +149,42 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         return null;
     }
 
-
+    public @NotNull ContainerFilter getDefaultContainerFilter()
+    {
+        return ContainerFilter.CURRENT;
+    }
 
     @Nullable
     public TableInfo getTable(String name, boolean includeExtraMetadata)
     {
-        return getTable(name, includeExtraMetadata, false);
+        return getTable(name, getDefaultContainerFilter(), includeExtraMetadata, false);
     }
 
+    public TableInfo getTable(String name, @Nullable ContainerFilter cf)
+    {
+        return getTable(name, cf, true, false);
+    }
 
-    /** if forWrite==true, do not return a cached version */
-    public TableInfo getTable(String name, boolean includeExtraMetadata, boolean forWrite)
+    /**
+     * @param cf null means to use the default for this schema/table (often schema.getDefaultContainerFilter()). It does not mean there is not ContainerFilter
+     * @param forWrite true means do not return a cached version
+     */
+    public TableInfo getTable(String name, @Nullable ContainerFilter cf, boolean includeExtraMetadata, boolean forWrite)
     {
         ArrayList<QueryException> errors = new ArrayList<>();
-        Object o = _getTableOrQuery(name, includeExtraMetadata, forWrite, errors);
+        /* NOTE: ContainerFilter is only applied to TableInfo not QueryDef */
+        Object o = _getTableOrQuery(name, cf, includeExtraMetadata, forWrite, errors);
         if (o instanceof TableInfo)
         {
+            if (!forWrite)
+                ((TableInfo)o).setLocked(true);
             assert validateTableInfo((TableInfo)o);
             return (TableInfo)o;
         }
         if (o instanceof QueryDefinition)
         {
+            // TODO QueryDefinition.getTable(ContainerFilter)
+            ((QueryDefinition)o).setContainerFilter(cf);
             TableInfo t = ((QueryDefinition)o).getTable(this, errors, true);
             // throw if there are any non-warning errors
             for (QueryException ex : errors)
@@ -179,6 +194,8 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
                 throw ex;
             }
             assert validateTableInfo(t);
+            if (null != t && !forWrite)
+                t.setLocked(true);
             return t;
         }
         return null;
@@ -198,7 +215,11 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
 
     Map<Pair<String, Boolean>, Object> cache = new HashMap<>();
 
-    public Object _getTableOrQuery(String name, boolean includeExtraMetadata, boolean forWrite, Collection<QueryException> errors)
+    /*
+     * NOTE ContainerFilter is ONLY applied to TableInfo not returned QueryDef
+     * Not ideal, but this is basically a private method anyway...
+     */
+    public Object _getTableOrQuery(String name, ContainerFilter cf, boolean includeExtraMetadata, boolean forWrite, Collection<QueryException> errors)
     {
         if (name == null)
             return null;
@@ -206,18 +227,9 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         if (!canReadSchema())
             return null; // See #21014
 
-        Pair<String,Boolean> key = new Pair<>(name.toLowerCase(), includeExtraMetadata);
-        boolean useCache = _cacheTableInfos && !forWrite;
+        TableInfo table = createTable(name, cf);
         Object torq;
 
-        if (useCache)
-        {
-            torq = cache.get(key);
-            if (null != torq)
-                return torq;
-        }
-
-        TableInfo table = createTable(name);
         if (table != null)
         {
             if (includeExtraMetadata)
@@ -225,8 +237,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
                 table.overlayMetadata(name, this, errors);
             }
             afterConstruct(table);
-            // should just be !forWrite, but exp schema is still a problem
-            if (useCache)
+            if (!forWrite)
                 table.setLocked(true);
             fireAfterConstruct(table);
             torq = table;
@@ -245,9 +256,6 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
             torq = def;
         }
 
-        if (false && useCache)
-           cache.put(key,torq);
-
         MemTracker.getInstance().put(torq);
         return torq;
     }
@@ -258,7 +266,20 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         return getTable(name, true);
     }
 
-    public abstract @Nullable TableInfo createTable(String name);
+
+    /* TODO schemas that still override this method have not been converted yet */
+    public @Nullable TableInfo createTable(String name)
+    {
+        throw new IllegalStateException();
+    }
+
+
+    /* TODO schemas that do not override this method have not been converted yet */
+    public @Nullable TableInfo createTable(String name, ContainerFilter cf)
+    {
+        return createTable(name);
+    }
+
 
     abstract public Set<String> getTableNames();
 

@@ -45,9 +45,9 @@ import java.util.List;
 
 public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Column> implements ExpExperimentTable
 {
-    public ExpExperimentTableImpl(String name, UserSchema schema)
+    public ExpExperimentTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoExperiment(), schema, new ExpExperimentImpl(new Experiment()));
+        super(name, ExperimentServiceImpl.get().getTinfoExperiment(), schema, new ExpExperimentImpl(new Experiment()), cf);
         addCondition(new SQLFragment("Hidden = ?", Boolean.FALSE), FieldKey.fromParts("Hidden"));
 
         ActionURL deleteExpUrl = ExperimentController.ExperimentUrlsImpl.get().getDeleteSelectedExperimentsURL(getContainer(), null);
@@ -95,7 +95,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
             {
                 ColumnInfo batchProtocolCol = wrapColumn(alias, _rootTable.getColumn("BatchProtocolId"));
                 batchProtocolCol.setLabel("Batch Protocol");
-                batchProtocolCol.setFk(getExpSchema().getProtocolForeignKey("RowId"));
+                batchProtocolCol.setFk(getExpSchema().getProtocolForeignKey(getContainerFilter(), "RowId"));
                 setupNonEditableCol(batchProtocolCol);
                 return batchProtocolCol;
             }

@@ -60,16 +60,15 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
     protected Map<String, String> _dbSchemaToColumnMap;
 
 
-    @Deprecated
-    public DefaultAuditTypeTable(AuditTypeProvider provider, Domain domain, UserSchema schema)
+    @Override
+    protected ContainerFilter getDefaultContainerFilter()
     {
-        this(provider, StorageProvisioner.createTableInfo(domain), schema, null);
+        return  ContainerFilter.Type.CurrentWithUser.create(_userSchema.getUser());
     }
 
-
-    public DefaultAuditTypeTable(AuditTypeProvider provider, TableInfo storage, UserSchema schema, List<FieldKey> defaultVisibleColumns)
+    public DefaultAuditTypeTable(AuditTypeProvider provider, TableInfo storage, UserSchema schema, ContainerFilter cf, List<FieldKey> defaultVisibleColumns)
     {
-        super(storage, schema, ContainerFilter.Type.CurrentWithUser.create(schema.getUser()));
+        super(storage, schema, cf);
 
         _provider = provider;
 
@@ -182,7 +181,6 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
             // and copy the real column's label to the aliased column so it will be used in the DataRegion grid.
             AliasedColumn a = new AliasedColumn(this, name, col);
             a.setLabel(col.getLabel());
-            addColumn(a);
             return a;
         }
 

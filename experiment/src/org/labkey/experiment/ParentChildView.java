@@ -228,7 +228,7 @@ public class ParentChildView extends VBox
         {
             protected TableInfo createTable()
             {
-                ExpMaterialTable table = ExperimentServiceImpl.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), getSchema());
+                ExpMaterialTable table = ExperimentServiceImpl.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), getSchema(), getContainerFilter());
                 table.setMaterials(materials);
                 table.populate(ss, false);
                 // We've already set an IN clause that restricts us to showing just data that we have permission

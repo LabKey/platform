@@ -21,6 +21,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerTable;
 import org.labkey.api.data.ConvertHelper;
@@ -82,9 +83,9 @@ import java.util.concurrent.Callable;
  */
 public class WorkbooksTableInfo extends ContainerTable implements UpdateableTableInfo
 {
-    public WorkbooksTableInfo(CoreQuerySchema coreSchema)
+    public WorkbooksTableInfo(CoreQuerySchema coreSchema, ContainerFilter cf)
     {
-        super(coreSchema);
+        super(coreSchema, cf);
 
         setDescription("Contains one row for each workbook in this folder or project");
         setName("Workbooks");

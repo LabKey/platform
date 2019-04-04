@@ -98,9 +98,9 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
     private TableExtension _extension;
     private List<FieldKey> _extraDefaultColumns = new ArrayList<>();
 
-    public IssuesTable(IssuesQuerySchema schema, IssueListDef issueDef)
+    public IssuesTable(IssuesQuerySchema schema, ContainerFilter cf, IssueListDef issueDef)
     {
-        super(IssuesSchema.getInstance().getTableInfoIssues(), schema);
+        super(IssuesSchema.getInstance().getTableInfoIssues(), schema, cf);
         setName(issueDef.getName());
         setTitle(issueDef.getLabel());
         setTitleColumn("Title");
@@ -118,7 +118,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
 
     private void addAllColumns()
     {
-        UserSchema schema = getUserSchema();
+        IssuesQuerySchema schema = (IssuesQuerySchema)getUserSchema();
         Set<String> baseProps = new CaseInsensitiveHashSet();
         Map<String, String> colNameMap = new HashMap<>();
         for (String colName : getDomainKind().getReservedPropertyNames(getDomain()))
@@ -164,19 +164,25 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         relatedURL.setContainerContext(new ContainerContext.FieldKeyContext(FieldKey.fromParts("Related", "Folder")));
         related.setURL(relatedURL);
 
-        QueryForeignKey qfk = new QueryForeignKey(getUserSchema(), getContainer(), "RelatedIssues", "IssueId", null)
+        QueryForeignKey qfk = new QueryForeignKey(getUserSchema(), IssuesTable.this.getContainerFilter(), getUserSchema(), getContainer(), "RelatedIssues", "IssueId", null)
         {
             @Override
             public TableInfo getLookupTableInfo()
             {
-                TableInfo table = super.getLookupTableInfo();
+                // What is the AllIssueTable anyway
+                // TODO ContainerFilter should not mutate table here
+                if (_table == null && getSchema() != null)
+                {
+                    // TODO use forWrite==true because of setFk() below
+                    _table = getUserSchema().getTable(_tableName, getLookupContainerFilter(), true, true);
 
-                ColumnInfo lookupColumn = table.getColumn(getLookupColumnName());
-                lookupColumn.setFk(new QueryForeignKey(getUserSchema(), getLookupContainer(), IssuesQuerySchema.ALL_ISSUE_TABLE, "issueid", null));
-                ColumnInfo junctionColumn = table.getColumn("RelatedIssueId");
-                junctionColumn.setFk(new QueryForeignKey(getUserSchema(), getLookupContainer(), IssuesQuerySchema.ALL_ISSUE_TABLE, "issueid", null));
+                    ColumnInfo lookupColumn = _table.getColumn(getLookupColumnName());
+                    lookupColumn.setFk( QueryForeignKey.from(getUserSchema(), getLookupContainerFilter()).to(IssuesQuerySchema.ALL_ISSUE_TABLE, "issueid", null) );
+                    ColumnInfo junctionColumn = _table.getColumn("RelatedIssueId");
+                    junctionColumn.setFk( QueryForeignKey.from(getUserSchema(), getLookupContainerFilter()).to(IssuesQuerySchema.ALL_ISSUE_TABLE, "issueid", null) );
+                }
 
-                return table;
+                return _table;
             }
         };
 
@@ -219,7 +225,8 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         ColumnInfo duplicateCol = addWrapColumn(_rootTable.getColumn("Duplicate"));
         duplicateCol.setURL(new DetailsURL(base, Collections.singletonMap("issueId", "Duplicate")));
         duplicateCol.setDisplayColumnFactory(new URLTitleDisplayColumnFactory("Issue ${Duplicate}: ${Duplicate/Title:htmlEncode}"));
-        duplicateCol.setFk(new QueryForeignKey(IssuesSchema.getInstance().getTableInfoIssues(), getContainer(), "IssueId", "IssueId"));
+        duplicateCol.setFk( QueryForeignKey.from(getUserSchema(), getContainerFilter())
+                .table(this).key("IssueId").display("IssueId") );
 
         TableInfo defTable = _issueDef.createTable(getUserSchema().getUser());
 
@@ -284,7 +291,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
                 {
                     if (pd.getLookupQuery() != null || pd.getConceptURI() != null)
                     {
-                        col.setFk(new IssuesPdLookupForeignKey(schema.getUser(), pd, schema.getContainer()));
+                        col.setFk(new IssuesPdLookupForeignKey(schema, pd));
                         TableInfo target = col.getFk().getLookupTableInfo();
                         if (null != target && target.getPkColumnNames().size() == 1 && StringUtils.equalsIgnoreCase(target.getTitleColumn(),target.getPkColumnNames().get(0)))
                         {
@@ -687,12 +694,11 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         private Container _container;
         private String _propName;
 
-        public IssuesPdLookupForeignKey(User user, PropertyDescriptor pd, Container container)
+        public IssuesPdLookupForeignKey(IssuesQuerySchema schema, PropertyDescriptor pd)
         {
-            super(user, pd, container);
-
-            _user = user;
-            _container = container;
+            super(schema, schema.getContainer(), schema.getUser(), null, pd, pd.getLookupSchema(), pd.getLookupQuery(), pd.getContainer());
+            _user = schema.getUser();
+            _container = schema.getContainer();
             _propName = pd.getName();
         }
 

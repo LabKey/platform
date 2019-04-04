@@ -43,6 +43,7 @@ public class StudyDataTable extends BaseStudyTable
 {
     public StudyDataTable(StudyQuerySchema schema)
     {
+        // TODO ContainerFilter
         super(schema, StudySchema.getInstance().getTableInfoStudyData(schema.getStudy(), schema.getUser()));
 
         List<FieldKey> defaultColumns = new LinkedList<>();
@@ -62,7 +63,7 @@ public class StudyDataTable extends BaseStudyTable
 
         String subjectColName = StudyService.get().getSubjectColumnName(getContainer());
         ColumnInfo participantIdColumn = new AliasedColumn(this, subjectColName, _rootTable.getColumn("participantid"));
-        participantIdColumn.setFk(new QueryForeignKey(_userSchema, null, StudyService.get().getSubjectTableName(getContainer()), subjectColName, null));
+        participantIdColumn.setFk( QueryForeignKey.from(_userSchema, null).to(StudyService.get().getSubjectTableName(getContainer()), subjectColName, null) );
         addColumn(participantIdColumn);
         defaultColumns.add(FieldKey.fromParts(subjectColName));
 

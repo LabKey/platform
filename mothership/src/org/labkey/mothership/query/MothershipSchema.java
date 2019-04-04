@@ -367,7 +367,7 @@ public class MothershipSchema extends UserSchema
         result.setTitleColumn("ExceptionStackTraceId");
         result.setDetailsURL(new DetailsURL(new ActionURL(MothershipController.ShowStackTraceDetailAction.class, getContainer()), Collections.singletonMap("exceptionStackTraceId", "ExceptionStackTraceId")));
 
-        result.getColumn("ModifiedBy").setFk(new UserIdQueryForeignKey(getUser(), getContainer(), true));
+        result.getColumn("ModifiedBy").setFk(new UserIdQueryForeignKey(this, true));
 
         List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromParts("ExceptionStackTraceId"));
@@ -544,7 +544,7 @@ public class MothershipSchema extends UserSchema
         @Override
         public QueryUpdateService getUpdateService()
         {
-            return new SimpleQueryUpdateService(new SimpleUserSchema.SimpleTable<>(this.getUserSchema(), this.getRealTable()).init(), this.getRealTable());
+            return new SimpleQueryUpdateService(new SimpleUserSchema.SimpleTable<>(this.getUserSchema(), this.getRealTable(), null).init(), this.getRealTable());
         }
     }
 }

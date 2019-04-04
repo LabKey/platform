@@ -91,7 +91,7 @@ public class LookupColumn extends ColumnInfo
         ret.setShortLabel(lookupColumn.getShortLabel());
         if (ret.getFk() instanceof RowIdForeignKey)
         {
-            ret.setFk(null);
+            ret.clearFk();
         }
         return ret;
     }

@@ -83,7 +83,8 @@ public class ParticipantTable extends BaseStudyTable
         datasetColumn.setKeyField(false);
         datasetColumn.setIsUnselectable(true);
         datasetColumn.setLabel("DataSet");
-        datasetColumn.setFk(new AbstractForeignKey()
+        // TODO ContainerFilter
+        datasetColumn.setFk(new AbstractForeignKey(getUserSchema(), null)
         {
             public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
             {
@@ -317,7 +318,7 @@ public class ParticipantTable extends BaseStudyTable
 
         public PivotedAliasForeignKey(TableInfo datasetTable, ColumnInfo sourceColumn, ColumnInfo aliasColumn)
         {
-            super(StudyQuerySchema.SCHEMA_NAME, "PivotedParticipantAliases", null);
+            super(datasetTable.getUserSchema(), null, StudyQuerySchema.SCHEMA_NAME, "PivotedParticipantAliases", null);
             _datasetTable = datasetTable;
             _sourceColumn = sourceColumn;
             _aliasColumn = aliasColumn;

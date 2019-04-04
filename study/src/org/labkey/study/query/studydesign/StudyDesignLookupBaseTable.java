@@ -65,7 +65,7 @@ public class StudyDesignLookupBaseTable extends BaseStudyTable
                     newCol.setHidden(col.isHidden());
 
                 if (newCol.getName().equalsIgnoreCase("CreatedBy") || newCol.getName().equalsIgnoreCase("ModifiedBy"))
-                    UserIdQueryForeignKey.initColumn(schema.getUser(), schema.getContainer(), newCol, true);
+                    UserIdQueryForeignKey.initColumn(schema, newCol, true);
             }
             else
                 addContainerColumn();

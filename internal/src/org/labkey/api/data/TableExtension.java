@@ -58,7 +58,10 @@ public final class TableExtension
         ColumnInfo extensionCol = primaryTable.getColumn(foreignKey);
         assert extensionCol != null;
 
-        QueryForeignKey extensionFK = new QueryForeignKey(extensionTable, null, lookupKey, null);
+        QueryForeignKey extensionFK = (QueryForeignKey)QueryForeignKey
+                .from(primaryTable.getUserSchema(), primaryTable.getContainerFilter())
+                .table(extensionTable).key(lookupKey)
+                .build();
         extensionFK.setJoinType(joinType);
 
         return new TableExtension(primaryTable, extensionTable, extensionCol, extensionFK);

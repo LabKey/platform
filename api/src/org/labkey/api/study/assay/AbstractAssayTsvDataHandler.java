@@ -25,7 +25,6 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ForeignKey;
@@ -375,7 +374,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 }
             }
 
-            final ContainerFilterable dataTable = provider.createProtocolSchema(user, container, protocol, null).createDataTable();
+            final TableInfo dataTable = provider.createProtocolSchema(user, container, protocol, null).createDataTable(null);
 
             Map<ExpMaterial, String> inputMaterials = checkData(container, user, dataTable, dataDomain, rawData, settings, resolver);
 
@@ -503,7 +502,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
      * NOTE: Mutates the rawData list in-place
      * @return the set of materials that are inputs to this run
      */
-    private Map<ExpMaterial, String> checkData(Container container, User user, ContainerFilterable dataTable, Domain dataDomain, List<Map<String, Object>> rawData, DataLoaderSettings settings, ParticipantVisitResolver resolver)
+    private Map<ExpMaterial, String> checkData(Container container, User user, TableInfo dataTable, Domain dataDomain, List<Map<String, Object>> rawData, DataLoaderSettings settings, ParticipantVisitResolver resolver)
             throws ValidationException, ExperimentException
     {
         List<String> missing = new ArrayList<>();

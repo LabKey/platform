@@ -20,9 +20,9 @@ import org.labkey.api.assay.dilution.DilutionAssayProvider;
 import org.labkey.api.assay.dilution.DilutionDataHandler;
 import org.labkey.api.assay.dilution.SampleInfoMethod;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.EnumTableInfo;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.data.statistics.StatsService.CurveFitType;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -77,7 +77,7 @@ public class DilutionProviderSchema extends AssayProviderSchema
         return names;
     }
 
-    public TableInfo createTable(String name)
+    public TableInfo createTable(String name, ContainerFilter cf)
     {
         if (SAMPLE_PREPARATION_METHOD_TABLE_NAME.equalsIgnoreCase(name))
         {
@@ -94,7 +94,7 @@ public class DilutionProviderSchema extends AssayProviderSchema
             result.setPublicName(CURVE_FIT_METHOD_TABLE_NAME);
             return result;
         }
-        return super.createTable(name);
+        return super.createTable(name, cf);
     }
 
     private static final String[] _fixedRunDataProps = {DilutionDataHandler.DILUTION_INPUT_MATERIAL_DATA_PROPERTY, DilutionDataHandler.FIT_ERROR_PROPERTY, DilutionDataHandler.WELLGROUP_NAME_PROPERTY};

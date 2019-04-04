@@ -22,6 +22,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.SQLFragment;
@@ -150,12 +151,11 @@ public class SpecimenForeignKey extends LookupForeignKey
         if (null == _assayDataTable)
         {
             AssayProtocolSchema assaySchema = _provider.createProtocolSchema(studySchema.getUser(), _schema.getContainer(), _protocol, null);
-            _assayDataTable = assaySchema.createDataTable();
+            _assayDataTable = assaySchema.createDataTable(ContainerFilter.EVERYTHING);
         }
 
         // set container filter BEFORE we call getColumns(), it affects the filters on the join tables
         // TODO could the caller pass in the container filter at construction time, or is that too early?
-        ((ContainerFilterable)_assayDataTable).setContainerFilter(ContainerFilter.EVERYTHING);
 
         FieldKey specimenFK = _tableMetadata.getSpecimenIDFieldKey();
         FieldKey targetStudyFK = _tableMetadata.getTargetStudyFieldKey();
@@ -208,7 +208,7 @@ public class SpecimenForeignKey extends LookupForeignKey
         TableInfo vialTableInfo = getVialTableInfo();
         if (null == vialTableInfo)
             return null;
-        FilteredTable ft = new FilteredTable<AssaySchema>(vialTableInfo, _schema)
+        FilteredTable ft = new FilteredTable<>(vialTableInfo, _schema)
         {
             @NotNull
             @Override
@@ -244,6 +244,7 @@ public class SpecimenForeignKey extends LookupForeignKey
 
     private TableInfo getSpecimenTableInfo()
     {
+        // ignore passed in getLookupContainerFilter() we know the target container
         _initAssayColumns();
         UserSchema studySchema = QueryService.get().getUserSchema(_schema.getUser(), _schema.getContainer(), "study");
         List<Container> list = _containerList;
@@ -487,7 +488,7 @@ public class SpecimenForeignKey extends LookupForeignKey
             setLabel("Specimen  " + lookupColumn.getLabel());
             setShortLabel(lookupColumn.getShortLabel());
             if (getFk() instanceof RowIdForeignKey)
-                setFk(null);
+                clearFk();
         }
 
 

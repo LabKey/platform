@@ -433,12 +433,12 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return new QueryParseException("Unexpected exception", e, 0, 0);
     }
 
-    public Query getQuery(@NotNull QuerySchema schema)
+    public final Query getQuery(@NotNull QuerySchema schema)
     {
         return getQuery(schema, null, null, false);
     }
 
-    public Query getQuery(@NotNull QuerySchema schema, List<QueryException> errors, Query parent, boolean includeMetadata)
+    public final Query getQuery(@NotNull QuerySchema schema, List<QueryException> errors, Query parent, boolean includeMetadata)
     {
         return getQuery(schema, errors, parent, includeMetadata, false, false);
     }

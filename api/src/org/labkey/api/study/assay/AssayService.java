@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -81,7 +82,9 @@ public interface AssayService
 
     ModelAndView createAssayImportView(Map<String, String> properties);
 
+    @Deprecated
     ExpRunTable createRunTable(ExpProtocol protocol, AssayProvider provider, User user, Container container);
+    ExpRunTable createRunTable(ExpProtocol protocol, AssayProvider provider, User user, Container container, ContainerFilter cf);
 
     AssaySchema createSchema(User user, Container container, @Nullable Container targetStudy);
 

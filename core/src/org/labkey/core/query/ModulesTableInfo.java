@@ -39,7 +39,7 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
 {
     public ModulesTableInfo(CoreQuerySchema schema)
     {
-        super(schema, CoreSchema.getInstance().getTableInfoModules());
+        super(schema, CoreSchema.getInstance().getTableInfoModules(), null);
         setDescription("Contains a row for each module known to the server.");
     }
 

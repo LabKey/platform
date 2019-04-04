@@ -27,7 +27,6 @@ import org.labkey.api.data.MultiValuedDisplayColumn;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
 
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
@@ -433,7 +432,7 @@ public class QAggregate extends QExpr
                 ret.setURL(null);
                 ret.setMvColumnName(null);
                 ret.setDisplayColumnFactory(ColumnInfo.DEFAULT_FACTORY);
-                ret.setFk(null);
+                ret.clearFk();
             }
         }
         if (getType() == Type.GROUP_CONCAT)

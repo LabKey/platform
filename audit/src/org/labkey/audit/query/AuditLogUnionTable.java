@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
@@ -45,24 +46,24 @@ import java.util.Map;
  */
 public class AuditLogUnionTable extends FilteredTable<AuditQuerySchema>
 {
-    public AuditLogUnionTable(AuditQuerySchema schema)
+    public AuditLogUnionTable(AuditQuerySchema schema, ContainerFilter cf)
     {
-        super(createVirtualTable(schema), schema);
+        super(createVirtualTable(schema, cf), schema, null);
         wrapAllColumns(true);
     }
 
-    private static TableInfo createVirtualTable(AuditQuerySchema schema)
+    private static TableInfo createVirtualTable(AuditQuerySchema schema, ContainerFilter cf)
     {
-        return new AuditUnionTable(schema);
+        return new AuditUnionTable(schema, cf);
     }
 
     private static class AuditUnionTable extends VirtualTable
     {
         private SQLFragment _query;
 
-        public AuditUnionTable(@NotNull UserSchema schema)
+        public AuditUnionTable(@NotNull UserSchema schema, ContainerFilter cf)
         {
-            super(AuditSchema.getInstance().getSchema(), AuditQuerySchema.AUDIT_TABLE_NAME, schema);
+            super(AuditSchema.getInstance().getSchema(), AuditQuerySchema.AUDIT_TABLE_NAME, schema, ContainerFilter.EVERYTHING);
 
             _query = new SQLFragment();
             _query.appendComment("<AuditUnionTableInfo>", getSchema().getSqlDialect());
@@ -77,7 +78,7 @@ public class AuditLogUnionTable extends FilteredTable<AuditQuerySchema>
 
                 _query.append(union).append("\n");
 
-                TableInfo table = provider.createTableInfo(schema);
+                TableInfo table = provider.createTableInfo(schema, cf);
                 Map<FieldKey, String> legacyMap = provider.legacyNameMap();
 
                 _query.append("SELECT\n");
