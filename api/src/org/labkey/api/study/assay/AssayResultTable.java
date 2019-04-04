@@ -79,6 +79,12 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
 
     private static final String RUN_ID_ALIAS = "Run";
 
+    @Deprecated
+    public AssayResultTable(AssayProtocolSchema schema, boolean includeCopiedToStudyColumns)
+    {
+        this(schema, null, includeCopiedToStudyColumns);
+    }
+
     public AssayResultTable(AssayProtocolSchema schema, ContainerFilter cf, boolean includeCopiedToStudyColumns)
     {
         super(StorageProvisioner.createTableInfo(schema.getProvider().getResultsDomain(schema.getProtocol())), schema, cf);
