@@ -331,8 +331,19 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     @Nullable
     public ExpDataClassImpl getDataClass()
     {
+        return getDataClass(null);
+    }
+
+    @Nullable
+    public ExpDataClassImpl getDataClass(@Nullable User user)
+    {
         if (_object.getClassId() != null)
-            return ExperimentServiceImpl.get().getDataClass(_object.getClassId());
+        {
+            if (user == null)
+                return ExperimentServiceImpl.get().getDataClass(getContainer(), _object.getClassId());
+            else
+                return ExperimentServiceImpl.get().getDataClass(getContainer(), user, _object.getClassId());
+        }
 
         return null;
     }
