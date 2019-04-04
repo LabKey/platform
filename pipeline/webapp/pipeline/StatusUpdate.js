@@ -36,7 +36,7 @@ LABKEY.pipeline.StatusUpdate = function(controller, action, returnURL)
     var _dt = null;
     var _lastUpdate = "";
     var _iDelay = 0;
-    var _delays = [15, 30, 60, 120, 240];
+    var _delays = [2, 5, 10, 30, 60, 120, 240];
     var _paused = false;
 
     var isSelectionModified = function()
