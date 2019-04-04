@@ -985,13 +985,18 @@ LABKEY.internal.MiniProfiler = new function () {
 
     }
 
+    function getSimpleLinkHtml(topic, displayText)
+    {
+        return '<a href="' + LABKEY.Utils.encodeHtml(LABKEY.helpLinkPrefix + topic) + '" target="labkeyHelp">' + LABKEY.Utils.encodeHtml(displayText) + "</a>";
+    }
+
     function initControls() {
         if (_options.showControls) {
             _controls = append(_container,
                             '<div class="profiler-controls">' +
                             '<span class="profiler-min-max" title="click to minimize/maximize">m</span>' +
                             '<span class="profiler-clear" title="click to clear log">c</span>' +
-                            '<span>' + LABKEY.Utils.getSimpleLinkHtml('profiler#mini', '?') +
+                            '<span>' + getSimpleLinkHtml('profiler#mini', '?') +
                             '</div>');
 
             click(select(_container, '.profiler-controls .profiler-min-max'), function () {
