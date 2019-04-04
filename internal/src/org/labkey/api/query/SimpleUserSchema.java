@@ -25,6 +25,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.ContainerType;
 import org.labkey.api.data.DatabaseTableType;
@@ -111,6 +112,11 @@ public class SimpleUserSchema extends UserSchema
 
     public TableInfo createTable(String name)
     {
+        throw new IllegalStateException();
+    }
+
+    public TableInfo createTable(String name, ContainerFilter cf)
+    {
         if (!_available.contains(name))
             return null;
 
@@ -118,7 +124,7 @@ public class SimpleUserSchema extends UserSchema
         if (sourceTable == null)
             return null;
 
-        return createWrappedTable(name, sourceTable);
+        return createWrappedTable(name, sourceTable, cf);
     }
 
     /**
@@ -141,9 +147,9 @@ public class SimpleUserSchema extends UserSchema
      * @param sourceTable
      * @return The wrapped TableInfo.
      */
-    protected TableInfo createWrappedTable(String name, @NotNull TableInfo sourceTable)
+    protected TableInfo createWrappedTable(String name, @NotNull TableInfo sourceTable, ContainerFilter cf)
     {
-        return new SimpleTable<>(this, sourceTable).init();
+        return new SimpleTable<>(this, sourceTable, cf).init();
     }
 
     public Set<String> getTableNames()
@@ -192,13 +198,25 @@ public class SimpleUserSchema extends UserSchema
         protected Domain _domain;
         protected boolean _readOnly;
 
+
+        /**
+         * Create the simple table.
+         * SimpleTable doesn't add columns until .init() has been called to allow derived classes to fully initialize themselves before adding columns.
+         *
+         * TODO classes that use this constructor should be migrated to SimpleTable(SchemaType schema, TableInfo table, ContainerFilter cf)
+         */
+        public SimpleTable(SchemaType schema, TableInfo table)
+        {
+            super(table, schema, schema.getDefaultContainerFilter());
+        }
+
         /**
          * Create the simple table.
          * SimpleTable doesn't add columns until .init() has been called to allow derived classes to fully initialize themselves before adding columns.
          */
-        public SimpleTable(SchemaType schema, TableInfo table)
+        public SimpleTable(SchemaType schema, TableInfo table, ContainerFilter cf)
         {
-            super(table, schema);
+            super(table, schema, cf);
         }
 
         /**
@@ -287,7 +305,7 @@ public class SimpleUserSchema extends UserSchema
                (colName.equalsIgnoreCase("owner") || colName.equalsIgnoreCase("createdby") || colName.equalsIgnoreCase("modifiedby")) &&
                (_userSchema.getDbSchema().getScope().isLabKeyScope()))
             {
-                wrap.setFk(new UserIdQueryForeignKey(_userSchema.getUser(), _userSchema.getContainer(), true));
+                wrap.setFk(new UserIdQueryForeignKey(_userSchema, true));
                 wrap.setUserEditable(false);
                 wrap.setShownInInsertView(false);
                 wrap.setShownInUpdateView(false);
@@ -330,7 +348,11 @@ public class SimpleUserSchema extends UserSchema
                         useRawFKValue = ((QueryForeignKey)fk).isUseRawFKValue();
                     }
 
-                    ForeignKey wrapFk = new QueryForeignKey(lookupSchemaName, getUserSchema().getContainer(), fk.getLookupContainer(), getUserSchema().getUser(), fk.getLookupTableName(), fk.getLookupColumnName(), fk.getLookupDisplayName(), useRawFKValue);
+                    ForeignKey wrapFk = QueryForeignKey.from(getUserSchema(), getContainerFilter())
+                        .schema(lookupSchemaName)
+                        .to(fk.getLookupTableName(), fk.getLookupColumnName(), fk.getLookupDisplayName())
+                        .container(fk.getLookupContainer())
+                        .raw(useRawFKValue).build();
                     if (fk instanceof MultiValuedForeignKey)
                     {
                         wrapFk = new MultiValuedForeignKey(wrapFk, ((MultiValuedForeignKey)fk).getJunctionLookup());

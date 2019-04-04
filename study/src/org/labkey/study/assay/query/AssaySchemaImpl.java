@@ -24,6 +24,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
@@ -180,7 +181,7 @@ public class AssaySchemaImpl extends AssaySchema
 
 
     @Override
-    public TableInfo createTable(String name)
+    public TableInfo createTable(String name, ContainerFilter cf)
     {
         if (name.equalsIgnoreCase(ASSAY_LIST_TABLE_NAME))
             return new AssayListTable(this);
@@ -205,7 +206,7 @@ public class AssaySchemaImpl extends AssaySchema
                 // moved as part of the refactor
                 if (protocolSchema != null && new CaseInsensitiveHashSet(protocolSchema.getTableNames()).contains(newName))
                 {
-                    return protocolSchema.getTable(newName);
+                    return protocolSchema.getTable(newName, cf);
                 }
             }
         }

@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
@@ -47,9 +48,9 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
 {
     protected FileContentService _svc = FileContentService.get();
 
-    public ExpFilesTableImpl(String name, UserSchema schema)
+    public ExpFilesTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, schema);
+        super(name, schema, cf);
         addCondition(new SimpleFilter(FieldKey.fromParts("DataFileUrl"), null, CompareType.NONBLANK));
         _svc.ensureFileData(getUpdateService(), schema.getUser(), schema.getContainer());
     }

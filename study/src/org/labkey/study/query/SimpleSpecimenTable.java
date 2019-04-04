@@ -15,6 +15,7 @@
  */
 package org.labkey.study.query;
 
+import org.labkey.api.data.ForeignKey;
 import org.labkey.api.study.TimepointType;
 import org.labkey.study.StudySchema;
 import org.labkey.api.study.StudyService;
@@ -31,7 +32,7 @@ public class SimpleSpecimenTable extends AbstractSpecimenTable
         super(schema, StudySchema.getInstance().getTableInfoSpecimen(schema.getContainer()), skipPermissionChecks, true);
         setName("SimpleSpecimen");
 
-        getColumn(StudyService.get().getSubjectColumnName(getContainer())).setFk(null);
+        getColumn(StudyService.get().getSubjectColumnName(getContainer())).clearFk();
 
         addSpecimenVisitColumn(TimepointType.DATE, true);
 

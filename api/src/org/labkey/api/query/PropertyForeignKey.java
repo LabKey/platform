@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
@@ -52,8 +53,9 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
 
     private List<PropertyColumnDecorator> _decorators = new ArrayList<>();
 
-    public PropertyForeignKey(Map<String, PropertyDescriptor> pds, QuerySchema schema)
+    public PropertyForeignKey(QuerySchema schema, ContainerFilter cf, Map<String, PropertyDescriptor> pds)
     {
+        super(schema, cf);
         _pdMap = pds;
         _schema = schema;
     }
@@ -62,8 +64,9 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
     /**
      * Creates a virtual table with columns for each of the property descriptors.
      */
-    public PropertyForeignKey(Iterable<PropertyDescriptor> pds, QuerySchema schema)
+    public PropertyForeignKey(QuerySchema schema, ContainerFilter cf, Iterable<PropertyDescriptor> pds)
     {
+        super(schema, cf);
         _pdMap = new TreeMap<>();
         for (PropertyDescriptor pd : pds)
         {
@@ -73,9 +76,9 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
     }
 
 
-    public PropertyForeignKey(Domain domain, QuerySchema schema)
+    public PropertyForeignKey(QuerySchema schema, ContainerFilter cf, Domain domain)
     {
-        this(listProperties(domain), schema);
+        this(schema, cf, listProperties(domain));
     }
 
 
@@ -228,6 +231,7 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
         column.setImportAliasesSet(pd.getImportAliasSet());
         column.setSqlTypeName(CoreSchema.getInstance().getSqlDialect().getSqlTypeName(pd.getPropertyType().getJdbcType()));
         column.setDescription(pd.getDescription());
-        column.setFk(new PdLookupForeignKey(user, pd, _schema.getContainer()));
+        assert _schema.getUser() == user;
+        column.setFk(PdLookupForeignKey.create(_schema, pd));
     }
 }

@@ -78,7 +78,7 @@ public class AssaySpecimenVisitTable extends BaseStudyTable
             {
                 ColumnInfo column = addWrapColumn(baseColumn);
                 if (name.equalsIgnoreCase("CreatedBy") || name.equalsIgnoreCase("ModifiedBy"))
-                    UserIdQueryForeignKey.initColumn(schema.getUser(), schema.getContainer(), column, true);
+                    UserIdQueryForeignKey.initColumn(schema, column, true);
                 column.setHidden(true);
                 column.setUserEditable(false);
                 column.setShownInInsertView(false);

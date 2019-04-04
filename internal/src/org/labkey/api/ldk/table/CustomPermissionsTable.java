@@ -37,7 +37,7 @@ public class CustomPermissionsTable<SchemaType extends UserSchema> extends Simpl
 
     public CustomPermissionsTable(SchemaType schema, TableInfo table)
     {
-        super(schema, table);
+        super(schema, table, null);
     }
 
     @Override

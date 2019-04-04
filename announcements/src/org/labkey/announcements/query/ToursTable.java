@@ -109,8 +109,8 @@ public class ToursTable extends FilteredTable<AnnouncementSchema>
         containerCol.setLabel("Folder");
         ContainerForeignKey.initColumn(containerCol, schema);
 
-        getColumn("CreatedBy").setFk(new UserIdQueryForeignKey(_userSchema.getUser(), getContainer(), true));
-        getColumn("ModifiedBy").setFk(new UserIdQueryForeignKey(_userSchema.getUser(), getContainer(), true));
+        getColumn("CreatedBy").setFk(new UserIdQueryForeignKey(_userSchema, true));
+        getColumn("ModifiedBy").setFk(new UserIdQueryForeignKey(_userSchema, true));
 
         ColumnInfo modeCol = getColumn("Mode");
         modeCol.setDisplayColumnFactory(new DisplayColumnFactory()

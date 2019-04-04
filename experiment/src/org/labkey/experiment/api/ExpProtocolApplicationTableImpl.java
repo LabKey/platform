@@ -32,9 +32,9 @@ import org.labkey.api.query.UserSchema;
 
 public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApplicationTable.Column> implements ExpProtocolApplicationTable
 {
-    public ExpProtocolApplicationTableImpl(String name, UserSchema schema)
+    public ExpProtocolApplicationTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoProtocolApplication(), schema, new ExpProtocolApplicationImpl(new ProtocolApplication()));
+        super(name, ExperimentServiceImpl.get().getTinfoProtocolApplication(), schema, new ExpProtocolApplicationImpl(new ProtocolApplication()), cf);
 
     }
 
@@ -73,7 +73,7 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
                 return wrapColumn(alias, _rootTable.getColumn("CpasType"));
             case Protocol:
                 ColumnInfo columnInfo = wrapColumn(alias, _rootTable.getColumn("ProtocolLSID"));
-                columnInfo.setFk(getExpSchema().getProtocolForeignKey("LSID"));
+                columnInfo.setFk(getExpSchema().getProtocolForeignKey(getContainerFilter(), "LSID"));
                 return columnInfo;
         }
         throw new IllegalArgumentException("Unknown column " + column);
@@ -124,12 +124,13 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
         sql.append(")");
         ColumnInfo ret = new ExprColumn(this, name, sql, JdbcType.INTEGER);
 
+        // TODO add ContainerFitler to ExperimentLookupForeignKey() constructor
         ret.setFk(new ExpSchema.ExperimentLookupForeignKey("RowId")
         {
             public TableInfo getLookupTableInfo()
             {
-                ExpDataTable expDataTable = (ExpDataTable)schema.getTable(ExpSchema.TableType.Data.name(), true);
-                expDataTable.setContainerFilter(getContainerFilter());
+                ExpDataTable expDataTable;
+                expDataTable = (ExpDataTable)schema.getTable(ExpSchema.TableType.Data.name(), getLookupContainerFilter(), true, false);
                 return expDataTable;
             }
         });

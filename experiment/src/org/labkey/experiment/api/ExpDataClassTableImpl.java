@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
@@ -52,15 +53,17 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Map;
 
+import static org.labkey.api.exp.query.ExpSchema.TableType.SampleSets;
+
 /**
  * User: kevink
  * Date: 9/21/15
  */
 public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column> implements ExpDataClassTable
 {
-    protected ExpDataClassTableImpl(String name, UserSchema schema)
+    protected ExpDataClassTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoDataClass(), schema, new ExpDataClassImpl(new DataClass()));
+        super(name, ExperimentServiceImpl.get().getTinfoDataClass(), schema, new ExpDataClassImpl(new DataClass()), cf);
         addAllowablePermission(InsertPermission.class);
         addAllowablePermission(UpdatePermission.class);
     }
@@ -119,8 +122,10 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
             case SampleSet:
             {
                 ColumnInfo col = wrapColumn(alias, _rootTable.getColumn("MaterialSourceId"));
-                QueryForeignKey fk = new QueryForeignKey(ExpSchema.SCHEMA_NAME, getContainer(), null, getUserSchema().getUser(), ExpSchema.TableType.SampleSets.name(), "RowId", null);
-                col.setFk(fk);
+                var fk = QueryForeignKey.from(this.getUserSchema(), getContainerFilter())
+                        .schema(ExpSchema.SCHEMA_NAME, getContainer())
+                        .to(SampleSets.name(), "RowId", null);
+                col.setFk( fk );
                 return col;
             }
 

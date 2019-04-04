@@ -141,8 +141,8 @@ public class PipelineQuerySchema extends UserSchema
                     };
                 }
             });
-            UserIdQueryForeignKey.initColumn(getUser(), getContainer(), table.getColumn("CreatedBy"), true);
-            UserIdQueryForeignKey.initColumn(getUser(), getContainer(), table.getColumn("ModifiedBy"), true);
+            UserIdQueryForeignKey.initColumn(this, table.getColumn("CreatedBy"), true);
+            UserIdQueryForeignKey.initColumn(this, table.getColumn("ModifiedBy"), true);
             table.getColumn("JobParent").setFk(new LookupForeignKey("Job", "Description")
             {
                 public TableInfo getLookupTableInfo()
@@ -178,7 +178,7 @@ public class PipelineQuerySchema extends UserSchema
     // for pipeline internal use only; other uses should go through createTable() above for proper permissions check
     protected SimpleUserSchema.SimpleTable<PipelineQuerySchema> createTriggerConfigurationsTable()
     {
-        return new TriggerConfigurationsTable(this).init();
+        return new TriggerConfigurationsTable(this, null).init();
     }
 
     public Set<String> getTableNames()

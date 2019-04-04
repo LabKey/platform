@@ -62,7 +62,7 @@ public class AggregateColumnInfo extends ColumnInfo
         //if the agg function is something other than min or max, clear the FK
         if (!_crosstabMeasure.getAggregateFunction().retainsForeignKey())
         {
-            setFk(null);
+            clearFk();
         }
         else
         {

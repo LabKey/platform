@@ -7,6 +7,7 @@ import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -106,8 +107,9 @@ public abstract class SecurityEscalationAuditProvider extends AbstractAuditTypeP
      * @return A {@link TableInfo} to be displayed in the Audit Log
      */
     @Override
-    public TableInfo createTableInfo(UserSchema userSchema) {
-        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, getDefaultVisibleColumns()) {
+    public TableInfo createTableInfo(UserSchema userSchema, ContainerFilter cf)
+    {
+        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, cf, getDefaultVisibleColumns()) {
             @Override
             protected void initColumn(ColumnInfo columnInfo) {
                 // Customize Column Labels

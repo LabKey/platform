@@ -30,13 +30,12 @@ public class FlagForeignKey extends AbstractForeignKey
     public static final String DISPLAYFIELD_NAME = "Comment";
     private final String _urlFlagged;
     private final String _urlUnflagged;
-    private final UserSchema _schema;
 
-    public FlagForeignKey(String urlFlagged, String urlUnflagged, UserSchema schema)
+    public FlagForeignKey(UserSchema schema, String urlFlagged, String urlUnflagged)
     {
+        super(schema, null);
         _urlFlagged = urlFlagged;
         _urlUnflagged = urlUnflagged;
-        _schema = schema;
     }
 
     public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
@@ -47,12 +46,12 @@ public class FlagForeignKey extends AbstractForeignKey
         }
         if (!displayField.equalsIgnoreCase(DISPLAYFIELD_NAME))
             return null;
-        return new FlagColumn(parent, _urlFlagged, _urlUnflagged, _schema.getContainer(), _schema.getUser(), displayField);
+        return new FlagColumn(parent, _urlFlagged, _urlUnflagged, _sourceSchema.getContainer(), _sourceSchema.getUser(), displayField);
     }
 
     public TableInfo getLookupTableInfo()
     {
-        VirtualTable ret = new VirtualTable<>(ExperimentService.get().getSchema(), "FlagComment", _schema);
+        VirtualTable ret = new VirtualTable<>(ExperimentService.get().getSchema(), "FlagComment", (UserSchema)_sourceSchema);
         ColumnInfo colComment = new ColumnInfo("Comment", ret, JdbcType.VARCHAR);
         ret.addColumn(colComment);
         return ret;

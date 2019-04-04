@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
@@ -76,9 +77,9 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
 {
     private static final Logger LOG = Logger.getLogger(IssuesListDefTable.class);
 
-    public IssuesListDefTable(IssuesQuerySchema schema)
+    public IssuesListDefTable(IssuesQuerySchema schema, ContainerFilter cf)
     {
-        super(IssuesSchema.getInstance().getTableInfoIssueListDef(), schema);
+        super(IssuesSchema.getInstance().getTableInfoIssueListDef(), schema, cf);
 
         ActionURL url = new ActionURL(InsertIssueDefAction.class, getContainer()).
                 addParameter(QueryParam.schemaName, IssuesSchema.getInstance().getSchemaName()).

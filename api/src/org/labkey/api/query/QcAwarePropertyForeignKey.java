@@ -35,28 +35,18 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
     private final TableInfo _baseTable;
     private final QcMetadata _metadata;
 
-    
-    public QcAwarePropertyForeignKey(Collection<PropertyDescriptor> pds, TableInfo baseTable, QuerySchema schema)
+    public QcAwarePropertyForeignKey(QuerySchema schema, TableInfo baseTable, Collection<PropertyDescriptor> pds)
     {
-        super(getDisplayPds(pds).getDisplayProperties(), schema);
-        _baseTable = baseTable;
-        // It's annoying that we have to call 'getDisplayPds()' twice, but using
-        // a ThreadLocal or the like seems like overkill.
-        _metadata = getDisplayPds(pds);
+        this(getDisplayPds(pds), baseTable, schema);
     }
 
-//    public QcAwarePropertyForeignKey(List<? extends DomainProperty> dps, TableInfo baseTable, QuerySchema schema)
-//    {
-//        this(getPropertyDescriptors(dps), baseTable, schema);
-//    }
-//
-//    private static PropertyDescriptor[] getPropertyDescriptors(List<? extends DomainProperty> domainProperties)
-//    {
-//        PropertyDescriptor[] propertyDescriptors = new PropertyDescriptor[domainProperties.size()];
-//        for (int i = 0; i < domainProperties.size(); i++)
-//            propertyDescriptors[i] = domainProperties.get(i).getPropertyDescriptor();
-//        return propertyDescriptors;
-//    }
+    private QcAwarePropertyForeignKey(QcMetadata metadata, TableInfo baseTable, QuerySchema schema)
+    {
+        super(schema, null, metadata.getDisplayProperties());
+        _baseTable = baseTable;
+        _metadata = metadata;
+    }
+
 
     private static QcMetadata getDisplayPds(Collection<PropertyDescriptor> pds)
     {

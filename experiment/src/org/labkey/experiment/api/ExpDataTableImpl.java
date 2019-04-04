@@ -31,6 +31,7 @@ import org.labkey.api.action.ExtendedApiQueryResponse;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
@@ -95,6 +96,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.exp.query.ExpSchema.TableType.DataClasses;
+
 public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> implements ExpDataTable
 {
     private static final Logger _log = Logger.getLogger(ExpDataTableImpl.class);
@@ -105,9 +108,9 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
     protected DataType _type;
     protected ExpDataClass _dataClass;
 
-    public ExpDataTableImpl(String name, UserSchema schema)
+    public ExpDataTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoData(), schema, new ExpDataImpl(new Data()));
+        super(name, ExperimentServiceImpl.get().getTinfoData(), schema, new ExpDataImpl(new Data()), cf);
 
         addAllowablePermission(UpdatePermission.class);
         addAllowablePermission(InsertPermission.class);
@@ -257,7 +260,9 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             {
                 ColumnInfo c = wrapColumn(alias, _rootTable.getColumn("classId"));
                 c.setUserEditable(false);
-                c.setFk(new QueryForeignKey(ExpSchema.SCHEMA_NAME, getContainer(), getContainer(), getUserSchema().getUser(), ExpSchema.TableType.DataClasses.name(), "RowId", "Name"));
+                var fk = QueryForeignKey.from(getUserSchema(), getContainerFilter())
+                        .to(DataClasses.name(), "RowId", "Name");
+                c.setFk( fk );
                 return c;
             }
             case Protocol:
@@ -265,7 +270,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                 ExprColumn col = new ExprColumn(this, Column.Protocol.toString(), new SQLFragment(
                         "(SELECT ProtocolLSID FROM " + ExperimentServiceImpl.get().getTinfoProtocolApplication() + " pa " +
                         " WHERE pa.RowId = " + ExprColumn.STR_TABLE_ALIAS + ".SourceApplicationId)"), JdbcType.VARCHAR, getColumn(Column.SourceProtocolApplication));
-                col.setFk(getExpSchema().getProtocolForeignKey("LSID"));
+                col.setFk(getExpSchema().getProtocolForeignKey(getContainerFilter(),"LSID"));
                 col.setSqlTypeName("lsidtype");
                 col.setHidden(true);
                 return col;

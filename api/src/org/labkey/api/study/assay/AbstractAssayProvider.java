@@ -24,7 +24,6 @@ import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DetailsColumn;
@@ -189,8 +188,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             filter.addInClause(getTableMetadata(protocol).getResultRowIdFieldKey(), dataKeys.keySet());
 
             AssayProtocolSchema schema = createProtocolSchema(user, assayDataContainer, protocol, study);
-            ContainerFilterable dataTable = schema.createDataTable();
-            dataTable.setContainerFilter(new ContainerFilter.CurrentAndSubfolders(user));
+            TableInfo dataTable = schema.createDataTable(new ContainerFilter.CurrentAndSubfolders(user));
 
             FieldKey objectIdFK = getTableMetadata(protocol).getResultRowIdFieldKey();
             FieldKey runLSIDFK = new FieldKey(getTableMetadata(protocol).getRunFieldKeyFromResults(), ExpRunTable.Column.LSID.toString());

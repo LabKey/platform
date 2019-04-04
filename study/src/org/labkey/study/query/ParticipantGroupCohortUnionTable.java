@@ -44,13 +44,14 @@ public class ParticipantGroupCohortUnionTable extends BaseStudyTable
 {
     public ParticipantGroupCohortUnionTable(final StudyQuerySchema schema)
     {
+        // TODO ContainerFilter
         super(schema, StudySchema.getInstance().getSchema().getTable(StudyQuerySchema.PARTICIPANT_GROUP_COHORT_UNION_TABLE_NAME));
 
         addContainerColumn();
         addWrapParticipantColumn("ParticipantId");
 
         ColumnInfo groupIdColumn = new AliasedColumn(this, "GroupId", _rootTable.getColumn("GroupId"));
-        groupIdColumn.setFk(new QueryForeignKey(_userSchema, null, StudyService.get().getSubjectGroupTableName(getContainer()), "RowId", "Label"));
+        groupIdColumn.setFk( QueryForeignKey.from(_userSchema, null).to(StudyService.get().getSubjectGroupTableName(getContainer()), "RowId", "Label") );
         addColumn(groupIdColumn);
 
         if (StudyManager.getInstance().showCohorts(schema.getContainer(), schema.getUser()))

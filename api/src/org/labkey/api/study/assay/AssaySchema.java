@@ -18,6 +18,7 @@ package org.labkey.api.study.assay;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -58,7 +59,13 @@ public abstract class AssaySchema extends UserSchema
     }
 
     /** Make it public - protected in superclass */
-    public abstract @Nullable TableInfo createTable(String name);
+    public abstract @Nullable TableInfo createTable(String name, ContainerFilter cf);
+
+    public @Nullable TableInfo createTable(String name)
+    {
+        throw new IllegalStateException();
+    }
+
 
     /** Tack the table type onto the protocol name to create the full table name */
     public static String getLegacyProtocolTableName(ExpProtocol protocol, @NotNull String tableType)

@@ -28,12 +28,4 @@ import org.labkey.api.query.FieldKey;
 public interface AuditConfigurable extends TableInfo
 {
     void setAuditBehavior(AuditBehaviorType type);
-    AuditBehaviorType getAuditBehavior();
-
-    /**
-     * Returns the row primary key column to use for audit history details. Note, this must
-     * be a single key as we don't support multiple column primary keys for audit details.
-     */
-    @Nullable
-    FieldKey getAuditRowPk();
 }

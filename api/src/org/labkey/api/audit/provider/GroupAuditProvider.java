@@ -127,9 +127,9 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
     }
 
     @Override
-    public TableInfo createTableInfo(final UserSchema userSchema)
+    public TableInfo createTableInfo(final UserSchema userSchema, ContainerFilter cf)
     {
-        return new DefaultAuditTypeTable(GroupAuditProvider.this, createStorageTableInfo(), userSchema, defaultVisibleColumns)
+        return new DefaultAuditTypeTable(GroupAuditProvider.this, createStorageTableInfo(), userSchema, cf, defaultVisibleColumns)
         {
             @Override
             protected void initColumn(ColumnInfo col)

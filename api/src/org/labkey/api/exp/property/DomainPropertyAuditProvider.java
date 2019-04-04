@@ -21,7 +21,6 @@ import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -104,9 +103,9 @@ public class DomainPropertyAuditProvider extends AbstractAuditTypeProvider
     }
 
     @Override
-    public TableInfo createTableInfo(UserSchema userSchema)
+    public TableInfo createTableInfo(UserSchema userSchema, ContainerFilter cf)
     {
-        return new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, DEFAULT_VISIBLE_COLUMNS)
+        return new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, cf, DEFAULT_VISIBLE_COLUMNS)
         {
             @Override
             protected void initColumn(ColumnInfo col)
@@ -125,8 +124,7 @@ public class DomainPropertyAuditProvider extends AbstractAuditTypeProvider
                         public TableInfo getLookupTableInfo()
                         {
                             DomainAuditProvider provider = new DomainAuditProvider();
-                            ContainerFilterable table = (ContainerFilterable)provider.createTableInfo(getUserSchema());
-                            table.setContainerFilter(ContainerFilter.EVERYTHING);
+                            TableInfo table = provider.createTableInfo(getUserSchema(), ContainerFilter.EVERYTHING);
                             return table;
                         }
                     });

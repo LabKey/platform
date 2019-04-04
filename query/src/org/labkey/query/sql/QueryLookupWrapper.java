@@ -377,7 +377,7 @@ public class QueryLookupWrapper extends QueryRelation
             }
             if (null != _columnFK)
             {
-                _fk = AbstractTableInfo.makeForeignKey(_schema, _columnFK);
+                _fk = AbstractTableInfo.makeForeignKey(_schema, _query.getContainerFilter(), _columnFK);
                 if (_fk == null)
                 {
                     //noinspection ThrowableInstanceNeverThrown

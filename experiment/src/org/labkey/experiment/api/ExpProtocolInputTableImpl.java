@@ -24,11 +24,14 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.UserSchema;
 
+import static org.labkey.api.exp.query.ExpSchema.TableType.DataClasses;
+import static org.labkey.api.exp.query.ExpSchema.TableType.SampleSets;
+
 public abstract class ExpProtocolInputTableImpl<C extends Enum> extends ExpTableImpl<C>
 {
-    protected ExpProtocolInputTableImpl(String name, TableInfo rootTable, UserSchema schema)
+    protected ExpProtocolInputTableImpl(String name, TableInfo rootTable, UserSchema schema, ContainerFilter cf)
     {
-        super(name, rootTable, schema, null);
+        super(name, rootTable, schema, null, cf);
     }
 
     @Override
@@ -76,23 +79,29 @@ public abstract class ExpProtocolInputTableImpl<C extends Enum> extends ExpTable
     protected ColumnInfo createProtocolColumn(String alias)
     {
         ColumnInfo col = wrapColumn(alias, _rootTable.getColumn("protocolId"));
-        col.setFk(getExpSchema().getProtocolForeignKey("RowId"));
+        col.setFk(getExpSchema().getProtocolForeignKey(getContainerFilter(), "RowId"));
         return col;
     }
 
     protected ColumnInfo createSampleSetColumn(String alias)
     {
         ColumnInfo col = wrapColumn(alias, _rootTable.getColumn("MaterialSourceId"));
-        QueryForeignKey fk = new QueryForeignKey(ExpSchema.SCHEMA_NAME, getContainer(), null, getUserSchema().getUser(), ExpSchema.TableType.SampleSets.name(), "RowId", null);
-        col.setFk(fk);
+        var fk = QueryForeignKey
+                .from(getUserSchema(), getContainerFilter())
+                .schema(ExpSchema.SCHEMA_NAME, getContainer())
+                .to(SampleSets.name(), "RowId", null);
+        col.setFk( fk );
         return col;
     }
 
     protected ColumnInfo createDataClassColumn(String alias)
     {
         ColumnInfo col = wrapColumn(alias, _rootTable.getColumn("DataClassId"));
-        QueryForeignKey fk = new QueryForeignKey(ExpSchema.SCHEMA_NAME, getContainer(), null, getUserSchema().getUser(), ExpSchema.TableType.DataClasses.name(), "RowId", null);
-        col.setFk(fk);
+        var fk = QueryForeignKey
+                .from(getUserSchema(), getContainerFilter())
+                .schema(ExpSchema.SCHEMA_NAME, getContainer())
+                .to(DataClasses.name(), "RowId", null);
+        col.setFk( fk );
         return col;
     }
 

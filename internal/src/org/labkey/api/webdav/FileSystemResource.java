@@ -649,7 +649,7 @@ public class FileSystemResource extends AbstractWebdavResource
                     customPropertyNames.add(URL_COL_PREFIX + prop.getName());
                 }
 
-                TableInfo ti = ExpSchema.TableType.Data.createTable(new ExpSchema(user, getContainer()), ExpSchema.TableType.Data.toString());
+                TableInfo ti = ExpSchema.TableType.Data.createTable(new ExpSchema(user, getContainer()), ExpSchema.TableType.Data.toString(), null);
                 QueryUpdateService qus = ti.getUpdateService();
 
                 try

@@ -190,7 +190,7 @@ public class QueryTable extends QueryRelation
         ForeignKey foreignKey = parent._col.getFk();
         if (null == foreignKey)
             return null;
-        ColumnInfo lk = parent._col.getFk().createLookupColumn(parent._col, name);
+        ColumnInfo lk = foreignKey.createLookupColumn(parent._col, name);
         if (lk == null)
             return null;
         ret = new TableColumn(k, lk, parent);
@@ -216,7 +216,7 @@ public class QueryTable extends QueryRelation
         if (null != ret)
             return ret;
 
-        ForeignKey qfk = AbstractTableInfo.makeForeignKey(_schema, fk);
+        ForeignKey qfk = AbstractTableInfo.makeForeignKey(_schema, _query.getContainerFilter(), fk);
         if (null == qfk)
             return null;
         ColumnInfo lk = qfk.createLookupColumn(parent._col, name);

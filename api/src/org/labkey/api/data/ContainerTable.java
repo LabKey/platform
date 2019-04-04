@@ -54,18 +54,14 @@ import java.util.TreeMap;
  */
 public class ContainerTable extends FilteredTable<UserSchema>
 {
-    public ContainerTable(UserSchema schema)
+    public ContainerTable(UserSchema schema, ContainerFilter cf)
     {
-        this(schema, null);
+        this(schema, cf, null);
     }
 
-    public ContainerTable(UserSchema schema, ActionURL url)
+    public ContainerTable(UserSchema schema, ContainerFilter cf, ActionURL url)
     {
-        super(CoreSchema.getInstance().getTableInfoContainers(), schema);
-
-        // Call this after having a chance to set _schema's value. It's invoked in the superclass constructor,
-        // but that's too early for this scenario
-        applyContainerFilter(getContainerFilter());
+        super(CoreSchema.getInstance().getTableInfoContainers(), schema, cf);
         init(url);
     }
 
@@ -177,7 +173,7 @@ public class ContainerTable extends FilteredTable<UserSchema>
 
         col = getColumn("CreatedBy");
         col.setReadOnly(true);
-        col.setFk(new UserIdQueryForeignKey(_userSchema.getUser(), _userSchema.getContainer(), true));
+        col.setFk(new UserIdQueryForeignKey(_userSchema, true));
 
         ColumnInfo title = getColumn("Title");
         title.setURL(detailsURL);

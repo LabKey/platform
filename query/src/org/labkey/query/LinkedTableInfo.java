@@ -146,7 +146,11 @@ public class LinkedTableInfo extends SimpleUserSchema.SimpleTable<UserSchema>
                     useRawFKValue = ((QueryForeignKey)fk).isUseRawFKValue();
                 }
 
-                fixedFk = new QueryForeignKey(schema, schema.getContainer(), fk.getLookupTableName(), fk.getLookupColumnName(), fk.getLookupDisplayName(), useRawFKValue);
+                fixedFk = QueryForeignKey
+                        .from(schema, getContainerFilter())
+                        .to(fk.getLookupTableName(), fk.getLookupColumnName(), fk.getLookupDisplayName())
+                        .raw(useRawFKValue)
+                        .build();
 
                 if (fk instanceof MultiValuedForeignKey)
                 {

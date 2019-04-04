@@ -120,13 +120,13 @@ public class LineageTableInfo extends VirtualTable
 
     private ForeignKey createExpTypeFK(String expType)
     {
+        var fk = QueryForeignKey.from(getUserSchema(), null).to(expType, "LSID", "Name");
+
         switch (expType) {
             case "Data":
-                return new QueryForeignKey("exp", _userSchema.getContainer(), null, _userSchema.getUser(), "Data", "LSID", "Name");
             case "Material":
-                return new QueryForeignKey("exp", _userSchema.getContainer(), null, _userSchema.getUser(), "Materials", "LSID", "Name");
             case "ExperimentRun":
-                return new QueryForeignKey("exp", _userSchema.getContainer(), null, _userSchema.getUser(), "Runs", "LSID", "Name");
+                return fk.build();
             default:
                 return null;
         }
@@ -160,13 +160,13 @@ public class LineageTableInfo extends VirtualTable
         ExpDataClass dc = ExperimentServiceImpl.get().getDataClass(cpasType);
         if (dc != null)
         {
-            return new LookupForeignKey("lsid", "Name")
+            return new LookupForeignKey(getContainerFilter(), "lsid", "Name")
             {
                 @Override
                 public TableInfo getLookupTableInfo()
                 {
                     DataClassUserSchema dcus = new DataClassUserSchema(_userSchema.getContainer(), _userSchema.getUser());
-                    return dcus.createTable(dc);
+                    return dcus.createTable(dc, getLookupContainerFilter());
                 }
 
                 @Override

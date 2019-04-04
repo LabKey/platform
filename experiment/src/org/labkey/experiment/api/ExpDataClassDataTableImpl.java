@@ -112,17 +112,21 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 {
     private @NotNull ExpDataClassImpl _dataClass;
 
-    public ExpDataClassDataTableImpl(String name, UserSchema schema, @NotNull ExpDataClassImpl dataClass)
+    @Override
+    protected ContainerFilter getDefaultContainerFilter()
     {
-        super(name, ExperimentService.get().getTinfoData(), schema, dataClass);
+        return new ContainerFilter.CurrentPlusProjectAndShared(_userSchema.getUser());
+    }
+
+    public ExpDataClassDataTableImpl(String name, UserSchema schema, ContainerFilter cf, @NotNull ExpDataClassImpl dataClass)
+    {
+        super(name, ExperimentService.get().getTinfoData(), schema, dataClass, cf);
         _dataClass = dataClass;
         addAllowablePermission(InsertPermission.class);
         addAllowablePermission(UpdatePermission.class);
 
         // Filter exp.data to only those rows that are members of the DataClass
         addCondition(new SimpleFilter(FieldKey.fromParts("classId"), _dataClass.getRowId()));
-
-        setContainerFilter(new ContainerFilter.CurrentPlusProjectAndShared(_userSchema.getUser()));
     }
 
     @NotNull
@@ -186,7 +190,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             case DataClass:
             {
                 ColumnInfo c = wrapColumn(alias, getRealTable().getColumn("classId"));
-                c.setFk(new QueryForeignKey(ExpSchema.SCHEMA_NAME, getContainer(), null, getUserSchema().getUser(), ExpSchema.TableType.DataClasses.name(), "RowId", "Name"));
+                c.setFk(QueryForeignKey.from(getUserSchema(), getContainerFilter()).schema(ExpSchema.SCHEMA_NAME).to(ExpSchema.TableType.DataClasses.name(), "RowId", "Name"));
                 c.setShownInInsertView(false);
                 c.setShownInUpdateView(false);
                 c.setUserEditable(false);
@@ -326,7 +330,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 {
                     if (pd.getLookupQuery() != null || pd.getConceptURI() != null)
                     {
-                        col.setFk(new PdLookupForeignKey(schema.getUser(), pd, schema.getContainer()));
+                        col.setFk(PdLookupForeignKey.create(schema, pd));
                     }
 
                     if (pd.getPropertyType() == PropertyType.MULTI_LINE)

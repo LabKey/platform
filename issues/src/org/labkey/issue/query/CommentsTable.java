@@ -50,9 +50,9 @@ import java.util.Collections;
  */
 public class CommentsTable extends FilteredTable<IssuesQuerySchema>
 {
-    public CommentsTable(IssuesQuerySchema schema)
+    public CommentsTable(IssuesQuerySchema schema, ContainerFilter cf)
     {
-        super(IssuesSchema.getInstance().getTableInfoComments(), schema);
+        super(IssuesSchema.getInstance().getTableInfoComments(), schema, cf);
 
         ColumnInfo commentIdColumn = wrapColumn(_rootTable.getColumn("CommentId"));
         commentIdColumn.setSortDirection(Sort.SortDirection.DESC);      // This is a nice idea, but only sorts if the column is shown

@@ -1612,7 +1612,7 @@ public class QueryView extends WebPartView<Object>
         {
             t = ((UnionTable) t).getComponentTable();   // check against a component table
         }
-        if (t instanceof ContainerFilterable && t.supportsContainerFilter() && !getAllowableContainerFilterTypes().isEmpty())
+        if (t.supportsContainerFilter() && !getAllowableContainerFilterTypes().isEmpty())
         {
             NavTree containerFilterItem = new NavTree("Folder Filter");
             containerFilterItem.setId(getBaseMenuId() + ":GridViews:Folder Filter");
@@ -2739,7 +2739,11 @@ public class QueryView extends WebPartView<Object>
 
     protected TableInfo createTable()
     {
-        return getQueryDef() != null ? getQueryDef().getTable(_schema, _parseErrors, true) : null;
+        QueryDefinition qdef = getQueryDef();
+        if (null == qdef)
+            return null;
+        qdef.setContainerFilter(getContainerFilter());
+        return qdef.getTable(_schema, _parseErrors, true);
     }
 
     final public TableInfo getTable()
@@ -2748,6 +2752,7 @@ public class QueryView extends WebPartView<Object>
             return _table;
         _table = createTable();
 
+        /* TODO ContainerFilter check that this is correct for hasUnionTable() */
         if (_table instanceof ContainerFilterable && _table.supportsContainerFilter())
         {
             ContainerFilter filter = getContainerFilter();
@@ -2774,12 +2779,6 @@ public class QueryView extends WebPartView<Object>
 
                     if (!containers.isEmpty())
                         _table = userSchema.getUnionTable(_table, containers);
-
-                }
-                else
-                {
-                    ContainerFilterable fTable = (ContainerFilterable) _table;
-                    fTable.setContainerFilter(filter);
                 }
             }
         }
@@ -3134,7 +3133,11 @@ public class QueryView extends WebPartView<Object>
                 List<QueryException> errors = new ArrayList<>();
                 QueryDefinition queryDef = getQueryDef();
                 if (queryDef != null)
-                    ti = queryDef.getTable(errors, true);
+                {
+                    if (null != getContainerFilter())
+                        queryDef.setContainerFilter(getContainerFilter());
+                    ti = queryDef.getTable(getSchema(), errors, true, false, false);
+                }
             }
 
             if (ti != null)

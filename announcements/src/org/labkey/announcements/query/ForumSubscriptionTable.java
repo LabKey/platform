@@ -59,7 +59,7 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
 
         ColumnInfo modifiedByColumn = wrapColumn("ModifiedBy", getRealTable().getColumn("LastModifiedBy"));
         addColumn(modifiedByColumn);
-        modifiedByColumn.setFk(new UserIdQueryForeignKey(_userSchema.getUser(), getContainer(), true));
+        modifiedByColumn.setFk(new UserIdQueryForeignKey(_userSchema, true));
         modifiedByColumn.setUserEditable(false);
 
         ColumnInfo emailOptionColumn = wrapColumn("EmailOption", getRealTable().getColumn("EmailOptionId"));

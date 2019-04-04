@@ -23,6 +23,7 @@ import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.AbstractValueTransformingDisplayColumn;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -39,6 +40,7 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.SimpleUserSchema;
@@ -66,9 +68,9 @@ import java.util.Set;
 
 public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<PipelineQuerySchema>
 {
-    public TriggerConfigurationsTable(PipelineQuerySchema schema)
+    public TriggerConfigurationsTable(PipelineQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, PipelineSchema.getInstance().getTableInfoTriggerConfigurations());
+        super(schema, PipelineSchema.getInstance().getTableInfoTriggerConfigurations(), cf);
         setTitle("Pipeline Trigger Configurations");
 
         // disable the insert new button if there are no registered pipeline trigger types
@@ -84,11 +86,11 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
         super.init();
 
         ColumnInfo type = getColumn("Type");
-        type.setFk(new PipelineTriggerTypeForeignKey());
+        type.setFk(new PipelineTriggerTypeForeignKey(getUserSchema(), getContainerFilter()));
         type.setInputType("select");
 
         ColumnInfo pipelineId = getColumn("PipelineId");
-        pipelineId.setFk(new TaskPipelineForeignKey());
+        pipelineId.setFk(new TaskPipelineForeignKey(getUserSchema(), getContainerFilter()));
         pipelineId.setInputType("select");
 
         ColumnInfo pipelineTaskCol = new AliasedColumn("PipelineTask", getColumn("PipelineId"));
@@ -140,8 +142,9 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
 
     private class PipelineTriggerTypeForeignKey extends AbstractSelectListForeignKey
     {
-        PipelineTriggerTypeForeignKey()
+        PipelineTriggerTypeForeignKey(QuerySchema sourceSchema, ContainerFilter cf)
         {
+            super(sourceSchema, cf);
             for (PipelineTriggerType pipelineTriggerType : PipelineTriggerRegistry.get().getTypes())
                addListItem(pipelineTriggerType.getName(), pipelineTriggerType.getName());
         }
@@ -197,8 +200,9 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
      */
     private class TaskPipelineForeignKey extends AbstractSelectListForeignKey
     {
-        TaskPipelineForeignKey()
+        TaskPipelineForeignKey(QuerySchema sourceSchema, ContainerFilter cf)
         {
+            super(sourceSchema, cf);
             for (TaskPipeline taskPipeline : PipelineJobService.get().getTaskPipelines(getContainer()))
             {
                 if (taskPipeline instanceof FileAnalysisTaskPipeline)
@@ -368,6 +372,11 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
     private abstract class AbstractSelectListForeignKey extends AbstractForeignKey
     {
         NamedObjectList _list = new NamedObjectList();
+
+        protected AbstractSelectListForeignKey(QuerySchema sourceSchema, ContainerFilter cf)
+        {
+            super(sourceSchema, cf);
+        }
 
         @Override
         public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)

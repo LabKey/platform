@@ -382,7 +382,13 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
     {
         ColumnInfo info = new PropertyColumn(this, baseTable, lsidCol, container, user, false);
         if (getLookupQuery() != null || getConceptURI() != null)
-            info.setFk(new PdLookupForeignKey(user, this, container));
+        {
+            assert baseTable.getUserSchema().getUser() == user;
+            assert baseTable.getUserSchema().getContainer() == container;
+            // if assert fails, we may need this method instead
+            // info.setFk(PdLookupForeignKey.create(baseTable.getUserSchema(), user, container, this));
+            info.setFk(PdLookupForeignKey.create(baseTable.getUserSchema(), this));
+        }
         return info;
     }
 

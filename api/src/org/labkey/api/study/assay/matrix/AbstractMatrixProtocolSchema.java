@@ -18,6 +18,7 @@ package org.labkey.api.study.assay.matrix;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CrosstabDimension;
 import org.labkey.api.data.CrosstabMeasure;
 import org.labkey.api.data.CrosstabMember;
@@ -63,27 +64,32 @@ public abstract class AbstractMatrixProtocolSchema extends AssayProtocolSchema
 
     public abstract List<Map> getDistinctSampleIds();
 
-    public abstract TableInfo getDataTableInfo();
+    public abstract TableInfo getDataTableInfo(ContainerFilter cf);
+
+    public FilteredTable createDataTable(boolean includeCopiedToStudyColumns)
+    {
+        throw new IllegalStateException();
+    }
 
     @Override
-    public FilteredTable createDataTable(boolean includeCopiedToStudyColumns)
+    public FilteredTable createDataTable(ContainerFilter cf, boolean includeCopiedToStudyColumns)
     {
        return null;
     }
 
-    public TableInfo createTable(String name, String rowAxisId, String colAxisId, String valueMeasureName, String title)
+    public TableInfo createTable(String name, ContainerFilter cf, String rowAxisId, String colAxisId, String valueMeasureName, String title)
     {
         if (name.equals(getDataBySampleTableName()))
         {
-            return getDataBySampleTable(rowAxisId, colAxisId, valueMeasureName, title); //TODO: change
+            return getDataBySampleTable(cf, rowAxisId, colAxisId, valueMeasureName, title); //TODO: change
         }
 
-        return super.createTable(name);
+        return super.createTable(name, cf);
     }
 
-    public CrosstabTableInfo getDataBySampleTable(String rowAxisId, String colAxisId, String valueMeasureName, String title)
+    public CrosstabTableInfo getDataBySampleTable(ContainerFilter cf, String rowAxisId, String colAxisId, String valueMeasureName, String title)
     {
-        CrosstabSettings settings = new CrosstabSettings(getDataTableInfo());
+        CrosstabSettings settings = new CrosstabSettings(getDataTableInfo(cf));
         CrosstabTable cti;
         CrosstabDimension rowDim = settings.getRowAxis().addDimension(FieldKey.fromParts(rowAxisId));
         CrosstabDimension colDim = settings.getColumnAxis().addDimension(FieldKey.fromParts(colAxisId));

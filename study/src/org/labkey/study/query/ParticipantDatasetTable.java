@@ -77,7 +77,8 @@ public class ParticipantDatasetTable extends VirtualTable<StudyQuerySchema>
         // If it's demographic or a continuous study, there are no visits, so we can add the dataset fields directly
         if (def.isDemographicData() || def.getStudy().getTimepointType() == TimepointType.CONTINUOUS)
         {
-            column.setFk(new AbstractForeignKey() {
+            column.setFk(new AbstractForeignKey(getUserSchema(), getContainerFilter())
+            {
                 public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
                 {
                     TableInfo table = getLookupTableInfo();
@@ -95,6 +96,7 @@ public class ParticipantDatasetTable extends VirtualTable<StudyQuerySchema>
                 {
                     try
                     {
+                        // TODO ContainerFilter -- add CF to createDatasetTableInternal()
                         DatasetTableImpl dsTable = _userSchema.createDatasetTableInternal(def);
                         dsTable.hideParticipantLookups();
                         dsTable.overlayMetadata(dsTable.getName(), _userSchema, new ArrayList<>());
@@ -116,7 +118,7 @@ public class ParticipantDatasetTable extends VirtualTable<StudyQuerySchema>
         }
         else
         {
-            column.setFk(new AbstractForeignKey()
+            column.setFk(new AbstractForeignKey(getUserSchema(), getContainerFilter())
             {
                 public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
                 {
@@ -131,6 +133,7 @@ public class ParticipantDatasetTable extends VirtualTable<StudyQuerySchema>
 
                 public TableInfo getLookupTableInfo()
                 {
+                    // TODO ContainerFilter
                     return new ParticipantVisitDatasetTable(_userSchema, def, null);
                 }
 

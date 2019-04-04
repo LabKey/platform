@@ -30,8 +30,7 @@ public class SharedDataTable<SchemaType extends UserSchema> extends SimpleUserSc
 {
     public SharedDataTable(SchemaType schema, TableInfo table)
     {
-        super(schema, table);
-        applyContainerFilter(getContainerFilter());
+        super(schema, table, null);
     }
 
     @Override
@@ -46,9 +45,8 @@ public class SharedDataTable<SchemaType extends UserSchema> extends SimpleUserSc
         return (SharedDataTable<SchemaType>)super.init();
     }
 
-    @NotNull
     @Override
-    public ContainerFilter getContainerFilter()
+    protected ContainerFilter getDefaultContainerFilter()
     {
         return new ContainerFilter.CurrentPlusExtras(getUserSchema().getUser(), ContainerManager.getSharedContainer(), getUserSchema().getContainer().getContainerFor(ContainerType.DataType.sharedSchemaOwner));
     }

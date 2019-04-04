@@ -75,7 +75,7 @@ public class PlateTable extends BasePlateTable
 
         }, PropertyDescriptor.class);
 
-        colProperty.setFk(new PropertyForeignKey(map, schema));
+        colProperty.setFk(new PropertyForeignKey(schema, null, map));
         colProperty.setIsUnselectable(true);
         addColumn(colProperty);
         setDefaultVisibleColumns(visibleColumns);

@@ -17,6 +17,7 @@ package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.query.ExpMaterialInputTable;
 import org.labkey.api.exp.query.ExpSchema;
@@ -26,9 +27,9 @@ import org.labkey.api.query.UserSchema;
 
 public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C>
 {
-    protected ExpRunItemTableImpl(String name, TableInfo rootTable, UserSchema schema, @Nullable ExpObjectImpl objectType)
+    protected ExpRunItemTableImpl(String name, TableInfo rootTable, UserSchema schema, @Nullable ExpObjectImpl objectType, ContainerFilter cf)
     {
-        super(name, rootTable, schema, objectType);
+        super(name, rootTable, schema, objectType, cf);
     }
 
     /**

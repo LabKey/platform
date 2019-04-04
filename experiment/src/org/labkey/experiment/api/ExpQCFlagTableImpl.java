@@ -43,9 +43,9 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
     private ExpProtocol _assayProtocol;
     private Map<String, String> _columnMapping = new CaseInsensitiveHashMap<>();
 
-    public ExpQCFlagTableImpl(String name, UserSchema schema)
+    public ExpQCFlagTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoAssayQCFlag(), schema, new ExpProtocolApplicationImpl(new ProtocolApplication()));
+        super(name, ExperimentServiceImpl.get().getTinfoAssayQCFlag(), schema, new ExpProtocolApplicationImpl(new ProtocolApplication()), cf);
     }
 
     public ColumnInfo createColumn(String alias, Column column)

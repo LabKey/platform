@@ -16,6 +16,7 @@
 package org.labkey.experiment.api;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -33,9 +34,9 @@ import java.util.List;
  */
 public class ExpDataInputTableImpl extends ExpInputTableImpl<ExpDataInputTable.Column> implements ExpDataInputTable
 {
-    public ExpDataInputTableImpl(String name, UserSchema schema)
+    public ExpDataInputTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoDataInput(), schema, null);
+        super(name, ExperimentServiceImpl.get().getTinfoDataInput(), schema, null, cf);
     }
 
     public ColumnInfo createColumn(String alias, ExpDataInputTable.Column column)

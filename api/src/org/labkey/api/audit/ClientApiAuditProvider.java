@@ -18,6 +18,7 @@ package org.labkey.api.audit;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.PropertyStorageSpec.Index;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -114,9 +115,9 @@ public class ClientApiAuditProvider extends AbstractAuditTypeProvider implements
     }
 
     @Override
-    public TableInfo createTableInfo(UserSchema userSchema)
+    public TableInfo createTableInfo(UserSchema userSchema, ContainerFilter cf)
     {
-        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, defaultVisibleColumns)
+        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, cf, defaultVisibleColumns)
         {
             @Override
             public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)

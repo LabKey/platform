@@ -61,7 +61,8 @@ public class LocationTable extends BaseStudyTable
 {
     static public ForeignKey fkFor(StudyQuerySchema schema)
     {
-        return new QueryForeignKey(schema, null, "Location", "RowId", "Label");
+        // TODO: ContainerFilter
+        return QueryForeignKey.from(schema, null).to("Location", "RowId", "Label").build();
     }
 
     public LocationTable(StudyQuerySchema schema)

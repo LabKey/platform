@@ -90,7 +90,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
     public UsersTable(UserSchema schema, TableInfo table)
     {
-        super(schema, table);
+        super(schema, table, null);
 
         setDescription("Contains all users who are members of the current project." +
             " The data in this table are available only to users who are signed-in (not guests). Guests see no rows." +

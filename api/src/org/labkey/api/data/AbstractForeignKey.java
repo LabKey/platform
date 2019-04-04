@@ -19,6 +19,8 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.Pair;
 import org.labkey.data.xml.queryCustomView.FilterType;
 
@@ -43,6 +45,14 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
     protected String _columnName;
     protected String _displayColumnName;
 
+    // foreignKey lazily creates the target tableinfo, in order to do that it needs to know the container filter to use
+    // Some tables may chose to ignore/modify this container filter, but this indicates what the parent table/query/schema
+    // is using, and the lookup tableinfo may want to use it as well.
+    protected @Nullable ContainerFilter _containerFilter;
+
+    // We will also want a DefaultSchema to use to construct the target schema/table (and check permissions)
+    final protected QuerySchema _sourceSchema;
+
     private Map<FilterOperation, List<FilterType>> _filters = new HashMap<>();
 
     // Set of additional FieldKeys that query should select to make the join successful.
@@ -51,26 +61,52 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
     // Map original FieldKey to query's remapped FieldKey.
     private Map<FieldKey, FieldKey> _remappedFields;
 
-    protected AbstractForeignKey()
+    protected AbstractForeignKey(QuerySchema sourceSchema, @Nullable ContainerFilter cf)
     {
+        _sourceSchema = sourceSchema;
+        _containerFilter = cf;
     }
     
-    protected AbstractForeignKey(String tableName, String columnName)
+    protected AbstractForeignKey(QuerySchema sourceSchema, ContainerFilter cf, String tableName, String columnName)
     {
-        this(null, tableName, columnName);
+        this(sourceSchema, cf, null, tableName, columnName);
     }
 
-    protected AbstractForeignKey(@Nullable String schemaName, String tableName, @Nullable String columnName)
+    protected AbstractForeignKey(QuerySchema sourceSchema, ContainerFilter cf, @Nullable String lookupSchemaName, String tableName, @Nullable String columnName)
     {
-        this(schemaName, tableName, columnName, null);
+        this(sourceSchema, cf, lookupSchemaName, tableName, columnName, null);
     }
 
-    protected AbstractForeignKey(@Nullable String schemaName, String tableName, @Nullable String columnName, @Nullable String displayColumnName)
+    protected AbstractForeignKey(QuerySchema sourceSchema, @Nullable ContainerFilter cf, @Nullable String lookupSchemaName, String tableName, @Nullable String columnName, @Nullable String displayColumnName)
     {
-        _lookupSchemaName = schemaName;
+        _sourceSchema = sourceSchema;
+        _containerFilter = cf;
+        _lookupSchemaName = lookupSchemaName;
         _tableName = tableName;
         _columnName = columnName;
         _displayColumnName = displayColumnName;
+    }
+
+    /* this builder-ish method is used to help convert old anonymous subclasses */
+    public AbstractForeignKey setContainerFilter(ContainerFilter cf)
+    {
+        _containerFilter = cf;
+        return this;
+    }
+
+    protected ContainerFilter getLookupContainerFilter()
+    {
+        // if there is an explicit lookup container then use that
+        Container c = getLookupContainer();
+        if (null != c)
+        {
+            return new ContainerFilter.SimpleContainerFilterWithUser(_sourceSchema.getUser(), c);
+        }
+        if (null != _containerFilter)
+            return _containerFilter;
+        if (_sourceSchema instanceof UserSchema)
+            return ((UserSchema)_sourceSchema).getDefaultContainerFilter();
+        return null;
     }
 
     @Override
@@ -222,27 +258,6 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
             Logger.getLogger(AbstractForeignKey.class).error(e);
             return null;
         }
-    }
-
-    private String appendStackTrace(StackTraceElement[] ste, int count)
-    {
-        int i=1;  // Always skip getStackTrace() call
-        for ( ; i<ste.length ; i++)
-        {
-            String line = ste[i].toString();
-            if (!(line.startsWith("org.labkey.api.data.") || line.startsWith("java.lang.Thread")))
-                break;
-        }
-        StringBuilder sb = new StringBuilder();
-        int last = Math.min(ste.length,i+count);
-        for ( ; i<last ; i++)
-        {
-            String line = ste[i].toString();
-            if (line.startsWith("javax.servlet.http.HttpServlet.service("))
-                break;
-            sb.append("\n    ").append(line);
-        }
-        return sb.toString();
     }
 
 

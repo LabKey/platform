@@ -37,9 +37,9 @@ public class CutoffValueTable extends FilteredTable<AssayProtocolSchema>
     private static final FieldKey CONTAINER_FIELD_KEY = FieldKey.fromParts("Container");
     private static final FieldKey PROTOCOL_FIELD_KEY = FieldKey.fromParts("ProtocolId");
 
-    public CutoffValueTable(AssayProtocolSchema schema)
+    public CutoffValueTable(AssayProtocolSchema schema, ContainerFilter cf)
     {
-        super(DilutionManager.getTableInfoCutoffValue(), schema);
+        super(DilutionManager.getTableInfoCutoffValue(), schema, cf);
 
         addWrapColumn(getRealTable().getColumn("RowId")).setHidden(true);
         addWrapColumn(getRealTable().getColumn("NAbSpecimenID")).setFk(new LookupForeignKey()

@@ -19,9 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasedColumn;
-import org.labkey.api.query.ExprColumn;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Study;
@@ -62,7 +60,7 @@ public class SpecimenTable extends AbstractSpecimenTable
             addColumn(new AliasedColumn(this, "Date", getRealTable().getColumn("DrawTimeStamp")));
             addSpecimenVisitColumn(TimepointType.DATE, true);
         }
-        ptidColumn.setFk(null);
+        ptidColumn.clearFk();
 
         addSpecimenTypeColumns();
 

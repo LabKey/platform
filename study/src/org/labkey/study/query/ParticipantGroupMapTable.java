@@ -29,12 +29,13 @@ public class ParticipantGroupMapTable extends BaseStudyTable
 {
     public ParticipantGroupMapTable(StudyQuerySchema schema)
     {
+        // TODO ContainerFilter
         super(schema, StudySchema.getInstance().getTableInfoParticipantGroupMap());
         setName(StudyService.get().getSubjectGroupMapTableName(schema.getContainer()));
         setDescription("This table contains study group membership information");
 
         ColumnInfo groupIdColumn = new AliasedColumn(this, "GroupId", _rootTable.getColumn("GroupId"));
-        groupIdColumn.setFk(new QueryForeignKey(_userSchema, null, StudyService.get().getSubjectGroupTableName(getContainer()), "RowId", "Label"));
+        groupIdColumn.setFk( QueryForeignKey.from(_userSchema, null).to(StudyService.get().getSubjectGroupTableName(getContainer()), "RowId", "Label") );
         addColumn(groupIdColumn);
         addWrapParticipantColumn("ParticipantId");
         addContainerColumn();

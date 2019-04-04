@@ -59,10 +59,8 @@ import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
-import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
@@ -83,7 +81,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -100,9 +97,9 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
     private ExpMaterial _inputMaterial;
     private ExpData _inputData;
 
-    public ExpRunTableImpl(String name, UserSchema schema)
+    public ExpRunTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoExperimentRun(), schema, new ExpRunImpl(new ExperimentRun()));
+        super(name, ExperimentServiceImpl.get().getTinfoExperimentRun(), schema, new ExpRunImpl(new ExperimentRun()), cf);
     }
 
     public ExpProtocol getProtocol()
@@ -353,16 +350,17 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 col.setShownInInsertView(false);
                 col.setShownInUpdateView(false);
                 col.setFacetingBehaviorType(FacetingBehaviorType.ALWAYS_OFF);
-                col.setFk(new MultiValuedForeignKey(new LookupForeignKey(ExpRunGroupMapTable.Column.Run.toString())
+                col.setFk(new MultiValuedForeignKey(new LookupForeignKey(getContainerFilter(), ExpRunGroupMapTable.Column.Run.toString(), null)
                 {
                     @Override
                     public TableInfo getLookupTableInfo()
                     {
-                        ExpTable result = getExpSchema().getTable(ExpSchema.TableType.RunGroupMap);
+                        // TODO ContainerFilter: getLookupTableInfo() should not mutate table
+                        // for now use forWrite==true to get mutable tableinfo
+                        ExpTable result = (ExpTable)getExpSchema().getTable(ExpSchema.TableType.RunGroupMap.name(), getLookupContainerFilter(), true, true);
                         result.getColumn(ExpRunGroupMapTable.Column.RunGroup).setFk(getExpSchema().getRunGroupIdForeignKey(false));
                         return result;
                     }
-
                 }, ExpRunGroupMapTable.Column.RunGroup.toString()));
                 return col;
             case Input:
@@ -564,7 +562,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         addColumn(Column.ReplacedByRun);
         addColumn(Column.ReplacesRun);
         addColumn(Column.LSID).setHidden(true);
-        addColumn(Column.Protocol).setFk(schema.getProtocolForeignKey("LSID"));
+        addColumn(Column.Protocol).setFk(schema.getProtocolForeignKey(getContainerFilter(), "LSID"));
         addColumn(Column.RunGroups);
         addColumn(Column.RunGroupToggle);
         addColumn(Column.Input);

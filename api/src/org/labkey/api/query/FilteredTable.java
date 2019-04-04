@@ -88,21 +88,28 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         // UNDONE: lazy load button bar config????
         _buttonBarConfig = _rootTable.getButtonBarConfig() == null ? null : new ButtonBarConfig(_rootTable.getButtonBarConfig());
         if (_rootTable.supportsAuditTracking())
-            _auditBehaviorType = ((AuditConfigurable)_rootTable).getAuditBehavior();
+            _auditBehaviorType = _rootTable.getAuditBehavior();
 
         // We used to copy the titleColumn from table, but this forced all ColumnInfos to load.  Now, delegate
         // to _rootTable lazily, allowing overrides.
         _userSchema = userSchema;
 
-        if (_userSchema.getContainer() == null)
-            throw new IllegalArgumentException("container cannot be null");
-
-        if (containerFilter != null)
-            setContainerFilter(containerFilter);
-        else
-            applyContainerFilter(ContainerFilter.CURRENT);
+        // TODO ContainerFilter -- for some subclasses it is too early to call supportsContainerFilter() (e.g. DatasetTableImpl)
+//        if (supportsContainerFilter())
+        {
+            if (containerFilter != null)
+                setContainerFilter(containerFilter);
+            else
+                applyContainerFilter(getDefaultContainerFilter());
+        }
 
         _rules = supportTableRules() ? TableRulesManager.get().getTableRules(getContainer(), userSchema.getUser()) : TableRules.NOOP_TABLE_RULES;
+    }
+
+    @Override
+    protected ContainerFilter getDefaultContainerFilter()
+    {
+        return _userSchema.getDefaultContainerFilter();
     }
 
     public boolean supportTableRules()
@@ -251,7 +258,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
         TableInfo t = getRealTable();
         if (t instanceof AbstractTableInfo)
-            return ((AbstractTableInfo)t).getContainerFieldKey();
+            return t.getContainerFieldKey();
 
         return null;
     }
@@ -537,10 +544,6 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         ContainerFilter.logSetContainerFilter(filter, getClass().getSimpleName(), getName());
         _containerFilter = filter;
         applyContainerFilter(_containerFilter);
-        if (getRealTable().supportsContainerFilter() && getRealTable() instanceof ContainerFilterable)
-        {
-            ((ContainerFilterable)getRealTable()).setContainerFilter(filter);
-        }
     }
 
     protected void applyContainerFilter(ContainerFilter filter)

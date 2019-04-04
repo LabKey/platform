@@ -94,7 +94,7 @@ public class AssayListTable extends FilteredTable<AssaySchemaImpl>
         }
         typeFrag.append(" END)");
         ColumnInfo typeColumn = new ExprColumn(this, "Type", typeFrag, JdbcType.VARCHAR);
-        typeColumn.setFk(new QueryForeignKey(getUserSchema(), null, AssaySchema.ASSAY_PROVIDERS_TABLE_NAME, "Name", "Name"));
+        typeColumn.setFk(QueryForeignKey.from(getUserSchema(),null).to(AssaySchema.ASSAY_PROVIDERS_TABLE_NAME, "Name", "Name"));
         typeColumn.setDisplayColumnFactory(new DisplayColumnFactory()
         {
             public DisplayColumn createRenderer(ColumnInfo colInfo)

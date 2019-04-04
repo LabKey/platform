@@ -1400,14 +1400,6 @@ public class ColumnInfo extends ColumnRenderProperties
             {
                 return null;
             }
-            if (foreignKey.getParentTable() != null && foreignKey.getParentTable().supportsContainerFilter() && lookupTable.supportsContainerFilter())
-            {
-                ContainerFilterable table = (ContainerFilterable) lookupTable;
-                if (table.hasDefaultContainerFilter())
-                {
-                    table.setContainerFilter(new DelegatingContainerFilter(foreignKey.getParentTable(), true));
-                }
-            }
             ColumnInfo lookupColumn;
             if (displayField != null)
             {
@@ -1857,11 +1849,22 @@ public class ColumnInfo extends ColumnRenderProperties
         return _fk;
     }
 
+    public void clearFk()
+    {
+        checkLocked();
+        _fk = null;
+    }
 
     public void setFk(@Nullable ForeignKey fk)
     {
         checkLocked();
         _fk = fk;
+    }
+
+    public void setFk(@NotNull Builder<ForeignKey> b)
+    {
+        checkLocked();
+        _fk = b.build();
     }
 
 

@@ -107,7 +107,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     private final @NotNull DatasetDefinition _dsd;
 
     private TableInfo _fromTable;
-    private ContainerFilterable _assayResultTable;
+    private TableInfo _assayResultTable;
 
     public DatasetTableImpl(@NotNull final StudyQuerySchema schema, @NotNull DatasetDefinition dsd)
     {
@@ -204,7 +204,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             {
                 ColumnInfo c = addWrapColumn(baseColumn);
                 if (name.equalsIgnoreCase("CreatedBy") || name.equalsIgnoreCase("ModifiedBy"))
-                    UserIdQueryForeignKey.initColumn(schema.getUser(), schema.getContainer(), c, true);
+                    UserIdQueryForeignKey.initColumn(schema, c, true);
                 c.setUserEditable(false);
                 c.setShownInInsertView(false);
                 c.setShownInUpdateView(false);
@@ -232,7 +232,9 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             else if (name.equalsIgnoreCase(QCSTATE_ID_COLNAME))
             {
                 ColumnInfo qcStateColumn = new AliasedColumn(this, QCSTATE_ID_COLNAME, baseColumn);
-                qcStateColumn.setFk(new QueryForeignKey(QueryService.get().getUserSchema(schema.getUser(), getContainer(), "core"), getContainer(), "QCState","RowId", "Label"));
+                qcStateColumn.setFk(QueryForeignKey.from(getUserSchema(), getContainerFilter())
+                        .schema("core", getContainer())
+                        .to("QCState", "RowId", "Label"));
                 qcStateColumn.setDisplayColumnFactory(QCStateDisplayColumn::new);
 
                 qcStateColumn.setDimension(false);
@@ -280,8 +282,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                     // Issue 28671: Dataset with Lookup & MV Indicator enabled on field displays missing value as foreign key upon export
                     // MvIndicator has the same propertyURI as the value column, but should not copy the value column's foreign key
                     if (!col.isMvIndicatorColumn() && null != dp && (pd.getLookupQuery() != null || pd.getConceptURI() != null))
-                        col.setFk(new PdLookupForeignKey(schema.getUser(), pd, schema.getContainer()));
-
+                        col.setFk(PdLookupForeignKey.create(schema, pd));
 
                     if (pd != null && pd.getPropertyType() == PropertyType.MULTI_LINE)
                     {
@@ -346,7 +347,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         autoJoinColumn.setLabel("DataSets");
         final FieldKey sequenceNumFieldKey = new FieldKey(null, "SequenceNum");
         final FieldKey keyFieldKey = new FieldKey(null, "_Key");
-        AbstractForeignKey autoJoinFk = new AbstractForeignKey()
+        AbstractForeignKey autoJoinFk = new AbstractForeignKey(_userSchema, getContainerFilter())
         {
             @Override
             public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
@@ -879,11 +880,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                 return null;
             }
             AssayProtocolSchema schema = provider.createProtocolSchema(_userSchema.getUser(), protocol.getContainer(), protocol, getContainer());
-            _assayResultTable = schema.createDataTable(false);
-            if (_assayResultTable != null)
-            {
-                _assayResultTable.setContainerFilter(ContainerFilter.EVERYTHING);
-            }
+            _assayResultTable = schema.createDataTable(ContainerFilter.EVERYTHING, false);
         }
         return _assayResultTable;
     }

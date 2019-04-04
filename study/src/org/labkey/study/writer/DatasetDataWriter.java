@@ -38,14 +38,18 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DatasetDefinition;
@@ -539,7 +543,8 @@ public class DatasetDataWriter implements InternalStudyWriter
             assertFalse(shouldExport(ci, true, PHI.NotPHI, false));
 
             ci = new ColumnInfo("test", JdbcType.OTHER);
-            ci.setFk(new ContainerForeignKey(null, null));
+            UserSchema core =(UserSchema)DefaultSchema.get(TestContext.get().getUser(), JunitUtil.getTestContainer(), "core");
+            ci.setFk(new ContainerForeignKey(core));
             assertFalse(shouldExport(ci, true, PHI.NotPHI, false));
 
             ci = new ColumnInfo("test", JdbcType.OTHER);

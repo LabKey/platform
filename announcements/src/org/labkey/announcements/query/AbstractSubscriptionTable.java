@@ -44,7 +44,7 @@ public class AbstractSubscriptionTable extends FilteredTable<AnnouncementSchema>
 
         ColumnInfo userColumn = wrapColumn("User", getRealTable().getColumn("UserId"));
         addColumn(userColumn);
-        userColumn.setFk(new UserIdQueryForeignKey(_userSchema.getUser(), getContainer()));
+        userColumn.setFk(new UserIdQueryForeignKey(_userSchema));
 
         // Only admins can see subscriptions for other users
         if (!schema.getContainer().hasPermission(schema.getUser(), AdminPermission.class))

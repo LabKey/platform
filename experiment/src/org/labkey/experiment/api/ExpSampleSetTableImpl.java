@@ -18,6 +18,7 @@ package org.labkey.experiment.api;
 
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
@@ -38,9 +39,9 @@ import java.util.Collections;
  */
 public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column> implements ExpSampleSetTable
 {
-    public ExpSampleSetTableImpl(String name, UserSchema schema)
+    public ExpSampleSetTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoMaterialSource(), schema, new ExpSampleSetImpl(new MaterialSource()));
+        super(name, ExperimentServiceImpl.get().getTinfoMaterialSource(), schema, new ExpSampleSetImpl(new MaterialSource()), cf);
         addAllowablePermission(InsertPermission.class);
         addAllowablePermission(UpdatePermission.class);
     }

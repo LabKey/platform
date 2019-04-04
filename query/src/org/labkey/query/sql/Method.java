@@ -959,7 +959,7 @@ public abstract class Method
             UserSchema schema = parentTable.getUserSchema();
             if (null == schema)
                 throw new NullPointerException();
-            c.setFk(new UserIdQueryForeignKey(schema.getUser(), schema.getContainer()));
+            c.setFk(new UserIdQueryForeignKey(schema));
             c.setDisplayColumnFactory(UserIdQueryForeignKey._factoryBlank);
             return c;
         }
