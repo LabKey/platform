@@ -157,7 +157,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     @Nullable
     public TableInfo getTable(String name, boolean includeExtraMetadata)
     {
-        return getTable(name, getDefaultContainerFilter(), includeExtraMetadata, false);
+        return getTable(name, null, includeExtraMetadata, false);
     }
 
     public TableInfo getTable(String name, @Nullable ContainerFilter cf)
