@@ -262,7 +262,7 @@ public class PropertyController extends SpringActionController
                 {
                     DomainTemplate template = templateGroup.getTemplate(domainTemplate, kindName, true);
                     if (template == null)
-                        throw new NotFoundException("Domain template '" + domainTemplate + "' " + (kindName != null ? "of kind '" + kindName + "'" : "") + "not found in template group '" + domainGroup + "'");
+                        throw new NotFoundException("Domain template '" + domainTemplate + "' " + (kindName != null ? "of kind '" + kindName + "' " : "") + "not found in template group '" + domainGroup + "'");
 
                     if (template.hasErrors())
                     {
