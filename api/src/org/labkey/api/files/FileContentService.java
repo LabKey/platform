@@ -290,13 +290,13 @@ public interface FileContentService
     void ensureFileData(QueryUpdateService qus, @NotNull User user, @NotNull Container container);
 
     /**
-     * Add a recognizer for the directory pattern in order to zip the matching directory before uploading to files webpart.
+     * Allows a module to register a directory pattern to be checked in the files webpart in order to zip the matching directory before uploading.
      * @param directoryPattern DirectoryPattern
      * */
-    void addZipUploadRecognizer(DirectoryPattern directoryPattern);
+    void addZiploaderPattern(DirectoryPattern directoryPattern);
 
     /**
-     * Returns the Map of moduleNames and DirectoryPattern
+     * Returns a list of DirectoryPattern objects for the active modules in the given container.
      * */
-    List<DirectoryPattern> getZiploaderPattern(Container container);
+    List<DirectoryPattern> getZiploaderPatterns(Container container);
 }

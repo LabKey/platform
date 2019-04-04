@@ -40,52 +40,55 @@ LABKEY.internal.ZipLoad = new function () {
         this.zipProgressWindow.hide();
         zipFail();
         dropZone.uploadPanel.showErrorMsg("Zip Error", "Error zipping file - " + this.zipProgressName + " in directory - " + this.directoryBeingZipped);
-        moveToNextDirectory();
     }
 
     function getCurrentZipFile() {
-        this.currentZipFileText = Ext4.create('Ext.form.Label', {
-            text: '',
-            style: 'display: inline-block ;text-align: left',
-            width: 250,
-            border: false
-        });
+        if (!this.currentZipFileText) {
+            this.currentZipFileText = Ext4.create('Ext.form.Label', {
+                text: '',
+                style: 'display: inline-block ;text-align: left',
+                width: 250,
+                border: false
+            });
+        }
         return this.currentZipFileText;
     }
 
     function getCurrentFileNumber() {
-        this.currentFileNumber = Ext4.create('Ext.form.Label', {
-            text: '',
-            style: 'display: inline-block ;text-align: right',
-            width: 250,
-            border: false
-        });
+        if(!this.currentFileNumber) {
+            this.currentFileNumber = Ext4.create('Ext.form.Label', {
+                text: '',
+                style: 'display: inline-block ;text-align: right',
+                width: 250,
+                border: false
+            });
+        }
         return this.currentFileNumber;
     }
 
-    function setStatusText(text) {
-        this.statusText = Ext4.create('Ext.form.Label', {
-            text: text,
-            style: 'display: inline-block ;text-align: center',
-            width: 500,
-            margin: 4,
-            border: false
-        });
-        return this.statusText;
-    }
-
     function getStatusText() {
+        if(!this.statusText) {
+            this.statusText = Ext4.create('Ext.form.Label', {
+                text: '',
+                style: 'display: inline-block ;text-align: center',
+                width: 500,
+                margin: 4,
+                border: false
+            });
+        }
         return this.statusText;
     }
 
     function getProgressBar() {
-        this.progressBar = Ext4.create('Ext.ProgressBar', {
-            width: 500,
-            height: 25,
-            border: false,
-            autoRender : true,
-            style: 'background-color: transparent; -moz-border-radius: 5px; -webkit-border-radius: 5px; -o-border-radius: 5px; -ms-border-radius: 5px; -khtml-border-radius: 5px; border-radius: 5px;'
-        });
+        if(!this.progressBar) {
+            this.progressBar = Ext4.create('Ext.ProgressBar', {
+                width: 500,
+                height: 25,
+                border: false,
+                autoRender: true,
+                style: 'background-color: transparent; -moz-border-radius: 5px; -webkit-border-radius: 5px; -o-border-radius: 5px; -ms-border-radius: 5px; -khtml-border-radius: 5px; border-radius: 5px;'
+            });
+        }
         return this.progressBar;
     }
 
@@ -116,13 +119,11 @@ LABKEY.internal.ZipLoad = new function () {
         return this.zipProgressWindow;
     }
 
-    function showZipProgressWindow(text) {
-        setStatusText(text);
+    function showZipProgressWindow() {
         getZipProgressWindow().show();
     }
 
     function hideZipProgressWindow() {
-        setStatusText('');
         this.zipProgressWindow.hide();
     }
 
@@ -156,8 +157,8 @@ LABKEY.internal.ZipLoad = new function () {
             newFileName = this.directoryBeingZipped +'/' + file.name;
         }
         var zipProgressName = filePath[filePath.length-1];
-        this.currentZipFileText.update("Adding file - " + zipProgressName);
-        this.currentFileNumber.update(addIndex + '/' + filesBeingZipped.length);
+        getCurrentZipFile().update("Adding file - " + zipProgressName);
+        getCurrentFileNumber().update(addIndex + '/' + filesBeingZipped.length);
         zipWriter.add(newFileName, new zip.BlobReader(file), function () {
             addIndex++;
             if (addIndex < filesBeingZipped.length)
@@ -198,7 +199,7 @@ LABKEY.internal.ZipLoad = new function () {
 
     function zipProgress(current, total) {
         totalDone = (current - prevDone) + totalDone ;
-         this.progressBar.updateProgress(totalDone / totalSize);
+         getProgressBar().updateProgress(totalDone / totalSize);
         prevDone = current;
         if(current===total) {
             prevDone = 0;
@@ -206,6 +207,7 @@ LABKEY.internal.ZipLoad = new function () {
     }
 
     function zipSuccess(zippedBlob) {
+        getStatusText().update('');
         hideZipProgressWindow();
         var dirName = filesBeingZipped[0].dir;
         var nameToUse = '';
@@ -272,7 +274,8 @@ LABKEY.internal.ZipLoad = new function () {
             totalSize += files[s].file.size;
         }
 
-        showZipProgressWindow("Zipping directory " + files[0].dir );
+        showZipProgressWindow();
+        getStatusText().update("Zipping directory " + files[0].dir);
         zipFiles(files);
     }
 
@@ -280,29 +283,29 @@ LABKEY.internal.ZipLoad = new function () {
 
         //separating filesToZip to its own directory
 
-        var temp = [];
+        var filePerZipDir = [];
         var tempName = filesToZip[0].dir;
-        temp.push(filesToZip[0]);
+        filePerZipDir.push(filesToZip[0]);
         for (var fz = 1; fz < filesToZip.length; fz++) {
             if (filesToZip[fz].dir === tempName) {
-                temp.push(filesToZip[fz]);
+                filePerZipDir.push(filesToZip[fz]);
             }
             else {
-                filesToZipPerDirectory.push(temp);
-                temp = [];
+                filesToZipPerDirectory.push(filePerZipDir);
+                filePerZipDir = [];
                 tempName = filesToZip[fz].dir;
-                temp.push(filesToZip[fz]);
+                filePerZipDir.push(filesToZip[fz]);
             }
         }
 
-        if (temp.length > 0) {
-            filesToZipPerDirectory.push(temp);
+        if (filePerZipDir.length > 0) {
+            filesToZipPerDirectory.push(filePerZipDir);
         }
 
     }
 
-    function createParts(holder, limit) {
-        var temp = [];
+    function createPartialZipDirs(holder, limit) {
+        var filesPerZipLimit = [];
         var sum = 0;
         var ind = 1;
         for (var s = 0; s < holder.length; s++) {
@@ -311,27 +314,27 @@ LABKEY.internal.ZipLoad = new function () {
             } else {
                 sum += holder[s].file.size;
                 if (sum >= limit) {
-                    for (var tp = 0; tp < temp.length; tp++) {
-                        temp[tp].dir = temp[tp].dir + ind;
+                    for (var tp = 0; tp < filesPerZipLimit.length; tp++) {
+                        filesPerZipLimit[tp].dir = filesPerZipLimit[tp].dir + ind;
                     }
-                    filesToZipPerDirectoryParts.push(temp);
+                    filesToZipPerDirectoryParts.push(filesPerZipLimit);
                     ind++;
-                    temp = [];
+                    filesPerZipLimit = [];
                     sum = 0;
                 }
                 else {
-                    temp.push(holder[s]);
+                    filesPerZipLimit.push(holder[s]);
                 }
             }
         }
 
-        if (temp.length > 0) {
+        if (filesPerZipLimit.length > 0) {
             if (ind > 1) {
-                for (var tp = 0; tp < temp.length; tp++) {
-                    temp[tp].dir = temp[tp].dir + ind;
+                for (var tp = 0; tp < filesPerZipLimit.length; tp++) {
+                    filesPerZipLimit[tp].dir = filesPerZipLimit[tp].dir + ind;
                 }
             }
-            filesToZipPerDirectoryParts.push(temp);
+            filesToZipPerDirectoryParts.push(filesPerZipLimit);
         }
     }
 
@@ -350,7 +353,7 @@ LABKEY.internal.ZipLoad = new function () {
             }
 
             if (sum > limit) { //create parts
-                createParts(holder, limit);
+                createPartialZipDirs(holder, limit);
             }
             else {
                 filesToZipPerDirectoryParts.push(holder);
@@ -410,7 +413,6 @@ LABKEY.internal.ZipLoad = new function () {
                     }
 
                     if (!fileMatch) {
-                        patternMatch = false;//File present in pattern but not in tree
                         if(!tr.zip)
                             tr.zip = false;
                         return;
@@ -428,14 +430,12 @@ LABKEY.internal.ZipLoad = new function () {
                     }
 
                     if (!subDirMatch) {
-                        patternMatch = false; //SubDirectory present in pattern but not in tree
+                        //SubDirectory present in pattern but not in tree
                         if(!tr.zip)
                             tr.zip = false;
                         return;
                     }
                 }
-                //pattern matched
-                patternMatch = true;
                 tr.zip = true;
             }
             else if (tr.directories.length > 0) { // pattern directory name not matched with tree's directory, check all the subDirs of tree
@@ -456,7 +456,6 @@ LABKEY.internal.ZipLoad = new function () {
                     }
                 }
                 if (!dirMatch) { // no matched directories in tree
-                    patternMatch = false;
                     if(!tr.zip)
                         tr.zip = false;
                     return;
@@ -464,7 +463,6 @@ LABKEY.internal.ZipLoad = new function () {
             }
         }
         else { // no pattern registered for the module
-            patternMatch = false;
             if(!tr.zip)
                 tr.zip = false;
             return;
@@ -472,24 +470,25 @@ LABKEY.internal.ZipLoad = new function () {
     }
 
     function _buildTree(parts, file) {
+        var dirInTree, nextDir ={};
         for (var j = 0; j < parts.length; j++) {
             //var lastDir;
             if (j === parts.length - 1) {
                 //leaf node
-                setChildren(tmp, parts[j], true, file);
+                setChildren(nextDir, parts[j], true, file);
             }
             else if (j > 0 && j < parts.length - 1) {
                 dirInTree = false;
                 //check if sub directory already there
-                for (var t = 0; t < tmp.directories.length; t++) {
-                    if (parts[j] === tmp.directories[t].name) {
-                        tmp = tmp.directories[t];
+                for (var t = 0; t < nextDir.directories.length; t++) {
+                    if (parts[j] === nextDir.directories[t].name) {
+                        nextDir = nextDir.directories[t];
                         dirInTree = true;
                     }
                 }
                 //create sub directory
                 if (!dirInTree) {
-                    tmp = setChildren(tmp, parts[j], false);
+                    nextDir = setChildren(nextDir, parts[j], false);
                 }
 
             }
@@ -500,32 +499,32 @@ LABKEY.internal.ZipLoad = new function () {
                     for (var _n = 0; _n < tree.nodes.length; _n++) {
                         var n = tree.nodes[_n];
                         if (n.name === parts[j]) {
-                            tmp = tree.nodes[_n];
+                            nextDir = tree.nodes[_n];
                             nodeFound = true;
                         }
                     }
                     if (!nodeFound) {
-                        var x = tree.nodes.push(setNode({}, parts[j]));
-                        tmp = tree.nodes[x - 1];
+                        var nodeIndex = tree.nodes.push(setNode({}, parts[j]));
+                        nextDir = tree.nodes[nodeIndex - 1];
 
                     }
                 }
                 else {
-                    var x = tree.nodes.push(setNode({}, parts[j]));
-                    tmp = tree.nodes[x - 1];
+                    nodeIndex = tree.nodes.push(setNode({}, parts[j]));
+                    nextDir = tree.nodes[nodeIndex - 1];
                 }
             }
         }
     }
 
-    function setChildren(tmp, val, isFile, _file) {
+    function setChildren(nextDirectory, val, isFile, _file) {
         if (isFile) {
-            tmp.files.push({name: val, isFile: true, file: _file});
-            return tmp;
+            nextDirectory.files.push({name: val, isFile: true, file: _file});
+            return nextDirectory;
         }
         else {
-            var x = tmp.directories.push({name: val, isFile: false, files: [], directories: []});
-            return tmp.directories[x - 1];
+            var x = nextDirectory.directories.push({name: val, isFile: false, files: [], directories: []});
+            return nextDirectory.directories[x - 1];
         }
     }
 
@@ -594,7 +593,7 @@ LABKEY.internal.ZipLoad = new function () {
         }
     }
 
-    function getFilesFromDirectory(allFiles, entry, path, scope, callback) {
+    function getFilesFromDirectory(allFiles, entry, scope, callback) {
         var dirReader, entriesReader;
         dirReader = entry.createReader();
         entriesReader = (function (scope) {
@@ -607,8 +606,8 @@ LABKEY.internal.ZipLoad = new function () {
                         _entry.file(function (file) {
                             fileCbCount--;
 
-                            file.name = path + "/" + file.name;
-                            var updatedFile = new File([file], path + "/" + file.name, {type: file.type});
+                            file.name = entry.path + "/" + file.name;
+                            var updatedFile = new File([file], entry.fullPath + "/" + file.name, {type: file.type});
 
                             allFiles.push(updatedFile);
 
@@ -618,14 +617,14 @@ LABKEY.internal.ZipLoad = new function () {
                         });
                     }
                     else if (_entry.isDirectory) {
-                        getFilesFromDirectory(allFiles, _entry, _entry.fullPath, scope, callback);
+                        getFilesFromDirectory(allFiles, _entry, scope, callback);
                     }
                 }
                 if (entries.length >= 100) {
                     dirCbCount++;
                     //read next batch (readEntries only read 100 files in 1 batch)
                     dirReader.readEntries(entriesReader, function (error) {
-                        return typeof console !== "undefined" && console !== null ? typeof console.log === "function" ? console.log(error) : void 0 : void 0;
+                       return console.log(error);
                     });
                 }
                dirCbCount--;
@@ -635,15 +634,12 @@ LABKEY.internal.ZipLoad = new function () {
 
         dirCbCount++;
         dirReader.readEntries(entriesReader, function (error) {
-            return typeof console !== "undefined" && console !== null ? typeof console.log === "function" ? console.log(error) : void 0 : void 0;
+            return console.log(error);
         });
     }
 
     function checkFilePattern(file) {
-        if(filePattern.test(file.name))
-            return true;
-        else
-            return false;
+        return filePattern.test(file.name);
     }
 
     function _zipLoad(entry) {
@@ -653,7 +649,7 @@ LABKEY.internal.ZipLoad = new function () {
 
             allFiles = [];
             parentItemName = entry.name;
-            getFilesFromDirectory(allFiles, entry, entry.fullPath, dropZone, filesSuccess);
+            getFilesFromDirectory(allFiles, entry, dropZone, filesSuccess);
         }
         else if(entry) {//file
             entry.file(function (_file) {
