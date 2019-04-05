@@ -120,7 +120,7 @@ public class LineageTableInfo extends VirtualTable
 
     private ForeignKey createExpTypeFK(String expType)
     {
-        var fk = QueryForeignKey.from(getUserSchema(), null).to(expType, "LSID", "Name");
+        var fk = QueryForeignKey.from(getUserSchema(), null).schema("exp").to(expType, "LSID", "Name");
 
         switch (expType) {
             case "Data":
