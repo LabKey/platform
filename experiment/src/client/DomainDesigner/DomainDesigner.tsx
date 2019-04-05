@@ -3,17 +3,26 @@
  * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
  */
 import * as React from 'react'
-import {Panel} from "react-bootstrap";
+import {Alert, Button, ButtonToolbar, Col, Panel, Row} from "react-bootstrap";
 import {ActionURL} from "@labkey/api";
-import {SchemaQuery} from "@glass/models";
-import {DomainDesign, DomainFieldsDisplay, fetchDomain} from "@glass/domainproperties";
-import {Alert, LoadingSpinner} from "@glass/utils";
+import {DOMAIN_FORM_ID, DomainDesign} from "./models";
+import {LoadingSpinner} from "@glass/utils";
+import {clearFieldDetails, fetchDomain, saveDomain, updateField} from "./actions";
+import DomainForm from "./DomainForm";
 
 type State = {
-    schemaQuery: SchemaQuery,
+    schemaName,
+    queryName,
+    domainId: number,
     domain?: DomainDesign,
-    message?: string
+    message?: string,
+    messageType?: string
 }
+
+const btnStyle = {
+    margin: '10px 0 20px 10px',
+    width: 120
+};
 
 export class App extends React.Component<any, State> {
 
@@ -23,35 +32,59 @@ export class App extends React.Component<any, State> {
 
         const schemaName = ActionURL.getParameter('schemaName');
         const queryName = ActionURL.getParameter('queryName');
-        const schemaQuery = schemaName && queryName ? SchemaQuery.create(schemaName, queryName) : undefined;
+        const domainId = ActionURL.getParameter('domainId');
+
+        this.submitHandler = this.submitHandler.bind(this);
+        this.getAlert = this.getAlert.bind(this);
+        this.dismissAlert = this.dismissAlert.bind(this);
 
         this.state = {
-            schemaQuery,
-            message: schemaQuery ? undefined : 'Missing required parameter: schemaName or queryName.'
+            schemaName,
+            queryName,
+            domainId,
+            message: ((schemaName && queryName) || domainId) ? undefined : 'Missing required parameter: domainId or schemaName and queryName.'
         };
     }
 
     componentDidMount() {
-        const { schemaQuery } = this.state;
+        const { schemaName, queryName, domainId } = this.state;
 
-        if (schemaQuery) {
-            fetchDomain(schemaQuery)
+        if ((schemaName && queryName) || domainId) {
+            fetchDomain(domainId, schemaName, queryName)
                 .then(domain => {
                     this.setState({domain});
                 })
                 .catch(error => {
-                    this.setState({message: error})
+                    this.setState({message: error.exception, messageType: 'danger'})
                 });
         }
     }
 
-    render() {
-        const { domain, message } = this.state;
-        const isLoading = domain === undefined && message === undefined;
+    submitHandler(evt: any) {
 
-        if (message) {
-            return <Alert>{message}</Alert>
-        }
+        saveDomain(this.state.domain)
+            .then(domain => {
+                let dd = clearFieldDetails(this.state.domain);
+                this.setState(Object.assign({}, {domain: dd, message: 'Domain saved', messageType: 'success'}));
+            })
+            .catch(error => {
+                this.setState({message: error.exception, messageType: 'danger'})
+            });
+    }
+
+    dismissAlert() {
+        this.setState({message: null, messageType: null})
+    }
+
+    getAlert(message, messageType) {
+        return (
+            <Alert bsStyle={messageType} key={"domain-msg-" + Math.random()} onDismiss={this.dismissAlert}>{message}</Alert>
+        )
+    }
+
+    render() {
+        const { domain, message, messageType } = this.state;
+        const isLoading = domain === undefined && message === undefined;
 
         if (isLoading) {
             return <LoadingSpinner/>
@@ -59,15 +92,16 @@ export class App extends React.Component<any, State> {
 
         return (
             <>
-                <Panel>
-                    <Panel.Heading>
-                        <div className={"panel-title"}>{domain.name}</div>
-                    </Panel.Heading>
-                    <Panel.Body>
-                        <p>Description: {domain.description}</p>
-                    </Panel.Body>
-                </Panel>
-                <DomainFieldsDisplay title={"Field Properties"} domain={domain} />
+                <Row>
+                    <Col xs={12}>
+                        <ButtonToolbar>
+                            <Button type='button' style={btnStyle} bsClass='btn'>Cancel</Button>
+                            <Button type='button' style={btnStyle} bsClass='btn btn-success' onClick={this.submitHandler} >Save Changes</Button>
+                        </ButtonToolbar>
+                    </Col>
+                </Row>
+                { message ? this.getAlert(message, messageType) : '' }
+                <DomainForm domainDesign = {domain} id={DOMAIN_FORM_ID} />
             </>
         )
     }
