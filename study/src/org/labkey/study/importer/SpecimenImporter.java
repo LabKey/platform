@@ -2274,7 +2274,7 @@ public class SpecimenImporter
                 "\texp.Material.RowId = exp.MaterialInput.MaterialId\n" +
                 "WHERE " + info.getTempTableName() + ".LSID IS NULL\n" +
                 "AND exp.MaterialInput.MaterialId IS NULL\n" +
-                "AND (exp.Material.CpasType = ? OR exp.Material.CpasType = 'StudySpecimen') \n" +
+                "AND (exp.Material.CpasType = ? OR exp.Material.CpasType = '" + StudyService.SPECIMEN_NAMESPACE_PREFIX + "') \n" +
                 "AND exp.Material.Container = ?)";
 
         String prefix = new Lsid(StudyService.SPECIMEN_NAMESPACE_PREFIX, "Folder-" + info.getContainer().getRowId(), "").toString();

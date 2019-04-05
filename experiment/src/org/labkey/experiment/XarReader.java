@@ -434,7 +434,7 @@ public class XarReader extends AbstractXarImporter
         materialSource.setName(sampleSet.getName());
         materialSource.setLSID(lsid);
         materialSource.setContainer(getContainer());
-        materialSource.setMaterialLSIDPrefix(LsidUtils.resolveLsidFromTemplate(sampleSet.getMaterialLSIDPrefix(), getRootContext(), "Material"));
+        materialSource.setMaterialLSIDPrefix(LsidUtils.resolveLsidFromTemplate(sampleSet.getMaterialLSIDPrefix(), getRootContext(), ExpMaterial.DEFAULT_CPAS_TYPE));
 
         Domain domain = materialSource.getType();
         if (sampleSet.getKeyFieldArray() != null && sampleSet.getKeyFieldArray().length > 0)
@@ -983,9 +983,9 @@ public class XarReader extends AbstractXarImporter
 
         for (InputOutputRefsType.MaterialLSID inputMaterialLSID : inputMaterialLSIDs)
         {
-            String declaredType = (inputMaterialLSID.isSetCpasType() ? inputMaterialLSID.getCpasType() : "Material");
+            String declaredType = (inputMaterialLSID.isSetCpasType() ? inputMaterialLSID.getCpasType() : ExpMaterial.DEFAULT_CPAS_TYPE);
             checkMaterialCpasType(declaredType);
-            String lsid = LsidUtils.resolveLsidFromTemplate(inputMaterialLSID.getStringValue(), context, declaredType, "Material");
+            String lsid = LsidUtils.resolveLsidFromTemplate(inputMaterialLSID.getStringValue(), context, declaredType, ExpMaterial.DEFAULT_CPAS_TYPE);
 
             ExpMaterial inputRow = _xarSource.getMaterial(firstApp ? null : new ExpRunImpl(experimentRun), new ExpProtocolApplicationImpl(protocolApp), lsid);
             if (firstApp)
@@ -1055,14 +1055,14 @@ public class XarReader extends AbstractXarImporter
 
         String declaredType = xbMaterial.getCpasType();
         if (null == declaredType)
-            declaredType = "Material";
+            declaredType = ExpMaterial.DEFAULT_CPAS_TYPE;
         if (declaredType.contains("${"))
         {
             declaredType = LsidUtils.resolveLsidFromTemplate(declaredType, context, "SampleSet");
         }
         checkMaterialCpasType(declaredType);
 
-        String materialLSID = LsidUtils.resolveLsidFromTemplate(xbMaterial.getAbout(), context, declaredType, "Material");
+        String materialLSID = LsidUtils.resolveLsidFromTemplate(xbMaterial.getAbout(), context, declaredType, ExpMaterial.DEFAULT_CPAS_TYPE);
 
         ExpMaterialImpl material = ExperimentServiceImpl.get().getExpMaterial(materialLSID);
         if (material == null)
@@ -1735,7 +1735,7 @@ public class XarReader extends AbstractXarImporter
             protocol.setOutputDataPerInstance(p.getOutputDataPerInstance());
 
         String materialType = trimString(p.getOutputMaterialType());
-        protocol.setOutputMaterialType(materialType == null ? "Material" : materialType);
+        protocol.setOutputMaterialType(materialType == null ? ExpMaterial.DEFAULT_CPAS_TYPE : materialType);
         String dataType = trimString(p.getOutputDataType());
         protocol.setOutputDataType(dataType == null ? "Data" : dataType);
 
