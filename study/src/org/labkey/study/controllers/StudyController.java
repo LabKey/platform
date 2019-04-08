@@ -6070,18 +6070,18 @@ public class StudyController extends BaseStudyController
         private String _encodedQcState;
         private boolean _showCustomizeLink = true;
 
-        public ParticipantNavView(ActionURL prevURL, ActionURL nextURL, String currentPartitipantId, String encodedQCState, String display)
+        public ParticipantNavView(ActionURL prevURL, ActionURL nextURL, String currentParticipantId, String encodedQCState, String display)
         {
             _prevURL = prevURL;
             _nextURL = nextURL;
             _display = display;
-            _currentParticipantId = currentPartitipantId;
+            _currentParticipantId = currentParticipantId;
             _encodedQcState = encodedQCState;
         }
 
-        public ParticipantNavView(ActionURL prevURL, ActionURL nextURL, String currentPartitipantId, String encodedQCState)
+        public ParticipantNavView(ActionURL prevURL, ActionURL nextURL, String currentParticipantId, String encodedQCState)
         {
-            this(prevURL, nextURL, currentPartitipantId,  encodedQCState, null);
+            this(prevURL, nextURL, currentParticipantId,  encodedQCState, null);
         }
 
         @Override
@@ -6109,7 +6109,7 @@ public class StudyController extends BaseStudyController
             if (null != _currentParticipantId && null != ss)
             {
                 ActionURL search = PageFlowUtil.urlProvider(SearchUrls.class).getSearchURL(c, "+" + ss.escapeTerm(_currentParticipantId));
-                out.print(PageFlowUtil.textLink("Search for '" + PageFlowUtil.filter(id(_currentParticipantId, c, user)) + "'", search));
+                out.print(PageFlowUtil.textLink("Search for '" + id(_currentParticipantId, c, user) + "'", search));
                 out.print("&nbsp;");
             }
 
