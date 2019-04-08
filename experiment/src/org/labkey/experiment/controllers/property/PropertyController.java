@@ -353,8 +353,9 @@ public class PropertyController extends SpringActionController
         {
             String queryName = form.getQueryName();
             String schemaName = form.getSchemaName();
+            Integer domainId = form.getDomainId();
 
-            return getDomain(schemaName, queryName, getContainer(), getUser());
+            return getDomain(schemaName, queryName, domainId, getContainer(), getUser());
         }
     }
 
@@ -376,7 +377,7 @@ public class PropertyController extends SpringActionController
             if (newDomain.getDomainId() == -1 || newDomain.getDomainURI() == null)
                 throw new IllegalArgumentException("Domain id and URI are required");
 
-            GWTDomain originalDomain = getDomain(form.getSchemaName(), form.getQueryName(), getContainer(), getUser());
+            GWTDomain originalDomain = getDomain(form.getSchemaName(), form.getQueryName(), form.getDomainId(), getContainer(), getUser());
 
             List<String> updateErrors = updateDomain(originalDomain, newDomain, getContainer(), getUser());
             for (String msg : updateErrors)
@@ -415,6 +416,17 @@ public class PropertyController extends SpringActionController
         private String containerPath;
         private String schemaName;
         private String queryName;
+        private Integer domainId;
+
+        public Integer getDomainId()
+        {
+            return domainId;
+        }
+
+        public void setDomainId(Integer domainId)
+        {
+            this.domainId = domainId;
+        }
 
         public String getSchemaName()
         {
@@ -865,13 +877,30 @@ public class PropertyController extends SpringActionController
     }
 
     @NotNull
-    private static GWTDomain getDomain(String schemaName, String queryName, Container container, User user) throws NotFoundException
+    private static GWTDomain getDomain(String schemaName, String queryName, Integer domainId, Container container, User user) throws NotFoundException
     {
-        String domainURI = PropertyService.get().getDomainURI(schemaName, queryName, container, user);
-        GWTDomain domain = DomainUtil.getDomainDescriptor(user, domainURI, container);
+        if ((schemaName == null || queryName == null) && domainId == null)
+        {
+            throw new IllegalArgumentException("domainId or schemaName and queryName are required" );
+        }
 
-        if (domain == null)
-            throw new NotFoundException("Could not find domain for " + domainURI);
+        GWTDomain domain;
+        if (domainId != null)
+        {
+            Domain dom = PropertyService.get().getDomain(domainId);
+            if (dom == null)
+                throw new NotFoundException("Could not find domain for " + domainId);
+
+            domain = DomainUtil.getDomainDescriptor(user, dom);
+        }
+        else
+        {
+            String domainURI = PropertyService.get().getDomainURI(schemaName, queryName, container, user);
+            domain = DomainUtil.getDomainDescriptor(user, domainURI, container);
+
+            if (domain == null)
+                throw new NotFoundException("Could not find domain for " + domainURI);
+        }
 
         return domain;
     }
@@ -989,7 +1018,7 @@ public class PropertyController extends SpringActionController
             if (StringUtils.isBlank(schema) || StringUtils.isBlank(query))
                 throw new IllegalArgumentException("schemaName and queryName required");
 
-            GWTDomain gwt = getDomain(schema, query, getContainer(), getUser());
+            GWTDomain gwt = getDomain(schema, query, null, getContainer(), getUser());
             Domain domain = form.getDomain();
 
             if (null == domain)
