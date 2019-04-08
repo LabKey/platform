@@ -1004,7 +1004,7 @@ public class UserController extends SpringActionController
                 if (displayName.contains("@"))
                 {
                     if (!displayName.equalsIgnoreCase(userEmailAddress))
-                        errors.reject(SpringActionController.ERROR_MSG, "The value of the 'Display Name' should not contain '@'.");
+                        errors.reject(SpringActionController.ERROR_MSG, "User display name should not contain '@'. Please enter a different value");
                 }
 
                 //ensure that display name is unique
@@ -1012,7 +1012,7 @@ public class UserController extends SpringActionController
                 //if there's a user with this display name and it's not the user currently being edited
                 if (existingUser != null && !existingUser.equals(user))
                 {
-                    errors.reject(SpringActionController.ERROR_MSG, "The value of the 'Display Name' field conflicts with another value in the database. Please enter a different value");
+                    errors.reject(SpringActionController.ERROR_MSG, "The specified display name is already in use. Please enter a different value");
                 }
             }
 
