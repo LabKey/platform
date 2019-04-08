@@ -34,6 +34,12 @@ public class NAbSpecimenTable extends FilteredTable<AssayProtocolSchema>
 {
     private static final FieldKey CONTAINER_FIELD_KEY = FieldKey.fromParts("Container");
 
+    @Deprecated // TODO ContainerFilter
+    public NAbSpecimenTable(AssayProtocolSchema schema)
+    {
+        this(schema, null);
+    }
+
     public NAbSpecimenTable(AssayProtocolSchema schema, ContainerFilter cf)
     {
         super(DilutionManager.getTableInfoNAbSpecimen(), schema, cf);

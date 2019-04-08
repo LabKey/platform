@@ -250,6 +250,24 @@ public class QueryForeignKey extends AbstractForeignKey
         this(sourceSchema, cf, schema, lookupContainer, tableName, lookupKey, displayField, false);
     }
 
+    /**
+     * @param schema a schema pointed at the effective container for this usage
+     * @param lookupContainer null if the lookup isn't specifically configured to point at a specific container, and should be pointing at the current container
+     */
+    @Deprecated // TODO ContainerFilter
+    public QueryForeignKey(QuerySchema schema, @Nullable Container lookupContainer, String tableName, @Nullable String lookupKey, @Nullable String displayField)
+    {
+        this(null, null, schema, lookupContainer, tableName, lookupKey, displayField, false);
+    }
+
+
+    @Deprecated // TODO ContainerFilter
+    public QueryForeignKey(TableInfo table, @Nullable Container lookupContainer, @Nullable String lookupKey, @Nullable String displayField)
+    {
+        super(null, null, table.getName(), lookupKey, displayField);
+        _table = table;
+        _lookupContainer = lookupContainer;
+    }
 
     public void setJoinType(LookupColumn.JoinType joinType)
     {
@@ -309,11 +327,16 @@ public class QueryForeignKey extends AbstractForeignKey
         return _table;
     }
 
-    private QuerySchema getSchema()
+    protected QuerySchema getSchema()
     {
         if (_schema == null && _user != null && _lookupSchemaName != null)
         {
-            _schema = QueryService.get().getUserSchema(_user, _effectiveContainer, _lookupSchemaName);
+            DefaultSchema resolver = null;
+            if (null==_sourceSchema || !_effectiveContainer.equals(_sourceSchema.getContainer()))
+                resolver = DefaultSchema.get(_user,_effectiveContainer);
+            else
+                resolver = _sourceSchema.getDefaultSchema();
+            _schema = resolver.getSchema(_lookupSchemaName);
         }
         return _schema;
     }
