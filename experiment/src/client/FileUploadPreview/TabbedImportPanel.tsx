@@ -64,11 +64,9 @@ export class TabbedImportPanel extends React.Component<TabbedImportPanelProps, a
                 <FileAttachmentForm
                     acceptedFormats={".tsv, .xlsx, .xls, .csv"}
                     allowMultiple={false}
-                    label="Upload a data file"
                     showButtons={false}
                     showLabel={false}
                     showProgressBar={false}
-                    submitText={"submit"}
                     onFileChange={handleFileChange}
                     onFileRemoval={handleFileRemoval}
                     onSubmit={handleFileSubmit}

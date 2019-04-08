@@ -68,6 +68,10 @@ body {
   display: block;
 }
 
+.hidden {
+  display: none;
+}
+
 .form-step {
   display: none;
 
@@ -93,9 +97,3 @@ body {
   padding: 10px 0;
   border-top: 1px solid lightgrey;
 }
-
-
-//      confirmation: green notification window. text is displayed as passed in
-//      warning: orange notification window. includes a 'warning' header above warning text
-//      error: red notification window. includes an 'error' header above associated error text
-//      newTask: blue notification window. includes new tasks

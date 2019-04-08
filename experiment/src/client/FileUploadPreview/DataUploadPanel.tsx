@@ -11,6 +11,7 @@ const PREVIEW_ROW_COUNT = 3;
 interface DataUploadPanelProps
 {
     //leaving room for Assay id, etc.
+    handleErrors: (errorMessage: string) => any
 }
 
 export class DataUploadPanel extends React.Component<DataUploadPanelProps, any> {
@@ -32,17 +33,25 @@ export class DataUploadPanel extends React.Component<DataUploadPanelProps, any> 
     }
 
     handleFileChange(files: Map<string, File>): void {
+        const { handleErrors } = this.props;
         this.getPreviewDataFromFile(files.get(files.keys().next().value)) // just take the first file, since we only support 1 file at this time
             .then(previewData => {
                 this.setState({
                     previewData,
                     actionsForUser: 'You need to do something' //TODO derive from future inference work
                 });
+                this.clearErrors();
             })
-            .catch(reason => console.error(reason));
+            .catch(reason => {
+                if (handleErrors) {
+                    handleErrors(reason);
+                }
+            });
     }
 
     handleFileRemoval(attachmentName: string) {
+        this.clearErrors();
+
         this.setState({
             previewData: null,
             actionsForUser: null
@@ -68,6 +77,13 @@ export class DataUploadPanel extends React.Component<DataUploadPanelProps, any> 
         })
     }
 
+    clearErrors() {
+        const { handleErrors } = this.props;
+        if (handleErrors) {
+            handleErrors(null);
+        }
+    }
+
     getContentFromExpData(expData: any) : Promise<any> { //todo define Exp.Data config interface
         return new Promise((resolve, reject) => {
             Ajax.request(
@@ -79,7 +95,7 @@ export class DataUploadPanel extends React.Component<DataUploadPanelProps, any> 
                         resolve(JSON.parse(response.responseText));
                     },
                     failure: (response) => {
-                        reject("There was a problem getting information about the data file.");
+                        reject("There was a problem getting preview information about the data file.");
                         console.error(response);
                     }
                 });
@@ -95,10 +111,9 @@ export class DataUploadPanel extends React.Component<DataUploadPanelProps, any> 
                     if (Array.isArray(response.sheets) && response.sheets.length) {
                         if (response.sheets[0].data) {
                             resolve(this.convertRowDataIntoPreviewData(response.sheets[0].data));
-                        } else {
-                            reject('There is no data in the file or in the first sheet of the file.');
                         }
                     }
+                    reject('There is no data in the file to preview.');
             })
             .catch(reason => {
                 console.error(reason);
