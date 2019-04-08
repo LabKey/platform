@@ -15,6 +15,7 @@
  */
 package org.labkey.issue.query;
 
+import com.google.common.collect.ImmutableSet;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -79,8 +80,10 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
     private final static Set<String> _AUTOPOPULATED_COLUMN_NAMES;
     static
     {
-        _AUTOPOPULATED_COLUMN_NAMES = new HashSet<>(Table.AUTOPOPULATED_COLUMN_NAMES);
-        _AUTOPOPULATED_COLUMN_NAMES.add("Name");
+        Set<String> autoPopulatedCols = new HashSet<>(Table.AUTOPOPULATED_COLUMN_NAMES);
+        autoPopulatedCols.add("Name");
+        _AUTOPOPULATED_COLUMN_NAMES = ImmutableSet.copyOf(autoPopulatedCols);
+        autoPopulatedCols.clear();
     }
 
     public IssuesListDefTable(IssuesQuerySchema schema)
@@ -268,9 +271,7 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
         @Override
         protected Set<String> getAutoPopulatedColumns()
         {
-            Set<String> defCols = new HashSet<>(super.getAutoPopulatedColumns());
-            defCols.add("Name");
-            return Collections.unmodifiableSet(defCols);
+            return _AUTOPOPULATED_COLUMN_NAMES;
         }
 
         @Override

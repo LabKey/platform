@@ -419,7 +419,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         List<ColumnValidator> validators = ColumnValidators.create(column, dp);
         for (ColumnValidator v : validators)
         {
-            String msg = v.validate(1, value, _validatorContext);
+            String msg = v.validate(-1, value, _validatorContext);
             if (msg != null)
                 throw new ValidationException(msg, column.getName());
         }
