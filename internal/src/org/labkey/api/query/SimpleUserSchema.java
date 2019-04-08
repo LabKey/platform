@@ -152,6 +152,13 @@ public class SimpleUserSchema extends UserSchema
         return new SimpleTable<>(this, sourceTable, cf).init();
     }
 
+    // TODO ContainerFilter find classes that override this method
+    @Deprecated
+    protected TableInfo createWrappedTable(String name, @NotNull TableInfo sourceTable)
+    {
+        return createWrappedTable(name, sourceTable, null);
+    }
+
     public Set<String> getTableNames()
     {
         return Collections.unmodifiableSet(_available);
