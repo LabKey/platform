@@ -15,13 +15,13 @@
  */
 package org.labkey.issue.query;
 
-import com.google.common.collect.ImmutableSet;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerForeignKey;
@@ -65,7 +65,6 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -80,10 +79,9 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
     private final static Set<String> _AUTOPOPULATED_COLUMN_NAMES;
     static
     {
-        Set<String> autoPopulatedCols = new HashSet<>(Table.AUTOPOPULATED_COLUMN_NAMES);
+        Set<String> autoPopulatedCols = new CaseInsensitiveHashSet(Table.AUTOPOPULATED_COLUMN_NAMES);
         autoPopulatedCols.add("Name");
-        _AUTOPOPULATED_COLUMN_NAMES = ImmutableSet.copyOf(autoPopulatedCols);
-        autoPopulatedCols.clear();
+        _AUTOPOPULATED_COLUMN_NAMES = Collections.unmodifiableSet(autoPopulatedCols);
     }
 
     public IssuesListDefTable(IssuesQuerySchema schema)
