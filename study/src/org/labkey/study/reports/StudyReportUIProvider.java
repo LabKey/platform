@@ -22,8 +22,8 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.DefaultReportUIProvider;
-import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.reports.report.view.ReportUtil;
+import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.Study;
@@ -156,7 +156,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
             // r report
             if (ReportUtil.canCreateScript(context, "r") && RReport.isEnabled())
             {
-                RReportBean rBean = new RReportBean(settings);
+                ScriptReportBean rBean = new ScriptReportBean(settings);
                 rBean.setReportType(StudyRReport.TYPE);
                 rBean.setRedirectUrl(returnUrl.getLocalURIString());
 

@@ -32,7 +32,6 @@ import org.labkey.api.reports.report.JavaScriptReport;
 import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.view.DefaultReportUIProvider;
-import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -87,7 +86,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
 
         if (RReport.isEnabled())
         {
-            RReportBean bean = new RReportBean();
+            ScriptReportBean bean = new ScriptReportBean();
             bean.setReportType(RReport.TYPE);
             bean.setRedirectUrl(context.getActionURL().getLocalURIString());
 
@@ -131,7 +130,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
 
         if (ReportUtil.canCreateScript(context, "r") && RReport.isEnabled())
         {
-            RReportBean rBean = new RReportBean(settings);
+            ScriptReportBean rBean = new ScriptReportBean(settings);
             rBean.setReportType(RReport.TYPE);
             rBean.setRedirectUrl(returnUrl.getLocalURIString());
             designers.add(new DesignerInfoImpl(RReport.TYPE, "R Report", null, ReportUtil.getScriptReportDesignerURL(context, rBean),
