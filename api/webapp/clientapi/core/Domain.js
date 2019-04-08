@@ -272,8 +272,8 @@ LABKEY.Domain.create({
             saveDomain(
                 config.success,
                 config.failure,
-                config.domainId,
-                {domainDesign: config.domainDesign, schemaName: config.schemaName, queryName: config.queryName},
+                {domainDesign: config.domainDesign, schemaName: config.schemaName, queryName: config.queryName,
+                    domainId: config.domainId},
                 config.containerPath);
         },
 
