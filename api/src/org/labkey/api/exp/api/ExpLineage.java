@@ -303,10 +303,11 @@ public class ExpLineage
             else if (expObject instanceof ExpData)
             {
                 ExpData data = (ExpData) expObject;
-                if (data.getDataClass() != null)
+                ExpDataClass dc = data.getDataClass(null);
+                if (dc != null)
                 {
                     json.put("schemaName", "exp.data");
-                    json.put("queryName", data.getDataClass().getName());
+                    json.put("queryName", dc.getName());
                 }
                 json.put("nearestParentData", nearestParentData);
             }

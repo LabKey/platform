@@ -1707,7 +1707,7 @@ public class ExperimentController extends SpringActionController
             ExpRun run = _data.getRun();
             ExpProtocol sourceProtocol = _data.getSourceProtocol();
             ExpProtocolApplication sourceProtocolApplication = _data.getSourceApplication();
-            ExpDataClass dataClass = _data.getDataClass();
+            ExpDataClass dataClass = _data.getDataClass(getUser());
 
             ExpSchema schema = new ExpSchema(getUser(), getContainer());
             TableInfo table;
@@ -3025,7 +3025,7 @@ public class ExperimentController extends SpringActionController
             }
 
             // Issue 32076: Delete the exp.Data objects using QueryUpdateService so trigger scripts will be executed
-            Map<Optional<ExpDataClass>, List<ExpData>> byDataClass = datas.stream().collect(Collectors.groupingBy(d -> Optional.ofNullable(d.getDataClass())));
+            Map<Optional<ExpDataClass>, List<ExpData>> byDataClass = datas.stream().collect(Collectors.groupingBy(d -> Optional.ofNullable(d.getDataClass(null))));
             for (Optional<ExpDataClass> opt : byDataClass.keySet())
             {
                 SchemaKey schemaKey;
@@ -5056,7 +5056,7 @@ public class ExperimentController extends SpringActionController
             // Create "DataInputs/<DataClass>" columns with a value containing a comma-separated list of ExpData names
             for (ExpData d : dataInputs.keySet())
             {
-                ExpDataClass dc = d.getDataClass();
+                ExpDataClass dc = d.getDataClass(getUser());
                 String keyName = ExpData.DATA_INPUT_PARENT + "/" + dc.getName();
                 parentInputNames.merge(keyName, d.getName(), (s1, s2) -> s1.concat(",").concat(s2));
             }
@@ -5136,9 +5136,9 @@ public class ExperimentController extends SpringActionController
 
                 JSONObject ret;
                 if (run != null)
-                    ret = ExperimentJSONConverter.serializeRun(run, null);
+                    ret = ExperimentJSONConverter.serializeRun(run, null, getUser());
                 else
-                    ret = ExperimentJSONConverter.serializeRunOutputs(outputData.keySet(), outputMaterials.keySet());
+                    ret = ExperimentJSONConverter.serializeRunOutputs(outputData.keySet(), outputMaterials.keySet(), getUser());
 
                 return success(successMessage.toString(), ret);
             }
@@ -6090,7 +6090,7 @@ public class ExperimentController extends SpringActionController
                         SearchService.SearchHit hit = search.find(docId);
                         if (hit == null)
                         {
-                            Map<String, Object> props = ExperimentJSONConverter.serializeData(d);
+                            Map<String, Object> props = ExperimentJSONConverter.serializeData(d, getUser());
                             props.put("docid", docId);
                             notInIndex.add(props);
                         }

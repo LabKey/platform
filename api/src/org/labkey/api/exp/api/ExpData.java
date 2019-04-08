@@ -73,6 +73,7 @@ public interface ExpData extends ExpRunItem
     /**
      * Get the ExpDataClass this ExpData is a member of.
      */
+    @Deprecated
     @Nullable
     ExpDataClass getDataClass();
 

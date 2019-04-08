@@ -342,7 +342,7 @@ public abstract class UploadSamplesHelper
                         ensureTargetColumnLookup(user, c, source, parentColName, "exp.data", parts[1]);
                     ExpData data = findData(c, user, parts[1], parentValue, cache, dataMap);
                     if (data != null)
-                        parentData.put(data, dataRole(data));
+                        parentData.put(data, dataRole(data, user));
                     else
                         throw new ValidationException("Data input '" + parentValue + "' in DataClass '" + parts[1] + "' not found");
                 }
@@ -350,7 +350,7 @@ public abstract class UploadSamplesHelper
                 {
                     ExpData data = findData(c, user, parts[1], parentValue, cache, dataMap);
                     if (data != null)
-                        childData.put(data, dataRole(data));
+                        childData.put(data, dataRole(data, user));
                     else
                         throw new ValidationException("Data output '" + parentValue + "' in DataClass '" + parts[1] + "' not found");
                 }
@@ -374,9 +374,9 @@ public abstract class UploadSamplesHelper
         return ss != null ? ss.getName() : "Sample";
     }
 
-    private static String dataRole(ExpData data)
+    private static String dataRole(ExpData data, User user)
     {
-        ExpDataClass dc = data.getDataClass();
+        ExpDataClass dc = data.getDataClass(user);
         return dc != null ? dc.getName() : ExpDataRunInput.DEFAULT_ROLE;
     }
 

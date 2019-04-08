@@ -170,7 +170,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     public void save(User user)
     {
         // Replace the default "Data" cpastype if the Data belongs to a DataClass
-        ExpDataClassImpl dataClass = getDataClass();
+        ExpDataClassImpl dataClass = getDataClass(null);
         if (dataClass != null && DEFAULT_CPAS_TYPE.equals(getCpasType()))
            setCpasType(dataClass.getLSID());
 
@@ -298,7 +298,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         if (result != null)
             return result;
 
-        ExpDataClass dataClass = getDataClass();
+        ExpDataClass dataClass = getDataClass(null);
         if (dataClass != null)
             return dataClass.getLSID();
 
@@ -401,7 +401,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     @NotNull
     private void getIndexValues(Set<String> identifiers, Set<String> keywords)
     {
-        ExpDataClassImpl dc = this.getDataClass();
+        ExpDataClassImpl dc = this.getDataClass(null);
         if (dc == null)
             return;
 
@@ -499,7 +499,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     public String getDocumentId()
     {
         String dataClassName = "-";
-        ExpDataClass dc = getDataClass();
+        ExpDataClass dc = getDataClass(null);
         if (dc != null)
             dataClassName = dc.getName();
         return "data:" + new Path(getContainer().getId(), dataClassName, Integer.toString(getRowId()));
@@ -638,7 +638,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         // Collect other text columns and lookup display columns
         getIndexValues(identifiersMed, keywordsLo);
 
-        ExpDataClass dc = this.getDataClass();
+        ExpDataClass dc = this.getDataClass(null);
         if (null != dc)
         {
             ActionURL show = new ActionURL(ExperimentController.ShowDataClassAction.class,getContainer()).addParameter("rowId", dc.getRowId());
