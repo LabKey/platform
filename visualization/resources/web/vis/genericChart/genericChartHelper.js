@@ -1549,7 +1549,8 @@ LABKEY.vis.GenericChartHelper = new function(){
 
             for (var i = 0; i < queryConfig.filterArray.length; i++) {
                 var f = queryConfig.filterArray[i];
-                if (f.hasOwnProperty('getValue')) {
+                // Issue 37191: Check to see if 'f' is already a filter instance (either labkey-api-js/src/filter/Filter.ts or clientapi/core/Query.js)
+                if (f.hasOwnProperty('getValue') || f.getValue instanceof Function) {
                     filters.push(f);
                 }
                 else {
