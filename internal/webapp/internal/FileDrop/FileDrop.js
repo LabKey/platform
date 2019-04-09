@@ -232,8 +232,11 @@ LABKEY.internal.FileDrop = new function () {
                 this.entries = [];
 
                 for (var it = 0; it < items.length; it++) {
-                    if (items[it].webkitGetAsEntry != null) {
-                        this.entries.push(items[it].webkitGetAsEntry())
+                    if (LABKEY.Utils.isFunction(items[it].webkitGetAsEntry)) {
+                        this.entries.push(items[it].webkitGetAsEntry());
+                    }
+                    else {
+                        this.entries.push(items[it]);
                     }
                 }
 
@@ -302,6 +305,10 @@ LABKEY.internal.FileDrop = new function () {
         hideDropzones: function() {
             shouldShowDropzones = false;
             hideDropzones();
+        },
+
+        getDropzones: function() {
+            return registered;
         }
     }
 };
