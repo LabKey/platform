@@ -191,6 +191,8 @@ LABKEY.Domain.create({
 	* @param {Function} [config.failure] Function called if execution of the "get" function fails.
 	* @param {String} config.schemaName Name of the schema
 	* @param {String} config.queryName Name of the query
+    * @param {String} config.domainId Id of the domain. This is an alternate way to identify the domain.
+    *       SchemaName and queryName will be ignored if this value is not undefined or null.
 	* @param {String} [config.containerPath] The container path in which the requested Domain is defined.
 	*       If not supplied, the current container path will be used.
 	* @example Example:
@@ -235,7 +237,7 @@ LABKEY.Domain.create({
             getDomain(
                 config.success,
                 config.failure,
-                {schemaName: config.schemaName, queryName: config.queryName},
+                {schemaName: config.schemaName, queryName: config.queryName, domainId: config.domainId},
                 config.containerPath);
         },
 
@@ -248,6 +250,8 @@ LABKEY.Domain.create({
          * @param {LABKEY.Domain.DomainDesign} config.domainDesign The domain design to save.
          * @param {String} config.schemaName Name of the schema
          * @param {String} config.queryName Name of the query
+         * @param {String} config.domainId Id of the domain. This is an alternate way to identify the domain to update.
+         *        SchemaName and queryName will be ignored if this value is not undefined or null.
          * @param {String} [config.containerPath] The container path in which the requested Domain is defined.
          *       If not supplied, the current container path will be used.
          */
@@ -268,7 +272,8 @@ LABKEY.Domain.create({
             saveDomain(
                 config.success,
                 config.failure,
-                {domainDesign: config.domainDesign, schemaName: config.schemaName, queryName: config.queryName},
+                {domainDesign: config.domainDesign, schemaName: config.schemaName, queryName: config.queryName,
+                    domainId: config.domainId},
                 config.containerPath);
         },
 
