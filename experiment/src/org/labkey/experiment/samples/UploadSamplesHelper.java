@@ -339,7 +339,7 @@ public abstract class UploadSamplesHelper
                         ensureTargetColumnLookup(user, c, source, parentColName, "exp.data", parts[1]);
                     ExpData data = findData(c, user, parts[1], parentValue, cache, dataMap);
                     if (data != null)
-                        parentData.put(data, data.getName());
+                        parentData.put(data, "Data");
                     else
                         throw new ValidationException("Data input '" + parentValue + "' in DataClass '" + parts[1] + "' not found");
                 }
@@ -347,7 +347,7 @@ public abstract class UploadSamplesHelper
                 {
                     ExpData data = findData(c, user, parts[1], parentValue, cache, dataMap);
                     if (data != null)
-                        childData.put(data, data.getName());
+                        childData.put(data, "Data");
                     else
                         throw new ValidationException("Data output '" + parentValue + "' in DataClass '" + parts[1] + "' not found");
                 }

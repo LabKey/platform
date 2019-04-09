@@ -78,11 +78,11 @@ public class LinkedSchemaQueryDefinition extends QueryDefinitionImpl
     }
 
     @Override
-    public Query getQuery(@NotNull QuerySchema schema, List<QueryException> errors, Query parent, boolean includeMetadata)
+    public Query getQuery(@NotNull QuerySchema schema, List<QueryException> errors, Query parent, boolean includeMetadata, boolean skipSuggestedColumns, boolean allowDuplicateColumns)
     {
         // Parse/resolve the wrapped query in the context of the original source schema
         UserSchema sourceSchema = _schema.getSourceSchema();
-        return super.getQuery(sourceSchema, errors, parent, includeMetadata);
+        return super.getQuery(sourceSchema, errors, parent, includeMetadata, skipSuggestedColumns, allowDuplicateColumns);
     }
 
     @Override

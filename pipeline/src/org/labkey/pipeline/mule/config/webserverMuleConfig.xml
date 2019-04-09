@@ -270,6 +270,29 @@
             </properties>
         </mule-descriptor>
 
+        <mule-descriptor name="PipelineProgressionRunnerUMO"
+                         implementation="org.labkey.pipeline.mule.PipelineProgressionRunner">
+            <inbound-router>
+                <endpoint type="receiver" address="JobMQ" transformers="JMSMessageToJob"
+                          responseTransformers="NoOpTransformer" connector="jmsConnectorState">
+                    <!--<transaction action="ALWAYS_BEGIN" factory="org.mule.providers.jms.JmsTransactionFactory" />-->
+                    <filter className="org.labkey.pipeline.mule.filters.TaskStateChangeJmsSelectorFilter"/>
+                </endpoint>
+            </inbound-router>
+
+            <!-- Return to job queue if not complete -->
+            <outbound-router>
+                <router className="org.labkey.pipeline.mule.routing.EPipelineQueueMessageSplitter">
+                    <endpoint type="sender" address="JobMQ" transformers="JobToJMSMessage"
+                              connector="jmsConnectorState"/>
+                    <filter className="org.labkey.pipeline.mule.filters.JobIncompleteFilter"/>
+                </router>
+            </outbound-router>
+
+            <threading-profile maxThreadsActive="1" maxThreadsIdle="0" threadTTL="100"/>
+            <pooling-profile maxActive="1" maxIdle="0" initialisationPolicy="INITIALISE_NONE"/>
+        </mule-descriptor>
+
         <mule-descriptor name="PipelineStatusSetterUMO"
             implementation="org.labkey.pipeline.mule.StatusRequestHandler">
             <inbound-router>
