@@ -36,25 +36,20 @@ LABKEY.pipeline.StatusUpdate = function(controller, action, returnURL)
     var _dt = null;
     var _lastUpdate = "";
     var _iDelay = 0;
-    var _delays = [15, 30, 60, 120, 240];
+    var _delays = [10, 30, 60, 120, 240];
     var _paused = false;
 
-    var isSelectionModified = function()
+    // Disable refresh if the user has toggled any checkboxes or a menu is open or a panel (customize view or export) is open
+    var isUserInteracting = function()
     {
-        // Disable refresh if the user has toggled any checkboxes
         return LABKEY.Utils.isDefined(LABKEY.DataRegions) &&
                LABKEY.Utils.isDefined(LABKEY.DataRegions["StatusFiles"]) &&
-               LABKEY.DataRegions["StatusFiles"].selectionModified;
+               LABKEY.DataRegions["StatusFiles"].isUserInteracting();
     };
 
     // private methods:
     var nextUpdate = function(iNext)
     {
-        if (isSelectionModified())
-        {
-            return;
-        }
-        
         _iDelay = (iNext < _delays.length ? iNext : _delays.length - 1);
         var sec = _delays[_iDelay];
         setStatusFailure(_iDelay > 0, 'Waiting ' + sec + 's...');
@@ -74,8 +69,10 @@ LABKEY.pipeline.StatusUpdate = function(controller, action, returnURL)
 
     var update = function()
     {
-        if (isSelectionModified())
+        if (isUserInteracting())
         {
+            console.debug("skip update while user is interacting with grid...");
+            nextUpdate(0);
             return;
         }
 
@@ -97,8 +94,10 @@ LABKEY.pipeline.StatusUpdate = function(controller, action, returnURL)
     var onUpdateSuccess = function (response)
     {
         // LABKEY.disablePipelineRefresh is a secret value set through Selenium to make IE testing more reliable
-        if (isSelectionModified() || LABKEY.disablePipelineRefresh)
+        if (isUserInteracting() || LABKEY.disablePipelineRefresh)
         {
+            console.debug("skip update while user is interacting with grid...");
+            nextUpdate(0);
             return;
         }
 
@@ -115,7 +114,7 @@ LABKEY.pipeline.StatusUpdate = function(controller, action, returnURL)
             else
             {
                 var newText = Ext4.util.Format.stripTags(Ext4.util.Format.stripScripts(response.responseText));
-                if (_lastUpdate != newText)
+                if (_lastUpdate !== newText)
                 {
                     delete LABKEY.DataRegions["StatusFiles"];
                     el.update(response.responseText, true, function(){
@@ -138,7 +137,7 @@ LABKEY.pipeline.StatusUpdate = function(controller, action, returnURL)
     {
         // Don't show an error message if the request was canceled, as would happen if the user clicked on a link
         // while we were trying up refresh
-        if (response.status != 0)
+        if (response.status !== 0)
         {
             nextUpdate(_iDelay + 1);
         }

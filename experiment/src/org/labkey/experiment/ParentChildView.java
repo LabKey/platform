@@ -206,7 +206,7 @@ public class ParentChildView extends VBox
         }
 
         final ExpSampleSet ss;
-        if (sameType && typeName != null && !"Material".equals(typeName) && !"Sample".equals(typeName))
+        if (sameType && typeName != null && !ExpMaterial.DEFAULT_CPAS_TYPE.equals(typeName) && !"Sample".equals(typeName))
             ss = ExperimentService.get().getSampleSet(typeName);
         else
             ss = null;

@@ -64,7 +64,7 @@ import java.util.stream.Stream;
  */
 public class DomainTemplateGroup
 {
-    private static final Logger LOG = Logger.getLogger(DomainTemplateGroup.class);
+    static final Logger LOG = Logger.getLogger(DomainTemplateGroup.class);
     private static final String DIR_NAME = "domain-templates";
     private static final String SUFFIX = ".template.xml";
     private static final ModuleResourceCache<Map<String, DomainTemplateGroup>> CACHE = ModuleResourceCaches.create("Domain templates", new DomainTemplateGroupCacheHandler(), ResourceRootProvider.getStandard(new Path(DIR_NAME)));
