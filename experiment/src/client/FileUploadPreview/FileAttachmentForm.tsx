@@ -133,15 +133,14 @@ export class FileAttachmentForm extends React.Component<FileAttachmentFormProps,
 
         return (
             <>
-                <span className="translator--toggle__wizard">
-                    <FileAttachmentContainer
-                        acceptedFormats={acceptedFormats}
-                        allowDirectories={allowDirectories}
-                        handleChange={this.handleFileChange}
-                        handleRemoval={this.handleFileRemoval}
-                        allowMultiple={allowMultiple}
-                        label={label}/>
-                </span>
+
+                <FileAttachmentContainer
+                    acceptedFormats={acceptedFormats}
+                    allowDirectories={allowDirectories}
+                    handleChange={this.handleFileChange}
+                    handleRemoval={this.handleFileRemoval}
+                    allowMultiple={allowMultiple}
+                    label={label}/>
                 {acceptedFormats && attachedFiles.size === 0 && (
                     <div className={"margin-top"}>
                         <strong>Supported formats include: </strong>{acceptedFormats}

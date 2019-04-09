@@ -1,12 +1,3 @@
-// #Sections
-// Html, body and base element styles.
-
-body {
-  overflow-y: scroll;
-  text-rendering: auto;
-  -moz-osx-font-smoothing: auto;
-  -webkit-font-smoothing: auto;
-}
 
 .app__notification-container--top {
   position: absolute;
@@ -31,21 +22,6 @@ body {
   &--newTask {
     background: cornflowerblue;
   }
-}
-
-.home-icon--route:hover {
-  text-decoration: none;
-}
-
-.registry-home__entity-link {
-  cursor: pointer;
-}
-
-// Truncate overflow
-.text__truncate {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .margin-top {
