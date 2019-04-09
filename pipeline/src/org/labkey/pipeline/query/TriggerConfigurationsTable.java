@@ -59,6 +59,8 @@ import org.labkey.pipeline.api.PipelineSchema;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -216,6 +218,14 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
         public TriggerConfigurationsUpdateService(TriggerConfigurationsTable table)
         {
             super(table, table.getRealTable());
+        }
+
+        @Override
+        protected Set<String> getAutoPopulatedColumns()
+        {
+            Set<String> defCols = new HashSet<>(super.getAutoPopulatedColumns());
+            defCols.add("PipelineTask");
+            return Collections.unmodifiableSet(defCols);
         }
 
         @Override

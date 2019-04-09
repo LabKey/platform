@@ -121,7 +121,8 @@ public class BatchValidationException extends Exception
             message = rowError.getMessage();
             if (message != null)
             {
-                sb.append("\n");
+                if (sb.length() > 0)  //dont append leading newline to empty message
+                    sb.append("\n");
                 sb.append(rowError.getMessage());
             }
         }
