@@ -1581,6 +1581,8 @@ public class Query
         new SqlTest("SELECT 1+median(seven), avg(seven), day FROM R GROUP BY day", 3, 7),             // not top-level expression
         new SqlTest("SELECT 1+median(seven)+avg(seven), avg(seven), day FROM R GROUP BY day", 3, 7),             // not top-level expression
         new SqlTest("SELECT median(d), median(seven), day FROM R GROUP BY day", 3, 7),
+        new SqlTest("SELECT median(d), median(seven), day, length(day) FROM R GROUP BY day", 4, 7),
+        new SqlTest("SELECT CASE day WHEN 'Monday' THEN median(d) ELSE median(seven) END, day, length(day) FROM R GROUP BY day", 3, 7),
 
         // LIMIT
         new SqlTest("SELECT R.day, R.month, R.date FROM R LIMIT 10", 3, 10),

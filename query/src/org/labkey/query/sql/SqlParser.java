@@ -68,6 +68,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -960,12 +961,12 @@ public class SqlParser
             for (QNode groupChild : groupChildren)
             {
                 QExpr expr = groupByAliasMap.get(((QExpr) groupChild).getFieldKey());
-                if (null == expr)
-                    _parseErrors.add(new QueryParseException("Group By field not found: " + ((QExpr) groupChild).getFieldKey(), null, groupChild.getLine(), groupChild.getLine()));
-                else
+                if (null != expr)
                     groupBy.appendChild(expr);
             }
-            queryNew.appendChild(groupBy);
+
+            if (!groupBy.childList().isEmpty())
+                queryNew.appendChild(groupBy);          // If no groupBy fields are surfaced, no need for groupBy, since they went into partitioning median
         }
         if (null != limit)
             queryNew.appendChild(limit);
@@ -1022,25 +1023,22 @@ public class SqlParser
         QSelect innerSelect = new QSelect();
         innerSelect.setTokenTypeAndText(SELECT);
 
+        List<QNode> innerSelectNewChildren = new ArrayList<>();
         for (QNode child : select.children())
         {
             if (child instanceof QAs)
             {
                 QAs as = (QAs)child;
                 QIdentifier identifier = as.childList().size() > 1 ? as.getAlias() : null;
-
-                QExpr expr = as.getExpression();
-                if (null != expr.getFieldKey() && groupByAliasMap.containsKey(expr.getFieldKey()))
-                    groupByAliasMap.put(expr.getFieldKey(), null != identifier ? identifier : expr);
-
-                innerSelect.appendChildren(transformInnerExpr(as, identifier, groupBy, aliasManager));
+                innerSelectNewChildren.addAll(transformInnerExpr(as, identifier, groupBy, aliasManager, groupByAliasMap));
 
             }
             else
             {   // TODO: Is this possible?  I don't think so
-                innerSelect.appendChild(child);
+                innerSelectNewChildren.add(child);
             }
         }
+        innerSelect.appendChildren(filterDuplicateIdentifiers(innerSelectNewChildren));
         innerSelectFrom.appendChildren(innerSelect, from);
         return select;
     }
@@ -1049,10 +1047,14 @@ public class SqlParser
     private List<QNode> transformInnerExpr(@NotNull QAs as,                     // Input As   [possibly modified in place]
                                            @Nullable QIdentifier identifier,    // Input identifier
                                            @Nullable QGroupBy groupBy,          // Input GroupBy
-                                           @NotNull AliasManager aliasManager)  // Input AliasManager [possibly modified]
+                                           @NotNull AliasManager aliasManager,  // Input AliasManager [possibly modified]
+                                           @NotNull Map<FieldKey, QExpr> groupByAliasMap) // [out] alias map for GroupBy
     {
         // Retain only aggregates and leaves of all other expressions
         QExpr expr = as.getExpression();
+        if (null != expr.getFieldKey() && groupByAliasMap.containsKey(expr.getFieldKey()))
+            groupByAliasMap.put(expr.getFieldKey(), null != identifier ? identifier : expr);
+
         if (expr instanceof QAggregate)
         {
             QAggregate aggregate = (QAggregate) expr;
@@ -1071,7 +1073,7 @@ public class SqlParser
                 QAs asNew = (QAs)as.clone();
                 asNew.appendChild(aggregate);
                 if (null == identifier)
-                    identifier = new QIdentifier(aliasManager.decideAlias("expr_"));
+                    identifier = new QIdentifier(aliasManager.decideAlias("expression"));
                 asNew.appendChild(identifier);
 
                 // For outer select replace children of As with MAX
@@ -1092,7 +1094,7 @@ public class SqlParser
                 QAs asNew = (QAs)as.clone();
                 asNew.appendChild(aggregate.getFirstChild());
                 if (null == identifier)
-                    identifier = new QIdentifier(aliasManager.decideAlias("expr_"));
+                    identifier = new QIdentifier(aliasManager.decideAlias("expression"));
                 asNew.appendChild(identifier);
 
                 // For outer select leave aggregate in place but against identifier coming from inner select
@@ -1102,7 +1104,11 @@ public class SqlParser
                 return Collections.singletonList(asNew);
             }
         }
-        else if (expr instanceof QOperator)
+        else if (expr instanceof QOperator ||
+                 expr instanceof QExprList ||
+                 expr instanceof QCase ||
+                 expr instanceof QWhen ||
+                 expr instanceof QElse)
         {
             List<QNode> list = new ArrayList<>();
             List<QNode> exprNewChildren = new ArrayList<>();
@@ -1110,11 +1116,28 @@ public class SqlParser
             {
                 QAs asTemp = (QAs)as.clone();
                 asTemp.appendChild(opChild);
-                list.addAll(transformInnerExpr(asTemp, null, groupBy, aliasManager));
+                list.addAll(transformInnerExpr(asTemp, null, groupBy, aliasManager, groupByAliasMap));
                 exprNewChildren.add(asTemp.getExpression());
             }
             expr.removeChildren();
             expr.appendChildren(exprNewChildren);
+            return list;
+        }
+        else if (expr instanceof QMethodCall)
+        {
+            QExprList exprList = (QExprList)expr.getLastChild();
+
+            List<QNode> list = new ArrayList<>();
+            List<QNode> exprListNewChildren = new ArrayList<>();
+            for (QNode opChild : exprList.children())
+            {
+                QAs asTemp = (QAs)as.clone();
+                asTemp.appendChild(opChild);
+                list.addAll(transformInnerExpr(asTemp, null, groupBy, aliasManager, groupByAliasMap));
+                exprListNewChildren.add(asTemp.getExpression());
+            }
+            exprList.removeChildren();
+            exprList.appendChildren(exprListNewChildren);
             return list;
         }
         else if (expr instanceof QIdentifier || expr.isConstant())
@@ -1127,14 +1150,14 @@ public class SqlParser
             }
             return Collections.singletonList(asNew);
         }
-        else                  // TODO: what else can be here? Case? Method? 
+        else                  // TODO: what else can be here?
         {
             QAs asNew = (QAs)as.clone();
             asNew.appendChild(expr);
             as.removeChildren();
             if (null == identifier)
             {
-                identifier = new QIdentifier(aliasManager.decideAlias("expr_"));
+                identifier = new QIdentifier(aliasManager.decideAlias("expression"));
             }
             as.appendChild(identifier);
             asNew.appendChild(identifier);
@@ -1143,6 +1166,28 @@ public class SqlParser
 
     }
 
+
+    List<QNode> filterDuplicateIdentifiers(List<QNode> qnodes)
+    {
+        Set<FieldKey> fieldKeys = new HashSet<>();
+        List<QNode> outList = new ArrayList<>();
+        for (QNode node : qnodes)
+        {
+            if (node instanceof QAs)
+            {
+                QAs as = (QAs) node;
+                if (as.getExpression() instanceof QIdentifier && as.childList().size() == 1)
+                {
+                    FieldKey fieldKey = as.getExpression().getFieldKey();
+                    if (fieldKeys.contains(fieldKey))
+                        continue;       // Leave out dup
+                    fieldKeys.add(fieldKey);
+                }
+            }
+            outList.add(node);
+        }
+        return outList;
+    }
 
     private QFieldKey substituteModuleProperty(String moduleName, String propertyName)
     {
