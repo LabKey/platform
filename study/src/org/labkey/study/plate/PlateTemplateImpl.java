@@ -108,7 +108,8 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
             for (WellGroupTemplateImpl wellGroup : sortedWellGroups)
                 templatesByType.put(wellGroup.getName(), wellGroup);
         }
-        assert (wellGroupsInOrder(templatesByType)) : "WellGroupTemplates are out of order.";
+        if (!wellGroupsInOrder(templatesByType))
+            throw new IllegalArgumentException("WellGroupTemplates are out of order.");
         return template;
     }
 
