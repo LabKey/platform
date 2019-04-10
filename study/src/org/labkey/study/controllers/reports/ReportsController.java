@@ -53,9 +53,9 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportUrls;
-import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.reports.report.view.ReportDesignBean;
 import org.labkey.api.reports.report.view.ReportUtil;
+import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
@@ -69,6 +69,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
+import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.study.reports.CrosstabReportDescriptor;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.HelpTopic;
@@ -462,7 +463,7 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    public static class CrosstabDesignBean extends ReportDesignBean
+    public static class CrosstabDesignBean extends ReportDesignBean<CrosstabReport>
     {
         private Map<String, ColumnInfo> columns;
         private int _visitRowId = -1;
@@ -532,9 +533,9 @@ public class ReportsController extends BaseStudyController
             _stats = stats;
         }
 
-        public Report getReport(ContainerUser cu) throws Exception
+        public CrosstabReport getReport(ContainerUser cu) throws Exception
         {
-            Report report = super.getReport(cu);
+            CrosstabReport report = super.getReport(cu);
             if (null == report)
                 return null;
 
@@ -563,7 +564,7 @@ public class ReportsController extends BaseStudyController
 
             if (reshow)
             {
-                Report report = form.getReport(getViewContext());
+                CrosstabReport report = form.getReport(getViewContext());
                 if (report != null)
                 {
                     try
@@ -1304,12 +1305,12 @@ public class ReportsController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class RunRReportAction extends SimpleViewAction<RReportBean>
+    public class RunRReportAction extends SimpleViewAction<ScriptReportBean>
     {
         protected Report _report;
         protected Dataset _def;
 
-        protected Report getReport(RReportBean form)
+        protected Report getReport(ScriptReportBean form)
         {
             String reportIdParam = form.getViewContext().getActionURL().getParameter(StudyController.DATASET_REPORT_ID_PARAMETER_NAME);
             ReportIdentifier reportId = ReportService.get().getReportIdentifier(reportIdParam);
@@ -1321,7 +1322,7 @@ public class ReportsController extends BaseStudyController
             return null;
         }
 
-        public ModelAndView getView(RReportBean form, BindException errors) throws Exception
+        public ModelAndView getView(ScriptReportBean form, BindException errors) throws Exception
         {
             _report = getReport(form);
             if (_report == null)
