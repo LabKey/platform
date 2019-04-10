@@ -19,7 +19,6 @@ package org.labkey.api.reports.report.view;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.ReportIdentifier;
-import org.labkey.api.security.permissions.AnalystPermission;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
@@ -79,7 +78,7 @@ public class AjaxScriptReportView extends JspView<ScriptReportBean>
     protected Report _report;
     protected ReportIdentifier _reportId;
 
-    public AjaxScriptReportView(@Nullable Report report, ScriptReportBean bean, Mode mode) throws Exception
+    public AjaxScriptReportView(@Nullable Report report, ScriptReportDesignBean bean, Mode mode) throws Exception
     {
         super("/org/labkey/api/reports/report/view/ajaxScriptReportDesigner.jsp", bean);
 
@@ -93,7 +92,7 @@ public class AjaxScriptReportView extends JspView<ScriptReportBean>
         init(bean, mode);
     }
 
-    protected void init(ScriptReportBean bean, Mode mode) throws Exception
+    protected void init(ScriptReportDesignBean bean, Mode mode) throws Exception
     {
         bean.init(getViewContext(), mode);
     }

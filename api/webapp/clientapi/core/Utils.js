@@ -175,6 +175,37 @@ LABKEY.Utils = new function()
         return false;
     };
 
+    var isIE11 = !!window.MSInputMethodContext && !!document.documentMode;
+
+    /**
+     * Parses a date string returned from LabKey Server which should be in the format of: "yyyy-MM-dd HH:mm:ss.SSS"
+     * On IE 11 does not support this syntax view new Date(), while all other browsers that we support do (as of April
+     * 2019). This requires us to manually parse the date string and use the alternate Date constructor.
+     *
+     * @param dateString {String} a string in the format of: "yyyy-MM-dd HH:mm:ss.SSS"
+     * @returns {Date}
+     */
+    var parseDateStringIE11 = function (dateString) {
+        var parts = dateString.split(' ');
+        var dateParts = parts[0].split('-');
+        var year = parseInt(dateParts[0], 10);
+        var month = parseInt(dateParts[1], 10) - 1; // Months start at 0.
+        var day = parseInt(dateParts[2], 10);
+        var timeParts = parts[1].split(':');
+        var hour = parseInt(timeParts[0], 10);
+        var minute = parseInt(timeParts[1], 10);
+        var secondParts = timeParts[2].split('.');
+        var second = parseInt(secondParts[0], 10);
+        var millisecond = parseInt(secondParts[1], 10);
+        var values = [year, month, day, hour, minute, second, millisecond];
+
+        if (values.some(isNaN)) {
+            throw "Invalid date string";
+        }
+
+        return new Date(year, month, day, hour, minute, second, millisecond);
+    };
+
     /** @scope LABKEY.Utils */
     return {
         /**
@@ -931,32 +962,26 @@ LABKEY.Utils = new function()
         },
 
         /**
-         * POSTs to the given href, including CSRF token. Taken from PageFlowUtil.postOnClickJavascript .
-         * @param href containing action and parameters to be POSTed
+         * Parses a date string returned from LabKey Server.
+         *
+         * @param dateString {String} a string in the format of: "yyyy-MM-dd HH:mm:ss.SSS"
+         * @returns {Date}
          */
-
-        postToAction : function (href) {
-            var form = document.createElement('form');
-            form.setAttribute('method', 'post');
-            form.setAttribute('action', href);
-            var input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'X-LABKEY-CSRF';
-            input.value = LABKEY.CSRF;
-            form.appendChild(input);
-            form.style.display = 'hidden';
-            document.body.appendChild(form);
-            form.submit();
-        },
-
-        /**
-         * Displays a confirmation dialog with the specified message and then, if confirmed, POSTs to the href, using the method above
-         */
-        confirmAndPost : function (message, href) {
-            if (confirm(message))
-                this.postToAction(href);
-
-            return false;
+        parseDateString: function (dateString) {
+            try {
+                if (isIE11) {
+                    // This method call can throw exceptions, either due to string split on undefined or if any of the
+                    // date or time parts are NaN after parseInt.
+                    return parseDateStringIE11(dateString);
+                } else {
+                    // Note: This is not actually the best way to parse a date in JS, browser vendors recommend using a
+                    // date parsing library of sorts. See more information at MDN:
+                    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/parse
+                    return new Date(dateString);
+                }
+            } catch (e) {
+                throw "Date string not in expected format. Expecting yyyy-MM-dd HH:mm:ss.SSS";
+            }
         },
 
         // private
@@ -1029,13 +1054,13 @@ LABKEY.Utils = new function()
  * @param {Object} config.  The config object
  * @param {String} config.fileNamePrefix name to suggest to the browser for saving the file. The appropriate extension (either ".txt" or ".csv", will be appended based on the delim character used (see below).  Defaults to 'Export'
  * @param {String} config.delim The separator between fields.  Allowable values are 'COMMA' or 'TAB'.
- * @param {String} config.quoteChar The character that will be used to quote each field.  Allowable values are 'DOUBLE' (ie. double-quote character), 'SINLGE' (ie. single-quote character) or 'NONE' (ie. no character used).  Defaults to none.
+ * @param {String} config.quoteChar The character that will be used to quote each field.  Allowable values are 'DOUBLE' (ie. double-quote character), 'SINGLE' (ie. single-quote character) or 'NONE' (ie. no character used).  Defaults to none.
  * @param {String} config.newlineChar The character that will be used to separate each line.  Defaults to '\n'
  * @param {String} config.rows array of rows, which are arrays with values for each cell.
  * @example &lt;script type="text/javascript"&gt;
  LABKEY.Utils.convertToTable(
  {
-     fileName: 'output.csv',
+     fileNamePrefix: 'output',
      rows:
      [
          ['Row1Col1', 'Row1Col2'],
@@ -1166,4 +1191,25 @@ LABKEY.Utils = new function()
                     });
                 });
  &lt;/script&gt;
+ */
+
+/**
+ * POSTs to the given href, including CSRF token. Taken from PageFlowUtil.postOnClickJavascript .
+ * @memberOf LABKEY.Utils
+ * @function
+ * @static
+ * @name postToAction
+ * @param {String} href containing action and parameters to be POSTed.
+ * @param {Object} formData values to include on the hidden form
+ */
+
+/**
+ * Displays a confirmation dialog with the specified message and then, if confirmed, POSTs to the href, using the method above
+ * @memberOf LABKEY.Utils
+ * @function
+ * @static
+ * @name confirmAndPost
+ * @param {String} message confirmation message to display.
+ * @param {String} href containing action and parameters to be POSTed.
+ * @param {Object} formData values to include on the hidden form
  */

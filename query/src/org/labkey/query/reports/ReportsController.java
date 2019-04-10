@@ -96,11 +96,11 @@ import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.reports.report.view.AjaxScriptReportView;
 import org.labkey.api.reports.report.view.AjaxScriptReportView.Mode;
-import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.reports.report.view.RenderBackgroundRReportView;
 import org.labkey.api.reports.report.view.ReportDesignBean;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ScriptReportBean;
+import org.labkey.api.reports.report.view.ScriptReportDesignBean;
 import org.labkey.api.resource.FileResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.RequiresNoPermission;
@@ -113,6 +113,7 @@ import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.reports.CrosstabReport;
@@ -170,7 +171,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -223,6 +223,12 @@ public class ReportsController extends SpringActionController
         public ActionURL urlViewScriptReport(Container c)
         {
             return new ActionURL(ViewScriptReportAction.class, c);
+        }
+
+        @Override
+        public ActionURL urlDesignScriptReport(Container c)
+        {
+            return new ActionURL(DesignScriptReportAction.class, c);
         }
 
         @Override
@@ -385,7 +391,7 @@ public class ReportsController extends SpringActionController
     {
         public ApiResponse execute(CreateSessionForm form, BindException errors) throws Exception
         {
-            String reportSessionId = null;
+            String reportSessionId;
             //
             // create a unique key for this session.  Note that a report session id can never
             // span sessions but does span multiple requests within a session
@@ -719,10 +725,8 @@ public class ReportsController extends SpringActionController
             {
                 synchronized (RConnectionHolder.getReportSessions())
                 {
-                    Iterator<String> i = RConnectionHolder.getReportSessions().iterator();
-                    while (i.hasNext())
+                    for (String reportSessionId : RConnectionHolder.getReportSessions())
                     {
-                        String reportSessionId = i.next();
                         // ensure we only return valid sessions for this session state
                         RConnectionHolder rh = (RConnectionHolder) getViewContext().getSession().getAttribute(reportSessionId);
                         if (rh != null)
@@ -776,19 +780,19 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermission(InsertPermission.class)  // Need insert AND developer (checked below)
-    public class CreateScriptReportAction extends FormViewAction<ScriptReportBean>
+    public class CreateScriptReportAction extends FormViewAction<ScriptReportDesignBean>
     {
-        private Report _report;
+        private ScriptReport _report;
 
-        public void validateCommand(ScriptReportBean form, Errors errors)
+        public void validateCommand(ScriptReportDesignBean form, Errors errors)
         {
         }
 
-        public ModelAndView getView(ScriptReportBean form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ScriptReportDesignBean form, boolean reshow, BindException errors) throws Exception
         {
             _report = form.getReport(getViewContext());
             List<ValidationError> reportErrors = new ArrayList<>();
-            validatePermissions(getViewContext(), (ScriptReport)_report, reportErrors);
+            validatePermissions(getViewContext(), _report, reportErrors);
 
             if (reportErrors.isEmpty())
                 return new AjaxScriptReportView(null, form, Mode.create);
@@ -803,12 +807,12 @@ public class ReportsController extends SpringActionController
             }
         }
 
-        public boolean handlePost(ScriptReportBean form, BindException errors)
+        public boolean handlePost(ScriptReportDesignBean form, BindException errors)
         {
             return true;
         }
 
-        public ActionURL getSuccessURL(ScriptReportBean form)
+        public ActionURL getSuccessURL(ScriptReportDesignBean form)
         {
             return null;
         }
@@ -824,12 +828,10 @@ public class ReportsController extends SpringActionController
     }
 
 
-    @RequiresPermission(ReadPermission.class)
-    @Action(ActionType.SelectData.class)
-    public class ViewScriptReportAction extends ReadOnlyApiAction<ScriptReportBean>
+    abstract class BaseViewScriptReportAction<BEAN extends ScriptReportBean> extends MutatingApiAction<BEAN>
     {
         @Override
-        public ApiResponse execute(ScriptReportBean bean, BindException errors) throws Exception
+        public ApiResponse execute(BEAN bean, BindException errors) throws Exception
         {
             // TODO: Do something with errors?
 
@@ -899,12 +901,33 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
+    @Action(ActionType.SelectData.class)
+    public class ViewScriptReportAction extends BaseViewScriptReportAction<ScriptReportBean>
+    {
+    }
+
+    @RequiresPermission(UpdatePermission.class)  // At least update; canEdit() will perform additional permissions checks
+    @Action(ActionType.Configure.class)
+    public class DesignScriptReportAction extends BaseViewScriptReportAction<ScriptReportDesignBean>
+    {
+        @Override
+        public ApiResponse execute(ScriptReportDesignBean bean, BindException errors) throws Exception
+        {
+            ScriptReport report = bean.getReport(getViewContext());
+            if (null == report || !report.canEdit(getUser(), getContainer()))
+                throw new UnauthorizedException();
+
+            return super.execute(bean, errors);
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
     public class GetBackgroundReportResultsAction extends ReadOnlyApiAction<ScriptReportBean>
     {
         @Override
         public ApiResponse execute(ScriptReportBean bean, BindException errors) throws Exception
         {
-            Report report = bean.getReport(getViewContext());
+            ScriptReport report = bean.getReport(getViewContext());
             File logFile = new File(((RReport)report).getReportDir(this.getViewContext().getContainer().getId()), RReportJob.LOG_FILE_NAME);
             PipelineStatusFile statusFile = PipelineService.get().getStatusFile(logFile);
 
@@ -966,7 +989,7 @@ public class ReportsController extends SpringActionController
             if (null == _report)
                 return new HtmlView("<span class=\"labkey-error\">Invalid report identifier, unable to create report.</span>");
 
-            HttpView ret = null;
+            HttpView ret;
             try
             {
                 ret = _report.getRunReportView(getViewContext());
@@ -1226,10 +1249,10 @@ public class ReportsController extends SpringActionController
 
 
     @RequiresNoPermission
-    public class AjaxSaveScriptReportAction extends MutatingApiAction<RReportBean>
+    public class AjaxSaveScriptReportAction extends MutatingApiAction<ScriptReportDesignBean>
     {
         @Override
-        public void validateForm(RReportBean form, Errors errors)
+        public void validateForm(ScriptReportDesignBean form, Errors errors)
         {
             try
             {
@@ -1270,7 +1293,7 @@ public class ReportsController extends SpringActionController
         }
 
         @Override
-        public ApiResponse execute(RReportBean form, BindException errors) throws Exception
+        public ApiResponse execute(ScriptReportDesignBean form, BindException errors) throws Exception
         {
             Report report = null;
 
@@ -1334,7 +1357,7 @@ public class ReportsController extends SpringActionController
             return createResponse(form, report, errors);
         }
 
-        protected ApiSimpleResponse createResponse(RReportBean form, Report report, BindException errors)
+        protected ApiSimpleResponse createResponse(ScriptReportDesignBean form, Report report, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("success", true);
@@ -1363,7 +1386,7 @@ public class ReportsController extends SpringActionController
         }
 
         @Override
-        protected ApiSimpleResponse createResponse(RReportBean form, Report report, BindException errors)
+        protected ApiSimpleResponse createResponse(ScriptReportDesignBean form, Report report, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             Pair<String, String> externalEditor = report.startExternalEditor(getViewContext(), form.getScript(), errors);
@@ -1389,9 +1412,9 @@ public class ReportsController extends SpringActionController
      * Ajax action to start a pipeline-based R view.
      */
     @RequiresPermission(ReadPermission.class)
-    public class StartBackgroundRReportAction extends MutatingApiAction<RReportBean>
+    public class StartBackgroundRReportAction extends MutatingApiAction<ScriptReportBean>
     {
-        public ApiResponse execute(RReportBean form, BindException errors) throws Exception
+        public ApiResponse execute(ScriptReportBean form, BindException errors) throws Exception
         {
             final ViewContext context = getViewContext();
             final Container c = getContainer();
@@ -1427,11 +1450,11 @@ public class ReportsController extends SpringActionController
 
 
     @RequiresPermission(ReadPermission.class)
-    public class DownloadInputDataAction extends SimpleViewAction<RReportBean>
+    public class DownloadInputDataAction extends SimpleViewAction<ScriptReportBean>
     {
-        public ModelAndView getView(RReportBean form, BindException errors) throws Exception
+        public ModelAndView getView(ScriptReportBean form, BindException errors) throws Exception
         {
-            Report report = form.getReport(getViewContext());
+            ScriptReport report = form.getReport(getViewContext());
             if (report instanceof RReport)
             {
                 try
@@ -2773,9 +2796,9 @@ public class ReportsController extends SpringActionController
 
                 // add the default categories after the explicit categories
                 Map<String, Integer> defaultCategoryMap = new HashMap<>();
-                for (Iterator<String> it = defaultCategories.iterator(); it.hasNext(); )
+                for (String defaultCategory : defaultCategories)
                 {
-                    defaultCategoryMap.put(it.next(), ++startingDefaultDisplayOrder);
+                    defaultCategoryMap.put(defaultCategory, ++startingDefaultDisplayOrder);
                 }
 
                 for (DataViewInfo info : views)
@@ -3009,7 +3032,7 @@ public class ReportsController extends SpringActionController
                         // Because 'Uncategorized' is not a real persisted category
                         int rowId = og.getRowId(); // == 0
                         if (!groups.containsKey(rowId))
-                            groups.put(rowId, new ArrayList<DataViewInfo>());
+                            groups.put(rowId, new ArrayList<>());
 
                         groups.get(rowId).add(view);
                         categories.put(rowId, og);
@@ -3025,7 +3048,7 @@ public class ReportsController extends SpringActionController
                             ViewCategory parent = vc.getParentCategory();
 
                             if (!groups.containsKey(rowId))
-                                groups.put(rowId, new ArrayList<DataViewInfo>());
+                                groups.put(rowId, new ArrayList<>());
                             groups.get(rowId).add(view);
                             categories.put(rowId, vc);
 
@@ -3038,7 +3061,7 @@ public class ReportsController extends SpringActionController
                                     categories.put(pid, parent);
 
                                     if (!groups.containsKey(pid))
-                                        groups.put(pid, new ArrayList<DataViewInfo>());
+                                        groups.put(pid, new ArrayList<>());
 
                                     order.add(parent);
                                 }
@@ -3536,12 +3559,12 @@ public class ReportsController extends SpringActionController
                 if (views instanceof JSONArray)
                 {
                     for (JSONObject view : ((JSONArray)views).toJSONObjectArray())
-                        _views.add(new Pair<String, String>(view.getString("dataType"), view.getString("id")));
+                        _views.add(new Pair<>(view.getString("dataType"), view.getString("id")));
                 }
                 else if (views instanceof JSONObject)
                 {
                     JSONObject view = (JSONObject)views;
-                    _views.add(new Pair<String, String>(view.getString("dataType"), view.getString("id")));
+                    _views.add(new Pair<>(view.getString("dataType"), view.getString("id")));
                 }
             }
         }
@@ -3725,14 +3748,14 @@ public class ReportsController extends SpringActionController
                 for (int i = 0; i < categories.length(); i++)
                 {
                     Integer rowId = ((JSONObject) categories.get(i)).getInt("rowid");
-                    Boolean subscribed = ((JSONObject) categories.get(i)).getBoolean("subscribed");
+                    boolean subscribed = ((JSONObject) categories.get(i)).getBoolean("subscribed");
                     assert(null != rowId);
                     if (subscribed)
                         _subscriptionSet.add(rowId);
                 }
             }
             Object notifyOptionObj = props.get("notifyOption");
-            Integer notifyOptionInt;
+            int notifyOptionInt;
             if (notifyOptionObj instanceof String)
                 notifyOptionInt = ReportContentEmailManager.NotifyOption.getNotifyOption((String)notifyOptionObj).getSpecialCategoryId();
             else
@@ -3919,7 +3942,6 @@ public class ReportsController extends SpringActionController
 
     public static class SerializationTest extends PipelineJob.TestSerialization
     {
-
         @Test
         public void testSerialization()
         {
@@ -3937,7 +3959,6 @@ public class ReportsController extends SpringActionController
             RReportJob job = new RReportJob(ReportsPipelineProvider.NAME, info, report, root);
 
             testSerialize(job, _log);
-
         }
     }
 }

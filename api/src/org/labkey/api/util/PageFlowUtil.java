@@ -1405,7 +1405,7 @@ public class PageFlowUtil
         return link(text).href(url).onClick(onClickScript).id(id).attributes(properties).build().toString();
     }
 
-    public static String iconLink(String iconCls, String tooltip, String url, @Nullable String onClickScript, @Nullable String id, Map<String, String> properties)
+    public static String iconLink(String iconCls, String tooltip, @Nullable String url, @Nullable String onClickScript, @Nullable String id, Map<String, String> properties)
     {
         return new LinkBuilder().iconCls(iconCls).tooltip(tooltip).href(url).onClick(onClickScript).id(id).attributes(properties).build().toString();
     }

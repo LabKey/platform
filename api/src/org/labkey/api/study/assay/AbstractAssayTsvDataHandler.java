@@ -17,6 +17,7 @@
 package org.labkey.api.study.assay;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -121,7 +122,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         AssayProvider provider = AssayService.get().getProvider(protocol);
 
         DataLoaderSettings settings = new DataLoaderSettings();
-        settings.setAllowLookupByAlternateKey(true);
 
         Map<DataType, List<Map<String, Object>>> rawData = getValidationDataMap(data, dataFile, info, log, context, settings);
         assert(rawData.size() <= 1);
@@ -140,7 +140,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         try
         {
             DataLoaderSettings settings = new DataLoaderSettings();
-            settings.setAllowLookupByAlternateKey(true);
             importRows(data, context.getUser(), run, context.getProtocol(), context.getProvider(), dataMap, settings);
         }
         catch (ValidationException e)
@@ -670,7 +669,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 Object o = map.get(pd.getName());
                 if (o instanceof String)
                 {
-                    o = ((String) o).trim();
+                    o = StringUtils.trimToNull((String) o);
                     map.put(pd.getName(), o);
                     iter.set(map);
                 }

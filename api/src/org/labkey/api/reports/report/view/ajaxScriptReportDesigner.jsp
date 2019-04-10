@@ -28,7 +28,7 @@
 <%@ page import="org.labkey.api.reports.report.ScriptReport" %>
 <%@ page import="org.labkey.api.reports.report.view.AjaxScriptReportView.Mode" %>
 <%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
-<%@ page import="org.labkey.api.reports.report.view.ScriptReportBean" %>
+<%@ page import="org.labkey.api.reports.report.view.ScriptReportDesignBean" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.roles.ProjectAdminRole" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
@@ -42,8 +42,10 @@
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
-<%@ page import="java.util.Map" %>
+<%@ page import="java.util.ListIterator" %>
 <%@ page import="static java.lang.Boolean.TRUE" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="java.util.LinkedList" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -55,12 +57,12 @@
     }
 %>
 <%
-    JspView<ScriptReportBean> me = (JspView<ScriptReportBean>)HttpView.currentView();
+    JspView<ScriptReportDesignBean> me = (JspView<ScriptReportDesignBean>)HttpView.currentView();
     ViewContext ctx = getViewContext();
     Container c = getContainer();
     User user = getUser();
-    ScriptReportBean bean = me.getModelBean();
-    ScriptReport report = (ScriptReport) bean.getReport(ctx);
+    ScriptReportDesignBean bean = me.getModelBean();
+    ScriptReport report = bean.getReport(ctx);
     List<String> includedReports = bean.getIncludedReports();
     String helpHtml = report.getDesignerHelpHtml();
     boolean readOnly = bean.isReadOnly() || !report.canEdit(user, c);
@@ -70,27 +72,29 @@
     String knitrFormat = bean.getKnitrFormat() != null ? bean.getKnitrFormat() : "None";
     boolean useGetDataApi = report.getReportId() == null || TRUE==bean.isUseGetDataApi();
     ActionURL saveURL = urlProvider(ReportUrls.class).urlAjaxSaveScriptReport(c);
-    ActionURL initialViewURL = urlProvider(ReportUrls.class).urlViewScriptReport(c);
+    ActionURL initialViewURL = readOnly ? urlProvider(ReportUrls.class).urlViewScriptReport(c) : urlProvider(ReportUrls.class).urlDesignScriptReport(c);
     ActionURL baseViewURL = initialViewURL.clone();
     Pair<ActionURL, Map<String, Object>> externalEditorSettings = urlProvider(ReportUrls.class).urlAjaxExternalEditScriptReport(getViewContext(), report);
-    List<Pair<String, String>> params = getActionURL().getParameters();
+    List<Pair<String, String>> params = new LinkedList<>(getActionURL().getParameters());
 
     // Initial view URL uses all parameters
-    initialViewURL.addParameters(params);
+    bean.addParameters(initialViewURL, params);
 
     // Base view URL strips off sort and filter parameters (we'll get them from the data tab)
-    for (Pair<String, String> pair : params)
+    ListIterator<Pair<String, String>> iter = params.listIterator();
+
+    while (iter.hasNext())
     {
+        Pair<String, String> pair = iter.next();
         String name = pair.getKey();
 
         if (name.equals(bean.getDataRegionName() + ".sort"))
-            continue;
-
-        if (name.startsWith(bean.getDataRegionName() + ".") && name.contains("~"))
-            continue;
-
-        baseViewURL.addParameter(name, pair.getValue());
+            iter.remove();
+        else if (name.startsWith(bean.getDataRegionName() + ".") && name.contains("~"))
+            iter.remove();
     }
+
+    bean.addParameters(baseViewURL, params);
 
     initialViewURL.replaceParameter(ReportDescriptor.Prop.reportId, String.valueOf(bean.getReportId()));
     baseViewURL.replaceParameter(ReportDescriptor.Prop.reportId, String.valueOf(bean.getReportId()));

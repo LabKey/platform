@@ -514,7 +514,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             columns: [
                 {dataIndex: 'Created', header: '&nbsp;Created', width: 100, sortable: true,
                  renderer: Ext.util.Format.dateRenderer(LABKEY.extDefaultDateFormat) },
-                {dataIndex: 'CreatedBy/DisplayName', header: '&nbsp;Created By', width: 100, sortable: true},
+                {dataIndex: 'CreatedBy/DisplayName', header: '&nbsp;Created By', renderer: Ext.util.Format.htmlEncode, width: 100, sortable: true},
                 {dataIndex: 'Destination', header: '&nbsp;Destination', width: 200, sortable: true},
                 {dataIndex: 'RowId', hidden: true},
                 {dataIndex: 'Settings', hidden: true}
@@ -765,11 +765,11 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             formItems.push({
                 xtype: 'displayfield',
                 fieldLabel: 'Previous Child Study',
-                value: this.previousStudy
+                value: Ext.util.Format.htmlEncode(this.previousStudy)
             },{
                 xtype: 'displayfield',
                 fieldLabel: 'Created By',
-                value: this.createdBy
+                value: Ext.util.Format.htmlEncode(this.createdBy)
             },
             {
                 xtype: 'displayfield',

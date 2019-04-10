@@ -16,7 +16,9 @@
 
 package org.labkey.experiment.api;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
@@ -71,6 +73,7 @@ import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -88,8 +91,9 @@ import java.util.stream.Collectors;
 
 public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
 {
-    public static final SearchService.SearchCategory expDataCategory = new SearchService.SearchCategory("data", "ExpData");
+    private static final Logger LOG = Logger.getLogger(ExpDataImpl.class);
 
+    public static final SearchService.SearchCategory expDataCategory = new SearchService.SearchCategory("data", "ExpData");
 
     /**
      * Temporary mapping until experiment.xml contains the mime type
@@ -166,7 +170,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     public void save(User user)
     {
         // Replace the default "Data" cpastype if the Data belongs to a DataClass
-        ExpDataClassImpl dataClass = getDataClass();
+        ExpDataClassImpl dataClass = getDataClass(null);
         if (dataClass != null && DEFAULT_CPAS_TYPE.equals(getCpasType()))
            setCpasType(dataClass.getLSID());
 
@@ -294,7 +298,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         if (result != null)
             return result;
 
-        ExpDataClass dataClass = getDataClass();
+        ExpDataClass dataClass = getDataClass(null);
         if (dataClass != null)
             return dataClass.getLSID();
 
@@ -327,8 +331,19 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     @Nullable
     public ExpDataClassImpl getDataClass()
     {
+        return getDataClass(null);
+    }
+
+    @Nullable
+    public ExpDataClassImpl getDataClass(@Nullable User user)
+    {
         if (_object.getClassId() != null)
-            return ExperimentServiceImpl.get().getDataClass(_object.getClassId());
+        {
+            if (user == null)
+                return ExperimentServiceImpl.get().getDataClass(getContainer(), _object.getClassId());
+            else
+                return ExperimentServiceImpl.get().getDataClass(getContainer(), user, _object.getClassId());
+        }
 
         return null;
     }
@@ -386,7 +401,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     @NotNull
     private void getIndexValues(Set<String> identifiers, Set<String> keywords)
     {
-        ExpDataClassImpl dc = this.getDataClass();
+        ExpDataClassImpl dc = this.getDataClass(null);
         if (dc == null)
             return;
 
@@ -484,7 +499,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     public String getDocumentId()
     {
         String dataClassName = "-";
-        ExpDataClass dc = getDataClass();
+        ExpDataClass dc = getDataClass(null);
         if (dc != null)
             dataClassName = dc.getName();
         return "data:" + new Path(getContainer().getId(), dataClassName, Integer.toString(getRowId()));
@@ -524,6 +539,53 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             return ExperimentServiceImpl.get().getExpData(dc, rowId);
         else
             return ExperimentServiceImpl.get().getExpData(rowId);
+    }
+
+    @Nullable
+    public String getWebDavURL(@NotNull PathType type)
+    {
+        java.nio.file.Path path = getFilePath();
+        if (path == null)
+        {
+            return null;
+        }
+
+        if (getContainer() == null)
+        {
+            return null;
+        }
+
+        PipeRoot root = PipelineService.get().getPipelineRootSetting(getContainer());
+        if (root == null)
+            return null;
+
+        try
+        {
+            path = path.toAbsolutePath();
+
+            //currently only report if the file is under the container for this ExpData
+            if (root.isUnderRoot(path))
+            {
+                String relPath = root.relativePath(path);
+                if (relPath == null)
+                    return null;
+
+                relPath = Path.parse(FilenameUtils.separatorsToUnix(relPath)).encode();
+                switch (type)
+                {
+                    case folderRelative: return relPath;
+                    case serverRelative: return root.getWebdavURL() + relPath;
+                    case full: return AppProps.getInstance().getBaseServerUrl() + root.getWebdavURL() + relPath;
+                    default:
+                        throw new IllegalArgumentException("Unexpected path type: " + type);
+                }
+            }
+        }
+        catch (InvalidPathException e)
+        {
+            LOG.error("Invalid path for expData: " + getRowId(), e);
+        }
+        return null;
     }
 
     public void index(SearchService.IndexTask task)
@@ -576,7 +638,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         // Collect other text columns and lookup display columns
         getIndexValues(identifiersMed, keywordsLo);
 
-        ExpDataClass dc = this.getDataClass();
+        ExpDataClass dc = this.getDataClass(null);
         if (null != dc)
         {
             ActionURL show = new ActionURL(ExperimentController.ShowDataClassAction.class,getContainer()).addParameter("rowId", dc.getRowId());

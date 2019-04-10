@@ -5,7 +5,7 @@
            elementFormDefault="qualified"
           >
 
-    <xs:import namespace="http://labkey.org/pipeline/xml" schemaLocation="../../../api/schemas/pipelineTasks.xsd"/>
+    <xs:import namespace="http://labkey.org/pipeline/xml" schemaLocation="../../api/schemas/pipelineTasks.xsd"/>
 
     <!-- Intermediate type introduced only to remove the 'outputs' element from base TaskType -->
     <xs:complexType name="AssayImportRunTaskIntermediateType" abstract="true">

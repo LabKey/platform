@@ -84,8 +84,8 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
                 '<tpl for=".">',
                 '<tr style="cursor:pointer">',
                     '<td  class="{style}" id="{["completionTR" + (xindex-1)]}">',
-                        '<span onclick="{[this.getClickHandler(values, (xindex-1))]}">{name}</span>',
-                        '<span style="display:none" id="{["insertSpan" + (xindex-1)]}">{value}</span>',
+                        '<span onclick="{[this.getClickHandler(values, (xindex-1))]}">{name:htmlEncode}</span>',
+                        '<span style="display:none" id="{["insertSpan" + (xindex-1)]}">{value:htmlEncode}</span>',
                     '</td></tr>',
             '</tpl></table>',
             {
@@ -188,7 +188,7 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
         if (index >= 0)
             this.optionSelectedIndex = index;
         var newlineIndex = this.element.value.lastIndexOf('\n');
-        var newValue = document.getElementById("insertSpan" + this.optionSelectedIndex).innerHTML;
+        var newValue = document.getElementById("insertSpan" + this.optionSelectedIndex).innerText;
         if (newlineIndex >= 0)
             this.element.value = this.element.value.substring(0, newlineIndex + 1) + newValue;
         else

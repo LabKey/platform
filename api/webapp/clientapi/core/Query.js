@@ -1362,12 +1362,10 @@ LABKEY.Query = new function()
                 url: LABKEY.ActionURL.buildURL('query', 'getServerDate.api'),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope),
                 success: LABKEY.Utils.getCallbackWrapper(function(json){
-                    var d;
                     var onSuccess = LABKEY.Utils.getOnSuccess(config);
                     if (json && json.date && onSuccess)
                     {
-                        d = new Date(json.date);
-                        onSuccess(d);
+                        onSuccess(LABKEY.Utils.parseDateString(json.date));
                     }
                 }, this)
             });
@@ -1478,20 +1476,7 @@ LABKEY.Query.Filter = function (columnName, value, filterType)
 
     // If the filter is multi-valued and we were constructed with a single
     // string value, parse the string into the individual parts.
-    if (filterType.isMultiValued() && LABKEY.Utils.isString(value))
-    {
-        if (value.indexOf("{json:") === 0 && value.indexOf("}") === value.length-1)
-        {
-            value = JSON.parse(value.substring("{json:".length, value.length - 1));
-        }
-        else
-        {
-            value = value.split(filterType.getMultiValueSeparator());
-        }
-    }
-
-    if (!filterType.isMultiValued() && LABKEY.Utils.isArray(value))
-        throw new Error("Can't create '" + filterType.getDisplayText() + "' filter for column '" + columnName + "' with an array of values: " + value);
+    value = filterType.parseValue(value);
 
     /**
      * @private
@@ -1504,7 +1489,7 @@ LABKEY.Query.Filter = function (columnName, value, filterType)
     this.value = value;
 
     /**
-     * @private
+     * @private {LABKEY.Filter#Types}
      */
     this.filterType = filterType;
 };
@@ -1537,25 +1522,12 @@ LABKEY.Query.Filter.prototype.getValue = function ()
 };
 
 /**
- * Returns the value that will be put on URL.
+ * Returns the (unencoded) value that will be put on URL.
  * @returns {String}
  */
 LABKEY.Query.Filter.prototype.getURLParameterValue = function ()
 {
-    if (!this.filterType.isDataValueRequired())
-        return '';
-    if (this.filterType.isMultiValued() && LABKEY.Utils.isArray(this.value))
-    {
-        var sep = this.filterType.getMultiValueSeparator();
-        var containsSep = this.value.some(function (v) {
-            return LABKEY.Utils.isString(v) && v.indexOf(sep) !== -1;
-        });
-        if (containsSep)
-            return "{json:" + JSON.stringify(this.value) + "}";
-        else
-            return this.value.join(sep);
-    }
-    return this.value;
+    return this.filterType.getURLParameterValue(this.value);
 };
 
 /**

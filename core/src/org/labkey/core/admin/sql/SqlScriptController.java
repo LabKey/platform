@@ -579,7 +579,7 @@ public class SqlScriptController extends SpringActionController
                 File scriptDir = ((FileSqlScriptProvider)firstScript.getProvider()).getScriptDirectory(firstScript.getSchema().getSqlDialect());
                 File moduleDir = scriptDir.getParentFile().getParentFile().getParentFile().getParentFile();
 
-                if (!new File(moduleDir, ".git").exists())
+                if (!new File(moduleDir, ".git").exists() && !new File(moduleDir.getParent(), ".git").exists())
                 {
                     String firstFilename = firstScript.getDescription();
 

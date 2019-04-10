@@ -53,6 +53,7 @@ import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpLineage;
 import org.labkey.api.exp.api.ExpLineageOptions;
 import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpMaterialRunInput;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
@@ -86,7 +87,6 @@ import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;
-import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FieldKey;
@@ -94,7 +94,6 @@ import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryForm;
-import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateForm;
@@ -107,10 +106,8 @@ import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.ExcelFactory;
-import org.labkey.api.reader.MapLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.ActionNames;
-import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurableResource;
@@ -1710,7 +1707,7 @@ public class ExperimentController extends SpringActionController
             ExpRun run = _data.getRun();
             ExpProtocol sourceProtocol = _data.getSourceProtocol();
             ExpProtocolApplication sourceProtocolApplication = _data.getSourceApplication();
-            ExpDataClass dataClass = _data.getDataClass();
+            ExpDataClass dataClass = _data.getDataClass(getUser());
 
             ExpSchema schema = new ExpSchema(getUser(), getContainer());
             TableInfo table;
@@ -3028,7 +3025,7 @@ public class ExperimentController extends SpringActionController
             }
 
             // Issue 32076: Delete the exp.Data objects using QueryUpdateService so trigger scripts will be executed
-            Map<Optional<ExpDataClass>, List<ExpData>> byDataClass = datas.stream().collect(Collectors.groupingBy(d -> Optional.ofNullable(d.getDataClass())));
+            Map<Optional<ExpDataClass>, List<ExpData>> byDataClass = datas.stream().collect(Collectors.groupingBy(d -> Optional.ofNullable(d.getDataClass(null))));
             for (Optional<ExpDataClass> opt : byDataClass.keySet())
             {
                 SchemaKey schemaKey;
@@ -4680,14 +4677,14 @@ public class ExperimentController extends SpringActionController
             List<ExpMaterial> materials = form.lookupMaterials();
 
             Map<ExpMaterial, String> inputMaterials = new LinkedHashMap<>();
-            int unknownMaterialCount = 0;
             for (int i = 0; i < materials.size(); i++)
             {
+                ExpMaterial m = materials.get(i);
                 String inputRole = form.determineLabel(i);
                 if (inputRole == null || "".equals(inputRole))
                 {
-                    inputRole = "Material" + (unknownMaterialCount == 0 ? "" : Integer.toString(unknownMaterialCount + 1));
-                    unknownMaterialCount++;
+                    ExpSampleSet ss = m.getSampleSet();
+                    inputRole = ss != null ? ss.getName() : ExpMaterialRunInput.DEFAULT_ROLE;
                 }
                 inputMaterials.put(materials.get(i), inputRole);
             }
@@ -4933,7 +4930,6 @@ public class ExperimentController extends SpringActionController
         public Object execute(DerivationForm form, BindException errors) throws Exception
         {
             // Find material inputs
-            int unknownMaterialCount = 0;
             Map<ExpMaterial, String> materialInputs = new LinkedHashMap<>();
             if (form.materialInputs != null)
             {
@@ -4959,26 +4955,23 @@ public class ExperimentController extends SpringActionController
                         continue;
                     }
 
-                    if (m.getSampleSet() == null)
+                    ExpSampleSet ss = m.getSampleSet();
+                    if (ss == null)
                     {
                         errors.reject(ERROR_MSG, "Material input is not a member of a SampleSet");
                         continue;
                     }
 
-                    // TODO: check within scope
-
                     String role = in.role;
                     if (role == null || "".equals(role))
                     {
-                        role = "Material" + (unknownMaterialCount == 0 ? "" : Integer.toString(unknownMaterialCount + 1));
-                        unknownMaterialCount++;
+                        role = ss.getName();
                     }
                     materialInputs.put(m, role);
                 }
             }
 
             // Find input data
-            int unknownDataCount = 0;
             Map<ExpData, String> dataInputs = new LinkedHashMap<>();
             if (form.dataInputs != null)
             {
@@ -5004,18 +4997,17 @@ public class ExperimentController extends SpringActionController
                         continue;
                     }
 
-                    if (d.getDataClass() == null)
+                    ExpDataClass dc = d.getDataClass(getUser());
+                    if (dc == null)
                     {
                         errors.reject(ERROR_MSG, "Data input is not a member of a DataClass");
                         continue;
                     }
 
-                    // TODO: check within scope
                     String role = in.role;
                     if (role == null || "".equals(role))
                     {
-                        role = "Data" + (unknownDataCount == 0 ? "" : Integer.toString(unknownDataCount + 1));
-                        unknownDataCount++;
+                        role = dc.getName();
                     }
                     dataInputs.put(d, role);
                 }
@@ -5064,7 +5056,7 @@ public class ExperimentController extends SpringActionController
             // Create "DataInputs/<DataClass>" columns with a value containing a comma-separated list of ExpData names
             for (ExpData d : dataInputs.keySet())
             {
-                ExpDataClass dc = d.getDataClass();
+                ExpDataClass dc = d.getDataClass(getUser());
                 String keyName = ExpData.DATA_INPUT_PARENT + "/" + dc.getName();
                 parentInputNames.merge(keyName, d.getName(), (s1, s2) -> s1.concat(",").concat(s2));
             }
@@ -5144,9 +5136,9 @@ public class ExperimentController extends SpringActionController
 
                 JSONObject ret;
                 if (run != null)
-                    ret = ExperimentJSONConverter.serializeRun(run, null);
+                    ret = ExperimentJSONConverter.serializeRun(run, null, getUser());
                 else
-                    ret = ExperimentJSONConverter.serializeRunOutputs(outputData.keySet(), outputMaterials.keySet());
+                    ret = ExperimentJSONConverter.serializeRunOutputs(outputData.keySet(), outputMaterials.keySet(), getUser());
 
                 return success(successMessage.toString(), ret);
             }
@@ -6098,7 +6090,7 @@ public class ExperimentController extends SpringActionController
                         SearchService.SearchHit hit = search.find(docId);
                         if (hit == null)
                         {
-                            Map<String, Object> props = ExperimentJSONConverter.serializeData(d);
+                            Map<String, Object> props = ExperimentJSONConverter.serializeData(d, getUser());
                             props.put("docid", docId);
                             notInIndex.add(props);
                         }

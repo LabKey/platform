@@ -16,10 +16,9 @@
 
 package org.labkey.api.exp.query;
 
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpSampleSet;
 
+//Associated with hard table exp.AssayQCFlag
 public interface ExpQCFlagTable extends ExpTable<ExpQCFlagTable.Column>
 {
     enum Column

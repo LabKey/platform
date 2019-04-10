@@ -103,8 +103,9 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         addSearchCategory(fileCategory);
         addSearchCategory(navigationCategory);
     }
-    
 
+
+    @Override
     public IndexTask createTask(String description)
     {
         _IndexTask task = new _IndexTask(description);
@@ -120,18 +121,21 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         return task;
     }
 
+    @Override
     public IndexTask defaultTask()
     {
         return _defaultTask;
     }
 
 
+    @Override
     public boolean accept(WebdavResource r)
     {
         return true;
     }
-    
 
+
+    @Override
     public void addPathToCrawl(Path path, Date next)
     {
         DavCrawler.getInstance().addPathToCrawl(path, next);
@@ -151,14 +155,16 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         }
 
 
+        @Override
         public void addRunnable(@NotNull Runnable r, @NotNull PRIORITY pri)
         {
             Item i = new Item(this, r, pri);
             this.addItem(i);
             queueItem(i);
         }
-        
 
+
+        @Override
         public void addResource(@NotNull String identifier, PRIORITY pri)
         {
             Item i = new Item(this, OPERATION.add, identifier, null, pri);
@@ -167,6 +173,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         }
 
 
+        @Override
         public void addResource(@NotNull WebdavResource r, PRIORITY pri)
         {
             if (!r.shouldIndex())
@@ -185,7 +192,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             super.completeItem(item, success);
         }
 
-        
+
+        @Override
         protected boolean checkDone()
         {
             if (_isReady)
@@ -306,6 +314,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }, PRIORITY.commit);
 
 
+    @Override
     public boolean isBusy()
     {
         if (_runQueue.size() > 0)
@@ -319,6 +328,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     boolean _idleWaiting = false;
 
 
+    @Override
     public void waitForIdle() throws InterruptedException
     {
         if (_runQueue.size() == 0 && _itemQueue.size() < 4)
@@ -348,14 +358,16 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     
 
-    SavePaths _savePaths = new SavePaths();
+    private final SavePaths _savePaths = new SavePaths();
 
+    @Override
     public void setLastIndexedForPath(Path path, long time, long indexed)
     {
         _savePaths.updateFile(path, new Date(time), new Date(indexed));
     }
 
 
+    @Override
     public final void deleteContainer(final String id)
     {
         Runnable r = () -> {
@@ -369,13 +381,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    public final void clear()
-    {
-        clearIndex();
-        clearLastIndexed();
-    }
-
-
+    @Override
     public final void clearLastIndexed()
     {
         for (DocumentProvider p : _documentProviders)
@@ -469,12 +475,14 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
+    @Override
     public List<IndexTask> getTasks()
     {
         return new LinkedList<>(_tasks);
     }
 
 
+    @Override
     public void deleteResource(String id)
     {
         this.deleteDocument(id);
@@ -535,6 +543,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         return URLHelper.queryEqual(a,b);
     }
 
+    @Override
     public void notFound(URLHelper in)
     {
         try
@@ -577,8 +586,9 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    Map<String, ResourceResolver> _resolvers = new ConcurrentHashMap<>();
+    private Map<String, ResourceResolver> _resolvers = new ConcurrentHashMap<>();
 
+    @Override
     public void addResourceResolver(@NotNull String prefix, @NotNull ResourceResolver resolver)
     {
         _resolvers.put(prefix, resolver);
@@ -586,6 +596,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
 
     // CONSIDER Iterable<Resource>
+    @Override
     @Nullable
     public WebdavResource resolveResource(@NotNull String resourceIdentifier)
     {
@@ -655,7 +666,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     boolean _crawlerPaused = true;
     ArrayList<Thread> _threads = new ArrayList<>(10);
 
-    
+
+    @Override
     public void start()
     {
         synchronized (_runningLock)
@@ -680,6 +692,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
     /** OK we're really only pausing the crawler */
+    @Override
     public void pauseCrawler()
     {
         synchronized (_runningLock)
@@ -706,6 +719,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         _configurationError = t;
     }
 
+    @Override
     public boolean isRunning()
     {
         return !_crawlerPaused;
@@ -713,6 +727,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
 
     /** this is for testing, and memcheck only! */
+    @Override
     public void purgeQueues()
     {
         _defaultTask._subtasks.clear();
@@ -789,6 +804,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         return "Search service";
     }
 
+    @Override
     public void shutdownPre()
     {
         _shuttingDown = true;
@@ -800,6 +816,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
+    @Override
     public void shutdownStarted()
     {
         try
@@ -1035,12 +1052,14 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     private List<SearchCategory> _readonlyCategories = Collections.emptyList();
 
 
+    @Override
     public DbSchema getSchema()
     {
         return SearchSchema.getInstance().getSchema();
     }
 
 
+    @Override
     public List<SearchCategory> getSearchCategories()
     {
         synchronized (_categoriesLock)
@@ -1050,6 +1069,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
+    @Override
     public void addSearchCategory(SearchCategory category)
     {
         synchronized (_categoriesLock)
@@ -1060,6 +1080,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         }
     }
 
+    @Override
     public List<SearchCategory> getCategories(String categories)
     {
         if (categories == null)
@@ -1085,14 +1106,11 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    // Returns true if indexing was successful
     protected abstract void commitIndex();
     protected abstract void deleteDocument(String id);
     protected abstract void deleteDocumentsForPrefix(String prefix);
     protected abstract void deleteIndexedContainer(String id);
     protected abstract void shutDown();
-    protected abstract void clearIndex();  // must be callable before (and after) start() has been called.
-
 
     public boolean processAndIndex(String id, WebdavResource r, Throwable[] handledException)
     {
@@ -1100,19 +1118,22 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
     protected final List<DocumentProvider> _documentProviders = new CopyOnWriteArrayList<>();
-    
+
+    @Override
     public void addDocumentProvider(DocumentProvider provider)
     {
         _documentProviders.add(provider);
     }
 
     protected final List<DocumentParser> _documentParsers = new CopyOnWriteArrayList<>();
-    
+
+    @Override
     public void addDocumentParser(DocumentParser parser)
     {
         _documentParsers.add(parser);
     }
 
+    @Override
     public IndexTask indexContainer(IndexTask in, final Container c, final Date since)
     {
         final IndexTask task = null==in ? createTask("Index folder " + c.getPath()) : in;
@@ -1132,6 +1153,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
 
     // UNDONE: get last crawl time from Crawler? support incrementals
+    @Override
     public IndexTask indexProject(IndexTask in, final Container c)
     {
         final IndexTask task = null==in ? createTask("Index project " + c.getName()) : in;
@@ -1158,9 +1180,10 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     //
     // full crawl
-    // use clear() and indexFull() for full forced reindex
+    // use deleteIndex() and indexFull() for full forced reindex
     //
-    
+
+    @Override
     public void indexFull(final boolean force)
     {
         // crank crawler into high gear!
@@ -1258,6 +1281,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     public abstract Map<String, Double> getSearchStats();
 
+    @Override
     public void maintenance()
     {
         DbSchema search = getSchema();
@@ -1284,6 +1308,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     private static class SearchServiceMaintenanceTask implements MaintenanceTask
     {
+        @Override
         public String getDescription()
         {
             return "Search Service Maintenance";
@@ -1295,6 +1320,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             return "SearchService";
         }
 
+        @Override
         public void run(Logger log)
         {
             SearchService ss = SearchService.get();

@@ -117,7 +117,7 @@ public class XMLWriter {
     public void writeProperty(String namespace, String namespaceInfo,
                               String name, String value) {
         writeElement(namespace, namespaceInfo, name, OPENING);
-        buffer.append(value);
+        buffer.append(normalize(value));
         writeElement(namespace, namespaceInfo, name, CLOSING);
 
     }
@@ -132,7 +132,7 @@ public class XMLWriter {
      */
     public void writeProperty(@Nullable String namespace, String name, String value) {
         writeElement(namespace, name, OPENING);
-        buffer.append(value);
+        buffer.append(normalize(value));
         writeElement(namespace, name, CLOSING);
     }
 
@@ -218,7 +218,7 @@ public class XMLWriter {
      * @param text Text to append
      */
     public void writeText(String text) {
-        buffer.append(text);
+        buffer.append(normalize(text));
     }
 
 

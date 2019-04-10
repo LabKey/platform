@@ -2747,24 +2747,24 @@ public class SecurityManager
 
             if (newUserStatus.isLdapEmail())
             {
-                message.append(newUser.getEmail()).append(" added as a new user to the system.  This user will be authenticated via LDAP.");
+                message.append(PageFlowUtil.filter(newUser.getEmail())).append(" added as a new user to the system.  This user will be authenticated via LDAP.");
                 UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system.  This user will be authenticated via LDAP.");
             }
             else if (sendMail)
             {
-                message.append(email.getEmailAddress()).append(" added as a new user to the system and emailed successfully.");
+                message.append(PageFlowUtil.filter(email.getEmailAddress())).append(" added as a new user to the system and emailed successfully.");
                 UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system.  Verification email was sent successfully.");
             }
             else
             {
-                message.append(email.getEmailAddress()).append(" added as a new user to the system, but no email was sent.");
+                message.append(PageFlowUtil.filter(email.getEmailAddress())).append(" added as a new user to the system, but no email was sent.");
 
                 // Issue 33254: only allow Site Admins to see the verification URL
                 if (currentUser.hasSiteAdminPermission())
                 {
                     message.append("  Click ");
                     String href = "<a href=\"" + PageFlowUtil.filter(createVerificationURL(context.getContainer(),
-                            email, newUserStatus.getVerification(), extraParameters)) + "\" target=\"" + email.getEmailAddress() + "\">here</a>";
+                            email, newUserStatus.getVerification(), extraParameters)) + "\" target=\"_blank\">here</a>";
                     message.append(href).append(" to change the password from the random one that was assigned.");
                 }
 
@@ -2774,7 +2774,7 @@ public class SecurityManager
         catch (ConfigurationException e)
         {
             message.append("<br>");
-            message.append(email.getEmailAddress());
+            message.append(PageFlowUtil.filter(email.getEmailAddress()));
             message.append(" was added successfully, but could not be emailed due to a failure:<br><pre>");
             message.append(e.getMessage());
             message.append("</pre>");

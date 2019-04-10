@@ -386,6 +386,7 @@ public class DomainTemplate
         {
             try (DbScope.Transaction tx = ExperimentService.get().getSchema().getScope().ensureTransaction())
             {
+                DomainTemplateGroup.LOG.debug("creating domain '" + domainName + "'");
                 d = DomainUtil.createDomain(this, c, u, domainName);
                 tx.commit();
             }
@@ -474,6 +475,7 @@ public class DomainTemplate
 
         try (DbScope.Transaction transaction = table.getSchema().getScope().ensureTransaction())
         {
+            DomainTemplateGroup.LOG.debug("importing data for domain '" + domainName + "' from '" + initialData.file + "'");
             int count = updateService.loadRows(u, c, dl, context, new HashMap<>());
             if (errors.hasErrors())
                 return 0;

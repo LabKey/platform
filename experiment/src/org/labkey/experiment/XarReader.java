@@ -24,6 +24,7 @@ import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
 import org.fhcrc.cpas.exp.xml.*;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -66,6 +67,7 @@ import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayService;
@@ -432,7 +434,7 @@ public class XarReader extends AbstractXarImporter
         materialSource.setName(sampleSet.getName());
         materialSource.setLSID(lsid);
         materialSource.setContainer(getContainer());
-        materialSource.setMaterialLSIDPrefix(LsidUtils.resolveLsidFromTemplate(sampleSet.getMaterialLSIDPrefix(), getRootContext(), "Material"));
+        materialSource.setMaterialLSIDPrefix(LsidUtils.resolveLsidFromTemplate(sampleSet.getMaterialLSIDPrefix(), getRootContext(), ExpMaterial.DEFAULT_CPAS_TYPE));
 
         Domain domain = materialSource.getType();
         if (sampleSet.getKeyFieldArray() != null && sampleSet.getKeyFieldArray().length > 0)
@@ -690,7 +692,7 @@ public class XarReader extends AbstractXarImporter
             if (null != exp.getContact())
                 contactProperty = readContact(exp.getContact(), experimentLSID);
 
-            loadPropertyCollection(xbProps, experimentLSID, experimentLSID, contactProperty);
+            savePropertyCollection(xbProps, experimentLSID, experimentLSID, contactProperty);
         }
         else
         {
@@ -819,7 +821,7 @@ public class XarReader extends AbstractXarImporter
 
         PropertyCollectionType xbProps = a.getProperties();
 
-        loadPropertyCollection(xbProps, run.getLSID(), run.getLSID(), null);
+        savePropertyCollection(xbProps, run.getLSID(), run.getLSID(), null);
 
 
         // if ExperimentLog is present and ProtocolApps section is not, generate from log
@@ -971,7 +973,7 @@ public class XarReader extends AbstractXarImporter
 
         PropertyCollectionType xbProps = xmlProtocolApp.getProperties();
 
-        loadPropertyCollection(xbProps, protAppLSID, experimentRun.getLSID(), null);
+        savePropertyCollection(xbProps, protAppLSID, experimentRun.getLSID(), null);
 
         SimpleValueCollectionType xbParams = xmlProtocolApp.getProtocolApplicationParameters();
         if (xbParams != null)
@@ -981,9 +983,9 @@ public class XarReader extends AbstractXarImporter
 
         for (InputOutputRefsType.MaterialLSID inputMaterialLSID : inputMaterialLSIDs)
         {
-            String declaredType = (inputMaterialLSID.isSetCpasType() ? inputMaterialLSID.getCpasType() : "Material");
+            String declaredType = (inputMaterialLSID.isSetCpasType() ? inputMaterialLSID.getCpasType() : ExpMaterial.DEFAULT_CPAS_TYPE);
             checkMaterialCpasType(declaredType);
-            String lsid = LsidUtils.resolveLsidFromTemplate(inputMaterialLSID.getStringValue(), context, declaredType, "Material");
+            String lsid = LsidUtils.resolveLsidFromTemplate(inputMaterialLSID.getStringValue(), context, declaredType, ExpMaterial.DEFAULT_CPAS_TYPE);
 
             ExpMaterial inputRow = _xarSource.getMaterial(firstApp ? null : new ExpRunImpl(experimentRun), new ExpProtocolApplicationImpl(protocolApp), lsid);
             if (firstApp)
@@ -1053,14 +1055,14 @@ public class XarReader extends AbstractXarImporter
 
         String declaredType = xbMaterial.getCpasType();
         if (null == declaredType)
-            declaredType = "Material";
+            declaredType = ExpMaterial.DEFAULT_CPAS_TYPE;
         if (declaredType.contains("${"))
         {
             declaredType = LsidUtils.resolveLsidFromTemplate(declaredType, context, "SampleSet");
         }
         checkMaterialCpasType(declaredType);
 
-        String materialLSID = LsidUtils.resolveLsidFromTemplate(xbMaterial.getAbout(), context, declaredType, "Material");
+        String materialLSID = LsidUtils.resolveLsidFromTemplate(xbMaterial.getAbout(), context, declaredType, ExpMaterial.DEFAULT_CPAS_TYPE);
 
         ExpMaterialImpl material = ExperimentServiceImpl.get().getExpMaterial(materialLSID);
         if (material == null)
@@ -1077,12 +1079,23 @@ public class XarReader extends AbstractXarImporter
 
             if (null != sourceApplicationId)
                 m.setSourceApplicationId(sourceApplicationId);
-            m = Table.insert(getUser(), tiMaterial, m);
 
             PropertyCollectionType xbProps = xbMaterial.getProperties();
             if (null == xbProps)
                 xbProps = xbMaterial.addNewProperties();
-            loadPropertyCollection(xbProps, materialLSID, run == null ? null : run.getLSID(), null);
+
+            Map<String,ObjectProperty> props = loadObjectProperties(xbProps, materialLSID, null);
+
+            try
+            {
+                ExpMaterialImpl mi = new ExpMaterialImpl(m);
+                mi.save(getUser());
+                mi.setProperties(getUser(), (Map<String,Object>)(Map)props);
+            }
+            catch (ValidationException vex)
+            {
+                throw new XarFormatException(vex.getMessage(), vex);
+            }
 
             loadExtendedMaterialType(xbMaterial, materialLSID, run);
             material = new ExpMaterialImpl(m);
@@ -1261,7 +1274,7 @@ public class XarReader extends AbstractXarImporter
             if (null == xbProps)
                 xbProps = xbData.addNewProperties();
 
-            loadPropertyCollection(xbProps, dataLSID, null, null);
+            savePropertyCollection(xbProps, dataLSID, null, null);
 
             Path path = expData.getFilePath();
             if (null != path)
@@ -1474,10 +1487,9 @@ public class XarReader extends AbstractXarImporter
         return result;
     }
 
-    private void loadPropertyCollection(PropertyCollectionType xbProps,
-                                        String parentLSID,
-                                        String ownerLSID,
-                                        ObjectProperty additionalProperty) throws SQLException, XarFormatException
+
+    @NotNull
+    private Map<String, ObjectProperty> loadObjectProperties(PropertyCollectionType xbProps, String parentLSID, ObjectProperty additionalProperty) throws XarFormatException
     {
         Map<String, ObjectProperty> propsToInsert = new HashMap<>();
         if (xbProps != null)
@@ -1488,6 +1500,17 @@ public class XarReader extends AbstractXarImporter
         {
             propsToInsert.put(additionalProperty.getPropertyURI(), additionalProperty);
         }
+        return propsToInsert;
+    }
+
+
+    private void savePropertyCollection(
+        PropertyCollectionType xbProps,
+        String parentLSID,
+        String ownerLSID,
+        ObjectProperty additionalProperty) throws SQLException, XarFormatException
+    {
+        Map<String, ObjectProperty> propsToInsert = loadObjectProperties(xbProps, parentLSID, additionalProperty);
 
         if (!propsToInsert.isEmpty())
         {
@@ -1712,7 +1735,7 @@ public class XarReader extends AbstractXarImporter
             protocol.setOutputDataPerInstance(p.getOutputDataPerInstance());
 
         String materialType = trimString(p.getOutputMaterialType());
-        protocol.setOutputMaterialType(materialType == null ? "Material" : materialType);
+        protocol.setOutputMaterialType(materialType == null ? ExpMaterial.DEFAULT_CPAS_TYPE : materialType);
         String dataType = trimString(p.getOutputDataType());
         protocol.setOutputDataType(dataType == null ? "Data" : dataType);
 
@@ -1830,7 +1853,7 @@ public class XarReader extends AbstractXarImporter
 
         ExpDataProtocolInput protocolInput = ExperimentServiceImpl.get().createDataProtocolInput(getContainer(), name, 0, input, dc, criteria, minOccurs, maxOccurs);
 
-        loadPropertyCollection(pi.getProperties(), protocolInput.getLSID(), protocolInput.getLSID(), null);
+        savePropertyCollection(pi.getProperties(), protocolInput.getLSID(), protocolInput.getLSID(), null);
 
         return protocolInput;
     }
@@ -1865,7 +1888,7 @@ public class XarReader extends AbstractXarImporter
 
         ExpMaterialProtocolInput protocolInput = ExperimentServiceImpl.get().createMaterialProtocolInput(getContainer(), name, 0, input, sampleSet, criteria, minOccurs, maxOccurs);
 
-        loadPropertyCollection(pi.getProperties(), protocolInput.getLSID(), protocolInput.getLSID(), null);
+        savePropertyCollection(pi.getProperties(), protocolInput.getLSID(), protocolInput.getLSID(), null);
 
         return protocolInput;
     }

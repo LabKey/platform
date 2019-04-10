@@ -29,10 +29,8 @@ import org.apache.lucene.document.SortedDocValuesField;
 import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
-import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexFormatTooNewException;
 import org.apache.lucene.index.IndexFormatTooOldException;
-import org.apache.lucene.index.IndexUpgrader;
 import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
@@ -49,7 +47,6 @@ import org.apache.lucene.search.SortField;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.WildcardQuery;
-import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.BytesRef;
 import org.apache.tika.config.LoadErrorHandler;
 import org.apache.tika.config.ServiceLoader;
@@ -63,6 +60,7 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
@@ -116,7 +114,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.FileSystemException;
-import java.nio.file.Files;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -144,7 +141,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     // Changes to _index are rare (only when admin changes the index path), but we want any changes to be visible to
     // other threads immediately. Initialize to Noop class to prevent rare NPE (e.g., system maintenance runs before index
     // is initialized).
-    private volatile WritableIndexManager _indexManager = new NoopWritableIndex("the indexer has not been started yet", _log);
+    private static final WritableIndexManager NOOP_WRITABLE_INDEX = new NoopWritableIndex("the indexer has not been started", _log);
+    private volatile WritableIndexManager _indexManager = NOOP_WRITABLE_INDEX;
 
     private final MultiPhaseCPUTimer<SEARCH_PHASE> TIMER = new MultiPhaseCPUTimer<>(SEARCH_PHASE.class, SEARCH_PHASE.values());
     private final Analyzer _standardAnalyzer = LuceneAnalyzer.LabKeyAnalyzer.getAnalyzer();
@@ -212,18 +210,19 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     {
         try
         {
-            File indexDir = SearchPropertyManager.getIndexDirectory();
-            _indexManager = WritableIndexManagerImpl.get(indexDir.toPath(), getAnalyzer());
-            setConfigurationError(null);  // Clear out any previous error
-        }
-        catch (IndexFormatTooOldException | IndexFormatTooNewException e)    // Lucene used to throw "TooOld" in this case; now throws "TooNew"... either way, suppress mothership logging
-        {
-            MinorConfigurationException mce = new MinorConfigurationException(
-                "Index format is not supported; the configured index directory may have been created by a more recent version of LabKey Server", e);
-
-            _log.error("Full-text search index format error", mce);
-
-            throw mce;
+            try
+            {
+                attemptInitialize();
+            }
+            catch (IndexFormatTooOldException | IndexFormatTooNewException | IllegalArgumentException e)
+            {
+                // We delete the search index after every major upgrade, but we can still encounter a "future" index format when
+                // developers switch to a previous release branch that uses an older version of Lucene... and then encounter an
+                // "old" index format when they switch back. In either case, just delete the index and retry once.
+                _log.info("Deleting existing full-text search index due to exception: " + e.getMessage());
+                deleteIndex();
+                attemptInitialize();
+            }
         }
         catch (Throwable t)
         {
@@ -238,6 +237,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
     }
 
+    private void attemptInitialize() throws IOException
+    {
+        File indexDir = SearchPropertyManager.getIndexDirectory();
+        _indexManager = WritableIndexManagerImpl.get(indexDir.toPath(), getAnalyzer());
+        setConfigurationError(null);  // Clear out any previous error
+    }
 
     @Override
     public Map<String, String> getIndexFormatProperties()
@@ -386,7 +391,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     @Override
     public void deleteIndex()
     {
-        assert !_indexManager.isReal();
+        if (_indexManager.isReal())
+            closeIndex();
 
         File indexDir = SearchPropertyManager.getIndexDirectory();
 
@@ -395,42 +401,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
         clearLastIndexed();
     }
-
-    @Override
-    public void clearIndex()
-    {
-        boolean serviceStarted = _indexManager.isReal();
-
-        try
-        {
-            // If the service hasn't been started yet then initialize the index and close it down in finally block below
-            if (!serviceStarted)
-                initializeIndex();
-
-            try
-            {
-                _indexManager.clear();
-            }
-            catch (Throwable t)
-            {
-                // If any exceptions happen during commit() the IndexManager will attempt to close the IndexWriter, making
-                // the IndexManager unusable.  Attempt to reset the index.
-                ExceptionUtil.logExceptionToMothership(null, t);
-
-                if (serviceStarted)
-                    initializeIndex();
-            }
-        }
-        finally
-        {
-            if (!serviceStarted)
-            {
-                closeIndex();
-                _indexManager = new NoopWritableIndex("the indexer has not been started yet", _log);
-            }
-        }
-    }
-
 
     // Custom property code path needs to ignore "known properties", the properties we handle by name. See #26015.
     private static final Set<String> KNOWN_PROPERTIES = Sets.newCaseInsensitiveHashSet();
@@ -1200,7 +1170,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         try
         {
             TopDocs docs = searcher.search(query, 1);
-            return docs.totalHits;
+            return docs.totalHits.value;
         }
         finally
         {
@@ -1253,6 +1223,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
+    @Override
     protected void commitIndex()
     {
         try
@@ -1271,27 +1242,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             // the IndexManager unusable.  Attempt to reset the index.
             ExceptionUtil.logExceptionToMothership(null, t);
             initializeIndex();
-        }
-    }
-
-
-    // Upgrade index to the latest version. This must be called BEFORE start() and initializeIndex() are called, otherwise upgrade will fail to obtain the lock.
-    @Override
-    public final void upgradeIndex()
-    {
-        try
-        {
-            Directory directory = WritableIndexManagerImpl.openDirectory(SearchPropertyManager.getIndexDirectory().toPath());
-
-            if (DirectoryReader.indexExists(directory))
-            {
-                IndexUpgrader upgrader = new IndexUpgrader(directory);
-                upgrader.upgrade();
-            }
-        }
-        catch (IOException e)
-        {
-            ExceptionUtil.logExceptionToMothership(null, e);
         }
     }
 
@@ -1340,6 +1290,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         standardFields = boosts.keySet().toArray(new String[boosts.size()]);
     }
 
+    @Override
     public WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink, boolean isWebpart)
     {
         return new SearchWebPart(includeSubfolders, textBoxWidth, includeHelpLink, isWebpart);
@@ -1535,12 +1486,13 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
 
         SearchResult result = new SearchResult();
-        result.totalHits = topDocs.totalHits;
+        result.totalHits = topDocs.totalHits.value;
         result.hits = ret;
         return result;
     }
 
 
+    @Override
     protected void shutDown()
     {
         closeIndex();
@@ -1555,6 +1507,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         try
         {
             _indexManager.close();
+            _indexManager = NOOP_WRITABLE_INDEX;
         }
         catch (Exception e)
         {

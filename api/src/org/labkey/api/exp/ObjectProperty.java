@@ -196,7 +196,7 @@ public class ObjectProperty extends OntologyManager.PropertyRow
                     boolValue = (Boolean)value;
                 else if (null != value)
                     boolValue = (Boolean) ConvertUtils.convert(value.toString(), Boolean.class);
-                this.floatValue = boolValue == Boolean.TRUE ? 1.0 : 0.0;
+                this.floatValue = boolValue == null ? null : boolValue == Boolean.TRUE ? 1.0 : 0.0;
                 break;
             case RESOURCE:
                 if (value instanceof Identifiable)

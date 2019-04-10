@@ -138,18 +138,22 @@ Ext4.define('LABKEY.ext.DetailsPanel', {
             if (LABKEY.ext4.Util.shouldShowInDetailsView(field)){
                 var value;
 
-                if(rec.raw && rec.raw[field.name]){
+                if (rec.raw && rec.raw[field.name]) {
                     value = rec.raw[field.name].displayValue !== undefined ? rec.raw[field.name].displayValue : rec.get(field.name);
-                    if(value && field.jsonType == 'date'){
+                    if (value && field.jsonType === 'date') {
                         var format = field.extFormat || 'Y-m-d h:i A'; //NOTE: java date formats do not necessarily match Ext
                         value = Ext4.Date.format(value, format);
                     }
 
-                    if(rec.raw[field.name].url)
+                    value = LABKEY.Utils.encodeHtml(value);
+
+                    if (rec.raw[field.name].url) {
                         value = '<a href="'+rec.raw[field.name].url+'" target="new">'+value+'</a>';
+                    }
                 }
-                else
-                    value = rec.get(field.name);
+                else {
+                    value = LABKEY.Utils.encodeHtml(rec.get(field.name));
+                }
 
                 toAdd.push({
                     fieldLabel: field.label || field.caption || field.name,
