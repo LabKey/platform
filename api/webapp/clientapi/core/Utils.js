@@ -175,6 +175,37 @@ LABKEY.Utils = new function()
         return false;
     };
 
+    var isIE11 = !!window.MSInputMethodContext && !!document.documentMode;
+
+    /**
+     * Parses a date string returned from LabKey Server which should be in the format of: "yyyy-MM-dd HH:mm:ss.SSS"
+     * On IE 11 does not support this syntax view new Date(), while all other browsers that we support do (as of April
+     * 2019). This requires us to manually parse the date string and use the alternate Date constructor.
+     *
+     * @param dateString {String} a string in the format of: "yyyy-MM-dd HH:mm:ss.SSS"
+     * @returns {Date}
+     */
+    var parseDateStringIE11 = function (dateString) {
+        var parts = dateString.split(' ');
+        var dateParts = parts[0].split('-');
+        var year = parseInt(dateParts[0], 10);
+        var month = parseInt(dateParts[1], 10) - 1; // Months start at 0.
+        var day = parseInt(dateParts[2], 10);
+        var timeParts = parts[1].split(':');
+        var hour = parseInt(timeParts[0], 10);
+        var minute = parseInt(timeParts[1], 10);
+        var secondParts = timeParts[2].split('.');
+        var second = parseInt(secondParts[0], 10);
+        var millisecond = parseInt(secondParts[1], 10);
+        var values = [year, month, day, hour, minute, second, millisecond];
+
+        if (values.some(isNaN)) {
+            throw "Invalid date string";
+        }
+
+        return new Date(year, month, day, hour, minute, second, millisecond);
+    };
+
     /** @scope LABKEY.Utils */
     return {
         /**
@@ -927,6 +958,29 @@ LABKEY.Utils = new function()
             else {
                 var alias = measure.schemaName + '_' + measure.queryName + '_' + measure.name;
                 return alias.replace(/\//g, '_');
+            }
+        },
+
+        /**
+         * Parses a date string returned from LabKey Server.
+         *
+         * @param dateString {String} a string in the format of: "yyyy-MM-dd HH:mm:ss.SSS"
+         * @returns {Date}
+         */
+        parseDateString: function (dateString) {
+            try {
+                if (isIE11) {
+                    // This method call can throw exceptions, either due to string split on undefined or if any of the
+                    // date or time parts are NaN after parseInt.
+                    return parseDateStringIE11(dateString);
+                } else {
+                    // Note: This is not actually the best way to parse a date in JS, browser vendors recommend using a
+                    // date parsing library of sorts. See more information at MDN:
+                    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/parse
+                    return new Date(dateString);
+                }
+            } catch (e) {
+                throw "Date string not in expected format. Expecting yyyy-MM-dd HH:mm:ss.SSS";
             }
         },
 
