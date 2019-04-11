@@ -301,9 +301,9 @@ public class LineagePerfTest extends Assert
         CPUTimer insertDataTimer = new CPUTimer("insertData");
         CPUTimer insertSamplesTimer = new CPUTimer("insertSamples");
 
-        CPUTimer oldLineageQuery = new CPUTimer("old lineage query");
-        CPUTimer oldLineageGraph = new CPUTimer("old lineage graph");
-        CPUTimer oldInsertMoreTimer = new CPUTimer("old insertMore");
+//        CPUTimer oldLineageQuery = new CPUTimer("old lineage query");
+//        CPUTimer oldLineageGraph = new CPUTimer("old lineage graph");
+//        CPUTimer oldInsertMoreTimer = new CPUTimer("old insertMore");
 
         CPUTimer newLineageQuery = new CPUTimer("new lineage query");
         CPUTimer newLineageGraph = new CPUTimer("new lineage graph");
@@ -326,9 +326,9 @@ public class LineagePerfTest extends Assert
         // TEST: 10 x (insert a sample, query lineage twice)
         //
 
-        LOG.info("TEST querying with legacy lineage: ");
-        ExperimentalFeatureService.get().setFeatureEnabled(ExperimentServiceImpl.EXPERIMENTAL_LEGACY_LINEAGE, true, _user);
-        lineageQueries("OLD", oldLineageQuery, oldLineageGraph, oldInsertMoreTimer, ss, firstData);
+//        LOG.info("TEST querying with legacy lineage: ");
+//        ExperimentalFeatureService.get().setFeatureEnabled(ExperimentServiceImpl.EXPERIMENTAL_LEGACY_LINEAGE, true, _user);
+//        lineageQueries("OLD", oldLineageQuery, oldLineageGraph, oldInsertMoreTimer, ss, firstData);
 
         LOG.info("TEST querying with exp.edge lineage: ");
         ExperimentalFeatureService.get().setFeatureEnabled(ExperimentServiceImpl.EXPERIMENTAL_LEGACY_LINEAGE, false, _user);
@@ -342,9 +342,9 @@ public class LineagePerfTest extends Assert
         LOG.info(generateRowsTimer);
         LOG.info(insertDataTimer);
         LOG.info(insertSamplesTimer);
-        LOG.info(oldLineageQuery);
-        LOG.info(oldLineageGraph);
-        LOG.info(oldInsertMoreTimer);
+//        LOG.info(oldLineageQuery);
+//        LOG.info(oldLineageGraph);
+//        LOG.info(oldInsertMoreTimer);
         LOG.info(newLineageQuery);
         LOG.info(newLineageGraph);
         LOG.info(newInsertMoreTimer);
@@ -363,7 +363,7 @@ public class LineagePerfTest extends Assert
             // Generate lots of samples
             LOG.info("generating data and samples");
             generateRowsTimer.start();
-            Pair<List<Map<String, Object>>, List<Map<String, Object>>> generated = generateSamples(30000);
+            Pair<List<Map<String, Object>>, List<Map<String, Object>>> generated = generateSamples(300);
             generateRowsTimer.stop();
             List<Map<String, Object>> data = generated.first;
             List<Map<String, Object>> samples = generated.second;

@@ -61,6 +61,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.Callable;
 
 
 abstract public class UserSchema extends AbstractSchema implements MemTrackable
@@ -763,4 +764,35 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
             throw new UnauthorizedException("Insufficient permissions for folder: " + rowContainer.getPath());
         }
     }
+
+    // FOR USE BY SUBCLASSES
+    /* Eventually we want UserSchema.getTable() to implement support for caching TableInfo
+     * However, many ForeignKeys create tables w/o using getTable().  This can be used to optimize
+     * that scenario.  It is up to the caller to ensure propert caching when ContainerFilter may differ
+     * CONSIDER: add ContainerFilter as a second parameter in addition to String key
+     */
+    private Map<String,TableInfo> tableInfoCache = Collections.synchronizedMap(new CaseInsensitiveHashMap<TableInfo>());
+
+    public TableInfo getCachedTableInfo(String key, Callable<TableInfo> call)
+    {
+        TableInfo ret = tableInfoCache.get(key);
+        if (null == ret)
+        {
+            try
+            {
+                ret = call.call();
+            }
+            catch (RuntimeException rex)
+            {
+                throw rex;
+            }
+            catch (Exception x)
+            {
+                throw new RuntimeException(x);
+            }
+            tableInfoCache.put(key,ret);
+        }
+        return ret;
+    }
+
 }
