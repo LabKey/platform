@@ -3,10 +3,13 @@ package org.labkey.api.data;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.PdLookupForeignKey;
+import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.util.StringExpression;
 import org.labkey.data.xml.ColumnType;
 
@@ -19,9 +22,53 @@ import java.util.Map;
 public interface ColumnInfo extends ColumnRenderProperties
 {
     String DEFAULT_PROPERTY_URI_PREFIX = "http://terms.fhcrc.org/dbschemas/";
-    DisplayColumnFactory DEFAULT_FACTORY = BaseColumnInfo.DEFAULT_FACTORY;
-    DisplayColumnFactory NOWRAP_FACTORY = BaseColumnInfo.NOWRAP_FACTORY;
-    DisplayColumnFactory NOLOOKUP_FACTORY = BaseColumnInfo.NOLOOKUP_FACTORY;
+
+    DisplayColumnFactory DEFAULT_FACTORY = new DisplayColumnFactory()
+    {
+        public DisplayColumn createRenderer(ColumnInfo colInfo)
+        {
+            if (isUserId(colInfo))
+            {
+                return new UserIdRenderer(colInfo);
+            }
+            // TODO: PropertyType.FILE_LINK
+            else if (colInfo.getPropertyType() == PropertyType.ATTACHMENT)
+            {
+                return new AttachmentDisplayColumn(colInfo);
+            }
+
+
+            DataColumn dataColumn = new DataColumn(colInfo);
+            if (colInfo.getPropertyType() == PropertyType.MULTI_LINE)
+                dataColumn.setPreserveNewlines(true);
+
+            if (colInfo.getFk() instanceof MultiValuedForeignKey)
+            {
+                return new MultiValuedDisplayColumn(dataColumn, true);
+            }
+            return dataColumn;
+        }
+
+        private boolean isUserId(ColumnInfo col)
+        {
+            if (col.getJdbcType() != JdbcType.INTEGER)
+                return false;
+            if (col.getFk() instanceof PdLookupForeignKey)
+            {
+                PdLookupForeignKey lfk = (PdLookupForeignKey)col.getFk();
+                if ("core".equals(lfk.getLookupSchemaName()) && "users".equals(lfk.getLookupTableName()))
+                    return true;
+            }
+            return false;
+        }
+    };
+    DisplayColumnFactory NOWRAP_FACTORY = colInfo ->
+    {
+        DataColumn dataColumn = new DataColumn(colInfo);
+        dataColumn.setNoWrap(true);
+        return dataColumn;
+    };
+    DisplayColumnFactory NOLOOKUP_FACTORY = colInfo -> new DataColumn(colInfo, false);
 
     class ImportedKey
     {

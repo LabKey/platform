@@ -74,54 +74,6 @@ import java.util.Set;
  */
 public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements ColumnInfo
 {
-
-    public static final DisplayColumnFactory DEFAULT_FACTORY = new DisplayColumnFactory()
-    {
-        public DisplayColumn createRenderer(ColumnInfo colInfo)
-        {
-            if (isUserId(colInfo))
-            {
-                return new UserIdRenderer(colInfo);
-            }
-            // TODO: PropertyType.FILE_LINK
-            else if (colInfo.getPropertyType() == PropertyType.ATTACHMENT)
-            {
-                return new AttachmentDisplayColumn(colInfo);
-            }
-
-
-            DataColumn dataColumn = new DataColumn(colInfo);
-            if (colInfo.getPropertyType() == PropertyType.MULTI_LINE)
-                dataColumn.setPreserveNewlines(true);
-
-            if (colInfo.getFk() instanceof MultiValuedForeignKey)
-            {
-                return new MultiValuedDisplayColumn(dataColumn, true);
-            }
-            return dataColumn;
-        }
-
-        private boolean isUserId(ColumnInfo col)
-        {
-            if (col.getJdbcType() != JdbcType.INTEGER)
-                return false;
-            if (col.getFk() instanceof PdLookupForeignKey)
-            {
-                PdLookupForeignKey lfk = (PdLookupForeignKey)col.getFk();
-                if ("core".equals(lfk.getLookupSchemaName()) && "users".equals(lfk.getLookupTableName()))
-                    return true;
-            }
-            return false;
-        }
-    };
-    public static final DisplayColumnFactory NOWRAP_FACTORY = colInfo ->
-    {
-        DataColumn dataColumn = new DataColumn(colInfo);
-        dataColumn.setNoWrap(true);
-        return dataColumn;
-    };
-    public static final DisplayColumnFactory NOLOOKUP_FACTORY = colInfo -> new DataColumn(colInfo, false);
-
     private static final Logger LOG = Logger.getLogger(ColumnInfo.class);
     private static final Set<String> NON_EDITABLE_COL_NAMES = new CaseInsensitiveHashSet("created", "createdBy", "modified", "modifiedBy", "_ts", "entityId", "container");
 
