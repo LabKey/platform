@@ -463,7 +463,14 @@ public class ConvertHelper implements PropertyEditorRegistrar
                 return null;
             if (value instanceof GUID)
                 return value;
-            return new GUID(String.valueOf(value));
+            try
+            {
+                return new GUID(String.valueOf(value));
+            }
+            catch (Exception e)
+            {
+                throw new ConversionException("Could not convert '" + value + "' to a GUID", e);
+            }
         }
     }
 
