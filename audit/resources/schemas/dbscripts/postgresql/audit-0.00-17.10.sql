@@ -69,7 +69,3 @@ LANGUAGE plpgsql;
 SELECT audit.updateSelectQueryIdentifiedData();
 
 DROP FUNCTION audit.updateSelectQueryIdentifiedData();
-
-/* audit-16.30-17.10.sql */
-
-SELECT core.executeJavaUpgradeCode('repairAuditFieldTypes');

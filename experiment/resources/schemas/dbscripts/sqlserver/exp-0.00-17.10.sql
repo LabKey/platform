@@ -1159,8 +1159,6 @@ ALTER TABLE exp.DomainDescriptor ADD TemplateInfo NVARCHAR(4000) NULL;
 
 ALTER TABLE exp.MaterialSource ADD NameExpression NVARCHAR(200) NULL;
 
-EXEC core.executeJavaUpgradeCode 'cleanupQuotedAliases';
-
 ALTER TABLE exp.material
     ADD description NVARCHAR(4000);
 

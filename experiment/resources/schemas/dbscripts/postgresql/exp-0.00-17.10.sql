@@ -1174,8 +1174,6 @@ ALTER TABLE exp.DomainDescriptor ADD COLUMN TemplateInfo VARCHAR(4000) NULL;
 
 ALTER TABLE exp.MaterialSource ADD COLUMN NameExpression VARCHAR(200) NULL;
 
-SELECT core.executeJavaUpgradeCode('cleanupQuotedAliases');
-
 ALTER TABLE exp.material
     ADD description VARCHAR(4000);
 

@@ -72,7 +72,3 @@ GO
 EXEC audit.updateSelectQueryIdentifiedData;
 
 DROP PROCEDURE audit.updateSelectQueryIdentifiedData;
-
-/* audit-16.30-17.10.sql */
-
-EXEC core.executeJavaUpgradeCode 'repairAuditFieldTypes';
