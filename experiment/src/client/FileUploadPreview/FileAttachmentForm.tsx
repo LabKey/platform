@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2017-2018 LabKey Corporation. All rights reserved. No portion of this work may be reproduced in
+ * Copyright (c) 2018-2019 LabKey Corporation. All rights reserved. No portion of this work may be reproduced in
  * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
  */
 import * as React from 'react'
 import { Button } from 'react-bootstrap'
 import { Map } from 'immutable'
 
-import { FileAttachmentContainer } from '@glass/utils'
+import { FileAttachmentContainer } from './FileAttachmentContainer'
 
 interface FileAttachmentFormProps {
     acceptedFormats?: string // comma-separated list of allowed extensions i.e. '.png, .jpg, .jpeg'

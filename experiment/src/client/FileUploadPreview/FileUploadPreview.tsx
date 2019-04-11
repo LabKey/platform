@@ -10,16 +10,20 @@ export class App extends React.Component<any, State> {
 
     constructor(props) {
         super(props);
+
         this.state = {
             errorMessage: null
         };
+
         this.handleErrors = this.handleErrors.bind(this);
     }
 
     handleErrors(incomingError?: string) {
-        this.setState({
-            errorMessage: incomingError
-        })
+        this.setState((state) => {
+            return {
+                errorMessage: incomingError
+            }
+        });
     }
 
     render(): React.ReactNode {
@@ -29,13 +33,9 @@ export class App extends React.Component<any, State> {
             <>
                 {errorMessage && <div className={'alert alert-danger'}>{errorMessage + ' You may want to try a different file.'}</div>}
                 <Panel>
-                    <Panel.Heading>
-                        <div className={"panel-title"}>File Upload and Preview</div>
-                    </Panel.Heading>
+                    <Panel.Heading>File Upload and Preview</Panel.Heading>
                     <Panel.Body>
-                        <DataUploadPanel
-                            handleErrors={this.handleErrors}
-                        />
+                        <DataUploadPanel handleErrors={this.handleErrors}/>
                     </Panel.Body>
                 </Panel>
             </>

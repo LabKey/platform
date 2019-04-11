@@ -67,7 +67,7 @@ export class DataUploadPanel extends React.Component<DataUploadPanelProps, any> 
                 method: 'POST',
                 form,
                 success: (response) => {
-                    resolve(JSON.parse(response.responseText)); //gross
+                    resolve(JSON.parse(response.responseText)); //TODO: use the helper that does the json parsing for us
                 },
                 failure: (response) => {
                     reject("There was a problem uploading the data file for data preview.");

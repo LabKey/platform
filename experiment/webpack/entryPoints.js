@@ -13,5 +13,10 @@ module.exports = {
         title: 'Domain Designer',
         permission: 'admin',
         path: './src/client/DomainDesigner'
+    },{
+        name: 'fileUploadPreview',
+        title: 'File Upload Preview',
+        permission: 'admin',
+        path: './src/client/FileUploadPreview'
     }]
 };
