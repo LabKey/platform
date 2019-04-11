@@ -92,8 +92,8 @@ class LineageForeignKey extends LookupForeignKey
         private ColumnInfo addLevelColumn(@NotNull String name, @NotNull String expType, @NotNull Supplier<List<? extends ExpObject>> items)
         {
             SQLFragment sql = new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".lsid");
-            ColumnInfo col = new ExprColumn(this, FieldKey.fromParts(name), sql, JdbcType.VARCHAR);
-            col.setFk(new ByTypeLineageForeignKey(this, expType, items));
+            var col = new ExprColumn(this, FieldKey.fromParts(name), sql, JdbcType.VARCHAR);
+            col.setFk(new ByTypeLineageForeignKey( expType, items ));
             col.setUserEditable(false);
             col.setReadOnly(true);
             col.setIsUnselectable(true);
@@ -182,7 +182,7 @@ class LineageForeignKey extends LookupForeignKey
         private final @NotNull String _expType;
         private final @NotNull Supplier<List<? extends ExpObject>> _items;
 
-        ByTypeLineageForeignKey(LineageForeignKeyLookupTable table, @NotNull String expType, @NotNull Supplier<List<? extends ExpObject>> items)
+        ByTypeLineageForeignKey(@NotNull String expType, @NotNull Supplier<List<? extends ExpObject>> items)
         {
             super("lsid", "Name");
             _expType = expType;
