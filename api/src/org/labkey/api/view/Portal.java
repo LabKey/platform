@@ -1494,9 +1494,12 @@ public class Portal
                 _navTreeCustomizerMap.forEach((webPartName, navTreeCustomizerList) -> {
                     if (webPart.name.equalsIgnoreCase(webPartName))
                     {
-                        navTreeCustomizerList
-                                .forEach(navTreeCustomizer -> navTreeCustomizer.getNavTrees(webPart.getContainer(), portalCtx.getUser())
-                                        .forEach(view::setNavMenu));
+                        navTreeCustomizerList.forEach(navTreeCustomizer -> {
+                            if (null != navTreeCustomizer.getNavTrees(webPart.getContainer(), portalCtx.getUser()))
+                            {
+                                navTreeCustomizer.getNavTrees(webPart.getContainer(), portalCtx.getUser()).forEach(view::setNavMenu);
+                            }
+                        });
                     }
                 });
             }
