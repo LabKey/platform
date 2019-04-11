@@ -271,9 +271,10 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
 
 
     /* TODO schemas that still override this method have not been converted yet */
+    @Deprecated
     public @Nullable TableInfo createTable(String name)
     {
-        throw new IllegalStateException();
+        return createTable(name, null);
     }
 
 
