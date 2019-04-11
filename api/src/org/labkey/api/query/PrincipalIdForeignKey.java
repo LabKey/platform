@@ -16,6 +16,7 @@
 
 package org.labkey.api.query;
 
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DisplayColumn;
@@ -26,7 +27,7 @@ public class PrincipalIdForeignKey extends LookupForeignKey
 {
     private final UserSchema _userSchema;
 
-    static public ColumnInfo initColumn(ColumnInfo column)
+    static public ColumnInfo initColumn(BaseColumnInfo column)
     {
         column.setFk(new PrincipalIdForeignKey(column.getParentTable().getUserSchema()));
         column.setDisplayColumnFactory(new DisplayColumnFactory()

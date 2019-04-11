@@ -43,15 +43,15 @@ public class StudyObjectiveTable extends BaseStudyTable
         super(schema, StudySchema.getInstance().getTableInfoObjective(), true);
 
         setDescription("Contains one row per study objective");
-        ColumnInfo rowIdColumn = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("RowId")));
+        var rowIdColumn = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("RowId")));
         rowIdColumn.setKeyField(true);
         rowIdColumn.setHidden(true);
 
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Label")));
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Type")));
 
-        ColumnInfo descriptionColumn = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Description")));
-        final ColumnInfo descriptionRendererTypeColumn = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("DescriptionRendererType")));
+        var descriptionColumn = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Description")));
+        final var descriptionRendererTypeColumn = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("DescriptionRendererType")));
         descriptionRendererTypeColumn.setFk(new LookupForeignKey("Value")
         {
             @Override
@@ -71,23 +71,23 @@ public class StudyObjectiveTable extends BaseStudyTable
         });
 
         // setup lookups for the standard fields
-        ColumnInfo container = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container")));
+        var container = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container")));
         ContainerForeignKey.initColumn(container, schema);
 
-        ColumnInfo created = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Created")));
+        var created = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Created")));
         created.setFormat("DateTime");
         created.setHidden(true);
 
-        ColumnInfo createdBy = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("CreatedBy")));
+        var createdBy = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("CreatedBy")));
         createdBy.setLabel("Created By");
         createdBy.setHidden(true);
         UserIdForeignKey.initColumn(createdBy);
 
-        ColumnInfo modified = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Modified")));
+        var modified = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Modified")));
         modified.setFormat("DateTime");
         modified.setHidden(true);
 
-        ColumnInfo modifiedBy = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("ModifiedBy")));
+        var modifiedBy = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("ModifiedBy")));
         modifiedBy.setLabel("Modified By");
         modifiedBy.setHidden(true);
         UserIdForeignKey.initColumn(modifiedBy);

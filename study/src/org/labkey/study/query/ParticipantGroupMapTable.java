@@ -15,7 +15,6 @@
  */
 package org.labkey.study.query;
 
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.study.StudyService;
@@ -34,7 +33,7 @@ public class ParticipantGroupMapTable extends BaseStudyTable
         setName(StudyService.get().getSubjectGroupMapTableName(schema.getContainer()));
         setDescription("This table contains study group membership information");
 
-        ColumnInfo groupIdColumn = new AliasedColumn(this, "GroupId", _rootTable.getColumn("GroupId"));
+        var groupIdColumn = new AliasedColumn(this, "GroupId", _rootTable.getColumn("GroupId"));
         groupIdColumn.setFk( QueryForeignKey.from(_userSchema, null).to(StudyService.get().getSubjectGroupTableName(getContainer()), "RowId", "Label") );
         addColumn(groupIdColumn);
         addWrapParticipantColumn("ParticipantId");

@@ -155,12 +155,13 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     }
 
     @Nullable
-    public TableInfo getTable(String name, boolean includeExtraMetadata)
+    final public TableInfo getTable(String name, boolean includeExtraMetadata)
     {
         return getTable(name, null, includeExtraMetadata, false);
     }
 
-    public TableInfo getTable(String name, @Nullable ContainerFilter cf)
+    @Nullable
+    final public TableInfo getTable(String name, @Nullable ContainerFilter cf)
     {
         return getTable(name, cf, true, false);
     }
@@ -169,6 +170,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
      * @param cf null means to use the default for this schema/table (often schema.getDefaultContainerFilter()). It does not mean there is not ContainerFilter
      * @param forWrite true means do not return a cached version
      */
+    @Nullable
     public TableInfo getTable(String name, @Nullable ContainerFilter cf, boolean includeExtraMetadata, boolean forWrite)
     {
         ArrayList<QueryException> errors = new ArrayList<>();

@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnLogging;
 import org.labkey.api.data.ContainerFilter;
@@ -450,7 +451,8 @@ public class QueryTable extends QueryRelation
             return _col.isHidden();
         }
 
-        void copyColumnAttributesTo(ColumnInfo to)
+        @Override
+        void copyColumnAttributesTo(BaseColumnInfo to)
         {
             to.copyAttributesFrom(_col);
             to.setKeyField(false);

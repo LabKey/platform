@@ -16,15 +16,14 @@
 
 package org.labkey.study.query;
 
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
-import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.LookupForeignKey;
 import org.labkey.study.StudySchema;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * User: brittp
@@ -59,7 +58,7 @@ public class SpecimenRequestTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("Created"));
         addWrapColumn(_rootTable.getColumn("ModifiedBy"));
         addWrapColumn(_rootTable.getColumn("Modified"));
-        ColumnInfo hiddenColumn = addWrapColumn(_rootTable.getColumn("Hidden"));
+        var hiddenColumn = addWrapColumn(_rootTable.getColumn("Hidden"));
         hiddenColumn.setHidden(true);
         hiddenColumn.setIsUnselectable(true);
 

@@ -60,7 +60,7 @@ public class StudyDesignLookupBaseTable extends BaseStudyTable
         {
             if (!col.getName().equalsIgnoreCase("Container"))
             {
-                ColumnInfo newCol = addWrapColumn(col);
+                var newCol = addWrapColumn(col);
                 if (col.isHidden())
                     newCol.setHidden(col.isHidden());
 

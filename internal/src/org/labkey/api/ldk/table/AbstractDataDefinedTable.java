@@ -84,12 +84,12 @@ abstract public class AbstractDataDefinedTable extends CustomPermissionsTable
         assert pks.size() > 0;
         _pk = pks.get(0);
 
-        ColumnInfo valueCol = getColumn(_valueColumn);
+        var valueCol = getMutableColumn(_valueColumn);
         assert valueCol != null;
 
         valueCol.setKeyField(true);
         valueCol.setNullable(false);
-        getColumn(_pk).setKeyField(false);
+        getMutableColumn(_pk).setKeyField(false);
 
         ColumnInfo filterCol = getColumn(_filterColumn);
         assert filterCol != null;

@@ -50,22 +50,22 @@ public class ParticipantGroupCohortUnionTable extends BaseStudyTable
         addContainerColumn();
         addWrapParticipantColumn("ParticipantId");
 
-        ColumnInfo groupIdColumn = new AliasedColumn(this, "GroupId", _rootTable.getColumn("GroupId"));
+        var groupIdColumn = new AliasedColumn(this, "GroupId", _rootTable.getColumn("GroupId"));
         groupIdColumn.setFk( QueryForeignKey.from(_userSchema, null).to(StudyService.get().getSubjectGroupTableName(getContainer()), "RowId", "Label") );
         addColumn(groupIdColumn);
 
         if (StudyManager.getInstance().showCohorts(schema.getContainer(), schema.getUser()))
         {
-            ColumnInfo currentCohortColumn = new AliasedColumn(this, "Cohort", _rootTable.getColumn("CohortId"));
+            var currentCohortColumn = new AliasedColumn(this, "Cohort", _rootTable.getColumn("CohortId"));
             currentCohortColumn.setFk(new CohortForeignKey(_userSchema));
             addColumn(currentCohortColumn);
         }
 
-        ColumnInfo groupOrderCol = new ExprColumn(this, "GroupingOrder", new SQLFragment("(CASE WHEN GroupId IS NOT NULL THEN 1 ELSE 0 END)"), JdbcType.INTEGER);
+        var groupOrderCol = new ExprColumn(this, "GroupingOrder", new SQLFragment("(CASE WHEN GroupId IS NOT NULL THEN 1 ELSE 0 END)"), JdbcType.INTEGER);
         groupOrderCol.setHidden(true);
         addColumn(groupOrderCol);
 
-        ColumnInfo col = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("UniqueId")));
+        var col = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("UniqueId")));
         col.setHidden(true);
         col.setDisplayColumnFactory(new DisplayColumnFactory()
         {

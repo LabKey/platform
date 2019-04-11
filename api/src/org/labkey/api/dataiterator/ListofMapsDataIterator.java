@@ -17,6 +17,7 @@ package org.labkey.api.dataiterator;
 
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
 
@@ -41,7 +42,7 @@ public class ListofMapsDataIterator extends AbstractDataIterator implements Scro
     protected ListofMapsDataIterator(List<ColumnInfo> cols)
     {
         super(null);
-        _cols.add(new ColumnInfo("_rowNumber", JdbcType.INTEGER));
+        _cols.add(new BaseColumnInfo("_rowNumber", JdbcType.INTEGER));
         _cols.addAll(cols);
     }
     
@@ -49,9 +50,9 @@ public class ListofMapsDataIterator extends AbstractDataIterator implements Scro
     public ListofMapsDataIterator(Set<String> colNames, List<Map<String, Object>> rows)
     {
         super(null);
-        _cols.add(new ColumnInfo("_rowNumber", JdbcType.INTEGER));
+        _cols.add(new BaseColumnInfo("_rowNumber", JdbcType.INTEGER));
         for (String name : colNames)
-            _cols.add(new ColumnInfo(name));
+            _cols.add(new BaseColumnInfo(name));
         _rows = initRows(rows);
     }
 

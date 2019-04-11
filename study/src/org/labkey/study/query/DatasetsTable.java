@@ -56,7 +56,7 @@ public class DatasetsTable extends FilteredTable<StudyQuerySchema>
             if (name.equalsIgnoreCase("datasharing"))
                 continue;
 
-            ColumnInfo colInfo = addWrapColumn(baseColumn);
+            var colInfo = addWrapColumn(baseColumn);
             if ("Container".equalsIgnoreCase(name) || "EntityId".equalsIgnoreCase(name))
                 colInfo.setHidden(true);
         }
@@ -82,7 +82,7 @@ public class DatasetsTable extends FilteredTable<StudyQuerySchema>
 
         setTitleColumn("Label");
 
-        getColumn("Container").setFk(new ContainerForeignKey(schema));
+        getMutableColumn("Container").setFk(new ContainerForeignKey(schema));
     }
 
 

@@ -18,7 +18,6 @@ package org.labkey.study.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
@@ -69,7 +68,7 @@ public class LocationTable extends BaseStudyTable
     {
         super(schema, StudySchema.getInstance().getTableInfoSite(schema.getContainer()));
         // FK on Container
-        ColumnInfo containerColumn = ContainerForeignKey.initColumn(addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container"))), schema);
+        var containerColumn = ContainerForeignKey.initColumn(addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container"))), schema);
         containerColumn.setHidden(true);
         containerColumn.setRequired(true);
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("RowId"))).setHidden(true);
@@ -77,7 +76,7 @@ public class LocationTable extends BaseStudyTable
 
         setName("Location");
         setPublicSchemaName("study");
-        ColumnInfo inUse = new LocationInUseExpressionColumn(this);
+        var inUse = new LocationInUseExpressionColumn(this);
         addColumn(inUse);
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("ExternalId")));
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("LdmsLabCode")));
@@ -232,7 +231,7 @@ public class LocationTable extends BaseStudyTable
         final StudySchema schema = StudySchema.getInstance();
 
         // Because Location is now provisioned, each row's container must match container in the target table to be an InUse match
-        ColumnInfo inUseColumn = getRealTable().getColumn("InUse");
+        var inUseColumn = getRealTable().getColumn("InUse");
         SQLFragment existsSQL = new SQLFragment();
         existsSQL.append(inUseColumn.getValueSql(tableAlias));
         if (schema.getSqlDialect().isSqlServer())
@@ -284,7 +283,7 @@ public class LocationTable extends BaseStudyTable
         TableInfo specimentTableInfo = schema.getTableInfoSpecimenIfExists(container);
         if (null != eventTableInfo && null != vialTableInfo && null != specimentTableInfo)
         {
-            ColumnInfo inUseColumn = locationTableInfo.getColumn("InUse");
+            var inUseColumn = locationTableInfo.getColumn("InUse");
 
             SQLFragment existsSQL = new SQLFragment();
             existsSQL

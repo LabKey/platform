@@ -18,7 +18,6 @@ package org.labkey.announcements.query;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.ContainerManager;
@@ -53,16 +52,16 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
     {
         super(CommSchema.getInstance().getTableInfoEmailPrefs(), schema);
 
-        ColumnInfo folderColumn = wrapColumn("Folder", getRealTable().getColumn("Container"));
+        var folderColumn = wrapColumn("Folder", getRealTable().getColumn("Container"));
         addColumn(folderColumn);
         folderColumn.setFk(new ContainerForeignKey(_userSchema));
 
-        ColumnInfo modifiedByColumn = wrapColumn("ModifiedBy", getRealTable().getColumn("LastModifiedBy"));
+        var modifiedByColumn = wrapColumn("ModifiedBy", getRealTable().getColumn("LastModifiedBy"));
         addColumn(modifiedByColumn);
         modifiedByColumn.setFk(new UserIdQueryForeignKey(_userSchema, true));
         modifiedByColumn.setUserEditable(false);
 
-        ColumnInfo emailOptionColumn = wrapColumn("EmailOption", getRealTable().getColumn("EmailOptionId"));
+        var emailOptionColumn = wrapColumn("EmailOption", getRealTable().getColumn("EmailOptionId"));
         emailOptionColumn.setFk(new LookupForeignKey("EmailOptionId")
         {
             @Override
@@ -73,7 +72,7 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
         });
         addColumn(emailOptionColumn);
 
-        ColumnInfo emailFormatColumn = wrapColumn("EmailFormat", getRealTable().getColumn("EmailFormatId"));
+        var emailFormatColumn = wrapColumn("EmailFormat", getRealTable().getColumn("EmailFormatId"));
         emailFormatColumn.setFk(new LookupForeignKey("EmailFormatId")
         {
             @Override

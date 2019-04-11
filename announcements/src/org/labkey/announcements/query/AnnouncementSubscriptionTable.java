@@ -20,7 +20,6 @@ import org.labkey.announcements.model.AnnouncementManager;
 import org.labkey.announcements.model.AnnouncementModel;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -52,7 +51,7 @@ public class AnnouncementSubscriptionTable extends AbstractSubscriptionTable
     {
         super(CommSchema.getInstance().getTableInfoUserList(), schema);
 
-        ColumnInfo announcementColumn = wrapColumn("Announcement", getRealTable().getColumn("MessageId"));
+        var announcementColumn = wrapColumn("Announcement", getRealTable().getColumn("MessageId"));
         addColumn(announcementColumn);
         announcementColumn.setFk(new LookupForeignKey("RowId")
         {

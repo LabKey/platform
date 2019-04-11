@@ -16,13 +16,9 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DefaultQueryUpdateService;
-import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryForeignKey;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.security.UserPrincipal;
@@ -52,13 +48,13 @@ public class AssaySpecimenTable extends BaseStudyTable
 
         addWrapColumn(_rootTable.getColumn("RowId"));
 
-        ColumnInfo assayColumn = new AliasedColumn(this, "AssayName", _rootTable.getColumn("AssayName"));
+        var assayColumn = new AliasedColumn(this, "AssayName", _rootTable.getColumn("AssayName"));
         assayColumn.setFk(studyFK().to(STUDY_DESIGN_ASSAYS_TABLE_NAME, "Name", null));
         addColumn(assayColumn);
 
         addWrapColumn(_rootTable.getColumn("Description"));
         addWrapLocationColumn("LocationId", "LocationId");
-        ColumnInfo dataSetColumn = new AliasedColumn(this, "DataSet", _rootTable.getColumn("DataSet"));
+        var dataSetColumn = new AliasedColumn(this, "DataSet", _rootTable.getColumn("DataSet"));
         dataSetColumn.setFk(studyFK().to("DataSets", "DataSetId", null));
         addColumn(dataSetColumn);
 
@@ -67,16 +63,16 @@ public class AssaySpecimenTable extends BaseStudyTable
         //addWrapTypeColumn("DerivativeTypeId", "DerivativeTypeId");
         addWrapColumn(_rootTable.getColumn("TubeType"));
 
-        ColumnInfo labColumn = new AliasedColumn(this, "Lab", _rootTable.getColumn("Lab"));
+        var labColumn = new AliasedColumn(this, "Lab", _rootTable.getColumn("Lab"));
         labColumn.setFk(studyFK().to(STUDY_DESIGN_LABS_TABLE_NAME, "Name", null));
         addColumn(labColumn);
 
-        ColumnInfo sampleTypeColumn = new AliasedColumn(this, "SampleType", _rootTable.getColumn("SampleType"));
+        var sampleTypeColumn = new AliasedColumn(this, "SampleType", _rootTable.getColumn("SampleType"));
         sampleTypeColumn.setFk(studyFK().to(STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME, "Name", null));
         addColumn(sampleTypeColumn);
 
         addWrapColumn(_rootTable.getColumn("SampleQuantity"));
-        ColumnInfo sampleUnitsColumn = new AliasedColumn(this, "SampleUnits", _rootTable.getColumn("SampleUnits"));
+        var sampleUnitsColumn = new AliasedColumn(this, "SampleUnits", _rootTable.getColumn("SampleUnits"));
         sampleUnitsColumn.setFk(studyFK().to(STUDY_DESIGN_UNITS_TABLE_NAME, "Name", null));
         addColumn(sampleUnitsColumn);
 
@@ -86,7 +82,7 @@ public class AssaySpecimenTable extends BaseStudyTable
             String name = baseColumn.getName();
             if (name.equalsIgnoreCase("Created") || name.equalsIgnoreCase("Modified") || name.equalsIgnoreCase("CreatedBy") || name.equalsIgnoreCase("ModifiedBy"))
             {
-                ColumnInfo column = addWrapColumn(baseColumn);
+                var column = addWrapColumn(baseColumn);
                 if (name.equalsIgnoreCase("CreatedBy") || name.equalsIgnoreCase("ModifiedBy"))
                     UserIdQueryForeignKey.initColumn(schema, column, true);
                 column.setHidden(true);

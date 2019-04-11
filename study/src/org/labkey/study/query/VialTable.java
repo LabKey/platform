@@ -16,6 +16,7 @@
 package org.labkey.study.query;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
@@ -37,13 +38,13 @@ public class VialTable extends BaseStudyTable
 
         addWrapColumn(getRealTable().getColumn("RowID")).setHidden(true);
 
-        ColumnInfo guid = addWrapColumn(getRealTable().getColumn("GlobalUniqueID"));
-        guid.setDisplayColumnFactory(ColumnInfo.NOWRAP_FACTORY);
+        var guid = addWrapColumn(getRealTable().getColumn("GlobalUniqueID"));
+        guid.setDisplayColumnFactory(BaseColumnInfo.NOWRAP_FACTORY);
 
         setTitleColumn(guid.getName());
 
         addWrapColumn(getRealTable().getColumn("Volume"));
-        ColumnInfo specimenCol = wrapColumn("Specimen", getRealTable().getColumn("SpecimenID"));
+        var specimenCol = wrapColumn("Specimen", getRealTable().getColumn("SpecimenID"));
         specimenCol.setFk(new LookupForeignKey("RowId")
         {
             public TableInfo getLookupTableInfo()
@@ -58,8 +59,8 @@ public class VialTable extends BaseStudyTable
         });
         addColumn(specimenCol);
 
-//        ColumnInfo containerCol = addWrapColumn(getRealTable().getColumn("Container"));
-        ColumnInfo containerCol = addContainerColumn(true);
+//        var containerCol = addWrapColumn(getRealTable().getColumn("Container"));
+        var containerCol = addContainerColumn(true);
         containerCol.setFk(new ContainerForeignKey(schema));
         containerCol.setHidden(true);
 

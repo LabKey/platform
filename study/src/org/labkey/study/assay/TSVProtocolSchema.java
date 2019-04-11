@@ -17,6 +17,7 @@ package org.labkey.study.assay;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -92,9 +93,9 @@ public class TSVProtocolSchema extends AssayProtocolSchema
             AssayWellExclusionService svc = AssayWellExclusionService.getProvider(getProtocol());
             if (svc != null)
             {
-                ColumnInfo excludedByColumn = svc.createExcludedByColumn(this, getProtocol());
-                ColumnInfo excludedAtColumn = svc.createExcludedAtColumn(this, getProtocol());
-                ColumnInfo excludedCommentColumn = svc.createExclusionCommentColumn(this, getProtocol());
+                var excludedByColumn = svc.createExcludedByColumn(this, getProtocol());
+                var excludedAtColumn = svc.createExcludedAtColumn(this, getProtocol());
+                var excludedCommentColumn = svc.createExclusionCommentColumn(this, getProtocol());
 
                 addColumn(excludedByColumn);
                 addColumn(excludedAtColumn);
@@ -120,7 +121,7 @@ public class TSVProtocolSchema extends AssayProtocolSchema
             {
                 if (col.getJdbcType() == JdbcType.VARCHAR && flagConceptURI.equals(col.getConceptURI()))
                 {
-                    col.setDisplayColumnFactory(new _FlagDisplayColumnFactory(schema.getProtocol(), this.getName()));
+                    ((BaseColumnInfo)col).setDisplayColumnFactory(new _FlagDisplayColumnFactory(schema.getProtocol(), this.getName()));
                 }
             }
         }

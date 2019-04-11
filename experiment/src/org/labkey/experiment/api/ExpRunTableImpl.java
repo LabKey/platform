@@ -22,26 +22,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.collections.NamedObjectList;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ConditionalFormat;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DelegatingContainerFilter;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
-import org.labkey.api.data.ForeignKey;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.MultiValuedForeignKey;
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
-import org.labkey.api.data.VirtualTable;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -240,20 +221,20 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         }
     }
 
-    public ColumnInfo createColumn(String alias, Column column)
+    public BaseColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
         {
             case Comments:
                 return wrapColumn(alias, _rootTable.getColumn("Comments"));
             case Folder:
-                ColumnInfo containerColumn = wrapColumn(alias, _rootTable.getColumn("Container"));
+                var containerColumn = wrapColumn(alias, _rootTable.getColumn("Container"));
                 containerColumn.setUserEditable(false);
                 containerColumn.setShownInInsertView(false);
                 containerColumn.setShownInUpdateView(false);
                 return containerColumn;
             case Created:
-                ColumnInfo createdCol = wrapColumn(alias, _rootTable.getColumn("Created"));
+                var createdCol = wrapColumn(alias, _rootTable.getColumn("Created"));
                 createdCol.setUserEditable(false);
                 createdCol.setShownInInsertView(false);
                 createdCol.setShownInUpdateView(false);
@@ -261,20 +242,20 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             case CreatedBy:
                 return createUserColumn(alias, _rootTable.getColumn("CreatedBy"));
             case FilePathRoot:
-                ColumnInfo filePathRootColumn = wrapColumn(alias, _rootTable.getColumn("FilePathRoot"));
+                var filePathRootColumn = wrapColumn(alias, _rootTable.getColumn("FilePathRoot"));
                 filePathRootColumn.setUserEditable(false);
                 filePathRootColumn.setShownInInsertView(false);
                 filePathRootColumn.setShownInUpdateView(false);
                 return filePathRootColumn;
             case LSID:
-                ColumnInfo lsidColumn = wrapColumn(alias, _rootTable.getColumn("LSID"));
+                var lsidColumn = wrapColumn(alias, _rootTable.getColumn("LSID"));
                 lsidColumn.setShownInInsertView(false);
                 lsidColumn.setShownInUpdateView(false);
                 lsidColumn.setShownInDetailsView(false);
                 lsidColumn.setUserEditable(false);
                 return lsidColumn;
             case Modified:
-                ColumnInfo modifiedCol = wrapColumn(alias, _rootTable.getColumn("Modified"));
+                var modifiedCol = wrapColumn(alias, _rootTable.getColumn("Modified"));
                 modifiedCol.setUserEditable(false);
                 modifiedCol.setShownInInsertView(false);
                 modifiedCol.setShownInUpdateView(false);
@@ -284,7 +265,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             case Name:
                 return wrapColumn(alias, _rootTable.getColumn("Name"));
             case Protocol:
-                ColumnInfo protocolColumn = wrapColumn(alias, _rootTable.getColumn("ProtocolLSID"));
+                var protocolColumn = wrapColumn(alias, _rootTable.getColumn("ProtocolLSID"));
                 protocolColumn.setUserEditable(false);
                 protocolColumn.setShownInInsertView(false);
                 protocolColumn.setShownInUpdateView(false);
@@ -300,7 +281,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             }
             case RowId:
             {
-                ColumnInfo ret = wrapColumn(alias, _rootTable.getColumn("RowId"));
+                var ret = wrapColumn(alias, _rootTable.getColumn("RowId"));
                 if (getPkColumns().isEmpty())
                     ret.setKeyField(true);
                 ret.setSortDirection(Sort.SortDirection.DESC);
@@ -313,7 +294,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 return createFlagColumn(alias);
             case Links:
             {
-                ColumnInfo result = wrapColumn("Links", _rootTable.getColumn("RowId"));
+                var result = wrapColumn("Links", _rootTable.getColumn("RowId"));
                 result.setDescription("Link to the run's graph");
                 result.setShownInUpdateView(false);
                 result.setShownInInsertView(false);
@@ -327,7 +308,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 return result;
             }
             case RunGroupToggle:
-                ColumnInfo toggleCol = wrapColumn(alias, _rootTable.getColumn("RowId"));
+                var toggleCol = wrapColumn(alias, _rootTable.getColumn("RowId"));
                 toggleCol.setKeyField(false);
                 toggleCol.setDescription("A lookup to individual columns that show if the run is a member of each run group that's in scope");
                 toggleCol.setTextAlign("left");
@@ -345,7 +326,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 toggleCol.setShownInUpdateView(false);
                 return toggleCol;
             case RunGroups:
-                ColumnInfo col = wrapColumn(alias, _rootTable.getColumn("RowId"));
+                var col = wrapColumn(alias, _rootTable.getColumn("RowId"));
                 col.setKeyField(false);
                 col.setShownInInsertView(false);
                 col.setShownInUpdateView(false);
@@ -358,7 +339,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                         // TODO ContainerFilter: getLookupTableInfo() should not mutate table
                         // for now use forWrite==true to get mutable tableinfo
                         ExpTable result = (ExpTable)getExpSchema().getTable(ExpSchema.TableType.RunGroupMap.name(), getLookupContainerFilter(), true, true);
-                        result.getColumn(ExpRunGroupMapTable.Column.RunGroup).setFk(getExpSchema().getRunGroupIdForeignKey(false));
+                        result.getMutableColumn(ExpRunGroupMapTable.Column.RunGroup).setFk(getExpSchema().getRunGroupIdForeignKey(false));
                         return result;
                     }
                 }, ExpRunGroupMapTable.Column.RunGroup.toString()));
@@ -372,14 +353,14 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             case DataOutputs:
                 return createDataOutputsColumn(alias);
             case JobId:
-                ColumnInfo ret = wrapColumn(alias, _rootTable.getColumn("JobId"));
+                var ret = wrapColumn(alias, _rootTable.getColumn("JobId"));
                 ret.setLabel("Job");
                 ret.setUserEditable(false);
                 ret.setShownInInsertView(false);
                 ret.setShownInUpdateView(false);
                 return ret;
             case ReplacedByRun:
-                ColumnInfo replacedByRunCol = wrapColumn(alias, _rootTable.getColumn("ReplacedByRunId"));
+                var replacedByRunCol = wrapColumn(alias, _rootTable.getColumn("ReplacedByRunId"));
                 replacedByRunCol.setFk(getExpSchema().getRunIdForeignKey());
                 replacedByRunCol.setLabel("Replaced By");
                 replacedByRunCol.setShownInInsertView(false);
@@ -389,7 +370,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 SQLFragment replacedSQL = new SQLFragment("CASE WHEN " + ExprColumn.STR_TABLE_ALIAS + ".ReplacedByRunId IS NULL THEN ? ELSE ? END");
                 replacedSQL.add(false);
                 replacedSQL.add(true);
-                ColumnInfo replacedCol = new ExprColumn(this, alias, replacedSQL, JdbcType.BOOLEAN);
+                var replacedCol = new ExprColumn(this, alias, replacedSQL, JdbcType.BOOLEAN);
                 replacedCol.setHidden(true);
                 replacedCol.setShownInInsertView(false);
                 replacedCol.setShownInUpdateView(false);
@@ -400,13 +381,13 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 replacesSQL.append(" WHERE er.ReplacedByRunId = ");
                 replacesSQL.append(ExprColumn.STR_TABLE_ALIAS);
                 replacesSQL.append(".RowId)");
-                ColumnInfo replacesRunCol = new ExprColumn(this, "ReplacesRun", replacesSQL, JdbcType.INTEGER);
+                var replacesRunCol = new ExprColumn(this, "ReplacesRun", replacesSQL, JdbcType.INTEGER);
                 replacesRunCol.setFk(getExpSchema().getRunIdForeignKey());
                 replacesRunCol.setLabel("Replaces");
                 replacesRunCol.setDescription("The run that this run replaces, usually with updated or corrected information");
                 return replacesRunCol;
             case Batch:
-                ColumnInfo batchIdCol = wrapColumn(alias, _rootTable.getColumn("BatchId"));
+                var batchIdCol = wrapColumn(alias, _rootTable.getColumn("BatchId"));
                 batchIdCol.setUserEditable(false);
                 batchIdCol.setShownInInsertView(false);
                 batchIdCol.setShownInUpdateView(false);
@@ -417,7 +398,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         }
     }
 
-    public ColumnInfo addDataInputColumn(String alias, String role)
+    public BaseColumnInfo addDataInputColumn(String alias, String role)
     {
         SQLFragment sql = new SQLFragment("(SELECT MIN(exp.datainput.dataid)" +
                 "\nFROM exp.datainput" +
@@ -438,7 +419,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         return doAdd(new ExprColumn(this, alias, sql, JdbcType.INTEGER));
     }
 
-    public ColumnInfo addDataCountColumn(String alias, String roleName)
+    public BaseColumnInfo addDataCountColumn(String alias, String roleName)
     {
         SQLFragment sql = new SQLFragment("(SELECT COUNT(DISTINCT exp.DataInput.DataId) FROM exp.DataInput " +
                 "\nINNER JOIN exp.ProtocolApplication ON exp.ProtocolApplication.RowId = exp.DataInput.TargetApplicationId" +
@@ -457,49 +438,49 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         return doAdd(new ExprColumn(this, alias, sql, JdbcType.INTEGER));
     }
 
-    public ColumnInfo createInputLookupColumn()
+    public BaseColumnInfo createInputLookupColumn()
     {
         SQLFragment sql = new SQLFragment("(SELECT MIN(exp.ProtocolApplication.RowId) FROM exp.ProtocolApplication " +
                 "\nWHERE exp.ProtocolApplication.RunId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId" +
                 "\nAND exp.ProtocolApplication.CpasType = '" + ExpProtocol.ApplicationType.ExperimentRun + "')");
-        ColumnInfo ret = new ExprColumn(this, Column.Input.toString(), sql, JdbcType.INTEGER);
+        ExprColumn ret = new ExprColumn(this, Column.Input.toString(), sql, JdbcType.INTEGER);
         ret.setDescription("Contains pointers to all of the different kinds of inputs (both materials and data files) that could be used for this run");
         ret.setFk(new InputForeignKey(getExpSchema(), ExpProtocol.ApplicationType.ExperimentRun, new DelegatingContainerFilter(this)));
         ret.setIsUnselectable(true);
         return ret;
     }
 
-    public ColumnInfo createOutputLookupColumn()
+    public BaseColumnInfo createOutputLookupColumn()
     {
         SQLFragment sql = new SQLFragment("(SELECT MIN(exp.ProtocolApplication.RowId) FROM exp.ProtocolApplication " +
                 "\nWHERE exp.ProtocolApplication.RunId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId" +
                 "\nAND exp.ProtocolApplication.CpasType = '" + ExpProtocol.ApplicationType.ExperimentRunOutput + "')");
-        ColumnInfo ret = new ExprColumn(this, Column.Output.toString(), sql, JdbcType.INTEGER);
+        ExprColumn ret = new ExprColumn(this, Column.Output.toString(), sql, JdbcType.INTEGER);
         ret.setDescription("Contains pointers to all of the different kinds of outputs (both materials and data files) that could be produced by this run");
         ret.setFk(new InputForeignKey(getExpSchema(), ExpProtocol.ApplicationType.ExperimentRunOutput, new DelegatingContainerFilter(this)));
         ret.setIsUnselectable(true);
         return ret;
     }
 
-    public ColumnInfo createDataInputsColumn(String alias)
+    public BaseColumnInfo createDataInputsColumn(String alias)
     {
-        ColumnInfo col = createMultiValueDatasColumn(alias, ExpProtocol.ApplicationType.ExperimentRun);
+        var col = createMultiValueDatasColumn(alias, ExpProtocol.ApplicationType.ExperimentRun);
         col.setDescription("Contains multi-value lookup to each data inputs produced by this run");
         return col;
     }
 
-    public ColumnInfo createDataOutputsColumn(String alias)
+    public BaseColumnInfo createDataOutputsColumn(String alias)
     {
-        ColumnInfo col = createMultiValueDatasColumn(alias, ExpProtocol.ApplicationType.ExperimentRunOutput);
+        var col = createMultiValueDatasColumn(alias, ExpProtocol.ApplicationType.ExperimentRunOutput);
         col.setDescription("Contains multi-value lookup to each data outputs produced by this run");
         return col;
     }
 
-    protected ColumnInfo createMultiValueDatasColumn(String alias, final ExpProtocol.ApplicationType type)
+    protected BaseColumnInfo createMultiValueDatasColumn(String alias, final ExpProtocol.ApplicationType type)
     {
         final String dataIdName = type == ExpProtocol.ApplicationType.ExperimentRun ? "InputDataId" : "OutputDataId";
 
-        ColumnInfo dataOutputsCol = wrapColumn(alias, _rootTable.getColumn("RowId"));
+        var dataOutputsCol = wrapColumn(alias, _rootTable.getColumn("RowId"));
         dataOutputsCol.setReadOnly(true);
         dataOutputsCol.setShownInInsertView(false);
         dataOutputsCol.setShownInUpdateView(false);
@@ -528,10 +509,10 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 };
                 t.setContainerFilter(new DelegatingContainerFilter(ExpRunTableImpl.this));
 
-                ColumnInfo runCol = new ColumnInfo("RunId", t, JdbcType.INTEGER);
+                var runCol = new BaseColumnInfo("RunId", t, JdbcType.INTEGER);
                 t.addColumn(runCol);
 
-                ColumnInfo dataCol = new ColumnInfo(dataIdName, t, JdbcType.INTEGER);
+                var dataCol = new BaseColumnInfo(dataIdName, t, JdbcType.INTEGER);
                 dataCol.setFk(getExpSchema().getDataIdForeignKey());
                 t.addColumn(dataCol);
                 return t;
@@ -810,7 +791,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             VirtualTable result = new VirtualTable(ExperimentServiceImpl.get().getSchema(), "Experiments");
             for (ExpExperiment experiment : getExperiments())
             {
-                ColumnInfo column = new ColumnInfo(experiment.getName(), JdbcType.BOOLEAN);
+                var column = new BaseColumnInfo(experiment.getName(), JdbcType.BOOLEAN);
                 column.setParentTable(result);
                 result.safeAddColumn(column);
             }

@@ -80,7 +80,7 @@ public class ContainerScopedTable<SchemaType extends UserSchema> extends CustomP
 
         for (String col : getRealTable().getPkColumnNames())
         {
-            ColumnInfo existing = getColumn(col);
+            var existing = getMutableColumn(col);
             if (existing != null)
             {
                 existing.setKeyField(false);
@@ -90,7 +90,7 @@ public class ContainerScopedTable<SchemaType extends UserSchema> extends CustomP
             }
         }
 
-        ColumnInfo newKey = getColumn(_pseudoPk);
+        var newKey = getMutableColumn(_pseudoPk);
         assert newKey != null;
 
         newKey.setKeyField(true);

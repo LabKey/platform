@@ -187,7 +187,7 @@ public class AnnouncementSchema extends UserSchema
         AnnouncementTable table = new AnnouncementTable(this, filter);
 
         for (String name : Arrays.asList("Expires", "RendererType", "Status", "AssignedTo", "DiscussionSrcIdentifier", "DiscussionSrcURL", "Folder", "LastIndexed"))
-            table.getColumn(name).setHidden(true);
+            table.getMutableColumn(name).setHidden(true);
 
         return table;
     }

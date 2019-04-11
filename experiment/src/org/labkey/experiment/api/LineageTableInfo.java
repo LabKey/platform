@@ -17,6 +17,7 @@ package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.ForeignKey;
@@ -67,36 +68,36 @@ public class LineageTableInfo extends VirtualTable
         _expType = expType;
         _cpasType = cpasType;
 
-        ColumnInfo selfLsid = new ColumnInfo(FieldKey.fromParts("self_lsid"), this, JdbcType.VARCHAR);
+        var selfLsid = new BaseColumnInfo(FieldKey.fromParts("self_lsid"), this, JdbcType.VARCHAR);
         selfLsid.setSqlTypeName("lsidtype");
         addColumn(selfLsid);
 
-        ColumnInfo selfRowId = new ColumnInfo(FieldKey.fromParts("self_rowid"), this, JdbcType.INTEGER);
+        var selfRowId = new BaseColumnInfo(FieldKey.fromParts("self_rowid"), this, JdbcType.INTEGER);
         addColumn(selfRowId);
 
-        ColumnInfo depthCol = new ColumnInfo(FieldKey.fromParts("depth"), this, JdbcType.INTEGER);
+        var depthCol = new BaseColumnInfo(FieldKey.fromParts("depth"), this, JdbcType.INTEGER);
         addColumn(depthCol);
 
-        ColumnInfo parentContainer = new ColumnInfo(FieldKey.fromParts("container"), this, JdbcType.VARCHAR);
+        var parentContainer = new BaseColumnInfo(FieldKey.fromParts("container"), this, JdbcType.VARCHAR);
         parentContainer.setSqlTypeName("entityid");
         ContainerForeignKey.initColumn(parentContainer, schema);
         addColumn(parentContainer);
 
-        ColumnInfo parentExpType = new ColumnInfo(FieldKey.fromParts("exptype"), this, JdbcType.VARCHAR);
+        var parentExpType = new BaseColumnInfo(FieldKey.fromParts("exptype"), this, JdbcType.VARCHAR);
         addColumn(parentExpType);
 
-        ColumnInfo parentCpasType = new ColumnInfo(FieldKey.fromParts("cpastype"), this, JdbcType.VARCHAR);
+        var parentCpasType = new BaseColumnInfo(FieldKey.fromParts("cpastype"), this, JdbcType.VARCHAR);
         addColumn(parentCpasType);
 
-        ColumnInfo parentName = new ColumnInfo(FieldKey.fromParts("name"), this, JdbcType.VARCHAR);
+        var parentName = new BaseColumnInfo(FieldKey.fromParts("name"), this, JdbcType.VARCHAR);
         addColumn(parentName);
 
-        ColumnInfo parentLsid = new ColumnInfo(FieldKey.fromParts("lsid"), this, JdbcType.VARCHAR);
+        var parentLsid = new BaseColumnInfo(FieldKey.fromParts("lsid"), this, JdbcType.VARCHAR);
         parentLsid.setSqlTypeName("lsidtype");
         parentLsid.setFk(createLsidLookup(_expType, _cpasType));
         addColumn(parentLsid);
 
-        ColumnInfo parentRowId = new ColumnInfo(FieldKey.fromParts("rowId"), this, JdbcType.INTEGER);
+        var parentRowId = new BaseColumnInfo(FieldKey.fromParts("rowId"), this, JdbcType.INTEGER);
         //parentRowId.setFk(new QueryForeignKey("exp", schema.getContainer(), schema.getContainer(), schema.getUser(), "Materials", "rowId", "Name"));
         addColumn(parentRowId);
     }
@@ -114,7 +115,12 @@ public class LineageTableInfo extends VirtualTable
 
         return new LookupForeignKey("lsid") {
             @Override
-            public TableInfo getLookupTableInfo() { return new NodesTableInfo(_userSchema); }
+            public TableInfo getLookupTableInfo()
+            {
+                return getUserSchema().getCachedTableInfo(
+                    this.getClass().getName()+"/NodesTable",
+                    () -> new NodesTableInfo(_userSchema));
+            }
         };
     }
 
@@ -143,8 +149,12 @@ public class LineageTableInfo extends VirtualTable
                 @Override
                 public TableInfo getLookupTableInfo()
                 {
-                    SamplesSchema samplesSchema = new SamplesSchema(_userSchema.getUser(), _userSchema.getContainer());
-                    return samplesSchema.getSampleTable(ss);
+                    return getUserSchema().getCachedTableInfo(getClass().getName() + "/Samples/" + ss.getName(), () ->
+                    {
+                        // TODO don't call new SamplesSchema
+                        SamplesSchema samplesSchema = new SamplesSchema(_userSchema.getUser(), _userSchema.getContainer());
+                        return samplesSchema.getSampleTable(ss);
+                    });
                 }
 
                 @Override
@@ -165,8 +175,12 @@ public class LineageTableInfo extends VirtualTable
                 @Override
                 public TableInfo getLookupTableInfo()
                 {
-                    DataClassUserSchema dcus = new DataClassUserSchema(_userSchema.getContainer(), _userSchema.getUser());
-                    return dcus.createTable(dc, getLookupContainerFilter());
+                    return getUserSchema().getCachedTableInfo(getClass().getName() + "/DataClass", () ->
+                    {
+                        // TODO don't call new DataClassUserSchema
+                        DataClassUserSchema dcus = new DataClassUserSchema(_userSchema.getContainer(), _userSchema.getUser());
+                        return dcus.createTable(dc, getLookupContainerFilter());
+                    });
                 }
 
                 @Override
@@ -187,14 +201,16 @@ public class LineageTableInfo extends VirtualTable
                 @Override
                 public TableInfo getLookupTableInfo()
                 {
-                    if (provider != null)
+                    return getUserSchema().getCachedTableInfo(getClass().getName() + "/Runs", () ->
                     {
-                        AssayProtocolSchema schema = provider.createProtocolSchema(_userSchema.getUser(), _userSchema.getContainer(), protocol, null);
-                        if (schema != null)
-                            return schema.createRunsTable();
-                    }
-
-                    return new ExpSchema(getUserSchema().getUser(), getUserSchema().getContainer()).getTable(ExpSchema.TableType.Runs.toString());
+                        if (provider != null)
+                        {
+                            AssayProtocolSchema schema = provider.createProtocolSchema(_userSchema.getUser(), _userSchema.getContainer(), protocol, null);
+                            if (schema != null)
+                                return schema.createRunsTable();
+                        }
+                        return new ExpSchema(getUserSchema().getUser(), getUserSchema().getContainer()).getTable(ExpSchema.TableType.Runs.toString());
+                    });
                 }
 
                 @Override
@@ -242,26 +258,26 @@ public class LineageTableInfo extends VirtualTable
         {
             super(schema.getDbSchema(), "Nodes", schema);
 
-            ColumnInfo containerCol = new ColumnInfo(FieldKey.fromParts("Container"), this, JdbcType.VARCHAR);
+            var containerCol = new BaseColumnInfo(FieldKey.fromParts("Container"), this, JdbcType.VARCHAR);
             containerCol.setSqlTypeName("entityid");
             ContainerForeignKey.initColumn(containerCol, schema);
             addColumn(containerCol);
 
-            ColumnInfo name = new ColumnInfo(FieldKey.fromParts("name"), this, JdbcType.VARCHAR);
+            var name = new BaseColumnInfo(FieldKey.fromParts("name"), this, JdbcType.VARCHAR);
             name.setURL(DetailsURL.fromString("experiment/resolveLsid.view?lsid=${LSID}&type=${exptype}"));
             addColumn(name);
 
-            ColumnInfo expType = new ColumnInfo(FieldKey.fromParts("exptype"), this, JdbcType.VARCHAR);
+            var expType = new BaseColumnInfo(FieldKey.fromParts("exptype"), this, JdbcType.VARCHAR);
             addColumn(expType);
 
-            ColumnInfo cpasType = new ColumnInfo(FieldKey.fromParts("cpastype"), this, JdbcType.VARCHAR);
+            var cpasType = new BaseColumnInfo(FieldKey.fromParts("cpastype"), this, JdbcType.VARCHAR);
             addColumn(cpasType);
 
-            ColumnInfo lsid = new ColumnInfo(FieldKey.fromParts("lsid"), this, JdbcType.VARCHAR);
+            var lsid = new BaseColumnInfo(FieldKey.fromParts("lsid"), this, JdbcType.VARCHAR);
             lsid.setSqlTypeName("lsidtype");
             addColumn(lsid);
 
-            ColumnInfo rowId = new ColumnInfo(FieldKey.fromParts("rowId"), this, JdbcType.INTEGER);
+            var rowId = new BaseColumnInfo(FieldKey.fromParts("rowId"), this, JdbcType.INTEGER);
             addColumn(rowId);
 
         }

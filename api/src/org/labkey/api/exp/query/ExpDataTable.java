@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp.query;
 
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpExperiment;
@@ -69,7 +70,7 @@ public interface ExpDataTable extends ExpTable<ExpDataTable.Column>
     void setDataType(DataType type);
     DataType getDataType();
 
-    ColumnInfo addMaterialInputColumn(String alias, SamplesSchema schema, String inputRole, ExpSampleSet sampleSet);
-    ColumnInfo addDataInputColumn(String alias, String role);
-    ColumnInfo addInputRunCountColumn(String alias);
+    BaseColumnInfo addMaterialInputColumn(String alias, SamplesSchema schema, String inputRole, ExpSampleSet sampleSet);
+    BaseColumnInfo addDataInputColumn(String alias, String role);
+    BaseColumnInfo addInputRunCountColumn(String alias);
 }

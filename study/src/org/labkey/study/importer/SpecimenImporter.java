@@ -118,7 +118,7 @@ import java.util.concurrent.Callable;
  * Date: Mar 13, 2006
  * Time: 2:18:48
  */
-@SuppressWarnings({"AssertWithSideEffects", "ConstantConditions"})
+@SuppressWarnings({"ConstantConditions"})
 public class SpecimenImporter
 {
     private enum ImportPhases {UpdateCommentSpecimenHashes, MarkOrphanedRequestVials, SetLockedInRequest, VialUpdatePreLoopPrep,
@@ -3014,7 +3014,7 @@ public class SpecimenImporter
             {
                 if (null != cc && seen.add(cc.getName()))
                 {
-                    ColumnInfo col = new ColumnInfo(cc.getName(), JdbcType.OTHER);
+                    ColumnInfo col = new BaseColumnInfo(cc.getName(), JdbcType.OTHER);
                     Callable call = new Callable()
                     {
                         @Override
@@ -3041,7 +3041,7 @@ public class SpecimenImporter
                     else if (tsvColumnNames.contains(ic.getDbColumnName()))
                         boundInputColumnName = ic.getDbColumnName();
                     final String name = boundInputColumnName;
-                    ColumnInfo col = new ColumnInfo(ic.getLegalDbColumnName(d), ic.getJdbcType());
+                    ColumnInfo col = new BaseColumnInfo(ic.getLegalDbColumnName(d), ic.getJdbcType());
                     Callable call = new Callable()
                     {
                         @Override
@@ -3617,35 +3617,35 @@ public class SpecimenImporter
         StringBuilder sql = new StringBuilder();
         String uniquifier = StringUtilsLabKey.getUniquifier(9);
 
-        ArrayList<ColumnInfo> columns = new ArrayList<>();
+        ArrayList<BaseColumnInfo> columns = new ArrayList<>();
 
         String strType = dialect.getSqlTypeName(JdbcType.VARCHAR);
 
         sql.append("\n(\n    RowId ").append(dialect.getUniqueIdentType()).append(", ");
-        columns.add(new ColumnInfo("RowId", JdbcType.INTEGER, 0, false));
+        columns.add(new BaseColumnInfo("RowId", JdbcType.INTEGER, 0, false));
         columns.get(0).setAutoIncrement(true);
 
         sql.append("LSID ").append(strType).append("(300) NOT NULL, ");
-        columns.add(new ColumnInfo("LSID", JdbcType.VARCHAR, 300, false));
+        columns.add(new BaseColumnInfo("LSID", JdbcType.VARCHAR, 300, false));
 
         sql.append("SpecimenHash ").append(strType).append("(300), ");
-        columns.add(new ColumnInfo("SpecimenHash", JdbcType.VARCHAR, 300, true));
+        columns.add(new BaseColumnInfo("SpecimenHash", JdbcType.VARCHAR, 300, true));
 
         sql.append(DRAW_DATE.getDbColumnName()).append(" ").append(DRAW_DATE.getDbType()).append(", ");
-        columns.add(new ColumnInfo(DRAW_DATE.getDbColumnName(), DRAW_DATE.getJdbcType(), 0, true));
+        columns.add(new BaseColumnInfo(DRAW_DATE.getDbColumnName(), DRAW_DATE.getJdbcType(), 0, true));
 
         sql.append(DRAW_TIME.getDbColumnName()).append(" ").append(DRAW_TIME.getDbType());
-        columns.add(new ColumnInfo(DRAW_TIME.getDbColumnName(), DRAW_TIME.getJdbcType(), 0, true));
+        columns.add(new BaseColumnInfo(DRAW_TIME.getDbColumnName(), DRAW_TIME.getJdbcType(), 0, true));
 
         for (SpecimenColumn col : _specimenColumns)
         {
             String name = col.getLegalDbColumnName(_dialect);
             sql.append(",\n    ").append(name).append(" ").append(col.getDbType());
-            columns.add(new ColumnInfo(name, col.getJdbcType(), col.getMaxSize(), true));
+            columns.add(new BaseColumnInfo(name, col.getJdbcType(), col.getMaxSize(), true));
         }
         sql.append("\n);");
 
-        TempTableInfo tempTableInfo = new TempTableInfo("SpecimenUpload", columns, Arrays.asList("RowId"));
+        TempTableInfo tempTableInfo = new TempTableInfo("SpecimenUpload", (List<ColumnInfo>)(List)columns, Arrays.asList("RowId"));
         final String fullTableName = tempTableInfo.getSelectName();
 
         sql.insert(0, "CREATE TABLE " + fullTableName + " ");
@@ -3660,8 +3660,8 @@ public class SpecimenImporter
 
         // We'll Insert Into this one with the calculated specimenHashes and then Update the temp table from there
         ArrayList<ColumnInfo> columns2 = new ArrayList<>();
-        columns2.add(new ColumnInfo(GLOBAL_UNIQUE_ID.getDbColumnName(), GLOBAL_UNIQUE_ID.getJdbcType(), GLOBAL_UNIQUE_ID.getMaxSize(), true));
-        columns2.add(new ColumnInfo("SpecimenHash", JdbcType.VARCHAR, 300, true));
+        columns2.add(new BaseColumnInfo(GLOBAL_UNIQUE_ID.getDbColumnName(), GLOBAL_UNIQUE_ID.getJdbcType(), GLOBAL_UNIQUE_ID.getMaxSize(), true));
+        columns2.add(new BaseColumnInfo("SpecimenHash", JdbcType.VARCHAR, 300, true));
         TempTableInfo selectInsertTempTableInfo = new TempTableInfo("SpecimenUpload2", columns2, Collections.singletonList("RowId"));
 
         final String rowIdIndexSql = "CREATE INDEX IX_SpecimenUpload" + uniquifier + "_RowId ON " + fullTableName + "(RowId)";
@@ -3734,14 +3734,14 @@ public class SpecimenImporter
         @Before
         public void createTable()
         {
-            List<ColumnInfo> columns = new ArrayList<>();
-            columns.add(new ColumnInfo("Container",JdbcType.GUID, 0, false));
-            columns.add(new ColumnInfo("id", JdbcType.VARCHAR, 0, false));
-            columns.add(new ColumnInfo("s", JdbcType.VARCHAR, 30, true));
+            List<BaseColumnInfo> columns = new ArrayList<>();
+            columns.add(new BaseColumnInfo("Container",JdbcType.GUID, 0, false));
+            columns.add(new BaseColumnInfo("id", JdbcType.VARCHAR, 0, false));
+            columns.add(new BaseColumnInfo("s", JdbcType.VARCHAR, 30, true));
             columns.get(columns.size()-1).setKeyField(true);
-            columns.add(new ColumnInfo("i", JdbcType.INTEGER, 0, true));
-            columns.add(new ColumnInfo("entityid", JdbcType.GUID, 0, false));
-            _simpleTable = new TempTableInfo(TABLE, columns, Arrays.asList("s"));
+            columns.add(new BaseColumnInfo("i", JdbcType.INTEGER, 0, true));
+            columns.add(new BaseColumnInfo("entityid", JdbcType.GUID, 0, false));
+            _simpleTable = new TempTableInfo(TABLE, (List<ColumnInfo>)(List)columns, Arrays.asList("s"));
 
             new SqlExecutor(_simpleTable.getSchema()).execute("CREATE TABLE " + _simpleTable.getSelectName() +
                     "(Container VARCHAR(255) NOT NULL, id VARCHAR(10) NOT NULL, s VARCHAR(32), i INTEGER, entityid VARCHAR(36))");

@@ -53,7 +53,7 @@ public class ParticipantCategoryTable extends BaseStudyTable
         if (schema.getContainer().isProject() && getContainerFilter() instanceof DataspaceContainerFilter)
             _setContainerFilter(((DataspaceContainerFilter)getContainerFilter()).getIncludeProjectDatasetContainerFilter());
 
-        ColumnInfo rowIdColumn = addWrapColumn(_rootTable.getColumn("RowId"));
+        var rowIdColumn = addWrapColumn(_rootTable.getColumn("RowId"));
         rowIdColumn.setHidden(true);
         rowIdColumn.setUserEditable(false);
         rowIdColumn.setKeyField(true);
@@ -63,7 +63,7 @@ public class ParticipantCategoryTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("Created"));
         addWrapColumn(_rootTable.getColumn("OwnerId"));
 
-        ColumnInfo createdBy = wrapColumn("CreatedBy", getRealTable().getColumn("CreatedBy"));
+        var createdBy = wrapColumn("CreatedBy", getRealTable().getColumn("CreatedBy"));
         createdBy.setFk(new UserIdForeignKey(getUserSchema()));
         createdBy.setDisplayColumnFactory(new DisplayColumnFactory()
         {

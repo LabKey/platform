@@ -15,7 +15,7 @@
  */
 package org.labkey.experiment.api;
 
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
@@ -47,21 +47,21 @@ public abstract class ExpProtocolInputTableImpl<C extends Enum> extends ExpTable
         addCondition(getContainerFilter().getSQLFragment(getSchema(), sqlFragment, getContainer(), false), containerFK);
     }
 
-    protected ColumnInfo createRowIdColumn(String alias)
+    protected BaseColumnInfo createRowIdColumn(String alias)
     {
-        ColumnInfo col = wrapColumn(alias, _rootTable.getColumn("RowId"));
+        var col = wrapColumn(alias, _rootTable.getColumn("RowId"));
         col.setHidden(true);
         return col;
     }
 
-    protected ColumnInfo createNameColumn(String alias)
+    protected BaseColumnInfo createNameColumn(String alias)
     {
         return wrapColumn(alias, _rootTable.getColumn("Name"));
     }
 
-    protected ColumnInfo createLsidColumn(String alias)
+    protected BaseColumnInfo createLsidColumn(String alias)
     {
-        ColumnInfo col = wrapColumn(alias, _rootTable.getColumn("LSID"));
+        var col = wrapColumn(alias, _rootTable.getColumn("LSID"));
         col.setHidden(true);
         col.setShownInInsertView(false);
         col.setShownInUpdateView(false);
@@ -70,22 +70,23 @@ public abstract class ExpProtocolInputTableImpl<C extends Enum> extends ExpTable
         return col;
     }
 
-    protected ColumnInfo createInputColumn(String alias)
+    protected BaseColumnInfo createInputColumn(String alias)
     {
-        ColumnInfo col = wrapColumn(alias, _rootTable.getColumn("input"));
+        BaseColumnInfo col;
+        col = wrapColumn(alias, _rootTable.getColumn("input"));
         return col;
     }
 
-    protected ColumnInfo createProtocolColumn(String alias)
+    protected BaseColumnInfo createProtocolColumn(String alias)
     {
-        ColumnInfo col = wrapColumn(alias, _rootTable.getColumn("protocolId"));
+        var col = wrapColumn(alias, _rootTable.getColumn("protocolId"));
         col.setFk(getExpSchema().getProtocolForeignKey(getContainerFilter(), "RowId"));
         return col;
     }
 
-    protected ColumnInfo createSampleSetColumn(String alias)
+    protected BaseColumnInfo createSampleSetColumn(String alias)
     {
-        ColumnInfo col = wrapColumn(alias, _rootTable.getColumn("MaterialSourceId"));
+        var col = wrapColumn(alias, _rootTable.getColumn("MaterialSourceId"));
         var fk = QueryForeignKey
                 .from(getUserSchema(), getContainerFilter())
                 .schema(ExpSchema.SCHEMA_NAME, getContainer())
@@ -94,9 +95,9 @@ public abstract class ExpProtocolInputTableImpl<C extends Enum> extends ExpTable
         return col;
     }
 
-    protected ColumnInfo createDataClassColumn(String alias)
+    protected BaseColumnInfo createDataClassColumn(String alias)
     {
-        ColumnInfo col = wrapColumn(alias, _rootTable.getColumn("DataClassId"));
+        var col = wrapColumn(alias, _rootTable.getColumn("DataClassId"));
         var fk = QueryForeignKey
                 .from(getUserSchema(), getContainerFilter())
                 .schema(ExpSchema.SCHEMA_NAME, getContainer())
@@ -105,12 +106,12 @@ public abstract class ExpProtocolInputTableImpl<C extends Enum> extends ExpTable
         return col;
     }
 
-    protected ColumnInfo createMinOccursColumn(String alias)
+    protected BaseColumnInfo createMinOccursColumn(String alias)
     {
         return wrapColumn(alias, _rootTable.getColumn("MinOccurs"));
     }
 
-    protected ColumnInfo createMaxOccursColumn(String alias)
+    protected BaseColumnInfo createMaxOccursColumn(String alias)
     {
         return wrapColumn(alias, _rootTable.getColumn("MaxOccurs"));
     }

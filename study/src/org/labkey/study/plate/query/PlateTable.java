@@ -61,7 +61,7 @@ public class PlateTable extends BasePlateTable
         //String sqlObjectId = "( SELECT objectid FROM exp.object WHERE exp.object.objecturi = " + ExprColumn.STR_TABLE_ALIAS + ".lsid)";
 
         //ColumnInfo colProperty = new ExprColumn(this, "property", new SQLFragment(sqlObjectId), Types.INTEGER);
-        ColumnInfo colProperty = wrapColumn("property", _rootTable.getColumn("lsid"));
+        var colProperty = wrapColumn("property", _rootTable.getColumn("lsid"));
         String propPrefix = new Lsid("PlateInstance", "Folder-" + schema.getContainer().getRowId(), "").toString();
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("PropertyURI"), propPrefix, CompareType.STARTS_WITH);

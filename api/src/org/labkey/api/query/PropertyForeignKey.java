@@ -19,6 +19,7 @@ package org.labkey.api.query;
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.AbstractForeignKey;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CoreSchema;
@@ -136,13 +137,13 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
     }
 
 
-    protected ColumnInfo constructColumnInfo(ColumnInfo parent, FieldKey name, PropertyDescriptor pd)
+    protected BaseColumnInfo constructColumnInfo(ColumnInfo parent, FieldKey name, PropertyDescriptor pd)
     {
-        ColumnInfo ret;
+        BaseColumnInfo ret;
         if (parent == null)
         {
             // this happens from getLookupTableInfo()
-            ret = new ColumnInfo(pd.getName(), pd.getJdbcType());
+            ret = new BaseColumnInfo(pd.getName(), pd.getJdbcType());
             initColumn(_schema.getUser(), ret, pd);
         }
         else
@@ -156,7 +157,7 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
     }
 
 
-    public void decorateColumn(ColumnInfo columnInfo, PropertyDescriptor pd)
+    public void decorateColumn(BaseColumnInfo columnInfo, PropertyDescriptor pd)
     {
         for (PropertyColumnDecorator decorator : _decorators)
         {
@@ -170,7 +171,7 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
         VirtualTable ret = new VirtualTable(ExperimentService.get().getSchema(), null);
         for (Map.Entry<String, PropertyDescriptor> entry : _pdMap.entrySet())
         {
-            ColumnInfo column = constructColumnInfo(null, new FieldKey(null,entry.getKey()), entry.getValue());
+            BaseColumnInfo column = constructColumnInfo(null, new FieldKey(null,entry.getKey()), entry.getValue());
             if (column != null)
             {
                 column.setParentTable(ret);
@@ -217,7 +218,7 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
     }
 
 
-    private void initColumn(User user, ColumnInfo column, PropertyDescriptor pd)
+    private void initColumn(User user, BaseColumnInfo column, PropertyDescriptor pd)
     {
         if (pd.getLabel() != null)
             column.setLabel(pd.getLabel());

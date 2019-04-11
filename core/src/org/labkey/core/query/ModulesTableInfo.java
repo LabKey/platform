@@ -17,6 +17,7 @@ package org.labkey.core.query;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.JdbcType;
@@ -62,7 +63,7 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
     @Override
     public void addColumns()
     {
-        ColumnInfo nameCol = addWrapColumn(getRealTable().getColumn("Name"));
+        var nameCol = addWrapColumn(getRealTable().getColumn("Name"));
         nameCol.setKeyField(true);
         nameCol.setURL(new StringExpressionFactory.URLStringExpression("${URL}"));
         nameCol.setURLTargetWindow("_blank");
@@ -76,12 +77,12 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         addTextColumn("Author");
         addTextColumn("Maintainer");
 
-        ColumnInfo orgCol = addTextColumn("Organization");
+        var orgCol = addTextColumn("Organization");
         orgCol.setURL(StringExpressionFactory.createURL("${OrganizationURL}"));
         orgCol.setURLTargetWindow("_blank");
         addTextColumn("OrganizationURL").setHidden(true);
 
-        ColumnInfo licenseCol = addTextColumn("License");
+        var licenseCol = addTextColumn("License");
         licenseCol.setURL(StringExpressionFactory.createURL("${LicenseURL}"));
         licenseCol.setURLTargetWindow("_blank");
         addTextColumn("LicenseURL").setHidden(true);
@@ -100,9 +101,9 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         ));
     }
 
-    private ColumnInfo addTextColumn(String name)
+    private BaseColumnInfo addTextColumn(String name)
     {
-        ColumnInfo col = new ColumnInfo(FieldKey.fromParts(name), this, JdbcType.VARCHAR);
+        var col = new BaseColumnInfo(FieldKey.fromParts(name), this, JdbcType.VARCHAR);
         col.setReadOnly(true);
         addColumn(col);
         return col;

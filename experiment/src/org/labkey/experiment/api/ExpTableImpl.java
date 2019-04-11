@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.collections.Sets;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
@@ -127,7 +128,8 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
                     PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(name /* uri */, getContainer());
                     if (pd != null)
                     {
-                        PropertyColumn pc = new PropertyColumn(pd, lsidCol, getContainer(), getUserSchema().getUser(), false);
+                        PropertyColumn pc;
+                        pc = new PropertyColumn(pd, lsidCol, getContainer(), getUserSchema().getUser(), false);
                         return pc;
                     }
                 }
@@ -146,20 +148,20 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
 
     protected ColumnInfo addContainerColumn(C containerCol, ActionURL url)
     {
-        ColumnInfo result = addColumn(containerCol);
+        var result = addColumn(containerCol);
         result.getImportAliasSet().add("container");
         ContainerForeignKey.initColumn(result, _userSchema, url);
         return result;
     }
 
-    final public ColumnInfo addColumn(C column)
+    final public BaseColumnInfo addColumn(C column)
     {
         return addColumn(column.toString(), column);
     }
 
-    final public ColumnInfo addColumn(String alias, C column)
+    final public BaseColumnInfo addColumn(String alias, C column)
     {
-        ColumnInfo ret = createColumn(alias, column);
+        var ret = createColumn(alias, column);
         addColumn(ret);
         return ret;
     }
@@ -176,13 +178,13 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
         return null;
     }
 
-    protected ColumnInfo doAdd(ColumnInfo column)
+    protected BaseColumnInfo doAdd(BaseColumnInfo column)
     {
         addColumn(column);
         return column;
     }
 
-    public ColumnInfo createPropertyColumn(String name)
+    public BaseColumnInfo createPropertyColumn(String name)
     {
         return wrapColumn(name, getLSIDColumn());
     }
@@ -192,7 +194,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
     // TODO: How to handle lookup values?
     protected ColumnInfo createPropertiesColumn(String name)
     {
-        ColumnInfo col = new AliasedColumn(this, name, getLSIDColumn());
+        var col = new AliasedColumn(this, name, getLSIDColumn());
         col.setDisplayColumnFactory(colInfo -> new DataColumn(colInfo)
         {
             @Override
@@ -248,9 +250,9 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
         return col;
     }
 
-    public ColumnInfo createUserColumn(String name, ColumnInfo userIdColumn)
+    public BaseColumnInfo createUserColumn(String name, ColumnInfo userIdColumn)
     {
-        ColumnInfo ret = wrapColumn(name, userIdColumn);
+        var ret = wrapColumn(name, userIdColumn);
         UserIdQueryForeignKey.initColumn(getUserSchema(), ret, true);
         ret.setShownInInsertView(false);
         ret.setShownInUpdateView(false);
@@ -270,9 +272,9 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
     }
 
     // if you change this, see similar AssayResultTable.createFlagColumn or TSVAssayProvider.createFlagColumn()
-    protected ColumnInfo createFlagColumn(String alias)
+    protected BaseColumnInfo createFlagColumn(String alias)
     {
-        ColumnInfo ret = wrapColumn(alias, getLSIDColumn());
+        var ret = wrapColumn(alias, getLSIDColumn());
         ret.setFk(new FlagForeignKey(_userSchema, urlFlag(true), urlFlag(false)));
         ret.setDisplayColumnFactory(FlagColumnRenderer::new);
         ret.setDescription("Contains a reference to a user-editable comment about this row");
@@ -313,9 +315,9 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
      * @param domain the domain from which to add all of the properties
      * @param legacyName if non-null, the name of a hidden node to be added as a FK for backwards compatibility
      */
-    public ColumnInfo addColumns(Domain domain, @Nullable String legacyName)
+    public BaseColumnInfo addColumns(Domain domain, @Nullable String legacyName)
     {
-        ColumnInfo colProperty = null;
+        BaseColumnInfo colProperty = null;
         if (legacyName != null && !domain.getProperties().isEmpty())
         {
             colProperty = wrapColumn(legacyName, getLSIDColumn());
@@ -332,7 +334,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
         for (DomainProperty dp : domain.getProperties())
         {
             PropertyDescriptor pd = dp.getPropertyDescriptor();
-            ColumnInfo propColumn = new PropertyColumn(pd, getColumn("LSID"), getContainer(), _userSchema.getUser(), false);
+            PropertyColumn propColumn = new PropertyColumn(pd, getColumn("LSID"), getContainer(), _userSchema.getUser(), false);
             if (getColumn(propColumn.getName()) == null)
             {
                 addColumn(propColumn);

@@ -32,7 +32,7 @@ import java.util.Map;
  * how to do the JOIN to the target query/table, and how to find the value of that expression in the generated ResultSet.
  */
 
-public class LookupColumn extends ColumnInfo
+public class LookupColumn extends BaseColumnInfo
 {
     /**
      * In the vast majority of cases, lookups will use a LEFT OUTER JOIN. However, in very specific scenarios

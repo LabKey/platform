@@ -58,18 +58,18 @@ public class StudySnapshotTable extends FilteredTable<StudyQuerySchema>
         setDescription("Contains a row for each Ancillary, Published, or Specimen study that was created from the study in this folder." +
                 " Only users with administrator permissions will see any data.");
 
-        ColumnInfo rowIdColumn = addWrapColumn(_rootTable.getColumn("RowId"));
+        var rowIdColumn = addWrapColumn(_rootTable.getColumn("RowId"));
         rowIdColumn.setHidden(true);
         rowIdColumn.setUserEditable(false);
         rowIdColumn.setKeyField(true);
 
-        ColumnInfo source = new AliasedColumn(this, "Source", _rootTable.getColumn("source"));
+        var source = new AliasedColumn(this, "Source", _rootTable.getColumn("source"));
         ContainerForeignKey.initColumn(source, getUserSchema());
         addColumn(source);
 
         addColumn(new AliasedColumn(this, "Type", _rootTable.getColumn(FieldKey.fromParts("type"))));
 
-        ColumnInfo destination = new AliasedColumn(this, "Destination", _rootTable.getColumn("destination"));
+        var destination = new AliasedColumn(this, "Destination", _rootTable.getColumn("destination"));
         final User user = schema.getUser();
         destination.setDisplayColumnFactory(new DisplayColumnFactory()
         {
@@ -94,17 +94,17 @@ public class StudySnapshotTable extends FilteredTable<StudyQuerySchema>
         });
         addColumn(destination);
 
-        ColumnInfo createdBy = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("CreatedBy")));
+        var createdBy = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("CreatedBy")));
         UserIdForeignKey.initColumn(createdBy);
 
-        ColumnInfo modifiedBy = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("ModifiedBy")));
+        var modifiedBy = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("ModifiedBy")));
         UserIdForeignKey.initColumn(modifiedBy);
 
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Created")));
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Modified")));
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Refresh")));
 
-        ColumnInfo settingsColumn = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Settings")));
+        var settingsColumn = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Settings")));
         settingsColumn.setDisplayColumnFactory(new DisplayColumnFactory(){
             @Override
             public DisplayColumn createRenderer(ColumnInfo colInfo)

@@ -157,7 +157,7 @@ public class MultiValuedForeignKey implements ForeignKey
             displayField = _displayField;
         }
 
-        ColumnInfo lookupColumn = fk.createLookupColumn(junctionKey, displayField);
+        BaseColumnInfo lookupColumn = (BaseColumnInfo)fk.createLookupColumn(junctionKey, displayField);
 
         if (lookupColumn == null)
         {

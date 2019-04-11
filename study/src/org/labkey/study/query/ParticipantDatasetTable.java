@@ -17,6 +17,7 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.AbstractForeignKey;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.LookupColumn;
@@ -60,12 +61,12 @@ public class ParticipantDatasetTable extends VirtualTable<StudyQuerySchema>
         }
     }
 
-    protected ColumnInfo createDatasetColumn(String name, final DatasetDefinition def)
+    protected BaseColumnInfo createDatasetColumn(String name, final DatasetDefinition def)
     {
-        ColumnInfo column;
+        BaseColumnInfo column;
         if (_colParticipantId == null)
         {
-            column = new ColumnInfo(name, this, JdbcType.VARCHAR);
+            column = new BaseColumnInfo(name, this, JdbcType.VARCHAR);
             column.setSqlTypeName("VARCHAR");
         }
         else
@@ -124,7 +125,7 @@ public class ParticipantDatasetTable extends VirtualTable<StudyQuerySchema>
                 {
                     if (displayField == null)
                         return null;
-                    ColumnInfo ret = new ParticipantVisitDatasetTable(_userSchema, def, parent).getColumn(displayField);
+                    var ret = new ParticipantVisitDatasetTable(_userSchema, def, parent).getMutableColumn(displayField);
                     if (ret == null)
                         return null;
                     ret.setLabel(parent.getLabel() + " " + ret.getLabel());

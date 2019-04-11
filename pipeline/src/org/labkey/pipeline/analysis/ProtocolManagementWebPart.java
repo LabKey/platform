@@ -16,6 +16,7 @@
 package org.labkey.pipeline.analysis;
 
 import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.CachedResultSets;
 import org.labkey.api.data.ColumnInfo;
@@ -111,7 +112,7 @@ public class ProtocolManagementWebPart extends GridView
             params.put("archived", "archived");
             ActionURL actionURL = new ActionURL(AnalysisController.ProtocolDetailsAction.class, getViewContext().getContainer());
             DetailsURL url = new DetailsURL(actionURL.addReturnURL(getContextURLHelper()), params);
-            colInfos.get(1).setURL(url);
+            ((BaseColumnInfo)colInfos.get(1)).setURL(url);
             setResults(new ResultsImpl(rs, colInfos));
             getDataRegion().setColumns(colInfos);
             getDataRegion().getDisplayColumn("taskId").setVisible(false);

@@ -38,24 +38,24 @@ public class OORDisplayColumnFactory implements DisplayColumnFactory
     }
 
     /** @return the merged value/indicator OOR ColumnInfo */
-    public static ColumnInfo addOORColumns(FilteredTable table, ColumnInfo numberColumn, ColumnInfo oorIndicatorColumn)
+    public static BaseColumnInfo addOORColumns(FilteredTable table, ColumnInfo numberColumn, ColumnInfo oorIndicatorColumn)
     {
         return addOORColumns(table, numberColumn, oorIndicatorColumn, numberColumn.getLabel());
     }
 
     /** @return the merged value/indicator OOR ColumnInfo */
-    public static ColumnInfo addOORColumns(FilteredTable table, ColumnInfo numberColumn, ColumnInfo oorIndicatorColumn, String caption)
+    public static BaseColumnInfo addOORColumns(FilteredTable table, ColumnInfo numberColumn, ColumnInfo oorIndicatorColumn, String caption)
     {
         return addOORColumns(table, numberColumn, oorIndicatorColumn, caption, true);
     }
 
     /** @return the merged value/indicator OOR ColumnInfo */
-    public static ColumnInfo addOORColumns(FilteredTable table, ColumnInfo numberColumn, ColumnInfo oorIndicatorColumn, String caption, boolean fromRealTable)
+    public static BaseColumnInfo addOORColumns(FilteredTable table, ColumnInfo numberColumn, ColumnInfo oorIndicatorColumn, String caption, boolean fromRealTable)
     {
-        ColumnInfo combinedCol = fromRealTable ? table.addWrapColumn(numberColumn) : table.addColumn(numberColumn);
+        BaseColumnInfo combinedCol = fromRealTable ? table.addWrapColumn(numberColumn) : table.addColumn((BaseColumnInfo)numberColumn);
         combinedCol.setLabel(caption);
 
-        ColumnInfo wrappedOORIndicatorCol = fromRealTable ? table.addWrapColumn(oorIndicatorColumn) : table.addColumn(oorIndicatorColumn);
+        BaseColumnInfo wrappedOORIndicatorCol = fromRealTable ? table.addWrapColumn(oorIndicatorColumn) : table.addColumn((BaseColumnInfo)oorIndicatorColumn);
         wrappedOORIndicatorCol.setLabel(caption + " OOR Indicator");
 
         // Only add new columns if there is no name conflict with either the real or virtual table
@@ -68,7 +68,7 @@ public class OORDisplayColumnFactory implements DisplayColumnFactory
             return null;
         }
 
-        ColumnInfo wrappedNumberColumn = table.addColumn(new AliasedColumn(table, numberColumn.getName() + NUMBER_COLUMN_SUFFIX, numberColumn));
+        BaseColumnInfo wrappedNumberColumn = table.addColumn(new AliasedColumn(table, numberColumn.getName() + NUMBER_COLUMN_SUFFIX, numberColumn));
         wrappedNumberColumn.setPropertyURI(null);
         wrappedNumberColumn.setLabel(caption + " " + NUMBER_COLUMN_SUFFIX);
         wrappedNumberColumn.setShownInInsertView(false);
@@ -91,7 +91,7 @@ public class OORDisplayColumnFactory implements DisplayColumnFactory
 //        inRangeSQL.append(numberColumn.getName());
         inRangeSQL.append(" ELSE NULL END");
 
-        ColumnInfo inRangeColumn = table.addColumn(new ExprColumn(table, numberColumn.getName() + IN_RANGE_COLUMN_SUFFIX,
+        BaseColumnInfo inRangeColumn = table.addColumn(new ExprColumn(table, numberColumn.getName() + IN_RANGE_COLUMN_SUFFIX,
                     inRangeSQL, numberColumn.getJdbcType(), wrappedNumberColumn, wrappedOORIndicatorCol));
         inRangeColumn.setLabel(caption + " In Range");
         inRangeColumn.setFormat(numberColumn.getFormat());

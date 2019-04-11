@@ -90,15 +90,15 @@ public final class TableExtension
         return columns;
     }
 
-    public ColumnInfo addExtensionColumn(String baseColName, @Nullable String newColName)
+    public BaseColumnInfo addExtensionColumn(String baseColName, @Nullable String newColName)
     {
         ColumnInfo baseCol = _extensionTable.getColumn(baseColName);
         return addExtensionColumn(baseCol, newColName);
     }
 
-    public ColumnInfo addExtensionColumn(ColumnInfo baseCol, @Nullable String newColName)
+    public BaseColumnInfo addExtensionColumn(ColumnInfo baseCol, @Nullable String newColName)
     {
-        ColumnInfo aliased = wrapExtensionColumn(baseCol, newColName);
+        var aliased = wrapExtensionColumn(baseCol, newColName);
         return _primaryTable.addColumn(aliased);
     }
 
@@ -108,7 +108,7 @@ public final class TableExtension
         return wrapExtensionColumn(baseCol, newColName);
     }
 
-    public ColumnInfo wrapExtensionColumn(ColumnInfo baseCol, @Nullable String newColName)
+    public BaseColumnInfo wrapExtensionColumn(ColumnInfo baseCol, @Nullable String newColName)
     {
         newColName = Objects.toString(newColName, baseCol.getName());
 

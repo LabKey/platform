@@ -21,7 +21,6 @@ import org.labkey.announcements.model.AnnouncementManager;
 import org.labkey.announcements.model.AnnouncementModel;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerForeignKey;
@@ -67,11 +66,11 @@ public class AnnouncementTable extends FilteredTable<AnnouncementSchema>
         wrapAllColumns(true);
         removeColumn(getColumn("Container"));
         removeColumn(getColumn("Approved"));
-        ColumnInfo folderColumn = wrapColumn("Folder", getRealTable().getColumn("Container"));
+        var folderColumn = wrapColumn("Folder", getRealTable().getColumn("Container"));
         folderColumn.setFk(new ContainerForeignKey(_userSchema));
         addColumn(folderColumn);
         setDescription("Contains one row per announcement or reply");
-        getColumn("Parent").setFk(new LookupForeignKey("EntityId")
+        getMutableColumn("Parent").setFk(new LookupForeignKey("EntityId")
         {
             @Override
             public TableInfo getLookupTableInfo()
@@ -82,7 +81,7 @@ public class AnnouncementTable extends FilteredTable<AnnouncementSchema>
                 return result;
             }
         });
-        final ColumnInfo renderTypeColumn = getColumn("RendererType");
+        final var renderTypeColumn = getMutableColumn("RendererType");
         renderTypeColumn.setFk(new LookupForeignKey("Value")
         {
             @Override
@@ -92,11 +91,11 @@ public class AnnouncementTable extends FilteredTable<AnnouncementSchema>
             }
         });
 
-        ColumnInfo bodyColumn = getColumn("Body");
+        var bodyColumn = getMutableColumn("Body");
         bodyColumn.setHidden(true);
         bodyColumn.setShownInDetailsView(false);
 
-        ColumnInfo formattedBodyColumn = wrapColumn("FormattedBody", getRealTable().getColumn("Body"));
+        var formattedBodyColumn = wrapColumn("FormattedBody", getRealTable().getColumn("Body"));
         formattedBodyColumn.setDisplayColumnFactory(colInfo -> new WikiRendererDisplayColumn(colInfo, renderTypeColumn.getName(), WikiRendererType.TEXT_WITH_LINKS));
         addColumn(formattedBodyColumn);
         formattedBodyColumn.setReadOnly(true);
@@ -104,9 +103,9 @@ public class AnnouncementTable extends FilteredTable<AnnouncementSchema>
         formattedBodyColumn.setShownInInsertView(false);
         formattedBodyColumn.setShownInDetailsView(true);
 
-        getColumn("CreatedBy").setFk(new UserIdQueryForeignKey(_userSchema, true));
-        getColumn("ModifiedBy").setFk(new UserIdQueryForeignKey(_userSchema, true));
-        getColumn("AssignedTo").setFk(new UserIdQueryForeignKey(_userSchema, true));
+        getMutableColumn("CreatedBy").setFk(new UserIdQueryForeignKey(_userSchema, true));
+        getMutableColumn("ModifiedBy").setFk(new UserIdQueryForeignKey(_userSchema, true));
+        getMutableColumn("AssignedTo").setFk(new UserIdQueryForeignKey(_userSchema, true));
 
         setName(AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME);
         setPublicSchemaName(AnnouncementSchema.SCHEMA_NAME);

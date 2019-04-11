@@ -190,7 +190,7 @@ public class CoreQuerySchema extends UserSchema
         groups.setName("Groups");
 
         //expose UserId, Name, Container, and Type
-        ColumnInfo col = groups.wrapColumn(principalsBase.getColumn("UserId"));
+        var col = groups.wrapColumn(principalsBase.getColumn("UserId"));
         col.setKeyField(true);
         col.setReadOnly(true);
         col.setUserEditable(false);
@@ -268,7 +268,7 @@ public class CoreQuerySchema extends UserSchema
 
     private void toggleExpirationDateColumn(FilteredTable users)
     {
-        ColumnInfo expirationDateCol = users.getColumn(FieldKey.fromParts("ExpirationDate"));
+        var expirationDateCol = users.getMutableColumn(FieldKey.fromParts("ExpirationDate"));
         if (expirationDateCol != null)
         {
             boolean isUserManager = getUser().hasRootPermission(UserManagementPermission.class);
@@ -294,7 +294,7 @@ public class CoreQuerySchema extends UserSchema
         FilteredTable principals = new FilteredTable<>(principalsBase, this, ContainerFilter.EVERYTHING);
 
         //we expose userid, name and type via query
-        ColumnInfo col = principals.wrapColumn(principalsBase.getColumn("UserId"));
+        var col = principals.wrapColumn(principalsBase.getColumn("UserId"));
         col.setKeyField(true);
         col.setHidden(true);
         col.setReadOnly(true);
@@ -321,7 +321,7 @@ public class CoreQuerySchema extends UserSchema
         defCols.add(FieldKey.fromParts("Container"));
         principals.setDefaultVisibleColumns(defCols);
 
-        principals.getColumn("Container").setFk(new ContainerForeignKey(this));
+        principals.getMutableColumn("Container").setFk(new ContainerForeignKey(this));
 
         //filter out inactive
         principals.addCondition(new SQLFragment("Active=?", true));
@@ -344,7 +344,7 @@ public class CoreQuerySchema extends UserSchema
         TableInfo membersBase = CoreSchema.getInstance().getTableInfoMembers();
         FilteredTable members = new FilteredTable<>(membersBase, this);
 
-        ColumnInfo col = members.wrapColumn(membersBase.getColumn("UserId"));
+        var col = members.wrapColumn(membersBase.getColumn("UserId"));
         col.setKeyField(true);
         final boolean isUserManager = getUser().hasRootPermission(UserManagementPermission.class);
         col.setFk(new LookupForeignKey("UserId", "DisplayName")
@@ -448,7 +448,7 @@ public class CoreQuerySchema extends UserSchema
 
     private void addGroupsColumn(UsersTable users)
     {
-        ColumnInfo groupsCol;
+        BaseColumnInfo groupsCol;
         if (users.isCanSeeDetails())
         {
             groupsCol = users.wrapColumn("Groups", users.getRealTable().getColumn("userid"));
@@ -482,7 +482,7 @@ public class CoreQuerySchema extends UserSchema
 
     private void addAvatarColumn(FilteredTable users)
     {
-        ColumnInfo avatarCol = users.wrapColumn(UserAvatarDisplayColumnFactory.FIELD_KEY, users.getRealTable().getColumn("userid"));
+        var avatarCol = users.wrapColumn(UserAvatarDisplayColumnFactory.FIELD_KEY, users.getRealTable().getColumn("userid"));
         avatarCol.setDescription("Thumbnail icon associated with this use account.");
         avatarCol.setDisplayColumnFactory(new UserAvatarDisplayColumnFactory());
         avatarCol.setInputType("file");
@@ -497,7 +497,7 @@ public class CoreQuerySchema extends UserSchema
         TableInfo membersBase = CoreSchema.getInstance().getTableInfoMembers();
         FilteredTable result = new FilteredTable<>(membersBase, this);
 
-        ColumnInfo userColumn = result.wrapColumn("User", membersBase.getColumn("UserId"));
+        var userColumn = result.wrapColumn("User", membersBase.getColumn("UserId"));
         result.addColumn(userColumn);
         userColumn.setFk(new LookupForeignKey("UserId")
         {
@@ -508,7 +508,7 @@ public class CoreQuerySchema extends UserSchema
             }
         });
 
-        ColumnInfo groupColumn = result.wrapColumn("Group", membersBase.getColumn("GroupId"));
+        var groupColumn = result.wrapColumn("Group", membersBase.getColumn("GroupId"));
         result.addColumn(groupColumn);
         groupColumn.setFk(new LookupForeignKey("UserId")
         {
@@ -587,7 +587,7 @@ public class CoreQuerySchema extends UserSchema
         t = def.getTable(this, errors, true);
         if (!errors.isEmpty())
             throw errors.get(0);
-        t.getColumn("UserId").setDisplayColumnFactory(new DisplayColumnFactory()
+        ((BaseColumnInfo)t.getColumn("UserId")).setDisplayColumnFactory(new DisplayColumnFactory()
         {
             @Override
             public DisplayColumn createRenderer(ColumnInfo colInfo)
@@ -715,12 +715,12 @@ public class CoreQuerySchema extends UserSchema
             setDescription("Contains one row for each view category.");
             wrapAllColumns(true);
 
-            getColumn(FieldKey.fromParts("RowId")).setHidden(true);
-            ContainerForeignKey.initColumn(getColumn(FieldKey.fromParts("Container")), userSchema);
-            UserIdForeignKey.initColumn(getColumn(FieldKey.fromParts("CreatedBy")));
-            UserIdForeignKey.initColumn(getColumn(FieldKey.fromParts("ModifiedBy")));
+            getMutableColumn(FieldKey.fromParts("RowId")).setHidden(true);
+            ContainerForeignKey.initColumn(getMutableColumn(FieldKey.fromParts("Container")), userSchema);
+            UserIdForeignKey.initColumn(getMutableColumn(FieldKey.fromParts("CreatedBy")));
+            UserIdForeignKey.initColumn(getMutableColumn(FieldKey.fromParts("ModifiedBy")));
 
-            ColumnInfo parentCol = getColumn(FieldKey.fromParts("Parent"));
+            var parentCol = getMutableColumn(FieldKey.fromParts("Parent"));
             parentCol.setFk(new LookupForeignKey("RowId", "Label"){
 
                 @Override

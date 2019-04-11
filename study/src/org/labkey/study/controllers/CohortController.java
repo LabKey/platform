@@ -20,6 +20,7 @@ import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataRegion;
@@ -324,7 +325,7 @@ public class CohortController extends BaseStudyController
                 {
                     // Can't edit the label if the cohorts are automatically generated
                     ColumnInfo labelColumn = table.getColumn("Label");
-                    labelColumn.setUserEditable(false);
+                    ((BaseColumnInfo)labelColumn).setUserEditable(false);
                 }
             }
 

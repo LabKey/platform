@@ -26,6 +26,7 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CsvSet;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -832,7 +833,7 @@ public class StudyServiceImpl implements StudyService
         AliasManager aliasManager = new AliasManager(table.getSchema());
 
         // scan all tables for all columns
-        Map<String,ColumnInfo> unionColumns = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<String,ColumnInfo>());
+        Map<String,BaseColumnInfo> unionColumns = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<>());
         for (TableInfo t : terms)
         {
             final StudyQuerySchema studyQuerySchema = (StudyQuerySchema)t.getUserSchema();
@@ -844,7 +845,7 @@ public class StudyServiceImpl implements StudyService
                 String name = c.getName();
                 if (useParticipantIdName && name.equalsIgnoreCase(subjectColumnName))
                     name = "ParticipantId";
-                ColumnInfo unionCol = unionColumns.get(name);
+                var unionCol = unionColumns.get(name);
                 if (null == unionCol)
                 {
                     unionCol = makeUnionColumn(c, aliasManager, containers, name);
@@ -859,7 +860,7 @@ public class StudyServiceImpl implements StudyService
                             }
                         };
                         fk.addJoin(FieldKey.fromParts("Container"), "Container", false);
-                        unionCol.setFk(fk);
+                        ((BaseColumnInfo)unionCol).setFk(fk);
                     }
                     else if ("derivativetype".equalsIgnoreCase(name) || "derivativetype2".equalsIgnoreCase(name))
                     {
@@ -986,7 +987,7 @@ public class StudyServiceImpl implements StudyService
         SqlDialect dialect = table.getSqlDialect();
         AliasManager aliasManager = new AliasManager(table.getSchema());
 
-        Map<String, ColumnInfo> unionColumns = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<String,ColumnInfo>());
+        Map<String, BaseColumnInfo> unionColumns = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<>());
         for (ColumnInfo c : table.getColumns())
         {
             unionColumns.put(c.getName(), makeUnionColumn(c, aliasManager, containers, c.getName()));
@@ -996,9 +997,9 @@ public class StudyServiceImpl implements StudyService
         return new UnionTable(schemaDefault, tableName, unionColumns.values(), sqlf, table, table.getTitleColumn());
     }
 
-    private ColumnInfo makeUnionColumn(ColumnInfo column, AliasManager aliasManager, Set<Container> containers, String name)
+    private BaseColumnInfo makeUnionColumn(ColumnInfo column, AliasManager aliasManager, Set<Container> containers, String name)
     {
-        ColumnInfo unionCol = new AliasedColumn(null, new FieldKey(null,name), column, true)
+        var unionCol = new AliasedColumn(null, new FieldKey(null,name), column, true)
         {
             @Override
             public SQLFragment getValueSql(String tableAlias)
@@ -1021,7 +1022,7 @@ public class StudyServiceImpl implements StudyService
         return unionCol;
     }
 
-    private SQLFragment getUnionSql(Collection<BaseStudyTable> terms, Map<TableInfo, SQLFragment> filterFragmentMap, boolean dontAliasColumns, SqlDialect dialect, Map<String, ColumnInfo> unionColumns)
+    private SQLFragment getUnionSql(Collection<BaseStudyTable> terms, Map<TableInfo, SQLFragment> filterFragmentMap, boolean dontAliasColumns, SqlDialect dialect, Map<String, BaseColumnInfo> unionColumns)
     {
         SQLFragment sqlf = new SQLFragment();
         String union = "";

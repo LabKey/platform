@@ -16,7 +16,9 @@
 
 package org.labkey.api.exp.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilterable;
@@ -31,13 +33,13 @@ public interface ExpTable<C extends Enum> extends ContainerFilterable, TableInfo
 {
     Container getContainer();
 
-    ColumnInfo addColumn(C column);
-    ColumnInfo addColumn(String alias, C column);
+    BaseColumnInfo addColumn(C column);
+    BaseColumnInfo addColumn(String alias, C column);
     ColumnInfo getColumn(C column);
-    ColumnInfo createColumn(String alias, C column);
-    ColumnInfo addColumn(ColumnInfo column);
+    BaseColumnInfo createColumn(String alias, C column);
+    BaseColumnInfo addColumn(BaseColumnInfo column);
     // Adds a column so long as there is not already one of that name.
-    boolean safeAddColumn(ColumnInfo column);
+    boolean safeAddColumn(BaseColumnInfo column);
     void setTitleColumn(String titleColumn);
 
     /**
@@ -67,7 +69,7 @@ public interface ExpTable<C extends Enum> extends ContainerFilterable, TableInfo
      * @param legacyName if non-null, the name of a hidden node to be added as a FK for backwards compatibility
      * @return if a legacyName is specified, the ColumnInfo for the hidden node. Otherwise, null 
      */
-    ColumnInfo addColumns(Domain domain, @Nullable String legacyName);
+    BaseColumnInfo addColumns(Domain domain, @Nullable String legacyName);
 
     void setDescription(String description);
 
@@ -78,4 +80,18 @@ public interface ExpTable<C extends Enum> extends ContainerFilterable, TableInfo
      * Allows experiment-based tables to be exposed in other schemas, such as samples sets being exposed in the "samples" schema.
      */
     void setPublicSchemaName(String schemaName);
+
+    void checkLocked();
+
+    /* returns null or BaseColumnInfo, will throw if column exists and is locked */
+    default BaseColumnInfo getMutableColumn(@NotNull C c)
+    {
+        checkLocked();
+        ColumnInfo col = getColumn(c);
+        if (null == col)
+            return null;
+        // all columns extend BaseColumnInfo for now
+        ((BaseColumnInfo)col).checkLocked();
+        return (BaseColumnInfo) col;
+    }
 }

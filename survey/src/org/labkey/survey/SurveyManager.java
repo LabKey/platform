@@ -31,6 +31,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.MultiValuedMapCollectors;
 import org.labkey.api.data.AuditConfigurable;
 import org.labkey.api.data.BeanObjectFactory;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -744,7 +745,7 @@ public class SurveyManager
         public void testGetMetaDataForColumn()
         {
             SurveyManager sm = SurveyManager.get();
-            ColumnInfo ci = new ColumnInfo("test", JdbcType.OTHER);
+            var ci = new BaseColumnInfo("test", JdbcType.OTHER);
             DisplayColumn dc = new DataColumn(ci, false);
             Map<String, Object> metaDataMap = JsonWriter.getMetaData(dc, null, false, true, false);
             Map<String, Object> trimmedMap = sm.getTrimmedMetaData(metaDataMap);

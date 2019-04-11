@@ -17,7 +17,6 @@ package org.labkey.wiki.query;
 
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.data.AbstractTableInfo;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.EnumTableInfo;
 import org.labkey.api.data.Sort;
@@ -95,7 +94,7 @@ public class WikiSchema extends UserSchema
             table.init();
 
             // Change default sort to newest->oldest
-            ColumnInfo pk = table.getColumn("RowId");
+            var pk = table.getMutableColumn("RowId");
             pk.setSortDirection(Sort.SortDirection.DESC);
 
             return table;

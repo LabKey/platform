@@ -17,6 +17,7 @@
 package org.labkey.api.exp.flag;
 
 import org.labkey.api.data.AbstractForeignKey;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.TableInfo;
@@ -52,7 +53,7 @@ public class FlagForeignKey extends AbstractForeignKey
     public TableInfo getLookupTableInfo()
     {
         VirtualTable ret = new VirtualTable<>(ExperimentService.get().getSchema(), "FlagComment", (UserSchema)_sourceSchema);
-        ColumnInfo colComment = new ColumnInfo("Comment", ret, JdbcType.VARCHAR);
+        var colComment = new BaseColumnInfo("Comment", ret, JdbcType.VARCHAR);
         ret.addColumn(colComment);
         return ret;
     }

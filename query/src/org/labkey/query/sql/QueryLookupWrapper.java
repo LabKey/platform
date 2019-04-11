@@ -401,7 +401,7 @@ public class QueryLookupWrapper extends QueryRelation
         }
 
         @Override
-        void copyColumnAttributesTo(ColumnInfo to)
+        void copyColumnAttributesTo(BaseColumnInfo to)
         {
             _wrapped.copyColumnAttributesTo(to);
             if (to.getFieldKey().getParent() == null)
@@ -465,7 +465,7 @@ public class QueryLookupWrapper extends QueryRelation
         {
             fkCol = ((QueryLookupColumn)parent)._lkCol;
         }
-        ColumnInfo lkCol = fk.createLookupColumn(fkCol, key.getName());
+        var lkCol = (BaseColumnInfo)fk.createLookupColumn(fkCol, key.getName());
         if (null == lkCol)
             return null;
         return new QueryLookupColumn(key, parent, fk, lkCol);
@@ -479,7 +479,7 @@ public class QueryLookupWrapper extends QueryRelation
         final ForeignKey _fk;
         final ColumnInfo _lkCol;
 
-        protected QueryLookupColumn(FieldKey key, RelationColumn parent, @NotNull ForeignKey fk, ColumnInfo lkCol)
+        protected QueryLookupColumn(FieldKey key, RelationColumn parent, @NotNull ForeignKey fk, BaseColumnInfo lkCol)
         {
             super(parent.getTable(), key, _aliasManager.decideAlias((parent.getAlias() + "$" + key.getName()).toLowerCase()));
             lkCol.setAlias(getAlias());
@@ -506,7 +506,8 @@ public class QueryLookupWrapper extends QueryRelation
             return _lkCol.isHidden();
         }
 
-        void copyColumnAttributesTo(ColumnInfo to)
+        @Override
+        void copyColumnAttributesTo(BaseColumnInfo to)
         {
             to.copyAttributesFrom(_lkCol);
         }

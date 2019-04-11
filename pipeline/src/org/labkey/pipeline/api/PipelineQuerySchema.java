@@ -93,7 +93,7 @@ public class PipelineQuerySchema extends UserSchema
             table.wrapAllColumns(true);
             table.removeColumn(table.getColumn("Container"));
             table.setName(JOB_TABLE_NAME);
-            ColumnInfo folderColumn = table.wrapColumn("Folder", table.getRealTable().getColumn("Container"));
+            var folderColumn = table.wrapColumn("Folder", table.getRealTable().getColumn("Container"));
             folderColumn.setFk(new ContainerForeignKey(this));
             folderColumn.setDisplayColumnFactory(ContainerDisplayColumn.FACTORY);
             table.addColumn(folderColumn);
@@ -106,15 +106,15 @@ public class PipelineQuerySchema extends UserSchema
                 table.setContainerFilter(new ContainerFilter.AllFolders(getUser()));
             }
 
-            table.getColumn("RowId").setURL(DetailsURL.fromString(urlExp));
-            table.getColumn("Status").setDisplayColumnFactory(colInfo ->
+            table.getMutableColumn("RowId").setURL(DetailsURL.fromString(urlExp));
+            table.getMutableColumn("Status").setDisplayColumnFactory(colInfo ->
             {
                 DataColumn result = new DataColumn(colInfo);
                 result.setNoWrap(true);
                 return result;
             });
 
-            table.getColumn("Description").setDisplayColumnFactory(new DisplayColumnFactory()
+            table.getMutableColumn("Description").setDisplayColumnFactory(new DisplayColumnFactory()
             {
                 @Override
                 public DisplayColumn createRenderer(ColumnInfo colInfo)
@@ -141,9 +141,9 @@ public class PipelineQuerySchema extends UserSchema
                     };
                 }
             });
-            UserIdQueryForeignKey.initColumn(this, table.getColumn("CreatedBy"), true);
-            UserIdQueryForeignKey.initColumn(this, table.getColumn("ModifiedBy"), true);
-            table.getColumn("JobParent").setFk(new LookupForeignKey("Job", "Description")
+            UserIdQueryForeignKey.initColumn(this, table.getMutableColumn("CreatedBy"), true);
+            UserIdQueryForeignKey.initColumn(this, table.getMutableColumn("ModifiedBy"), true);
+            table.getMutableColumn("JobParent").setFk(new LookupForeignKey("Job", "Description")
             {
                 public TableInfo getLookupTableInfo()
                 {

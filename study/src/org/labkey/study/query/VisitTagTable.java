@@ -49,23 +49,23 @@ public class VisitTagTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("SingleUse")));
 
         // setup lookups for the standard fields
-        ColumnInfo container = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container")));
+        var container = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container")));
         ContainerForeignKey.initColumn(container, schema);
 
-        ColumnInfo created = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Created")));
+        var created = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Created")));
         created.setFormat("DateTime");
         created.setHidden(true);
 
-        ColumnInfo createdBy = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("CreatedBy")));
+        var createdBy = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("CreatedBy")));
         createdBy.setLabel("Created By");
         createdBy.setHidden(true);
         UserIdForeignKey.initColumn(createdBy);
 
-        ColumnInfo modified = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Modified")));
+        var modified = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Modified")));
         modified.setFormat("DateTime");
         modified.setHidden(true);
 
-        ColumnInfo modifiedBy = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("ModifiedBy")));
+        var modifiedBy = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("ModifiedBy")));
         modifiedBy.setLabel("Modified By");
         modifiedBy.setHidden(true);
         UserIdForeignKey.initColumn(modifiedBy);

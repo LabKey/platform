@@ -80,7 +80,7 @@ public class VialRequestTable extends FilteredTable<StudyQuerySchema>
             }
             else if (!"Container".equalsIgnoreCase(name))
             {
-                ColumnInfo wrappedColumn = addWrapColumn(baseColumn);
+                var wrappedColumn = addWrapColumn(baseColumn);
                 if ("RowId".equalsIgnoreCase(name))
                     wrappedColumn.setHidden(true);
             }

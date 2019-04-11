@@ -24,6 +24,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.dataiterator.ScrollableDataIterator;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -867,12 +868,12 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         public ColumnInfo getColumnInfo(int i)
         {
             if (i == 0)
-                return new ColumnInfo("_rowNumber", JdbcType.INTEGER);
+                return new BaseColumnInfo("_rowNumber", JdbcType.INTEGER);
             ColumnDescriptor d = _columns[i-1];
             JdbcType type = JdbcType.valueOf(d.clazz);
             if (null == type)
                 type = JdbcType.VARCHAR;
-            ColumnInfo ret = new ColumnInfo(d.name, type);
+            var ret = new BaseColumnInfo(d.name, type);
             if (null != d.propertyURI)
                 ret.setPropertyURI(d.propertyURI);
             return ret;

@@ -101,18 +101,18 @@ public class ToursTable extends FilteredTable<AnnouncementSchema>
         //
         wrapAllColumns(true);
 
-        getColumn("EntityId").setHidden(true);
-        getColumn("RowId").setHidden(true);
-        getColumn("Json").setHidden(true);
+        getMutableColumn("EntityId").setHidden(true);
+        getMutableColumn("RowId").setHidden(true);
+        getMutableColumn("Json").setHidden(true);
 
-        ColumnInfo containerCol = getColumn("Container");
+        var containerCol = getMutableColumn("Container");
         containerCol.setLabel("Folder");
         ContainerForeignKey.initColumn(containerCol, schema);
 
-        getColumn("CreatedBy").setFk(new UserIdQueryForeignKey(_userSchema, true));
-        getColumn("ModifiedBy").setFk(new UserIdQueryForeignKey(_userSchema, true));
+        getMutableColumn("CreatedBy").setFk(new UserIdQueryForeignKey(_userSchema, true));
+        getMutableColumn("ModifiedBy").setFk(new UserIdQueryForeignKey(_userSchema, true));
 
-        ColumnInfo modeCol = getColumn("Mode");
+        var modeCol = getMutableColumn("Mode");
         modeCol.setDisplayColumnFactory(new DisplayColumnFactory()
         {
             public DisplayColumn createRenderer(final ColumnInfo colInfo)

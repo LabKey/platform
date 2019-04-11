@@ -16,9 +16,7 @@
 package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
-import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ForeignKey;
@@ -35,11 +33,9 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpression;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -109,7 +105,7 @@ class LineageForeignKey extends LookupForeignKey
         ColumnInfo addLineageColumn(String name, boolean parents, Integer depth, String expType, String cpasType)
         {
             SQLFragment sql = new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".lsid");
-            ColumnInfo col = new ExprColumn(this, FieldKey.fromParts(name), sql, JdbcType.VARCHAR);
+            var col = new ExprColumn(this, FieldKey.fromParts(name), sql, JdbcType.VARCHAR);
             col.setFk(new _MultiValuedForeignKey(parents, depth, expType, cpasType));
 
             return addColumn(col);

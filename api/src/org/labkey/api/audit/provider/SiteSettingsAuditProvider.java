@@ -91,7 +91,7 @@ public class SiteSettingsAuditProvider extends AbstractAuditTypeProvider impleme
     public TableInfo createTableInfo(UserSchema userSchema, ContainerFilter cf)
     {
         DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, cf, defaultVisibleColumns);
-        table.getColumn("Changes").setDisplayColumnFactory(new HtmlDisplayColumnFactory());
+        table.getMutableColumn("Changes").setDisplayColumnFactory(new HtmlDisplayColumnFactory());
         List<FieldKey> defaultCols = new ArrayList<>(table.getDefaultVisibleColumns());
         defaultCols.add(FieldKey.fromParts("Changes"));
         table.setDefaultVisibleColumns(defaultCols);

@@ -16,26 +16,15 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ContainerForeignKey;
-import org.labkey.api.data.DatabaseTableType;
-import org.labkey.api.data.DelegatingContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DefaultQueryUpdateService;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.study.StudySchema;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * User: cnathe
@@ -50,7 +39,7 @@ public class AssaySpecimenVisitTable extends BaseStudyTable
 
         addWrapColumn(_rootTable.getColumn("RowId"));
 
-        ColumnInfo visitCol = new AliasedColumn(this, "VisitId", _rootTable.getColumn("VisitId"));
+        var visitCol = new AliasedColumn(this, "VisitId", _rootTable.getColumn("VisitId"));
         visitCol.setFk(new LookupForeignKey("RowId")
         {
             public TableInfo getLookupTableInfo()
@@ -60,7 +49,7 @@ public class AssaySpecimenVisitTable extends BaseStudyTable
         });
         addColumn(visitCol);
 
-        ColumnInfo assaySpecimenCol = new AliasedColumn(this, "AssaySpecimenId", _rootTable.getColumn("AssaySpecimenId"));
+        var assaySpecimenCol = new AliasedColumn(this, "AssaySpecimenId", _rootTable.getColumn("AssaySpecimenId"));
         assaySpecimenCol.setFk(new LookupForeignKey("RowId")
         {
             public TableInfo getLookupTableInfo()
@@ -76,7 +65,7 @@ public class AssaySpecimenVisitTable extends BaseStudyTable
             String name = baseColumn.getName();
             if (name.equalsIgnoreCase("Created") || name.equalsIgnoreCase("Modified") || name.equalsIgnoreCase("CreatedBy") || name.equalsIgnoreCase("ModifiedBy"))
             {
-                ColumnInfo column = addWrapColumn(baseColumn);
+                var column = addWrapColumn(baseColumn);
                 if (name.equalsIgnoreCase("CreatedBy") || name.equalsIgnoreCase("ModifiedBy"))
                     UserIdQueryForeignKey.initColumn(schema, column, true);
                 column.setHidden(true);

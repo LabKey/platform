@@ -15,7 +15,6 @@
  */
 package org.labkey.study.query;
 
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.TableInfo;
@@ -53,16 +52,16 @@ public class ParticipantGroupTable extends BaseStudyTable
         if (schema.getContainer().isProject() && getContainerFilter() instanceof DataspaceContainerFilter)
             _setContainerFilter(((DataspaceContainerFilter)getContainerFilter()).getIncludeProjectDatasetContainerFilter());
 
-        ColumnInfo folderColumn = wrapColumn("Folder", getRealTable().getColumn("Container"));
+        var folderColumn = wrapColumn("Folder", getRealTable().getColumn("Container"));
         addColumn(folderColumn);
         folderColumn.setFk(new ContainerForeignKey(_userSchema));
 
-        ColumnInfo rowIdColumn = addWrapColumn(_rootTable.getColumn("RowId"));
+        var rowIdColumn = addWrapColumn(_rootTable.getColumn("RowId"));
         rowIdColumn.setHidden(true);
         rowIdColumn.setUserEditable(false);
         rowIdColumn.setKeyField(true);
 
-        ColumnInfo categoryIdColumn = new AliasedColumn(this, "CategoryId", _rootTable.getColumn("CategoryId"));
+        var categoryIdColumn = new AliasedColumn(this, "CategoryId", _rootTable.getColumn("CategoryId"));
         categoryIdColumn.setFk( QueryForeignKey.from(_userSchema, null).to(StudyService.get().getSubjectCategoryTableName(getContainer()), "RowId", "Label") );
         addColumn(categoryIdColumn);
 

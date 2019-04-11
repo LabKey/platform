@@ -82,12 +82,6 @@ public class DataClassUserSchema extends AbstractExpSchema
         return getDataClasses().keySet();
     }
 
-    @Override
-    public TableInfo getTable(String name, @Nullable ContainerFilter cf)
-    {
-        return super.getTable(name, cf);
-    }
-
     @Nullable
     @Override
     public TableInfo createTable(String name)

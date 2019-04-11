@@ -17,6 +17,7 @@ package org.labkey.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
@@ -117,7 +118,7 @@ public class LinkedTableInfo extends SimpleUserSchema.SimpleTable<UserSchema>
     }
 
     @Override
-    protected void fixupWrappedColumn(ColumnInfo wrap, ColumnInfo col)
+    protected void fixupWrappedColumn(BaseColumnInfo wrap, ColumnInfo col)
     {
         super.fixupWrappedColumn(wrap, col);
 
@@ -165,14 +166,14 @@ public class LinkedTableInfo extends SimpleUserSchema.SimpleTable<UserSchema>
     }
 
     @Override
-    public ColumnInfo wrapColumn(ColumnInfo col)
+    public BaseColumnInfo wrapColumn(ColumnInfo col)
     {
         if ("Container".equalsIgnoreCase(col.getName()) || "Folder".equalsIgnoreCase(col.getName()))
         {
             // Remap the container column to be the the target instead
             //ISSUE 19600: explicitly cast to varchar on postgres to avoid "failed to find conversion function from unknown to text" error
             SQLFragment sql = col.getSqlDialect().isPostgreSQL() ? new SQLFragment("CAST('" + getContainer().getEntityId() + "' AS VARCHAR)") : new SQLFragment("'" + getContainer().getEntityId() + "'");
-            ColumnInfo ret = new ExprColumn(col.getParentTable(), col.getName(), sql, JdbcType.VARCHAR);
+            var ret = new ExprColumn(col.getParentTable(), col.getName(), sql, JdbcType.VARCHAR);
             ret.copyAttributesFrom(col);
             ret.setHidden(col.isHidden());
             col = ret;

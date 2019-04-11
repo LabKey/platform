@@ -18,6 +18,7 @@ package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.ContainerFilter;
@@ -54,7 +55,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         setDeleteURL(new DetailsURL(deleteExpUrl));
     }
 
-    public ColumnInfo createColumn(String alias, Column column)
+    public BaseColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
         {
@@ -73,11 +74,11 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
             case Hypothesis:
                 return wrapColumn(alias, _rootTable.getColumn("Hypothesis"));
             case Contact:
-                ColumnInfo contactCol = wrapColumn(alias, _rootTable.getColumn("ContactId"));
+                var contactCol = wrapColumn(alias, _rootTable.getColumn("ContactId"));
                 contactCol.setLabel("Contact");
                 return contactCol;
             case ExperimentDescriptionURL:
-                ColumnInfo descUrlCol = wrapColumn(alias, _rootTable.getColumn("ExperimentDescriptionURL"));
+                var descUrlCol = wrapColumn(alias, _rootTable.getColumn("ExperimentDescriptionURL"));
                 descUrlCol.setLabel("Description URL");
                 return descUrlCol;
             case LSID:
@@ -93,7 +94,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
                 return runCountColumnInfo;
             case BatchProtocolId:
             {
-                ColumnInfo batchProtocolCol = wrapColumn(alias, _rootTable.getColumn("BatchProtocolId"));
+                var batchProtocolCol = wrapColumn(alias, _rootTable.getColumn("BatchProtocolId"));
                 batchProtocolCol.setLabel("Batch Protocol");
                 batchProtocolCol.setFk(getExpSchema().getProtocolForeignKey(getContainerFilter(), "RowId"));
                 setupNonEditableCol(batchProtocolCol);
@@ -104,7 +105,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         }
     }
 
-    private ColumnInfo setupNonEditableCol (ColumnInfo col)
+    private BaseColumnInfo setupNonEditableCol (BaseColumnInfo col)
     {
         col.setUserEditable(false);
         col.setReadOnly(true);
@@ -153,7 +154,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
     @Override
     protected void populateColumns()
     {
-        ColumnInfo colRowId = addColumn(Column.RowId);
+        var colRowId = addColumn(Column.RowId);
         colRowId.setHidden(true);
         colRowId.setKeyField(true);
         colRowId.setFk(new RowIdForeignKey(colRowId));
@@ -184,7 +185,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
 //        getColumn(Column.Name).setURL(detailsURL);
     }
 
-    public ColumnInfo createRunCountColumn(String alias, ExpProtocol parentProtocol, ExpProtocol childProtocol)
+    public BaseColumnInfo createRunCountColumn(String alias, ExpProtocol parentProtocol, ExpProtocol childProtocol)
     {
         SQLFragment sql = new SQLFragment("(SELECT COUNT(exp.experimentrun.rowid) FROM exp.experimentrun" +
                 "\nINNER JOIN exp.runlist ON exp.experimentrun.rowid = exp.runlist.experimentrunid" +

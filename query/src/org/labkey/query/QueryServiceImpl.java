@@ -1226,7 +1226,7 @@ public class QueryServiceImpl implements QueryService
                 StringExpression url = table.getDetailsURL(pkColumnMap, null);
 
                 if (url != null)
-                    ret.setURL(url);
+                    ((BaseColumnInfo)ret).setURL(url);
             }
 
             if (ret != null && !AliasManager.isLegalName(ret.getName()) && !ret.isAliasSet())

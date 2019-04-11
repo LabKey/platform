@@ -17,7 +17,7 @@
 package org.labkey.experiment.api;
 
 import org.labkey.api.data.AbstractTableInfo;
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.JdbcType;
@@ -46,12 +46,12 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
         addAllowablePermission(UpdatePermission.class);
     }
 
-    public ColumnInfo createColumn(String alias, Column column)
+    public BaseColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
         {
             case Folder:
-                ColumnInfo columnInfo = wrapColumn(alias, _rootTable.getColumn("Container"));
+                var columnInfo = wrapColumn(alias, _rootTable.getColumn("Container"));
                 ContainerForeignKey.initColumn(columnInfo, _userSchema, new ActionURL(ExperimentController.ShowMaterialSourceAction.class, getContainer()));
                 return columnInfo;
             case Description:

@@ -57,7 +57,7 @@ public class SpecimenPivotByPrimaryType extends BaseSpecimenPivotTable
                 }
                 else if (allPrimaryTypes.containsKey(primaryId))
                 {
-                    ColumnInfo wrappedCol = wrapPivotColumn(col, COLUMN_DESCRIPTION_FORMAT, allPrimaryTypes.get(primaryId),
+                    var wrappedCol = wrapPivotColumn(col, COLUMN_DESCRIPTION_FORMAT, allPrimaryTypes.get(primaryId),
                             new NameLabelPair(parts[1], parts[1]));
 
                     wrappedCol.setHidden(true);

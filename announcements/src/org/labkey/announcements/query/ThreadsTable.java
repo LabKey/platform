@@ -17,7 +17,6 @@ package org.labkey.announcements.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.announcements.CommSchema;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.query.FilteredTable;
 
@@ -35,7 +34,7 @@ public class ThreadsTable extends FilteredTable<AnnouncementSchema>
         removeColumn(getColumn("DiscussionSrcIdentifier"));
         removeColumn(getColumn("DiscussionSrcUrl"));
         removeColumn(getColumn("Container"));
-        ColumnInfo folderColumn = wrapColumn("Folder", getRealTable().getColumn("Container"));
+        var folderColumn = wrapColumn("Folder", getRealTable().getColumn("Container"));
         folderColumn.setFk(new ContainerForeignKey(userSchema));
         addColumn(folderColumn);
 
