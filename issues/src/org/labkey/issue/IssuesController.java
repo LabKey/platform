@@ -439,7 +439,7 @@ public class IssuesController extends SpringActionController
             page.setIssueListDef(getIssueListDef());
 
             IssuesQuerySchema schema = new IssuesQuerySchema(getUser(), getContainer());
-            TableInfo issueTable = schema.createTable(getIssueListDef().getName());
+            TableInfo issueTable = schema.createTable(getIssueListDef().getName(), null);
             page.setAdditionalDetailInfo(getIssueListDef().getDomainKind().getAdditionalDetailInfo(issueTable, issueId));
 
             // remove any notifications related to this user/objectid/type
