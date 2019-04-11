@@ -21,6 +21,7 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.AbstractForeignKey;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.LookupColumn;
@@ -140,7 +141,7 @@ public class ParticipantVisitDatasetTable extends VirtualTable<StudyQuerySchema>
                 String label = visit.getLabel();
                 if (!uniqueLabel || hasSequenceRange)
                     label += " (" + VisitImpl.formatSequenceNum(seq) + ")";
-                ColumnInfo colSeq = createVisitDatasetColumn(name, seq, visit);
+                var colSeq = createVisitDatasetColumn(name, seq, visit);
                 colSeq.setLabel(label);
 //                colSeq.setHidden(!hasSequenceRange);
                 addColumn(colSeq);
@@ -220,12 +221,12 @@ public class ParticipantVisitDatasetTable extends VirtualTable<StudyQuerySchema>
     }
 
     
-    protected ColumnInfo createVisitDatasetColumn(String name, final double sequenceNum, @NotNull final VisitImpl visit)
+    protected BaseColumnInfo createVisitDatasetColumn(String name, final double sequenceNum, @NotNull final VisitImpl visit)
     {
-        ColumnInfo ret;
+        BaseColumnInfo ret;
         if (_colParticipantId == null)
         {
-            ret = new ColumnInfo(name, this, JdbcType.VARCHAR);
+            ret = new BaseColumnInfo(name, this, JdbcType.VARCHAR);
         }
         else
         {

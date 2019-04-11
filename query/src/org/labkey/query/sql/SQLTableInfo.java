@@ -21,7 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.query.UserSchema;
 
 
-/* This is a shim class to let Query interact with APIs that require a TableInfo (like new ColumnInfo()) */
+/* This is a shim class to let Query interact with APIs that require a TableInfo (like new BaseColumnInfo()) */
 public class SQLTableInfo extends AbstractTableInfo implements ContainerFilterable
 {
     private ContainerFilter _containerFilter;

@@ -21,6 +21,7 @@ import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
@@ -447,7 +448,7 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
             ColumnInfo rawColumnInfo = rawTableInfo.getColumn(gwtColumnInfo.getName());
             if (rawColumnInfo == null)
             {
-                rawColumnInfo = new ColumnInfo((String)null);
+                rawColumnInfo = new BaseColumnInfo((String)null);
                 // Establish the type of the column
                 if (gwtColumnInfo.getWrappedColumnName() != null)
                 {
@@ -456,7 +457,7 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
                     {
                         continue;
                     }
-                    rawColumnInfo.setJdbcType(columnToBeWrapped.getJdbcType());
+                    ((BaseColumnInfo)rawColumnInfo).setJdbcType(columnToBeWrapped.getJdbcType());
                 }
                 else
                 {

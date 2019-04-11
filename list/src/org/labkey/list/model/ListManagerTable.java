@@ -16,7 +16,6 @@
 package org.labkey.list.model;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
@@ -41,13 +40,13 @@ public class ListManagerTable extends FilteredTable<ListManagerSchema>
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Name")));
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Description")));
 
-        ColumnInfo container = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container")));
+        var container = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container")));
         ContainerForeignKey.initColumn(container, userSchema);
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Created")));
-        ColumnInfo createdBy = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("CreatedBy")));
+        var createdBy = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("CreatedBy")));
         UserIdForeignKey.initColumn(createdBy);
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Modified")));
-        ColumnInfo modifiedBy = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("ModifiedBy")));
+        var modifiedBy = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("ModifiedBy")));
         UserIdForeignKey.initColumn(modifiedBy);
 
         setDefaultVisibleColumns(Arrays.asList(FieldKey.fromParts("Name"), FieldKey.fromParts("Description")));

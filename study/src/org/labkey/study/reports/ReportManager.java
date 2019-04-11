@@ -18,6 +18,7 @@ package org.labkey.study.reports;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Results;
@@ -166,7 +167,7 @@ public class ReportManager implements DatasetManager.DatasetListener
 
         // UNDONE: use def.getTableInfo()
         TableInfo tinfo = StudySchema.getInstance().getTableInfoStudyData(study, ctx.getUser());
-        List<ColumnInfo> propertyColumns = def.getDomain().getColumns(tinfo, tinfo.getColumn("LSID"), ctx.getContainer(), ctx.getUser());
+        List<BaseColumnInfo> propertyColumns = def.getDomain().getColumns(tinfo, tinfo.getColumn("LSID"), ctx.getContainer(), ctx.getUser());
         if (propertyColumns == null || propertyColumns.isEmpty())
             throw new IllegalArgumentException("No columns for type: " + typeURI);
 

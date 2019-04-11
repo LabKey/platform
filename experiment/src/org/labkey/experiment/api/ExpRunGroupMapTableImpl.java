@@ -49,17 +49,17 @@ public class ExpRunGroupMapTableImpl extends ExpTableImpl<ExpRunGroupMapTable.Co
     }
 
     @Override
-    public ColumnInfo createColumn(String alias, Column column)
+    public BaseColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
         {
             case RunGroup:
-                ColumnInfo experimentId = wrapColumn(alias, _rootTable.getColumn("ExperimentId"));
+                var experimentId = wrapColumn(alias, _rootTable.getColumn("ExperimentId"));
                 experimentId.setFk(getExpSchema().getRunGroupIdForeignKey(true));
                 return experimentId;
 
             case Run:
-                ColumnInfo experimentRunId = wrapColumn(alias, _rootTable.getColumn("ExperimentRunId"));
+                var experimentRunId = wrapColumn(alias, _rootTable.getColumn("ExperimentRunId"));
                 experimentRunId.setFk(getExpSchema().getRunIdForeignKey());
                 return experimentRunId;
 
@@ -67,7 +67,7 @@ public class ExpRunGroupMapTableImpl extends ExpTableImpl<ExpRunGroupMapTable.Co
                 return wrapColumn(alias, _rootTable.getColumn("Created"));
 
             case CreatedBy:
-                ColumnInfo createdBy = wrapColumn(alias, _rootTable.getColumn("CreatedBy"));
+                var createdBy = wrapColumn(alias, _rootTable.getColumn("CreatedBy"));
                 createdBy.setFk(new UserIdQueryForeignKey(_userSchema, true));
                 return createdBy;
 

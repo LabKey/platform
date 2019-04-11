@@ -1190,7 +1190,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 //        col.setShownInUpdateView(false);
 //    }
 
-    private void _showColumn(ColumnInfo col)
+    private void _showColumn(BaseColumnInfo col)
     {
         col.setHidden(false);
         col.setShownInInsertView(true);
@@ -1210,7 +1210,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     {
         private Container _container;
         boolean _multiContainer = false;
-        ColumnInfo _ptid;
+        BaseColumnInfo _ptid;
 
         TableInfo _storage;
         TableInfo _template;
@@ -1252,10 +1252,10 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                 // NOTE (MAB): I think it was probably wrong to alias participantid to subjectname here
                 // That probably should have been done only in the StudyQuerySchema
                 // CONSIDER: remove this aliased column
-                ColumnInfo ptidCol = getStorageColumn("ParticipantId");
+                var ptidCol = getStorageColumn("ParticipantId");
                 if (null == ptidCol) // shouldn't happen! bug mothership says it did
                     throw new NullPointerException("ParticipantId column not found in dataset: " + (null != _container ? "(" + _container.getPath() + ") " : "") + getName());
-                ColumnInfo wrapped = newDatasetColumnInfo(this, ptidCol, getParticipantIdURI());
+                var wrapped = newDatasetColumnInfo(this, ptidCol, getParticipantIdURI());
                 wrapped.setName("ParticipantId");
                 String subject = StudyService.get().getSubjectColumnName(_container);
 
@@ -1272,9 +1272,9 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
             for (String name : Arrays.asList("Container", "lsid", "ParticipantSequenceNum", "sourcelsid", "Created", "CreatedBy", "Modified", "ModifiedBy", "dsrowid"))
             {
-                ColumnInfo col = getStorageColumn(name);
+                var col = getStorageColumn(name);
                 if (null == col) continue;
-                ColumnInfo wrapped = newDatasetColumnInfo(this, col, uriForName(col.getName()));
+                var wrapped = newDatasetColumnInfo(this, col, uriForName(col.getName()));
                 wrapped.setName(name);
                 wrapped.setUserEditable(false);
                 addColumn(wrapped);
@@ -1284,14 +1284,14 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
             if (def.getKeyPropertyName() != null)
             {
-                ColumnInfo keyCol = newDatasetColumnInfo(this, getStorageColumn("_Key"), getKeyURI());
+                var keyCol = newDatasetColumnInfo(this, getStorageColumn("_Key"), getKeyURI());
                 keyCol.setUserEditable(false);
                 addColumn(keyCol);
             }
 
             // SequenceNum
 
-            ColumnInfo sequenceNumCol = newDatasetColumnInfo(this, getStorageColumn("SequenceNum"), getSequenceNumURI());
+            var sequenceNumCol = newDatasetColumnInfo(this, getStorageColumn("SequenceNum"), getSequenceNumURI());
             sequenceNumCol.setName("SequenceNum");
             sequenceNumCol.setDisplayColumnFactory(new AutoCompleteDisplayColumnFactory(_container, SpecimenService.CompletionType.VisitId));
             sequenceNumCol.setMeasure(false);
@@ -1313,8 +1313,8 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
             // Date
 
-            ColumnInfo column = getStorageColumn("Date");
-            ColumnInfo visitDateCol = newDatasetColumnInfo(this, column, getVisitDateURI());
+            var column = getStorageColumn("Date");
+            var visitDateCol = newDatasetColumnInfo(this, column, getVisitDateURI());
             if (!study.getTimepointType().isVisitBased())
                 visitDateCol.setNullable(false);
 
@@ -1327,7 +1327,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
             // QCState
 
-            ColumnInfo qcStateCol = newDatasetColumnInfo(this, getStorageColumn(DatasetTableImpl.QCSTATE_ID_COLNAME), getQCStateURI());
+            var qcStateCol = newDatasetColumnInfo(this, getStorageColumn(DatasetTableImpl.QCSTATE_ID_COLNAME), getQCStateURI());
             // UNDONE: make the QC column user editable.  This is turned off for now because DatasetSchemaTableInfo is not
             // a FilteredTable, so it doesn't know how to restrict QC options to those in the current container.
             // Note that QC state can still be modified via the standard update UI.
@@ -1346,7 +1346,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
                 if (null != getColumn(p.getName()))
                 {
-                    ColumnInfo builtin = getColumn(p.getName());
+                    BaseColumnInfo builtin = (BaseColumnInfo)getColumn(p.getName());
                     // StorageProvisioner should have already handled copying most propertydescriptor attributes
                     if (!p.isHidden())
                         _showColumn(builtin);
@@ -1355,7 +1355,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                     builtin.setPropertyURI(p.getPropertyURI());
                     continue;
                 }
-                ColumnInfo col = getStorageColumn(d, p);
+                var col = getStorageColumn(d, p);
 
                 if (col == null)
                 {
@@ -1363,7 +1363,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                     continue;
                 }
 
-                ColumnInfo wrapped = newDatasetColumnInfo(user, this, col, p.getPropertyDescriptor());
+                var wrapped = newDatasetColumnInfo(user, this, col, p.getPropertyDescriptor());
                 addColumn(wrapped);
 
                 // Set the FK if the property descriptor is configured as a lookup or a conceptURI.
@@ -1378,9 +1378,9 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
                 if (p.isMvEnabled())
                 {
-                    ColumnInfo baseColumn = StorageProvisioner.getMvIndicatorColumn(_storage, pd,
+                    var baseColumn = StorageProvisioner.getMvIndicatorColumn(_storage, pd,
                                                 "No MV column found for '" + col.getName() + "' in dataset '" + getName() + "'");
-                    ColumnInfo mvColumn = newDatasetColumnInfo(this, baseColumn, p.getPropertyDescriptor().getPropertyURI());
+                    var mvColumn = newDatasetColumnInfo(this, baseColumn, p.getPropertyDescriptor().getPropertyURI());
                     mvColumn.setName(p.getName() + MvColumn.MV_INDICATOR_SUFFIX);
                     mvColumn.setLabel(col.getLabel() + " MV Indicator");
                     mvColumn.setPropertyURI(wrapped.getPropertyURI());
@@ -1389,8 +1389,8 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                     mvColumn.setHidden(true);
                     mvColumn.setMvIndicatorColumn(true);
 
-                    ColumnInfo rawValueCol = new AliasedColumn(wrapped.getName() + RawValueColumn.RAW_VALUE_SUFFIX, wrapped);
-                    rawValueCol.setDisplayColumnFactory(ColumnInfo.DEFAULT_FACTORY);
+                    var rawValueCol = new AliasedColumn(wrapped.getName() + RawValueColumn.RAW_VALUE_SUFFIX, wrapped);
+                    rawValueCol.setDisplayColumnFactory(BaseColumnInfo.DEFAULT_FACTORY);
                     rawValueCol.setLabel(wrapped.getLabel() + " Raw Value");
                     rawValueCol.setUserEditable(false);
                     rawValueCol.setHidden(true);
@@ -1414,14 +1414,14 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                 {
                     if (col.getName().equals(def.getKeyPropertyName()))
                     {
-                        col.setUserEditable(false);
+                        ((BaseColumnInfo)col).setUserEditable(false);
                     }
                 }
             }
 
             // Dataset
 
-            ColumnInfo datasetColumn = new ExprColumn(this, "Dataset", new SQLFragment("CAST('" + def.getEntityId() + "' AS " + getSqlDialect().getGuidType() + ")"), JdbcType.VARCHAR);
+            var datasetColumn = new ExprColumn(this, "Dataset", new SQLFragment("CAST('" + def.getEntityId() + "' AS " + getSqlDialect().getGuidType() + ")"), JdbcType.VARCHAR);
             LookupForeignKey datasetFk = new LookupForeignKey("entityid")
             {
                 public TableInfo getLookupTableInfo()
@@ -1562,9 +1562,9 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     }
 
 
-    static ColumnInfo newDatasetColumnInfo(TableInfo tinfo, final ColumnInfo from, final String propertyURI)
+    static BaseColumnInfo newDatasetColumnInfo(TableInfo tinfo, final ColumnInfo from, final String propertyURI)
     {
-        ColumnInfo result = new AliasedColumn(tinfo, from.getName(), from);
+        var result = new AliasedColumn(tinfo, from.getName(), from);
         if (null != propertyURI)
             result.setPropertyURI(propertyURI);
         // Hidden doesn't get copied with the default set of properties
@@ -1574,9 +1574,9 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     }
 
     
-    static ColumnInfo newDatasetColumnInfo(User user, TableInfo tinfo, ColumnInfo from, PropertyDescriptor p)
+    static BaseColumnInfo newDatasetColumnInfo(User user, TableInfo tinfo, ColumnInfo from, PropertyDescriptor p)
     {
-        ColumnInfo ci = newDatasetColumnInfo(tinfo, from, p.getPropertyURI());
+        var ci = newDatasetColumnInfo(tinfo, from, p.getPropertyURI());
         // We are currently assuming the db column name is the same as the propertyname
         // I want to know if that changes
         assert ci.getName().equalsIgnoreCase(p.getName());
@@ -2114,7 +2114,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             }
             else if (getKeyPropertyName() != null)
             {
-                ColumnInfo key = getStorageTableInfo().getColumn(getKeyPropertyName());
+                var key = getStorageTableInfo().getColumn(getKeyPropertyName());
                 if (null != key)
                 {
                     // It's possible for the key value to be null. In SQL, NULL concatenated with any other value is NULL,
@@ -2294,7 +2294,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         ResultSet rs = null;
         try
         {
-            ColumnInfo colKey = getKeyPropertyName()==null ? null : getStorageTableInfo().getColumn(getKeyPropertyName());
+            var colKey = getKeyPropertyName()==null ? null : getStorageTableInfo().getColumn(getKeyPropertyName());
 
             TableInfo tt = getStorageTableInfo();
             String cols = isDemographicData() ? "participantid" :
@@ -2479,7 +2479,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             // If any fields aren't included, reuse the old values
             for (Map.Entry<String,Object> entry : data.entrySet())
             {
-                ColumnInfo col = colMap.get(entry.getKey());
+                var col = colMap.get(entry.getKey());
                 String name = null == col ? entry.getKey() : col.getName();
                 if (name.equalsIgnoreCase(managedKey))
                     continue;

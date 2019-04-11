@@ -17,7 +17,7 @@
 package org.labkey.study.query;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NullColumnInfo;
@@ -73,7 +73,7 @@ public class VisitTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("SequenceNumHandling"));
 
         boolean showCohorts = StudyManager.getInstance().showCohorts(schema.getContainer(), schema.getUser());
-        ColumnInfo cohortColumn;
+        BaseColumnInfo cohortColumn;
         if (showCohorts)
         {
             cohortColumn = new AliasedColumn(this, "Cohort", _rootTable.getColumn("CohortId"));

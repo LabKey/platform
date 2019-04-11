@@ -88,11 +88,11 @@ public class ExternalSchemaTable extends SimpleUserSchema.SimpleTable<ExternalSc
         if (containerId == null)
             return;
 
-        ColumnInfo realContainerColumn = getRealTable().getColumn("container");
+        var realContainerColumn = getRealTable().getColumn("container");
 
         if (realContainerColumn != null)
         {
-            ColumnInfo wrappedContainerColumn = getColumn("container");
+            var wrappedContainerColumn = getMutableColumn("container");
             if (wrappedContainerColumn != null)
             {
                 wrappedContainerColumn.setReadOnly(true);
@@ -115,7 +115,7 @@ public class ExternalSchemaTable extends SimpleUserSchema.SimpleTable<ExternalSc
     @Override
     public FieldKey getContainerFieldKey()
     {
-        ColumnInfo colContainer = getRealTable().getColumn("container");
+        var colContainer = getRealTable().getColumn("container");
         return null==colContainer ? null : colContainer.getFieldKey();
     }
 

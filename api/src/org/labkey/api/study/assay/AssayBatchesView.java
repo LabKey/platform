@@ -62,7 +62,7 @@ public class AssayBatchesView extends AssayView
         ExpExperimentTable tableInfo = (ExpExperimentTable)batchesView.getTable();
         ActionURL runsURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(context.getContainer(), protocol, tableInfo.getContainerFilter());
         DetailsURL expr = new DetailsURL(runsURL, Collections.singletonMap(key,"RowId"));
-        tableInfo.getColumn(ExpExperimentTable.Column.Name).setURL(expr);
+        tableInfo.getMutableColumn(ExpExperimentTable.Column.Name).setURL(expr);
 
         if (provider.hasCustomView(ExpProtocol.AssayDomainTypes.Batch, true))
         {

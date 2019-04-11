@@ -17,6 +17,7 @@
 package org.labkey.study.query;
 
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DisplayColumn;
@@ -53,20 +54,20 @@ public class ParticipantVisitTable extends BaseStudyTable
         _demographicsColumns = new CaseInsensitiveHashMap<>();
         Study study = StudyService.get().getStudy(schema.getContainer());
 
-        ColumnInfo participantSequenceNumColumn = null;
+        BaseColumnInfo participantSequenceNumColumn = null;
         for (ColumnInfo col : _rootTable.getColumns())
         {
             if ("Container".equalsIgnoreCase(col.getName()))
             {
                 // 20546: need to expose Container for use in DatasetTableImpl.ParticipantVisitForeignKey
-                col = new AliasedColumn(this, "Container", col);
-                col = ContainerForeignKey.initColumn(col, _userSchema);
-                col.setHidden(true);
-                addColumn(col);
+                var containerColumn = new AliasedColumn(this, "Container", col);
+                ContainerForeignKey.initColumn(containerColumn, _userSchema);
+                containerColumn.setHidden(true);
+                addColumn(containerColumn);
             }
             else if ("VisitRowId".equalsIgnoreCase(col.getName()))
             {
-                ColumnInfo visitColumn = new AliasedColumn(this, "Visit", col);
+                var visitColumn = new AliasedColumn(this, "Visit", col);
                 LookupForeignKey visitFK = new LookupForeignKey("RowId")
                 {
                     public TableInfo getLookupTableInfo()
@@ -87,7 +88,7 @@ public class ParticipantVisitTable extends BaseStudyTable
             }
             else if ("CohortID".equalsIgnoreCase(col.getName()))
             {
-                ColumnInfo cohortColumn;
+                BaseColumnInfo cohortColumn;
                 boolean showCohorts = StudyManager.getInstance().showCohorts(getContainer(), schema.getUser());
                 if (!showCohorts)
                 {
@@ -113,7 +114,7 @@ public class ParticipantVisitTable extends BaseStudyTable
             }
             else if (study != null && study.getTimepointType() != TimepointType.VISIT && "SequenceNum".equalsIgnoreCase(col.getName()))
             {
-                ColumnInfo sequenceNumCol = addWrapColumn(col);
+                var sequenceNumCol = addWrapColumn(col);
                 sequenceNumCol.setHidden(true);
             }
             else
@@ -139,7 +140,7 @@ public class ParticipantVisitTable extends BaseStudyTable
             if (dataset.getKeyPropertyName() != null)
                 continue;
 
-            ColumnInfo datasetColumn = createDatasetColumn(name, dataset, participantSequenceNumColumn);
+            var datasetColumn = createDatasetColumn(name, dataset, participantSequenceNumColumn);
             datasetColumn.setHidden(hideDatasets);
 
             // Don't add demographics datasets, but stash it for backwards compatibility with <11.3 queries if needed.
@@ -151,9 +152,9 @@ public class ParticipantVisitTable extends BaseStudyTable
     }
 
 
-    protected ColumnInfo createDatasetColumn(String name, final DatasetDefinition dsd, ColumnInfo participantSequenceNumColumn)
+    protected BaseColumnInfo createDatasetColumn(String name, final DatasetDefinition dsd, ColumnInfo participantSequenceNumColumn)
     {
-        ColumnInfo ret = new AliasedColumn(name, participantSequenceNumColumn);
+        var ret = new AliasedColumn(name, participantSequenceNumColumn);
         ret.setFk(new PVForeignKey(dsd));
         ret.setLabel(dsd.getLabel());
         ret.setIsUnselectable(true);
@@ -163,13 +164,13 @@ public class ParticipantVisitTable extends BaseStudyTable
     @Override
     protected ColumnInfo resolveColumn(String name)
     {
-        ColumnInfo col = super.resolveColumn(name);
+        var col = super.resolveColumn(name);
         if (col != null)
             return col;
 
         col = _demographicsColumns.get(name);
         if (col != null)
-            return addColumn(col);
+            return addColumn( (BaseColumnInfo)col );
 
         // Resolve 'ParticipantSequenceKey' to 'ParticipantSequenceNum' for compatibility with versions <12.2.
         if ("ParticipantSequenceKey".equalsIgnoreCase(name))

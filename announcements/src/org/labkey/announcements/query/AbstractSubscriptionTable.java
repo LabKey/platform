@@ -16,7 +16,6 @@
 package org.labkey.announcements.query;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FilteredTable;
@@ -42,7 +41,7 @@ public class AbstractSubscriptionTable extends FilteredTable<AnnouncementSchema>
     {
         super(table, schema);
 
-        ColumnInfo userColumn = wrapColumn("User", getRealTable().getColumn("UserId"));
+        var userColumn = wrapColumn("User", getRealTable().getColumn("UserId"));
         addColumn(userColumn);
         userColumn.setFk(new UserIdQueryForeignKey(_userSchema));
 

@@ -18,6 +18,7 @@ package org.labkey.study.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -136,12 +137,12 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
     }
 
 
-    protected ColumnInfo addWrapParticipantColumn(String rootTableColumnName)
+    protected BaseColumnInfo addWrapParticipantColumn(String rootTableColumnName)
     {
         final String subjectColName = StudyService.get().getSubjectColumnName(getContainer());
         final String subjectTableName = StudyService.get().getSubjectTableName(getContainer());
 
-        ColumnInfo participantColumn =
+        var participantColumn =
                 new AliasedColumn(this, subjectColName, _rootTable.getColumn(rootTableColumnName));
         LookupForeignKey lfk = new LookupForeignKey(subjectTableName, subjectColName, null)
         {
@@ -197,9 +198,9 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
     }
 
 
-    protected ColumnInfo addWrapLocationColumn(String wrappedName, String rootTableColumnName)
+    protected BaseColumnInfo addWrapLocationColumn(String wrappedName, String rootTableColumnName)
     {
-        ColumnInfo locationColumn = new AliasedColumn(this, wrappedName, _rootTable.getColumn(rootTableColumnName));
+        var locationColumn = new AliasedColumn(this, wrappedName, _rootTable.getColumn(rootTableColumnName));
         locationColumn.setFk(new LookupForeignKey("RowId")
         {
             public TableInfo getLookupTableInfo()
@@ -213,14 +214,14 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         return addColumn(locationColumn);
     }
 
-    protected ColumnInfo addContainerColumn()
+    protected BaseColumnInfo addContainerColumn()
     {
-        return  addContainerColumn(false);
+        return addContainerColumn(false);
     }
 
-    protected ColumnInfo addContainerColumn(boolean isProvisioned)
+    protected BaseColumnInfo addContainerColumn(boolean isProvisioned)
     {
-        ColumnInfo containerCol;
+        BaseColumnInfo containerCol;
         if (isProvisioned)
         {
             SQLFragment sql = new SQLFragment("CAST (");
@@ -239,7 +240,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 
     protected ColumnInfo addWrapTypeColumn(String wrappedName, final String rootTableColumnName)
     {
-        ColumnInfo typeColumn = new AliasedColumn(this, wrappedName, _rootTable.getColumn(rootTableColumnName));
+        var typeColumn = new AliasedColumn(this, wrappedName, _rootTable.getColumn(rootTableColumnName));
         LookupForeignKey fk = new LookupForeignKey("RowId")
         {
             public TableInfo getLookupTableInfo()
@@ -266,14 +267,14 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 
     protected ColumnInfo addSpecimenVisitColumn(TimepointType timepointType, boolean isProvisioned)
     {
-        ColumnInfo aliasVisitColumn = new AliasedColumn(this, "SequenceNum", _rootTable.getColumn("VisitValue"));
+        var aliasVisitColumn = new AliasedColumn(this, "SequenceNum", _rootTable.getColumn("VisitValue"));
         return addSpecimenVisitColumn(timepointType, aliasVisitColumn, isProvisioned);
     }
 
-    protected ColumnInfo addSpecimenVisitColumn(TimepointType timepointType, ColumnInfo aliasVisitColumn, boolean isProvisioned)
+    protected ColumnInfo addSpecimenVisitColumn(TimepointType timepointType, BaseColumnInfo aliasVisitColumn, boolean isProvisioned)
     {
-        ColumnInfo visitColumn = null;
-        ColumnInfo visitDescriptionColumn = addWrapColumn(_rootTable.getColumn("VisitDescription"));
+        BaseColumnInfo visitColumn = null;
+        var visitDescriptionColumn = addWrapColumn(_rootTable.getColumn("VisitDescription"));
 
         // add the sequenceNum column so we have it for later queries
         // Make it visible by default since it's useful in scenarios like specimen lookups from assay data
@@ -449,7 +450,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 
     protected void addVialCommentsColumn(final boolean joinBackToSpecimens)
     {
-        ColumnInfo commentsColumn = new AliasedColumn(this, "VialComments", _rootTable.getColumn("GlobalUniqueId"));
+        var commentsColumn = new AliasedColumn(this, "VialComments", _rootTable.getColumn("GlobalUniqueId"));
         LookupForeignKey commentsFK = new LookupForeignKey("GlobalUniqueId")
         {
             public TableInfo getLookupTableInfo()
@@ -851,7 +852,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             SQLFragment sql = new SQLFragment(ExprColumn.STR_TABLE_ALIAS);
             String legalName = property.getLegalSelectName(dialect);
             sql.append(".").append(legalName);
-            ColumnInfo column = new ExprColumn(this, legalName, sql, property.getJdbcType());
+            var column = new ExprColumn(this, legalName, sql, property.getJdbcType());
             PropertyColumn.copyAttributes(getUserSchema().getUser(), column, domainProperty, getContainer(), null);
             if (editable)
             {
@@ -872,7 +873,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         // Workaround to prevent IllegalArgumentException for assay tables
         if (getColumn("Folder") == null)
         {
-            ColumnInfo folder = new AliasedColumn(this, "Folder", _rootTable.getColumn("Container"));
+            var folder = new AliasedColumn(this, "Folder", _rootTable.getColumn("Container"));
             ContainerForeignKey.initColumn(folder,getUserSchema());
             folder.setHidden(true);
             addColumn(folder);
@@ -883,7 +884,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 
     protected ColumnInfo addStudyColumn()
     {
-        ColumnInfo study = new AliasedColumn(this, "Study", _rootTable.getColumn("Container"));
+        var study = new AliasedColumn(this, "Study", _rootTable.getColumn("Container"));
 
 //      NOTE: QFK doesn't seem to support container joins
 //      study.setFk(new QueryForeignKey("study", getUserSchema().getContainer(), null, getUserSchema().getUser(), "studyproperties", "Container", "Label", false));

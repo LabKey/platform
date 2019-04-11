@@ -72,12 +72,12 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
     }
 
     @Override
-    protected ColumnInfo constructColumnInfo(ColumnInfo parent, FieldKey name, PropertyDescriptor pd)
+    protected BaseColumnInfo constructColumnInfo(ColumnInfo parent, FieldKey name, PropertyDescriptor pd)
     {
         OORColumnGroup group = _metadata.getOORGroupByDisplayColumn(pd);
         if (group != null)
         {
-            ColumnInfo col = super.constructColumnInfo(parent, name, pd);
+            BaseColumnInfo col = super.constructColumnInfo(parent, name, pd);
             col.setDisplayColumnFactory(new LateBoundOORDisplayColumnFactory(group.getBaseName()));
             return col;
         }
@@ -85,7 +85,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
         group = _metadata.getOORGroupByInRangeColumn(pd);
         if (group != null)
         {
-            ColumnInfo inRangeColumn = new InRangeExprColumn(_baseTable, name, group.getBaseName());
+            BaseColumnInfo inRangeColumn = new InRangeExprColumn(_baseTable, name, group.getBaseName());
             inRangeColumn.setLabel(group.getInRangePd().getLabel());
             inRangeColumn.setFormat(group.getNumberPd().getFormat());
             return inRangeColumn;
@@ -94,7 +94,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
         if (pd.isMvEnabled())
         {
             // Just need to set the display column factory
-            ColumnInfo col = super.constructColumnInfo(parent, name, pd);
+            BaseColumnInfo col = super.constructColumnInfo(parent, name, pd);
             col.setMvColumnName(new FieldKey(null, pd.getName() + MvColumn.MV_INDICATOR_SUFFIX));
             col.setDisplayColumnFactory(new MVDisplayColumnFactory());
             return col;
@@ -105,7 +105,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
         {
             if (parent == null)
             {
-                return new ColumnInfo(pd.getName(), pd.getJdbcType());
+                return new BaseColumnInfo(pd.getName(), pd.getJdbcType());
             }
             PropertyColumn qcColumn = new PropertyColumn(pd, parent, _schema.getContainer(), _schema.getUser(), false);
             qcColumn.setParentIsObjectId(_parentIsObjectId);

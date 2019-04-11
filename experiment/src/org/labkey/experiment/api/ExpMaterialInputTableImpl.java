@@ -15,6 +15,7 @@
  */
 package org.labkey.experiment.api;
 
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
@@ -39,20 +40,20 @@ public class ExpMaterialInputTableImpl extends ExpInputTableImpl<ExpMaterialInpu
         super(name, ExperimentServiceImpl.get().getTinfoMaterialInput(), schema, null, cf);
     }
 
-    public ColumnInfo createColumn(String alias, Column column)
+    public BaseColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
         {
             case Material:
             {
-                ColumnInfo result = wrapColumn(alias, _rootTable.getColumn("MaterialId"));
+                var result = wrapColumn(alias, _rootTable.getColumn("MaterialId"));
                 result.setFk(getExpSchema().getMaterialIdForeignKey(null, null));
                 return result;
             }
             case Role:
                 return wrapColumn(alias, _rootTable.getColumn("Role"));
             case TargetProtocolApplication:
-                ColumnInfo result = wrapColumn(alias, _rootTable.getColumn("TargetApplicationId"));
+                var result = wrapColumn(alias, _rootTable.getColumn("TargetApplicationId"));
                 result.setFk(getExpSchema().getProtocolApplicationForeignKey());
                 return result;
 
@@ -66,7 +67,7 @@ public class ExpMaterialInputTableImpl extends ExpInputTableImpl<ExpMaterialInpu
                                 "'.'",
                                 "CAST(" + ExprColumn.STR_TABLE_ALIAS + ".targetApplicationId AS VARCHAR)"));
 
-                ColumnInfo col = new ExprColumn(this, alias, sql, JdbcType.VARCHAR);
+                var col = new ExprColumn(this, alias, sql, JdbcType.VARCHAR);
                 col.setHidden(true);
                 col.setCalculated(true);
                 col.setUserEditable(false);
@@ -76,7 +77,7 @@ public class ExpMaterialInputTableImpl extends ExpInputTableImpl<ExpMaterialInpu
 
             case ProtocolInput:
             {
-                ColumnInfo col = wrapColumn(alias, _rootTable.getColumn("ProtocolInputId"));
+                var col = wrapColumn(alias, _rootTable.getColumn("ProtocolInputId"));
                 col.setFk(getExpSchema().getMaterialProtocolInputForeignKey());
                 col.setHidden(true);
                 return col;

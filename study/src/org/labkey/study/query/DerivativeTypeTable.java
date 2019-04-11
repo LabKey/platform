@@ -16,11 +16,10 @@
 
 package org.labkey.study.query;
 
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.study.StudySchema;
-import org.labkey.api.query.AliasedColumn;
 
 public class DerivativeTypeTable extends BaseStudyTable
 {
@@ -34,7 +33,7 @@ public class DerivativeTypeTable extends BaseStudyTable
         addColumn(new AliasedColumn(this, "LdmsCode", _rootTable.getColumn("LdmsDerivativeCode")));
         addColumn(new AliasedColumn(this, "LabwareCode", _rootTable.getColumn("LabwareDerivativeCode")));
         addColumn(new AliasedColumn(this, "Description", _rootTable.getColumn("Derivative")));
-        ColumnInfo typeColumn = addWrapColumn("Derivative", _rootTable.getColumn("Derivative"));    // for lookups
+        var typeColumn = addWrapColumn("Derivative", _rootTable.getColumn("Derivative"));    // for lookups
         typeColumn.setHidden(true);
         ContainerForeignKey.initColumn(addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container"))), schema).setHidden(true);
         setTitleColumn("Description");

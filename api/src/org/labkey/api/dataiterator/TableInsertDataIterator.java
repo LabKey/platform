@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
@@ -168,7 +169,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
             FieldKey mvColumnName = col.getMvColumnName();
             if (null == index || null == mvColumnName)
                 continue;
-            data.getColumnInfo(index).setMvColumnName(mvColumnName);
+            ((BaseColumnInfo)data.getColumnInfo(index)).setMvColumnName(mvColumnName);
         }
 
         // NOTE StatementUtils figures out reselect etc, but we need to get our metadata straight at construct time
@@ -291,7 +292,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
             // Iterator makes SQL stmt from table, but munges names (see Parameter), so we need to match that to find them.
             ColumnInfo mvColumn = _table.getColumn(mvFieldKey);
             if (null != mvColumn)
-                mv = stmt.getParameter(ColumnInfo.jdbcRsNameFromName(mvColumn.getMetaDataName()));
+                mv = stmt.getParameter(BaseColumnInfo.jdbcRsNameFromName(mvColumn.getMetaDataName()));
         }
         return mv;
     }

@@ -46,11 +46,11 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
     {
         super(schema, StudySchema.getInstance().getTableInfoSpecimenDetail(schema.getContainer()), false, true);
 
-        ColumnInfo guid = addWrapColumn(_rootTable.getColumn(GLOBAL_UNIQUE_ID_COLUMN_NAME));
+        var guid = addWrapColumn(_rootTable.getColumn(GLOBAL_UNIQUE_ID_COLUMN_NAME));
         guid.setDisplayColumnFactory(ColumnInfo.NOWRAP_FACTORY);
         setTitleColumn(GLOBAL_UNIQUE_ID_COLUMN_NAME);
 
-        ColumnInfo pvColumn = new AliasedColumn(this, StudyService.get().getSubjectVisitColumnName(schema.getContainer()),
+        var pvColumn = new AliasedColumn(this, StudyService.get().getSubjectVisitColumnName(schema.getContainer()),
                                                 _rootTable.getColumn("ParticipantSequenceNum"));//addWrapColumn(baseColumn);
         pvColumn.setFk(new LookupForeignKey("ParticipantSequenceNum")
         {
@@ -77,7 +77,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         addWrapColumn(_rootTable.getColumn("LockedInRequest")).setHidden(!enableSpecimenRequest);
         addWrapColumn(_rootTable.getColumn("Requestable")).setHidden(!enableSpecimenRequest);
 
-        ColumnInfo siteNameColumn = wrapColumn("SiteName", getRealTable().getColumn("CurrentLocation"));
+        var siteNameColumn = wrapColumn("SiteName", getRealTable().getColumn("CurrentLocation"));
         siteNameColumn.setFk(new LookupForeignKey("RowId")
         {
             public TableInfo getLookupTableInfo()
@@ -94,7 +94,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         });
         addColumn(siteNameColumn);
 
-        ColumnInfo siteLdmsCodeColumn = wrapColumn("SiteLdmsCode", getRealTable().getColumn("CurrentLocation"));
+        var siteLdmsCodeColumn = wrapColumn("SiteLdmsCode", getRealTable().getColumn("CurrentLocation"));
         siteLdmsCodeColumn.setFk(new LookupForeignKey("RowId", "LdmsLabCode")
         {
             public TableInfo getLookupTableInfo()
@@ -106,7 +106,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         addColumn(siteLdmsCodeColumn);
         addWrapColumn(_rootTable.getColumn("AtRepository"));
 
-        ColumnInfo availableColumn = wrapColumn("Available", getRealTable().getColumn("Available"));
+        var availableColumn = wrapColumn("Available", getRealTable().getColumn("Available"));
         // Don't setKeyField. Use addQueryFieldKeys where needed
         addColumn(availableColumn).setHidden(!enableSpecimenRequest);
         addWrapColumn(_rootTable.getColumn("AvailabilityReason")).setHidden(!enableSpecimenRequest);
@@ -144,7 +144,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
     @Override
     protected ColumnInfo resolveColumn(String name)
     {
-        ColumnInfo result = super.resolveColumn(name);
+        var result = super.resolveColumn(name);
         if (result == null)
         {
             // Resolve 'ParticipantSequenceKey' to 'ParticipantSequenceNum' for compatibility with versions <12.2.
@@ -184,11 +184,11 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
     }
 
 
-    ColumnInfo createCollectionCohortColumn(StudyQuerySchema schema, TableInfo parent)
+    BaseColumnInfo createCollectionCohortColumn(StudyQuerySchema schema, TableInfo parent)
     {
         if (!StudyManager.getInstance().showCohorts(getContainer(), schema.getUser()))
         {
-            ColumnInfo c = new NullColumnInfo(parent, "CollectionCohort", JdbcType.INTEGER);
+            var c = new NullColumnInfo(parent, "CollectionCohort", JdbcType.INTEGER);
             c.setFk(new CohortForeignKey(schema, false, c.getLabel()));
             return c;
         }
@@ -275,14 +275,14 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         public void addQueryColumns(Set<ColumnInfo> columns)
         {
             super.addQueryColumns(columns);
-            ColumnInfo inRequestCol = getInRequestColumn();
+            var inRequestCol = getInRequestColumn();
             if (inRequestCol != null)
                 columns.add(inRequestCol);
         }
 
         private String getNoSiteText(RenderContext ctx)
         {
-            ColumnInfo inRequestColumn = getInRequestColumn();
+            var inRequestColumn = getInRequestColumn();
             if (inRequestColumn != null)
             {
                 Object inRequest = inRequestColumn.getValue(ctx);
@@ -315,16 +315,16 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
 
     public void changeRequestableColumn()
     {   // TODO: finish fixing bug    (couple of options here)
-//        ColumnInfo requestableColumn = getColumn("requestable");
+//        var requestableColumn = getColumn("requestable");
 //        SQLFragment sql = new SQLFragment("(CASE WHEN requestable IS NULL THEN 'Null' WHEN requestable = TRUE THEN 'True' ELSE 'False' END) AS RequestableSetting");
-//        ColumnInfo newRequestableColumn = new ExprColumn(this, "RequestableSetting", sql, JdbcType.VARCHAR, requestableColumn);
+//        var newRequestableColumn = new ExprColumn(this, "RequestableSetting", sql, JdbcType.VARCHAR, requestableColumn);
 //        requestableColumn.setUserEditable(false);
 //        requestableColumn.setHidden(true);
 
     //    SQLFragment sql = new SQLFragment("CASE WHEN requestable IS NULL THEN ? ELSE ? END");
 //        sql.add(getSchema().getSqlDialect().getBooleanTRUE());
 //        sql.add(getSchema().getSqlDialect().getBooleanFALSE());
-//        ColumnInfo newRequestableColumn = new ExprColumn(this, "RequestableNull", sql, JdbcType.BOOLEAN, requestableColumn);
+//        var newRequestableColumn = new ExprColumn(this, "RequestableNull", sql, JdbcType.BOOLEAN, requestableColumn);
     //    addColumn(newRequestableColumn);
     }
 

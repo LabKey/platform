@@ -713,7 +713,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
 
             // NOTE: Setting here instead of in table ctor because if set when SpecimenDetail is sub-query, we have too many columns in sub-query (Dave)
             if (ViewType.VIALS.equals(_viewType))
-                getTable().getColumn("Container").setRequired(true);
+                ((BaseColumnInfo)getTable().getColumn("Container")).setRequired(true);
         }
         else
         {

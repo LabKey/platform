@@ -21,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.compliance.TableRules;
 import org.labkey.api.compliance.TableRulesManager;
 import org.labkey.api.data.AbstractTableInfo;
-import org.labkey.api.data.AuditConfigurable;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ButtonBarConfig;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnLogging;
@@ -171,7 +171,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     {
         for (ColumnInfo col : getRealTable().getColumns())
         {
-            ColumnInfo newCol = addWrapColumn(col);
+            BaseColumnInfo newCol = addWrapColumn(col);
             if (preserveHidden && col.isHidden())
             {
                 newCol.setHidden(col.isHidden());
@@ -284,7 +284,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         _filter.addAllClauses(filter);
     }
 
-    public ColumnInfo wrapColumnFromJoinedTable(String alias, ColumnInfo underlyingColumn, String tableAlias)
+    public BaseColumnInfo wrapColumnFromJoinedTable(String alias, ColumnInfo underlyingColumn, String tableAlias)
     {
         ExprColumn ret = new ExprColumn(this, alias, underlyingColumn.getValueSql(tableAlias), underlyingColumn.getJdbcType());
         ret.copyAttributesFrom(underlyingColumn);
@@ -301,13 +301,13 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         return ret;
     }
 
-    public ColumnInfo wrapColumn(String alias, ColumnInfo underlyingColumn)
+    public BaseColumnInfo wrapColumn(String alias, ColumnInfo underlyingColumn)
     {
         assert underlyingColumn.getParentTable() == _rootTable;
         return wrapColumnFromJoinedTable(alias, underlyingColumn, ExprColumn.STR_TABLE_ALIAS);
     }
 
-    public ColumnInfo wrapColumn(ColumnInfo underlyingColumn)
+    public BaseColumnInfo wrapColumn(ColumnInfo underlyingColumn)
     {
         return wrapColumn(underlyingColumn.getName(), underlyingColumn);
     }
@@ -449,9 +449,9 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     }
 
     @Override
-    public ColumnInfo addColumn(ColumnInfo column)
+    public BaseColumnInfo addColumn(BaseColumnInfo column)
     {
-        ColumnInfo ret = column;
+        BaseColumnInfo ret = column;
 
         // Choke point for handling all column filtering and transforming, e.g., respecting PHI annotations
         if (_rules.getColumnInfoFilter().test(column))
@@ -460,7 +460,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
             if (null == _aliasManager)
                 _aliasManager = new AliasManager(getSchema());
             _aliasManager.ensureAlias(column);
-            ret = super.addColumn(transformed);
+            ret = super.addColumn((BaseColumnInfo)transformed);
         }
 
         return ret;
@@ -477,10 +477,10 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         return result;
     }
 
-    public ColumnInfo addWrapColumn(String name, ColumnInfo column)
+    public BaseColumnInfo addWrapColumn(String name, ColumnInfo column)
     {
         assert column.getParentTable() == getRealTable() : "Column is not from the same \"real\" table";
-        ColumnInfo ret = new AliasedColumn(this, name, column);
+        BaseColumnInfo ret = new AliasedColumn(this, name, column);
 
         if (!getPHIDataLoggingColumns().isEmpty() && PHI.NotPHI != column.getPHI() && column.isShouldLog())
         {
@@ -509,12 +509,12 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         return null;
     }
 
-    public ColumnInfo addWrapColumn(ColumnInfo column)
+    public BaseColumnInfo addWrapColumn(ColumnInfo column)
     {
         return addWrapColumn(column.getName(), column);
     }
 
-    public void propagateKeyField(ColumnInfo orig, ColumnInfo wrapped)
+    public void propagateKeyField(ColumnInfo orig, BaseColumnInfo wrapped)
     {
         // Use getColumnNameSet() instead of getColumn() because we don't want to go through the resolveColumn()
         // codepath, which is potentially expensive and doesn't reflect the "real" columns that are part of this table

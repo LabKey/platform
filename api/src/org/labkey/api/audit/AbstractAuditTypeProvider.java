@@ -21,6 +21,7 @@ import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -323,11 +324,12 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
 
     protected void appendValueMapColumns(AbstractTableInfo table)
     {
-        ColumnInfo oldCol = table.getColumn(FieldKey.fromString(OLD_RECORD_PROP_NAME));
-        ColumnInfo newCol = table.getColumn(FieldKey.fromString(NEW_RECORD_PROP_NAME));
+        BaseColumnInfo oldCol = table.getMutableColumn(FieldKey.fromString(OLD_RECORD_PROP_NAME));
+        BaseColumnInfo newCol = table.getMutableColumn(FieldKey.fromString(NEW_RECORD_PROP_NAME));
 
-        if(oldCol != null){
-            ColumnInfo added = table.addColumn(new AliasedColumn(table, "OldValues", oldCol));
+        if(oldCol != null)
+        {
+            var added = table.addColumn(new AliasedColumn(table, "OldValues", oldCol));
             added.setDisplayColumnFactory(new DisplayColumnFactory()
             {
                 public DisplayColumn createRenderer(final ColumnInfo colInfo)
@@ -341,7 +343,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
 
         if(newCol != null)
         {
-            ColumnInfo added = table.addColumn(new AliasedColumn(table, "NewValues", newCol));
+            var added = table.addColumn(new AliasedColumn(table, "NewValues", newCol));
             added.setDisplayColumnFactory(new DisplayColumnFactory()
             {
                 public DisplayColumn createRenderer(final ColumnInfo colInfo)

@@ -16,7 +16,6 @@
 
 package org.labkey.study.query;
 
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
@@ -34,7 +33,7 @@ public class PrimaryTypeTable extends BaseStudyTable
         addColumn(new AliasedColumn(this, "LdmsCode", _rootTable.getColumn("PrimaryTypeLdmsCode")));
         addColumn(new AliasedColumn(this, "LabwareCode", _rootTable.getColumn("PrimaryTypeLabwareCode")));
         addColumn(new AliasedColumn(this, "Description", _rootTable.getColumn("PrimaryType")));
-        ColumnInfo typeColumn = addWrapColumn("PrimaryType", _rootTable.getColumn("PrimaryType"));    // for lookups
+        var typeColumn = addWrapColumn("PrimaryType", _rootTable.getColumn("PrimaryType"));    // for lookups
         typeColumn.setHidden(true);
         ContainerForeignKey.initColumn(addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container"))), schema).setHidden(true);
         setTitleColumn("Description");

@@ -15,7 +15,6 @@
  */
 package org.labkey.study.query;
 
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
 
 /**
@@ -29,7 +28,7 @@ public abstract class AbstractSpecimenTable extends BaseStudyTable
     {
         super(schema, realTable, true, skipPermissionChecks);
 
-        ColumnInfo rowIdColumn = addWrapColumn(_rootTable.getColumn("RowId"));
+        var rowIdColumn = addWrapColumn(_rootTable.getColumn("RowId"));
         rowIdColumn.setKeyField(true);
 
         addWrapColumn(_rootTable.getColumn("SpecimenHash")).setHidden(true);
@@ -54,9 +53,9 @@ public abstract class AbstractSpecimenTable extends BaseStudyTable
         addWrapTypeColumn("DerivativeType2", "DerivativeTypeId2");
         addWrapColumn(_rootTable.getColumn("SubAdditiveDerivative"));
         addWrapColumn(_rootTable.getColumn("DrawTimestamp"));
-        ColumnInfo columnDrawDate =  addWrapColumn(_rootTable.getColumn("DrawDate"));
+        var columnDrawDate =  addWrapColumn(_rootTable.getColumn("DrawDate"));
         columnDrawDate.setReadOnly(true);
-        ColumnInfo columnDrawTime = addWrapColumn(_rootTable.getColumn("DrawTime"));
+        var columnDrawTime = addWrapColumn(_rootTable.getColumn("DrawTime"));
         columnDrawTime.setReadOnly(true);
 
         addWrapLocationColumn("Clinic", "OriginatingLocationId");

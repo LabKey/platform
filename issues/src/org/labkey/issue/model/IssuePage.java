@@ -23,6 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
@@ -402,7 +403,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
             TableInfo table = getIssueTable(context);
             if (table != null)
             {
-                ColumnInfo col = table.getColumn(FieldKey.fromParts(prop.getName()));
+                var col = table.getColumn(FieldKey.fromParts(prop.getName()));
                 if (col != null)
                 {
                     try (Writer writer = new StringWriter())
@@ -432,7 +433,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
             TableInfo table = getIssueTable(context);
             if (table != null)
             {
-                ColumnInfo col = table.getColumn(FieldKey.fromParts(prop.getName()));
+                var col = table.getColumn(FieldKey.fromParts(prop.getName()));
                 if (col != null)
                 {
                     DisplayColumn dc = col.getRenderer();
@@ -476,7 +477,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
             TableInfo table = getIssueTable(context);
             if (table != null)
             {
-                ColumnInfo col = table.getColumn(FieldKey.fromParts(prop.getName()));
+                var col = (BaseColumnInfo)table.getColumn(FieldKey.fromParts(prop.getName()));
                 if (col != null)
                 {
                     // Issue 27672: text area input size too big for issue insert/update page
@@ -599,7 +600,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
     public String getLabel(String columnName, boolean markIfRequired)
     {
-        ColumnInfo col = IssuesSchema.getInstance().getTableInfoIssues().getColumn(columnName);
+        var col = IssuesSchema.getInstance().getTableInfoIssues().getColumn(columnName);
         String name = null;
 
         if (_ccc.shouldDisplay(_user, columnName))

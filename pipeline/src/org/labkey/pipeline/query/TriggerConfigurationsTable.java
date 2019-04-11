@@ -85,15 +85,15 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
     {
         super.init();
 
-        ColumnInfo type = getColumn("Type");
+        var type = getMutableColumn("Type");
         type.setFk(new PipelineTriggerTypeForeignKey(getUserSchema(), getContainerFilter()));
         type.setInputType("select");
 
-        ColumnInfo pipelineId = getColumn("PipelineId");
+        var pipelineId = getMutableColumn("PipelineId");
         pipelineId.setFk(new TaskPipelineForeignKey(getUserSchema(), getContainerFilter()));
         pipelineId.setInputType("select");
 
-        ColumnInfo pipelineTaskCol = new AliasedColumn("PipelineTask", getColumn("PipelineId"));
+        var pipelineTaskCol = new AliasedColumn("PipelineTask", getColumn("PipelineId"));
         pipelineTaskCol.setDisplayColumnFactory(PipelineTaskDisplayColumn::new);
         pipelineTaskCol.setReadOnly(true);
         pipelineTaskCol.setShownInInsertView(false);
@@ -101,7 +101,7 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
         pipelineTaskCol.setTextAlign("left");
         addColumn(pipelineTaskCol);
 
-        ColumnInfo statusCol = new AliasedColumn("Status", getColumn("RowId"));
+        var statusCol = new AliasedColumn("Status", getColumn("RowId"));
         statusCol.setDisplayColumnFactory(StatusDisplayColumn::new);
         statusCol.setReadOnly(true);
         statusCol.setShownInInsertView(false);

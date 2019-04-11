@@ -17,11 +17,7 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.query.ExprColumn;
 import org.labkey.study.StudySchema;
 
 /**
@@ -36,7 +32,7 @@ public class SpecimenEventTable extends BaseStudyTable
         super(schema, StudySchema.getInstance().getTableInfoSpecimenEvent(schema.getContainer()), true);
         setName("SpecimenEvent");
 
-        ColumnInfo vid = addWrapColumn(_rootTable.getColumn("VialId"));
+        var vid = addWrapColumn(_rootTable.getColumn("VialId"));
         vid.setDisplayColumnFactory(ColumnInfo.NOWRAP_FACTORY);
         addWrapColumn(_rootTable.getColumn("SpecimenNumber"));
         addWrapLocationColumn("LabId", "LabId").setLabel("Location");
@@ -81,7 +77,7 @@ public class SpecimenEventTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("ExternalId")).setHidden(true);
         addWrapColumn(_rootTable.getColumn("OtherSpecimenId"));
         addWrapColumn(_rootTable.getColumn("ParentSpecimenId"));
-        ColumnInfo obsoleteColumn = addWrapColumn(_rootTable.getColumn("Obsolete"));
+        var obsoleteColumn = addWrapColumn(_rootTable.getColumn("Obsolete"));
         obsoleteColumn.setHidden(true);
         addContainerColumn(true);
 

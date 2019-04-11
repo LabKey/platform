@@ -15,7 +15,6 @@
  */
 package org.labkey.study.query.studydesign;
 
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DefaultQueryUpdateService;
@@ -42,7 +41,7 @@ public class StudyTreatmentVisitMapTable extends BaseStudyTable
         setName(StudyQuerySchema.TREATMENT_VISIT_MAP_TABLE_NAME);
         setDescription("Contains one row per cohort/treatment/visit mapping");
 
-        ColumnInfo cohortCol = new AliasedColumn(this, "CohortId", _rootTable.getColumn("CohortId"));
+        var cohortCol = new AliasedColumn(this, "CohortId", _rootTable.getColumn("CohortId"));
         cohortCol.setFk(new LookupForeignKey("RowId")
         {
             public TableInfo getLookupTableInfo()
@@ -52,7 +51,7 @@ public class StudyTreatmentVisitMapTable extends BaseStudyTable
         });
         addColumn(cohortCol);
 
-        ColumnInfo treatmentCol = new AliasedColumn(this, "TreatmentId", _rootTable.getColumn("TreatmentId"));
+        var treatmentCol = new AliasedColumn(this, "TreatmentId", _rootTable.getColumn("TreatmentId"));
         treatmentCol.setFk(new LookupForeignKey("RowId")
         {
             @Override
@@ -63,7 +62,7 @@ public class StudyTreatmentVisitMapTable extends BaseStudyTable
         });
         addColumn(treatmentCol);
 
-        ColumnInfo visitCol = new AliasedColumn(this, "VisitId", _rootTable.getColumn("VisitId"));
+        var visitCol = new AliasedColumn(this, "VisitId", _rootTable.getColumn("VisitId"));
         visitCol.setFk(new LookupForeignKey("RowId")
         {
             public TableInfo getLookupTableInfo()

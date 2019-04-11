@@ -18,7 +18,7 @@ package org.labkey.study.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NullColumnInfo;
@@ -44,12 +44,12 @@ public class VisitTagMapTable extends BaseStudyTable
         if (null != containerFilter)
             _setContainerFilter(containerFilter);
 
-        ColumnInfo rowIdColumn = wrapColumn( _rootTable.getColumn("RowId"));
+        var rowIdColumn = wrapColumn( _rootTable.getColumn("RowId"));
         rowIdColumn.setHidden(true);
         rowIdColumn.setUserEditable(false);
         addColumn(rowIdColumn);
 
-        ColumnInfo visitTagColumn = wrapColumn( _rootTable.getColumn("VisitTag"));
+        var visitTagColumn = wrapColumn( _rootTable.getColumn("VisitTag"));
         LookupForeignKey visitTagFk = new LookupForeignKey()
         {
             @Override
@@ -61,7 +61,7 @@ public class VisitTagMapTable extends BaseStudyTable
         visitTagColumn.setFk(visitTagFk);
         addColumn(visitTagColumn);
 
-        ColumnInfo visitIdColumn = wrapColumn("Visit", _rootTable.getColumn("VisitId"));
+        var visitIdColumn = wrapColumn("Visit", _rootTable.getColumn("VisitId"));
         LookupForeignKey visitIdFk = new LookupForeignKey()
         {
             @Override
@@ -74,7 +74,7 @@ public class VisitTagMapTable extends BaseStudyTable
         addColumn(visitIdColumn);
 
         boolean showCohorts = StudyManager.getInstance().showCohorts(schema.getContainer(), schema.getUser());
-        ColumnInfo cohortColumn;
+        BaseColumnInfo cohortColumn;
         if (showCohorts)
         {
             cohortColumn = new AliasedColumn(this, "Cohort", _rootTable.getColumn("CohortId"));

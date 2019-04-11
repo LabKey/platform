@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -286,9 +287,10 @@ public class SimpleUserSchema extends UserSchema
             }
         }
 
-        public ColumnInfo wrapColumn(ColumnInfo col)
+        @Override
+        public BaseColumnInfo wrapColumn(ColumnInfo col)
         {
-            ColumnInfo wrap = super.wrapColumn(col);
+            BaseColumnInfo wrap = super.wrapColumn(col);
 
             // 10945: Copy label from the underlying column -- wrapColumn() doesn't copy the label. TODO: This seems incorrect... wrapColumn() does copy it!
             // Copy the underlying value, so auto-generated labels remain auto-generated.
@@ -303,7 +305,7 @@ public class SimpleUserSchema extends UserSchema
             return wrap;
         }
 
-        protected void fixupWrappedColumn(ColumnInfo wrap, ColumnInfo col)
+        protected void fixupWrappedColumn(BaseColumnInfo wrap, ColumnInfo col)
         {
             final String colName = col.getName();
 
@@ -389,7 +391,7 @@ public class SimpleUserSchema extends UserSchema
                 for (DomainProperty dp : domain.getProperties())
                 {
                     PropertyDescriptor pd = dp.getPropertyDescriptor();
-                    ColumnInfo propColumn = new PropertyColumn(pd, _objectUriCol, getContainer(), _userSchema.getUser(), true);
+                    PropertyColumn propColumn = new PropertyColumn(pd, _objectUriCol, getContainer(), _userSchema.getUser(), true);
                     if (getColumn(propColumn.getName()) == null)
                     {
                         addColumn(propColumn);

@@ -19,6 +19,7 @@ package org.labkey.study.query;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.AbstractForeignKey;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -74,12 +75,12 @@ public class ParticipantTable extends BaseStudyTable
         setName(StudyService.get().getSubjectTableName(schema.getContainer()));
 
         _study = StudyManager.getInstance().getStudy(schema.getContainer());
-        ColumnInfo rowIdColumn = new AliasedColumn(this, StudyService.get().getSubjectColumnName(getContainer()), _rootTable.getColumn("ParticipantId"));
+        var rowIdColumn = new AliasedColumn(this, StudyService.get().getSubjectColumnName(getContainer()), _rootTable.getColumn("ParticipantId"));
         rowIdColumn.setDisplayColumnFactory(ColumnInfo.NOLOOKUP_FACTORY);
         rowIdColumn.setFk(new TitleForeignKey(getBaseDetailsURL(), null, null, "participantId", getContainerContext()));
         addColumn(rowIdColumn);
 
-        ColumnInfo datasetColumn = new AliasedColumn(this, "DataSet", _rootTable.getColumn("ParticipantId"));
+        var datasetColumn = new AliasedColumn(this, "DataSet", _rootTable.getColumn("ParticipantId"));
         datasetColumn.setKeyField(false);
         datasetColumn.setIsUnselectable(true);
         datasetColumn.setLabel("DataSet");
@@ -108,7 +109,7 @@ public class ParticipantTable extends BaseStudyTable
 
         addContainerColumn();
 
-        ColumnInfo currentCohortColumn;
+        BaseColumnInfo currentCohortColumn;
         boolean showCohorts = StudyManager.getInstance().showCohorts(schema.getContainer(), schema.getUser());
         if (!showCohorts)
         {
@@ -123,7 +124,7 @@ public class ParticipantTable extends BaseStudyTable
         addColumn(currentCohortColumn);
 
 
-        ColumnInfo initialCohortColumn;
+        BaseColumnInfo initialCohortColumn;
         if (!showCohorts)
         {
             initialCohortColumn = new NullColumnInfo(this, "InitialCohort", JdbcType.INTEGER);
@@ -158,7 +159,7 @@ public class ParticipantTable extends BaseStudyTable
         // join in participant categories
         for (ParticipantCategoryImpl category : ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), _userSchema.getUser()))
         {
-            ColumnInfo categoryColumn = new ParticipantCategoryColumn(category, this);
+            var categoryColumn = new ParticipantCategoryColumn(category, this);
             if (!_columnMap.containsKey(categoryColumn.getName()))
                 addColumn(categoryColumn);
         }
@@ -174,8 +175,8 @@ public class ParticipantTable extends BaseStudyTable
             {
                 // Get the table and the two admin-configured columns
                 final DatasetDefinition.DatasetSchemaTableInfo datasetTable = dataset.getTableInfo(user, true);
-                final ColumnInfo aliasColumn = datasetTable.getColumn(_study.getParticipantAliasProperty());
-                final ColumnInfo sourceColumn = datasetTable.getColumn(_study.getParticipantAliasSourceProperty());
+                final var aliasColumn = datasetTable.getColumn(_study.getParticipantAliasProperty());
+                final var sourceColumn = datasetTable.getColumn(_study.getParticipantAliasSourceProperty());
 
                 if (aliasColumn != null && sourceColumn != null)
                 {
@@ -200,7 +201,7 @@ public class ParticipantTable extends BaseStudyTable
                     addColumn(aliasesColumn);
 
                     // Add a separate column that pivots out the individual aliases based on source
-                    ColumnInfo linkedIDsColumn = wrapColumn(LINKED_IDS_COLUMN_NAME, getRealTable().getColumn("ParticipantID"));
+                    var linkedIDsColumn = wrapColumn(LINKED_IDS_COLUMN_NAME, getRealTable().getColumn("ParticipantID"));
                     linkedIDsColumn.setFk(new PivotedAliasForeignKey(datasetTable, sourceColumn, aliasColumn));
                     linkedIDsColumn.setIsUnselectable(true);
                     addColumn(linkedIDsColumn);
@@ -365,7 +366,7 @@ public class ParticipantTable extends BaseStudyTable
             VirtualTable result = new VirtualTable(getSchema(), null);
             for (String source : getParticipantAliasSources(_datasetTable, _sourceColumn))
             {
-                ColumnInfo column = new ColumnInfo(source, JdbcType.VARCHAR);
+                var column = new BaseColumnInfo(source, JdbcType.VARCHAR);
                 column.setParentTable(result);
                 result.safeAddColumn(column);
             }

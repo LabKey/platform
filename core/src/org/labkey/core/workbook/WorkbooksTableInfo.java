@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -47,12 +48,10 @@ import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
-import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -429,14 +428,14 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
             }
 
             // output columns
-            addColumn(new ColumnInfo("RowId", JdbcType.INTEGER), (Callable<Integer>) () -> _currentContainer != null ? _currentContainer.getRowId() : null);
+            addColumn(new BaseColumnInfo("RowId", JdbcType.INTEGER), (Callable<Integer>) () -> _currentContainer != null ? _currentContainer.getRowId() : null);
 
-            int entityIdOutputCol = addColumn(new ColumnInfo("EntityId", JdbcType.VARCHAR), (Callable<String>) () -> _currentContainer != null ? _currentContainer.getEntityId().toString() : null);
+            int entityIdOutputCol = addColumn(new BaseColumnInfo("EntityId", JdbcType.VARCHAR), (Callable<String>) () -> _currentContainer != null ? _currentContainer.getEntityId().toString() : null);
 
             // Not sure if this is right, but return the newly inserted container as 'container' instead of the parent container.
             addAliasColumn("Container", entityIdOutputCol);
 
-            addColumn(new ColumnInfo("Parent", JdbcType.VARCHAR), (Callable<String>) () ->
+            addColumn(new BaseColumnInfo("Parent", JdbcType.VARCHAR), (Callable<String>) () ->
             {
                 Container parentContainer = _currentContainer != null ? _currentContainer.getParent() : null;
                 return parentContainer != null ? parentContainer.getEntityId().toString() : null;
@@ -560,7 +559,7 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
                 throw new IllegalArgumentException("parent container required");
 
             // parent container
-            outputCols.put("parent", it.addColumn(new ColumnInfo("parent", JdbcType.VARCHAR), (Callable) () ->
+            outputCols.put("parent", it.addColumn(new BaseColumnInfo("parent", JdbcType.VARCHAR), (Callable) () ->
             {
                 int parentInputCol = inputCols.get("container");
                 Object parentContainerVal = it.getInputColumnValue(parentInputCol);
@@ -576,7 +575,7 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
             }));
 
             // sort order (depends on parent container column)
-            outputCols.put("sortOrder", it.addColumn(new ColumnInfo("sortOrder", JdbcType.INTEGER), (Callable) () ->
+            outputCols.put("sortOrder", it.addColumn(new BaseColumnInfo("sortOrder", JdbcType.INTEGER), (Callable) () ->
             {
                 int parentOutputCol = outputCols.get("parent");
                 String parentEntityId = it.get(parentOutputCol).toString();
@@ -585,7 +584,7 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
             }));
 
             // name column
-            outputCols.put("name", it.addColumn(new ColumnInfo("name", JdbcType.VARCHAR), (Callable) () ->
+            outputCols.put("name", it.addColumn(new BaseColumnInfo("name", JdbcType.VARCHAR), (Callable) () ->
             {
                 int nameInputCol = inputCols.get("name");
                 Object nameVal = it.getInputColumnValue(nameInputCol);
@@ -609,7 +608,7 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
             }));
 
             // title column
-            it.addColumn(new ColumnInfo("title", JdbcType.VARCHAR), (Callable) () ->
+            it.addColumn(new BaseColumnInfo("title", JdbcType.VARCHAR), (Callable) () ->
             {
                 int titleInputCol = inputCols.get("title");
                 Object titleVal = it.getInputColumnValue(titleInputCol);

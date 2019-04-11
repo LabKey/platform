@@ -15,7 +15,7 @@
  */
 package org.labkey.api.data.dialect;
 
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.BaseColumnInfo;
 
 /**
  * Created by adam on 8/14/2015.
@@ -23,8 +23,8 @@ import org.labkey.api.data.ColumnInfo;
 public class StandardForeignKeyResolver implements ForeignKeyResolver
 {
     @Override
-    public ColumnInfo.ImportedKey getImportedKey(String fkName, String pkSchemaName, String pkTableName, String pkColumnName, String colName)
+    public BaseColumnInfo.ImportedKey getImportedKey(String fkName, String pkSchemaName, String pkTableName, String pkColumnName, String colName)
     {
-        return new ColumnInfo.ImportedKey(fkName, pkSchemaName, pkTableName, pkColumnName, colName);
+        return new BaseColumnInfo.ImportedKey(fkName, pkSchemaName, pkTableName, pkColumnName, colName);
     }
 }

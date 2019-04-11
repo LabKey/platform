@@ -19,6 +19,7 @@ package org.labkey.query.sql;
 import org.antlr.runtime.tree.CommonTree;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
@@ -417,9 +418,10 @@ public class QAggregate extends QExpr
         return true;
     }
 
-    public ColumnInfo createColumnInfo(SQLTableInfo table, String alias, Query query)
+    @Override
+    public BaseColumnInfo createColumnInfo(SQLTableInfo table, String alias, Query query)
     {
-        ColumnInfo ret = super.createColumnInfo(table, alias, query);
+        var ret = super.createColumnInfo(table, alias, query);
         if (getType() == Type.MAX || getType() == Type.MIN)
         {
             List<QNode> children = childList();

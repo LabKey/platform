@@ -15,7 +15,7 @@
  */
 package org.labkey.experiment.api;
 
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.query.ExpDataProtocolInputTable;
@@ -46,7 +46,7 @@ public class ExpDataProtocolInputTableImpl extends ExpProtocolInputTableImpl<Exp
     }
 
     @Override
-    public ColumnInfo createColumn(String alias, Column column)
+    public BaseColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
         {

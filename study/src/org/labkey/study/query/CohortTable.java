@@ -15,6 +15,7 @@
  */
 package org.labkey.study.query;
 
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.property.Domain;
@@ -51,23 +52,23 @@ public class CohortTable extends BaseStudyTable
         addFolderColumn();
         addStudyColumn();
 
-        ColumnInfo labelColumn = addWrapColumn(_rootTable.getColumn("Label"));
+        var labelColumn = addWrapColumn(_rootTable.getColumn("Label"));
         labelColumn.setNullable(false);
 
-        ColumnInfo lsidColumn = addWrapColumn(_rootTable.getColumn("lsid"));
+        var lsidColumn = addWrapColumn(_rootTable.getColumn("lsid"));
         lsidColumn.setHidden(true);
         lsidColumn.setUserEditable(false);
         
-        ColumnInfo rowIdColumn = addWrapColumn(_rootTable.getColumn("RowId"));
+        var rowIdColumn = addWrapColumn(_rootTable.getColumn("RowId"));
         rowIdColumn.setHidden(true);
         rowIdColumn.setUserEditable(false);
         rowIdColumn.setKeyField(true);
 
-        ColumnInfo enrolledColumn = addWrapColumn(_rootTable.getColumn("Enrolled"));
+        var enrolledColumn = addWrapColumn(_rootTable.getColumn("Enrolled"));
         enrolledColumn.setNullable(false);
 
-        ColumnInfo subjectCountColumn = addWrapColumn(_rootTable.getColumn("SubjectCount"));
-        ColumnInfo descriptionColumn = addWrapColumn(_rootTable.getColumn("Description"));
+        var subjectCountColumn = addWrapColumn(_rootTable.getColumn("SubjectCount"));
+        var descriptionColumn = addWrapColumn(_rootTable.getColumn("Description"));
 
         // Add extended columns
         List<FieldKey> visibleColumns = new ArrayList<>();
@@ -85,7 +86,7 @@ public class CohortTable extends BaseStudyTable
         {
             for (ColumnInfo extraColumn : _domain.getColumns(this, lsidColumn, schema.getContainer(), schema.getUser()))
             {
-                safeAddColumn(extraColumn);
+                safeAddColumn( (BaseColumnInfo)extraColumn );
                 visibleColumns.add(FieldKey.fromParts(extraColumn.getName()));
             }
         }

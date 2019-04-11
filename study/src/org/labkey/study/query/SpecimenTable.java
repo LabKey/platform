@@ -23,15 +23,13 @@ import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.study.StudySchema;
-import org.labkey.api.study.StudyService;
 import org.labkey.study.model.StudyImpl;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class SpecimenTable extends AbstractSpecimenTable
 {
@@ -42,7 +40,7 @@ public class SpecimenTable extends AbstractSpecimenTable
     {
         super(schema, StudySchema.getInstance().getTableInfoSpecimen(schema.getContainer()), skipPermissionChecks, true);
 
-        ColumnInfo ptidColumn = getColumn(StudyService.get().getSubjectColumnName(getContainer()));
+        var ptidColumn = getMutableColumn(StudyService.get().getSubjectColumnName(getContainer()));
 //        addWrapColumn(getRealTable().getColumn("RowId"));
 //        addContainerColumn(true);
         if (false)                      // If we generate more like VialTable, then we need this
@@ -51,7 +49,7 @@ public class SpecimenTable extends AbstractSpecimenTable
             ptidColumn = new OuterAliasedColumn(this, "ParticipantId", getRealTable().getColumn("PTID"));
             addColumn(ptidColumn);
             addColumn(new OuterAliasedColumn(this, "Date", getRealTable().getColumn("DrawTimeStamp")));
-            ColumnInfo aliasVisitColumn = new OuterAliasedColumn(this, "SequenceNum", _rootTable.getColumn("VisitValue"));
+            var aliasVisitColumn = new OuterAliasedColumn(this, "SequenceNum", _rootTable.getColumn("VisitValue"));
             addSpecimenVisitColumn(TimepointType.DATE, aliasVisitColumn, true);
         }
         else

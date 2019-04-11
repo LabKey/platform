@@ -16,9 +16,8 @@
 package org.labkey.query.sql;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -323,7 +322,7 @@ public class QueryUnion extends QueryRelation
 
         for (UnionColumn unioncol : _unionColumns.values())
         {
-            ColumnInfo ucol = new RelationColumnInfo(ret, unioncol);
+            var ucol = new RelationColumnInfo(ret, unioncol);
             ret.addColumn(ucol);
         }
         for (UnionColumn unioncol : _allColumns)
@@ -493,7 +492,7 @@ public class QueryUnion extends QueryRelation
         }
 
         @Override
-        void copyColumnAttributesTo(ColumnInfo to)
+        void copyColumnAttributesTo(BaseColumnInfo to)
         {
             _first.copyColumnAttributesTo(to);
             to.clearFk();

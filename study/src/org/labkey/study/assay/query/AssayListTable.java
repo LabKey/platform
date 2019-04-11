@@ -61,20 +61,20 @@ public class AssayListTable extends FilteredTable<AssaySchemaImpl>
         detailsURL.setContainerContext(_userSchema.getContainer());
 
         addWrapColumn(_rootTable.getColumn("RowId")).setHidden(true);
-        ColumnInfo nameCol = addWrapColumn(_rootTable.getColumn("Name"));
+        var nameCol = addWrapColumn(_rootTable.getColumn("Name"));
         nameCol.setURL(detailsURL);
 
-        ColumnInfo desc = wrapColumn("Description", _rootTable.getColumn("ProtocolDescription"));
+        var desc = wrapColumn("Description", _rootTable.getColumn("ProtocolDescription"));
         addColumn(desc);
 
         addWrapColumn(_rootTable.getColumn("Created"));
         addWrapColumn(_rootTable.getColumn("CreatedBy"));
         addWrapColumn(_rootTable.getColumn("Modified"));
         addWrapColumn(_rootTable.getColumn("ModifiedBy"));
-        ColumnInfo folderCol = wrapColumn("Folder", _rootTable.getColumn("Container"));
+        var folderCol = wrapColumn("Folder", _rootTable.getColumn("Container"));
         addColumn(ContainerForeignKey.initColumn(folderCol, schema));
         
-        ColumnInfo lsidColumn = addWrapColumn(_rootTable.getColumn("LSID"));
+        var lsidColumn = addWrapColumn(_rootTable.getColumn("LSID"));
         lsidColumn.setHidden(true);
 
         // Generate a CASE statement that matches an LSID to an AssayProvider so we can create a lookup to the AssayProviderTable.
@@ -93,7 +93,7 @@ public class AssayListTable extends FilteredTable<AssaySchemaImpl>
             }
         }
         typeFrag.append(" END)");
-        ColumnInfo typeColumn = new ExprColumn(this, "Type", typeFrag, JdbcType.VARCHAR);
+        var typeColumn = new ExprColumn(this, "Type", typeFrag, JdbcType.VARCHAR);
         typeColumn.setFk(QueryForeignKey.from(getUserSchema(),null).to(AssaySchema.ASSAY_PROVIDERS_TABLE_NAME, "Name", "Name"));
         typeColumn.setDisplayColumnFactory(new DisplayColumnFactory()
         {

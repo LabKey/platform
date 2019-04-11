@@ -20,13 +20,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.compliance.TableRules;
-import org.labkey.api.compliance.TableRulesManager;
 import org.labkey.api.data.AbstractForeignKey;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.ForeignKey;
@@ -163,7 +161,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             String name = baseColumn.getName();
             if (subjectColName.equalsIgnoreCase(name))
             {
-                ColumnInfo column = new AliasedColumn(this, subjectColName, baseColumn);
+                var column = new AliasedColumn(this, subjectColName, baseColumn);
                 column.setInputType("text");
                 // TODO, need a way for a lookup to have a "text" input
                 column.setDisplayColumnFactory(colInfo -> {
@@ -202,7 +200,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                     name.equalsIgnoreCase("CreatedBy") || name.equalsIgnoreCase("ModifiedBy")
             )
             {
-                ColumnInfo c = addWrapColumn(baseColumn);
+                var c = addWrapColumn(baseColumn);
                 if (name.equalsIgnoreCase("CreatedBy") || name.equalsIgnoreCase("ModifiedBy"))
                     UserIdQueryForeignKey.initColumn(schema, c, true);
                 c.setUserEditable(false);
@@ -211,7 +209,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             }
             else if (name.equalsIgnoreCase("SequenceNum"))
             {
-                ColumnInfo c = addWrapColumn(baseColumn);
+                var c = addWrapColumn(baseColumn);
                 if (!timepointType.isVisitBased())
                 {
                     c.setHidden(true);
@@ -231,7 +229,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             }
             else if (name.equalsIgnoreCase(QCSTATE_ID_COLNAME))
             {
-                ColumnInfo qcStateColumn = new AliasedColumn(this, QCSTATE_ID_COLNAME, baseColumn);
+                var qcStateColumn = new AliasedColumn(this, QCSTATE_ID_COLNAME, baseColumn);
                 qcStateColumn.setFk(QueryForeignKey.from(getUserSchema(), getContainerFilter())
                         .schema("core", getContainer())
                         .to("QCState", "RowId", "Label"));
@@ -249,7 +247,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             {
                 // Add a copy of the ParticipantSequenceNum column without the FK so we can get the value easily when materializing to temp tables:
                 addWrapColumn(baseColumn).setHidden(true);
-                ColumnInfo pvColumn = new AliasedColumn(this, StudyService.get().getSubjectVisitColumnName(dsd.getContainer()), baseColumn);//addWrapColumn(baseColumn);
+                var pvColumn = new AliasedColumn(this, StudyService.get().getSubjectVisitColumnName(dsd.getContainer()), baseColumn);//addWrapColumn(baseColumn);
                 pvColumn.setFk(new ParticipantVisitForeignKey("ParticipantSequenceNum"));
                 pvColumn.setIsUnselectable(true);
                 pvColumn.setUserEditable(false);
@@ -262,7 +260,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             }
             else
             {
-                ColumnInfo col = addWrapColumn(baseColumn);
+                var col = addWrapColumn(baseColumn);
 
                 // When copying a column, the hidden bit is not propagated, so we need to do it manually
                 if (baseColumn.isHidden())
@@ -316,14 +314,14 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         }
 
         // TODO move "LSID" column handling to the loop above for consistency? (MAB)
-        ColumnInfo lsidColumn = getColumn("LSID");
+        var lsidColumn = getMutableColumn("LSID");
         lsidColumn.setHidden(true);
         lsidColumn.setKeyField(true);
         lsidColumn.setShownInInsertView(false);
         lsidColumn.setShownInUpdateView(false);
-        getColumn("SourceLSID").setHidden(true);
+        getMutableColumn("SourceLSID").setHidden(true);
 
-        ColumnInfo dsRowIdColumn = getColumn("dsrowid");
+        var dsRowIdColumn = getMutableColumn("dsrowid");
 
         // Importing old study may not have this column
         if (dsRowIdColumn != null)
@@ -332,13 +330,13 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             dsRowIdColumn.setKeyField(false);
             dsRowIdColumn.setShownInInsertView(false);
             dsRowIdColumn.setShownInUpdateView(false);
-            getColumn("dsrowid").setHidden(true);
+            getMutableColumn("dsrowid").setHidden(true);
         }
 
         if (null != _userSchema.getStudy() && !_userSchema.getStudy().isDataspaceStudy() && null == getColumn("container"))
             addContainerColumn(true);
 
-        ColumnInfo autoJoinColumn = new AliasedColumn(this, "DataSets", _rootTable.getColumn("ParticipantId"));
+        var autoJoinColumn = new AliasedColumn(this, "DataSets", _rootTable.getColumn("ParticipantId"));
         autoJoinColumn.setDescription("Contains lookups to each Dataset that can be joined by the " + _dsd.getLabel() + " Dataset's '" + _dsd.getKeyTypeDescription() + "' combination.");
         autoJoinColumn.setKeyField(false);
         autoJoinColumn.setIsUnselectable(true);
@@ -383,7 +381,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         TableInfo participantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
         if (timepointType == TimepointType.DATE)
         {
-            ColumnInfo dayColumn = new AliasedColumn(this, "Day", participantVisit.getColumn("Day"));
+            var dayColumn = new AliasedColumn(this, "Day", participantVisit.getColumn("Day"));
             dayColumn.setUserEditable(false);
             dayColumn.setDimension(false);
             dayColumn.setMeasure(false);
@@ -391,7 +389,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         }
 
         // TODO move "VisitRowId" to resolveColumn()?  Do we need to expose this? (MAB)
-        ColumnInfo visitRowId = new AliasedColumn(this, "VisitRowId", participantVisit.getColumn("VisitRowId"));
+        var visitRowId = new AliasedColumn(this, "VisitRowId", participantVisit.getColumn("VisitRowId"));
         visitRowId.setName("VisitRowId");
         visitRowId.setHidden(true);
         visitRowId.setUserEditable(false);
@@ -515,12 +513,12 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         // Workaround to prevent IllegalArgumentException for assay tables
         if (getColumn("Folder") == null)
         {
-            ColumnInfo ci = _rootTable.getColumn("Container");
+            var ci = _rootTable.getColumn("Container");
             if (null == ci)
             {
                 ci = getColumn("Container");
             }
-            ColumnInfo folder = new AliasedColumn(this, "Folder", ci);
+            var folder = new AliasedColumn(this, "Folder", ci);
             ContainerForeignKey.initColumn(folder,getUserSchema());
             folder.setHidden(true);
             addColumn(folder);
@@ -561,7 +559,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     @Override
     protected ColumnInfo resolveColumn(String name)
     {
-        ColumnInfo result = super.resolveColumn(name);
+        var result = super.resolveColumn(name);
         if (result != null)
         {
             return result;
@@ -584,8 +582,8 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             {
                 // Hook up a column that joins back to this table so that the columns formerly under the Properties
                 // node when this was OntologyManager-backed can still be queried there
-                result = wrapColumn("Properties", getRealTable().getColumn("_key"));
-                result.setIsUnselectable(true);
+                var wrapped = wrapColumn("Properties", getRealTable().getColumn("_key"));
+                wrapped.setIsUnselectable(true);
                 LookupForeignKey fk = new LookupForeignKey("_key")
                 {
                     @Override
@@ -601,8 +599,8 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                     }
                 };
                 fk.setPrefixColumnCaption(false);
-                result.setFk(fk);
-                return result;
+                wrapped.setFk(fk);
+                return wrapped;
             }
 
             // Second, see the if the assay table can resolve the column
@@ -672,8 +670,8 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             result = columns.get(fieldKey);
             if (null != result)
             {
-                result.setFieldKey(new FieldKey(null,name));
-                result.setAlias("_DataSetTableImpl_resolvefield$" + AliasManager.makeLegalName(name, getSqlDialect(), true, false));
+                ((BaseColumnInfo)result).setFieldKey(new FieldKey(null,name));
+                ((BaseColumnInfo)result).setAlias("_DataSetTableImpl_resolvefield$" + AliasManager.makeLegalName(name, getSqlDialect(), true, false));
             }
         }
         return result;
@@ -769,7 +767,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                 if (null != cf.getIds(getContainer()))
                 {
                     TableInfo tiParticipant = _userSchema.getDbSchema().getTable("Participant");
-                    ColumnInfo ciContainer = tiParticipant.getColumn("Container");
+                    var ciContainer = tiParticipant.getColumn("Container");
                     SimpleFilter.FilterClause f = super.getContainerFilterClause(cf, ciContainer.getFieldKey());
                     SQLFragment sqlCF = f.toSQLFragment(Collections.singletonMap(ciContainer.getFieldKey(), ciContainer), getSchema().getSqlDialect());
                     if (((DatasetDefinition) getDataset()).getDataSharingEnum() == DatasetDefinition.DataSharing.PTID)
@@ -798,7 +796,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                     // expand into a "ParticipantId IN ..." filter.
                     // CONSIDER: Use a temp table for large participant group lists
                     FieldKey participantFieldKey = FieldKey.fromParts("ParticipantId");
-                    ColumnInfo participantCol = getColumn(participantFieldKey);
+                    var participantCol = getColumn(participantFieldKey);
                     SimpleFilter.InClause clause = new SimpleFilter.InClause(participantFieldKey, group.getParticipantSet());
                     SQLFragment temp = clause.toSQLFragment(Collections.singletonMap(participantFieldKey, participantCol), getSqlDialect());
 
@@ -1022,15 +1020,15 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
      */
     public void hideParticipantLookups()
     {
-        ColumnInfo col = getColumn(StudyService.get().getSubjectColumnName(_dsd.getContainer()));
+        var col = getMutableColumn(StudyService.get().getSubjectColumnName(_dsd.getContainer()));
         if (col != null)
             col.setHidden(true);
 
-        col = getColumn(StudyService.get().getSubjectVisitColumnName(_dsd.getContainer()));
+        col = getMutableColumn(StudyService.get().getSubjectVisitColumnName(_dsd.getContainer()));
         if (col != null)
             col.setHidden(true);
 
-        col = getColumn("DataSets");
+        col = getMutableColumn("DataSets");
         if (col != null)
             col.setHidden(true);
     }

@@ -19,7 +19,7 @@ package org.labkey.experiment.api;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SimpleFilter;
@@ -51,7 +51,7 @@ public class ExpProtocolTableImpl extends ExpTableImpl<ExpProtocolTable.Column> 
         setTitleColumn("Name");
     }
 
-    public ColumnInfo createColumn(String alias, Column column)
+    public BaseColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
         {
@@ -94,15 +94,15 @@ public class ExpProtocolTableImpl extends ExpTableImpl<ExpProtocolTable.Column> 
     @Override
     protected void populateColumns()
     {
-        ColumnInfo colRowId = addColumn(Column.RowId);
+        var colRowId = addColumn(Column.RowId);
         colRowId.setHidden(true);
         colRowId.setFk(new RowIdForeignKey(colRowId));
         colRowId.setKeyField(true);
 
-        ColumnInfo colName = addColumn(Column.Name);
+        var colName = addColumn(Column.Name);
         setTitleColumn(colName.getName());
 
-        ColumnInfo colLSID = addColumn(Column.LSID);
+        var colLSID = addColumn(Column.LSID);
         colLSID.setHidden(true);
 
         addContainerColumn(Column.Folder, null);

@@ -55,13 +55,13 @@ public class SpecimenCommentTable extends FilteredTable<StudyQuerySchema>
             }
             else if (!"Container".equalsIgnoreCase(name))
             {
-                ColumnInfo wrappedColumn = addWrapColumn(baseColumn);
+                var wrappedColumn = addWrapColumn(baseColumn);
                 if ("RowId".equalsIgnoreCase(name) || "QualityControlFlagForced".equalsIgnoreCase(name))
                     wrappedColumn.setHidden(true);
             }
         }
 
-        ColumnInfo folderColumn = wrapColumn("Folder", _rootTable.getColumn("Container"));
+        var folderColumn = wrapColumn("Folder", _rootTable.getColumn("Container"));
         ContainerForeignKey.initColumn(folderColumn, schema);
         addColumn(folderColumn);
 

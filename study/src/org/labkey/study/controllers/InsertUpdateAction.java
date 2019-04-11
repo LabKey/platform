@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -136,7 +137,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
             String participantCohortPropertyName = study.getParticipantCohortProperty();
             if (participantCohortPropertyName != null)
             {
-                ColumnInfo cohortCol = datasetTable.getColumn(participantCohortPropertyName);
+                BaseColumnInfo cohortCol = (BaseColumnInfo)datasetTable.getColumn(participantCohortPropertyName);
                 if (cohortCol != null && cohortCol.getJdbcType() == JdbcType.VARCHAR)
                 {
                     cohortCol.setDisplayColumnFactory(colInfo -> new DataColumn(colInfo)

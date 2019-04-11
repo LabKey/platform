@@ -16,12 +16,11 @@
 package org.labkey.study;
 
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.NullColumnInfo;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
-import org.labkey.api.query.QueryForeignKey;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.CohortTable;
 import org.labkey.study.query.StudyQuerySchema;
@@ -57,7 +56,7 @@ public class CohortForeignKey extends LookupForeignKey
     @Override
     public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
     {
-        ColumnInfo c = super.createLookupColumn(parent, displayField);
+        var c = super.createLookupColumn(parent, displayField);
         if (null == c)
             return null;
 
@@ -65,7 +64,7 @@ public class CohortForeignKey extends LookupForeignKey
             c = new NullColumnInfo(parent.getParentTable(), c.getFieldKey(), c.getJdbcType());
 
         if (c.getFieldKey().getName().equalsIgnoreCase("Label") && !StringUtils.isEmpty(_labelCaption))
-            c.setLabel(_labelCaption);
+            ((BaseColumnInfo)c).setLabel(_labelCaption);
         return c;
     }
 

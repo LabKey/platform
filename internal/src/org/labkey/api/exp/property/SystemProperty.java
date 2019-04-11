@@ -17,7 +17,7 @@
 package org.labkey.api.exp.property;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.data.ColumnRenderProperties;
+import org.labkey.api.data.ColumnRenderPropertiesImpl;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
@@ -119,7 +119,7 @@ public class SystemProperty
         for (SystemProperty property : _systemProperties.values())
             properties.add(property._pd);
 
-        properties.sort(Comparator.comparing(ColumnRenderProperties::getPropertyURI));
+        properties.sort(Comparator.comparing(ColumnRenderPropertiesImpl::getPropertyURI));
         return Collections.unmodifiableList(properties);
     }
 

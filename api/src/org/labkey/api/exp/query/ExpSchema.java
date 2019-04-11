@@ -22,11 +22,9 @@ import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.UnionContainerFilter;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
@@ -226,7 +224,7 @@ public class ExpSchema extends AbstractExpSchema
         setupTable(ret);
         // Don't include exp.experiment rows that are assay batches
         ret.setBatchProtocol(null);
-        ret.getColumn(ExpExperimentTable.Column.RunCount).setHidden(true);
+        ret.getMutableColumn(ExpExperimentTable.Column.RunCount).setHidden(true);
 
         ret.addExperimentMembershipColumn(run);
         List<FieldKey> defaultCols = new ArrayList<>(ret.getDefaultVisibleColumns());
@@ -359,8 +357,14 @@ public class ExpSchema extends AbstractExpSchema
 
     public ExpRunTable getRunsTable()
     {
-        return (ExpRunTable)getTable(TableType.Runs);
+        return (ExpRunTable)getTable(TableType.Runs.toString(), null, true, false);
     }
+
+    public ExpRunTable getRunsTable(boolean forWrite)
+    {
+        return (ExpRunTable)getTable(TableType.Runs.toString(), null, true, forWrite);
+    }
+
 
     public ForeignKey getProtocolApplicationForeignKey()
     {

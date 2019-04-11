@@ -17,6 +17,7 @@ package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -218,8 +219,8 @@ public class SpecimenForeignKey extends LookupForeignKey
             }
         };
         ft.wrapAllColumns(true);
-        ft.addColumn(new ColumnInfo(new FieldKey(null,AbstractAssayProvider.ASSAY_SPECIMEN_MATCH_COLUMN_NAME),ft,JdbcType.BOOLEAN));
-        ft.getColumn("Specimen").setFk(new _SpecimenUnionForeignKey());
+        ft.addColumn(new BaseColumnInfo(new FieldKey(null,AbstractAssayProvider.ASSAY_SPECIMEN_MATCH_COLUMN_NAME),ft,JdbcType.BOOLEAN));
+        ft.getMutableColumn("Specimen").setFk(new _SpecimenUnionForeignKey());
         ft.setPublic(false);
         ft.setLocked(true);
         return ft;
@@ -312,7 +313,7 @@ public class SpecimenForeignKey extends LookupForeignKey
             if (null != vialTableInfo)
             {
                 ColumnInfo lookupColumn = vialTableInfo.getColumn(displayFieldName);
-                ColumnInfo specimenCol = new SpecimenLookupColumn(foreignKey, displayFieldKey, lookupColumn, false);
+                var specimenCol = new SpecimenLookupColumn(foreignKey, displayFieldKey, lookupColumn, false);
                 specimenCol.setFk(new _SpecimenUnionForeignKey());
                 return specimenCol;
             }
@@ -462,7 +463,7 @@ public class SpecimenForeignKey extends LookupForeignKey
     }
 
 
-    public class SpecimenLookupColumn extends ColumnInfo // extends LookupColumn
+    public class SpecimenLookupColumn extends BaseColumnInfo
     {
         private boolean _returnNull;
         ColumnInfo _foreignKey;
@@ -537,7 +538,7 @@ public class SpecimenForeignKey extends LookupForeignKey
     }
 
 
-    public class SpecimenMatchLookupColumn extends ColumnInfo
+    public class SpecimenMatchLookupColumn extends BaseColumnInfo
     {
         ColumnInfo _foreignKey;
 

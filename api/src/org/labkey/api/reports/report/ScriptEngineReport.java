@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
@@ -393,7 +394,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         for (int i = 0; i < md.getColumnCount(); i++)
         {
             int sqlColumn = i + 1;
-            dataColumns.add(new NADisplayColumn(outputColumnNames.get(i), new ColumnInfo(md, sqlColumn)));
+            dataColumns.add(new NADisplayColumn(outputColumnNames.get(i), new BaseColumnInfo(md, sqlColumn)));
         }
 
         TSVGridWriter tsv = new TSVGridWriter(r, dataColumns);

@@ -47,8 +47,8 @@ public class NAbSpecimenTable extends FilteredTable<AssayProtocolSchema>
         wrapAllColumns(true);
 
         // TODO - add columns for all of the different cutoff values
-        ColumnInfo selectedAUC = new ExprColumn(this, "AUC", getSelectedCurveFitAUC(false), JdbcType.DECIMAL);
-        ColumnInfo selectedPositiveAUC = new ExprColumn(this, "PositiveAUC", getSelectedCurveFitAUC(true), JdbcType.DECIMAL);
+        ExprColumn selectedAUC = new ExprColumn(this, "AUC", getSelectedCurveFitAUC(false), JdbcType.DECIMAL);
+        ExprColumn selectedPositiveAUC = new ExprColumn(this, "PositiveAUC", getSelectedCurveFitAUC(true), JdbcType.DECIMAL);
         addColumn(selectedAUC);
         addColumn(selectedPositiveAUC);
 

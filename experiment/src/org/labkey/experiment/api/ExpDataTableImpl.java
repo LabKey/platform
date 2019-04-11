@@ -17,7 +17,6 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.json.JSONObject;
@@ -29,6 +28,7 @@ import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.action.ExtendedApiQueryResponse;
 import org.labkey.api.action.NullSafeBindException;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -77,7 +77,6 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.MemoryVirtualFile;
@@ -90,7 +89,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.nio.file.InvalidPathException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -148,16 +146,16 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         DetailsURL detailsURL = DetailsURL.fromString("/experiment/showData.view?rowId=${rowId}${dataClass:prefix('%26dataClassId=')}");
 
         setDetailsURL(detailsURL);
-        getColumn(Column.RowId).setURL(detailsURL);
-        getColumn(Column.Name).setURL(detailsURL);
+        getMutableColumn(Column.RowId).setURL(detailsURL);
+        getMutableColumn(Column.Name).setURL(detailsURL);
 
         ActionURL deleteUrl = ExperimentController.ExperimentUrlsImpl.get().getDeleteDatasURL(getContainer(), null);
         setDeleteURL(new DetailsURL(deleteUrl));
 
-        ColumnInfo colInputs = addColumn(Column.Inputs);
+        var colInputs = addColumn(Column.Inputs);
         addMethod("Inputs", new LineageMethod(getContainer(), colInputs, true));
 
-        ColumnInfo colOutputs = addColumn(Column.Outputs);
+        var colOutputs = addColumn(Column.Outputs);
         addMethod("Outputs", new LineageMethod(getContainer(), colOutputs, false));
 
     }
@@ -165,7 +163,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
     public List<String> addFileColumns(boolean isFilesTable)
     {
         List<String> customProps = new ArrayList<>();
-        ColumnInfo lsidColumn = addColumn(Column.LSID);
+        var lsidColumn = addColumn(Column.LSID);
         lsidColumn.setHidden(true);
         if (!isFilesTable)
             addColumn(Column.DataFileUrl);
@@ -177,7 +175,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         addColumn(Column.FileExtension);
         addColumn(Column.WebDavUrl);
         addColumn(Column.WebDavUrlRelative);
-        ColumnInfo flagCol = addColumn(Column.Flag);
+        var flagCol = addColumn(Column.Flag);
         if (isFilesTable)
             flagCol.setLabel("Description");
 
@@ -193,7 +191,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                 for (DomainProperty prop : domain.getProperties())
                 {
                     // don't set container on property column so that inherited domain properties work
-                    ColumnInfo projectColumn = new PropertyColumn(prop.getPropertyDescriptor(), lsidColumn, getContainer(), _userSchema.getUser(), false);
+                    var projectColumn = new PropertyColumn(prop.getPropertyDescriptor(), lsidColumn, getContainer(), _userSchema.getUser(), false);
                     addColumn(projectColumn);
                     customProps.add(projectColumn.getAlias());
                 }
@@ -226,7 +224,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         return super.resolveColumn(name);
     }
 
-    public ColumnInfo createColumn(String alias, Column column)
+    public BaseColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
         {
@@ -241,11 +239,11 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             case ModifiedBy:
                 return createUserColumn(alias, _rootTable.getColumn("ModifiedBy"));
             case DataFileUrl:
-                ColumnInfo dataFileUrl = wrapColumn(alias, _rootTable.getColumn("DataFileUrl"));
+                var dataFileUrl = wrapColumn(alias, _rootTable.getColumn("DataFileUrl"));
                 dataFileUrl.setUserEditable(false);
                 return dataFileUrl;
             case LSID:
-                ColumnInfo lsid = wrapColumn(alias, _rootTable.getColumn("LSID"));
+                var lsid = wrapColumn(alias, _rootTable.getColumn("LSID"));
                 lsid.setUserEditable(false);
                 return lsid;
             case Name:
@@ -253,12 +251,12 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             case Description:
                 return wrapColumn(alias, _rootTable.getColumn("Description"));
             case LastIndexed:
-                ColumnInfo lastIndexed = wrapColumn(alias, _rootTable.getColumn("LastIndexed"));
+                var lastIndexed = wrapColumn(alias, _rootTable.getColumn("LastIndexed"));
                 lastIndexed.setUserEditable(false);
                 return lastIndexed;
             case DataClass:
             {
-                ColumnInfo c = wrapColumn(alias, _rootTable.getColumn("classId"));
+                var c = wrapColumn(alias, _rootTable.getColumn("classId"));
                 c.setUserEditable(false);
                 var fk = QueryForeignKey.from(getUserSchema(), getContainerFilter())
                         .to(DataClasses.name(), "RowId", "Name");
@@ -277,7 +275,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             }
             case SourceProtocolApplication:
             {
-                ColumnInfo columnInfo = wrapColumn(alias, _rootTable.getColumn("SourceApplicationId"));
+                var columnInfo = wrapColumn(alias, _rootTable.getColumn("SourceApplicationId"));
                 columnInfo.setFk(getExpSchema().getProtocolApplicationForeignKey());
                 columnInfo.setUserEditable(false);
                 columnInfo.setHidden(true);
@@ -286,7 +284,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
 
             case SourceApplicationInput:
             {
-                ColumnInfo col = createEdgeColumn(alias, Column.SourceProtocolApplication, ExpSchema.TableType.DataInputs);
+                var col = createEdgeColumn(alias, Column.SourceProtocolApplication, ExpSchema.TableType.DataInputs);
                 col.setDescription("Contains a reference to the DataInput row between this ExpData and it's SourceProtocolApplication");
                 col.setHidden(true);
                 return col;
@@ -300,7 +298,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                         .append(" AND pa.cpasType = '").append(ExpProtocol.ApplicationType.ExperimentRunOutput.name()).append("'")
                         .append(")");
 
-                ColumnInfo col = new ExprColumn(this, alias, sql, JdbcType.INTEGER);
+                var col = new ExprColumn(this, alias, sql, JdbcType.INTEGER);
                 col.setFk(getExpSchema().getProtocolApplicationForeignKey());
                 col.setDescription("Contains a reference to the ExperimentRunOutput protocol application of the run that created this data");
                 col.setUserEditable(false);
@@ -311,26 +309,26 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
 
             case RunApplicationOutput:
             {
-                ColumnInfo col = createEdgeColumn(alias, Column.RunApplication, ExpSchema.TableType.DataInputs);
+                var col = createEdgeColumn(alias, Column.RunApplication, ExpSchema.TableType.DataInputs);
                 col.setDescription("Contains a reference to the DataInput row between this ExpData and it's RunOutputApplication");
                 return col;
             }
             case RowId:
             {
-                ColumnInfo ret = wrapColumn(alias, _rootTable.getColumn("RowId"));
+                var ret = wrapColumn(alias, _rootTable.getColumn("RowId"));
                 ret.setFk(new RowIdForeignKey(ret));
                 ret.setHidden(true);
                 return ret;
             }
             case Run:
-                ColumnInfo runId = wrapColumn(alias, _rootTable.getColumn("RunId"));
+                var runId = wrapColumn(alias, _rootTable.getColumn("RunId"));
                 runId.setUserEditable(false);
                 return runId;
             case Flag:
                 return createFlagColumn(alias);
             case DownloadLink:
             {
-                ColumnInfo result = wrapColumn(alias, _rootTable.getColumn("RowId"));
+                var result = wrapColumn(alias, _rootTable.getColumn("RowId"));
                 result.setDisplayColumnFactory(new DisplayColumnFactory()
                 {
                     public DisplayColumn createRenderer(ColumnInfo colInfo)
@@ -343,7 +341,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             }
             case ViewFileLink:
             {
-                ColumnInfo result = wrapColumn(alias, _rootTable.getColumn("RowId"));
+                var result = wrapColumn(alias, _rootTable.getColumn("RowId"));
                 result.setDisplayColumnFactory(new DisplayColumnFactory()
                 {
                     public DisplayColumn createRenderer(ColumnInfo colInfo)
@@ -356,7 +354,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             }
             case ContentLink:
             {
-                ColumnInfo result = wrapColumn(alias, _rootTable.getColumn("RowId"));
+                var result = wrapColumn(alias, _rootTable.getColumn("RowId"));
                 result.setDisplayColumnFactory(new DisplayColumnFactory()
                 {
                     public DisplayColumn createRenderer(ColumnInfo colInfo)
@@ -369,7 +367,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             }
             case Thumbnail:
             {
-                ColumnInfo result = wrapColumn(alias, _rootTable.getColumn("RowId"));
+                var result = wrapColumn(alias, _rootTable.getColumn("RowId"));
                 result.setDisplayColumnFactory(new DisplayColumnFactory()
                 {
                     public DisplayColumn createRenderer(ColumnInfo colInfo)
@@ -382,7 +380,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             }
             case InlineThumbnail:
             {
-                ColumnInfo result = wrapColumn(alias, _rootTable.getColumn("RowId"));
+                var result = wrapColumn(alias, _rootTable.getColumn("RowId"));
                 result.setDisplayColumnFactory(new DisplayColumnFactory()
                 {
                     public DisplayColumn createRenderer(ColumnInfo colInfo)
@@ -395,7 +393,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             }
             case FileSize:
             {
-                ColumnInfo result = wrapColumn(alias, _rootTable.getColumn("RowId"));
+                var result = wrapColumn(alias, _rootTable.getColumn("RowId"));
                 result.setTextAlign("left");
                 result.setJdbcType(JdbcType.VARCHAR);
                 result.setDisplayColumnFactory(new DisplayColumnFactory()
@@ -436,7 +434,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             }
             case FileExists:
             {
-                ColumnInfo result = wrapColumn(alias, _rootTable.getColumn("RowId"));
+                var result = wrapColumn(alias, _rootTable.getColumn("RowId"));
                 result.setJdbcType(JdbcType.BOOLEAN);
                 result.setTextAlign("left");
                 result.setDisplayColumnFactory(new DisplayColumnFactory()
@@ -467,7 +465,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             }
             case FileExtension:
             {
-                ColumnInfo result = wrapColumn(alias, _rootTable.getColumn("RowId"));
+                var result = wrapColumn(alias, _rootTable.getColumn("RowId"));
                 result.setJdbcType(JdbcType.VARCHAR);
                 result.setTextAlign("left");
                 result.setDisplayColumnFactory(new DisplayColumnFactory()
@@ -498,7 +496,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             }
             case ViewOrDownload:
             {
-                ColumnInfo result = wrapColumn(alias, _rootTable.getColumn("RowId"));
+                var result = wrapColumn(alias, _rootTable.getColumn("RowId"));
                 result.setLabel("View/Download");
                 result.setDisplayColumnFactory(new DisplayColumnFactory()
                 {
@@ -512,7 +510,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             }
             case WebDavUrl:
             {
-                ColumnInfo result = wrapColumn(alias, _rootTable.getColumn("RowId"));
+                var result = wrapColumn(alias, _rootTable.getColumn("RowId"));
                 result.setJdbcType(JdbcType.VARCHAR);
                 result.setLabel("WebDAV URL");
                 result.setDescription("This is the full WebDAV URL to this file");
@@ -527,7 +525,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             }
             case WebDavUrlRelative:
             {
-                ColumnInfo result = wrapColumn(alias, _rootTable.getColumn("RowId"));
+                var result = wrapColumn(alias, _rootTable.getColumn("RowId"));
                 result.setJdbcType(JdbcType.VARCHAR);
                 result.setLabel("Relative WebDAV URL");
                 result.setDescription("This is the WebDAV path of this file, relative to the file root of this container");
@@ -594,7 +592,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         return _run;
     }
 
-    public ColumnInfo addDataInputColumn(String alias, String role)
+    public BaseColumnInfo addDataInputColumn(String alias, String role)
     {
         SQLFragment sql = new SQLFragment("(SELECT MIN(exp.datainput.dataid)" +
                 "\nFROM exp.datainput" +
@@ -614,7 +612,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         return doAdd(ret);
     }
 
-    public ColumnInfo addMaterialInputColumn(String alias, SamplesSchema schema, String pdRole, final ExpSampleSet ss)
+    public BaseColumnInfo addMaterialInputColumn(String alias, SamplesSchema schema, String pdRole, final ExpSampleSet ss)
     {
         SQLFragment sql = new SQLFragment("(SELECT MIN(InputMaterial.RowId)" +
             "\nFROM exp.materialInput" +
@@ -668,12 +666,12 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
     }
 
 
-    public ColumnInfo addInputRunCountColumn(String alias)
+    public BaseColumnInfo addInputRunCountColumn(String alias)
     {
         SQLFragment sql = new SQLFragment("(SELECT COUNT(DISTINCT exp.ProtocolApplication.RunId) " +
                 "FROM exp.ProtocolApplication INNER JOIN Exp.DataInput ON exp.ProtocolApplication.RowId = Exp.DataInput.TargetApplicationId " +
                 "WHERE Exp.DataInput.DataId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId)");
-        ColumnInfo ret = new ExprColumn(this, alias, sql, JdbcType.INTEGER);
+        var ret = new ExprColumn(this, alias, sql, JdbcType.INTEGER);
         return doAdd(ret);
     }
 

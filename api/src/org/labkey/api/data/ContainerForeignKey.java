@@ -16,10 +16,10 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 
 /**
@@ -29,12 +29,12 @@ import org.labkey.api.view.ActionURL;
  */
 public class ContainerForeignKey extends QueryForeignKey
 {
-    static public ColumnInfo initColumn(ColumnInfo column, UserSchema schema)
+    static public BaseColumnInfo initColumn(BaseColumnInfo column, UserSchema schema)
     {
         return initColumn(column, schema, null);
     }
 
-    static public ColumnInfo initColumn(ColumnInfo column, UserSchema schema, final ActionURL url)
+    static public BaseColumnInfo initColumn(@NotNull BaseColumnInfo column, UserSchema schema, final ActionURL url)
     {
         column.setFk(new ContainerForeignKey(schema));
         column.setUserEditable(false);

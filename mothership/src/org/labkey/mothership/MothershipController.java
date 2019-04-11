@@ -1710,7 +1710,7 @@ public class MothershipController extends SpringActionController
                 // incorrect for their usage on this page.
                 if (!("Note".equalsIgnoreCase(col.getColumnName()) || "IgnoreExceptions".equalsIgnoreCase(col.getColumnName())))
                 {
-                    col.setUserEditable(false);
+                    ((BaseColumnInfo)col).setUserEditable(false);
                 }
             }
 

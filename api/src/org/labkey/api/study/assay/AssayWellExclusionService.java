@@ -16,7 +16,7 @@
 package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -51,13 +51,13 @@ public interface AssayWellExclusionService
     }
 
     @Nullable
-    ColumnInfo createExcludedColumn(TableInfo tinfo, ExpProtocol protocol);
+    BaseColumnInfo createExcludedColumn(TableInfo tinfo, ExpProtocol protocol);
     @Nullable
-    ColumnInfo createExcludedByColumn(TableInfo tinfo, ExpProtocol protocol);
+    BaseColumnInfo createExcludedByColumn(TableInfo tinfo, ExpProtocol protocol);
     @Nullable
-    ColumnInfo createExcludedAtColumn(TableInfo tinfo, ExpProtocol protocol);
+    BaseColumnInfo createExcludedAtColumn(TableInfo tinfo, ExpProtocol protocol);
     @Nullable
-    ColumnInfo createExclusionCommentColumn(TableInfo tinfo, ExpProtocol protocol);
+    BaseColumnInfo createExclusionCommentColumn(TableInfo tinfo, ExpProtocol protocol);
 
     void createExclusionEvent(ExpRun run, Set<String> rowIds, String comment, User user, Container container);
 
