@@ -3,17 +3,15 @@
  * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
  */
 import * as React from 'react'
-import {Alert, Button, ButtonToolbar, Col, Panel, Row} from "react-bootstrap";
+import {Alert, Button, ButtonToolbar, Col, Row} from "react-bootstrap";
 import {ActionURL} from "@labkey/api";
-import {DOMAIN_FORM_ID, DomainDesign} from "./models";
 import {LoadingSpinner} from "@glass/utils";
-import {clearFieldDetails, fetchDomain, saveDomain, updateField} from "./actions";
-import DomainForm from "./DomainForm";
+import {DomainForm, DomainDesign, clearFieldDetails, updateField, fetchDomain, saveDomain} from "@glass/domainproperties"
 
-type State = {
-    schemaName,
-    queryName,
-    domainId: number,
+interface IDomainDesignerState {
+    schemaName?: string,
+    queryName?: string,
+    domainId?: number,
     domain?: DomainDesign,
     message?: string,
     messageType?: string
@@ -24,7 +22,7 @@ const btnStyle = {
     width: 120
 };
 
-export class App extends React.Component<any, State> {
+export class App extends React.PureComponent<any, IDomainDesignerState> {
 
     constructor(props)
     {
@@ -37,6 +35,7 @@ export class App extends React.Component<any, State> {
         this.submitHandler = this.submitHandler.bind(this);
         this.getAlert = this.getAlert.bind(this);
         this.dismissAlert = this.dismissAlert.bind(this);
+        this.onChangeHandler = this.onChangeHandler.bind(this);
 
         this.state = {
             schemaName,
@@ -60,7 +59,7 @@ export class App extends React.Component<any, State> {
         }
     }
 
-    submitHandler(evt: any) {
+    submitHandler() {
 
         saveDomain(this.state.domain)
             .then(domain => {
@@ -72,6 +71,14 @@ export class App extends React.Component<any, State> {
             });
     }
 
+    onChangeHandler(evt) {
+        let value = evt.target.value;
+        if (evt.target.type === "checkbox") {
+            value = evt.target.checked;
+        }
+        this.setState({domain: updateField(this.state.domain, evt.target.id, value)});
+    }
+
     dismissAlert() {
         this.setState({message: null, messageType: null})
     }
@@ -80,6 +87,10 @@ export class App extends React.Component<any, State> {
         return (
             <Alert bsStyle={messageType} key={"domain-msg-" + Math.random()} onDismiss={this.dismissAlert}>{message}</Alert>
         )
+    }
+
+    onCancel() {
+        location.reload();
     }
 
     render() {
@@ -95,13 +106,13 @@ export class App extends React.Component<any, State> {
                 <Row>
                     <Col xs={12}>
                         <ButtonToolbar>
-                            <Button type='button' style={btnStyle} bsClass='btn'>Cancel</Button>
+                            <Button type='button' style={btnStyle} bsClass='btn' onClick={this.onCancel}>Cancel</Button>
                             <Button type='button' style={btnStyle} bsClass='btn btn-success' onClick={this.submitHandler} >Save Changes</Button>
                         </ButtonToolbar>
                     </Col>
                 </Row>
                 { message ? this.getAlert(message, messageType) : '' }
-                <DomainForm domainDesign = {domain} id={DOMAIN_FORM_ID} />
+                <DomainForm domain={domain} onSubmit={this.submitHandler} onChange={this.onChangeHandler}/>
             </>
         )
     }

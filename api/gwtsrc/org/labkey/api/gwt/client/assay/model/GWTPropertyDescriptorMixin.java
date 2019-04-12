@@ -18,7 +18,8 @@ import org.labkey.api.gwt.client.util.StringProperty;
         "lookupDescription",
         "fileType",
         "updatedField",
-        "newField"
+        "newField",
+        "renderUpdate"
 })
 public abstract class GWTPropertyDescriptorMixin
 {
