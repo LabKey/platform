@@ -140,7 +140,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     public String getCpasType()
     {
         String result = _object.getCpasType();
-        return result == null ? "Material" : result;
+        return result == null ? ExpMaterialImpl.DEFAULT_CPAS_TYPE : result;
     }
 
     @Override

@@ -122,8 +122,8 @@ import org.labkey.study.controllers.assay.actions.GetAssayBatchAction;
 import org.labkey.study.controllers.assay.actions.GetAssayBatchesAction;
 import org.labkey.study.controllers.assay.actions.GetProtocolAction;
 import org.labkey.study.controllers.assay.actions.ImportRunApiAction;
-import org.labkey.study.controllers.assay.actions.SaveProtocolAction;
 import org.labkey.study.controllers.assay.actions.SaveAssayBatchAction;
+import org.labkey.study.controllers.assay.actions.SaveProtocolAction;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -794,7 +794,7 @@ public class AssayController extends SpringActionController
                 data.setName(originalName);
                 data.save(getUser());
 
-                JSONObject jsonData = ExperimentJSONConverter.serializeData(data);
+                JSONObject jsonData = ExperimentJSONConverter.serializeData(data, getUser());
 
                 if (files.size() == 1 && !form.isForceMultipleResults())
                 {

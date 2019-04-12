@@ -555,7 +555,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             XarContext context = new XarContext("DeriveSamples", viewContext.getContainer(), viewContext.getUser());
             try
             {
-                materialLsid = LsidUtils.resolveLsidFromTemplate("${FolderLSIDBase}:" + materialName, context, "Material");
+                materialLsid = LsidUtils.resolveLsidFromTemplate("${FolderLSIDBase}:" + materialName, context, ExpMaterial.DEFAULT_CPAS_TYPE);
             }
             catch (XarFormatException e)
             {

@@ -111,7 +111,7 @@ public class AssayJSONConverter
 
     public static JSONObject serializeRun(ExpRun run, AssayProvider provider, ExpProtocol protocol, User user)
     {
-        JSONObject jsonObject = ExperimentJSONConverter.serializeRun(run, provider != null ? provider.getRunDomain(protocol) : null);
+        JSONObject jsonObject = ExperimentJSONConverter.serializeRun(run, provider != null ? provider.getRunDomain(protocol) : null, user);
 
         JSONArray dataRows = new JSONArray();
         if (provider != null)

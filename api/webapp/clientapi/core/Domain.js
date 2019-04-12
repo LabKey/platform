@@ -192,7 +192,7 @@ LABKEY.Domain.create({
 	* @param {String} config.schemaName Name of the schema
 	* @param {String} config.queryName Name of the query
     * @param {String} config.domainId Id of the domain. This is an alternate way to identify the domain.
-    *    SchemaName and queryName will be ignored if this value is not undefined or null.
+    *       SchemaName and queryName will be ignored if this value is not undefined or null.
 	* @param {String} [config.containerPath] The container path in which the requested Domain is defined.
 	*       If not supplied, the current container path will be used.
 	* @example Example:
@@ -251,7 +251,7 @@ LABKEY.Domain.create({
          * @param {String} config.schemaName Name of the schema
          * @param {String} config.queryName Name of the query
          * @param {String} config.domainId Id of the domain. This is an alternate way to identify the domain to update.
-         *    SchemaName and queryName will be ignored if this value is not undefined or null.
+         *        SchemaName and queryName will be ignored if this value is not undefined or null.
          * @param {String} [config.containerPath] The container path in which the requested Domain is defined.
          *       If not supplied, the current container path will be used.
          */
@@ -272,8 +272,8 @@ LABKEY.Domain.create({
             saveDomain(
                 config.success,
                 config.failure,
-                config.domainId,
-                {domainDesign: config.domainDesign, schemaName: config.schemaName, queryName: config.queryName},
+                {domainDesign: config.domainDesign, schemaName: config.schemaName, queryName: config.queryName,
+                    domainId: config.domainId},
                 config.containerPath);
         },
 

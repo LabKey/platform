@@ -129,7 +129,7 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
                 url : LABKEY.ActionURL.buildURL('query', 'selectRows.api'),
                 extraParams : {
                     schemaName  : 'core',
-                    queryName   : 'UsersMsgPrefs'
+                    queryName   : 'Users'
                 },
                 reader : {
                     type : 'json',

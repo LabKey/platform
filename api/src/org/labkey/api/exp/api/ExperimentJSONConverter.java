@@ -17,6 +17,7 @@ package org.labkey.api.exp.api;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
@@ -26,6 +27,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.security.User;
 import org.labkey.api.util.URIUtil;
 
 import java.io.File;
@@ -78,7 +80,7 @@ public class ExperimentJSONConverter
         return jsonObject;
     }
 
-    public static JSONObject serializeRun(ExpRun run, Domain domain)
+    public static JSONObject serializeRun(ExpRun run, Domain domain, User user)
     {
         JSONObject jsonObject = serializeStandardProperties(run, domain == null ? null : domain.getProperties());
         jsonObject.put(COMMENT, run.getComments());
@@ -86,7 +88,7 @@ public class ExperimentJSONConverter
         JSONArray inputDataArray = new JSONArray();
         for (ExpData data : run.getDataInputs().keySet())
         {
-            inputDataArray.put(ExperimentJSONConverter.serializeData(data));
+            inputDataArray.put(ExperimentJSONConverter.serializeData(data, user));
         }
         jsonObject.put(DATA_INPUTS, inputDataArray);
 
@@ -99,25 +101,25 @@ public class ExperimentJSONConverter
         }
         jsonObject.put(MATERIAL_INPUTS, inputMaterialArray);
 
-        serializeRunOutputs(jsonObject, run.getDataOutputs(), run.getMaterialOutputs());
+        serializeRunOutputs(jsonObject, run.getDataOutputs(), run.getMaterialOutputs(), user);
 
         return jsonObject;
     }
 
-    public static JSONObject serializeRunOutputs(Collection<ExpData> data, Collection<ExpMaterial> materials)
+    public static JSONObject serializeRunOutputs(Collection<ExpData> data, Collection<ExpMaterial> materials, User user)
     {
         JSONObject obj = new JSONObject();
-        serializeRunOutputs(obj, data, materials);
+        serializeRunOutputs(obj, data, materials, user);
         return obj;
     }
 
-    protected static void serializeRunOutputs(@NotNull JSONObject obj, Collection<ExpData> data, Collection<ExpMaterial> materials)
+    protected static void serializeRunOutputs(@NotNull JSONObject obj, Collection<ExpData> data, Collection<ExpMaterial> materials, User user)
     {
         JSONArray outputDataArray = new JSONArray();
         for (ExpData d : data)
         {
-            if (null != d.getFile() || null != d.getDataClass())
-                outputDataArray.put(ExperimentJSONConverter.serializeData(d));
+            if (null != d.getFile() || null != d.getDataClass(user))
+                outputDataArray.put(ExperimentJSONConverter.serializeData(d, user));
         }
         obj.put(DATA_OUTPUTS, outputDataArray);
 
@@ -168,7 +170,7 @@ public class ExperimentJSONConverter
                     if (data != null)
                     {
                         // If we can find a row in the data table, return that
-                        value = serializeData(data);
+                        value = serializeData(data, null);
                     }
                     else
                     {
@@ -192,7 +194,7 @@ public class ExperimentJSONConverter
     }
 
 
-    public static JSONObject serializeData(ExpData data)
+    public static JSONObject serializeData(ExpData data, @Nullable User user)
     {
         JSONObject jsonObject = serializeStandardProperties(data, null);
         jsonObject.put(DATA_FILE_URL, data.getDataFileUrl());
@@ -207,9 +209,10 @@ public class ExperimentJSONConverter
             }
         }
 
-        if (data.getDataClass() != null)
+        ExpDataClass dc = data.getDataClass(user);
+        if (dc != null)
         {
-            jsonObject.put(DATA_CLASS, serializeStandardProperties(data.getDataClass(), null));
+            jsonObject.put(DATA_CLASS, serializeStandardProperties(dc, null));
         }
         return jsonObject;
     }

@@ -62,7 +62,7 @@
     Container c = getContainer();
     User user = getUser();
     ScriptReportDesignBean bean = me.getModelBean();
-    ScriptReport report = (ScriptReport) bean.getReport(ctx);
+    ScriptReport report = bean.getReport(ctx);
     List<String> includedReports = bean.getIncludedReports();
     String helpHtml = report.getDesignerHelpHtml();
     boolean readOnly = bean.isReadOnly() || !report.canEdit(user, c);

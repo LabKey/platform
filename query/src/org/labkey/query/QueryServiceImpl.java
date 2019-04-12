@@ -3112,7 +3112,7 @@ public class QueryServiceImpl implements QueryService
             {
                 assertEquals("Custom views from the simpletest module", 10, MODULE_CUSTOM_VIEW_CACHE.getResourceMap(simpleTest).size());
                 assertEquals("Queries from the simpletest module", 5, MODULE_QUERY_DEF_CACHE.getResourceMap(simpleTest).size());
-                assertEquals("Query metadata overrides from the simpletest module", 2, MODULE_QUERY_METADATA_DEF_CACHE.getResourceMap(simpleTest).size());
+                assertEquals("Query metadata overrides from the simpletest module", 3, MODULE_QUERY_METADATA_DEF_CACHE.getResourceMap(simpleTest).size());
             }
         }
     }

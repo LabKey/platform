@@ -42,7 +42,7 @@ public class ExpDataProtocolInputImpl extends ExpProtocolInputImpl<DataProtocolI
             return "Data must not be null";
 
         ExpDataClass dc = getType();
-        if (dc != null && !Objects.equals(dc, data.getDataClass()))
+        if (dc != null && !Objects.equals(dc, data.getDataClass(user)))
             return "Data is not from '" + dc.getName() + "' DataClass";
 
         ExpProtocolInputCriteria critera = getCriteria();
