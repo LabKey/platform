@@ -137,6 +137,12 @@ public class ClientDependency
         }
     }
 
+    private ClientDependency(Module m)
+    {
+        _module = m;
+        _primaryType = TYPE.context;
+    }
+
     private static void logError(String message)
     {
         URLHelper url = null;
@@ -146,12 +152,6 @@ public class ClientDependency
             url = HttpView.getContextURLHelper();
 
         _log.error(message + (null != url ? " URL: " + url.getLocalURIString() : ""));
-    }
-
-    private ClientDependency(Module m)
-    {
-        _module = m;
-        _primaryType = TYPE.context;
     }
 
     public static boolean isExternalDependency(String path)
@@ -205,14 +205,6 @@ public class ClientDependency
 
         return set;
     }
-
-
-    @Deprecated
-    public static ClientDependency fromFilePath(String path)
-    {
-        return ClientDependency.fromPath(path);
-    }
-
 
     @Nullable
     public static ClientDependency fromXML(DependencyType type)
@@ -449,10 +441,7 @@ public class ClientDependency
 
     private LinkedHashSet<ClientDependency> getUniqueDependencySet(Container c)
     {
-        LinkedHashSet<ClientDependency> cd = new LinkedHashSet<>();
-
-        if (_children != null)
-            cd.addAll(_children);
+        LinkedHashSet<ClientDependency> cd = new LinkedHashSet<>(_children);
 
         if (TYPE.context.equals(_primaryType))
         {
@@ -546,24 +535,9 @@ public class ClientDependency
     @Override
     public boolean equals(Object o)
     {
-        if (o == null || !(o instanceof ClientDependency))
+        if (!(o instanceof ClientDependency))
             return false;
 
         return ((ClientDependency)o).getUniqueKey().equals(getUniqueKey());
-    }
-
-    /**
-     * @return The string representation of this ClientDependency, as would appear in an XML or other config file
-     */
-    public String getScriptString()
-    {
-        if (_filePath != null)
-            return _filePath.toString();
-        if (_uri != null)
-            return _uri;
-        else if (_module != null)
-            return _module.getName() + "." + _primaryType.name();
-        else
-            return null;
     }
 }
