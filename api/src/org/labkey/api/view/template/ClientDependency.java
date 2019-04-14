@@ -101,13 +101,6 @@ public abstract class ClientDependency
         _mode = mode;
     }
 
-    // Allows for a ClientDependency that exists externally
-    protected ClientDependency(String uri, TYPE primaryType)
-    {
-        this(primaryType, ModeTypeEnum.BOTH);
-        _devModePath = _prodModePath = uri;
-    }
-
     protected abstract void init();
 
     private static void logError(String message)
@@ -142,9 +135,8 @@ public abstract class ClientDependency
     @NotNull
     public static ClientDependency fromModule(Module m)
     {
-        String key = getCacheKey("moduleContext|" + m.getName(), ModeTypeEnum.BOTH);
-
-        return (ClientDependency)CacheManager.getSharedCache().get(key, null, (key1, argument) -> new ContextClientDependency(m, ModeTypeEnum.BOTH));
+        //noinspection ConstantConditions
+        return fromFilePath(m.getName() + TYPE.context.getExtension(), ModeTypeEnum.BOTH);
     }
 
     // converts a semi-colon delimited list of dependencies into a set of appropriate ClientDependency objects
@@ -193,37 +185,38 @@ public abstract class ClientDependency
         ClientDependency cd;
 
         if (isExternalDependency(path))
-            cd = new ExternalClientDependency(path);
+            cd = new ExternalClientDependency(path, mode);
         else
             cd = fromFilePath(path, mode);
 
         return cd;
     }
 
-    protected static @Nullable ClientDependency fromFilePath(String path, @NotNull ModeTypeEnum.Enum mode)
+    // TODO: Rename
+    protected static @Nullable ClientDependency fromFilePath(String requestedPath, @NotNull ModeTypeEnum.Enum mode)
     {
-        path = path.replaceAll("^/", "");
+        requestedPath = requestedPath.replaceAll("^/", "");
 
         //as a convenience, if no extension provided, assume it's a library
-        if (StringUtils.isEmpty(FileUtil.getExtension(path)))
-            path = path + TYPE.lib.getExtension();
+        if (StringUtils.isEmpty(FileUtil.getExtension(requestedPath)))
+            requestedPath = requestedPath + TYPE.lib.getExtension();
 
-        Path filePath = Path.parse(path).normalize();
+        Path path = Path.parse(requestedPath).normalize();
 
-        if (filePath == null)
+        if (path == null)
         {
-            _log.warn("Invalid client dependency path: " + path);
+            _log.warn("Invalid client dependency path: " + requestedPath);
             return null;
         }
 
-        String key = getCacheKey(filePath.toString(), mode);
+        String key = getCacheKey(path.toString(), mode);
 
         return (ClientDependency)CacheManager.getSharedCache().get(key, null, (key1, argument) -> {
-            TYPE primaryType = TYPE.fromPath(filePath);
+            TYPE primaryType = TYPE.fromPath(path);
 
             if (primaryType == null)
             {
-                _log.warn("Client dependency type not recognized: " + filePath);
+                _log.warn("Client dependency type not recognized: " + path);
                 return null;
             }
 
@@ -231,12 +224,12 @@ public abstract class ClientDependency
 
             if (TYPE.context == primaryType)
             {
-                String moduleName = FileUtil.getBaseName(filePath.getName());
+                String moduleName = FileUtil.getBaseName(path.getName());
                 Module m = ModuleLoader.getInstance().getModule(moduleName);
 
                 if (m == null)
                 {
-                    logError("Module \"" + moduleName + "\" not found, skipping script file \"" + filePath + "\".");
+                    logError("Module \"" + moduleName + "\" not found, skipping script file \"" + path + "\".");
                     return null;
                 }
 
@@ -244,7 +237,7 @@ public abstract class ClientDependency
             }
             else
             {
-                Resource r = WebdavService.get().getRootResolver().lookup(filePath);
+                Resource r = WebdavService.get().getRootResolver().lookup(path);
                 //TODO: can we connect this resource back to a module, and load that module's context by default?--
 
                 if (r == null || !r.exists())
@@ -252,15 +245,15 @@ public abstract class ClientDependency
                     // Allows you to run in dev mode without having the concatenated scripts built
                     if (!AppProps.getInstance().isDevMode() || !mode.equals(ModeTypeEnum.PRODUCTION))
                     {
-                        logError("Script file \"" + filePath + "\" not found, skipping.");
+                        logError("ClientDependency \"" + path + "\" not found, skipping.");
                         return null;
                     }
                 }
 
                 if (TYPE.lib == primaryType)
-                    cr = new LibClientDependency(filePath, mode, r);
+                    cr = new LibClientDependency(path, mode, r);
                 else
-                    cr = new FilePathClientDependency(filePath, mode, primaryType);
+                    cr = new FilePathClientDependency(path, mode, primaryType);
             }
 
             cr.init();

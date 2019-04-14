@@ -1,6 +1,7 @@
 package org.labkey.api.view.template;
 
 import org.apache.log4j.Logger;
+import org.labkey.clientLibrary.xml.ModeTypeEnum;
 
 public class ExternalClientDependency extends ClientDependency
 {
@@ -8,10 +9,10 @@ public class ExternalClientDependency extends ClientDependency
 
     private final String _uri;
 
-    protected ExternalClientDependency(String uri)
+    protected ExternalClientDependency(String uri, ModeTypeEnum.Enum mode)
     {
-        super(uri, getType(uri));
-        _uri = uri;
+        super(getType(uri), mode);
+        _devModePath = _prodModePath = _uri = uri;
     }
 
     private static TYPE getType(String uri)
