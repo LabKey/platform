@@ -19,7 +19,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class LibClientDependency extends ClientDependency
+public class LibClientDependency extends FilePathClientDependency
 {
     private static final Logger _log = Logger.getLogger(LibClientDependency.class);
 

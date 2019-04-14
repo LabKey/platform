@@ -46,7 +46,7 @@ import java.util.Set;
  * Date: 6/13/12
  * Time: 5:25 PM
  */
-public class ClientDependency
+public abstract class ClientDependency
 {
     private static final Logger _log = Logger.getLogger(ClientDependency.class);
 
@@ -92,10 +92,8 @@ public class ClientDependency
     protected final TYPE _primaryType;
     protected final ModeTypeEnum.Enum _mode;
 
-    private String _prodModePath;
-    private String _devModePath;
-
-    protected Path _filePath;
+    protected String _prodModePath;
+    protected String _devModePath;
 
     protected ClientDependency(TYPE primaryType, ModeTypeEnum.Enum mode)
     {
@@ -110,17 +108,7 @@ public class ClientDependency
         _devModePath = _prodModePath = uri;
     }
 
-    protected ClientDependency(Path filePath, @NotNull ModeTypeEnum.Enum mode, TYPE primaryType)
-    {
-        this(primaryType, mode);
-        _filePath = filePath;
-    }
-
-    // TODO: Make abstract and move impl to subclass
-    protected void init()
-    {
-        processScript(_filePath);
-    }
+    protected abstract void init();
 
     private static void logError(String message)
     {
@@ -272,7 +260,7 @@ public class ClientDependency
                 if (TYPE.lib == primaryType)
                     cr = new LibClientDependency(filePath, mode, r);
                 else
-                    cr = new ClientDependency(filePath, mode, primaryType);
+                    cr = new FilePathClientDependency(filePath, mode, primaryType);
             }
 
             cr.init();
@@ -286,33 +274,7 @@ public class ClientDependency
         return ClientDependency.class.getName() + "|" + identifier.toLowerCase() + "|" + mode.toString();
     }
 
-    protected String getUniqueKey()
-    {
-        assert _filePath != null;
-        return getCacheKey(_filePath.toString(), _mode);
-    }
-
-    private void processScript(Path filePath)
-    {
-        TYPE type = TYPE.fromPath(filePath);
-
-        if (type == null)
-        {
-            _log.warn("Invalid file type for resource: " + filePath);
-            return;
-        }
-
-        handleScript(filePath);
-    }
-
-    protected void handleScript(Path filePath)
-    {
-        if (!_mode.equals(ModeTypeEnum.PRODUCTION))
-            _devModePath = filePath.toString();
-
-        if (!_mode.equals(ModeTypeEnum.DEV))
-            _prodModePath = filePath.toString();
-    }
+    protected abstract String getUniqueKey();
 
     @Nullable
     public TYPE getPrimaryType()
@@ -405,11 +367,5 @@ public class ClientDependency
     /**
      * @return The string representation of this ClientDependency, as would appear in an XML or other config file
      */
-    public String getScriptString()
-    {
-        if (_filePath != null)
-            return _filePath.toString();
-        else
-            return null;
-    }
+    public abstract String getScriptString();
 }
