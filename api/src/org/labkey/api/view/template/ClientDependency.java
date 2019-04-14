@@ -17,7 +17,6 @@ package org.labkey.api.view.template;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheManager;
@@ -33,17 +32,12 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.webdav.WebdavService;
-import org.labkey.clientLibrary.xml.DependenciesType;
 import org.labkey.clientLibrary.xml.DependencyType;
-import org.labkey.clientLibrary.xml.LibrariesDocument;
-import org.labkey.clientLibrary.xml.LibraryType;
 import org.labkey.clientLibrary.xml.ModeTypeEnum;
-import org.labkey.clientLibrary.xml.RequiredModuleType;
 
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
-import java.util.Map;
 import java.util.Set;
 
 
@@ -95,52 +89,39 @@ public class ClientDependency
         private final FileType _fileType;
     }
 
-    private final LinkedHashSet<ClientDependency> _children = new LinkedHashSet<>();
-    private final TYPE _primaryType;
+    protected final TYPE _primaryType;
 
-    private boolean _compileInProductionMode = true;
-    private Module _module;
     private String _prodModePath;
     private String _devModePath;
-    private String _uri;
-    private Path _filePath;
-    private Resource _resource;
-    private ModeTypeEnum.Enum _mode = ModeTypeEnum.BOTH;
 
-    // Allows for a ClientDependency that exists externally
-    private ClientDependency(String uri)
+    protected ModeTypeEnum.Enum _mode = ModeTypeEnum.BOTH;
+    protected Path _filePath;
+
+    protected ClientDependency(TYPE primaryType)
     {
-        _uri = uri;
-        _primaryType = TYPE.fromString(_uri);
-        if (_primaryType == null)
-        {
-            _log.warn("External client dependency type not recognized: " + uri);
-        }
-        _devModePath = _prodModePath = _uri;
-
-        _module = null; // not related to a module
+        _primaryType = primaryType;
     }
 
-    private ClientDependency(Path filePath, ModeTypeEnum.Enum mode, Resource r, TYPE primaryType, Module module)
+    // Allows for a ClientDependency that exists externally
+    protected ClientDependency(String uri, TYPE primaryType)
     {
+        this(primaryType);
+        _devModePath = _prodModePath = uri;
+    }
+
+    protected ClientDependency(Path filePath, ModeTypeEnum.Enum mode, TYPE primaryType)
+    {
+        this(primaryType);
         if (mode != null)
             _mode = mode;
 
         _filePath = filePath;
-        _primaryType = primaryType;
-        _module = module;
-        _resource = r;
-
-        if (!TYPE.context.equals(_primaryType))
-        {
-            processScript(_filePath);
-        }
     }
 
-    private ClientDependency(Module m)
+    // TODO: Make abstract and move impl to subclass
+    protected void init()
     {
-        _module = m;
-        _primaryType = TYPE.context;
+        processScript(_filePath);
     }
 
     private static void logError(String message)
@@ -182,7 +163,7 @@ public class ClientDependency
                 return cached;
         }
 
-        ClientDependency cd = new ClientDependency(m);
+        ClientDependency cd = new ContextClientDependency(m);
         if (!AppProps.getInstance().isDevMode())
             CacheManager.getSharedCache().put(key, cd);
         return cd;
@@ -190,9 +171,10 @@ public class ClientDependency
 
     // converts a semi-colon delimited list of dependencies into a set of
     // appropriate ClientDependency objects
-    public static LinkedHashSet<ClientDependency> fromList(String dependencies)
+    public static Set<ClientDependency> fromList(String dependencies)
     {
-        LinkedHashSet<ClientDependency> set = new LinkedHashSet<>();
+        Set<ClientDependency> set = new LinkedHashSet<>();
+
         if (null != dependencies)
         {
             String [] list = dependencies.split(";");
@@ -205,6 +187,14 @@ public class ClientDependency
 
         return set;
     }
+
+
+    @Deprecated
+    public static ClientDependency fromFilePath(String path)
+    {
+        return ClientDependency.fromPath(path);
+    }
+
 
     @Nullable
     public static ClientDependency fromXML(DependencyType type)
@@ -228,14 +218,14 @@ public class ClientDependency
         ClientDependency cd;
 
         if (isExternalDependency(path))
-            cd = new ClientDependency(path);
+            cd = new ExternalClientDependency(path);
         else
-            cd = ClientDependency.fromFilePath(path, mode);
+            cd = fromFilePath(path, mode);
 
         return cd;
     }
 
-    private static @Nullable ClientDependency fromFilePath(String path, ModeTypeEnum.Enum mode)
+    protected static @Nullable ClientDependency fromFilePath(String path, ModeTypeEnum.Enum mode)
     {
         path = path.replaceAll("^/", "");
 
@@ -260,8 +250,6 @@ public class ClientDependency
         }
 
         TYPE primaryType = TYPE.fromPath(filePath);
-        Module module = null;
-        Resource r = null;
 
         if (primaryType == null)
         {
@@ -269,23 +257,24 @@ public class ClientDependency
             return null;
         }
 
-        if (TYPE.context.equals(primaryType))
+        ClientDependency cr;
+
+        if (TYPE.context == primaryType)
         {
             String moduleName = FileUtil.getBaseName(filePath.getName());
             Module m = ModuleLoader.getInstance().getModule(moduleName);
+
             if (m == null)
             {
                 logError("Module \"" + moduleName + "\" not found, skipping script file \"" + filePath + "\".");
                 return null;
             }
-            else
-            {
-                module = m;
-            }
+
+            cr = new ContextClientDependency(m);
         }
         else
         {
-            r = WebdavService.get().getRootResolver().lookup(filePath);
+            Resource r = WebdavService.get().getRootResolver().lookup(filePath);
             //TODO: can we connect this resource back to a module, and load that module's context by default?--
 
             if (r == null || !r.exists())
@@ -297,140 +286,52 @@ public class ClientDependency
                     return null;
                 }
             }
+
+            if (TYPE.lib == primaryType)
+                cr = new LibClientDependency(filePath, mode, r);
+            else
+                cr = new ClientDependency(filePath, mode, primaryType);
         }
 
-        ClientDependency cr = new ClientDependency(filePath, mode, r, primaryType, module);
+        cr.init();
+
         if (!AppProps.getInstance().isDevMode())
             CacheManager.getSharedCache().put(key, cr);
+
         return cr;
     }
 
-    private static String getCacheKey(String identifier, ModeTypeEnum.Enum mode)
+    protected static String getCacheKey(String identifier, ModeTypeEnum.Enum mode)
     {
         return ClientDependency.class.getName() + "|" + identifier.toLowerCase() + "|" + mode.toString();
     }
 
-    private String getUniqueKey()
+    protected String getUniqueKey()
     {
-        if (TYPE.context.equals(_primaryType))
-            return getCacheKey("moduleContext|" + _module.toString(), _mode);
-        else if (_filePath != null)
-            return getCacheKey(_filePath.toString(), _mode);
-
-        return getCacheKey(_uri, _mode);
+        assert _filePath != null;
+        return getCacheKey(_filePath.toString(), _mode);
     }
 
     private void processScript(Path filePath)
     {
         TYPE type = TYPE.fromPath(filePath);
+
         if (type == null)
         {
             _log.warn("Invalid file type for resource: " + filePath);
             return;
         }
 
-        if (TYPE.lib.equals(type))
-        {
-            processLib(filePath);
-        }
-        else
-        {
-            if(!_mode.equals(ModeTypeEnum.PRODUCTION))
-                _devModePath = filePath.toString();
-
-            if(!_mode.equals(ModeTypeEnum.DEV))
-                _prodModePath = filePath.toString();
-        }
+        handleScript(filePath);
     }
 
-    private void processLib(Path filePath)
+    protected void handleScript(Path filePath)
     {
-        try
-        {
-            XmlOptions xmlOptions = new XmlOptions();
-            Map<String,String> namespaceMap = new HashMap<>();
-            namespaceMap.put("", "http://labkey.org/clientLibrary/xml/");
-            xmlOptions.setLoadSubstituteNamespaces(namespaceMap);
+        if (!_mode.equals(ModeTypeEnum.PRODUCTION))
+            _devModePath = filePath.toString();
 
-            LibrariesDocument libDoc = LibrariesDocument.Factory.parse(_resource.getInputStream(), xmlOptions);
-            boolean hasJsToCompile = false;
-            boolean hasCssToCompile = false;
-            if (libDoc != null && libDoc.getLibraries() != null)
-            {
-                //dependencies first
-                DependenciesType dependencies = libDoc.getLibraries().getDependencies();
-                if (dependencies != null)
-                {
-                    for (DependencyType s : dependencies.getDependencyArray())
-                    {
-                        ClientDependency cd = fromXML(s);
-                        if (cd != null)
-                            _children.add(cd);
-                        else
-                            _log.error("Unable to load <dependencies> in library " + _filePath.getName());
-                    }
-                }
-
-                //module contexts
-                if (libDoc.getLibraries().isSetRequiredModuleContext())
-                {
-                    for (RequiredModuleType mt : libDoc.getLibraries().getRequiredModuleContext().getModuleArray())
-                    {
-                        Module m = ModuleLoader.getInstance().getModule(mt.getName());
-                        if (m == null)
-                            _log.error("Unable to find module: '" + mt.getName() + "' in library " + _filePath.getName());
-                        else
-                            _children.add(ClientDependency.fromModule(m));
-                    }
-                }
-
-                LibraryType library = libDoc.getLibraries().getLibrary();
-
-                // <library> is an optional parameter
-                if (library != null)
-                {
-                    if (library.isSetCompileInProductionMode())
-                        _compileInProductionMode = library.getCompileInProductionMode();
-
-                    for (DependencyType s : library.getScriptArray())
-                    {
-                        ModeTypeEnum.Enum mode = s.isSetMode() ? s.getMode() :
-                                _compileInProductionMode ? ModeTypeEnum.DEV : ModeTypeEnum.BOTH;
-                        ClientDependency cr = fromPath(s.getPath(), mode);
-
-                        if (!TYPE.lib.equals(cr.getPrimaryType()))
-                            _children.add(cr);
-                        else
-                            _log.warn("Libraries cannot include other libraries: " + _filePath);
-
-                        if (_compileInProductionMode && mode != ModeTypeEnum.PRODUCTION)
-                        {
-                            if (TYPE.js.equals(cr.getPrimaryType()))
-                                hasJsToCompile = true;
-                            if (TYPE.css.equals(cr.getPrimaryType()))
-                                hasCssToCompile = true;
-                        }
-                    }
-                }
-
-                //add paths to the compiled scripts we expect to have created in the build.  these are production mode only
-                if (hasJsToCompile)
-                {
-                    String path = filePath.toString().replaceAll(TYPE.lib.getExtension() + "$", ".min" + TYPE.js.getExtension());
-                    _children.add(fromFilePath(path, ModeTypeEnum.PRODUCTION));
-                }
-
-                if (hasCssToCompile)
-                {
-                    String path = filePath.toString().replaceAll(TYPE.lib.getExtension() + "$", ".min" + TYPE.css.getExtension());
-                    _children.add(fromFilePath(path, ModeTypeEnum.PRODUCTION));
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            _log.error("Invalid client library XML file: " + _filePath + ". " + e.getMessage());
-        }
+        if (!_mode.equals(ModeTypeEnum.DEV))
+            _prodModePath = filePath.toString();
     }
 
     @Nullable
@@ -439,51 +340,43 @@ public class ClientDependency
         return _primaryType;
     }
 
-    private LinkedHashSet<ClientDependency> getUniqueDependencySet(Container c)
+    protected Set<ClientDependency> getUniqueDependencySet(Container c)
     {
-        LinkedHashSet<ClientDependency> cd = new LinkedHashSet<>(_children);
-
-        if (TYPE.context.equals(_primaryType))
-        {
-            if (_module != null)
-                cd.addAll(_module.getClientDependencies(c));
-        }
-
-        return cd;
+        return Collections.emptySet();
     }
 
-    private LinkedHashSet<String> getProductionScripts(Container c, TYPE type)
+    private Set<String> getProductionScripts(Container c, TYPE type)
     {
-        LinkedHashSet<String> scripts = new LinkedHashSet<>();
-        if (_primaryType != null && _primaryType.equals(type) && _prodModePath != null)
+        Set<String> scripts = new LinkedHashSet<>();
+        if (_primaryType != null && _primaryType == type && _prodModePath != null)
             scripts.add(_prodModePath);
 
-        LinkedHashSet<ClientDependency> cd = getUniqueDependencySet(c);
+        Set<ClientDependency> cd = getUniqueDependencySet(c);
         for (ClientDependency r : cd)
             scripts.addAll(r.getProductionScripts(c, type));
 
         return scripts;
     }
 
-    private LinkedHashSet<String> getDevModeScripts(Container c, TYPE type)
+    private Set<String> getDevModeScripts(Container c, TYPE type)
     {
-        LinkedHashSet<String> scripts = new LinkedHashSet<>();
-        if (_primaryType != null && _primaryType.equals(type) && _devModePath != null)
+        Set<String> scripts = new LinkedHashSet<>();
+        if (_primaryType != null && _primaryType == type && _devModePath != null)
             scripts.add(_devModePath);
 
-        LinkedHashSet<ClientDependency> cd = getUniqueDependencySet(c);
+        Set<ClientDependency> cd = getUniqueDependencySet(c);
         for (ClientDependency r : cd)
             scripts.addAll(r.getDevModeScripts(c, type));
 
         return scripts;
     }
 
-    public LinkedHashSet<String> getCssPaths(Container c)
+    public Set<String> getCssPaths(Container c)
     {
         return getCssPaths(c, AppProps.getInstance().isDevMode());
     }
 
-    public LinkedHashSet<String> getCssPaths(Container c, boolean devMode)
+    public Set<String> getCssPaths(Container c, boolean devMode)
     {
         if (devMode)
             return getDevModeScripts(c, TYPE.css);
@@ -491,12 +384,12 @@ public class ClientDependency
             return getProductionScripts(c, TYPE.css);
     }
 
-    public LinkedHashSet<String> getJsPaths(Container c)
+    public Set<String> getJsPaths(Container c)
     {
         return getJsPaths(c, AppProps.getInstance().isDevMode());
     }
 
-    public LinkedHashSet<String> getJsPaths(Container c, boolean devMode)
+    public Set<String> getJsPaths(Container c, boolean devMode)
     {
         if (devMode)
             return getDevModeScripts(c, TYPE.js);
@@ -506,9 +399,7 @@ public class ClientDependency
 
     public Set<Module> getRequiredModuleContexts(Container c)
     {
-        HashSet<Module> modules = new HashSet<>();
-        if(_module != null)
-            modules.add(_module);
+        Set<Module> modules = new HashSet<>();
 
         for (ClientDependency r : getUniqueDependencySet(c))
             modules.addAll(r.getRequiredModuleContexts(c));
@@ -539,5 +430,16 @@ public class ClientDependency
             return false;
 
         return ((ClientDependency)o).getUniqueKey().equals(getUniqueKey());
+    }
+
+    /**
+     * @return The string representation of this ClientDependency, as would appear in an XML or other config file
+     */
+    public String getScriptString()
+    {
+        if (_filePath != null)
+            return _filePath.toString();
+        else
+            return null;
     }
 }
