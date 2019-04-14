@@ -90,31 +90,29 @@ public class ClientDependency
     }
 
     protected final TYPE _primaryType;
+    protected final ModeTypeEnum.Enum _mode;
 
     private String _prodModePath;
     private String _devModePath;
 
-    protected ModeTypeEnum.Enum _mode = ModeTypeEnum.BOTH;
     protected Path _filePath;
 
-    protected ClientDependency(TYPE primaryType)
+    protected ClientDependency(TYPE primaryType, ModeTypeEnum.Enum mode)
     {
         _primaryType = primaryType;
+        _mode = mode;
     }
 
     // Allows for a ClientDependency that exists externally
     protected ClientDependency(String uri, TYPE primaryType)
     {
-        this(primaryType);
+        this(primaryType, ModeTypeEnum.BOTH);
         _devModePath = _prodModePath = uri;
     }
 
-    protected ClientDependency(Path filePath, ModeTypeEnum.Enum mode, TYPE primaryType)
+    protected ClientDependency(Path filePath, @NotNull ModeTypeEnum.Enum mode, TYPE primaryType)
     {
-        this(primaryType);
-        if (mode != null)
-            _mode = mode;
-
+        this(primaryType, mode);
         _filePath = filePath;
     }
 
@@ -144,6 +142,7 @@ public class ClientDependency
     public static ClientDependency fromModuleName(String mn)
     {
         Module m = ModuleLoader.getInstance().getModule(mn);
+
         if (m == null)
         {
             throw new IllegalArgumentException("Module '" + mn + "' not found, unable to create client resource");
@@ -156,21 +155,11 @@ public class ClientDependency
     public static ClientDependency fromModule(Module m)
     {
         String key = getCacheKey("moduleContext|" + m.getName(), ModeTypeEnum.BOTH);
-        if (!AppProps.getInstance().isDevMode())
-        {
-            ClientDependency cached = (ClientDependency)CacheManager.getSharedCache().get(key);
-            if (cached != null)
-                return cached;
-        }
 
-        ClientDependency cd = new ContextClientDependency(m);
-        if (!AppProps.getInstance().isDevMode())
-            CacheManager.getSharedCache().put(key, cd);
-        return cd;
+        return (ClientDependency)CacheManager.getSharedCache().get(key, null, (key1, argument) -> new ContextClientDependency(m, ModeTypeEnum.BOTH));
     }
 
-    // converts a semi-colon delimited list of dependencies into a set of
-    // appropriate ClientDependency objects
+    // converts a semi-colon delimited list of dependencies into a set of appropriate ClientDependency objects
     public static Set<ClientDependency> fromList(String dependencies)
     {
         Set<ClientDependency> set = new LinkedHashSet<>();
@@ -188,13 +177,11 @@ public class ClientDependency
         return set;
     }
 
-
     @Deprecated
     public static ClientDependency fromFilePath(String path)
     {
         return ClientDependency.fromPath(path);
     }
-
 
     @Nullable
     public static ClientDependency fromXML(DependencyType type)
@@ -213,7 +200,7 @@ public class ClientDependency
         return fromPath(path, ModeTypeEnum.BOTH);
     }
 
-    public static ClientDependency fromPath(String path, ModeTypeEnum.Enum mode)
+    public static ClientDependency fromPath(String path, @NotNull ModeTypeEnum.Enum mode)
     {
         ClientDependency cd;
 
@@ -225,7 +212,7 @@ public class ClientDependency
         return cd;
     }
 
-    protected static @Nullable ClientDependency fromFilePath(String path, ModeTypeEnum.Enum mode)
+    protected static @Nullable ClientDependency fromFilePath(String path, @NotNull ModeTypeEnum.Enum mode)
     {
         path = path.replaceAll("^/", "");
 
@@ -242,66 +229,59 @@ public class ClientDependency
         }
 
         String key = getCacheKey(filePath.toString(), mode);
-        if (!AppProps.getInstance().isDevMode())
-        {
-            ClientDependency cached = (ClientDependency)CacheManager.getSharedCache().get(key);
-            if (cached != null)
-                return cached;
-        }
 
-        TYPE primaryType = TYPE.fromPath(filePath);
+        return (ClientDependency)CacheManager.getSharedCache().get(key, null, (key1, argument) -> {
+            TYPE primaryType = TYPE.fromPath(filePath);
 
-        if (primaryType == null)
-        {
-            _log.warn("Client dependency type not recognized: " + filePath);
-            return null;
-        }
-
-        ClientDependency cr;
-
-        if (TYPE.context == primaryType)
-        {
-            String moduleName = FileUtil.getBaseName(filePath.getName());
-            Module m = ModuleLoader.getInstance().getModule(moduleName);
-
-            if (m == null)
+            if (primaryType == null)
             {
-                logError("Module \"" + moduleName + "\" not found, skipping script file \"" + filePath + "\".");
+                _log.warn("Client dependency type not recognized: " + filePath);
                 return null;
             }
 
-            cr = new ContextClientDependency(m);
-        }
-        else
-        {
-            Resource r = WebdavService.get().getRootResolver().lookup(filePath);
-            //TODO: can we connect this resource back to a module, and load that module's context by default?--
+            ClientDependency cr;
 
-            if (r == null || !r.exists())
+            if (TYPE.context == primaryType)
             {
-                // Allows you to run in dev mode without having the concatenated scripts built
-                if (!AppProps.getInstance().isDevMode() || !mode.equals(ModeTypeEnum.PRODUCTION))
+                String moduleName = FileUtil.getBaseName(filePath.getName());
+                Module m = ModuleLoader.getInstance().getModule(moduleName);
+
+                if (m == null)
                 {
-                    logError("Script file \"" + filePath + "\" not found, skipping.");
+                    logError("Module \"" + moduleName + "\" not found, skipping script file \"" + filePath + "\".");
                     return null;
                 }
+
+                cr = new ContextClientDependency(m, mode);
+            }
+            else
+            {
+                Resource r = WebdavService.get().getRootResolver().lookup(filePath);
+                //TODO: can we connect this resource back to a module, and load that module's context by default?--
+
+                if (r == null || !r.exists())
+                {
+                    // Allows you to run in dev mode without having the concatenated scripts built
+                    if (!AppProps.getInstance().isDevMode() || !mode.equals(ModeTypeEnum.PRODUCTION))
+                    {
+                        logError("Script file \"" + filePath + "\" not found, skipping.");
+                        return null;
+                    }
+                }
+
+                if (TYPE.lib == primaryType)
+                    cr = new LibClientDependency(filePath, mode, r);
+                else
+                    cr = new ClientDependency(filePath, mode, primaryType);
             }
 
-            if (TYPE.lib == primaryType)
-                cr = new LibClientDependency(filePath, mode, r);
-            else
-                cr = new ClientDependency(filePath, mode, primaryType);
-        }
+            cr.init();
 
-        cr.init();
-
-        if (!AppProps.getInstance().isDevMode())
-            CacheManager.getSharedCache().put(key, cr);
-
-        return cr;
+            return cr;
+        });
     }
 
-    protected static String getCacheKey(String identifier, ModeTypeEnum.Enum mode)
+    protected static String getCacheKey(String identifier, @NotNull ModeTypeEnum.Enum mode)
     {
         return ClientDependency.class.getName() + "|" + identifier.toLowerCase() + "|" + mode.toString();
     }
@@ -405,16 +385,6 @@ public class ClientDependency
             modules.addAll(r.getRequiredModuleContexts(c));
 
         return modules;
-    }
-
-    public ModeTypeEnum.Enum getMode()
-    {
-        return _mode;
-    }
-
-    public void setMode(ModeTypeEnum.Enum mode)
-    {
-        _mode = mode;
     }
 
     @Override

@@ -3,6 +3,7 @@ package org.labkey.api.view.template;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
+import org.labkey.clientLibrary.xml.ModeTypeEnum;
 
 import java.util.Set;
 
@@ -10,9 +11,9 @@ public class ContextClientDependency extends ClientDependency
 {
     private final Module _module;
 
-    protected ContextClientDependency(@NotNull Module m)
+    protected ContextClientDependency(@NotNull Module m, ModeTypeEnum.Enum mode)
     {
-        super(TYPE.context);
+        super(TYPE.context, mode);
         _module = m;
     }
 

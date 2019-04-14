@@ -6,7 +6,7 @@ public class ExternalClientDependency extends ClientDependency
 {
     private static final Logger _log = Logger.getLogger(ExternalClientDependency.class);
 
-    private String _uri;
+    private final String _uri;
 
     protected ExternalClientDependency(String uri)
     {
