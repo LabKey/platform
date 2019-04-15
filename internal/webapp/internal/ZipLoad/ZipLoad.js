@@ -632,6 +632,7 @@ LABKEY.internal.ZipLoad = new function () {
                 //code for file pattern - test integration
                 if(checkFilePattern(_file)) {
                     parentItemName = 'TestZipMeDir';
+                    _file.fullPath =  _file.name;
                     testFilesToZip.push({file: _file, dir: parentItemName});
                 }
                 else {
