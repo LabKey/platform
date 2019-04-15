@@ -12,7 +12,7 @@ LABKEY.internal.ZipLoad = new function () {
     var dirPatterns;
     var dropZone;
     var filePattern =new RegExp(".*\\.zipme$");
-    var firefox;
+    var checkReadEntriesByBatch;
 
     var zipWriter, writer;
     var addIndex;
@@ -594,10 +594,10 @@ LABKEY.internal.ZipLoad = new function () {
                         getFilesFromDirectory(allFiles, _entry, scope, callback);
                     }
                 }
-                if (!firefox) {
+                if (!checkReadEntriesByBatch) {
                     if (entries.length >= 100) {
                         dirCbCount++;
-                        //read next batch (readEntries only read 100 files in 1 batch)
+                        //read next batch (readEntries only read 100 files in 1 batch for chrome)
                         dirReader.readEntries(entriesReader, function (error) {
                             return console.log(error);
                         });
@@ -657,7 +657,7 @@ LABKEY.internal.ZipLoad = new function () {
             itemsDropped = entries;
             itemCount = itemsDropped.length-1;
             testFilesToZip = [];
-            firefox = isFirefox;
+            checkReadEntriesByBatch = isFirefox;
             _zipLoad(itemsDropped[itemCount]);
         }
     }

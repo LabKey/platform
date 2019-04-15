@@ -224,13 +224,7 @@ LABKEY.internal.FileDrop = new function () {
                 if (!e.dataTransfer) {
                     return;
                 }
-                //use colon(:) as file separator in case of firefox
-                if(window.navigator.userAgent.toLowerCase().indexOf("firefox") > -1) {
-                    isFirefox = true;
-                }
-                else {
-                    isFirefox = false;
-                }
+                isFirefox = window.navigator.userAgent.toLowerCase().indexOf("firefox") > -1;
 
                 var items = e.dataTransfer.items;
 
