@@ -1,5 +1,4 @@
-// #Main
-// Global import of all .scss files
-@import "variables";
-@import "fileDrop";
-@import "sections";
+
+@import "./scss/variables";
+@import "./scss/fileupload";
+@import "./scss/sections";

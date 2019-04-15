@@ -58,7 +58,6 @@ export class App extends React.Component<FileAttachmentFormWithPreviewProps, Fil
 
         uploadDataFileAsExpData(file)
             .then((response) => {
-                console.log(response);
                 this.handleFileAsExpData(response);
             })
             .catch(reason => {
@@ -140,7 +139,7 @@ export class App extends React.Component<FileAttachmentFormWithPreviewProps, Fil
     renderPreviewGrid() {
         const { previewData, previewStatus } = this.state;
 
-        if (previewData && previewData.size) {
+        if (previewData) {
             const numRows = previewData.size;
 
             return (

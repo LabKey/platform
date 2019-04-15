@@ -194,11 +194,11 @@ export class FileAttachmentContainer extends React.Component<FileAttachmentConta
     render() {
         const { acceptedFormats, allowMultiple, labelLong } = this.props;
         const { files, isHover } = this.state;
+        const hideFileUpload = !allowMultiple && Object.keys(files).length > 0;
 
         return (
             <div>
-                <div className="file-upload--container" style={{
-                    display: (!allowMultiple && Object.keys(files).length > 0) ? 'none' : 'block'}}>
+                <div className={classNames("file-upload--container", (hideFileUpload ? "hidden" : "block"))}>
                     <label
                         className={classNames("file-upload--label", {'file-upload__is-hover': isHover})}
                         htmlFor="fileUpload"
