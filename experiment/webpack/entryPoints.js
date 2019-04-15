@@ -16,7 +16,7 @@ module.exports = {
     },{
         name: 'fileUploadPreview',
         title: 'File Upload Preview',
-        permission: 'admin',
+        permission: 'insert',
         path: './src/client/FileUploadPreview'
     }]
 };
