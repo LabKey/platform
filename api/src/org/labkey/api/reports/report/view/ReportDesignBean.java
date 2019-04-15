@@ -34,7 +34,7 @@ import java.util.List;
  * User: Karl Lum
  * Date: Dec 4, 2007
  */
-public class ReportDesignBean extends ReportForm
+public class ReportDesignBean<R extends Report> extends ReportForm
 {
     protected String _queryName;
     protected String _schemaName;
@@ -203,13 +203,13 @@ public class ReportDesignBean extends ReportForm
         _cached = cached;
     }
 
-    public Report getReport(ContainerUser cu) throws Exception
+    public R getReport(ContainerUser cu) throws Exception
     {
-        Report report = null;
+        R report = null;
         if (null != getReportId())
-            report = getReportId().getReport(cu);
+            report = (R)getReportId().getReport(cu);
         if (report == null)
-            report = ReportService.get().createReportInstance(getReportType());
+            report = (R)ReportService.get().createReportInstance(getReportType());
 
         if (report != null)
         {

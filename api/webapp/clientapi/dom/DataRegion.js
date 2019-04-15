@@ -2242,6 +2242,24 @@ if (!LABKEY.DataRegions) {
         }, this);
     };
 
+    function _hasPanelOpen(dr) {
+        return dr.activePanelId !== undefined;
+    }
+
+    function _hasButtonBarMenuOpen(dr) {
+        return _getBarSelector(dr).find(".lk-menu-drop.open").length > 0;
+    }
+
+    /**
+     * Returns true if the user has interacted with the DataRegion by changing
+     * the selection, opening a button menu, or opening a panel.
+     * @return {boolean}
+     * @private
+     */
+    LABKEY.DataRegion.prototype.isUserInteracting = function () {
+        return this.selectionModified || _hasPanelOpen(this) || _hasButtonBarMenuOpen(this);
+    };
+
     //
     // Misc
     //

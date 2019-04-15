@@ -75,7 +75,7 @@ public class DefaultReportUIProvider implements ReportService.UIProvider
 
     protected void addDesignerURL(ViewContext context, QuerySettings settings, List<ReportService.DesignerInfo> designers, String type, String[] params)
     {
-        RReportBean bean = new RReportBean(settings);
+        ScriptReportBean bean = new ScriptReportBean(settings);
         bean.setReportType(type);
         bean.setRedirectUrl(context.getActionURL().toString());
 

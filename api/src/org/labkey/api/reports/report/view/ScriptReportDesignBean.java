@@ -6,7 +6,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.reports.Report;
 import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.report.RReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
@@ -49,7 +48,7 @@ public class ScriptReportDesignBean extends ScriptReportBean
     public void init(ContainerUser cu, AjaxScriptReportView.Mode mode) throws Exception
     {
         setMode(mode);
-        ScriptReport report = (ScriptReport)getReport(cu); // TODO: Should use generics (ScriptReportBean<ScriptReport>)
+        ScriptReport report = getReport(cu);
 
         if (null == _script)
         {
@@ -87,13 +86,13 @@ public class ScriptReportDesignBean extends ScriptReportBean
         return _includedReports;
     }
 
-    public Report getReport(ContainerUser cu) throws Exception
+    public ScriptReport getReport(ContainerUser cu) throws Exception
     {
-        Report report = super.getReport(cu);
+        ScriptReport report = super.getReport(cu);
 
         if (report != null)
         {
-            report = report.clone();
+            report = (ScriptReport)report.clone();
             ReportDescriptor reportDescriptor = report.getDescriptor();
 
             // This check fails if CreateScriptReportAction is called with a non-script report ID. The crawler enjoys doing this.
