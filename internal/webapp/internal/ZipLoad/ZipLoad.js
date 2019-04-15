@@ -12,6 +12,7 @@ LABKEY.internal.ZipLoad = new function () {
     var dirPatterns;
     var dropZone;
     var filePattern =new RegExp(".*\\.zipme$");
+    var firefox;
 
     var zipWriter, writer;
     var addIndex;
@@ -130,36 +131,14 @@ LABKEY.internal.ZipLoad = new function () {
     function nextFile() {
         var file = filesBeingZipped[addIndex].file;
         this.directoryBeingZipped = filesBeingZipped[addIndex].dir;
-        var filePath = file.name.split('/');
+        var filePath = file.fullPath.split('/');
         filePath.shift();
-        //newFileName - correct file name(path) to put in zip
-        var newFileName ='';
-
-        if(filePath.length>0) {
-            var parentDirIndex;
-
-            for (var fp = 0; fp < filePath.length; fp++) {
-                if (filesBeingZipped[0].realDir === filePath[fp]) {
-                    parentDirIndex = fp + 1;
-                }
-            }
-
-            for (fp = parentDirIndex; fp < filePath.length; fp++) {
-                if (fp === filePath.length - 1) {
-                    newFileName += filePath[fp]
-                }
-                else {
-                    newFileName += filePath[fp] + '/'
-                }
-            }
-            newFileName = filesBeingZipped[0].dir + '/' + newFileName;
-        } else {
-            newFileName = this.directoryBeingZipped +'/' + file.name;
-        }
         var zipProgressName = filePath[filePath.length-1];
+
         getCurrentZipFile().update("Adding file - " + zipProgressName);
         getCurrentFileNumber().update(addIndex + '/' + filesBeingZipped.length);
-        zipWriter.add(newFileName, new zip.BlobReader(file), function () {
+
+        zipWriter.add(file.name, new zip.BlobReader(file), function () {
             addIndex++;
             if (addIndex < filesBeingZipped.length)
                 nextFile();
@@ -210,38 +189,33 @@ LABKEY.internal.ZipLoad = new function () {
         getStatusText().update('');
         hideZipProgressWindow();
         var dirName = filesBeingZipped[0].dir;
-        var nameToUse = '';
-        var filename = filesBeingZipped[0].file.name; //used for getting correct zip path
+        var filename = filesBeingZipped[0].file.fullPath; //used for getting correct zip path
         var filenameParts = filename.split('/');
         filenameParts.shift();
-        var fileNamePartsIndex = 1;
-        var foundDirectoryName = false;
+        var correctPath = '';
 
-        for (var nps = 1; nps < filenameParts.length; nps++) {
-            if (filenameParts[nps] === dirName) {
-                foundDirectoryName = true;
-            }
-        }
-
-        if (parentItemName === filenameParts[0] && foundDirectoryName) {
-            while (filenameParts[fileNamePartsIndex] !== dirName) {
-                nameToUse = nameToUse + filenameParts[fileNamePartsIndex] + '/';
-                fileNamePartsIndex++;
-            }
-        }
-        nameToUse = nameToUse + dirName;
         //determine the correct zip path
-        var correctZipPath = '';
-        if (parentItemName === dirName) {
-            correctZipPath = parentItemName;
+        for (var nps = 0; nps < filenameParts.length; nps++) {
+            if (filenameParts[nps] === dirName) {
+                if(nps === 0) {
+                    correctPath = dirName;
+                }
+                else {
+                    correctPath +=  dirName;
+                }
+                break;
+            }
+            else {
+                correctPath += filenameParts[nps] +'/';
+            }
         }
-        else {
-            correctZipPath = parentItemName + '/' + nameToUse;
-        }
-        dropZone.addFile(new File([zippedBlob], correctZipPath + '.zip', {
+
+        var zipBlobFile = new File([zippedBlob], dirName + '.zip', {
             type: 'application/zip',
             lastModified: Date.now()
-        }));
+        });
+        zipBlobFile.fullPath =  correctPath + '.zip';
+        dropZone.addFile(zipBlobFile);
 
         moveToNextDirectory();
     }
@@ -543,7 +517,7 @@ LABKEY.internal.ZipLoad = new function () {
         tree = {name: 'root', nodes: []};
 
         for (var f = 0; f < files.length; f++) {
-            var parts = files[f].name.split('/');
+            var parts = files[f].fullPath.split('/');
             parts.shift();
             _buildTree(parts, files[f]);
         }
@@ -606,8 +580,8 @@ LABKEY.internal.ZipLoad = new function () {
                         _entry.file(function (file) {
                             fileCbCount--;
 
-                            file.name = entry.path + "/" + file.name;
-                            var updatedFile = new File([file], entry.fullPath + "/" + file.name, {type: file.type});
+                            var updatedFile = new File([file], file.name, {type: file.type});
+                            updatedFile.fullPath = entry.fullPath + "/" + file.name;
 
                             allFiles.push(updatedFile);
 
@@ -620,12 +594,14 @@ LABKEY.internal.ZipLoad = new function () {
                         getFilesFromDirectory(allFiles, _entry, scope, callback);
                     }
                 }
-                if (entries.length >= 100) {
-                    dirCbCount++;
-                    //read next batch (readEntries only read 100 files in 1 batch)
-                    dirReader.readEntries(entriesReader, function (error) {
-                       return console.log(error);
-                    });
+                if (!firefox) {
+                    if (entries.length >= 100) {
+                        dirCbCount++;
+                        //read next batch (readEntries only read 100 files in 1 batch)
+                        dirReader.readEntries(entriesReader, function (error) {
+                            return console.log(error);
+                        });
+                    }
                 }
                dirCbCount--;
             };
@@ -675,12 +651,13 @@ LABKEY.internal.ZipLoad = new function () {
     }
 
     return {
-        zipLoad: function (entries, me, patterns) {
+        zipLoad: function (entries, me, patterns, isFirefox) {
             dirPatterns = patterns;
             dropZone = me;
             itemsDropped = entries;
             itemCount = itemsDropped.length-1;
             testFilesToZip = [];
+            firefox = isFirefox;
             _zipLoad(itemsDropped[itemCount]);
         }
     }
