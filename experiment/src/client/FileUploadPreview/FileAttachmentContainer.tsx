@@ -131,10 +131,10 @@ export class FileAttachmentContainer extends React.Component<FileAttachmentConta
                 errorMsg: undefined,
                 isHover: false
             });
-        }
 
-        if (Utils.isFunction(handleChange)) {
-            handleChange(files);
+            if (Utils.isFunction(handleChange)) {
+                handleChange(files);
+            }
         }
     }
 
