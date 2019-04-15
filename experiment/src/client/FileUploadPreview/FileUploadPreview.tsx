@@ -127,7 +127,7 @@ export class App extends React.Component<FileAttachmentFormWithPreviewProps, Fil
                     showAcceptedFormats={previewData === null}
                     allowDirectories={false}
                     allowMultiple={false}
-                    showLabel={false}
+                    label={"Upload a file:"}
                     onFileChange={this.handleFileChange}
                     onFileRemoval={this.handleFileRemoval}
                     onSubmit={this.handleFileSubmit}
@@ -145,7 +145,7 @@ export class App extends React.Component<FileAttachmentFormWithPreviewProps, Fil
             return (
                 <>
                     <div className={"margin-top"}>
-                        <strong>Grid Preview:</strong>
+                        <strong>File preview:</strong>
                     </div>
                     <p className={'margin-top'}>
                         The {numRows === 1 ? 'only row ' : 'first ' + numRows + ' rows '} of your data
