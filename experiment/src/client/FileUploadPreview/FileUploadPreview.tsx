@@ -1,6 +1,7 @@
 import * as React from "react";
 import {Panel} from "react-bootstrap";
-import {DataUploadPanel} from "./DataUploadPanel";
+
+import {FileAttachmentFormWithPreview} from "./FileAttachmentFormWithPreview";
 
 type State = {
     errorMessage?: string
@@ -35,7 +36,7 @@ export class App extends React.Component<any, State> {
                 <Panel>
                     <Panel.Heading>File Upload and Preview</Panel.Heading>
                     <Panel.Body>
-                        <DataUploadPanel handleErrors={this.handleErrors}/>
+                        <FileAttachmentFormWithPreview handleErrors={this.handleErrors}/>
                     </Panel.Body>
                 </Panel>
             </>

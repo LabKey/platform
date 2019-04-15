@@ -5,15 +5,19 @@
 import * as React from 'react'
 import { Button } from 'react-bootstrap'
 import { Map } from 'immutable'
+import { Progress } from '@glass/base'
 
+import { FormSection } from './FormSection'
 import { FileAttachmentContainer } from './FileAttachmentContainer'
 
 interface FileAttachmentFormProps {
     acceptedFormats?: string // comma-separated list of allowed extensions i.e. '.png, .jpg, .jpeg'
+    showAcceptedFormats?: boolean
     allowDirectories?: boolean
     allowMultiple?: boolean
     cancelText?: string
     label?: string
+    labelLong?: string
     onCancel?: () => any
     onFileChange?: (files: Map<string, File>) => any
     onFileRemoval?: (attachmentName: string) => any
@@ -33,10 +37,12 @@ export class FileAttachmentForm extends React.Component<FileAttachmentFormProps,
 
     static defaultProps = {
         acceptedFormats: '',
+        showAcceptedFormats: true,
         allowDirectories: true,
-        allowMultiple: false,
+        allowMultiple: true,
         cancelText: 'Cancel',
-        label: 'Select file or drag and drop here',
+        label: 'Attachments',
+        labelLong: 'Select file or drag and drop here',
         onCancel: undefined,
         onSubmit: undefined,
         showButtons: false,
@@ -55,6 +61,12 @@ export class FileAttachmentForm extends React.Component<FileAttachmentFormProps,
         this.state = {
             attachedFiles: Map<string, File>()
         };
+    }
+
+    determineFileSize(): number {
+        const { attachedFiles } = this.state;
+
+        return attachedFiles.reduce((total, file) =>( total += file.size), 0);
     }
 
     handleFileChange(fileList: {[key: string]: File}) {
@@ -92,7 +104,7 @@ export class FileAttachmentForm extends React.Component<FileAttachmentFormProps,
         });
     }
 
-    renderButtons() { //TODO this is copied from biologics, requirements may change in future UX stories
+    renderButtons() {
         const { cancelText, onCancel, submitText } = this.props;
 
         return (
@@ -123,26 +135,42 @@ export class FileAttachmentForm extends React.Component<FileAttachmentFormProps,
     render() {
         const {
             acceptedFormats,
+            showAcceptedFormats,
             allowDirectories,
             allowMultiple,
             label,
-            showButtons
+            labelLong,
+            showButtons,
+            showLabel,
+            showProgressBar,
+            isSubmitting
         } = this.props;
-
-        const { attachedFiles } = this.state;
 
         return (
             <>
-
-                <FileAttachmentContainer
-                    acceptedFormats={acceptedFormats}
-                    allowDirectories={allowDirectories}
-                    handleChange={this.handleFileChange}
-                    handleRemoval={this.handleFileRemoval}
-                    allowMultiple={allowMultiple}
-                    label={label}/>
-                {acceptedFormats && attachedFiles.size === 0 && (
-                    <div className={"margin-top"}>
+                <span className="translator--toggle__wizard">
+                    <FormSection
+                        iconSpacer={false}
+                        label={label}
+                        showLabel={showLabel}>
+                        <FileAttachmentContainer
+                            acceptedFormats={acceptedFormats}
+                            allowDirectories={allowDirectories}
+                            handleChange={this.handleFileChange}
+                            handleRemoval={this.handleFileRemoval}
+                            allowMultiple={allowMultiple}
+                            labelLong={labelLong}/>
+                    </FormSection>
+                </span>
+                {showProgressBar && (
+                    <Progress
+                        estimate={this.determineFileSize() * .1}
+                        modal={true}
+                        title="Uploading"
+                        toggle={isSubmitting}/>
+                )}
+                {acceptedFormats && showAcceptedFormats && (
+                    <div>
                         <strong>Supported formats include: </strong>{acceptedFormats}
                     </div>
                 )}

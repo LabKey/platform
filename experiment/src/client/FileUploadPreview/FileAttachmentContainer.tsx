@@ -2,8 +2,9 @@
  * Copyright (c) 2018-2019 LabKey Corporation. All rights reserved. No portion of this work may be reproduced in
  * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
  */
-import { isFunction } from './utils';
 import * as React from 'react'
+import classNames from 'classnames'
+import { Utils } from '@labkey/api'
 
 interface FileAttachmentContainerProps {
     acceptedFormats?: string // comma separated list of allowed extensions i.e. '.png, .jpg, .jpeg'
@@ -11,7 +12,7 @@ interface FileAttachmentContainerProps {
     allowDirectories: boolean
     handleChange?: any
     handleRemoval?: any
-    label?: string
+    labelLong?: string
 }
 
 interface FileAttachmentContainerState {
@@ -106,7 +107,7 @@ export class FileAttachmentContainer extends React.Component<FileAttachmentConta
 
         if (!allowMultiple && fileList.length > 1) {
             this.setState({
-                errorMsg: 'Only one file allowed',
+                errorMsg: 'Only one file allowed.',
                 isHover: false
             });
             return;
@@ -132,7 +133,7 @@ export class FileAttachmentContainer extends React.Component<FileAttachmentConta
             });
         }
 
-        if (isFunction(handleChange)) {
+        if (Utils.isFunction(handleChange)) {
             handleChange(files);
         }
     }
@@ -166,7 +167,7 @@ export class FileAttachmentContainer extends React.Component<FileAttachmentConta
 
         this.setState({files});
 
-        if (isFunction(handleRemoval)) {
+        if (Utils.isFunction(handleRemoval)) {
             handleRemoval(name);
         }
     }
@@ -183,7 +184,6 @@ export class FileAttachmentContainer extends React.Component<FileAttachmentConta
         }
     }
 
-
     cancelEvent(event: React.SyntheticEvent<any>): void {
         if (event) {
             event.stopPropagation();
@@ -192,22 +192,22 @@ export class FileAttachmentContainer extends React.Component<FileAttachmentConta
     }
 
     render() {
-        const { acceptedFormats, allowMultiple, label } = this.props;
+        const { acceptedFormats, allowMultiple, labelLong } = this.props;
         const { files, isHover } = this.state;
-        const classString = isHover ? "file-upload--label file-upload__is-hover" : "file-upload--label";
+
         return (
             <div>
                 <div className="file-upload--container" style={{
                     display: (!allowMultiple && Object.keys(files).length > 0) ? 'none' : 'block'}}>
                     <label
-                        className={classString}
+                        className={classNames("file-upload--label", {'file-upload__is-hover': isHover})}
                         htmlFor="fileUpload"
                         onDragEnter={this.handleDrag}
                         onDragLeave={this.handleLeave}
                         onDragOver={this.handleDrag}
                         onDrop={this.handleDrop}>
                         <i className="fa fa-cloud-upload fa-2x cloud-logo" aria-hidden="true"/>
-                        {label}
+                        {labelLong}
                     </label>
                     <input
                         accept={acceptedFormats}
