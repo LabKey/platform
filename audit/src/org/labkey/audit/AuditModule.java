@@ -88,11 +88,4 @@ public class AuditModule extends DefaultModule
     {
         return Collections.singleton(AuditSchema.SCHEMA_NAME);
     }
-
-    @Nullable
-    @Override
-    public UpgradeCode getUpgradeCode()
-    {
-        return new AuditUpgradeCode();
-    }
 }

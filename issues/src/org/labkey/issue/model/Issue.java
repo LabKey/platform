@@ -79,10 +79,9 @@ public class Issue extends Entity implements Serializable, Cloneable
 
     public void open(Container c, User u)
     {
-        if (0 == getCreatedBy()) // TODO: Check for brand new issue (vs. reopen)?  What if guest opens issue?
-        {
-            beforeInsert(u, c.getId());
-        }
+        if (getCreatedBy() != 0)
+            u = UserManager.getUser(getCreatedBy()) != null ? UserManager.getUser(getCreatedBy()) : u;
+        beforeInsert(u, c.getId());
         change(u);
 
         setStatus(statusOPEN);
