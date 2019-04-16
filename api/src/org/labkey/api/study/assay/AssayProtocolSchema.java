@@ -19,6 +19,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AssayQCService;
+import org.labkey.api.assay.AssayFlagHandler;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
@@ -416,6 +418,11 @@ public abstract class AssayProtocolSchema extends AssaySchema
             }
         });
 
+        // add any QC filter conditions if applicable
+        AssayQCService svc = AssayQCService.getProvider(getProtocol());
+        SQLFragment qcFragment = svc.getRunsTableCondition(getProtocol(), getContainer(), getUser());
+        runTable.addCondition(qcFragment);
+
         visibleColumns.add(FieldKey.fromParts(batchColumn.getName()));
         FieldKey batchPropsKey = FieldKey.fromParts(batchColumn.getName());
         Domain batchDomain = getProvider().getBatchDomain(getProtocol());
@@ -436,10 +443,12 @@ public abstract class AssayProtocolSchema extends AssaySchema
 
     protected void addQCFlagColumn(ExpRunTable runTable)
     {
-        runTable.addColumn(new AssayQCFlagColumn(runTable, getSchemaName(), true));
-        ColumnInfo qcEnabled = runTable.addColumn(new ExprColumn(runTable, "QCFlagsEnabled", AssayQCFlagColumn.createSQLFragment(runTable.getSqlDialect(), "Enabled"), JdbcType.VARCHAR));
-        qcEnabled.setLabel("QC Flags Enabled State");
-        qcEnabled.setHidden(true);
+        AssayFlagHandler handler = AssayFlagHandler.getHandler(getProvider());
+        if (handler != null)
+        {
+            runTable.addColumn(handler.createFlagColumn(runTable, getSchemaName(), true));
+            runTable.addColumn(handler.createQCEnabledColumn(runTable, getSchemaName()));
+        }
     }
 
     private void addPropertyColumn(ExpTable table, Domain domain, String columnName)

@@ -21,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.model.QCState;
+import org.labkey.api.qc.QCState;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.writer.StudyArchiveDataTypes;

@@ -16,6 +16,7 @@
 package org.labkey.study.model;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.qc.QCState;
 
 import java.util.*;
 /*

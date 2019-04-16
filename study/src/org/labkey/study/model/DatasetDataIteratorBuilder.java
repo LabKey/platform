@@ -33,6 +33,7 @@ import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.ErrorIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
+import org.labkey.api.qc.QCState;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;

@@ -20,8 +20,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.compliance.TableRules;
-import org.labkey.api.compliance.TableRulesManager;
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -84,7 +82,7 @@ import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.ParticipantGroup;
-import org.labkey.study.model.QCState;
+import org.labkey.api.qc.QCState;
 import org.labkey.study.model.StudyManager;
 
 import java.util.ArrayList;

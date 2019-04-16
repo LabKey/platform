@@ -83,7 +83,7 @@ import org.labkey.study.assay.query.AssayAuditProvider;
 import org.labkey.study.controllers.assay.AssayController;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.DatasetDomainKind;
-import org.labkey.study.model.QCState;
+import org.labkey.api.qc.QCState;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.UploadLog;

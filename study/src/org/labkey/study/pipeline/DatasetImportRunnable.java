@@ -36,7 +36,7 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
 import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.model.DatasetDefinition;
-import org.labkey.study.model.QCState;
+import org.labkey.api.qc.QCState;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 

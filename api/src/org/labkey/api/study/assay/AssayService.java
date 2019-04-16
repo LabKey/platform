@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.ExpQCFlag;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -185,4 +186,22 @@ public interface AssayService
      * @return AssayColumnInfoRenderer
      */
     AssayColumnInfoRenderer getAssayColumnInfoRenderer(ExpProtocol protocol, ColumnInfo columnInfo, Container container, User user);
+
+    /**
+     * Saves a ExpQCFlag instance for the specified run.
+     * The assay provider must implement an instance of the AssayFlagHandler interface
+     */
+    <FlagType extends ExpQCFlag> void saveFlag(AssayProvider provider, FlagType flag, User user);
+
+    /**
+     * Delete the flags for the run.
+     * The assay provider must implement an instance of the AssayFlagHandler interface
+     */
+    int deleteFlags(AssayProvider provider, int runId, User user);
+
+    /**
+     * Returns the flags for the specified run.
+     * The assay provider must implement an instance of the AssayFlagHandler interface
+     */
+    <FlagType extends ExpQCFlag> List<FlagType> getFlags(AssayProvider provider, int runId, Class<FlagType> cls);
 }
