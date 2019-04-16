@@ -68,7 +68,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -943,13 +943,13 @@ public class SqlParser
 
         String medAlias = "medAlias_";
         Map<FieldKey, QExpr> groupByAliasMap = new HashMap<>();        // Need to replace groupBys with aliases
-        QSelectFrom transformedSelectFrom = makeInnerSelectFrom(query.getSelect(), query.getFrom(), groupBy, groupByAliasMap);
+        QSelectFrom transformedSelectFrom = new QSelectFrom();
+        transformedSelectFrom.setTokenTypeAndText(SELECT_FROM);
 
+        QSelect selectNew = transformSelect(query.getSelect(), query.getFrom(), groupBy, transformedSelectFrom, groupByAliasMap);
         QSelectFrom selectFrom = new QSelectFrom();
         selectFrom.setTokenTypeAndText(SELECT_FROM);
-        selectFrom.appendChildren(
-                transformSelect(query.getSelect(), transformedSelectFrom.getSelect()),
-                makeTransformedFrom(transformedSelectFrom, where, medAlias));
+        selectFrom.appendChildren(selectNew, makeTransformedFrom(transformedSelectFrom, where, medAlias));
 
         QQuery queryNew = new QQuery();
         queryNew.setTokenTypeAndText(QUERY);
@@ -961,12 +961,12 @@ public class SqlParser
             for (QNode groupChild : groupChildren)
             {
                 QExpr expr = groupByAliasMap.get(((QExpr) groupChild).getFieldKey());
-                if (null == expr)
-                    _parseErrors.add(new QueryParseException("Group By field not found: " + ((QExpr) groupChild).getFieldKey(), null, groupChild.getLine(), groupChild.getLine()));
-                else
+                if (null != expr)
                     groupBy.appendChild(expr);
             }
-            queryNew.appendChild(groupBy);
+
+            if (!groupBy.childList().isEmpty())
+                queryNew.appendChild(groupBy);          // If no groupBy fields are surfaced, no need for groupBy, since they went into partitioning median
         }
         if (null != limit)
             queryNew.appendChild(limit);
@@ -993,9 +993,23 @@ public class SqlParser
         return from;
     }
 
-    private QSelectFrom makeInnerSelectFrom(QSelect select, QFrom from, QGroupBy groupBy, @NotNull Map<FieldKey, QExpr> groupByAliasMap)
+    private QSelect transformSelect(QSelect select,                                 // input Select
+                                    QFrom from,                                     // input From
+                                    QGroupBy groupBy,                               // input GroupBy
+                                    QSelectFrom innerSelectFrom,                    // [out] inner SelectFrom to be filled in
+                                    @NotNull Map<FieldKey, QExpr> groupByAliasMap)  // [out] alias map for GroupBy
     {
         AliasManager aliasManager = new AliasManager(_dialect);     // Need to assign unique names to selected fields for them to be used in outer select
+        for (QNode child : select.children())                       // Claim existing aliases
+        {
+            if (child instanceof QAs)
+            {
+                QAs as = (QAs)child;
+                QIdentifier identifier = as.childList().size() > 1 ? as.getAlias() : null;
+                if (null != identifier)
+                    aliasManager.claimAlias(identifier.getIdentifier(), identifier.getIdentifier());
+            }
+        }
 
         if (null != groupBy)
         {
@@ -1008,145 +1022,171 @@ public class SqlParser
 
         QSelect innerSelect = new QSelect();
         innerSelect.setTokenTypeAndText(SELECT);
+
+        List<QNode> innerSelectNewChildren = new ArrayList<>();
         for (QNode child : select.children())
         {
             if (child instanceof QAs)
             {
                 QAs as = (QAs)child;
                 QIdentifier identifier = as.childList().size() > 1 ? as.getAlias() : null;
-                if (as.getExpression() instanceof QAggregate)
-                {
-                    QAggregate aggregate = (QAggregate) as.getExpression();
+                innerSelectNewChildren.addAll(transformInnerExpr(as, identifier, groupBy, aliasManager, groupByAliasMap));
 
-                    if (QAggregate.Type.MEDIAN.equals(aggregate.getType()))
-                    {
-                        QPartitionBy partitionBy = new QPartitionBy();
-                        if (null != groupBy)
-                        {
-                            for (QNode groupChild : groupBy.children())
-                                partitionBy.appendChild(groupChild.copyTree());
-                        }
-
-                        aggregate.appendChild(partitionBy);     // Append as last child
-                        if (null != identifier)
-                            identifier.setTokenText(aliasManager.decideAlias(identifier.getIdentifier()));
-                        else
-                            as.appendChild(new QIdentifier(aliasManager.decideAlias("aggexpr")));
-
-                        innerSelect.appendChild(as);
-                    }
-                    else
-                    {
-                        // Don't aggregate here; if Agg has only 1 arg, use the alias for its result to bubble up;
-                        // If > 1 arg.... TODO -- currently for SQL Server, there are none (other than group_concat)
-                        // For other aggregates, including group_concat, just evaluate first child and alias that
-                        QNode aggChild = aggregate.getFirstChild();
-                        QAs nonAgg = new QAs();
-                        nonAgg.appendChild(aggChild);
-                        if (null != identifier)
-                            identifier.setTokenText(aliasManager.decideAlias(identifier.getIdentifier()));
-                        else
-                            nonAgg.appendChild(new QIdentifier(aliasManager.decideAlias("aggexpr")));
-
-                        innerSelect.appendChild(nonAgg);
-                    }
-                }
-                else
-                {
-                    if (groupByAliasMap.containsKey(as.getExpression().getFieldKey()))
-                        groupByAliasMap.put(as.getExpression().getFieldKey(), null != identifier ? identifier : as.getExpression());
-
-                    innerSelect.appendChild(child.copyTree());
-                }
             }
             else
             {   // TODO: Is this possible?  I don't think so
-                innerSelect.appendChild(child);
+                innerSelectNewChildren.add(child);
             }
         }
-        QSelectFrom selectFrom = new QSelectFrom();
-        selectFrom.setTokenTypeAndText(SELECT_FROM);
-        selectFrom.appendChildren(innerSelect, from);
-        return selectFrom;
+        innerSelect.appendChildren(filterDuplicateIdentifiers(innerSelectNewChildren));
+        innerSelectFrom.appendChildren(innerSelect, from);
+        return select;
     }
 
 
-    private QSelect transformSelect(QSelect origSelect, QSelect transformedSelect)
+    private List<QNode> transformInnerExpr(@NotNull QAs as,                     // Input As   [possibly modified in place]
+                                           @Nullable QIdentifier identifier,    // Input identifier
+                                           @Nullable QGroupBy groupBy,          // Input GroupBy
+                                           @NotNull AliasManager aliasManager,  // Input AliasManager [possibly modified]
+                                           @NotNull Map<FieldKey, QExpr> groupByAliasMap) // [out] alias map for GroupBy
     {
-        QSelect selectNew = new QSelect();
-        selectNew.setTokenTypeAndText(SELECT);
-        Iterator<QNode> origIter = origSelect.children().iterator();
-        Iterator<QNode> transformedIter = transformedSelect.children().iterator();
-        for (; origIter.hasNext();)
+        // Retain only aggregates and leaves of all other expressions
+        QExpr expr = as.getExpression();
+        if (null != expr.getFieldKey() && groupByAliasMap.containsKey(expr.getFieldKey()))
+            groupByAliasMap.put(expr.getFieldKey(), null != identifier ? identifier : expr);
+
+        if (expr instanceof QAggregate)
         {
-            assert transformedIter.hasNext();
-            QNode child = origIter.next();
-            QNode transformedChild = transformedIter.next();
-            if (child instanceof QAs)
+            QAggregate aggregate = (QAggregate) expr;
+
+            if (QAggregate.Type.MEDIAN.equals(aggregate.getType()))
             {
-                QAs as = (QAs)child;
-                if (!(transformedChild instanceof QAs))
+                QPartitionBy partitionBy = new QPartitionBy();
+                if (null != groupBy)
                 {
-                    _parseErrors.add(new QueryParseException("Median transformation error", null, child.getLine(), 0));
+                    for (QNode groupChild : groupBy.children())
+                        partitionBy.appendChild(groupChild.copyTree());
                 }
-                else
-                {
-                    if (!(transformedChild.getLastChild() instanceof QIdentifier))
-                    {
-                        _parseErrors.add(new QueryParseException("Median transformation error", null, child.getLine(), 0));
-                    }
-                    else
-                    {
-                        QIdentifier identifier = (QIdentifier) transformedChild.getLastChild();
-                        if (as.getExpression() instanceof QAggregate)
-                        {
-                            QAggregate aggregate = (QAggregate) as.getExpression();
-                            if (QAggregate.Type.MEDIAN.equals(aggregate.getType()))
-                            {
-                                // Transformed MEDIAN is still MEDIAN and should have an alias
-                                QAggregate aggregateNew = new QAggregate();
-                                aggregateNew.appendChildren(aggregate.childList());
-                                aggregateNew.setTokenTypeAndText(MAX);
-                                aggregateNew.appendChild(identifier);
-                                selectNew.appendChild(makeAs(as, aggregateNew));
-                            }
-                            else
-                            {
-                                // Other Aggregates happen here; inner just evaluated arguments
-                                // GROUP_CONCAT: Should have 1 or 2 children, 2nd is separator; replace first child with identifier from transformedChild
-                                // Other aggs are the same
-                                List<QNode> children = aggregate.childList();
-                                aggregate.removeChildren();
-                                aggregate.appendChild(identifier);
-                                if (children.size() > 1)
-                                    aggregate.appendChild(children.get(1));
-                                selectNew.appendChild(makeAs(as, aggregate));
-                            }
-                        }
-                        else
-                        {
-                            // Inner has already evaluated, so just QAs here
-                            selectNew.appendChild(makeAs(as, identifier));
-                        }
-                    }
-                }
+
+                aggregate.appendChild(partitionBy);     // Append as last child
+
+                QAs asNew = (QAs)as.clone();
+                asNew.appendChild(aggregate);
+                if (null == identifier)
+                    identifier = new QIdentifier(aliasManager.decideAlias("expression"));
+                asNew.appendChild(identifier);
+
+                // For outer select replace children of As with MAX
+                QAggregate aggregateNew = new QAggregate();
+                aggregateNew.setTokenTypeAndText(MAX);
+                aggregateNew.appendChild(identifier);
+                as.removeChildren();
+                as.appendChildren(aggregateNew, identifier);
+
+                return Collections.singletonList(asNew);
             }
             else
-            {   // TODO: Is this possible?
-                selectNew.appendChild(child.copyTree());
+            {
+                // Don't aggregate here; if Agg has only 1 arg, use the alias for its result to bubble up;
+                // If > 1 arg.... TODO -- currently for SQL Server, there are none (other than group_concat)
+                // For other aggregates, including group_concat, just evaluate first child and alias that
+                // There can't be aggregate within aggregate, so ok not to look at subexpression
+                QAs asNew = (QAs)as.clone();
+                asNew.appendChild(aggregate.getFirstChild());
+                if (null == identifier)
+                    identifier = new QIdentifier(aliasManager.decideAlias("expression"));
+                asNew.appendChild(identifier);
+
+                // For outer select leave aggregate in place but against identifier coming from inner select
+                aggregate.removeChildren();
+                aggregate.appendChild(identifier);
+
+                return Collections.singletonList(asNew);
             }
         }
-        return selectNew;
+        else if (expr instanceof QOperator ||
+                 expr instanceof QExprList ||
+                 expr instanceof QCase ||
+                 expr instanceof QWhen ||
+                 expr instanceof QElse)
+        {
+            List<QNode> list = new ArrayList<>();
+            List<QNode> exprNewChildren = new ArrayList<>();
+            for (QNode opChild : expr.children())
+            {
+                QAs asTemp = (QAs)as.clone();
+                asTemp.appendChild(opChild);
+                list.addAll(transformInnerExpr(asTemp, null, groupBy, aliasManager, groupByAliasMap));
+                exprNewChildren.add(asTemp.getExpression());
+            }
+            expr.removeChildren();
+            expr.appendChildren(exprNewChildren);
+            return list;
+        }
+        else if (expr instanceof QMethodCall)
+        {
+            QExprList exprList = (QExprList)expr.getLastChild();
+
+            List<QNode> list = new ArrayList<>();
+            List<QNode> exprListNewChildren = new ArrayList<>();
+            for (QNode opChild : exprList.children())
+            {
+                QAs asTemp = (QAs)as.clone();
+                asTemp.appendChild(opChild);
+                list.addAll(transformInnerExpr(asTemp, null, groupBy, aliasManager, groupByAliasMap));
+                exprListNewChildren.add(asTemp.getExpression());
+            }
+            exprList.removeChildren();
+            exprList.appendChildren(exprListNewChildren);
+            return list;
+        }
+        else if (expr instanceof QIdentifier || expr.isConstant())
+        {
+            QAs asNew = (QAs)as.copyTree();
+            if (null != identifier)
+            {
+                as.removeChildren();
+                as.appendChild(identifier);
+            }
+            return Collections.singletonList(asNew);
+        }
+        else                  // TODO: what else can be here?
+        {
+            QAs asNew = (QAs)as.clone();
+            asNew.appendChild(expr);
+            as.removeChildren();
+            if (null == identifier)
+            {
+                identifier = new QIdentifier(aliasManager.decideAlias("expression"));
+            }
+            as.appendChild(identifier);
+            asNew.appendChild(identifier);
+            return Collections.singletonList(asNew);
+        }
+
     }
 
-    private QAs makeAs(QAs as, QNode expr)
+
+    List<QNode> filterDuplicateIdentifiers(List<QNode> qnodes)
     {
-        QAs asNew = new QAs();
-        asNew.setTokenTypeAndText(ALIAS);
-        asNew.appendChild(expr);
-        if (as.childList().size() > 1)
-            asNew.appendChild(as.getLastChild());
-        return asNew;
+        Set<FieldKey> fieldKeys = new HashSet<>();
+        List<QNode> outList = new ArrayList<>();
+        for (QNode node : qnodes)
+        {
+            if (node instanceof QAs)
+            {
+                QAs as = (QAs) node;
+                if (as.getExpression() instanceof QIdentifier && as.childList().size() == 1)
+                {
+                    FieldKey fieldKey = as.getExpression().getFieldKey();
+                    if (fieldKeys.contains(fieldKey))
+                        continue;       // Leave out dup
+                    fieldKeys.add(fieldKey);
+                }
+            }
+            outList.add(node);
+        }
+        return outList;
     }
 
     private QFieldKey substituteModuleProperty(String moduleName, String propertyName)
