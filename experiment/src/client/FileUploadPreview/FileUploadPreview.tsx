@@ -2,9 +2,8 @@ import * as React from 'react';
 import {Panel} from "react-bootstrap";
 import {Map, List} from 'immutable';
 import {Grid} from '@glass/grid';
-import {LoadingSpinner} from "@glass/base";
+import {LoadingSpinner, FileAttachmentForm} from "@glass/base";
 
-import {FileAttachmentForm} from "./FileAttachmentForm";
 import {convertRowDataIntoPreviewData, getContentFromExpData, uploadDataFileAsExpData} from "./actions";
 
 interface FileAttachmentFormWithPreviewProps
