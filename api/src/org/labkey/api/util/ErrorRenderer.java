@@ -37,14 +37,16 @@ public class ErrorRenderer
     private final int _status;
     private final String _heading;
     private final Throwable _exception;
+    private final String _additionalInfo;
     private final boolean _isStartupFailure;
     private final ErrorRendererProperties _errorRendererProps;
     private final String _title;
 
-    ErrorRenderer(int status, String heading, Throwable x, boolean isStartupFailure)
+    ErrorRenderer(int status, String heading, Throwable x, String additionalInfo, boolean isStartupFailure)
     {
         _status = status;
         _exception = x;
+        _additionalInfo = additionalInfo;
         _isStartupFailure = isStartupFailure;
         _errorRendererProps = (x instanceof ErrorRendererProperties ? (ErrorRendererProperties)x : null);
 
@@ -93,7 +95,14 @@ public class ErrorRenderer
                 {
                     try
                     {
-                        exceptionMessage = _exception.getMessage();
+                        if (_additionalInfo != null)
+                        {
+                            exceptionMessage =  _additionalInfo;
+                        }
+                        else  // should never happen, due to how ErrorRenderer is instantiated, but just in case
+                        {
+                            exceptionMessage = _exception.getMessage();
+                        }
                     }
                     catch (Throwable x)
                     {
@@ -104,7 +113,7 @@ public class ErrorRenderer
                 if (null != exceptionMessage)
                 {
                     out.println("<b style=\"color:red;\" class=\"exception-message\">");
-                    out.println(PageFlowUtil.filter(exceptionMessage));
+                    out.println(PageFlowUtil.filter(exceptionMessage, true));
                     out.println("</b><br><br>");
                 }
             }

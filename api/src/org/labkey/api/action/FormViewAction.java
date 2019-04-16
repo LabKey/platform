@@ -18,12 +18,16 @@ package org.labkey.api.action;
 
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.HttpView;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.servlet.ModelAndView;
+
+import java.util.List;
 
 /**
  * User: matthewb
@@ -111,9 +115,27 @@ public abstract class FormViewAction<FORM> extends BaseViewAction<FORM> implemen
         }
         catch (Exception e)
         {
-            // If there are errors that can get reported, report them; otherwise rethrow
-            if (null != errors && errors.hasErrors())
-                return new SimpleErrorView(errors);
+            // if we have errors so far, let's show those too instead of throwing them out
+
+            if (errors != null && errors.hasErrors())
+            {
+                StringBuilder errorTextBuilder = new StringBuilder();
+                String newLine = System.getProperty("line.separator");
+                List<ObjectError> errorsList = errors.getAllErrors();
+
+                for (int i = 0; i < errorsList.size(); i++)
+                {
+                    ObjectError objectError = errorsList.get(i);
+                    errorTextBuilder.append("Error ");
+                    errorTextBuilder.append(i + 1);
+                    errorTextBuilder.append(": ");
+                    errorTextBuilder.append(objectError.getDefaultMessage());
+                    errorTextBuilder.append(newLine);
+                }
+
+                ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.ExtraMessage, errorTextBuilder.toString(), false);
+            }
+
             throw e;
         }
     }

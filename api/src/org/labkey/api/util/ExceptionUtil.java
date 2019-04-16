@@ -214,9 +214,9 @@ public class ExceptionUtil
         }
 
         if (isPart)
-            return new WebPartErrorRenderer(responseStatus, message, ex, isStartupFailure);
+            return new WebPartErrorRenderer(responseStatus, message, ex, StringUtils.trimToNull(getExtendedMessage(ex)), isStartupFailure);
         else
-            return new ErrorRenderer(responseStatus, message, ex, isStartupFailure);
+            return new ErrorRenderer(responseStatus, message, ex, StringUtils.trimToNull(getExtendedMessage(ex)), isStartupFailure);
     }
 
     private static ExceptionReportingLevel getExceptionReportingLevel()
@@ -317,6 +317,11 @@ public class ExceptionUtil
                 if (extraInfo != null)
                 {
                     LOG.error("Additional exception info:\n" + extraInfo);
+                }
+                String decorations = getExtendedMessage(ex);
+                if (!decorations.isEmpty())
+                {
+                    LOG.error("Additional exception info:\n" + decorations);
                 }
             }
         }
