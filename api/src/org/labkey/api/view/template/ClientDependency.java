@@ -19,8 +19,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.Container;
+import org.labkey.api.files.FileSystemDirectoryListener;
+import org.labkey.api.files.FileSystemWatcher;
+import org.labkey.api.files.FileSystemWatchers;
+import org.labkey.api.files.SupportsFileSystemWatcher;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.resource.Resource;
@@ -39,6 +45,11 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.function.Function;
+
+import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
 
 /**
@@ -49,6 +60,7 @@ import java.util.Set;
 public abstract class ClientDependency
 {
     private static final Logger _log = Logger.getLogger(ClientDependency.class);
+    private static final Cache<String, ClientDependency> CACHE = CacheManager.getBlockingStringKeyCache(10000, CacheManager.MONTH, "Client dependencies", null);
 
     public enum TYPE
     {
@@ -136,7 +148,7 @@ public abstract class ClientDependency
     public static ClientDependency fromModule(Module m)
     {
         //noinspection ConstantConditions
-        return fromFilePath(m.getName() + TYPE.context.getExtension(), ModeTypeEnum.BOTH);
+        return fromCache(m.getName() + TYPE.context.getExtension(), ModeTypeEnum.BOTH);
     }
 
     // converts a semi-colon delimited list of dependencies into a set of appropriate ClientDependency objects
@@ -157,7 +169,7 @@ public abstract class ClientDependency
         return set;
     }
 
-    @Deprecated
+    @Deprecated  // TODO: Migrate caller(s) to fromPath(String) and delete this
     public static ClientDependency fromFilePath(String path)
     {
         return ClientDependency.fromPath(path);
@@ -187,13 +199,12 @@ public abstract class ClientDependency
         if (isExternalDependency(path))
             cd = new ExternalClientDependency(path, mode);
         else
-            cd = fromFilePath(path, mode);
+            cd = fromCache(path, mode);
 
         return cd;
     }
 
-    // TODO: Rename
-    protected static @Nullable ClientDependency fromFilePath(String requestedPath, @NotNull ModeTypeEnum.Enum mode)
+    protected static @Nullable ClientDependency fromCache(String requestedPath, @NotNull ModeTypeEnum.Enum mode)
     {
         requestedPath = requestedPath.replaceAll("^/", "");
 
@@ -209,9 +220,9 @@ public abstract class ClientDependency
             return null;
         }
 
-        String key = getCacheKey(path.toString(), mode);
+        String cacheKey = getCacheKey(path.toString(), mode);
 
-        return (ClientDependency)CacheManager.getSharedCache().get(key, null, (key1, argument) -> {
+        return CACHE.get(cacheKey, null, (key, argument) -> {
             TYPE primaryType = TYPE.fromPath(path);
 
             if (primaryType == null)
@@ -238,7 +249,7 @@ public abstract class ClientDependency
             else
             {
                 Resource r = WebdavService.get().getRootResolver().lookup(path);
-                //TODO: can we connect this resource back to a module, and load that module's context by default?--
+                //TODO: can we connect this resource back to a module, and load that module's context by default?
 
                 if (r == null || !r.exists())
                 {
@@ -251,9 +262,17 @@ public abstract class ClientDependency
                 }
 
                 if (TYPE.lib == primaryType)
+                {
                     cr = new LibClientDependency(path, mode, r);
+                    _log.info("Loading " + cr.getUniqueKey());
+
+                    if (null != r)
+                        ensureListener(key, r);
+                }
                 else
+                {
                     cr = new FilePathClientDependency(path, mode, primaryType);
+                }
             }
 
             cr.init();
@@ -262,9 +281,59 @@ public abstract class ClientDependency
         });
     }
 
+    private static final FileSystemWatcher WATCHER = FileSystemWatchers.get();
+    private static final Set<String> EXISTING_LISTENERS = new ConcurrentHashSet<>();
+
+    // TODO: Move this to a separate CacheLoader impl
+    // Register listeners on lib.xml files to invalidate the cache when they change. There aren't many lib files (< 100),
+    // so we don't have to be particularly clever... just construct and register one listener per lib file + mode combo.
+    private static void ensureListener(String key, @NotNull Resource r)
+    {
+        if (!EXISTING_LISTENERS.add(key))
+            return;
+
+        String name = r.getName();
+        Resource parent = r.parent();
+        if (parent instanceof SupportsFileSystemWatcher)
+        {
+            //noinspection unchecked
+            ((SupportsFileSystemWatcher) parent).registerListener(WATCHER, new FileSystemDirectoryListener()
+            {
+                @Override
+                public void entryCreated(java.nio.file.Path directory, java.nio.file.Path entry)
+                {
+                    process(entry);
+                }
+
+                @Override
+                public void entryDeleted(java.nio.file.Path directory, java.nio.file.Path entry)
+                {
+                    process(entry);
+                }
+
+                @Override
+                public void entryModified(java.nio.file.Path directory, java.nio.file.Path entry)
+                {
+                    process(entry);
+                }
+
+                private void process(java.nio.file.Path entry)
+                {
+                    if (entry.toString().equals(name))
+                        CACHE.remove(key);
+                }
+
+                @Override
+                public void overflow()
+                {
+                }
+            }, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
+        }
+    }
+
     protected static String getCacheKey(String identifier, @NotNull ModeTypeEnum.Enum mode)
     {
-        return ClientDependency.class.getName() + "|" + identifier.toLowerCase() + "|" + mode.toString();
+        return identifier.toLowerCase() + "|" + mode.toString();
     }
 
     protected abstract String getUniqueKey();
@@ -282,26 +351,23 @@ public abstract class ClientDependency
 
     private Set<String> getProductionScripts(Container c, TYPE type)
     {
-        Set<String> scripts = new LinkedHashSet<>();
-        if (_primaryType != null && _primaryType == type && _prodModePath != null)
-            scripts.add(_prodModePath);
-
-        Set<ClientDependency> cd = getUniqueDependencySet(c);
-        for (ClientDependency r : cd)
-            scripts.addAll(r.getProductionScripts(c, type));
-
-        return scripts;
+        return getScripts(c, type, _prodModePath, cd -> cd.getProductionScripts(c, type));
     }
 
     private Set<String> getDevModeScripts(Container c, TYPE type)
     {
+        return getScripts(c, type, _devModePath, cd -> cd.getDevModeScripts(c, type));
+    }
+
+    private Set<String> getScripts(Container c, TYPE type, String path, Function<ClientDependency, Set<String>> function)
+    {
         Set<String> scripts = new LinkedHashSet<>();
-        if (_primaryType != null && _primaryType == type && _devModePath != null)
-            scripts.add(_devModePath);
+        if (_primaryType != null && _primaryType == type && path != null)
+            scripts.add(path);
 
         Set<ClientDependency> cd = getUniqueDependencySet(c);
         for (ClientDependency r : cd)
-            scripts.addAll(r.getDevModeScripts(c, type));
+            scripts.addAll(function.apply(r));
 
         return scripts;
     }

@@ -112,13 +112,13 @@ public class LibClientDependency extends FilePathClientDependency
                 if (hasJsToCompile)
                 {
                     String path = filePath.toString().replaceAll(TYPE.lib.getExtension() + "$", ".min" + TYPE.js.getExtension());
-                    _children.add(fromFilePath(path, ModeTypeEnum.PRODUCTION));
+                    _children.add(fromCache(path, ModeTypeEnum.PRODUCTION));
                 }
 
                 if (hasCssToCompile)
                 {
                     String path = filePath.toString().replaceAll(TYPE.lib.getExtension() + "$", ".min" + TYPE.css.getExtension());
-                    _children.add(fromFilePath(path, ModeTypeEnum.PRODUCTION));
+                    _children.add(fromCache(path, ModeTypeEnum.PRODUCTION));
                 }
             }
         }
