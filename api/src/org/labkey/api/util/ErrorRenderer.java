@@ -99,7 +99,7 @@ public class ErrorRenderer
                         {
                             exceptionMessage =  _additionalInfo;
                         }
-                        else  // should never happen, due to how ErrorRenderer is instantiated, but just in case
+                        else
                         {
                             exceptionMessage = _exception.getMessage();
                         }

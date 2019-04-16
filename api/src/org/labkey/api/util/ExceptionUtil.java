@@ -213,10 +213,11 @@ public class ExceptionUtil
             }
         }
 
+        String extendedMessage = (ex != null) ? StringUtils.trimToNull(getExtendedMessage(ex)) : null;
         if (isPart)
-            return new WebPartErrorRenderer(responseStatus, message, ex, StringUtils.trimToNull(getExtendedMessage(ex)), isStartupFailure);
+            return new WebPartErrorRenderer(responseStatus, message, ex, extendedMessage, isStartupFailure);
         else
-            return new ErrorRenderer(responseStatus, message, ex, StringUtils.trimToNull(getExtendedMessage(ex)), isStartupFailure);
+            return new ErrorRenderer(responseStatus, message, ex, extendedMessage, isStartupFailure);
     }
 
     private static ExceptionReportingLevel getExceptionReportingLevel()
