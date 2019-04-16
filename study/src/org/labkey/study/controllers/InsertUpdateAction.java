@@ -38,6 +38,7 @@ import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.QueryUpdateService;
@@ -357,7 +358,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
 
         url = new ActionURL(StudyController.DatasetAction.class, getContainer());
         url.addParameter(DatasetDefinition.DATASETKEY, form.getDatasetId());
-        if (StudyManager.getInstance().showQCStates(getContainer()))
+        if (QCStateManager.getInstance().showQCStates(getContainer()))
         {
             QCStateSet stateSet = QCStateSet.getAllStates(getContainer());
             url.addParameter(BaseStudyController.SharedFormParameters.QCState, stateSet.getFormValue());

@@ -44,6 +44,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.text.NumberFormat" %>
+<%@ page import="org.labkey.api.qc.QCStateManager" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -67,7 +68,7 @@
         cohorts = manager.getCohorts(container, user);
     }
 
-    boolean showQCStates = manager.showQCStates(container);
+    boolean showQCStates = QCStateManager.getInstance().showQCStates(container);
     QCStateSet selectedQCStateSet = null;
     List<QCStateSet> qcStateSetOptions = null;
 

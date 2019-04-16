@@ -43,6 +43,7 @@ import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryService;
@@ -134,7 +135,7 @@ public class DatasetQueryView extends StudyQueryView
             _systemLog.warn("Dataset in schema'" + schema.getName() + "' was referenced by label (" + settings.getQueryName() + "), not name (" + _dataset.getName() + ").");
         }
 
-        if (settings.isUseQCSet() && StudyManager.getInstance().showQCStates(getContainer()))
+        if (settings.isUseQCSet() && QCStateManager.getInstance().showQCStates(getContainer()))
             _qcStateSet = QCStateSet.getSelectedStates(getContainer(), form.getQCState());
 
         _showSourceLinks = settings.isShowSourceLinks();
@@ -454,7 +455,7 @@ public class DatasetQueryView extends StudyQueryView
 
         bar.add(ParticipantGroupManager.getInstance().createParticipantGroupButton(getViewContext(), getDataRegionName(), _cohortFilter, true));
 
-        if (StudyManager.getInstance().showQCStates(getContainer()))
+        if (QCStateManager.getInstance().showQCStates(getContainer()))
             bar.add(createQCStateButton(_qcStateSet));
 
         ActionURL viewSamplesURL = new ActionURL(SpecimenController.SelectedSamplesAction.class, getContainer());

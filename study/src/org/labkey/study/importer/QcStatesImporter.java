@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;
+import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.api.qc.QCState;
@@ -73,7 +74,7 @@ public class QcStatesImporter implements InternalStudyImporter
                 StudyqcDocument.Studyqc.Qcstates states = qcXml.getQcstates();
                 Map<String, Integer> stateMap = new HashMap<>();
 
-                for (QCState existingState : StudyManager.getInstance().getQCStates(ctx.getContainer()))
+                for (QCState existingState : QCStateManager.getInstance().getQCStates(ctx.getContainer()))
                 {
                     // replace any existing states unless they are currently in use
                     if (!StudyManager.getInstance().isQCStateInUse(existingState))

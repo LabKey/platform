@@ -16,6 +16,7 @@
 package org.labkey.study.writer;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.qc.QCState;
 import org.labkey.study.model.StudyImpl;
@@ -41,7 +42,7 @@ public class QcStateWriter implements InternalStudyWriter
 
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws Exception
     {
-        List<QCState> qcStates = StudyManager.getInstance().getQCStates(ctx.getContainer());
+        List<QCState> qcStates = QCStateManager.getInstance().getQCStates(ctx.getContainer());
 
         if (!qcStates.isEmpty())
         {
@@ -96,7 +97,7 @@ public class QcStateWriter implements InternalStudyWriter
     private QCState getQCStateFromRowId(Container container, Integer rowId)
     {
         if (rowId != null)
-            return StudyManager.getInstance().getQCStateForRowId(container, rowId);
+            return QCStateManager.getInstance().getQCStateForRowId(container, rowId);
 
         return null;
     }

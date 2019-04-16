@@ -27,6 +27,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.study.assay.AssayPublishService;
@@ -67,7 +68,7 @@ public class PublishedRecordQueryView extends DatasetQueryView
 
     private static QCStateSet getStateSet(Container container)
     {
-        if (StudyManager.getInstance().showQCStates(container))
+        if (QCStateManager.getInstance().showQCStates(container))
             return QCStateSet.getAllStates(container);
         else
             return null;

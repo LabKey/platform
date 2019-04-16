@@ -65,6 +65,7 @@ import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.qc.QCState;
+import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.CustomView;
@@ -262,7 +263,7 @@ public class StudyController extends BaseStudyController
         {
             ActionURL url = new ActionURL(StudyController.DatasetAction.class, container);
             url.addParameter(DatasetDefinition.DATASETKEY, datasetId);
-            if (StudyManager.getInstance().showQCStates(container))
+            if (QCStateManager.getInstance().showQCStates(container))
             {
                 QCStateSet allStates = QCStateSet.getAllStates(container);
                 if (allStates != null)
@@ -601,7 +602,7 @@ public class StudyController extends BaseStudyController
             bean.showCohorts = StudyManager.getInstance().showCohorts(getContainer(), getUser());
             bean.stats = form.getVisitStatistics();
 
-            if (StudyManager.getInstance().showQCStates(getContainer()))
+            if (QCStateManager.getInstance().showQCStates(getContainer()))
                 bean.qcStates = QCStateSet.getSelectedStates(getContainer(), form.getQCState());
 
             if (!bean.showCohorts)
@@ -857,7 +858,7 @@ public class StudyController extends BaseStudyController
             Study study = getStudyRedirectIfNull();
             _encodedQcState = form.getQCState();
             QCStateSet qcStateSet = null;
-            if (StudyManager.getInstance().showQCStates(getContainer()))
+            if (QCStateManager.getInstance().showQCStates(getContainer()))
                 qcStateSet = QCStateSet.getSelectedStates(getContainer(), form.getQCState());
             ViewContext context = getViewContext();
 
@@ -2520,7 +2521,7 @@ public class StudyController extends BaseStudyController
         {
             ActionURL url = new ActionURL(DatasetAction.class, getContainer()).
                     addParameter(DatasetDefinition.DATASETKEY, form.getDatasetId());
-            if (StudyManager.getInstance().showQCStates(getContainer()))
+            if (QCStateManager.getInstance().showQCStates(getContainer()))
                 url.addParameter(SharedFormParameters.QCState, QCStateSet.getAllStates(getContainer()).getFormValue());
             return url;
         }
@@ -3315,7 +3316,7 @@ public class StudyController extends BaseStudyController
         public List<QCState> getQCStates()
         {
             if (_states == null)
-                _states = StudyManager.getInstance().getQCStates(_study.getContainer());
+                _states = QCStateManager.getInstance().getQCStates(_study.getContainer());
             return _states;
         }
 
@@ -3541,7 +3542,7 @@ public class StudyController extends BaseStudyController
                         state.setDescription(form.getDescriptions()[i]);
                     state.setPublicData(set.contains(state.getRowId()));
                     state.setContainer(getContainer());
-                    StudyManager.getInstance().updateQCState(getUser(), state);
+                    QCStateManager.getInstance().updateQCState(getUser(), state);
                 }
             }
 
@@ -3631,7 +3632,7 @@ public class StudyController extends BaseStudyController
         {
             if (form.isAll())
             {
-                for (QCState state : StudyManager.getInstance().getQCStates(getContainer()))
+                for (QCState state : QCStateManager.getInstance().getQCStates(getContainer()))
                 {
                     if (!StudyManager.getInstance().isQCStateInUse(state))
                         StudyManager.getInstance().deleteQCState(state);
@@ -3639,7 +3640,7 @@ public class StudyController extends BaseStudyController
             }
             else
             {
-                QCState state = StudyManager.getInstance().getQCStateForRowId(getContainer(), form.getId());
+                QCState state = QCStateManager.getInstance().getQCStateForRowId(getContainer(), form.getId());
                 if (state != null)
                     StudyManager.getInstance().deleteQCState(state);
             }
@@ -3799,7 +3800,7 @@ public class StudyController extends BaseStudyController
             QCState newState = null;
             if (updateQCForm.getNewState() != null)
             {
-                newState = StudyManager.getInstance().getQCStateForRowId(getContainer(), updateQCForm.getNewState());
+                newState = QCStateManager.getInstance().getQCStateForRowId(getContainer(), updateQCForm.getNewState());
                 if (newState == null)
                 {
                     errors.reject(null, "The selected state could not be found.  It may have been deleted from the database.");
@@ -5714,7 +5715,7 @@ public class StudyController extends BaseStudyController
 
         public QCStateSet getQCStateSet()
         {
-            if (_qcState != null && StudyManager.getInstance().showQCStates(getContainer()))
+            if (_qcState != null && QCStateManager.getInstance().showQCStates(getContainer()))
                 return QCStateSet.getSelectedStates(getContainer(), getQCState());
             return null;
         }

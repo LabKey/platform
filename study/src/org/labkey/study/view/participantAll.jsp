@@ -29,6 +29,8 @@
 <%@ page import="org.labkey.api.data.TableInfo" %>
 <%@ page import="org.labkey.api.data.TableSelector" %>
 <%@ page import="org.labkey.api.exp.LsidManager" %>
+<%@ page import="org.labkey.api.qc.QCState" %>
+<%@ page import="org.labkey.api.qc.QCStateManager" %>
 <%@ page import="org.labkey.api.query.FieldKey" %>
 <%@ page import="org.labkey.api.query.QueryService" %>
 <%@ page import="org.labkey.api.reports.Report" %>
@@ -59,7 +61,6 @@
 <%@ page import="org.labkey.study.controllers.StudyController.ExpandStateNotifyAction" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
 <%@ page import="org.labkey.study.model.DatasetDefinition" %>
-<%@ page import="org.labkey.api.qc.QCState" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
@@ -503,7 +504,7 @@
     // display details link(s) only if we have a source lsid in at least one of the rows
     boolean hasSourceLsid = false;
 
-    if (StudyManager.getInstance().showQCStates(getContainer()))
+    if (QCStateManager.getInstance().showQCStates(getContainer()))
     {
         row++;
         className = getShadeRowClass(row);
@@ -765,7 +766,7 @@
     {
         if (null == qcstates)
         {
-            List<QCState> states = StudyManager.getInstance().getQCStates(study.getContainer());
+            List<QCState> states = QCStateManager.getInstance().getQCStates(study.getContainer());
             qcstates = new HashMap<>(2 * states.size());
             for (QCState state : states)
                 qcstates.put(state.getRowId(), state);

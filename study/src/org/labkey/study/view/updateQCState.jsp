@@ -29,6 +29,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.io.Writer" %>
 <%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
+<%@ page import="org.labkey.api.qc.QCStateManager" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -43,7 +44,7 @@
     JspView<StudyController.UpdateQCStateForm> me = (JspView<StudyController.UpdateQCStateForm>) HttpView.currentView();
     StudyController.UpdateQCStateForm bean = me.getModelBean();
     Container container = getContainer();
-    List<QCState> states = StudyManager.getInstance().getQCStates(container);
+    List<QCState> states = QCStateManager.getInstance().getQCStates(container);
 %>
 <%
     FrameFactoryClassic.startTitleFrame(out, "QC State Change", null, null, null);
