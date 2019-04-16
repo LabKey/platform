@@ -628,26 +628,25 @@ LABKEY.internal.ZipLoad = new function () {
             getFilesFromDirectory(allFiles, entry, dropZone, filesSuccess);
         }
         else if(entry) {//file
-            entry.file(function (_file) {
-                //code for file pattern - test integration
-                if(checkFilePattern(_file)) {
-                    parentItemName = 'TestZipMeDir';
-                    _file.fullPath =  _file.name;
-                    testFilesToZip.push({file: _file, dir: parentItemName});
+            //code for file pattern - test integration
+            _file = entry.getAsFile();
+            if (checkFilePattern(_file)) {
+                parentItemName = 'TestZipMeDir';
+                _file.fullPath =  _file.name;
+                testFilesToZip.push({file: _file, dir: parentItemName});
+            }
+            else {
+                dropZone.addFile(_file);
+            }
+            itemCount--;
+            if (itemCount >= 0) {
+                _zipLoad(itemsDropped[itemCount]);
+            }
+            else {
+                if (testFilesToZip.length > 0) {
+                    zipDirectory(testFilesToZip);
                 }
-                else {
-                    dropZone.addFile(_file);
-                }
-                itemCount--;
-                if (itemCount >= 0) {
-                    _zipLoad(itemsDropped[itemCount]);
-                }
-                else {
-                    if(testFilesToZip.length>0) {
-                        zipDirectory(testFilesToZip);
-                    }
-                }
-            });
+            }
         }
     }
 
