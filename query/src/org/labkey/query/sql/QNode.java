@@ -139,7 +139,7 @@ abstract public class QNode implements Cloneable
 
     public void appendChildren(List<QNode> children)
     {
-		for (QNode n : children())
+		for (QNode n : children)
 			appendChild(n);
     }
 

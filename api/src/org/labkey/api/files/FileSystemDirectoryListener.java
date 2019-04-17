@@ -17,10 +17,10 @@ package org.labkey.api.files;
 
 import java.nio.file.Path;
 
-/**
- * User: adam
- * Date: 9/14/13
- * Time: 10:56 AM
+/*
+  User: adam
+  Date: 9/14/13
+  Time: 10:56 AM
  */
 
 /**
@@ -33,24 +33,24 @@ public interface FileSystemDirectoryListener
      * @param directory
      * @param entry
      */
-    public void entryCreated(Path directory, Path entry);
+    void entryCreated(Path directory, Path entry);
 
     /**
      * An entry (file or directory) in the directory was deleted. Invoked only if the event was listed at registration time
      * @param directory
      * @param entry
      */
-    public void entryDeleted(Path directory, Path entry);
+    void entryDeleted(Path directory, Path entry);
 
     /**
      * An entry (file or directory) in the directory was changed. Invoked only if the event was listed at registration time.
      * @param directory
      * @param entry
      */
-    public void entryModified(Path directory, Path entry);
+    void entryModified(Path directory, Path entry);
 
     /**
      * Indicates that events might have been lost or discarded. The method is always invoked when overflow occurs (regardless of registration).
      */
-    public void overflow();
+    void overflow();
 }
