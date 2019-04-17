@@ -7,6 +7,9 @@ import org.labkey.clientLibrary.xml.ModeTypeEnum;
 
 import java.util.Set;
 
+/**
+ * Handles a module context reference
+ */
 public class ContextClientDependency extends ClientDependency
 {
     private final Module _module;
@@ -22,12 +25,14 @@ public class ContextClientDependency extends ClientDependency
     {
     }
 
+    @NotNull
     @Override
     protected Set<ClientDependency> getUniqueDependencySet(Container c)
     {
         return _module.getClientDependencies(c);
     }
 
+    @NotNull
     @Override
     public Set<Module> getRequiredModuleContexts(Container c)
     {

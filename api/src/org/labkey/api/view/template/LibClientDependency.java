@@ -2,6 +2,7 @@ package org.labkey.api.view.template;
 
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlOptions;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -19,6 +20,9 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Parses and holds dependencies from a LabKey client library (lib.xml) file, which typically reference multiple JS and/or CSS files.
+ */
 public class LibClientDependency extends FilePathClientDependency
 {
     private static final Logger _log = Logger.getLogger(LibClientDependency.class);
@@ -32,6 +36,7 @@ public class LibClientDependency extends FilePathClientDependency
         _resource = r;
     }
 
+    @NotNull
     @Override
     protected Set<ClientDependency> getUniqueDependencySet(Container c)
     {

@@ -5,6 +5,9 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.Path;
 import org.labkey.clientLibrary.xml.ModeTypeEnum;
 
+/**
+ * Handle a reference to a resource that resides in the file system, such as a JS or CSS file
+ */
 public class FilePathClientDependency extends ClientDependency
 {
     private static final Logger _log = Logger.getLogger(FilePathClientDependency.class);

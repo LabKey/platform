@@ -3,6 +3,9 @@ package org.labkey.api.view.template;
 import org.apache.log4j.Logger;
 import org.labkey.clientLibrary.xml.ModeTypeEnum;
 
+/**
+ * Handles references to resources that reside on a third-party server, such as a CDN
+ */
 public class ExternalClientDependency extends ClientDependency
 {
     private static final Logger _log = Logger.getLogger(ExternalClientDependency.class);

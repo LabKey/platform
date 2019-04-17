@@ -33,7 +33,7 @@ public class ClientDependencyCacheLoader implements CacheLoader<String, ClientDe
     private final Path _path;
     private final ModeTypeEnum.Enum _mode;
 
-    public ClientDependencyCacheLoader(Cache<String, ClientDependency> cache, Path path, ModeTypeEnum.Enum mode)
+    public ClientDependencyCacheLoader(@NotNull Cache<String, ClientDependency> cache, @NotNull Path path, @NotNull ModeTypeEnum.Enum mode)
     {
         _cache = cache;
         _path = path;
@@ -41,7 +41,7 @@ public class ClientDependencyCacheLoader implements CacheLoader<String, ClientDe
     }
 
     @Override
-    public ClientDependency load(@NotNull String key, @Nullable Object argument)
+    public @Nullable ClientDependency load(@NotNull String key, @Nullable Object argument)
     {
         ClientDependency.TYPE primaryType = ClientDependency.TYPE.fromPath(_path);
 
@@ -102,7 +102,7 @@ public class ClientDependencyCacheLoader implements CacheLoader<String, ClientDe
 
     // We're registering listeners only on lib.xml files to invalidate the cache when they change. There aren't many lib files (< 100),
     // so we don't have to be particularly clever... just construct and register one listener per lib file + mode combo.
-    private void ensureListener(String key, @NotNull Resource r)
+    private void ensureListener(@NotNull String key, @NotNull Resource r)
     {
         if (!EXISTING_LISTENERS.add(key))
             return;

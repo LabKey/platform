@@ -42,6 +42,8 @@ import java.util.function.Function;
 
 
 /**
+ * Base class for handling client dependencies
+ *
  * User: bbimber
  * Date: 6/13/12
  * Time: 5:25 PM
@@ -214,7 +216,7 @@ public abstract class ClientDependency
         return CACHE.get(key, null, new ClientDependencyCacheLoader(CACHE, path, mode));
     }
 
-    protected static String getCacheKey(String identifier, @NotNull ModeTypeEnum.Enum mode)
+    protected static String getCacheKey(@NotNull String identifier, @NotNull ModeTypeEnum.Enum mode)
     {
         return identifier.toLowerCase() + "|" + mode.toString();
     }
@@ -227,22 +229,22 @@ public abstract class ClientDependency
         return _primaryType;
     }
 
-    protected Set<ClientDependency> getUniqueDependencySet(Container c)
+    protected @NotNull Set<ClientDependency> getUniqueDependencySet(Container c)
     {
         return Collections.emptySet();
     }
 
-    private Set<String> getProductionScripts(Container c, TYPE type)
+    private @NotNull Set<String> getProductionScripts(Container c, TYPE type)
     {
         return getScripts(c, type, _prodModePath, cd -> cd.getProductionScripts(c, type));
     }
 
-    private Set<String> getDevModeScripts(Container c, TYPE type)
+    private @NotNull Set<String> getDevModeScripts(Container c, TYPE type)
     {
         return getScripts(c, type, _devModePath, cd -> cd.getDevModeScripts(c, type));
     }
 
-    private Set<String> getScripts(Container c, TYPE type, String path, Function<ClientDependency, Set<String>> function)
+    private @NotNull Set<String> getScripts(Container c, TYPE type, String path, Function<ClientDependency, Set<String>> function)
     {
         Set<String> scripts = new LinkedHashSet<>();
         if (_primaryType != null && _primaryType == type && path != null)
@@ -255,12 +257,12 @@ public abstract class ClientDependency
         return scripts;
     }
 
-    public Set<String> getCssPaths(Container c)
+    public @NotNull Set<String> getCssPaths(Container c)
     {
         return getCssPaths(c, AppProps.getInstance().isDevMode());
     }
 
-    public Set<String> getCssPaths(Container c, boolean devMode)
+    public @NotNull Set<String> getCssPaths(Container c, boolean devMode)
     {
         if (devMode)
             return getDevModeScripts(c, TYPE.css);
@@ -268,12 +270,12 @@ public abstract class ClientDependency
             return getProductionScripts(c, TYPE.css);
     }
 
-    public Set<String> getJsPaths(Container c)
+    public @NotNull Set<String> getJsPaths(Container c)
     {
         return getJsPaths(c, AppProps.getInstance().isDevMode());
     }
 
-    public Set<String> getJsPaths(Container c, boolean devMode)
+    public @NotNull Set<String> getJsPaths(Container c, boolean devMode)
     {
         if (devMode)
             return getDevModeScripts(c, TYPE.js);
@@ -281,7 +283,7 @@ public abstract class ClientDependency
             return getProductionScripts(c, TYPE.js);
     }
 
-    public Set<Module> getRequiredModuleContexts(Container c)
+    public @NotNull Set<Module> getRequiredModuleContexts(Container c)
     {
         Set<Module> modules = new HashSet<>();
 
