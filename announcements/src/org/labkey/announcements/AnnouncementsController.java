@@ -1773,7 +1773,15 @@ public class AnnouncementsController extends SpringActionController
         {
             if (null == _selectedAnnouncementModel)
             {
-                AnnouncementModel bean = getBean();
+                AnnouncementModel bean;
+                try
+                {
+                    bean = getBean();
+                }
+                catch (ConversionException e)
+                {
+                    return null;
+                }
                 if (null != bean.getEntityId())
                     _selectedAnnouncementModel = AnnouncementManager.getAnnouncement(getContainer(), bean.getEntityId());  // Need member list
                 if (null == _selectedAnnouncementModel)

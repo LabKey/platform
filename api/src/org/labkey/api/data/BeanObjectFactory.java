@@ -141,7 +141,14 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
                 if (m.containsKey(prop))
                 {
                     value = m.get(prop);
-                    BeanUtils.copyProperty(bean, prop, value);
+                    try
+                    {
+                        BeanUtils.copyProperty(bean, prop, value);
+                    }
+                    catch (ConversionException e)
+                    {
+                        _log.warn(e.getMessage());
+                    }
                 }
             }
             catch (IllegalAccessException | InvocationTargetException x)
