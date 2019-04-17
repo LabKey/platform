@@ -122,7 +122,7 @@ export class App extends React.Component<FileAttachmentFormWithPreviewProps, Fil
         return (
             <>
                 <FileAttachmentForm
-                    acceptedFormats={".tsv, .xlsx, .xls, .csv"}
+                    acceptedFormats={".csv, .tsv, .txt, .xls, .xlsx"}
                     showAcceptedFormats={previewData === null}
                     allowDirectories={false}
                     allowMultiple={false}
