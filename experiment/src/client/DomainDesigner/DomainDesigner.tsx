@@ -5,8 +5,8 @@
 import * as React from 'react'
 import {Alert, Button, ButtonToolbar, Col, Row} from "react-bootstrap";
 import {ActionURL} from "@labkey/api";
-import {LoadingSpinner} from "@glass/utils";
-import {DomainForm, DomainDesign, clearFieldDetails, updateField, fetchDomain, saveDomain} from "@glass/domainproperties"
+import {LoadingSpinner} from "@glass/base";
+import {DomainForm, DomainDesign, clearFieldDetails, updateDomainField, fetchDomain, saveDomain} from "@glass/domainproperties"
 
 interface IDomainDesignerState {
     schemaName?: string,
@@ -76,7 +76,7 @@ export class App extends React.PureComponent<any, IDomainDesignerState> {
         if (evt.target.type === "checkbox") {
             value = evt.target.checked;
         }
-        this.setState({domain: updateField(this.state.domain, evt.target.id, value)});
+        this.setState({domain: updateDomainField(this.state.domain, evt.target.id, value)});
     }
 
     dismissAlert() {

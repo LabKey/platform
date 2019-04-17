@@ -37,9 +37,8 @@
     "@fortawesome/free-solid-svg-icons": "5.8.1",
     "@fortawesome/react-fontawesome": "0.1.4",
     "@fortawesome/fontawesome-free": "5.8.1",
-    "@glass/domainproperties": "0.0.6",
-    "@glass/models": "0.0.3",
-    "@glass/utils": "0.0.5"
+    "@glass/domainproperties": "0.0.5",
+    "@glass/base": "0.1.5"
   },
   "devDependencies": {
     "@babel/core": "7.2.2",
