@@ -74,10 +74,10 @@ public final class ModuleResourceCache<V>
 
     ModuleResourceCache(String description, ModuleResourceCacheHandler<V> handler, ResourceRootProvider provider, ResourceRootProvider... extraProviders)
     {
-        CacheLoader<Module, V> wrapper = new CacheLoader<Module, V>()
+        CacheLoader<Module, V> wrapper = new CacheLoader<>()
         {
             @Override
-            public V load(Module module, Object argument)
+            public V load(@NotNull Module module, Object argument)
             {
                 ModuleResourceCache<V> cache = (ModuleResourceCache<V>)argument;
                 Resource resourceRoot = new FileListenerResource(module.getModuleResource(Path.rootPath), module, cache);
