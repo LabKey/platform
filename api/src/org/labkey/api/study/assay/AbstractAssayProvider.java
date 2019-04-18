@@ -1499,7 +1499,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
     @Override
     public void setQCEnabled(ExpProtocol protocol, boolean qcEnabled)
     {
-        setBooleanProperty(protocol, QC_ENABLED_PROPERTY_SUFFIX, qcEnabled);
+        if (supportsQC())
+            setBooleanProperty(protocol, QC_ENABLED_PROPERTY_SUFFIX, qcEnabled);
     }
 
     @Override

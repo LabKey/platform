@@ -238,7 +238,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         }
 
         // add any QC filter conditions if applicable
-        AssayQCService qcService = AssayQCService.getProvider(_protocol);
+        AssayQCService qcService = AssayQCService.getProvider();
         SQLFragment qcFragment = qcService.getDataTableCondition(_protocol, getContainer(), getUserSchema().getUser());
         addCondition(qcFragment);
 

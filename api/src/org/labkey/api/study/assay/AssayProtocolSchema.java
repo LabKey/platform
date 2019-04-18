@@ -419,7 +419,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
         });
 
         // add any QC filter conditions if applicable
-        AssayQCService svc = AssayQCService.getProvider(getProtocol());
+        AssayQCService svc = AssayQCService.getProvider();
         SQLFragment qcFragment = svc.getRunsTableCondition(getProtocol(), getContainer(), getUser());
         runTable.addCondition(qcFragment);
 

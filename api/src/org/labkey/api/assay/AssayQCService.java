@@ -9,6 +9,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 
+import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,18 +33,21 @@ public interface AssayQCService
             throw new RuntimeException("An implementation of AssayQCService has previously been registered");
     }
 
-    static AssayQCService getProvider(ExpProtocol protocol)
+    @NotNull
+    static AssayQCService getProvider()
     {
         if (!_providers.isEmpty())
         {
-            AssayProvider provider = AssayService.get().getProvider(protocol);
-
-            // need to check if QC has been enabled for this protocol
-            if (provider != null && provider.isQCEnabled(protocol))
-                return _providers.get(0);
+            return _providers.get(0);
         }
         return _defaultProvider;
     }
+
+    /**
+     * Return whether this provider supports assay QC functionality. Can be used to enable/disable UI elements
+     * based on the presence of a valid QC provider.
+     */
+    boolean supportsQC();
 
     /**
      * Update the QC states for the specified runs
@@ -68,6 +72,12 @@ public interface AssayQCService
 
     class DefaultQCService implements AssayQCService
     {
+        @Override
+        public boolean supportsQC()
+        {
+            return false;
+        }
+
         @Override
         public void setQCStates(ExpProtocol protocol, Container container, User user, List<Integer> runIds, QCState state, String comment)
         {
