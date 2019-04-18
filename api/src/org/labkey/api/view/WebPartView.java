@@ -380,6 +380,10 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                     Logger.getLogger(WebPartView.class).warn("Shouldn't throw unauthorized during renderView()", x);
                     errorMessage = ExceptionUtil.getUnauthorizedMessage(getViewContext());
                 }
+                catch (NotFoundException x)
+                {
+                    errorMessage = "Not Found : " + x.getMessage();
+                }
                 catch (Throwable t)
                 {
                     exceptionToRender = ExceptionUtil.unwrapException(t);
