@@ -42,11 +42,16 @@ public class UserIdQueryForeignKey extends QueryForeignKey
         _includeAllUsers = includeAllUsers;
     }
 
+    public UserIdQueryForeignKey(QuerySchema sourceSchema, ContainerFilter cf, User user, Container container, boolean includeAllUsers)
+    {
+        super (sourceSchema, cf, "core", container, null, user, includeAllUsers ? "SiteUsers" : "Users", "UserId", "DisplayName");
+        _includeAllUsers = includeAllUsers;
+    }
+
     @Deprecated // TODO ContainerFilter
     public UserIdQueryForeignKey(User user, Container container, boolean includeAllUsers)
     {
-        super(null, null,"core", container, null, user, includeAllUsers ? "SiteUsers" : "Users", "UserId", "DisplayName");
-        _includeAllUsers = includeAllUsers;
+        this(null, null, user, container, includeAllUsers);
     }
 
     @Override
