@@ -90,7 +90,7 @@ public class LibClientDependency extends FilePathClientDependency
                 // <library> is an optional parameter
                 if (library != null)
                 {
-                    boolean compileInProductionMode = library.isSetCompileInProductionMode();
+                    boolean compileInProductionMode = !library.isSetCompileInProductionMode() || library.getCompileInProductionMode();
 
                     for (DependencyType s : library.getScriptArray())
                     {
