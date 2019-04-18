@@ -213,11 +213,10 @@ public class ExceptionUtil
             }
         }
 
-        String extendedMessage = (ex != null) ? StringUtils.trimToNull(getExtendedMessage(ex)) : null;
         if (isPart)
-            return new WebPartErrorRenderer(responseStatus, message, ex, extendedMessage, isStartupFailure);
+            return new WebPartErrorRenderer(responseStatus, message, ex, isStartupFailure);
         else
-            return new ErrorRenderer(responseStatus, message, ex, extendedMessage, isStartupFailure);
+            return new ErrorRenderer(responseStatus, message, ex, isStartupFailure);
     }
 
     private static ExceptionReportingLevel getExceptionReportingLevel()
@@ -315,14 +314,20 @@ public class ExceptionUtil
                 if (null != errorCode)
                     message += " and logged to mothership with error code: " + errorCode;
                 LOG.error(message, ex);
-                if (extraInfo != null)
-                {
-                    LOG.error("Additional exception info:\n" + extraInfo);
-                }
                 String decorations = getExtendedMessage(ex);
-                if (!decorations.isEmpty())
+
+                if ((extraInfo != null) || (!decorations.isEmpty()))
                 {
-                    LOG.error("Additional exception info:\n" + decorations);
+                    String logMessage = "Additional exception info:";
+                    if (extraInfo != null)
+                    {
+                        logMessage += "\n" + extraInfo;
+                    }
+                    if (!decorations.isEmpty())
+                    {
+                        logMessage += "\n" + decorations;
+                    }
+                    LOG.error(logMessage);
                 }
             }
         }

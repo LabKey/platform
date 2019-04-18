@@ -37,16 +37,14 @@ public class ErrorRenderer
     private final int _status;
     private final String _heading;
     private final Throwable _exception;
-    private final String _additionalInfo;
     private final boolean _isStartupFailure;
     private final ErrorRendererProperties _errorRendererProps;
     private final String _title;
 
-    ErrorRenderer(int status, String heading, Throwable x, String additionalInfo, boolean isStartupFailure)
+    ErrorRenderer(int status, String heading, Throwable x, boolean isStartupFailure)
     {
         _status = status;
         _exception = x;
-        _additionalInfo = additionalInfo;
         _isStartupFailure = isStartupFailure;
         _errorRendererProps = (x instanceof ErrorRendererProperties ? (ErrorRendererProperties)x : null);
 
@@ -95,14 +93,7 @@ public class ErrorRenderer
                 {
                     try
                     {
-                        if (_additionalInfo != null)
-                        {
-                            exceptionMessage =  _additionalInfo;
-                        }
-                        else
-                        {
-                            exceptionMessage = _exception.getMessage();
-                        }
+                        exceptionMessage = ExceptionUtil.getExtendedMessage(_exception);
                     }
                     catch (Throwable x)
                     {
