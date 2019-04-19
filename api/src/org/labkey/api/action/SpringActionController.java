@@ -367,7 +367,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
        return null;
    }
 
-    public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception
+    public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response)
     {
         request.setAttribute(DispatcherServlet.WEB_APPLICATION_CONTEXT_ATTRIBUTE, getApplicationContext());
         _viewContext.setApplicationContext(_applicationContext);
