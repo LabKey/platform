@@ -106,8 +106,7 @@ public class Portal
     private static Map<String, WebPartFactory> _viewMap = null;
     private static List<WebPartFactory> _homeWebParts = new ArrayList<>();
 
-    private static List<NavTreeCustomizer> _navTreeCustomizers = new LinkedList<>();
-    private static Map<String, List<NavTreeCustomizer>> _navTreeCustomizerMap = new HashMap<>();
+    private static Map<String, NavTreeCustomizer> _navTreeCustomizerMap = new HashMap<>();
 
 
     public static DbSchema getSchema()
@@ -1491,15 +1490,13 @@ public class Portal
                     view.setTitle(props.get("webpart.title"));
 
                 //find any matching navTreeCustomizers and inject their NavTree elements
-                _navTreeCustomizerMap.forEach((webPartName, navTreeCustomizerList) -> {
+                _navTreeCustomizerMap.forEach((webPartName, navTreeCustomizer) -> {
                     if (webPart.name.equalsIgnoreCase(webPartName))
                     {
-                        navTreeCustomizerList.forEach(navTreeCustomizer -> {
-                            if (null != navTreeCustomizer.getNavTrees(webPart.getContainer(), portalCtx.getUser()))
-                            {
-                                navTreeCustomizer.getNavTrees(webPart.getContainer(), portalCtx.getUser()).forEach(view::setNavMenu);
-                            }
-                        });
+                        if (null != navTreeCustomizer.getNavTrees(portalCtx))
+                        {
+                            navTreeCustomizer.getNavTrees(portalCtx).forEach(view::setNavMenu);
+                        }
                     }
                 });
             }
@@ -1902,7 +1899,6 @@ public class Portal
 
     public static void registerNavTreeCustomizer(String webPartName, NavTreeCustomizer navTreeCustomizer)
     {
-        _navTreeCustomizers.add(navTreeCustomizer);
-        _navTreeCustomizerMap.put(webPartName, _navTreeCustomizers);
+        _navTreeCustomizerMap.put(webPartName, navTreeCustomizer);
     }
 }

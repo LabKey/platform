@@ -7,5 +7,5 @@ import java.util.List;
 
 public interface NavTreeCustomizer
 {
-    List<NavTree> getNavTrees(Container container, User user);
+    List<NavTree> getNavTrees(ViewContext viewContext);
 }
