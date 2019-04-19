@@ -17,11 +17,6 @@ interface IDomainDesignerState {
     messageType?: string
 }
 
-const btnStyle = {
-    margin: '10px 0 20px 10px',
-    width: 120
-};
-
 export class App extends React.PureComponent<any, IDomainDesignerState> {
 
     constructor(props)
@@ -106,8 +101,8 @@ export class App extends React.PureComponent<any, IDomainDesignerState> {
                 <Row>
                     <Col xs={12}>
                         <ButtonToolbar>
-                            <Button type='button' style={btnStyle} bsClass='btn' onClick={this.onCancel}>Cancel</Button>
-                            <Button type='button' style={btnStyle} bsClass='btn btn-success' onClick={this.submitHandler} >Save Changes</Button>
+                            <Button type='button' className={'domain-designer-button'} bsClass='btn' onClick={this.onCancel}>Cancel</Button>
+                            <Button type='button' className={'domain-designer-button'} bsClass='btn btn-success' onClick={this.submitHandler} >Save Changes</Button>
                         </ButtonToolbar>
                     </Col>
                 </Row>

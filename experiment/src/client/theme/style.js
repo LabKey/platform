@@ -1,2 +1,3 @@
-import "./Main.scss";
 import "@glass/domainproperties/dist/domainproperties.css"
+import "./domaindesigner.scss";
+import "./Main.scss";
