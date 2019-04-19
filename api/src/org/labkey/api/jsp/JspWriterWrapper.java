@@ -10,7 +10,7 @@ public class JspWriterWrapper extends JspWriter
 {
     private final JspWriter _jspWriter;
 
-    public JspWriterWrapper(JspWriter jspWriter)
+    JspWriterWrapper(JspWriter jspWriter)
     {
         super(0, true);
         _jspWriter = jspWriter;
@@ -176,11 +176,6 @@ public class JspWriterWrapper extends JspWriter
     public boolean isAutoFlush()
     {
         return _jspWriter.isAutoFlush();
-    }
-
-    public static Writer nullWriter()
-    {
-        return Writer.nullWriter();
     }
 
     @Override

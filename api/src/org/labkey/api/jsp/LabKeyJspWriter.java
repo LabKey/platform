@@ -11,7 +11,7 @@ public class LabKeyJspWriter extends JspWriterWrapper
 {
     private static final Logger LOG = Logger.getLogger(LabKeyJspWriter.class);
 
-    public LabKeyJspWriter(JspWriter jspWriter)
+    LabKeyJspWriter(JspWriter jspWriter)
     {
         super(jspWriter);
     }

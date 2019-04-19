@@ -20,7 +20,7 @@ public class LabKeyPageContext extends PageContext
 {
     private final PageContext _pageContext;
 
-    public LabKeyPageContext(PageContext pageContext)
+    LabKeyPageContext(PageContext pageContext)
     {
         _pageContext = pageContext;
     }
