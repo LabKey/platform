@@ -534,7 +534,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         public final Attachment customFavIcon;
         public final Attachment customStylesheet;
 
-        private LookAndFeelResourcesBean(Container c)
+        LookAndFeelResourcesBean(Container c)
         {
             customLogo = AttachmentCache.lookupLogoAttachment(c);
             customFavIcon = AttachmentCache.lookupFavIconAttachment(new LookAndFeelResourceAttachmentParent(c));

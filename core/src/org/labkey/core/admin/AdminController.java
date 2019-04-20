@@ -68,8 +68,10 @@ import org.labkey.api.admin.StaticLoggerGetter;
 import org.labkey.api.admin.TableXmlUtils;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
+import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.LookAndFeelResourceAttachmentParent;
+import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.provider.ContainerAuditProvider;
@@ -155,6 +157,8 @@ import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.*;
 import org.labkey.api.view.FolderManagement.FolderManagementViewAction;
 import org.labkey.api.view.FolderManagement.FolderManagementViewPostAction;
+import org.labkey.api.view.FolderManagement.ProjectSettingsViewPostAction;
+import org.labkey.api.view.FolderManagement.TYPE;
 import org.labkey.api.view.template.EmptyView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PageConfig.Template;
@@ -179,6 +183,7 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.mail.MessagingException;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.beans.Introspector;
@@ -234,6 +239,7 @@ import static org.labkey.api.view.FolderManagement.EVERY_CONTAINER;
 import static org.labkey.api.view.FolderManagement.FOLDERS_AND_PROJECTS;
 import static org.labkey.api.view.FolderManagement.FOLDERS_ONLY;
 import static org.labkey.api.view.FolderManagement.NOT_ROOT;
+import static org.labkey.api.view.FolderManagement.ROOT_AND_PROJECTS;
 import static org.labkey.api.view.FolderManagement.addTab;
 
 /**
@@ -310,12 +316,12 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Diagnostics, "view primary site log file", new ActionURL(ShowPrimaryLogAction.class, root));
     }
 
-    public static void registerFolderManagementTabs()
+    public static void registerManagementTabs()
     {
-        addTab("Folder Tree", "folderTree", NOT_ROOT, ManageFoldersAction.class);
-        addTab("Folder Type", "folderType", NOT_ROOT, FolderTypeAction.class);
-        addTab("Missing Values", "mvIndicators", EVERY_CONTAINER, MissingValuesAction.class);
-        addTab("Module Properties", "props", c -> {
+        addTab(TYPE.FolderManagement,"Folder Tree", "folderTree", NOT_ROOT, ManageFoldersAction.class);
+        addTab(TYPE.FolderManagement,"Folder Type", "folderType", NOT_ROOT, FolderTypeAction.class);
+        addTab(TYPE.FolderManagement,"Missing Values", "mvIndicators", EVERY_CONTAINER, MissingValuesAction.class);
+        addTab(TYPE.FolderManagement,"Module Properties", "props", c -> {
             if (!c.isRoot())
             {
                 // Show module properties tab only if a module w/ properties to set is present for current folder
@@ -326,17 +332,21 @@ public class AdminController extends SpringActionController
 
             return false;
         }, ModulePropertiesAction.class);
-        addTab("Concepts", "concepts", c -> {
+        addTab(TYPE.FolderManagement,"Concepts", "concepts", c -> {
             // Show Concepts tab only if the experiment module is enabled in this container
             return c.getActiveModules().contains(ModuleLoader.getInstance().getModule("Experiment"));
         }, AdminController.ConceptsAction.class);
-        addTab("Notifications", "messages", NOT_ROOT, NotificationsAction.class);
-        addTab("Export", "export", NOT_ROOT, ExportFolderAction.class);
-        addTab("Import", "import", NOT_ROOT, ImportFolderAction.class);
-        addTab("Files", "files", FOLDERS_AND_PROJECTS, FileRootsAction.class);
-        addTab("Formats", "settings", FOLDERS_ONLY, FolderSettingsAction.class);
-        addTab("Information", "info", NOT_ROOT, FolderInformationAction.class);
-        addTab("R Config", "rConfig", EVERY_CONTAINER, RConfigurationAction.class);
+        addTab(TYPE.FolderManagement,"Notifications", "messages", NOT_ROOT, NotificationsAction.class);
+        addTab(TYPE.FolderManagement,"Export", "export", NOT_ROOT, ExportFolderAction.class);
+        addTab(TYPE.FolderManagement,"Import", "import", NOT_ROOT, ImportFolderAction.class);
+        addTab(TYPE.FolderManagement,"Files", "files", FOLDERS_AND_PROJECTS, FileRootsAction.class);
+        addTab(TYPE.FolderManagement,"Formats", "settings", FOLDERS_ONLY, FolderSettingsAction.class);
+        addTab(TYPE.FolderManagement,"Information", "info", NOT_ROOT, FolderInformationAction.class);
+        addTab(TYPE.FolderManagement,"R Config", "rConfig", EVERY_CONTAINER, RConfigurationAction.class);
+
+        addTab(TYPE.ProjectSettings, "Resources", "resources", ROOT_AND_PROJECTS, ResourcesAction.class);
+        addTab(TYPE.ProjectSettings, "Test 2", "test2", NOT_ROOT, ProjectSettings3Action.class);
+        addTab(TYPE.ProjectSettings, "I'm just a view!", "test3", FOLDERS_ONLY, PSViewAction.class);
     }
 
     public AdminController()
@@ -353,12 +363,12 @@ public class AdminController extends SpringActionController
         }
     }
 
-    public NavTree appendAdminNavTrail(NavTree root, String childTitle, Class<? extends Controller> action)
+    private NavTree appendAdminNavTrail(NavTree root, String childTitle, Class<? extends Controller> action)
     {
         return appendAdminNavTrail(root, childTitle, action, getContainer());
     }
 
-    public static NavTree appendAdminNavTrail(NavTree root, String childTitle, Class<? extends Controller> action, Container container)
+    private static NavTree appendAdminNavTrail(NavTree root, String childTitle, Class<? extends Controller> action, Container container)
     {
         if (container.isRoot())
             root.addChild("Admin Console", getShowAdminURL());
@@ -9425,6 +9435,163 @@ public class AdminController extends SpringActionController
             {
                 writer.write(response);
             }
+        }
+    }
+
+
+    @RequiresPermission(AdminPermission.class)
+    public static class ResourcesAction extends ProjectSettingsViewPostAction
+    {
+        @Override
+        protected HttpView getTabView(Object o, BindException errors)
+        {
+            ProjectSettingsAction.LookAndFeelResourcesBean bean = new ProjectSettingsAction.LookAndFeelResourcesBean(getContainer());
+            return new JspView<>("/org/labkey/core/admin/lookAndFeelResources.jsp", bean, errors);
+        }
+
+        @Override
+        public void validateCommand(Object target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors)
+        {
+            Container c = getContainer();
+            Map<String, MultipartFile> fileMap = getFileMap();
+
+            MultipartFile logoFile = fileMap.get("logoImage");
+            if (logoFile != null && !logoFile.isEmpty())
+            {
+                try
+                {
+                    handleLogoFile(logoFile, c);
+                }
+                catch (Exception e)
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                    return false;
+                }
+            }
+
+            MultipartFile iconFile = fileMap.get("iconImage");
+            if (logoFile != null && !iconFile.isEmpty())
+            {
+                try
+                {
+                    handleIconFile(iconFile, c);
+                }
+                catch (Exception e)
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                    return false;
+                }
+            }
+
+            MultipartFile customStylesheetFile = fileMap.get("customStylesheet");
+            if (customStylesheetFile != null && !customStylesheetFile.isEmpty())
+            {
+                try
+                {
+                    handleCustomStylesheetFile(customStylesheetFile, c);
+                }
+                catch (Exception e)
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                    return false;
+                }
+            }
+
+            // Note that audit logging happens via the attachment code, so we don't log separately here
+
+            // Bump the look & feel revision so browsers retrieve the new logo, custom stylesheet, etc.
+            WriteableAppProps.incrementLookAndFeelRevisionAndSave();
+
+            return true;
+        }
+
+        private void handleLogoFile(MultipartFile file, Container c) throws ServletException, IOException
+        {
+            User user = getUser();
+
+            // Set the name to something we'll recognize as a logo file
+            String uploadedFileName = file.getOriginalFilename();
+            int index = uploadedFileName.lastIndexOf(".");
+            if (index == -1)
+            {
+                throw new ServletException("No file extension on the uploaded image");
+            }
+
+            LookAndFeelResourceAttachmentParent parent = new LookAndFeelResourceAttachmentParent(c);
+            // Get rid of any existing logo
+            AdminController.deleteExistingLogo(c, user);
+
+            AttachmentFile renamed = new SpringAttachmentFile(file, AttachmentCache.LOGO_FILE_NAME_PREFIX + uploadedFileName.substring(index));
+            AttachmentService.get().addAttachments(parent, Collections.singletonList(renamed), user);
+            AttachmentCache.clearLogoCache();
+        }
+
+        private void handleIconFile(MultipartFile file, Container c) throws IOException, ServletException
+        {
+            User user = getUser();
+
+            if (!file.getOriginalFilename().toLowerCase().endsWith(".ico"))
+            {
+                throw new ServletException("FavIcon must be a .ico file");
+            }
+
+            AdminController.deleteExistingFavicon(c, user);
+
+            LookAndFeelResourceAttachmentParent parent = new LookAndFeelResourceAttachmentParent(c);
+            AttachmentFile renamed = new SpringAttachmentFile(file, AttachmentCache.FAVICON_FILE_NAME);
+            AttachmentService.get().addAttachments(parent, Collections.singletonList(renamed), user);
+            AttachmentCache.clearFavIconCache();
+        }
+
+        private void handleCustomStylesheetFile(MultipartFile file, Container c) throws IOException
+        {
+            User user = getUser();
+
+            AdminController.deleteExistingCustomStylesheet(c, user);
+
+            LookAndFeelResourceAttachmentParent parent = new LookAndFeelResourceAttachmentParent(c);
+            AttachmentFile renamed = new SpringAttachmentFile(file, AttachmentCache.STYLESHEET_FILE_NAME);
+            AttachmentService.get().addAttachments(parent, Collections.singletonList(renamed), user);
+
+            // Don't need to clear cache -- lookAndFeelRevision gets checked on retrieval
+        }
+    }
+
+
+    @RequiresPermission(AdminPermission.class)
+    public static class ProjectSettings3Action extends ProjectSettingsViewPostAction
+    {
+        @Override
+        protected HttpView getTabView(Object o, BindException errors)
+        {
+            return new HtmlView("This is a test of another tab");
+        }
+
+        @Override
+        public void validateCommand(Object target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors) throws Exception
+        {
+            return false;
+        }
+    }
+
+
+    @RequiresPermission(AdminPermission.class)
+    public static class PSViewAction extends FolderManagement.ProjectSettingsViewAction
+    {
+        @Override
+        protected HttpView getTabView()
+        {
+            return new HtmlView("This is just a view");
         }
     }
 
