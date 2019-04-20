@@ -27,13 +27,13 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.AdminController.AdminUrlsImpl" %>
-<%@ page import="org.labkey.core.admin.ProjectSettingsAction" %>
 <%@ page import="java.util.Arrays" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    ProjectSettingsAction.LookAndFeelPropertiesBean bean = ((JspView<ProjectSettingsAction.LookAndFeelPropertiesBean>)HttpView.currentView()).getModelBean();
+    AdminController.LookAndFeelPropertiesBean bean = ((JspView<AdminController.LookAndFeelPropertiesBean>)HttpView.currentView()).getModelBean();
     Container c = getContainer();
     boolean folder = !c.isRoot() && !c.isProject();
     boolean hasAdminOpsPerm = c.hasPermission(getUser(), AdminOperationsPermission.class);

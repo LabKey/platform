@@ -127,6 +127,7 @@ public class FolderManagement
     // Choosing "isInFolderNav" does not include Tabs, which is a slight change in functionality (previously excluded just workbooks), but that seems proper.
     public static final Predicate<Container> FOLDERS_AND_PROJECTS = container -> !container.isRoot() && container.isInFolderNav();
     public static final Predicate<Container> FOLDERS_ONLY = container -> !container.isRoot() && !container.isProject() && container.isInFolderNav();
+    public static final Predicate<Container> PROJECTS_ONLY = container -> !container.isRoot() && container.isProject() && container.isInFolderNav();
 
     private abstract static class ManagementTabStrip extends TabStripView
     {
@@ -214,7 +215,7 @@ public class FolderManagement
                 @Override
                 public HttpView getTabView(String tabId) throws Exception
                 {
-                    return ManagementViewPostAction.this.getTabView(form, errors);
+                    return ManagementViewPostAction.this.getTabView(form, reshow, errors);
                 }
 
                 @Override
@@ -234,7 +235,18 @@ public class FolderManagement
         }
 
         protected abstract TYPE getType();
-        protected abstract HttpView getTabView(FORM form, BindException errors) throws Exception;
+
+        // TODO: Make this abstract, once every subclass overrides this method
+        protected HttpView getTabView(FORM form, boolean reshow, BindException errors) throws Exception
+        {
+            return getTabView(form, errors);
+        }
+
+        @Deprecated // Remove this in favor of the "reshow" variant above...
+        protected HttpView getTabView(FORM form, BindException errors) throws Exception
+        {
+            return null;
+        }
 
         @Override
         public NavTree appendNavTrail(NavTree root)
