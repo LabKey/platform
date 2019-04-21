@@ -158,6 +158,7 @@ import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.*;
 import org.labkey.api.view.FolderManagement.FolderManagementViewAction;
 import org.labkey.api.view.FolderManagement.FolderManagementViewPostAction;
+import org.labkey.api.view.FolderManagement.ProjectSettingsViewAction;
 import org.labkey.api.view.FolderManagement.ProjectSettingsViewPostAction;
 import org.labkey.api.view.FolderManagement.TYPE;
 import org.labkey.api.view.template.EmptyView;
@@ -1588,7 +1589,34 @@ public class AdminController extends SpringActionController
         void setRestrictedColumnsEnabled(boolean restrictedColumnsEnabled);
     }
 
-    public static class ProjectSettingsForm extends SetupForm implements FileManagementForm, SettingsForm
+    public enum MigrateFilesOption
+    {
+        leave {
+            @Override
+            public String description()
+            {
+                return "Source files not copied or moved";
+            }
+        },
+        copy {
+            @Override
+            public String description()
+            {
+                return "Copy source files to destination";
+            }
+        },
+        move {
+            @Override
+            public String description()
+            {
+                return "Move source files to destination";
+            }
+        };
+
+        public abstract String description();
+    }
+
+    public static class ProjectSettingsForm implements SettingsForm
     {
         private boolean _shouldInherit; // new subfolders should inherit parent permissions
         private String _systemDescription;
@@ -1602,11 +1630,7 @@ public class AdminController extends SpringActionController
         private String _companyName;
         private String _systemEmailAddress;
         private String _reportAProblemPath;
-        private String _tabId;
-        private String _folderRootPath;
-        private String _fileRootOption;
         private String _supportEmail;
-        private String[] _enabledCloudStore;
         private String _dateParsingMode;
         private String _defaultDateFormat;
         private String _defaultDateTimeFormat;
@@ -1614,45 +1638,6 @@ public class AdminController extends SpringActionController
         private boolean _restrictedColumnsEnabled;
         private String _customLogin;
         private String _customWelcome;
-        private String _cloudRootName;
-        private boolean _fileRootChanged;
-        private boolean _enabledCloudStoresChanged;
-        private String _migrateFilesOption;
-
-        public enum FileRootProp
-        {
-            disable,
-            siteDefault,
-            folderOverride,
-            cloudRoot
-        }
-
-        public enum MigrateFilesOption
-        {
-            leave {
-                @Override
-                public String description()
-                {
-                    return "Source files not copied or moved";
-                }
-            },
-            copy {
-                @Override
-                public String description()
-                {
-                    return "Copy source files to destination";
-                }
-            },
-            move {
-                @Override
-                public String description()
-                {
-                    return "Move source files to destination";
-                }
-            };
-
-            public abstract String description();
-        }
 
         public boolean getShouldInherit()
         {
@@ -1819,62 +1804,6 @@ public class AdminController extends SpringActionController
             _systemEmailAddress = systemEmailAddress;
         }
 
-        public String getTabId()
-        {
-            return _tabId;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setTabId(String tabId)
-        {
-            _tabId = tabId;
-        }
-
-        public boolean isResourcesTab()
-        {
-            return "resources".equals(getTabId());
-        }
-
-        public boolean isMenuTab()
-        {
-            return "menubar".equals(getTabId());
-        }
-
-        public boolean isFilesTab()
-        {
-            return "files".equals(getTabId());
-        }
-
-        public boolean isDisableFileSharing()
-        {
-            return FileRootProp.disable.name().equals(getFileRootOption());
-        }
-
-        public boolean hasSiteDefaultRoot()
-        {
-            return FileRootProp.siteDefault.name().equals(getFileRootOption());
-        }
-
-        public String getFolderRootPath()
-        {
-            return _folderRootPath;
-        }
-
-        public void setFolderRootPath(String folderRootPath)
-        {
-            _folderRootPath = folderRootPath;
-        }
-
-        public String getFileRootOption()
-        {
-            return _fileRootOption;
-        }
-
-        public void setFileRootOption(String fileRootOption)
-        {
-            _fileRootOption = fileRootOption;
-        }
-
         @SuppressWarnings({"UnusedDeclaration"})
         public void setSupportEmail(String supportEmail)
         {
@@ -1884,18 +1813,6 @@ public class AdminController extends SpringActionController
         public String getSupportEmail()
         {
             return _supportEmail;
-        }
-
-        @Override
-        public String[] getEnabledCloudStore()
-        {
-            return _enabledCloudStore;
-        }
-
-        @Override
-        public void setEnabledCloudStore(String[] enabledCloudStore)
-        {
-            _enabledCloudStore = enabledCloudStore;
         }
 
         @Override
@@ -1946,22 +1863,25 @@ public class AdminController extends SpringActionController
         {
             _restrictedColumnsEnabled = restrictedColumnsEnabled;
         }
+    }
 
-        public boolean isCloudFileRoot()
-        {
-            return FileRootProp.cloudRoot.name().equals(getFileRootOption());
-        }
+    public enum FileRootProp
+    {
+        disable,
+        siteDefault,
+        folderOverride,
+        cloudRoot
+    }
 
-        @Nullable
-        public String getCloudRootName()
-        {
-            return _cloudRootName;
-        }
-
-        public void setCloudRootName(String cloudRootName)
-        {
-            _cloudRootName = cloudRootName;
-        }
+    public static class FilesForm extends SetupForm implements FileManagementForm
+    {
+        private boolean _fileRootChanged;
+        private boolean _enabledCloudStoresChanged;
+        private String _cloudRootName;
+        private String _migrateFilesOption;
+        private String[] _enabledCloudStore;
+        private String _fileRootOption;
+        private String _folderRootPath;
 
         public boolean isFileRootChanged()
         {
@@ -1982,6 +1902,43 @@ public class AdminController extends SpringActionController
         {
             _enabledCloudStoresChanged = enabledCloudStoresChanged;
         }
+        public boolean isDisableFileSharing()
+        {
+            return FileRootProp.disable.name().equals(getFileRootOption());
+        }
+
+        public boolean hasSiteDefaultRoot()
+        {
+            return FileRootProp.siteDefault.name().equals(getFileRootOption());
+        }
+
+        @Override
+        public String[] getEnabledCloudStore()
+        {
+            return _enabledCloudStore;
+        }
+
+        @Override
+        public void setEnabledCloudStore(String[] enabledCloudStore)
+        {
+            _enabledCloudStore = enabledCloudStore;
+        }
+
+        public boolean isCloudFileRoot()
+        {
+            return FileRootProp.cloudRoot.name().equals(getFileRootOption());
+        }
+
+        @Nullable
+        public String getCloudRootName()
+        {
+            return _cloudRootName;
+        }
+
+        public void setCloudRootName(String cloudRootName)
+        {
+            _cloudRootName = cloudRootName;
+        }
 
         public String getMigrateFilesOption()
         {
@@ -1991,6 +1948,26 @@ public class AdminController extends SpringActionController
         public void setMigrateFilesOption(String migrateFilesOption)
         {
             _migrateFilesOption = migrateFilesOption;
+        }
+
+        public String getFolderRootPath()
+        {
+            return _folderRootPath;
+        }
+
+        public void setFolderRootPath(String folderRootPath)
+        {
+            _folderRootPath = folderRootPath;
+        }
+
+        public String getFileRootOption()
+        {
+            return _fileRootOption;
+        }
+
+        public void setFileRootOption(String fileRootOption)
+        {
+            _fileRootOption = fileRootOption;
         }
     }
 
@@ -4777,7 +4754,7 @@ public class AdminController extends SpringActionController
         @Override
         protected HttpView getTabView(FolderSettingsForm form, boolean reshow, BindException errors)
         {
-            return new LookAndFeelView(getContainer(), errors);
+            return new LookAndFeelView(errors);
         }
 
         @Override
@@ -4994,17 +4971,17 @@ public class AdminController extends SpringActionController
 
         public boolean isDisableFileSharing()
         {
-            return ProjectSettingsForm.FileRootProp.disable.name().equals(getFileRootOption());
+            return FileRootProp.disable.name().equals(getFileRootOption());
         }
 
         public boolean hasSiteDefaultRoot()
         {
-            return ProjectSettingsForm.FileRootProp.siteDefault.name().equals(getFileRootOption());
+            return FileRootProp.siteDefault.name().equals(getFileRootOption());
         }
 
         public boolean isCloudFileRoot()
         {
-            return ProjectSettingsForm.FileRootProp.cloudRoot.name().equals(getFileRootOption());
+            return FileRootProp.cloudRoot.name().equals(getFileRootOption());
         }
 
         @Nullable
@@ -5213,9 +5190,9 @@ public class AdminController extends SpringActionController
         {
             // If we need to copy/move files based on the FileRoot change, we need to check children that use the default and move them, too.
             // And we need to capture the source roots for each of those, because changing this parent file root changes the child source roots.
-            ProjectSettingsForm.MigrateFilesOption migrateFilesOption = ProjectSettingsForm.MigrateFilesOption.valueOf(form.getMigrateFilesOption());
+            MigrateFilesOption migrateFilesOption = MigrateFilesOption.valueOf(form.getMigrateFilesOption());
             List<Pair<Container, String>> sourceInfos =
-                    ((ProjectSettingsForm.MigrateFilesOption.leave.equals(migrateFilesOption) && !form.isFolderSetup()) || form.isDisableFileSharing()) ?
+                    ((MigrateFilesOption.leave.equals(migrateFilesOption) && !form.isFolderSetup()) || form.isDisableFileSharing()) ?
                             Collections.emptyList() :
                             getCopySourceInfo(service, ctx.getContainer());
 
@@ -5307,7 +5284,7 @@ public class AdminController extends SpringActionController
 
             if (!errors.hasErrors())
             {
-                if (changed && shouldCopyMove && !ProjectSettingsForm.MigrateFilesOption.leave.equals(migrateFilesOption))
+                if (changed && shouldCopyMove && !MigrateFilesOption.leave.equals(migrateFilesOption))
                 {
                     // Make sure we have pipeRoot before starting jobs, even though each subfolder needs to get its own
                     PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(ctx.getContainer());
@@ -5370,7 +5347,7 @@ public class AdminController extends SpringActionController
     }
 
     private static void initiateCopyFilesPipelineJobs(ViewContext ctx, @NotNull List<Pair<Container, String>> sourceInfos, PipeRoot pipeRoot,
-                                                      ProjectSettingsForm.MigrateFilesOption migrateFilesOption) throws PipelineValidationException
+                                                      MigrateFilesOption migrateFilesOption) throws PipelineValidationException
     {
         CopyFileRootPipelineJob job = new CopyFileRootPipelineJob(ctx.getContainer(), ctx.getUser(), sourceInfos, pipeRoot, migrateFilesOption);
         PipelineService.get().queueJob(job);
@@ -5378,7 +5355,7 @@ public class AdminController extends SpringActionController
 
     private static void throwIfUnauthorizedFileRootChange(ViewContext ctx, FileContentService service, FileManagementForm form)
     {
-        // test permissions.  only site admins are able to turn on a custom file root for a folder
+        // test permissions. only site admins are able to turn on a custom file root for a folder
         // this is only relevant if the folder is either being switched to a custom file root,
         // or if the file root is changed.
         if (!service.isUseDefaultRoot(ctx.getContainer()))
@@ -5455,14 +5432,14 @@ public class AdminController extends SpringActionController
         String migrateFilesMessage = "";
         if (fileRootChanged && !form.isFolderSetup())
         {
-            if (ProjectSettingsForm.MigrateFilesOption.leave.name().equals(migrateFilesOption))
+            if (MigrateFilesOption.leave.name().equals(migrateFilesOption))
                 migrateFilesMessage = ". Existing files not copied or moved.";
-            else if (ProjectSettingsForm.MigrateFilesOption.copy.name().equals(migrateFilesOption))
+            else if (MigrateFilesOption.copy.name().equals(migrateFilesOption))
             {
                 migrateFilesMessage = ". Existing files copied.";
                 form.setMigrateFilesOption(migrateFilesOption);
             }
-            else if (ProjectSettingsForm.MigrateFilesOption.move.name().equals(migrateFilesOption))
+            else if (MigrateFilesOption.move.name().equals(migrateFilesOption))
             {
                 migrateFilesMessage = ". Existing files moved.";
                 form.setMigrateFilesOption(migrateFilesOption);
@@ -5473,13 +5450,13 @@ public class AdminController extends SpringActionController
         {
             if (service.isFileRootDisabled(container))
             {
-                form.setFileRootOption(ProjectSettingsForm.FileRootProp.disable.name());
+                form.setFileRootOption(FileRootProp.disable.name());
                 if (fileRootChanged)
                     confirmMessage = "File sharing has been disabled for this " + container.getContainerNoun();
             }
             else if (service.isUseDefaultRoot(container))
             {
-                form.setFileRootOption(ProjectSettingsForm.FileRootProp.siteDefault.name());
+                form.setFileRootOption(FileRootProp.siteDefault.name());
                 Path root = service.getFileRootPath(container);
                 if (root != null && Files.exists(root) && fileRootChanged)
                     confirmMessage = "The file root is set to a default of: " + FileUtil.getAbsolutePath(container, root) + migrateFilesMessage;
@@ -5488,7 +5465,7 @@ public class AdminController extends SpringActionController
             {
                 Path root = service.getFileRootPath(container);
 
-                form.setFileRootOption(ProjectSettingsForm.FileRootProp.folderOverride.name());
+                form.setFileRootOption(FileRootProp.folderOverride.name());
                 if (root != null)
                 {
                     String absolutePath = FileUtil.getAbsolutePath(container, root);
@@ -5502,7 +5479,7 @@ public class AdminController extends SpringActionController
             }
             else
             {
-                form.setFileRootOption(ProjectSettingsForm.FileRootProp.cloudRoot.name());
+                form.setFileRootOption(FileRootProp.cloudRoot.name());
                 form.setCloudRootName(service.getCloudRootName(container));
                 Path root = service.getFileRootPath(container);
                 if (root != null && fileRootChanged)
@@ -6368,7 +6345,7 @@ public class AdminController extends SpringActionController
             }
             else if (newParent.hasChild(c.getName()))
             {
-                errors.reject(ERROR_MSG, "Error: The selected folder already has a folder with that name.  Please select a different location (or Cancel).");
+                errors.reject(ERROR_MSG, "Error: The selected folder already has a folder with that name. Please select a different location (or Cancel).");
             }
         }
 
@@ -6786,15 +6763,15 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class SetInitialFolderSettingsAction extends FormViewAction<ProjectSettingsForm>
+    public class SetInitialFolderSettingsAction extends FormViewAction<FilesForm>
     {
         private ActionURL _successURL;
 
-        public void validateCommand(ProjectSettingsForm target, Errors errors)
+        public void validateCommand(FilesForm target, Errors errors)
         {
         }
 
-        public ModelAndView getView(ProjectSettingsForm form, boolean reshow, BindException errors)
+        public ModelAndView getView(FilesForm form, boolean reshow, BindException errors)
         {
             VBox vbox = new VBox();
             Container c = getContainer();
@@ -6809,10 +6786,9 @@ public class AdminController extends SpringActionController
             getPageConfig().setTitle(noun + " Settings");
 
             return vbox;
-
         }
 
-        public boolean handlePost(ProjectSettingsForm form, BindException errors)
+        public boolean handlePost(FilesForm form, BindException errors)
         {
             Container c = getContainer();
             String folderRootPath = StringUtils.trimToNull(form.getFolderRootPath());
@@ -6855,7 +6831,7 @@ public class AdminController extends SpringActionController
             return true;
         }
 
-        public ActionURL getSuccessURL(ProjectSettingsForm form)
+        public ActionURL getSuccessURL(FilesForm form)
         {
             return _successURL;
         }
@@ -6871,11 +6847,9 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class DeleteFolderAction extends FormViewAction<ManageFoldersForm>
     {
-        private Container target;
-
         public void validateCommand(ManageFoldersForm form, Errors errors)
         {
-            target = getContainer();
+            Container target = getContainer();
 
             if (!ContainerManager.isDeletable(target))
                 errors.reject(ERROR_MSG, "The path " + target.getPath() + " is not deletable.");
@@ -9447,7 +9421,7 @@ public class AdminController extends SpringActionController
         @Override
         protected HttpView getTabView(ProjectSettingsForm form, boolean reshow, BindException errors)
         {
-            return new LookAndFeelView(getContainer(), errors);
+            return new LookAndFeelView(errors);
         }
 
         @Override
@@ -9501,7 +9475,7 @@ public class AdminController extends SpringActionController
 
                 if (!props.isValidUrl(form.getCustomLogin()))
                 {
-                    errors.reject(SpringActionController.ERROR_MSG, "Invalid login URL.  Should be in the form <module>-<name>.");
+                    errors.reject(SpringActionController.ERROR_MSG, "Invalid login URL. Should be in the form <module>-<name>.");
                     return false;
                 }
                 props.setCustomLogin(form.getCustomLogin());
@@ -9509,7 +9483,7 @@ public class AdminController extends SpringActionController
                 String welcomeUrl = StringUtils.trimToNull(form.getCustomWelcome());
                 if ("/".equals(welcomeUrl) || AppProps.getInstance().getContextPath().equalsIgnoreCase(welcomeUrl))
                 {
-                    errors.reject(SpringActionController.ERROR_MSG, "Invalid welcome URL.  The url cannot equal '/' or the contextPath (" + AppProps.getInstance().getContextPath() + ")");
+                    errors.reject(SpringActionController.ERROR_MSG, "Invalid welcome URL. The url cannot equal '/' or the contextPath (" + AppProps.getInstance().getContextPath() + ")");
                     return false;
                 }
                 props.setCustomWelcome(welcomeUrl);
@@ -9685,7 +9659,7 @@ public class AdminController extends SpringActionController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class MenuBarAction extends FolderManagement.ProjectSettingsViewAction
+    public class MenuBarAction extends ProjectSettingsViewAction
     {
         @Override
         protected HttpView getTabView()
@@ -9709,10 +9683,10 @@ public class AdminController extends SpringActionController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class FilesAction extends ProjectSettingsViewPostAction<ProjectSettingsForm>
+    public class FilesAction extends ProjectSettingsViewPostAction<FilesForm>
     {
         @Override
-        protected HttpView getTabView(ProjectSettingsForm form, boolean reshow, BindException errors)
+        protected HttpView getTabView(FilesForm form, boolean reshow, BindException errors)
         {
             Container c = getContainer();
 
@@ -9760,7 +9734,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public void validateCommand(ProjectSettingsForm form, Errors errors)
+        public void validateCommand(FilesForm form, Errors errors)
         {
             if (!form.isPipelineRootForm() && !form.isDisableFileSharing() && !form.hasSiteDefaultRoot() && !form.isCloudFileRoot())
             {
@@ -9783,7 +9757,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(ProjectSettingsForm form, BindException errors) throws Exception
+        public boolean handlePost(FilesForm form, BindException errors) throws Exception
         {
             FileContentService service = FileContentService.get();
             if (service != null)
@@ -9803,7 +9777,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public URLHelper getSuccessURL(ProjectSettingsForm form)
+        public URLHelper getSuccessURL(FilesForm form)
         {
             ActionURL url = new AdminController.AdminUrlsImpl().getProjectSettingsFileURL(getContainer());
             if (form.isPipelineRootForm())
@@ -9898,21 +9872,16 @@ public class AdminController extends SpringActionController
     }
 
 
-    public static class LookAndFeelView extends JspView<LookAndFeelPropertiesBean>
+    public static class LookAndFeelView extends JspView<LookAndFeelBean>
     {
-        LookAndFeelView(Container c, BindException errors)
+        LookAndFeelView(BindException errors)
         {
-            super("/org/labkey/core/admin/lookAndFeelProperties.jsp", getBean(c), errors);
-        }
-
-        private static LookAndFeelPropertiesBean getBean(Container c)
-        {
-            return new LookAndFeelPropertiesBean(c);
+            super("/org/labkey/core/admin/lookAndFeelProperties.jsp", new LookAndFeelBean(), errors);
         }
     }
 
 
-    private static abstract class LookAndFeelBean
+    public static class LookAndFeelBean
     {
         public final String helpLink = new HelpTopic("customizeLook").getSimpleLinkHtml("more info...");
         public final String welcomeLink = new HelpTopic("customizeLook").getSimpleLinkHtml("more info...");
@@ -9931,14 +9900,6 @@ public class AdminController extends SpringActionController
             customLogo = AttachmentCache.lookupLogoAttachment(c);
             customFavIcon = AttachmentCache.lookupFavIconAttachment(new LookAndFeelResourceAttachmentParent(c));
             customStylesheet = AttachmentCache.lookupCustomStylesheetAttachment(new LookAndFeelResourceAttachmentParent(c));
-        }
-    }
-
-
-    public static class LookAndFeelPropertiesBean extends LookAndFeelBean
-    {
-        private LookAndFeelPropertiesBean(Container c)
-        {
         }
     }
 

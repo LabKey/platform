@@ -42,7 +42,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.core.admin.AdminController.ProjectSettingsForm.MigrateFilesOption;
+import org.labkey.core.admin.AdminController.MigrateFilesOption;
 import org.labkey.core.CoreModule;
 
 import java.io.IOException;
@@ -450,7 +450,7 @@ public class CopyFileRootPipelineJob extends PipelineJob
             User user = TestContext.get().getUser();
             Container container = ContainerManager.getRoot();
             PipeRoot pipeRoot = PipelineService.get().getPipelineRootSetting(container);
-            CopyFileRootPipelineJob job = new CopyFileRootPipelineJob(container, user, Collections.emptyList(), pipeRoot, AdminController.ProjectSettingsForm.MigrateFilesOption.leave);
+            CopyFileRootPipelineJob job = new CopyFileRootPipelineJob(container, user, Collections.emptyList(), pipeRoot, AdminController.MigrateFilesOption.leave);
             job.getActionSet().add(new RecordedAction("foo"));
             testSerialize(job, LOG);
         }

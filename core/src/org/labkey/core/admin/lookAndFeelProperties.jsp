@@ -33,7 +33,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    AdminController.LookAndFeelPropertiesBean bean = ((JspView<AdminController.LookAndFeelPropertiesBean>)HttpView.currentView()).getModelBean();
+    AdminController.LookAndFeelBean bean = ((JspView<AdminController.LookAndFeelBean>)HttpView.currentView()).getModelBean();
     Container c = getContainer();
     boolean folder = !c.isRoot() && !c.isProject();
     boolean hasAdminOpsPerm = c.hasPermission(getUser(), AdminOperationsPermission.class);
