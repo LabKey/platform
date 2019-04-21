@@ -55,11 +55,17 @@ export class App extends React.PureComponent<any, IDomainDesignerState> {
     }
 
     submitHandler() {
+        const { domain } = this.state;
 
-        saveDomain(this.state.domain)
-            .then(domain => {
-                let dd = clearFieldDetails(this.state.domain);
-                this.setState(Object.assign({}, {domain: dd, message: 'Domain saved', messageType: 'success'}));
+        saveDomain(domain)
+            .then((success) => {
+                const newDomain = clearFieldDetails(domain);
+
+                this.setState({
+                    domain: newDomain,
+                    message: 'Domain saved successfully.',
+                    messageType: 'success'
+                });
             })
             .catch(error => {
                 this.setState({message: error.exception, messageType: 'danger'})
@@ -67,11 +73,18 @@ export class App extends React.PureComponent<any, IDomainDesignerState> {
     }
 
     onChangeHandler(evt) {
-        let value = evt.target.value;
-        if (evt.target.type === "checkbox") {
-            value = evt.target.checked;
+        if (evt instanceof DomainDesign) {
+            this.setState(() => ({
+                domain: evt
+            }));
         }
-        this.setState({domain: updateDomainField(this.state.domain, evt.target.id, value)});
+        else {
+            let value = evt.target.value;
+            if (evt.target.type === "checkbox") {
+                value = evt.target.checked;
+            }
+            this.setState({domain: updateDomainField(this.state.domain, evt.target.id, value)});
+        }
     }
 
     dismissAlert() {
