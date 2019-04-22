@@ -47,18 +47,18 @@ import java.util.Map;
  */
 public class AnnouncementSubscriptionTable extends AbstractSubscriptionTable
 {
-    public AnnouncementSubscriptionTable(AnnouncementSchema schema)
+    public AnnouncementSubscriptionTable(AnnouncementSchema schema, ContainerFilter cf)
     {
-        super(CommSchema.getInstance().getTableInfoUserList(), schema);
+        super(CommSchema.getInstance().getTableInfoUserList(), schema, cf);
 
         var announcementColumn = wrapColumn("Announcement", getRealTable().getColumn("MessageId"));
         addColumn(announcementColumn);
-        announcementColumn.setFk(new LookupForeignKey("RowId")
+        announcementColumn.setFk(new LookupForeignKey(cf, "RowId", null)
         {
             @Override
             public TableInfo getLookupTableInfo()
             {
-                AnnouncementTable result = _userSchema.createAnnouncementTable();
+                AnnouncementTable result = _userSchema.createAnnouncementTable(getLookupContainerFilter());
                 result.addCondition(new SimpleFilter(FieldKey.fromParts("Parent"), null, CompareType.ISBLANK));
                 return result;
             }

@@ -17,6 +17,7 @@ package org.labkey.announcements.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.announcements.CommSchema;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.query.FilteredTable;
 
@@ -24,9 +25,9 @@ import static org.labkey.announcements.query.AnnouncementSchema.THREADS_TABLE_NA
 
 public class ThreadsTable extends FilteredTable<AnnouncementSchema>
 {
-    public ThreadsTable(@NotNull AnnouncementSchema userSchema)
+    public ThreadsTable(@NotNull AnnouncementSchema userSchema, ContainerFilter cf)
     {
-        super(CommSchema.getInstance().getTableInfoThreads(), userSchema);
+        super(CommSchema.getInstance().getTableInfoThreads(), userSchema, cf);
 
         wrapAllColumns(true);
         removeColumn(getColumn("Body"));

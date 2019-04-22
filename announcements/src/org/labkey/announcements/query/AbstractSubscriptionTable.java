@@ -17,6 +17,7 @@ package org.labkey.announcements.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.InvalidKeyException;
@@ -37,9 +38,9 @@ import java.util.Map;
  */
 public class AbstractSubscriptionTable extends FilteredTable<AnnouncementSchema>
 {
-    public AbstractSubscriptionTable(TableInfo table, AnnouncementSchema schema)
+    public AbstractSubscriptionTable(TableInfo table, AnnouncementSchema schema, ContainerFilter cf)
     {
-        super(table, schema);
+        super(table, schema, cf);
 
         var userColumn = wrapColumn("User", getRealTable().getColumn("UserId"));
         addColumn(userColumn);

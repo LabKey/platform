@@ -25,6 +25,7 @@ import org.labkey.announcements.model.TourModel;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
@@ -92,9 +93,9 @@ public class ToursTable extends FilteredTable<AnnouncementSchema>
         }
     }
 
-    public ToursTable(AnnouncementSchema schema)
+    public ToursTable(AnnouncementSchema schema, ContainerFilter cf)
     {
-        super(CommSchema.getInstance().getTableInfoTours(), schema);
+        super(CommSchema.getInstance().getTableInfoTours(), schema, cf);
 
         //
         // Handle columns

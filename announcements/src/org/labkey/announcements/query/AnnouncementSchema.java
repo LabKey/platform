@@ -20,6 +20,7 @@ import org.labkey.announcements.AnnouncementsController;
 import org.labkey.announcements.model.AnnouncementManager;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.Module;
@@ -97,63 +98,63 @@ public class AnnouncementSchema extends UserSchema
     }
 
     @Override
-    public TableInfo createTable(String name)
+    public TableInfo createTable(String name, ContainerFilter cf)
     {
         if (ANNOUNCEMENT_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return createAnnouncementTable();
+            return createAnnouncementTable(cf);
         }
         if (MODERATOR_REVIEW_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return createModeratorReviewTable();
+            return createModeratorReviewTable(cf);
         }
         if (SPAM_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return createSpamTable();
+            return createSpamTable(cf);
         }
         if (EMAIL_FORMAT_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return createEmailFormatTable();
+            return createEmailFormatTable(cf);
         }
         if (EMAIL_OPTION_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return createEmailOptionTable();
+            return createEmailOptionTable(cf);
         }
         if (FORUM_SUBSCRIPTION_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return createForumSubscriptionTable();
+            return createForumSubscriptionTable(cf);
         }
         if (ANNOUNCEMENT_SUBSCRIPTION_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return createAnnouncementSubscriptionTable();
+            return createAnnouncementSubscriptionTable(cf);
         }
         if (RSS_FEEDS_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return createRSSFeedsTable();
+            return createRSSFeedsTable(cf);
         }
         if (TOURS_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return createToursTable();
+            return createToursTable(cf);
         }
         if (THREADS_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return createThreadsTable();
+            return createThreadsTable(cf);
         }
         return null;
     }
 
-    public TableInfo createEmailFormatTable()
+    public TableInfo createEmailFormatTable(ContainerFilter cf)
     {
-        FilteredTable result = new FilteredTable<>(CommSchema.getInstance().getTableInfoEmailFormats(), this);
+        FilteredTable result = new FilteredTable<>(CommSchema.getInstance().getTableInfoEmailFormats(), this, cf);
         result.setName(EMAIL_FORMAT_TABLE_NAME);
         result.wrapAllColumns(true);
         result.setPublicSchemaName(getName());
         return result;
     }
 
-    public TableInfo createEmailOptionTable()
+    public TableInfo createEmailOptionTable(ContainerFilter cf)
     {
-        FilteredTable result = new FilteredTable<>(CommSchema.getInstance().getTableInfoEmailOptions(), this);
+        FilteredTable result = new FilteredTable<>(CommSchema.getInstance().getTableInfoEmailOptions(), this, cf);
         result.setName(EMAIL_OPTION_TABLE_NAME);
         result.addWrapColumn(result.getRealTable().getColumn("EmailOptionId"));
         result.addWrapColumn(result.getRealTable().getColumn("EmailOption"));
@@ -162,29 +163,29 @@ public class AnnouncementSchema extends UserSchema
         return result;
     }
 
-    private TableInfo createRSSFeedsTable()
+    private TableInfo createRSSFeedsTable(ContainerFilter cf)
     {
-        return new RSSFeedsTable(this);
+        return new RSSFeedsTable(this, cf);
     }
 
-    private TableInfo createAnnouncementSubscriptionTable()
+    private TableInfo createAnnouncementSubscriptionTable(ContainerFilter cf)
     {
-        return new AnnouncementSubscriptionTable(this);
+        return new AnnouncementSubscriptionTable(this, cf);
     }
 
-    private TableInfo createForumSubscriptionTable()
+    private TableInfo createForumSubscriptionTable(ContainerFilter cf)
     {
-        return new ForumSubscriptionTable(this);
+        return new ForumSubscriptionTable(this, cf);
     }
 
-    public AnnouncementTable createAnnouncementTable()
+    public AnnouncementTable createAnnouncementTable(ContainerFilter cf)
     {
-        return new AnnouncementTable(this);
+        return new AnnouncementTable(this, cf);
     }
 
-    private AnnouncementTable createFilteredAnnouncementTable(SimpleFilter filter)
+    private AnnouncementTable createFilteredAnnouncementTable(ContainerFilter cf, SimpleFilter filter)
     {
-        AnnouncementTable table = new AnnouncementTable(this, filter);
+        AnnouncementTable table = new AnnouncementTable(this, cf, filter);
 
         for (String name : Arrays.asList("Expires", "RendererType", "Status", "AssignedTo", "DiscussionSrcIdentifier", "DiscussionSrcURL", "Folder", "LastIndexed"))
             table.getMutableColumn(name).setHidden(true);
@@ -192,27 +193,27 @@ public class AnnouncementSchema extends UserSchema
         return table;
     }
 
-    private AnnouncementTable createModeratorReviewTable()
+    private AnnouncementTable createModeratorReviewTable(ContainerFilter cf)
     {
-        return createFilteredAnnouncementTable(AnnouncementManager.REQUIRES_REVIEW_FILTER);
+        return createFilteredAnnouncementTable(cf, AnnouncementManager.REQUIRES_REVIEW_FILTER);
     }
 
-    private AnnouncementTable createSpamTable()
+    private AnnouncementTable createSpamTable(ContainerFilter cf)
     {
-        AnnouncementTable spamTable = createFilteredAnnouncementTable(AnnouncementManager.IS_SPAM_FILTER);
+        AnnouncementTable spamTable = createFilteredAnnouncementTable(cf, AnnouncementManager.IS_SPAM_FILTER);
         spamTable.setTitle("Spam");
 
         return spamTable;
     }
 
-    private TableInfo createToursTable()
+    private TableInfo createToursTable(ContainerFilter cf)
     {
-        return new ToursTable(this);
+        return new ToursTable(this, cf);
     }
 
-    public TableInfo createThreadsTable()
+    public TableInfo createThreadsTable(ContainerFilter cf)
     {
-        return new ThreadsTable(this);
+        return new ThreadsTable(this, cf);
     }
 
     @Override

@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
@@ -48,9 +49,9 @@ import java.util.Map;
  */
 public class ForumSubscriptionTable extends AbstractSubscriptionTable
 {
-    public ForumSubscriptionTable(AnnouncementSchema schema)
+    public ForumSubscriptionTable(AnnouncementSchema schema, ContainerFilter cf)
     {
-        super(CommSchema.getInstance().getTableInfoEmailPrefs(), schema);
+        super(CommSchema.getInstance().getTableInfoEmailPrefs(), schema, cf);
 
         var folderColumn = wrapColumn("Folder", getRealTable().getColumn("Container"));
         addColumn(folderColumn);
@@ -62,23 +63,23 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
         modifiedByColumn.setUserEditable(false);
 
         var emailOptionColumn = wrapColumn("EmailOption", getRealTable().getColumn("EmailOptionId"));
-        emailOptionColumn.setFk(new LookupForeignKey("EmailOptionId")
+        emailOptionColumn.setFk(new LookupForeignKey(cf, "EmailOptionId", null)
         {
             @Override
             public TableInfo getLookupTableInfo()
             {
-                return _userSchema.createEmailOptionTable();
+                return _userSchema.createEmailOptionTable(getLookupContainerFilter());
             }
         });
         addColumn(emailOptionColumn);
 
         var emailFormatColumn = wrapColumn("EmailFormat", getRealTable().getColumn("EmailFormatId"));
-        emailFormatColumn.setFk(new LookupForeignKey("EmailFormatId")
+        emailFormatColumn.setFk(new LookupForeignKey(cf, "EmailFormatId", null)
         {
             @Override
             public TableInfo getLookupTableInfo()
             {
-                return _userSchema.createEmailFormatTable();
+                return _userSchema.createEmailFormatTable(getLookupContainerFilter());
             }
         });
         addColumn(emailFormatColumn);

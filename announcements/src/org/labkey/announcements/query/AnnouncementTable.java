@@ -23,6 +23,7 @@ import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -53,15 +54,15 @@ public class AnnouncementTable extends FilteredTable<AnnouncementSchema>
 {
     private Boolean _secure;
 
-    public AnnouncementTable(AnnouncementSchema schema)
+    public AnnouncementTable(AnnouncementSchema schema, ContainerFilter cf)
     {
         // Standard usage omits unapproved announcements
-        this(schema, AnnouncementManager.IS_APPROVED_FILTER);
+        this(schema, cf, AnnouncementManager.IS_APPROVED_FILTER);
     }
 
-    public AnnouncementTable(AnnouncementSchema schema, SimpleFilter filter)
+    public AnnouncementTable(AnnouncementSchema schema, ContainerFilter cf, SimpleFilter filter)
     {
-        super(CommSchema.getInstance().getTableInfoAnnouncements(), schema);
+        super(CommSchema.getInstance().getTableInfoAnnouncements(), schema, cf);
         addCondition(filter);
         wrapAllColumns(true);
         removeColumn(getColumn("Container"));
@@ -70,12 +71,12 @@ public class AnnouncementTable extends FilteredTable<AnnouncementSchema>
         folderColumn.setFk(new ContainerForeignKey(_userSchema));
         addColumn(folderColumn);
         setDescription("Contains one row per announcement or reply");
-        getMutableColumn("Parent").setFk(new LookupForeignKey("EntityId")
+        getMutableColumn("Parent").setFk(new LookupForeignKey(cf,"EntityId", null)
         {
             @Override
             public TableInfo getLookupTableInfo()
             {
-                AnnouncementTable result = new AnnouncementTable(_userSchema);
+                AnnouncementTable result = new AnnouncementTable(_userSchema, getLookupContainerFilter());
                 result.addCondition(new SimpleFilter(FieldKey.fromParts("Parent"), null, CompareType.ISBLANK));
                 result.setPublic(false);
                 return result;
