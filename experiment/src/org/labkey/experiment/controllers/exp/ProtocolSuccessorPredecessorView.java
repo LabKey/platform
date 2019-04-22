@@ -66,8 +66,6 @@ public class ProtocolSuccessorPredecessorView extends GridView
 
         setSort(new Sort("ActionSequence"));
 
-        getDataRegion().setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
-
         setTitle(title);
         setFrame(FrameType.TITLE);
     }

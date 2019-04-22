@@ -402,7 +402,6 @@ public class DatasetQueryView extends StudyQueryView
                     ActionButton insertButton = createInsertMenuButton(null, importURL);
                     if (insertButton != null)
                     {
-                        insertButton.setDisplayModes(DataRegion.MODE_GRID);
                         insertButton.setDisplayPermission(InsertPermission.class);
                         bar.add(insertButton);
                     }
@@ -429,7 +428,6 @@ public class DatasetQueryView extends StudyQueryView
                 {
                     // manage dataset
                     ActionButton manageButton = new ActionButton(new ActionURL(StudyController.DatasetDetailsAction.class, getContainer()).addParameter("id", _dataset.getDatasetId()), "Manage");
-                    manageButton.setDisplayModes(DataRegion.MODE_GRID);
                     manageButton.setActionType(ActionButton.Action.LINK);
                     manageButton.setDisplayPermission(InsertPermission.class);
                     bar.add(manageButton);

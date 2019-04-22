@@ -78,11 +78,9 @@ public class StudyPropertiesController extends BaseStudyController
 
             ActionURL cancelURL = new ActionURL(StudyController.ManageStudyAction.class, getContainer());
             
-            ButtonBar buttonBar = dataRegion.getButtonBar(DataRegion.MODE_UPDATE);
-            buttonBar = new ButtonBar(buttonBar); // need to copy since the original is read-only
-            ActionButton cancelButton = new ActionButton(cancelURL, "Cancel", DataRegion.MODE_UPDATE, ActionButton.Action.GET);
-            cancelButton.setURL(cancelURL);
-            buttonBar.add(1, cancelButton);
+            ButtonBar buttonBar = new ButtonBar();
+            buttonBar.add(new ActionButton(UpdateAction.class, "Submit"));
+            buttonBar.add(new ActionButton(cancelURL, "Cancel", ActionButton.Action.GET));
             dataRegion.setButtonBar(buttonBar);
 
             return view;
