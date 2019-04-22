@@ -64,7 +64,12 @@ import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
+import org.labkey.api.qc.DeleteQCStateAction;
+import org.labkey.api.qc.ManageQCStatesAction;
+import org.labkey.api.qc.ManageQCStatesBean;
+import org.labkey.api.qc.ManageQCStatesForm;
 import org.labkey.api.qc.QCState;
+import org.labkey.api.qc.QCStateHandler;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;
@@ -176,6 +181,7 @@ import org.labkey.study.model.*;
 import org.labkey.study.pipeline.DatasetFileReader;
 import org.labkey.study.pipeline.MasterPatientIndexUpdateTask;
 import org.labkey.study.pipeline.StudyPipeline;
+import org.labkey.study.qc.StudyQCStateHandler;
 import org.labkey.study.query.DatasetQuerySettings;
 import org.labkey.study.query.DatasetQueryView;
 import org.labkey.study.query.LocationTable;
@@ -3301,276 +3307,71 @@ public class StudyController extends BaseStudyController
         return Collections.emptyList();
     }
 
-    public static class ManageQCStatesBean
+    public class StudyManageQCStatesBean extends ManageQCStatesBean
     {
-        private StudyImpl _study;
-        private List<QCState> _states;
-        private String _returnUrl;
-
-        public ManageQCStatesBean(StudyImpl study, String returnUrl)
+        StudyManageQCStatesBean(String returnUrl)
         {
-            _study = study;
-            _returnUrl = returnUrl;
-        }
-
-        public List<QCState> getQCStates()
-        {
-            if (_states == null)
-                _states = QCStateManager.getInstance().getQCStates(_study.getContainer());
-            return _states;
-        }
-
-        public StudyImpl getStudy()
-        {
-            return _study;
-        }
-
-        public String getReturnUrl()
-        {
-            return _returnUrl;
-        }
-    }
-
-    public static class ManageQCStatesForm extends ReturnUrlForm
-    {
-        private int[] _ids;
-        private String[] _labels;
-        private String[] _descriptions;
-        private int[] _publicData;
-        private String _newLabel;
-        private String _newDescription;
-        private boolean _newPublicData;
-        private boolean _reshowPage;
-        private Integer _defaultPipelineQCState;
-        private Integer _defaultAssayQCState;
-        private Integer _defaultDirectEntryQCState;
-        private boolean _showPrivateDataByDefault;
-        private boolean _blankQCStatePublic;
-        private String _returnUrl;
-
-        public int[] getIds()
-        {
-            return _ids;
-        }
-
-        public void setIds(int[] ids)
-        {
-            _ids = ids;
-        }
-
-        public String[] getLabels()
-        {
-            return _labels;
-        }
-
-        public void setLabels(String[] labels)
-        {
-            _labels = labels;
-        }
-
-        public String[] getDescriptions()
-        {
-            return _descriptions;
-        }
-
-        public void setDescriptions(String[] descriptions)
-        {
-            _descriptions = descriptions;
-        }
-
-        public int[] getPublicData()
-        {
-            return _publicData;
-        }
-
-        public void setPublicData(int[] publicData)
-        {
-            _publicData = publicData;
-        }
-
-        public String getNewLabel()
-        {
-            return _newLabel;
-        }
-
-        public void setNewLabel(String newLabel)
-        {
-            _newLabel = newLabel;
-        }
-
-        public String getNewDescription()
-        {
-            return _newDescription;
-        }
-
-        public void setNewDescription(String newDescription)
-        {
-            _newDescription = newDescription;
-        }
-
-        public boolean isNewPublicData()
-        {
-            return _newPublicData;
-        }
-
-        public void setNewPublicData(boolean newPublicData)
-        {
-            _newPublicData = newPublicData;
-        }
-
-        public boolean isReshowPage()
-        {
-            return _reshowPage;
-        }
-
-        public void setReshowPage(boolean reshowPage)
-        {
-            _reshowPage = reshowPage;
-        }
-
-        public Integer getDefaultPipelineQCState()
-        {
-            return _defaultPipelineQCState;
-        }
-
-        public void setDefaultPipelineQCState(Integer defaultPipelineQCState)
-        {
-            _defaultPipelineQCState = defaultPipelineQCState;
-        }
-
-        public Integer getDefaultAssayQCState()
-        {
-            return _defaultAssayQCState;
-        }
-
-        public void setDefaultAssayQCState(Integer defaultAssayQCState)
-        {
-            _defaultAssayQCState = defaultAssayQCState;
-        }
-
-        public Integer getDefaultDirectEntryQCState()
-        {
-            return _defaultDirectEntryQCState;
-        }
-
-        public void setDefaultDirectEntryQCState(Integer defaultDirectEntryQCState)
-        {
-            _defaultDirectEntryQCState = defaultDirectEntryQCState;
-        }
-
-        public boolean isShowPrivateDataByDefault()
-        {
-            return _showPrivateDataByDefault;
-        }
-
-        public void setShowPrivateDataByDefault(boolean showPrivateDataByDefault)
-        {
-            _showPrivateDataByDefault = showPrivateDataByDefault;
-        }
-
-        public boolean isBlankQCStatePublic()
-        {
-            return _blankQCStatePublic;
-        }
-
-        public void setBlankQCStatePublic(boolean blankQCStatePublic)
-        {
-            _blankQCStatePublic = blankQCStatePublic;
+            super(returnUrl);
+            _qcStateHandler = new StudyQCStateHandler(getStudyThrowIfNull());
         }
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class ManageQCStatesAction extends FormViewAction<ManageQCStatesForm>
+    public class StudyManageQCStatesAction extends ManageQCStatesAction
     {
-        public ModelAndView getView(ManageQCStatesForm manageQCStatesForm, boolean reshow, BindException errors)
+        protected StudyImpl _study;
+
+        public StudyManageQCStatesAction()
         {
-            return new JspView<>("/org/labkey/study/view/manageQCStates.jsp",
-                    new ManageQCStatesBean(getStudyRedirectIfNull(), manageQCStatesForm.getReturnUrl()), errors);
+            super();
         }
 
-        public void validateCommand(ManageQCStatesForm form, Errors errors)
+        @Override
+        public QcDefaultSettings getCurrentQcDefaultSettings()
         {
-            Set<String> labels = new HashSet<>();
-            if (form.getLabels() != null)
-            {
-                for (String label : form.getLabels())
-                {
-                    if (labels.contains(label))
-                    {
-                        errors.reject(null, "QC state \"" + label + "\" is defined more than once.");
-                        return;
-                    }
-                    else
-                        labels.add(label);
-                }
-            }
-            if (labels.contains(form.getNewLabel()))
-                errors.reject(null, "QC state \"" + form.getNewLabel() + "\" is defined more than once.");
+            _study = getStudyThrowIfNull();
+
+            QcDefaultSettings qcDefaultSettings = new QcDefaultSettings();
+            qcDefaultSettings.setDefaultAssayQCState(_study.getDefaultAssayQCState());
+            qcDefaultSettings.setDefaultPipelineQCState(_study.getDefaultPipelineQCState());
+            qcDefaultSettings.setDefaultDirectEntryQCState(_study.getDefaultDirectEntryQCState());
+            qcDefaultSettings.setBlankQCStatePublic(_study.isBlankQCStatePublic());
+            qcDefaultSettings.setShowPrivateDataByDefault(_study.isShowPrivateDataByDefault());
+
+            return qcDefaultSettings;
         }
 
-        public boolean handlePost(ManageQCStatesForm form, BindException errors)
+        @Override
+        public void persistQcSettings(QcDefaultSettings qcDefaultSettings)
         {
-            if (form.getNewLabel() != null && form.getNewLabel().length() > 0)
-            {
-                QCState newState = new QCState();
-                newState.setContainer(getContainer());
-                newState.setLabel(form.getNewLabel());
-                newState.setDescription(form.getNewDescription());
-                newState.setPublicData(form.isNewPublicData());
-                StudyManager.getInstance().insertQCState(getUser(), newState);
-            }
-            if (form.getIds() != null)
-            {
-                // use a map to store the IDs of the public QC states; since checkboxes are
-                // omitted from the request entirely if they aren't checked, we use a different
-                // method for keeping track of the checked values (by posting the rowid of the item as the
-                // checkbox value).
-                Set<Integer> set = new HashSet<>();
-                if (form.getPublicData() != null)
-                {
-                    for (int i = 0; i < form.getPublicData().length; i++)
-                        set.add(form.getPublicData()[i]);
-                }
-
-                for (int i = 0; i < form.getIds().length; i++)
-                {
-                    int rowId = form.getIds()[i];
-                    QCState state = new QCState();
-                    state.setRowId(rowId);
-                    state.setLabel(form.getLabels()[i]);
-                    if (form.getDescriptions() != null)
-                        state.setDescription(form.getDescriptions()[i]);
-                    state.setPublicData(set.contains(state.getRowId()));
-                    state.setContainer(getContainer());
-                    QCStateManager.getInstance().updateQCState(getUser(), state);
-                }
-            }
-
-            updateQcState(getStudyThrowIfNull(), getUser(), form);
-
-            return true;
+            _study = _study.createMutable();
+            _study.setDefaultAssayQCState(qcDefaultSettings.getDefaultAssayQCState());
+            _study.setDefaultPipelineQCState(qcDefaultSettings.getDefaultPipelineQCState());
+            _study.setDefaultDirectEntryQCState(qcDefaultSettings.getDefaultDirectEntryQCState());
+            _study.setShowPrivateDataByDefault(qcDefaultSettings.isShowPrivateDataByDefault());
+            _study.setBlankQCStatePublic(qcDefaultSettings.isBlankQCStatePublic());
+            StudyManager.getInstance().updateStudy(getUser(), _study);
         }
 
-        public ActionURL getSuccessURL(ManageQCStatesForm manageQCStatesForm)
+        @Override
+        public ModelAndView getView(org.labkey.api.qc.ManageQCStatesForm manageQCStatesForm, boolean reshow, BindException errors)
         {
-            if (manageQCStatesForm.isReshowPage())
-            {
-                ActionURL url = new ActionURL(ManageQCStatesAction.class, getContainer());
-                if (manageQCStatesForm.getReturnUrl() != null)
-                    url.addParameter(ActionURL.Param.returnUrl, manageQCStatesForm.getReturnUrl());
-                return url;
-            }
-            else if (manageQCStatesForm.getReturnUrl() != null)
-                return new ActionURL(manageQCStatesForm.getReturnUrl());
-            else
-                return new ActionURL(ManageStudyAction.class, getContainer());
+            return new JspView<>("/org/labkey/api/qc/view/manageQCStates.jsp",
+                    new StudyManageQCStatesBean(manageQCStatesForm.getReturnUrl()), errors);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("manageQC");
             _appendManageStudy(root);
             return root.addChild("Manage Dataset QC States");
+        }
+
+        @Override
+        public URLHelper getSuccessURL(org.labkey.api.qc.ManageQCStatesForm manageQCStatesForm)
+        {
+            return getSuccessURL(manageQCStatesForm, ManageStudyAction.class);
         }
     }
 
@@ -3593,66 +3394,19 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static class DeleteQCStateForm extends IdForm
-    {
-        private boolean _all = false;
-        private String _manageReturnUrl;
-
-        public boolean isAll()
-        {
-            return _all;
-        }
-
-        public void setAll(boolean all)
-        {
-            _all = all;
-        }
-
-        public String getManageReturnUrl()
-        {
-            return _manageReturnUrl;
-        }
-
-        public void setManageReturnUrl(String manageReturnUrl)
-        {
-            _manageReturnUrl = manageReturnUrl;
-        }
-    }
-
     @RequiresPermission(AdminPermission.class)
-    public class DeleteQCStateAction extends FormHandlerAction<DeleteQCStateForm>
+    public class StudyDeleteQCStateAction extends DeleteQCStateAction
     {
-        @Override
-        public void validateCommand(DeleteQCStateForm target, Errors errors)
+        public StudyDeleteQCStateAction()
         {
+            super();
+            _qcStateHandler = new StudyQCStateHandler(getStudyThrowIfNull());
         }
 
         @Override
-        public boolean handlePost(DeleteQCStateForm form, BindException errors) throws Exception
+        public QCStateHandler getQCStateHandler()
         {
-            if (form.isAll())
-            {
-                for (QCState state : QCStateManager.getInstance().getQCStates(getContainer()))
-                {
-                    if (!StudyManager.getInstance().isQCStateInUse(state))
-                        StudyManager.getInstance().deleteQCState(state);
-                }
-            }
-            else
-            {
-                QCState state = QCStateManager.getInstance().getQCStateForRowId(getContainer(), form.getId());
-                if (state != null)
-                    StudyManager.getInstance().deleteQCState(state);
-            }
-            return true;
-        }
-
-        public ActionURL getSuccessURL(DeleteQCStateForm form)
-        {
-            ActionURL returnUrl = new ActionURL(ManageQCStatesAction.class, getContainer());
-            if (form.getManageReturnUrl() != null)
-                returnUrl.addParameter(ActionURL.Param.returnUrl, form.getManageReturnUrl());
-            return returnUrl;
+            return _qcStateHandler;
         }
     }
 

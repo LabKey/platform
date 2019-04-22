@@ -2014,36 +2014,6 @@ public class StudyManager
         return newState;
     }
 
-    /**
-     * Helper to delete a QCState and manage some study specific behavior
-     */
-    public void deleteQCState(QCState state)
-    {
-        if (QCStateManager.getInstance().deleteQCState(state))
-            // removing our last QC state affects the columns in our materialized datasets
-            // (removing a QC State column), so we unmaterialize them here:
-            StudyManager.getInstance().clearCaches(state.getContainer(), true);
-    }
-
-    public boolean isQCStateInUse(QCState state)
-    {
-        StudyImpl study = getStudy(state.getContainer());
-        if (safeIntegersEqual(study.getDefaultAssayQCState(), state.getRowId()) ||
-                safeIntegersEqual(study.getDefaultDirectEntryQCState(), state.getRowId()) ||
-                safeIntegersEqual(study.getDefaultPipelineQCState(), state.getRowId()))
-        {
-            return true;
-        }
-        SQLFragment f = new SQLFragment();
-        f.append("SELECT * FROM ").append(
-                StudySchema.getInstance().getTableInfoStudyData(study, null).getFromSQL("SD")).append(
-                " WHERE QCState = ? AND Container = ?");
-        f.add(state.getRowId());
-        f.add(state.getContainer());
-
-        return new SqlSelector(StudySchema.getInstance().getSchema(), f).exists();
-    }
-
     @Nullable
     public QCState getDefaultQCState(StudyImpl study)
     {
@@ -2229,7 +2199,7 @@ public class StudyManager
         }
     }
 
-    private boolean safeIntegersEqual(Integer first, Integer second)
+    public static boolean safeIntegersEqual(Integer first, Integer second)
     {
         if (first == null && second == null)
             return true;
