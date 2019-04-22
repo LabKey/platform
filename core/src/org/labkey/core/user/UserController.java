@@ -277,13 +277,11 @@ public class UserController extends SpringActionController
         assert isOwnRecord || isAnyAdmin;
 
         SimpleDisplayColumn accountDetails = new UrlColumn(new UserUrlsImpl().getUserDetailsURL(c, currentURL) + "userId=${UserId}", "details");
-        accountDetails.setDisplayModes(DataRegion.MODE_GRID);
         rgn.addDisplayColumn(0, accountDetails);
 
         if (isAnyAdmin)
         {
             SimpleDisplayColumn securityDetails = new UrlColumn(new UserUrlsImpl().getUserAccessURL(c) + "userId=${UserId}", "permissions");
-            securityDetails.setDisplayModes(DataRegion.MODE_GRID);
             rgn.addDisplayColumn(1, securityDetails);
         }
 
@@ -383,7 +381,7 @@ public class UserController extends SpringActionController
             if (AuditLogService.get().isViewable())
             {
                 gridButtonBar.add(new ActionButton(ShowUserHistoryAction.class, "History",
-                        DataRegion.MODE_ALL, ActionButton.Action.LINK));
+                        ActionButton.Action.LINK));
             }
         }
     }
