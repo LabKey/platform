@@ -111,6 +111,7 @@ public class SimpleUserSchema extends UserSchema
             _visible.removeAll(hiddenTables);
     }
 
+    @Deprecated
     public TableInfo createTable(String name)
     {
         throw new IllegalStateException();
@@ -213,6 +214,7 @@ public class SimpleUserSchema extends UserSchema
          *
          * TODO classes that use this constructor should be migrated to SimpleTable(SchemaType schema, TableInfo table, ContainerFilter cf)
          */
+        @Deprecated
         public SimpleTable(SchemaType schema, TableInfo table)
         {
             super(table, schema, schema.getDefaultContainerFilter());
