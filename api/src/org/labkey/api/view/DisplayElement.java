@@ -16,6 +16,7 @@
 package org.labkey.api.view;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -45,6 +46,7 @@ public abstract class DisplayElement implements View, Cloneable
     /** The permission that the current user must have in order for this element to be rendered (shown as opposed to hidden) */
     private Class<? extends Permission> _displayPermission = ReadPermission.class;
     private boolean _visible = true;
+    private int _displayModes = DataRegion.MODE_ALL;
     protected StringExpression _caption = null;
     /** Whether the object is considered immutable */
     protected boolean _locked = false;
@@ -136,6 +138,19 @@ public abstract class DisplayElement implements View, Cloneable
     public String getCaptionExpr()
     {
         return _caption == null ? null : _caption.toString();
+    }
+
+    @Deprecated (forRemoval = true)
+    public int getDisplayModes()
+    {
+        return _displayModes;
+    }
+
+    @Deprecated (forRemoval = true)
+    public void setDisplayModes(int displayModes)
+    {
+        checkLocked();
+        _displayModes = displayModes;
     }
 
     /**
