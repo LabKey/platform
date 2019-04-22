@@ -87,7 +87,7 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
 
     public LookupForeignKey(ContainerFilter cf, @Nullable String pkColumnName, @Nullable String titleColumn)
     {
-        this(null, null, null, null, null, pkColumnName, titleColumn);
+        this(cf, null, null, null, null, pkColumnName, titleColumn);
     }
 
     /** Use the table's (single) PK column as the lookup target */
