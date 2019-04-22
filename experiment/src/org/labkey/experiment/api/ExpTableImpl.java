@@ -321,7 +321,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
         if (legacyName != null && !domain.getProperties().isEmpty())
         {
             colProperty = wrapColumn(legacyName, getLSIDColumn());
-            colProperty.setFk(new PropertyForeignKey(_userSchema, getContainerFilter(), _domain));
+            colProperty.setFk(new PropertyForeignKey(_userSchema, getContainerFilter(), domain));
             // Hide because the preferred way to get to these values is to add them directly to the table, instead of having
             // them under the legacyName node
             colProperty.setHidden(true);
