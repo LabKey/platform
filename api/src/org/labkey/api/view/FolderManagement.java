@@ -169,10 +169,16 @@ public class FolderManagement
     private static abstract class ManagementViewAction extends SimpleViewAction<Void> implements ManagementAction
     {
         @Override
-        public ModelAndView getView(Void form, BindException errors)
+        public ModelAndView handleRequest() throws Exception
         {
             getType().validateContainer(getContainer());
 
+            return super.handleRequest();
+        }
+
+        @Override
+        public ModelAndView getView(Void form, BindException errors)
+        {
             return new ManagementTabStrip(getContainer(), (String)getViewContext().get("tabId"), errors)
             {
                 @Override
@@ -208,8 +214,6 @@ public class FolderManagement
         @Override
         public ModelAndView getView(FORM form, boolean reshow, BindException errors) throws Exception
         {
-            getType().validateContainer(getContainer());
-
             return new ManagementTabStrip(getContainer(), (String)getViewContext().get("tabId"), errors)
             {
                 @Override
@@ -226,7 +230,13 @@ public class FolderManagement
             };
         }
 
-        // TODO: Validate container in postHandler()
+        @Override
+        public ModelAndView handleRequest(FORM form, BindException errors) throws Exception
+        {
+            getType().validateContainer(getContainer());
+
+            return super.handleRequest(form, errors);
+        }
 
         @Override
         public URLHelper getSuccessURL(FORM form)
