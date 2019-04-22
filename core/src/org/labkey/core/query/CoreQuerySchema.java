@@ -155,7 +155,7 @@ public class CoreQuerySchema extends UserSchema
         if (API_KEYS_TABLE_NAME.equalsIgnoreCase(name) && getUser().hasRootPermission(UserManagementPermission.class))
             return new ApiKeysTableInfo(this);
         if (VIEW_CATEGORY_TABLE_NAME.equalsIgnoreCase(name))
-            return new ViewCategoryTable(ViewCategoryManager.getInstance().getTableInfoCategories(), this);
+            return new ViewCategoryTable(ViewCategoryManager.getInstance().getTableInfoCategories(), this, cf);
         return null;
     }
 
@@ -708,9 +708,9 @@ public class CoreQuerySchema extends UserSchema
 
     static class ViewCategoryTable extends FilteredTable<CoreQuerySchema>
     {
-        public ViewCategoryTable(@NotNull TableInfo table, @NotNull CoreQuerySchema userSchema)
+        public ViewCategoryTable(@NotNull TableInfo table, @NotNull CoreQuerySchema userSchema, ContainerFilter cf)
         {
-            super(table, userSchema);
+            super(table, userSchema, cf);
 
             setDescription("Contains one row for each view category.");
             wrapAllColumns(true);
