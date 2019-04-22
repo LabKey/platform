@@ -2551,19 +2551,6 @@ public class ExperimentServiceImpl implements ExperimentService
 
         Iterables.partition(allMissingObjectLsids, 1000).forEach(missingObjectLsids -> {
 
-//            SQLFragment sql = new SQLFragment("SELECT lsid FROM (\n");
-//            sql.append("VALUES\n");
-//            String sep = "";
-//            for (String lsid : lsids)
-//            {
-//                sql.append(sep).append("(?)").add(lsid);
-//                sep = ",\n";
-//            }
-//            sql.append(") AS t (lsid)\n");
-//            sql.append("WHERE NOT EXISTS (SELECT 1 FROM ").append(getTinfoObject(), "o").append(" WHERE o.objectUri = lsid)");
-//
-//            SqlSelector ss = new SqlSelector(getExpSchema(), sql);
-//            Collection<String> missingObjectLsids = ss.getCollection(String.class);
             if (!missingObjectLsids.isEmpty())
             {
                 LOG.debug("  creating exp.object for " + missingObjectLsids.size() + " nodes");
@@ -2636,28 +2623,8 @@ public class ExperimentServiceImpl implements ExperimentService
         if (params.isEmpty())
             return;
 
-        /*
-        List<List<Object>> newparams = params.stream()
-            .map(row -> {
-                var newrow = new ArrayList<Object>(5);
-                newrow.add(row.get(0));
-                newrow.add(row.get(0));
-                newrow.add(row.get(1));
-                newrow.add(row.get(1));
-                newrow.add(row.get(2));
-                return newrow;
-            }).collect(Collectors.toList());
-
-        String sql = "INSERT INTO " + getTinfoEdge() + " (fromLsid, fromObjectId, toLsid, toObjectId, runId)\n"+
-                "VALUES (?, (select objectid from exp.Object where objecturi=?), ?, (select objectid from exp.Object where objecturi=?), ?)";
-*/
-
         try
         {
-// this almost works, but I need containerid
-//            String objectSql = "INSERT INTO " + getTinfoObject() + " (objecturi) VALUES (?) SELECT NOT EXISTS (SELECT objecturi FROM " + getTinfoObject() + " WHERE objecturi = ?)";
-//            Table.batchExecute(getExpSchema(), objectSql, params.stream().map(r -> Arrays.asList(r.get(0),r.get(0))).collect(Collectors.toList()));
-//            Table.batchExecute(getExpSchema(), objectSql, params.stream().map(r -> Arrays.asList(r.get(1),r.get(1))).collect(Collectors.toList()));
             String edgeSql = "INSERT INTO " + getTinfoEdge() + " (fromObjectId, toObjectId, runId)\n"+
                     "VALUES ( (select objectid from exp.Object where objecturi=?), (select objectid from exp.Object where objecturi=?), ?)";
             Table.batchExecute(getExpSchema(), edgeSql, params);

@@ -25,7 +25,7 @@
       0                                              AS depth,
       objectid                                       AS fromObjectId,
       CAST(NULL AS INT)                              AS toObjectId,
-      CAST('/' || CAST(objectid as VARCHAR(20)) || '/' AS VARCHAR(8000)) AS path
+      CAST('/' AS VARCHAR(8000)) AS path
     FROM exp.object
     WHERE objecturi IN ($LSIDS$)
 
@@ -35,10 +35,10 @@
       _Graph.depth - 1                                           AS depth,
       _Edges.fromObjectId,
       _Edges.toObjectId,
-      CAST(SUBSTRING(_Graph.path,1+{fn LENGTH(_Graph.path)}+21-8000,8000) || CAST(_Edges.fromObjectId AS VARCHAR(20)) || '/' AS VARCHAR(8000)) AS path
+      CAST(SUBSTRING(_Graph.path,1+{fn LENGTH(_Graph.path)}+21-8000,8000) || CAST(_Edges.toObjectId AS VARCHAR(20)) || '/' AS VARCHAR(8000)) AS path
     FROM exp.Edge _Edges
       INNER JOIN $SELF$ _Graph ON _Edges.toObjectId = _Graph.fromObjectId
-    WHERE 0 = {fn LOCATE('/' || CAST(_Edges.toObjectId AS VARCHAR(20)) || '/' || CAST(_Edges.fromObjectId as VARCHAR(20)) || '/', _Graph.path)}
+    WHERE 0 = {fn LOCATE('/' || CAST(_Edges.fromObjectId as VARCHAR(20)) || '/', _Graph.path)}
     $AND_STUFF$
   ),
 
@@ -101,7 +101,7 @@
       0                                              AS depth,
       CAST(NULL AS INT)                              AS fromObjectId,
       objectid                                       AS toObjectId,
-      CAST('/' || CAST(objectid as VARCHAR(20)) || '/' AS VARCHAR(8000)) AS PATH
+      CAST('/' AS VARCHAR(8000)) AS PATH
     FROM exp.object
     WHERE objecturi IN ($LSIDS$)
 
@@ -111,10 +111,10 @@
       _Graph.depth + 1                               AS depth,
       _Edges.fromObjectId,
       _Edges.toObjectId,
-      CAST(SUBSTRING(_Graph.path,1+{fn LENGTH(_Graph.path)}+21-8000,8000) || CAST(_Edges.toObjectId AS VARCHAR(20)) || '/' AS VARCHAR(8000)) AS path
+      CAST(SUBSTRING(_Graph.path,1+{fn LENGTH(_Graph.path)}+21-8000,8000) || CAST(_Edges.fromObjectId AS VARCHAR(20)) || '/' AS VARCHAR(8000)) AS path
     FROM exp.Edge _Edges
       INNER JOIN $SELF$ _Graph ON _Edges.fromObjectId = _Graph.toObjectId
-    WHERE 0 = {fn LOCATE('/' || CAST(_Edges.fromObjectId AS VARCHAR(20)) || '/' || CAST(_Edges.toObjectId AS VARCHAR(20)) || '/', _Graph.path)}
+    WHERE 0 = {fn LOCATE('/' || CAST(_Edges.toObjectId AS VARCHAR(20)) || '/', _Graph.path)}
     $AND_STUFF$
   ),
 
