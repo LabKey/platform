@@ -3,9 +3,9 @@
  * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
  */
 import * as React from 'react'
-import {Alert, Button, ButtonToolbar, Col, Row} from "react-bootstrap";
+import {Button, ButtonToolbar, Col, Row} from "react-bootstrap";
 import {ActionURL} from "@labkey/api";
-import {LoadingSpinner} from "@glass/base";
+import {LoadingSpinner, Alert} from "@glass/base";
 import {DomainForm, DomainDesign, clearFieldDetails, fetchDomain, saveDomain} from "@glass/domainproperties"
 
 interface IDomainDesignerState {
@@ -68,23 +68,17 @@ export class App extends React.PureComponent<any, IDomainDesignerState> {
             .catch(error => {
                 this.setState({message: error.exception, messageType: 'danger'})
             });
-    }
+    };
 
     onChangeHandler = (newDomain) => {
         this.setState(() => ({
             domain: newDomain
         }));
-    }
+    };
 
     dismissAlert = () => {
         this.setState({message: null, messageType: null})
-    }
-
-    getAlert = (message, messageType): any => {
-        return (
-            <Alert bsStyle={messageType} onDismiss={this.dismissAlert}>{message}</Alert>
-        )
-    }
+    };
 
     onCancel = () => {
         if (this.state.returnUrl) {
@@ -93,7 +87,7 @@ export class App extends React.PureComponent<any, IDomainDesignerState> {
         else {
             location.reload();
         }
-    }
+    };
 
     render() {
         const { domain, message, messageType } = this.state;
@@ -113,7 +107,7 @@ export class App extends React.PureComponent<any, IDomainDesignerState> {
                         </ButtonToolbar>}
                     </Col>
                 </Row>
-                { message ? this.getAlert(message, messageType) : '' }
+                { message && <Alert bsStyle={messageType} onDismiss={this.dismissAlert}>{message}</Alert> }
                 <DomainForm domain={domain} onChange={this.onChangeHandler}/>
             </>
         )
