@@ -655,7 +655,6 @@ public class QueryView extends WebPartView<Object>
         if (parameterToAdd != null)
             url.addParameter(parameterToAdd, parameterValue);
         ActionButton actionButton = new ActionButton(label, url);
-        actionButton.setDisplayModes(DataRegion.MODE_ALL);
         return actionButton;
     }
 
@@ -913,7 +912,6 @@ public class QueryView extends WebPartView<Object>
         rstudio.setScript(script, false);
         rstudio.setVisible(showRStudioButton());
         rstudio.setEnabled(_hasExportRStudioPanel);
-        rstudio.setDisplayModes(DataRegion.MODE_GRID);
         rstudio.setDisplayPermission(ReadPermission.class);
         return rstudio;
     }
@@ -1260,7 +1258,7 @@ public class QueryView extends WebPartView<Object>
                 buttonText += " / Sign Data";
         }
 
-        PanelButton button = new PanelButton("export", buttonText, getDataRegionName(), 132);
+        PanelButton button = new PanelButton("export", buttonText, getDataRegionName());
         button.setActionName("export");     // #32594: API can set a buttonConfig including "export"; since the caption may differ, add action so BuiltinButtonConfig can figure it out
         ActionURL xlsURL = urlFor(QueryAction.exportRowsExcel);
         ActionURL xlsxURL = urlFor(QueryAction.exportRowsXLSX);
@@ -2139,15 +2137,15 @@ public class QueryView extends WebPartView<Object>
         DataRegion rgn = ret.getDataRegion();
         ret.setFrame(WebPartView.FrameType.NONE);
         rgn.setAllowAsync(true);
+        ButtonBar bb = new ButtonBar();
         if (!isPrintView() && !isExportView())
         {
-            ButtonBar bb = new ButtonBar();
             populateButtonBar(ret, bb);
             // TODO: Until the "More" menu is dynamically populated the "Print" button has been moved back to the bar.
             bb.add(createPrintButton());
 //            bb.add(populateMoreMenu(ret));
-            rgn.setButtonBar(bb);
         }
+        rgn.setButtonBar(bb);
 
         rgn.setButtonBarPosition(isPrintView() ? DataRegion.ButtonBarPosition.NONE : _buttonBarPosition);
 

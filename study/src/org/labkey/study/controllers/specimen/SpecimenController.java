@@ -1224,7 +1224,7 @@ public class SpecimenController extends BaseStudyController
             grid.setShowDetailsColumn(false);
             if (getContainer().hasPermission(getUser(), RequestSpecimensPermission.class))
             {
-                ActionButton insertButton = new ActionButton(SpecimenController.ShowCreateSampleRequestAction.class, "Create New Request", DataRegion.MODE_GRID, ActionButton.Action.LINK);
+                ActionButton insertButton = new ActionButton(SpecimenController.ShowCreateSampleRequestAction.class, "Create New Request", ActionButton.Action.LINK);
                 grid.setButtons(Collections.singletonList(insertButton));
             }
             else

@@ -2660,7 +2660,6 @@ public class StudyController extends BaseStudyController
                 }
             };
             dr.addDisplayColumn(dc);
-            dr.setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
 
             SimpleFilter filter = SimpleFilter.createContainerFilter(getContainer());
             if (form.getId() != 0)

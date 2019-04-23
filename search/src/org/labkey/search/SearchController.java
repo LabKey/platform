@@ -1106,7 +1106,7 @@ public class SearchController extends SpringActionController
     public class SearchSettingsAction extends FolderManagementViewPostAction<SearchSettingsForm>
     {
         @Override
-        protected HttpView getTabView(SearchSettingsForm form, BindException errors)
+        protected HttpView getTabView(SearchSettingsForm form, boolean reshow, BindException errors)
         {
             return new JspView<>("/org/labkey/search/view/fullTextSearch.jsp", form, errors);
         }

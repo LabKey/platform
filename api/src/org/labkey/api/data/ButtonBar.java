@@ -17,7 +17,6 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.DisplayElement;
 
@@ -45,46 +44,6 @@ public class ButtonBar extends DisplayElement
     // that's partially overridden by a
     private List<ButtonBarConfig> _configs = null;
     private boolean _alwaysShowRecordSelectors = false;
-
-    /**
-     * These button bars are unlikely to be useful for new code. They assume that a specific action name
-     * exists within the same controller. Instead, new code should generally use the TableInfo's update/insert/delete
-     * URLs to build up button bars.
-     *
-     * In the future, we could create a factory that creates button bars based on a TableInfo, and call it from
-     * various places that are building custom UI.
-     */
-    public static ButtonBar BUTTON_BAR_GRID = new ButtonBar();
-    public static ButtonBar BUTTON_BAR_DETAILS = new ButtonBar();
-    public static ButtonBar BUTTON_BAR_INSERT = new ButtonBar();
-    public static ButtonBar BUTTON_BAR_UPDATE = new ButtonBar();
-    public static ButtonBar BUTTON_BAR_EMPTY = new ButtonBar();
-
-    static
-    {
-        BUTTON_BAR_GRID.add(ActionButton.BUTTON_DELETE).add(ActionButton.BUTTON_SHOW_INSERT);
-        BUTTON_BAR_GRID.lock();
-        MemTracker.getInstance().remove(BUTTON_BAR_GRID);
-
-        BUTTON_BAR_DETAILS.getList().add(ActionButton.BUTTON_SHOW_UPDATE);
-        BUTTON_BAR_DETAILS.getList().add(ActionButton.BUTTON_SHOW_GRID);
-        BUTTON_BAR_DETAILS.setStyle(Style.separateButtons);
-        BUTTON_BAR_DETAILS.lock();
-        MemTracker.getInstance().remove(BUTTON_BAR_DETAILS);
-
-        BUTTON_BAR_INSERT.getList().add(ActionButton.BUTTON_DO_INSERT);
-        BUTTON_BAR_INSERT.setStyle(Style.separateButtons);
-        BUTTON_BAR_INSERT.lock();
-        MemTracker.getInstance().remove(BUTTON_BAR_INSERT);
-
-        BUTTON_BAR_UPDATE.getList().add(ActionButton.BUTTON_DO_UPDATE);
-        BUTTON_BAR_UPDATE.setStyle(Style.separateButtons);
-        BUTTON_BAR_UPDATE.lock();
-        MemTracker.getInstance().remove(BUTTON_BAR_UPDATE);
-
-        BUTTON_BAR_EMPTY.lock();
-        MemTracker.getInstance().remove(BUTTON_BAR_EMPTY);
-    }
 
     public ButtonBar() {}
 
@@ -161,9 +120,6 @@ public class ButtonBar extends DisplayElement
         out.write(">");
         for (DisplayElement el : getList())
         {
-            if (ctx.getMode() != DataRegion.MODE_NONE && (ctx.getMode() & el.getDisplayModes()) == 0)
-                continue;
-
             // This is redundant with shouldRender check in ActionButton.render, but we don't want to output <td></td> if button is not visible
             if (el.shouldRender(ctx))
             {
@@ -187,9 +143,6 @@ public class ButtonBar extends DisplayElement
 
         for (DisplayElement el : getList())
         {
-            if (ctx.getMode() != DataRegion.MODE_NONE && (ctx.getMode() & el.getDisplayModes()) == 0)
-                continue;
-
             if (el.shouldRender(ctx) && el instanceof ActionButton && ((ActionButton)el).hasRequiresSelection())
                 return true;
         }
