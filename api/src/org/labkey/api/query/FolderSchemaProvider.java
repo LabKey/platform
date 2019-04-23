@@ -76,7 +76,8 @@ abstract public class FolderSchemaProvider extends DefaultSchema.SchemaProvider
             return Collections.emptySet();
         }
 
-        public TableInfo createTable(String name)
+        @Override
+        public TableInfo createTable(String name, ContainerFilter cf)
         {
             return null;
         }

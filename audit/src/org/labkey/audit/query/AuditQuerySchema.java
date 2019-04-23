@@ -81,11 +81,6 @@ public class AuditQuerySchema extends UserSchema
         return Collections.unmodifiableSet(tables);
     }
 
-    public TableInfo createTable(String name)
-    {
-        return createTable(name, null);
-    }
-
     public TableInfo createTable(String name, ContainerFilter cf)
     {
         // event specific audit views are implemented as queries on the audit schema
