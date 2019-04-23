@@ -3345,14 +3345,14 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public void persistQcSettings(QcDefaultSettings qcDefaultSettings)
+        public void persistQcSettings(ManageQCStatesForm form)
         {
             _study = _study.createMutable();
-            _study.setDefaultAssayQCState(qcDefaultSettings.getDefaultAssayQCState());
-            _study.setDefaultPipelineQCState(qcDefaultSettings.getDefaultPipelineQCState());
-            _study.setDefaultDirectEntryQCState(qcDefaultSettings.getDefaultDirectEntryQCState());
-            _study.setShowPrivateDataByDefault(qcDefaultSettings.isShowPrivateDataByDefault());
-            _study.setBlankQCStatePublic(qcDefaultSettings.isBlankQCStatePublic());
+            _study.setDefaultAssayQCState(form.getDefaultAssayQCState());
+            _study.setDefaultPipelineQCState(form.getDefaultPipelineQCState());
+            _study.setDefaultDirectEntryQCState(form.getDefaultDirectEntryQCState());
+            _study.setShowPrivateDataByDefault(form.isShowPrivateDataByDefault());
+            _study.setBlankQCStatePublic(form.isBlankQCStatePublic());
             StudyManager.getInstance().updateStudy(getUser(), _study);
         }
 

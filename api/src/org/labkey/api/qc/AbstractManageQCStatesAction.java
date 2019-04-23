@@ -15,7 +15,7 @@ import java.util.Set;
 public abstract class AbstractManageQCStatesAction extends FormViewAction<ManageQCStatesForm>
 {
     public abstract QcDefaultSettings getCurrentQcDefaultSettings();
-    public abstract void persistQcSettings(QcDefaultSettings qcDefaultSettings);
+    public abstract void persistQcSettings(ManageQCStatesForm form);
 
     public void validateCommand(ManageQCStatesForm form, Errors errors)
     {
@@ -163,7 +163,7 @@ public abstract class AbstractManageQCStatesAction extends FormViewAction<Manage
                 !nullSafeEqual(qcDefaultSettings.isBlankQCStatePublic(), form.isBlankQCStatePublic()) ||
                 qcDefaultSettings.isShowPrivateDataByDefault() != form.isShowPrivateDataByDefault())
         {
-            persistQcSettings(qcDefaultSettings);
+            persistQcSettings(form);
         }
     }
 
