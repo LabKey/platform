@@ -23,11 +23,15 @@ import org.junit.Test;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
+import org.labkey.api.files.FileSystemDirectoryListener;
+import org.labkey.api.files.FileSystemWatcher;
+import org.labkey.api.files.SupportsFileSystemWatcher;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HeartBeat;
@@ -40,6 +44,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.WatchEvent;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -88,11 +93,13 @@ public class ModuleStaticResolverImpl implements WebdavResolver
     Cache<Path, WebdavResource> _allStaticFiles = CacheManager.getCache(CacheManager.UNLIMITED, CacheManager.DAY, "webdav static files");
 
 
+    @Override
     public boolean requiresLogin()
     {
         return false;
     }
 
+    @Override
     public Path getRootPath()
     {
         return Path.emptyPath;
@@ -107,11 +114,13 @@ public class ModuleStaticResolverImpl implements WebdavResolver
         return false;
     }
 
+    @Override
     public WebdavResource welcome()
     {
         return lookup(pathIndexHtml);
     }
 
+    @Override
     public LookupResult lookupEx(Path path)
     {
         Path normalized = path.normalize();
@@ -251,6 +260,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
      * @param from
      * @param target
      */
+    @Override
     public void addLink(@NotNull Path from, @NotNull Path target, String indexPage)
     {
         if (null == target || from.equals(target))
@@ -365,7 +375,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
 
     private static final Cache<Path, Map<String, WebdavResource>> CHILDREN_CACHE = CacheManager.getCache(1000, CacheManager.DAY, "StaticResourceCache");
 
-    private class StaticResource extends _PublicResource
+    private class StaticResource extends _PublicResource implements SupportsFileSystemWatcher
     {
         WebdavResource _parent;
         List<File> _files;
@@ -462,6 +472,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
 
 
         // just clear cache and let getChildren() create new children list with new shortcut
+        @Override
         public void createLink(String name, Path target, String indexPage)
         {
             CHILDREN_CACHE.remove(getPath());
@@ -482,25 +493,28 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             return exists() ? _files.get(0) : null;
         }
 
+        @Override
         public Collection<WebdavResource> list()
         {
             Map<String, WebdavResource> children = getChildren();
             return new ArrayList<>(children.values());
         }
 
+        @Override
         public boolean exists()
         {
             return _files != null && !_files.isEmpty();
         }
 
+        @Override
         public boolean isCollection()
         {
             return exists() && _files.get(0).isDirectory();
         }
 
+        @Override
         public WebdavResource find(String name)
         {
-
             WebdavResource r = getChildren().get(name);
             if (r == null && AppProps.getInstance().isDevMode())
             {
@@ -515,21 +529,25 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             return r;
         }
 
+        @Override
         public boolean isFile()
         {
             return exists() && _files.get(0).isFile();
         }
 
+        @Override
         public Collection<String> listNames()
         {
             return new ArrayList<>(getChildren().keySet());
         }
 
+        @Override
         public long getLastModified()
         {
             return exists() ? _files.get(0).lastModified() : Long.MIN_VALUE;
         }
 
+        @Override
         public InputStream getInputStream(User user) throws IOException
         {
             if (isFile())
@@ -537,11 +555,13 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             return null;
         }
 
+        @Override
         public long copyFrom(User user, FileStream in)
         {
             throw new UnsupportedOperationException(); 
         }
 
+        @Override
         public long getContentLength()
         {
             if (isFile())
@@ -564,6 +584,29 @@ public class ModuleStaticResolverImpl implements WebdavResolver
                 _etag = "W/\"" + getLastModified() + "\"";
             }
             return _etag;
+        }
+
+        // Listen for events in all directories associated with this resource
+        @SafeVarargs
+        @Override
+        public final void registerListener(FileSystemWatcher watcher, FileSystemDirectoryListener listener, WatchEvent.Kind<java.nio.file.Path>... events)
+        {
+            if (isCollection())
+            {
+                File dir = getFile();
+
+                if (null != dir)
+                {
+                    try
+                    {
+                        watcher.addListener(dir.toPath(), listener, events);
+                    }
+                    catch (IOException e)
+                    {
+                        ExceptionUtil.logExceptionToMothership(null, e);
+                    }
+                }
+            }
         }
     }
 
@@ -589,18 +632,21 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             _indexPage = indexPage;
             _readOnly = ro;
         }
-        
+
+        @Override
         public WebdavResource find(String name)
         {
             LookupResult res = lookupEx(new Path(name));
             return null == res ? null : res.resource;
         }
 
+        @Override
         public boolean exists()
         {
             return true;
         }
 
+        @Override
         public Collection<String> listNames()
         {
             WebdavResource r = getResolver().lookup(getPath());
@@ -672,10 +718,6 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             return super.toString();
         }
     }
-
-
-
-
 
 
     public static class TestCase extends Assert

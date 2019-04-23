@@ -64,7 +64,7 @@ public class SearchModule extends DefaultModule
 
     public double getVersion()
     {
-        return 19.10;
+        return 19.11;
     }
 
     public boolean hasScripts()
@@ -141,7 +141,7 @@ public class SearchModule extends DefaultModule
         // add a container listener so we'll know when containers are deleted
         ContainerManager.addContainerListener(new SearchContainerListener());
 
-        FolderManagement.addTab("Search", "fullTextSearch", FolderManagement.NOT_ROOT, SearchController.SearchSettingsAction.class);
+        FolderManagement.addTab(FolderManagement.TYPE.FolderManagement, "Search", "fullTextSearch", FolderManagement.NOT_ROOT, SearchController.SearchSettingsAction.class);
     }
 
 

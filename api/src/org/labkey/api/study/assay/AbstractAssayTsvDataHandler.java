@@ -121,7 +121,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         AssayProvider provider = AssayService.get().getProvider(protocol);
 
         DataLoaderSettings settings = new DataLoaderSettings();
-        settings.setAllowLookupByAlternateKey(true);
 
         Map<DataType, List<Map<String, Object>>> rawData = getValidationDataMap(data, dataFile, info, log, context, settings);
         assert(rawData.size() <= 1);
@@ -140,7 +139,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         try
         {
             DataLoaderSettings settings = new DataLoaderSettings();
-            settings.setAllowLookupByAlternateKey(true);
             importRows(data, context.getUser(), run, context.getProtocol(), context.getProvider(), dataMap, settings);
         }
         catch (ValidationException e)

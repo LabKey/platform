@@ -938,8 +938,8 @@ public class ExpDataClassDataTestCase
             if (sqlServer)
             {
                 // Check error message from trigger script is propagated up on SqlServer
-                Assert.assertTrue("Expected error to start with '" + "\n" + SqlDialect.CUSTOM_UNIQUE_ERROR_MESSAGE + "', got '" + e.getMessage() + "'",
-                        e.getMessage().startsWith("\n" + SqlDialect.CUSTOM_UNIQUE_ERROR_MESSAGE));
+                Assert.assertTrue("Expected error to start with '" + SqlDialect.CUSTOM_UNIQUE_ERROR_MESSAGE + "', got '" + e.getMessage() + "'",
+                        e.getMessage().startsWith(SqlDialect.CUSTOM_UNIQUE_ERROR_MESSAGE));
             }
             Throwable t = e.getLastRowError().getGlobalError(0).getCause();
             Assert.assertTrue("Expected a SQLException", t instanceof SQLException);

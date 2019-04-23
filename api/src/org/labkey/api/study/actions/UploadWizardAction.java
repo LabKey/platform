@@ -503,7 +503,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                 targetURL.addParameter(param.getKey(), param.getValue());
         }
 
-        ActionButton newRunButton = new ActionButton(targetURL, "Next", DataRegion.MODE_INSERT, ActionButton.Action.POST);
+        ActionButton newRunButton = new ActionButton(targetURL, "Next", ActionButton.Action.POST);
         newRunButton.setScript("this.className += \" labkey-disabled-button\";", true);
         bbar.add(newRunButton);
     }

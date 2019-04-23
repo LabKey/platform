@@ -1362,12 +1362,10 @@ LABKEY.Query = new function()
                 url: LABKEY.ActionURL.buildURL('query', 'getServerDate.api'),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope),
                 success: LABKEY.Utils.getCallbackWrapper(function(json){
-                    var d;
                     var onSuccess = LABKEY.Utils.getOnSuccess(config);
                     if (json && json.date && onSuccess)
                     {
-                        d = new Date(json.date);
-                        onSuccess(d);
+                        onSuccess(LABKEY.Utils.parseDateString(json.date));
                     }
                 }, this)
             });

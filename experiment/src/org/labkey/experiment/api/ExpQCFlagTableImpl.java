@@ -21,6 +21,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
@@ -36,7 +37,10 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> implements ExpQCFlagTable
 {
@@ -57,7 +61,7 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
                 rowIdColumnInfo.setHidden(true);
                 return rowIdColumnInfo;
             case Run:
-                _columnMapping.put("RunId", column.name());
+                _columnMapping.put(column.name(), "RunId");
                 var runColumnInfo = wrapColumn(alias, _rootTable.getColumn("RunId"));
                 runColumnInfo.setFk(getExpSchema().getRunIdForeignKey());
                 return runColumnInfo;
@@ -129,6 +133,7 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
                 AssayProvider provider = AssayService.get().getProvider(_assayProtocol);
                 return provider.createProtocolSchema(_userSchema.getUser(), _userSchema.getContainer(), _assayProtocol, null).createRunsTable();
             }
+
         });
         SQLFragment protocolSQL = new SQLFragment("RunId IN (SELECT er.RowId FROM ");
         protocolSQL.append(ExperimentService.get().getTinfoExperimentRun(), "er");

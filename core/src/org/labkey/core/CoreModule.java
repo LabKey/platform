@@ -897,7 +897,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         FolderTypeManager.get().populateWithStartupProps();
 
         AdminController.registerAdminConsoleLinks();
-        AdminController.registerFolderManagementTabs();
+        AdminController.registerManagementTabs();
         AnalyticsController.registerAdminConsoleLinks();
         UserController.registerAdminConsoleLinks();
         LoggerController.registerAdminConsoleLinks();

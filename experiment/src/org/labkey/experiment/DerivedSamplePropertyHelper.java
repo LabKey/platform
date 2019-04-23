@@ -24,6 +24,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.SamplePropertyHelper;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
+import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
@@ -114,7 +115,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
                 XarContext context = new XarContext("DeriveSamples", _container, _user);
                 try
                 {
-                    lsid = LsidUtils.resolveLsidFromTemplate("${FolderLSIDBase}:" + name, context, "Material");
+                    lsid = LsidUtils.resolveLsidFromTemplate("${FolderLSIDBase}:" + name, context, ExpMaterial.DEFAULT_CPAS_TYPE);
                 }
                 catch (XarFormatException e)
                 {

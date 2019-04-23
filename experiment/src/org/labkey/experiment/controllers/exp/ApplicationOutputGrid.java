@@ -48,7 +48,7 @@ public class ApplicationOutputGrid extends GridView
         DetailsURL url = new DetailsURL(resolve, "lsid", FieldKey.fromParts("LSID"));
         getDataRegion().getDisplayColumn(1).setURLExpression(url);
 
-        getDataRegion().setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
+        getDataRegion().setButtonBar(new ButtonBar());
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("SourceApplicationId"), rowIdPA);
         setFilter(filter);

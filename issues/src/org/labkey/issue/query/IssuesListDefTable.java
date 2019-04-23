@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -31,6 +32,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Table;
 import org.labkey.api.issues.IssuesListDefProvider;
 import org.labkey.api.issues.IssuesListDefService;
 import org.labkey.api.issues.IssuesSchema;
@@ -74,6 +76,14 @@ import java.util.Set;
 public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
 {
     private static final Logger LOG = Logger.getLogger(IssuesListDefTable.class);
+
+    private final static Set<String> _AUTOPOPULATED_COLUMN_NAMES;
+    static
+    {
+        Set<String> autoPopulatedCols = new CaseInsensitiveHashSet(Table.AUTOPOPULATED_COLUMN_NAMES);
+        autoPopulatedCols.add("Name");
+        _AUTOPOPULATED_COLUMN_NAMES = Collections.unmodifiableSet(autoPopulatedCols);
+    }
 
     public IssuesListDefTable(IssuesQuerySchema schema, ContainerFilter cf)
     {
@@ -255,6 +265,12 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
                 return null;
 
             return ObjectFactory.Registry.getFactory(IssueListDef.class).toMap(def, new CaseInsensitiveHashMap<>());
+        }
+
+        @Override
+        protected Set<String> getAutoPopulatedColumns()
+        {
+            return _AUTOPOPULATED_COLUMN_NAMES;
         }
 
         @Override

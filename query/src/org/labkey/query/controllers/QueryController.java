@@ -6202,7 +6202,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class SaveNamedSetAction extends ReadOnlyApiAction<NamedSetForm>
+    public class SaveNamedSetAction extends MutatingApiAction<NamedSetForm>
     {
         @Override
         public Object execute(NamedSetForm namedSetForm, BindException errors)

@@ -475,6 +475,8 @@ public class CoreQuerySchema extends UserSchema
             groupsCol = users.addColumn(new NullColumnInfo(users, "Groups", JdbcType.VARCHAR));
             groupsCol.setReadOnly(true);
         }
+
+        groupsCol.setNullable(true);
         List<FieldKey> visibleColumns = new ArrayList<>(users.getDefaultVisibleColumns());
         visibleColumns.add(groupsCol.getFieldKey());
         users.setDefaultVisibleColumns(visibleColumns);
@@ -488,6 +490,7 @@ public class CoreQuerySchema extends UserSchema
         avatarCol.setInputType("file");
         avatarCol.setHidden(true);
         avatarCol.setReadOnly(false);
+        avatarCol.setNullable(true);
         users.addColumn(avatarCol);
     }
 

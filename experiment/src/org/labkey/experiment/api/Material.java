@@ -15,6 +15,8 @@
  */
 package org.labkey.experiment.api;
 
+import org.labkey.api.exp.api.ExpMaterial;
+
 /**
  * Bean class for the exp.material table.
  * User: migra
@@ -24,7 +26,7 @@ public class Material extends RunItem
 {
     public Material()
     {
-        setCpasType("Material");
+        setCpasType(ExpMaterial.DEFAULT_CPAS_TYPE);
     }
 
     public boolean equals(Object o)

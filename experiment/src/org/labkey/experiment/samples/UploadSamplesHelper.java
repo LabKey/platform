@@ -40,10 +40,13 @@ import org.labkey.api.dataiterator.WrapperDataIterator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataClass;
+import org.labkey.api.exp.api.ExpDataRunInput;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SimpleRunRecord;
 import org.labkey.api.exp.property.Domain;
@@ -311,7 +314,7 @@ public abstract class UploadSamplesHelper
                 {
                     ExpMaterial sample = findMaterial(c, user, null, parentValue, cache, materialMap);
                     if (sample != null)
-                        parentMaterials.put(sample, "Sample");
+                        parentMaterials.put(sample, sampleRole(sample));
                     else
                         throw new ValidationException("Sample input '" + parentValue + "' in SampleSet '" + parts[1] + "' not found");
                 }
@@ -322,7 +325,7 @@ public abstract class UploadSamplesHelper
                 {
                     ExpMaterial sample = findMaterial(c, user, parts[1], parentValue, cache, materialMap);
                     if (sample != null)
-                        parentMaterials.put(sample, "Sample");
+                        parentMaterials.put(sample, sampleRole(sample));
                     else
                         throw new ValidationException("Sample input '" + parentValue + "' in SampleSet '" + parts[1] + "' not found");
                 }
@@ -330,7 +333,7 @@ public abstract class UploadSamplesHelper
                 {
                     ExpMaterial sample = findMaterial(c, user, parts[1], parentValue, cache, materialMap);
                     if (sample != null)
-                        childMaterials.put(sample, "Sample");
+                        childMaterials.put(sample, sampleRole(sample));
                     else
                         throw new ValidationException("Sample output '" + parentValue + "' in SampleSet '" + parts[1] + "' not found");
                 }
@@ -340,7 +343,7 @@ public abstract class UploadSamplesHelper
                         ensureTargetColumnLookup(user, c, source, parentColName, "exp.data", parts[1]);
                     ExpData data = findData(c, user, parts[1], parentValue, cache, dataMap);
                     if (data != null)
-                        parentData.put(data, data.getName());
+                        parentData.put(data, dataRole(data, user));
                     else
                         throw new ValidationException("Data input '" + parentValue + "' in DataClass '" + parts[1] + "' not found");
                 }
@@ -348,7 +351,7 @@ public abstract class UploadSamplesHelper
                 {
                     ExpData data = findData(c, user, parts[1], parentValue, cache, dataMap);
                     if (data != null)
-                        childData.put(data, data.getName());
+                        childData.put(data, dataRole(data, user));
                     else
                         throw new ValidationException("Data output '" + parentValue + "' in DataClass '" + parts[1] + "' not found");
                 }
@@ -364,6 +367,18 @@ public abstract class UploadSamplesHelper
             children = new RunInputOutputBean(childMaterials, childData);
 
         return Pair.of(parents, children);
+    }
+
+    private static String sampleRole(ExpMaterial material)
+    {
+        ExpSampleSet ss = material.getSampleSet();
+        return ss != null ? ss.getName() : "Sample";
+    }
+
+    private static String dataRole(ExpData data, User user)
+    {
+        ExpDataClass dc = data.getDataClass(user);
+        return dc != null ? dc.getName() : ExpDataRunInput.DEFAULT_ROLE;
     }
 
 

@@ -275,7 +275,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                     if (data == null)
                         return null;
 
-                    return ExperimentJSONConverter.serializeData(data);
+                    return ExperimentJSONConverter.serializeData(data, user);
                 }
             });
             ss.addResourceResolver("material", new SearchService.ResourceResolver(){

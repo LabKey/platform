@@ -102,10 +102,10 @@ public class DataRegion extends DisplayElement
     private boolean _showFilters = true;
     private boolean _sortable = true;
     private boolean _showFilterDescription = true;
-    private ButtonBar _gridButtonBar = ButtonBar.BUTTON_BAR_GRID;
-    private ButtonBar _insertButtonBar = ButtonBar.BUTTON_BAR_INSERT;
-    private ButtonBar _updateButtonBar = ButtonBar.BUTTON_BAR_UPDATE;
-    private ButtonBar _detailsButtonBar = ButtonBar.BUTTON_BAR_DETAILS;
+    private ButtonBar _gridButtonBar = new ButtonBar();
+    private ButtonBar _insertButtonBar = new ButtonBar();
+    private ButtonBar _updateButtonBar = new ButtonBar();
+    private ButtonBar _detailsButtonBar = new ButtonBar();
     private String _inputPrefix = null;
     private List<String> _recordSelectorValueColumns;
     private int _maxRows = Table.ALL_ROWS;   // Display all rows by default
@@ -1902,7 +1902,7 @@ public class DataRegion extends DisplayElement
 
                 for (DisplayColumn renderer : renderers)
                 {
-                    if (!renderer.isVisible(ctx) || (renderer.getDisplayModes() & MODE_DETAILS) == 0)
+                    if (!renderer.isVisible(ctx))
                         continue;
                     out.write("<tr>");
                     renderer.renderDetailsCaptionCell(ctx, out, null);
@@ -2401,7 +2401,7 @@ public class DataRegion extends DisplayElement
 
     protected boolean shouldRender(DisplayColumn renderer, RenderContext ctx)
     {
-        return (renderer.isVisible(ctx) && (renderer.getDisplayModes() & (MODE_UPDATE | MODE_UPDATE_MULTIPLE | MODE_INSERT)) != 0);
+        return renderer.isVisible(ctx);
     }
 
     private Boolean _isFileUploadForm = null;

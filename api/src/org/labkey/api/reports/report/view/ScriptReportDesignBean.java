@@ -49,7 +49,7 @@ public class ScriptReportDesignBean extends ScriptReportBean
     public void init(ContainerUser cu, AjaxScriptReportView.Mode mode) throws Exception
     {
         setMode(mode);
-        ScriptReport report = (ScriptReport)getReport(cu); // TODO: Should use generics (ScriptReportBean<ScriptReport>)
+        ScriptReport report = getReport(cu);
 
         if (null == _script)
         {
@@ -87,58 +87,54 @@ public class ScriptReportDesignBean extends ScriptReportBean
         return _includedReports;
     }
 
-    public Report getReport(ContainerUser cu) throws Exception
+    public ScriptReport getReport(ContainerUser cu) throws Exception
     {
         Report report = super.getReport(cu);
 
-        if (report != null)
+        // This check fails if CreateScriptReportAction is called with a non-script report ID. The crawler enjoys doing this.
+        //noinspection ConstantConditions
+        if (report instanceof ScriptReport)
         {
-            report = report.clone();
-            ReportDescriptor reportDescriptor = report.getDescriptor();
+            ScriptReport scriptReport = (ScriptReport)report.clone();
+            ReportDescriptor reportDescriptor = scriptReport.getDescriptor();
+            ScriptReportDescriptor scriptReportDescriptor = (ScriptReportDescriptor) reportDescriptor;
 
-            // This check fails if CreateScriptReportAction is called with a non-script report ID. The crawler enjoys doing this.
-            if (reportDescriptor instanceof ScriptReportDescriptor)
-            {
-                ScriptReportDescriptor scriptReportDescriptor = (ScriptReportDescriptor) reportDescriptor;
+            if (getScript() != null)
+                scriptReportDescriptor.setProperty(ScriptReportDescriptor.Prop.script, getScript());
 
-                if (getScript() != null)
-                    scriptReportDescriptor.setProperty(ScriptReportDescriptor.Prop.script, getScript());
+            if (getScriptExtension() != null)
+                scriptReportDescriptor.setProperty(ScriptReportDescriptor.Prop.scriptExtension, getScriptExtension());
 
-                if (getScriptExtension() != null)
-                    scriptReportDescriptor.setProperty(ScriptReportDescriptor.Prop.scriptExtension, getScriptExtension());
+            scriptReportDescriptor.setProperty(ScriptReportDescriptor.Prop.sourceTabVisible, isSourceTabVisible());
 
-                scriptReportDescriptor.setProperty(ScriptReportDescriptor.Prop.sourceTabVisible, isSourceTabVisible());
-
-                if (!isShareReport() && !scriptReportDescriptor.hasCustomAccess())
-                    scriptReportDescriptor.setOwner(getUser().getUserId());
-                else
-                    scriptReportDescriptor.setOwner(null);
-
-                if (getRedirectUrl() != null)
-                    scriptReportDescriptor.setProperty(ReportDescriptor.Prop.redirectUrl, getRedirectUrl());
-
-                scriptReportDescriptor.setProperty(ScriptReportDescriptor.Prop.runInBackground, _runInBackground);
-
-                if (getKnitrFormat() != null)
-                    scriptReportDescriptor.setProperty(ScriptReportDescriptor.Prop.knitrFormat, getKnitrFormat());
-
-                scriptReportDescriptor.setProperty(ScriptReportDescriptor.Prop.useDefaultOutputFormat, isUseDefaultOutputFormat());
-                scriptReportDescriptor.setProperty(ScriptReportDescriptor.Prop.rmarkdownOutputOptions, getRmarkdownOutputOptions());
-
-                if (isUseGetDataApi() != null)
-                    scriptReportDescriptor.setProperty(ScriptReportDescriptor.Prop.useGetDataApi, isUseGetDataApi());
-
-                scriptReportDescriptor.setIncludedReports(_includedReports);
-
-                scriptReportDescriptor.setScriptDependencies(getScriptDependencies());
-            }
+            if (!isShareReport() && !scriptReportDescriptor.hasCustomAccess())
+                scriptReportDescriptor.setOwner(getUser().getUserId());
             else
-            {
-                throw new NotFoundException("Specified report is not a script report");
-            }
-        }
+                scriptReportDescriptor.setOwner(null);
 
-        return report;
+            if (getRedirectUrl() != null)
+                scriptReportDescriptor.setProperty(ReportDescriptor.Prop.redirectUrl, getRedirectUrl());
+
+            scriptReportDescriptor.setProperty(ScriptReportDescriptor.Prop.runInBackground, _runInBackground);
+
+            if (getKnitrFormat() != null)
+                scriptReportDescriptor.setProperty(ScriptReportDescriptor.Prop.knitrFormat, getKnitrFormat());
+
+            scriptReportDescriptor.setProperty(ScriptReportDescriptor.Prop.useDefaultOutputFormat, isUseDefaultOutputFormat());
+            scriptReportDescriptor.setProperty(ScriptReportDescriptor.Prop.rmarkdownOutputOptions, getRmarkdownOutputOptions());
+
+            if (isUseGetDataApi() != null)
+                scriptReportDescriptor.setProperty(ScriptReportDescriptor.Prop.useGetDataApi, isUseGetDataApi());
+
+            scriptReportDescriptor.setIncludedReports(_includedReports);
+            scriptReportDescriptor.setScriptDependencies(getScriptDependencies());
+
+            return scriptReport;
+        }
+        else
+        {
+            throw new NotFoundException("Specified report is not a script report");
+        }
     }
 
     public List<Pair<String, String>> getParameters()

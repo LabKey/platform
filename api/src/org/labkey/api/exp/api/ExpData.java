@@ -23,7 +23,6 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.XarSource;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.security.User;
-import org.labkey.api.util.URLHelper;
 
 import java.io.File;
 import java.net.URI;
@@ -71,8 +70,20 @@ public interface ExpData extends ExpRunItem
 
     boolean isFinalRunOutput();
 
+    /**
+     * Get the ExpDataClass this ExpData is a member of.
+     */
+    @Deprecated
     @Nullable
     ExpDataClass getDataClass();
+
+    /**
+     * Get the ExpDataClass this ExpData is a member of.
+     *
+     * @param user When not null, include other containers the user has read permission for when looking up the ExpDataClass definition.
+     */
+    @Nullable
+    ExpDataClass getDataClass(@Nullable User user);
 
     void importDataFile(PipelineJob job, XarSource xarSource) throws ExperimentException, SQLException;
 

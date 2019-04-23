@@ -1773,7 +1773,15 @@ public class AnnouncementsController extends SpringActionController
         {
             if (null == _selectedAnnouncementModel)
             {
-                AnnouncementModel bean = getBean();
+                AnnouncementModel bean;
+                try
+                {
+                    bean = getBean();
+                }
+                catch (ConversionException e)
+                {
+                    return null;
+                }
                 if (null != bean.getEntityId())
                     _selectedAnnouncementModel = AnnouncementManager.getAnnouncement(getContainer(), bean.getEntityId());  // Need member list
                 if (null == _selectedAnnouncementModel)
@@ -2388,7 +2396,6 @@ public class AnnouncementsController extends SpringActionController
             QuerySettings qs = new QuerySettings(getViewContext(), "Announcements");
             DataRegion rgn = new DataRegion();
             rgn.setSettings(qs);
-            rgn.setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
             return rgn;
         }
 
@@ -2437,9 +2444,9 @@ public class AnnouncementsController extends SpringActionController
         {
             DataRegion rgn = super.getDataRegion(perm, settings);
 
+            ButtonBar bb = new ButtonBar();
             if (perm.allowDeleteAnyThread())
             {
-                ButtonBar bb = new ButtonBar();
                 rgn.setShowRecordSelectors(true);
 
                 String conversation = settings.getConversationName().toLowerCase();
@@ -2450,10 +2457,8 @@ public class AnnouncementsController extends SpringActionController
                 delete.setRequiresSelection(true, "Are you sure you want to delete this " + conversation + "?", "Are you sure you want to delete these " + conversations + "?");
                 bb.add(delete);
 
-                rgn.setButtonBar(bb);
             }
-            else
-                rgn.setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
+            rgn.setButtonBar(bb);
 
             return rgn;
         }

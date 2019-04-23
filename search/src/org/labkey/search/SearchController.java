@@ -329,7 +329,8 @@ public class SearchController extends SpringActionController
             }
             else if (form.isDelete())
             {
-                ss.clear();
+                ss.deleteIndex();
+                ss.start();
                 _msgid = 1;
                 audit(getUser(), null, "(admin action)", "Index Deleted");
             }
@@ -1105,7 +1106,7 @@ public class SearchController extends SpringActionController
     public class SearchSettingsAction extends FolderManagementViewPostAction<SearchSettingsForm>
     {
         @Override
-        protected HttpView getTabView(SearchSettingsForm form, BindException errors)
+        protected HttpView getTabView(SearchSettingsForm form, boolean reshow, BindException errors)
         {
             return new JspView<>("/org/labkey/search/view/fullTextSearch.jsp", form, errors);
         }

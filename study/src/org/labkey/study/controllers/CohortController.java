@@ -350,20 +350,20 @@ public class CohortController extends BaseStudyController
             // In case we reshow due to errors, we need to stuff the row id into the data region
             dataRegion.addHiddenFormField("rowId", Integer.toString(form.getRowId()));
 
-            ActionURL cancelURL = new ActionURL(CohortController.ManageCohortsAction.class, getContainer());
-            
-            ButtonBar buttonBar = dataRegion.getButtonBar(DataRegion.MODE_UPDATE);
-            buttonBar = new ButtonBar(buttonBar); // need to copy since the original is read-only
-            ActionButton cancelButton = new ActionButton(cancelURL, "Cancel", DataRegion.MODE_UPDATE, ActionButton.Action.GET);
-            cancelButton.setURL(cancelURL);
-            buttonBar.add(1, cancelButton);
+            ButtonBar buttonBar = new ButtonBar();
+            buttonBar.setStyle(ButtonBar.Style.separateButtons);
             if (isInsert())
             {
-                // Need to update the URL to be the insert action
-                buttonBar.getList().remove(0);
-                buttonBar.add(0, ActionButton.BUTTON_DO_INSERT);
-                cancelButton.setDisplayModes(DataRegion.MODE_INSERT);
+                buttonBar.add(new ActionButton(InsertAction.class, "Submit"));
             }
+            else
+            {
+                buttonBar.add(new ActionButton(UpdateAction.class, "Submit"));
+            }
+
+            ActionURL cancelURL = new ActionURL(CohortController.ManageCohortsAction.class, getContainer());
+            buttonBar.add(new ActionButton(cancelURL, "Cancel", ActionButton.Action.GET));
+
             dataRegion.setButtonBar(buttonBar);
 
             return view;

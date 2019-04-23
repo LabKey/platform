@@ -51,7 +51,7 @@ else
             </tr><%
         if (hasAdminOpsPerms)
         {
-            %><tr><td colspan="2">Note: Changing the index path requires re-indexing all data, which can be very expensive.</td></tr>
+            %><tr><td colspan="2">Note: Changing the index path requires re-indexing all data.</td></tr>
             <tr><td><input type="hidden" name="path" value="1"></td></tr>
             <tr><td colspan="2" width="500"><%= button("Set Path").submit(true) %></td></tr><%
         }
@@ -109,7 +109,7 @@ else
     %>
     <p><labkey:form method="POST" action="<%=h(buildURL(SearchController.AdminAction.class))%>">
         <table>
-            <tr><td>Deleting the search index isn't usually necessary; it causes re-indexing of all data, which can be very expensive.</td></tr>
+            <tr><td>Deleting the search index isn't usually necessary; it causes re-indexing of all data.</td></tr>
             <tr><td><input type="hidden" name="delete" value="1"></td></tr>
             <tr><td><%= button("Delete Index").submit(true) %></td></tr>
         </table>

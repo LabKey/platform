@@ -17,6 +17,7 @@ package org.labkey.api.collections;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
@@ -218,7 +219,7 @@ public class BoundMap extends AbstractMap<String, Object> implements Serializabl
 
     private BoundProperty getBoundProperty(String key)
     {
-        if (null == key)
+        if (StringUtils.isBlank(key))
             return null;
         BoundProperty bound = _properties.get(key);
         if (null == bound && Character.isUpperCase(key.charAt(0)))

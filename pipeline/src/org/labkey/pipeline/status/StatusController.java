@@ -845,7 +845,6 @@ public class StatusController extends SpringActionController
             col.setVisible(false);
             col = rgn.getDisplayColumn("DataUrl");
             col.setVisible(false);
-            rgn.setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
 
             DetailsView detailsView = new DetailsView(rgn, form.getRowId());
             detailsView.setTitle("Job Status");
@@ -1042,7 +1041,6 @@ public class StatusController extends SpringActionController
                 ActionURL url = (ActionURL)run.detailsURL();
                 runsMenu.addMenuItem(run.getName(), url);
             }
-            runsMenu.setDisplayModes(DataRegion.MODE_DETAILS);
             bb.add(runsMenu);
         }
 

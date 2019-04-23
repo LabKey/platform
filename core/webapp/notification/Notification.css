@@ -45,6 +45,7 @@
     display: inline-block;
     white-space: nowrap;
     width: 300px;
+    overflow: hidden;
     text-overflow: ellipsis;
 }
 .labkey-notification-body

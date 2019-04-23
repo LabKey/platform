@@ -112,7 +112,10 @@ public class StudyDesignsWebPart extends GridView
             if (ctx.getContainer().hasPermission(ctx.getUser(), DeletePermission.class))
             {
                 dr.setShowRecordSelectors(true);
-                bb.add(ActionButton.BUTTON_DELETE);
+                ActionButton deleteButton = new ActionButton(DesignerController.DeleteAction.class, "Delete");
+                deleteButton.setDisplayPermission(DeletePermission.class);
+                deleteButton.setRequiresSelection(true, "Are you sure you want to delete the selected row?", "Are you sure you want to delete the selected rows?");
+                bb.add(deleteButton);
             }
             else
                 dr.setShowRecordSelectors(false);
