@@ -6,12 +6,13 @@ import * as React from 'react'
 import {Alert, Button, ButtonToolbar, Col, Row} from "react-bootstrap";
 import {ActionURL} from "@labkey/api";
 import {LoadingSpinner} from "@glass/base";
-import {DomainForm, DomainDesign, clearFieldDetails, updateDomainField, fetchDomain, saveDomain} from "@glass/domainproperties"
+import {DomainForm, DomainDesign, clearFieldDetails, fetchDomain, saveDomain} from "@glass/domainproperties"
 
 interface IDomainDesignerState {
     schemaName?: string,
     queryName?: string,
     domainId?: number,
+    returnUrl?: string,
     domain?: DomainDesign,
     message?: string,
     messageType?: string
@@ -26,16 +27,13 @@ export class App extends React.PureComponent<any, IDomainDesignerState> {
         const schemaName = ActionURL.getParameter('schemaName');
         const queryName = ActionURL.getParameter('queryName');
         const domainId = ActionURL.getParameter('domainId');
-
-        this.submitHandler = this.submitHandler.bind(this);
-        this.getAlert = this.getAlert.bind(this);
-        this.dismissAlert = this.dismissAlert.bind(this);
-        this.onChangeHandler = this.onChangeHandler.bind(this);
+        const returnUrl = ActionURL.getParameter('returnUrl');
 
         this.state = {
             schemaName,
             queryName,
             domainId,
+            returnUrl,
             message: ((schemaName && queryName) || domainId) ? undefined : 'Missing required parameter: domainId or schemaName and queryName.'
         };
     }
@@ -54,7 +52,7 @@ export class App extends React.PureComponent<any, IDomainDesignerState> {
         }
     }
 
-    submitHandler() {
+    submitHandler = () => {
         const { domain } = this.state;
 
         saveDomain(domain)
@@ -72,33 +70,29 @@ export class App extends React.PureComponent<any, IDomainDesignerState> {
             });
     }
 
-    onChangeHandler(evt) {
-        if (evt instanceof DomainDesign) {
-            this.setState(() => ({
-                domain: evt
-            }));
-        }
-        else {
-            let value = evt.target.value;
-            if (evt.target.type === "checkbox") {
-                value = evt.target.checked;
-            }
-            this.setState({domain: updateDomainField(this.state.domain, evt.target.id, value)});
-        }
+    onChangeHandler = (newDomain) => {
+        this.setState(() => ({
+            domain: newDomain
+        }));
     }
 
-    dismissAlert() {
+    dismissAlert = () => {
         this.setState({message: null, messageType: null})
     }
 
-    getAlert(message, messageType) {
+    getAlert = (message, messageType): any => {
         return (
-            <Alert bsStyle={messageType} key={"domain-msg-" + Math.random()} onDismiss={this.dismissAlert}>{message}</Alert>
+            <Alert bsStyle={messageType} onDismiss={this.dismissAlert}>{message}</Alert>
         )
     }
 
-    onCancel() {
-        location.reload();
+    onCancel = () => {
+        if (this.state.returnUrl) {
+            location.href = this.state.returnUrl;
+        }
+        else {
+            location.reload();
+        }
     }
 
     render() {
@@ -113,14 +107,14 @@ export class App extends React.PureComponent<any, IDomainDesignerState> {
             <>
                 <Row>
                     <Col xs={12}>
-                        <ButtonToolbar>
+                        {domain && <ButtonToolbar>
                             <Button type='button' className={'domain-designer-button'} bsClass='btn' onClick={this.onCancel}>Cancel</Button>
                             <Button type='button' className={'domain-designer-button'} bsClass='btn btn-success' onClick={this.submitHandler} >Save Changes</Button>
-                        </ButtonToolbar>
+                        </ButtonToolbar>}
                     </Col>
                 </Row>
                 { message ? this.getAlert(message, messageType) : '' }
-                <DomainForm domain={domain} onSubmit={this.submitHandler} onChange={this.onChangeHandler}/>
+                <DomainForm domain={domain} onChange={this.onChangeHandler}/>
             </>
         )
     }
