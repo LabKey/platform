@@ -70,6 +70,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainTemplate;
 import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.exp.query.ExpDataInputTable;
 import org.labkey.api.exp.query.ExpDataProtocolInputTable;
 import org.labkey.api.exp.query.ExpInputTable;
 import org.labkey.api.exp.query.ExpMaterialProtocolInputTable;
@@ -219,6 +220,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
+import static org.labkey.api.exp.query.ExpSchema.TableType.DataInputs;
 
 /**
  * User: jeckels
@@ -1598,11 +1600,11 @@ public class ExperimentController extends SpringActionController
 
             HtmlView toggleView = new ToggleRunView(expRun, true, true, false);
 
-            QuerySettings runDataInputsSettings = new QuerySettings(getViewContext(), "RunDataInputs", ExpSchema.TableType.DataInputs.name());
+            QuerySettings runDataInputsSettings = new QuerySettings(getViewContext(), "RunDataInputs", DataInputs.name());
             UsageQueryView runDataInputsView = new UsageQueryView("Data Inputs", getViewContext(), expRun, ExpProtocol.ApplicationType.ExperimentRun, runDataInputsSettings, errors);
             runDataInputsView.setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
 
-            QuerySettings runDataOutputsSettings = new QuerySettings(getViewContext(), "RunDataOutputs", ExpSchema.TableType.DataInputs.name());
+            QuerySettings runDataOutputsSettings = new QuerySettings(getViewContext(), "RunDataOutputs", DataInputs.name());
             UsageQueryView runDataOutputsView = new UsageQueryView("Data Outputs", getViewContext(), expRun, ExpProtocol.ApplicationType.ExperimentRunOutput, runDataOutputsSettings, errors);
             runDataOutputsView.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
 
@@ -1644,12 +1646,12 @@ public class ExperimentController extends SpringActionController
         @Override
         protected TableInfo createTable()
         {
-            ExpInputTable tableInfo = (ExpInputTable)super.createTable();
-            tableInfo.setContainerFilter(new ContainerFilter.AllFolders(getUser()));
+            String tableName = getSettings().getQueryName();
+            ExpInputTable tableInfo = (ExpInputTable)((ExpSchema)getSchema()).getTable(tableName, new ContainerFilter.AllFolders(getUser()), true, true);
             tableInfo.setRun(_run, _type);
+            tableInfo.setLocked(true);
             return tableInfo;
         }
-
     }
 
 
@@ -1791,6 +1793,7 @@ public class ExperimentController extends SpringActionController
             ExperimentRunListView runListView = ExperimentRunListView.createView(getViewContext(), ExperimentRunType.ALL_RUNS_TYPE, true);
             runListView.getRunTable().setInputData(_data);
             runListView.getRunTable().setContainerFilter(new ContainerFilter.AllFolders(getUser()));
+            runListView.getRunTable().setLocked(true);
             runListView.setTitle("Runs using this data as an input");
             vbox.addView(runListView);
 
