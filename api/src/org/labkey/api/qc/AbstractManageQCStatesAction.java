@@ -12,7 +12,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @RequiresPermission(AdminPermission.class)
-public abstract class ManageQCStatesAction extends FormViewAction<ManageQCStatesForm>
+public abstract class AbstractManageQCStatesAction extends FormViewAction<ManageQCStatesForm>
 {
     public abstract QcDefaultSettings getCurrentQcDefaultSettings();
     public abstract void persistQcSettings(QcDefaultSettings qcDefaultSettings);
@@ -80,11 +80,11 @@ public abstract class ManageQCStatesAction extends FormViewAction<ManageQCStates
         return true;
     }
 
-    public ActionURL getSuccessURL(ManageQCStatesForm manageQCStatesForm, Class<? extends SimpleViewAction> defaultActionClass)
+    public ActionURL getSuccessURL(ManageQCStatesForm manageQCStatesForm, Class<? extends AbstractManageQCStatesAction> manageActionClass, Class<? extends SimpleViewAction> defaultActionClass)
     {
         if (manageQCStatesForm.isReshowPage())
         {
-            ActionURL url = new ActionURL(ManageQCStatesAction.class, getContainer());
+            ActionURL url = new ActionURL(manageActionClass, getContainer());
             if (manageQCStatesForm.getReturnUrl() != null)
                 url.addParameter(ActionURL.Param.returnUrl, manageQCStatesForm.getReturnUrl());
             return url;

@@ -249,7 +249,7 @@
                     <tr>
                         <td class="lk-study-prop-label">Quality Control States</td>
                         <td class="lk-study-prop-desc">Manage QC states for datasets in this study</td>
-                        <td><%=textLink("Manage Dataset QC States", new ActionURL(StudyController.StudyManageQCStatesAction.class, c)) %></td>
+                        <td><%=textLink("Manage Dataset QC States", new ActionURL(StudyController.ManageQCStatesAction.class, c)) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Comments</td>

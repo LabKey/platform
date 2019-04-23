@@ -8,10 +8,11 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
 @RequiresPermission(AdminPermission.class)
-public abstract class DeleteQCStateAction extends FormHandlerAction<DeleteQCStateForm>
+public abstract class AbstractDeleteQCStateAction extends FormHandlerAction<DeleteQCStateForm>
 {
     protected static QCStateHandler _qcStateHandler;
     public abstract QCStateHandler getQCStateHandler();
+    public abstract ActionURL getSuccessURL(DeleteQCStateForm form);
 
     @Override
     public void validateCommand(DeleteQCStateForm target, Errors errors)
@@ -25,7 +26,7 @@ public abstract class DeleteQCStateAction extends FormHandlerAction<DeleteQCStat
         {
             for (QCState state : QCStateManager.getInstance().getQCStates(getContainer()))
             {
-                if (getQCStateHandler().isQCStateInUse(state))
+                if (!getQCStateHandler().isQCStateInUse(state))
                     QCStateManager.getInstance().deleteQCState(state);
             }
         }
@@ -36,13 +37,5 @@ public abstract class DeleteQCStateAction extends FormHandlerAction<DeleteQCStat
                 QCStateManager.getInstance().deleteQCState(state);
         }
         return true;
-    }
-
-    public ActionURL getSuccessURL(DeleteQCStateForm form)
-    {
-        ActionURL returnUrl = new ActionURL(ManageQCStatesAction.class, getContainer());
-        if (form.getManageReturnUrl() != null)
-            returnUrl.addParameter(ActionURL.Param.returnUrl, form.getManageReturnUrl());
-        return returnUrl;
     }
 }

@@ -64,9 +64,10 @@ import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
-import org.labkey.api.qc.DeleteQCStateAction;
-import org.labkey.api.qc.ManageQCStatesAction;
-import org.labkey.api.qc.ManageQCStatesBean;
+import org.labkey.api.qc.AbstractDeleteQCStateAction;
+import org.labkey.api.qc.AbstractManageQCStatesAction;
+import org.labkey.api.qc.AbstractManageQCStatesBean;
+import org.labkey.api.qc.DeleteQCStateForm;
 import org.labkey.api.qc.ManageQCStatesForm;
 import org.labkey.api.qc.QCState;
 import org.labkey.api.qc.QCStateHandler;
@@ -3306,21 +3307,24 @@ public class StudyController extends BaseStudyController
         return Collections.emptyList();
     }
 
-    public class StudyManageQCStatesBean extends ManageQCStatesBean
+    public class ManageQCStatesBean extends AbstractManageQCStatesBean
     {
-        StudyManageQCStatesBean(String returnUrl)
+        ManageQCStatesBean(String returnUrl)
         {
             super(returnUrl);
             _qcStateHandler = new StudyQCStateHandler(getStudyThrowIfNull());
+            _controllerClass = StudyController.class;
+            _manageAction = ManageQCStatesAction.class;
+            _deleteAction = DeleteQCStateAction.class;
         }
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class StudyManageQCStatesAction extends ManageQCStatesAction
+    public class ManageQCStatesAction extends AbstractManageQCStatesAction
     {
         protected StudyImpl _study;
 
-        public StudyManageQCStatesAction()
+        public ManageQCStatesAction()
         {
             super();
         }
@@ -3356,7 +3360,7 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(org.labkey.api.qc.ManageQCStatesForm manageQCStatesForm, boolean reshow, BindException errors)
         {
             return new JspView<>("/org/labkey/api/qc/view/manageQCStates.jsp",
-                    new StudyManageQCStatesBean(manageQCStatesForm.getReturnUrl()), errors);
+                    new ManageQCStatesBean(manageQCStatesForm.getReturnUrl()), errors);
         }
 
         @Override
@@ -3370,7 +3374,7 @@ public class StudyController extends BaseStudyController
         @Override
         public URLHelper getSuccessURL(org.labkey.api.qc.ManageQCStatesForm manageQCStatesForm)
         {
-            return getSuccessURL(manageQCStatesForm, ManageStudyAction.class);
+            return getSuccessURL(manageQCStatesForm, ManageQCStatesAction.class, ManageStudyAction.class);
         }
     }
 
@@ -3394,9 +3398,9 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class StudyDeleteQCStateAction extends DeleteQCStateAction
+    public class DeleteQCStateAction extends AbstractDeleteQCStateAction
     {
-        public StudyDeleteQCStateAction()
+        public DeleteQCStateAction()
         {
             super();
             _qcStateHandler = new StudyQCStateHandler(getStudyThrowIfNull());
@@ -3406,6 +3410,14 @@ public class StudyController extends BaseStudyController
         public QCStateHandler getQCStateHandler()
         {
             return _qcStateHandler;
+        }
+
+        public ActionURL getSuccessURL(DeleteQCStateForm form)
+        {
+            ActionURL returnUrl = new ActionURL(ManageQCStatesAction.class, getContainer());
+            if (form.getManageReturnUrl() != null)
+                returnUrl.addParameter(ActionURL.Param.returnUrl, form.getManageReturnUrl());
+            return returnUrl;
         }
     }
 

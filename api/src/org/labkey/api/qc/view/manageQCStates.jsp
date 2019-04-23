@@ -19,26 +19,23 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.qc.QCState" %>
-<%@ page import="org.labkey.api.qc.DeleteQCStateAction" %>
-<%@ page import="org.labkey.api.qc.ManageQCStatesBean" %>
 <%@ page import="org.labkey.api.qc.QCStateHandler" %>
 <%@ page import="org.labkey.api.view.FolderManagement" %>
 <%@ page import="org.labkey.api.action.HasPageConfig" %>
+<%@ page import="org.labkey.api.qc.AbstractManageQCStatesBean" %>
+<%@ page import="org.springframework.web.servlet.mvc.Controller" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<ManageQCStatesBean> me = (JspView<ManageQCStatesBean>) HttpView.currentView();
+    JspView<AbstractManageQCStatesBean> me = (JspView<AbstractManageQCStatesBean>) HttpView.currentView();
 
-    ManageQCStatesBean bean = me.getModelBean();
-    /*ActionURL cancelUrl = bean.getReturnUrl() != null ? new ActionURL(bean.getReturnUrl()) :
-            new ActionURL(ManageQCStatesAction.class, getContainer());  // TODO: make this a better cancelUrl */
+    AbstractManageQCStatesBean bean = me.getModelBean();
     ActionURL cancelUrl = bean.getReturnUrl() != null ? new ActionURL(bean.getReturnUrl()) :
-            new ActionURL();
+            new ActionURL(bean.getManageAction(), getContainer());
     QCStateHandler qcStateHandler = bean.getQCStateHandler();
-
 %>
 <labkey:errors/><br>
-<labkey:form action="test" name="manageQCStates" method="POST"> <!-- TODO: make this form go to the right place -->
+<labkey:form action="<%=h(buildURL(bean.getManageAction()))%>" name="manageQCStates" method="POST">
 <input type="hidden" name="reshowPage" value="true">
 <input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl()) %>">
     <labkey:panel title="Currently Defined Dataset QC States"> <!-- TODO: make this title configurable -->
@@ -58,8 +55,7 @@
             <tr>
             </tr>
             <%
-                //ActionURL baseDeleteStateURL = new ActionURL(DeleteQCStateAction.class, getContainer());<!-- TODO make this a better delete URL -->
-                ActionURL baseDeleteStateURL = new ActionURL();
+                ActionURL baseDeleteStateURL = new ActionURL(bean.getDeleteAction(), getContainer());
                 baseDeleteStateURL.addParameter("manageReturnUrl", bean.getReturnUrl());
                 for (QCState state : qcStateHandler.getQCStates())
                 {
@@ -97,8 +93,7 @@
                 <td colspan="4">
                     <%= button("Save").submit(true) %>
                     <%= button("Delete Unused QC States")
-                            .href(baseDeleteStateURL.clone().addParameter("all", "true"))
-                            .onClick("return confirm('Delete all unused QC states? No additional study data will be deleted.')") /* TODO: make this messages configurable */%>
+                            .onClick("return LABKEY.Utils.confirmAndPost('Delete all unused QC states? No additional study data will be deleted.', " + qh(baseDeleteStateURL.clone().addParameter("all", "true").getLocalURIString()) + ")") /* TODO: make this messages configurable */%>
                     <%= button("Cancel").href(cancelUrl) %>
                 </td>
             </tr>
