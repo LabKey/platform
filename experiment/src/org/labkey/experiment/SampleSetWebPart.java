@@ -27,7 +27,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -90,38 +89,31 @@ public class SampleSetWebPart extends QueryView
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
         super.populateButtonBar(view, bar);
-        populateButtonBar(view.getViewContext(), bar, false);
-    }
 
-    public static void populateButtonBar(ViewContext model, ButtonBar bb, boolean detailsView)
-    {
-        ActionURL urlInsert = new ActionURL(ExperimentController.CreateSampleSetAction.class, model.getContainer());
-        urlInsert.addParameter(ActionURL.Param.returnUrl, model.getActionURL().toString());
+        ActionURL urlInsert = new ActionURL(ExperimentController.CreateSampleSetAction.class, getContainer());
+        urlInsert.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
 
-        ActionButton createNewButton = new ActionButton(ExperimentController.CreateSampleSetAction.class, "Create New Sample Set", DataRegion.MODE_GRID, ActionButton.Action.LINK);
+        ActionButton createNewButton = new ActionButton(ExperimentController.CreateSampleSetAction.class, "Create New Sample Set", ActionButton.Action.LINK);
         createNewButton.setDisplayPermission(InsertPermission.class);
         createNewButton.setIconCls("plus");
         createNewButton.setURL(urlInsert);
-        bb.add(createNewButton);
+        bar.add(createNewButton);
 
-        ActionButton deleteButton = new ActionButton(ExperimentController.DeleteMaterialSourceAction.class, "Delete", DataRegion.MODE_GRID, ActionButton.Action.GET);
+        ActionButton deleteButton = new ActionButton(ExperimentController.DeleteMaterialSourceAction.class, "Delete", ActionButton.Action.GET);
         deleteButton.setDisplayPermission(DeletePermission.class);
-        ActionURL deleteURL = new ActionURL(ExperimentController.DeleteMaterialSourceAction.class, model.getContainer());
-        deleteURL.addParameter(ActionURL.Param.returnUrl, model.getActionURL().toString());
+        ActionURL deleteURL = new ActionURL(ExperimentController.DeleteMaterialSourceAction.class, getContainer());
+        deleteURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
         deleteButton.setIconCls("trash");
         deleteButton.setURL(deleteURL);
         deleteButton.setActionType(ActionButton.Action.POST);
         deleteButton.setRequiresSelection(true);
-        bb.add(deleteButton);
+        bar.add(deleteButton);
 
-        bb.add(new ActionButton(new ActionURL(ExperimentController.UpdateMaterialSourceAction.class, model.getContainer()), "Submit", DataRegion.MODE_UPDATE));
-
-        ActionURL showAllURL = new ActionURL(ExperimentController.ShowAllMaterialsAction.class, model.getContainer());
-        ActionButton showAllButton = new ActionButton(showAllURL, "Show All Materials", DataRegion.MODE_GRID);
+        ActionURL showAllURL = new ActionURL(ExperimentController.ShowAllMaterialsAction.class, getContainer());
+        ActionButton showAllButton = new ActionButton(showAllURL, "Show All Materials");
         showAllButton.setDisplayPermission(ReadPermission.class);
-        bb.add(showAllButton);
+        bar.add(showAllButton);
     }
-
 
     @Override
     protected void renderView(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception

@@ -21,9 +21,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.DetailsURL;
-import org.labkey.api.security.permissions.DeletePermission;
-import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DisplayElement;
@@ -70,52 +67,6 @@ public class ActionButton extends DisplayElement implements Cloneable
             return getDescription();
         }
     }
-
-    // All of these buttons assume that they can address an action of a predefined name
-    // in the same controller as the current page. This isn't usually a good assumption,
-    // as it doesn't work for web parts that might be rendered by another controller.
-    public static ActionButton BUTTON_DELETE = null;
-    public static ActionButton BUTTON_SHOW_INSERT = null;
-    public static ActionButton BUTTON_SHOW_UPDATE = null;
-    public static ActionButton BUTTON_SHOW_GRID = null;
-    public static ActionButton BUTTON_DO_INSERT = null;
-    public static ActionButton BUTTON_DO_UPDATE = null;
-
-    static
-    {
-        BUTTON_DELETE = new ActionButton("delete.post", "Delete");
-        BUTTON_DELETE.setDisplayPermission(DeletePermission.class);
-        BUTTON_DELETE.setRequiresSelection(true, "Are you sure you want to delete the selected row?", "Are you sure you want to delete the selected rows?");
-        BUTTON_DELETE.lock();
-        MemTracker.getInstance().remove(BUTTON_DELETE);
-
-        BUTTON_SHOW_INSERT = new ActionButton("showInsert.view", "Insert New");
-        BUTTON_SHOW_INSERT.setActionType(Action.LINK);
-        BUTTON_SHOW_INSERT.setDisplayPermission(InsertPermission.class);
-        BUTTON_SHOW_INSERT.lock();
-        MemTracker.getInstance().remove(BUTTON_SHOW_INSERT);
-
-        BUTTON_SHOW_UPDATE = new ActionButton("showUpdate.view", "Edit");
-        BUTTON_SHOW_UPDATE.setActionType(Action.GET);
-        BUTTON_SHOW_UPDATE.setDisplayPermission(UpdatePermission.class);
-        BUTTON_SHOW_UPDATE.lock();
-        MemTracker.getInstance().remove(BUTTON_SHOW_UPDATE);
-
-        BUTTON_SHOW_GRID = new ActionButton("begin.view", "Show Grid");
-        BUTTON_SHOW_GRID.setURL("begin.view?" + DataRegion.LAST_FILTER_PARAM + "=true");
-        BUTTON_SHOW_GRID.setActionType(Action.LINK);
-        BUTTON_SHOW_GRID.lock();
-        MemTracker.getInstance().remove(BUTTON_SHOW_GRID);
-
-        BUTTON_DO_INSERT = new ActionButton("insert.post", "Submit");
-        BUTTON_DO_INSERT.lock();
-        MemTracker.getInstance().remove(BUTTON_DO_INSERT);
-
-        BUTTON_DO_UPDATE = new ActionButton("update.post", "Submit");
-        BUTTON_DO_UPDATE.lock();
-        MemTracker.getInstance().remove(BUTTON_DO_UPDATE);
-    }
-
 
     private Action _actionType = Action.POST;
     private StringExpression _caption;
@@ -166,15 +117,6 @@ public class ActionButton extends DisplayElement implements Cloneable
         _url = StringExpressionFactory.create(url.getLocalURIString(true), true);
     }
 
-    /** Use version that takes an action class instead */
-    @Deprecated
-    private ActionButton(String actionName, String caption)
-    {
-        assert StringUtils.containsNone(actionName,"/:?") : "this is for _actions_, use setUrl() or setScript()";
-        _actionName = StringExpressionFactory.create(actionName);
-        _caption = StringExpressionFactory.create(caption);
-    }
-
     public ActionButton(Class<? extends Controller> action, String caption)
     {
         _caption = StringExpressionFactory.create(caption);
@@ -183,30 +125,21 @@ public class ActionButton extends DisplayElement implements Cloneable
         _actionName = StringExpressionFactory.create(url.getAction());
     }
 
-    public ActionButton(ActionURL url, String caption, int displayModes)
+    public ActionButton(ActionURL url, String caption, Action actionType)
     {
         this(url, caption);
-        setDisplayModes(displayModes);
-    }
-
-    public ActionButton(ActionURL url, String caption, int displayModes, Action actionType)
-    {
-        this(url, caption);
-        setDisplayModes(displayModes);
         setActionType(actionType);
     }
 
-    public ActionButton(Class<? extends Controller> action, String caption, int displayModes, Action actionType)
+    public ActionButton(Class<? extends Controller> action, String caption, Action actionType)
     {
         this(action, caption);
-        setDisplayModes(displayModes);
         setActionType(actionType);
     }
 
-    protected ActionButton(String caption, int displayModes, Action actionType)
+    protected ActionButton(String caption, Action actionType)
     {
         this(caption);
-        setDisplayModes(displayModes);
         setActionType(actionType);
     }
 

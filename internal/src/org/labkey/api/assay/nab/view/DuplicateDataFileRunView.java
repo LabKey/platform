@@ -55,7 +55,7 @@ public class DuplicateDataFileRunView extends RunListQueryView
         ButtonBar bar = rgn.getButtonBar(DataRegion.MODE_GRID);
 
         ActionButton deleteButton = new ActionButton(PageFlowUtil.urlProvider(NabUrls.class).urlDeleteRun(getContainer()),
-                "Delete", DataRegion.MODE_GRID, ActionButton.Action.POST);
+                "Delete", ActionButton.Action.POST);
         deleteButton.setRequiresSelection(true);
         deleteButton.setDisplayPermission(DeletePermission.class);
         bar.add(deleteButton);

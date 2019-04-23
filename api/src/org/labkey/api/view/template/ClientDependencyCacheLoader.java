@@ -84,7 +84,6 @@ public class ClientDependencyCacheLoader implements CacheLoader<String, ClientDe
             if (ClientDependency.TYPE.lib == primaryType)
             {
                 cr = new LibClientDependency(_path, _mode, r);
-                LOG.info("Loading " + cr.getUniqueKey());
 
                 if (null != r)
                     ensureListener(key, r);

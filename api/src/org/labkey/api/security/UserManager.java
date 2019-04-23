@@ -1117,5 +1117,4 @@ public class UserManager
         Set<UserRelationships> existing = getRelationships(user, other);
         return relationships.stream().anyMatch(existing::contains);
     }
-
 }

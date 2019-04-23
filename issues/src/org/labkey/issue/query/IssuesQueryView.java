@@ -90,7 +90,7 @@ public class IssuesQueryView extends QueryView
             if (domain != null)
             {
                 ActionURL url = new ActionURL(IssuesController.AdminAction.class, getContainer()).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, _issueDef.getName());
-                ActionButton adminButton = new ActionButton(url, "Admin", DataRegion.MODE_GRID, ActionButton.Action.LINK);
+                ActionButton adminButton = new ActionButton(url, "Admin", ActionButton.Action.LINK);
                 adminButton.setDisplayPermission(AdminPermission.class);
 
                 bar.add(adminButton);
@@ -99,7 +99,7 @@ public class IssuesQueryView extends QueryView
             if (!getUser().isGuest())
             {
                 ActionURL url = new ActionURL(IssuesController.EmailPrefsAction.class, getContainer()).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, _issueDef.getName());
-                ActionButton prefsButton = new ActionButton(url, "Email Preferences", DataRegion.MODE_GRID, ActionButton.Action.LINK);
+                ActionButton prefsButton = new ActionButton(url, "Email Preferences", ActionButton.Action.LINK);
                 bar.add(prefsButton);
             }
         }

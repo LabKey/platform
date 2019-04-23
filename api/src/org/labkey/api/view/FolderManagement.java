@@ -16,11 +16,13 @@
 package org.labkey.api.view;
 
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.springframework.validation.BindException;
@@ -38,87 +40,254 @@ import java.util.stream.Collectors;
  */
 public class FolderManagement
 {
-    private static final List<TabProvider> REGISTERED_TAB_PROVIDERS = new CopyOnWriteArrayList<>();
+    public enum TYPE
+    {
+        FolderManagement
+        {
+            private final List<TabProvider> FOLDER_TAB_PROVIDERS = new CopyOnWriteArrayList<>();
+
+            @Override
+            void validateContainer(Container c)
+            {
+                // Allow all containers for now
+            }
+
+            @Override
+            List<TabProvider> getTabProviders()
+            {
+                return FOLDER_TAB_PROVIDERS;
+            }
+
+            @Override
+            NavTree appendNavTrail(BaseViewAction action, NavTree root, Container c, User user)
+            {
+                return folderManagementNavTrail(root, c, user);
+            }
+        },
+        ProjectSettings
+        {
+            private final List<TabProvider> PROJECT_TAB_PROVIDERS = new CopyOnWriteArrayList<>();
+
+            @Override
+            void validateContainer(Container c)
+            {
+                if (!c.isRoot() && !c.isProject())
+                    throw new NotFoundException("Valid only from root or project");
+            }
+
+            @Override
+            List<TabProvider> getTabProviders()
+            {
+                return PROJECT_TAB_PROVIDERS;
+            }
+
+            @Override
+            NavTree appendNavTrail(BaseViewAction action, NavTree root, Container c, User user)
+            {
+                action.setHelpTopic(new HelpTopic("customizeLook"));
+
+                if (c.isRoot())
+                    root.addChild("Admin Console", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL()).addChild("Look and Feel Settings");
+                else
+                    root.addChild("Project Settings");
+                return root;
+            }
+        };
+
+        abstract void validateContainer(Container c);
+        abstract List<TabProvider> getTabProviders();
+        abstract NavTree appendNavTrail(BaseViewAction action, NavTree root, Container c, User user);
+    }
+
+    @Deprecated // Left behind for backward compatibility  TODO: Migrate callers and delete this!
+    public static void addTab(String text, String id, Predicate<Container> filter, Class<? extends ManagementAction> actionClass)
+    {
+        addTab(TYPE.FolderManagement, text, id, filter, actionClass);
+    }
 
     /**
-     * Register a tab that can appear on the folder management page. Implement a FolderManagementAction (subclass
-     * FolderManagementViewAction or FolderManagementViewPostAction) then add it to the tabs using this method.
+     * Register a tab that can appear on the folder management or project settings page. Implement a ManagementAction
+     * (by subclassing FolderManagementViewAction, FolderManagementViewPostAction, ProjectSettingsViewAction, or
+     * ProjectSettingsViewPostAction) and then add it to the tabs using this method.
      *
+     * @param type Management page type
      * @param text Tab caption
      * @param id Unique string that identifies the tab. Used by the tab strip to highlight the selected tab.
      * @param filter A predicate that determines if the tab should be rendered in this container.
-     * @param actionClass Your FolderManagementAction class. TabProvider will create the tab's ActionURL from this class, the current container, and the tabId.
+     * @param actionClass Your ManagementAction class. TabProvider will create the tab's ActionURL from this class, the current container, and the tabId.
      */
-    public static void addTab(String text, String id, Predicate<Container> filter, Class<? extends FolderManagementAction> actionClass)
+    public static void addTab(TYPE type, String text, String id, Predicate<Container> filter, Class<? extends ManagementAction> actionClass)
     {
-        REGISTERED_TAB_PROVIDERS.add(new TabProvider(text, id, filter, actionClass));
+        type.getTabProviders().add(new TabProvider(text, id, filter, actionClass));
     }
 
     public static final Predicate<Container> EVERY_CONTAINER = container -> true;
     public static final Predicate<Container> NOT_ROOT = container -> !container.isRoot();
+    public static final Predicate<Container> ROOT_AND_PROJECTS = container -> container.isRoot() || container.isProject();
     // Choosing "isInFolderNav" does not include Tabs, which is a slight change in functionality (previously excluded just workbooks), but that seems proper.
     public static final Predicate<Container> FOLDERS_AND_PROJECTS = container -> !container.isRoot() && container.isInFolderNav();
     public static final Predicate<Container> FOLDERS_ONLY = container -> !container.isRoot() && !container.isProject() && container.isInFolderNav();
+    public static final Predicate<Container> PROJECTS_ONLY = container -> !container.isRoot() && container.isProject() && container.isInFolderNav();
 
-    public abstract static class FolderManagementTabStrip extends TabStripView
+    private abstract static class ManagementTabStrip extends TabStripView
     {
         private final Container _container;
-        private final BindException _errors;
 
-        private FolderManagementTabStrip(Container c, String tabId, BindException errors)
+        ManagementTabStrip(Container c, String tabId, BindException errors)
         {
             _container = c;
-            _errors = errors;
 
             // Stay on same tab if there are errors
-            if (_errors.hasErrors() && null != StringUtils.trimToNull(tabId))
+            if (errors.hasErrors() && null != StringUtils.trimToNull(tabId))
                 setSelectedTabId(tabId);
         }
 
         public List<NavTree> getTabList()
         {
-            return FolderManagement.REGISTERED_TAB_PROVIDERS.stream()
+            return getTabProviders().stream()
                 .filter(provider->provider.shouldRender(_container))
                 .map(provider->provider.getTab(_container))
                 .collect(Collectors.toList());
         }
 
+        protected abstract List<TabProvider> getTabProviders();
         public abstract HttpView getTabView(String tabId) throws Exception;
     }
 
 
     /**
-     * Marker interface for actions that register themselves with the folder management page
+     * Marker interface for actions that register themselves with a management page
      */
-    public interface FolderManagementAction extends Controller
+    interface ManagementAction extends Controller
     {
+    }
+
+
+    /**
+     * Base action class for management actions that only need to display a view (no post handling).
+     */
+    private static abstract class ManagementViewAction extends SimpleViewAction<Void> implements ManagementAction
+    {
+        @Override
+        public ModelAndView handleRequest() throws Exception
+        {
+            getType().validateContainer(getContainer());
+
+            return super.handleRequest();
+        }
+
+        @Override
+        public ModelAndView getView(Void form, BindException errors)
+        {
+            return new ManagementTabStrip(getContainer(), (String)getViewContext().get("tabId"), errors)
+            {
+                @Override
+                public HttpView getTabView(String tabId) throws Exception
+                {
+                    return ManagementViewAction.this.getTabView();
+                }
+
+                @Override
+                protected List<TabProvider> getTabProviders()
+                {
+                    return getType().getTabProviders();
+                }
+            };
+        }
+
+        protected abstract TYPE getType();
+        protected abstract HttpView getTabView() throws Exception;
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return getType().appendNavTrail(this, root, getContainer(), getUser());
+        }
+    }
+
+
+    /**
+     * Base action class for management actions that display a view and handle a post.
+     */
+    private static abstract class ManagementViewPostAction<FORM> extends FormViewAction<FORM> implements ManagementAction
+    {
+        @Override
+        public ModelAndView getView(FORM form, boolean reshow, BindException errors) throws Exception
+        {
+            return new ManagementTabStrip(getContainer(), (String)getViewContext().get("tabId"), errors)
+            {
+                @Override
+                public HttpView getTabView(String tabId) throws Exception
+                {
+                    return ManagementViewPostAction.this.getTabView(form, reshow, errors);
+                }
+
+                @Override
+                protected List<TabProvider> getTabProviders()
+                {
+                    return getType().getTabProviders();
+                }
+            };
+        }
+
+        @Override
+        public ModelAndView handleRequest(FORM form, BindException errors) throws Exception
+        {
+            getType().validateContainer(getContainer());
+
+            return super.handleRequest(form, errors);
+        }
+
+        @Override
+        public URLHelper getSuccessURL(FORM form)
+        {
+            return null;
+        }
+
+        protected abstract TYPE getType();
+
+        // TODO: Make this abstract, once every subclass overrides this method
+        protected HttpView getTabView(FORM form, boolean reshow, BindException errors) throws Exception
+        {
+            return getTabView(form, errors);
+        }
+
+        @Deprecated // Remove this in favor of the "reshow" variant above...
+        protected HttpView getTabView(FORM form, BindException errors) throws Exception
+        {
+            return null;
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return getType().appendNavTrail(this, root, getContainer(), getUser());
+        }
     }
 
 
     /**
      * Base action class for folder management actions that only need to display a view (no post handling).
      */
-    public static abstract class FolderManagementViewAction extends SimpleViewAction<Void> implements FolderManagementAction
+    public static abstract class FolderManagementViewAction extends ManagementViewAction
     {
         @Override
-        public ModelAndView getView(Void form, BindException errors)
+        final protected TYPE getType()
         {
-            return new FolderManagementTabStrip(getContainer(), (String)getViewContext().get("tabId"), errors)
-            {
-                @Override
-                public HttpView getTabView(String tabId) throws Exception
-                {
-                    return FolderManagementViewAction.this.getTabView();
-                }
-            };
+            return TYPE.FolderManagement;
         }
+    }
 
-        protected abstract HttpView getTabView() throws Exception;
 
+    /**
+     * Base action class for project settings actions that only need to display a view (no post handling).
+     */
+    public static abstract class ProjectSettingsViewAction extends ManagementViewAction
+    {
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        final protected TYPE getType()
         {
-            return folderManagementNavTrail(root, getContainer(), getUser());
+            return TYPE.ProjectSettings;
         }
     }
 
@@ -128,33 +297,27 @@ public class FolderManagement
      *
      * @param <FORM> Bean form used by your post handler
      */
-    public static abstract class FolderManagementViewPostAction<FORM> extends FormViewAction<FORM> implements FolderManagementAction
+    public static abstract class FolderManagementViewPostAction<FORM> extends ManagementViewPostAction<FORM>
     {
         @Override
-        public ModelAndView getView(FORM form, boolean reshow, BindException errors) throws Exception
+        final protected TYPE getType()
         {
-            return new FolderManagementTabStrip(getContainer(), (String)getViewContext().get("tabId"), errors)
-            {
-                @Override
-                public HttpView getTabView(String tabId) throws Exception
-                {
-                    return FolderManagementViewPostAction.this.getTabView(form, errors);
-                }
-            };
+            return TYPE.FolderManagement;
         }
+    }
 
+
+    /**
+     * Base action class for project settings actions that display a view and handle a post.
+     *
+     * @param <FORM> Bean form used by your post handler
+     */
+    public static abstract class ProjectSettingsViewPostAction<FORM> extends ManagementViewPostAction<FORM>
+    {
         @Override
-        public URLHelper getSuccessURL(FORM form)
+        final protected TYPE getType()
         {
-            return null;
-        }
-
-        protected abstract HttpView getTabView(FORM form, BindException errors) throws Exception;
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return folderManagementNavTrail(root, getContainer(), getUser());
+            return TYPE.ProjectSettings;
         }
     }
 
@@ -179,9 +342,9 @@ public class FolderManagement
         private final String _text;
         private final String _id;
         private final Predicate<Container> _filter;
-        private final Class<? extends FolderManagementAction> _actionClass;
+        private final Class<? extends ManagementAction> _actionClass;
 
-        private TabProvider(String text, String id, Predicate<Container> filter, Class<? extends FolderManagementAction> actionClass)
+        private TabProvider(String text, String id, Predicate<Container> filter, Class<? extends ManagementAction> actionClass)
         {
             _text = text;
             _id = id;

@@ -314,9 +314,20 @@ public class ExceptionUtil
                 if (null != errorCode)
                     message += " and logged to mothership with error code: " + errorCode;
                 LOG.error(message, ex);
-                if (extraInfo != null)
+                String decorations = getExtendedMessage(ex);
+
+                if ((extraInfo != null) || (!decorations.isEmpty()))
                 {
-                    LOG.error("Additional exception info:\n" + extraInfo);
+                    String logMessage = "Additional exception info:";
+                    if (extraInfo != null)
+                    {
+                        logMessage += "\n" + extraInfo;
+                    }
+                    if (!decorations.isEmpty())
+                    {
+                        logMessage += "\n" + decorations;
+                    }
+                    LOG.error(logMessage);
                 }
             }
         }
