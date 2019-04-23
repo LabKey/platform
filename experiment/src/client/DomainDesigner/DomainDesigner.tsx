@@ -81,12 +81,8 @@ export class App extends React.PureComponent<any, IDomainDesignerState> {
     };
 
     onCancel = () => {
-        if (this.state.returnUrl) {
-            location.href = this.state.returnUrl;
-        }
-        else {
-            location.reload();
-        }
+        const { returnUrl } = this.state;
+        window.location.href = returnUrl || ActionURL.buildURL('project', 'begin');
     };
 
     render() {
@@ -99,16 +95,16 @@ export class App extends React.PureComponent<any, IDomainDesignerState> {
 
         return (
             <>
-                <Row>
+                { domain && <Row>
                     <Col xs={12}>
-                        {domain && <ButtonToolbar>
+                        <ButtonToolbar>
                             <Button type='button' className={'domain-designer-button'} bsClass='btn' onClick={this.onCancel}>Cancel</Button>
                             <Button type='button' className={'domain-designer-button'} bsClass='btn btn-success' onClick={this.submitHandler} >Save Changes</Button>
-                        </ButtonToolbar>}
+                        </ButtonToolbar>
                     </Col>
-                </Row>
+                </Row>}
                 { message && <Alert bsStyle={messageType} onDismiss={this.dismissAlert}>{message}</Alert> }
-                <DomainForm domain={domain} onChange={this.onChangeHandler}/>
+                { domain && <DomainForm domain={domain} onChange={this.onChangeHandler}/>}
             </>
         )
     }
