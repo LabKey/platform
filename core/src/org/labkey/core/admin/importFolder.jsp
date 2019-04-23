@@ -239,7 +239,7 @@
 %>
 <script type="text/javascript">
     Ext4.onReady(function()  {
-        // note: client dependencies declared in FolderManagementTabStrip
+        // note: client dependencies declared in ManagementTabStrip
         var templateFolders = [];
         var sourceRadioGroup = Ext4.create('Ext.form.RadioGroup', {
             width: 300,

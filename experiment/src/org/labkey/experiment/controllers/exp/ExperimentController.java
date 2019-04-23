@@ -602,7 +602,7 @@ public class ExperimentController extends SpringActionController
             };
             queryView.setTitle("Sample Set Contents");
 
-            DetailsView detailsView = new DetailsView(getMaterialSourceRegion(getViewContext(), true), _source.getRowId());
+            DetailsView detailsView = new DetailsView(getMaterialSourceRegion(getViewContext()), _source.getRowId());
             detailsView.getDataRegion().getDisplayColumn("Name").setURL(null);
             detailsView.getDataRegion().getDisplayColumn("LSID").setVisible(false);
             detailsView.getDataRegion().getDisplayColumn("MaterialLSIDPrefix").setVisible(false);
@@ -659,7 +659,7 @@ public class ExperimentController extends SpringActionController
                 if (editURL != null)
                 {
                     editURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
-                    ActionButton editTypeButton = new ActionButton(editURL, "Edit Fields", DataRegion.MODE_DETAILS);
+                    ActionButton editTypeButton = new ActionButton(editURL, "Edit Fields");
                     editTypeButton.setDisplayPermission(UpdatePermission.class);
                     detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(editTypeButton);
                 }
@@ -669,11 +669,11 @@ public class ExperimentController extends SpringActionController
                     ActionURL updateURL = new ActionURL(ShowUpdateMaterialSourceAction.class, _source.getContainer());
                     updateURL.addParameter("RowId", _source.getRowId());
                     updateURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
-                    ActionButton updateButton = new ActionButton(updateURL, "Edit Set", DataRegion.MODE_DETAILS, ActionButton.Action.LINK);
+                    ActionButton updateButton = new ActionButton(updateURL, "Edit Set", ActionButton.Action.LINK);
                     updateButton.setDisplayPermission(UpdatePermission.class);
                     detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(updateButton);
 
-                    ActionButton deleteButton = new ActionButton(ExperimentController.DeleteMaterialSourceAction.class, "Delete Set", DataRegion.MODE_DETAILS, ActionButton.Action.POST);
+                    ActionButton deleteButton = new ActionButton(ExperimentController.DeleteMaterialSourceAction.class, "Delete Set", ActionButton.Action.POST);
                     deleteButton.setDisplayPermission(DeletePermission.class);
                     ActionURL deleteURL = new ActionURL(ExperimentController.DeleteMaterialSourceAction.class, _source.getContainer());
                     deleteURL.addParameter("singleObjectRowId", _source.getRowId());
@@ -695,7 +695,7 @@ public class ExperimentController extends SpringActionController
                     {
                         importURL = importURL.clone();
                         importURL.replaceParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
-                        ActionButton uploadButton = new ActionButton(importURL, "Import More Samples", DataRegion.MODE_ALL, ActionButton.Action.LINK);
+                        ActionButton uploadButton = new ActionButton(importURL, "Import More Samples", ActionButton.Action.LINK);
                         uploadButton.setDisplayPermission(UpdatePermission.class);
                         detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(uploadButton);
 
@@ -2421,7 +2421,6 @@ public class ExperimentController extends SpringActionController
             dr.addDisplayColumn(new ProtocolDisplayColumn(protocol));
             dr.addDisplayColumn(new LineageGraphDisplayColumn(_app, _run));
             detailsView.setTitle("Protocol Application");
-            dr.setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
 
             Container c = getContainer();
             ApplicationOutputGrid outMGrid = new ApplicationOutputGrid(c, _app.getRowId(), ExperimentServiceImpl.get().getTinfoMaterial());
@@ -3279,10 +3278,10 @@ public class ExperimentController extends SpringActionController
                 throw new RedirectException(url);
             }
 
-            UpdateView updateView = new UpdateView(getMaterialSourceRegion(getViewContext(), false), form, errors);
+            UpdateView updateView = new UpdateView(getMaterialSourceRegion(getViewContext()), form, errors);
             if (form.getReturnUrl() != null)
             {
-                updateView.getDataRegion().addHiddenFormField(ActionURL.Param.returnUrl, form.getReturnUrl().toString());
+                updateView.getDataRegion().addHiddenFormField(ActionURL.Param.returnUrl, form.getReturnUrl());
             }
             return updateView;
         }
@@ -3295,7 +3294,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    private DataRegion getMaterialSourceRegion(ViewContext model, boolean detailsView)
+    private DataRegion getMaterialSourceRegion(ViewContext model)
     {
         TableInfo tableInfo = ExperimentServiceImpl.get().getTinfoMaterialSource();
 
@@ -3320,7 +3319,7 @@ public class ExperimentController extends SpringActionController
 
         ButtonBar bb = new ButtonBar();
 
-        SampleSetWebPart.populateButtonBar(model, bb, detailsView);
+        bb.add(new ActionButton(new ActionURL(ExperimentController.UpdateMaterialSourceAction.class, model.getContainer()), "Submit"));
 
         dr.setButtonBar(bb);
         bb.setStyle(ButtonBar.Style.separateButtons);
@@ -3334,7 +3333,7 @@ public class ExperimentController extends SpringActionController
     {
         public ModelAndView getView(MaterialSourceForm form, BindException errors)
         {
-            return new InsertView(getMaterialSourceRegion(getViewContext(), false), form, errors);
+            return new InsertView(getMaterialSourceRegion(getViewContext()), form, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)

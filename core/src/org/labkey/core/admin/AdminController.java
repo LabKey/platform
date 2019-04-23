@@ -68,8 +68,10 @@ import org.labkey.api.admin.StaticLoggerGetter;
 import org.labkey.api.admin.TableXmlUtils;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
+import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.LookAndFeelResourceAttachmentParent;
+import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.provider.ContainerAuditProvider;
@@ -140,6 +142,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConceptURIProperties;
+import org.labkey.api.settings.DateParsingMode;
 import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.NetworkDriveProps;
@@ -155,6 +158,9 @@ import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.*;
 import org.labkey.api.view.FolderManagement.FolderManagementViewAction;
 import org.labkey.api.view.FolderManagement.FolderManagementViewPostAction;
+import org.labkey.api.view.FolderManagement.ProjectSettingsViewAction;
+import org.labkey.api.view.FolderManagement.ProjectSettingsViewPostAction;
+import org.labkey.api.view.FolderManagement.TYPE;
 import org.labkey.api.view.template.EmptyView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PageConfig.Template;
@@ -164,7 +170,6 @@ import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.api.writer.ZipUtil;
 import org.labkey.core.CoreModule;
-import org.labkey.core.admin.ProjectSettingsAction.LookAndFeelView;
 import org.labkey.core.admin.miniprofiler.MiniProfilerController;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.portal.ProjectController;
@@ -179,6 +184,7 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.mail.MessagingException;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.beans.Introspector;
@@ -234,6 +240,8 @@ import static org.labkey.api.view.FolderManagement.EVERY_CONTAINER;
 import static org.labkey.api.view.FolderManagement.FOLDERS_AND_PROJECTS;
 import static org.labkey.api.view.FolderManagement.FOLDERS_ONLY;
 import static org.labkey.api.view.FolderManagement.NOT_ROOT;
+import static org.labkey.api.view.FolderManagement.PROJECTS_ONLY;
+import static org.labkey.api.view.FolderManagement.ROOT_AND_PROJECTS;
 import static org.labkey.api.view.FolderManagement.addTab;
 
 /**
@@ -245,8 +253,7 @@ public class AdminController extends SpringActionController
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(
         AdminController.class,
         FilesSiteSettingsAction.class,
-        FileListAction.class,
-        ProjectSettingsAction.class
+        FileListAction.class
     );
 
     private static final Logger LOG = Logger.getLogger(AdminController.class);
@@ -310,12 +317,12 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Diagnostics, "view primary site log file", new ActionURL(ShowPrimaryLogAction.class, root));
     }
 
-    public static void registerFolderManagementTabs()
+    public static void registerManagementTabs()
     {
-        addTab("Folder Tree", "folderTree", NOT_ROOT, ManageFoldersAction.class);
-        addTab("Folder Type", "folderType", NOT_ROOT, FolderTypeAction.class);
-        addTab("Missing Values", "mvIndicators", EVERY_CONTAINER, MissingValuesAction.class);
-        addTab("Module Properties", "props", c -> {
+        addTab(TYPE.FolderManagement,"Folder Tree", "folderTree", NOT_ROOT, ManageFoldersAction.class);
+        addTab(TYPE.FolderManagement,"Folder Type", "folderType", NOT_ROOT, FolderTypeAction.class);
+        addTab(TYPE.FolderManagement,"Missing Values", "mvIndicators", EVERY_CONTAINER, MissingValuesAction.class);
+        addTab(TYPE.FolderManagement,"Module Properties", "props", c -> {
             if (!c.isRoot())
             {
                 // Show module properties tab only if a module w/ properties to set is present for current folder
@@ -326,17 +333,22 @@ public class AdminController extends SpringActionController
 
             return false;
         }, ModulePropertiesAction.class);
-        addTab("Concepts", "concepts", c -> {
+        addTab(TYPE.FolderManagement,"Concepts", "concepts", c -> {
             // Show Concepts tab only if the experiment module is enabled in this container
             return c.getActiveModules().contains(ModuleLoader.getInstance().getModule("Experiment"));
         }, AdminController.ConceptsAction.class);
-        addTab("Notifications", "messages", NOT_ROOT, NotificationsAction.class);
-        addTab("Export", "export", NOT_ROOT, ExportFolderAction.class);
-        addTab("Import", "import", NOT_ROOT, ImportFolderAction.class);
-        addTab("Files", "files", FOLDERS_AND_PROJECTS, FileRootsAction.class);
-        addTab("Formats", "settings", FOLDERS_ONLY, FolderSettingsAction.class);
-        addTab("Information", "info", NOT_ROOT, FolderInformationAction.class);
-        addTab("R Config", "rConfig", EVERY_CONTAINER, RConfigurationAction.class);
+        addTab(TYPE.FolderManagement,"Notifications", "messages", NOT_ROOT, NotificationsAction.class);
+        addTab(TYPE.FolderManagement,"Export", "export", NOT_ROOT, ExportFolderAction.class);
+        addTab(TYPE.FolderManagement,"Import", "import", NOT_ROOT, ImportFolderAction.class);
+        addTab(TYPE.FolderManagement,"Files", "files", FOLDERS_AND_PROJECTS, FileRootsAction.class);
+        addTab(TYPE.FolderManagement,"Formats", "settings", FOLDERS_ONLY, FolderSettingsAction.class);
+        addTab(TYPE.FolderManagement,"Information", "info", NOT_ROOT, FolderInformationAction.class);
+        addTab(TYPE.FolderManagement,"R Config", "rConfig", EVERY_CONTAINER, RConfigurationAction.class);
+
+        addTab(TYPE.ProjectSettings, "Properties", "properties", ROOT_AND_PROJECTS, ProjectSettingsAction.class);
+        addTab(TYPE.ProjectSettings, "Resources", "resources", ROOT_AND_PROJECTS, ResourcesAction.class);
+        addTab(TYPE.ProjectSettings, "Menu Bar", "menubar", PROJECTS_ONLY, MenuBarAction.class);
+        addTab(TYPE.ProjectSettings, "Files", "files", PROJECTS_ONLY, FilesAction.class);
     }
 
     public AdminController()
@@ -353,12 +365,12 @@ public class AdminController extends SpringActionController
         }
     }
 
-    public NavTree appendAdminNavTrail(NavTree root, String childTitle, Class<? extends Controller> action)
+    private NavTree appendAdminNavTrail(NavTree root, String childTitle, Class<? extends Controller> action)
     {
         return appendAdminNavTrail(root, childTitle, action, getContainer());
     }
 
-    public static NavTree appendAdminNavTrail(NavTree root, String childTitle, Class<? extends Controller> action, Container container)
+    private static NavTree appendAdminNavTrail(NavTree root, String childTitle, Class<? extends Controller> action, Container container)
     {
         if (container.isRoot())
             root.addChild("Admin Console", getShowAdminURL());
@@ -462,9 +474,9 @@ public class AdminController extends SpringActionController
             return new ActionURL(ProjectSettingsAction.class, LookAndFeelProperties.getSettingsContainer(c));
         }
 
-        public ActionURL getLookAndFeelResourcesURL(Container c)
+        ActionURL getLookAndFeelResourcesURL(Container c)
         {
-            ActionURL url = getProjectSettingsURL(c);
+            ActionURL url = new ActionURL(ResourcesAction.class, LookAndFeelProperties.getSettingsContainer(c));
             url.addParameter("tabId", "resources");
             return url;
         }
@@ -472,7 +484,7 @@ public class AdminController extends SpringActionController
         @Override
         public ActionURL getProjectSettingsMenuURL(Container c)
         {
-            ActionURL url = getProjectSettingsURL(c);
+            ActionURL url = new ActionURL(MenuBarAction.class, LookAndFeelProperties.getSettingsContainer(c));
             url.addParameter("tabId", "menubar");
             return url;
         }
@@ -480,7 +492,7 @@ public class AdminController extends SpringActionController
         @Override
         public ActionURL getProjectSettingsFileURL(Container c)
         {
-            ActionURL url = getProjectSettingsURL(c);
+            ActionURL url = new ActionURL(FilesAction.class, LookAndFeelProperties.getSettingsContainer(c));
             url.addParameter("tabId", "files");
             return url;
         }
@@ -1577,7 +1589,34 @@ public class AdminController extends SpringActionController
         void setRestrictedColumnsEnabled(boolean restrictedColumnsEnabled);
     }
 
-    public static class ProjectSettingsForm extends SetupForm implements FileManagementForm, SettingsForm
+    public enum MigrateFilesOption
+    {
+        leave {
+            @Override
+            public String description()
+            {
+                return "Source files not copied or moved";
+            }
+        },
+        copy {
+            @Override
+            public String description()
+            {
+                return "Copy source files to destination";
+            }
+        },
+        move {
+            @Override
+            public String description()
+            {
+                return "Move source files to destination";
+            }
+        };
+
+        public abstract String description();
+    }
+
+    public static class ProjectSettingsForm implements SettingsForm
     {
         private boolean _shouldInherit; // new subfolders should inherit parent permissions
         private String _systemDescription;
@@ -1591,11 +1630,7 @@ public class AdminController extends SpringActionController
         private String _companyName;
         private String _systemEmailAddress;
         private String _reportAProblemPath;
-        private String _tabId;
-        private String _folderRootPath;
-        private String _fileRootOption;
         private String _supportEmail;
-        private String[] _enabledCloudStore;
         private String _dateParsingMode;
         private String _defaultDateFormat;
         private String _defaultDateTimeFormat;
@@ -1603,45 +1638,6 @@ public class AdminController extends SpringActionController
         private boolean _restrictedColumnsEnabled;
         private String _customLogin;
         private String _customWelcome;
-        private String _cloudRootName;
-        private boolean _fileRootChanged;
-        private boolean _enabledCloudStoresChanged;
-        private String _migrateFilesOption;
-
-        public enum FileRootProp
-        {
-            disable,
-            siteDefault,
-            folderOverride,
-            cloudRoot
-        }
-
-        public enum MigrateFilesOption
-        {
-            leave {
-                @Override
-                public String description()
-                {
-                    return "Source files not copied or moved";
-                }
-            },
-            copy {
-                @Override
-                public String description()
-                {
-                    return "Copy source files to destination";
-                }
-            },
-            move {
-                @Override
-                public String description()
-                {
-                    return "Move source files to destination";
-                }
-            };
-
-            public abstract String description();
-        }
 
         public boolean getShouldInherit()
         {
@@ -1808,62 +1804,6 @@ public class AdminController extends SpringActionController
             _systemEmailAddress = systemEmailAddress;
         }
 
-        public String getTabId()
-        {
-            return _tabId;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setTabId(String tabId)
-        {
-            _tabId = tabId;
-        }
-
-        public boolean isResourcesTab()
-        {
-            return "resources".equals(getTabId());
-        }
-
-        public boolean isMenuTab()
-        {
-            return "menubar".equals(getTabId());
-        }
-
-        public boolean isFilesTab()
-        {
-            return "files".equals(getTabId());
-        }
-
-        public boolean isDisableFileSharing()
-        {
-            return FileRootProp.disable.name().equals(getFileRootOption());
-        }
-
-        public boolean hasSiteDefaultRoot()
-        {
-            return FileRootProp.siteDefault.name().equals(getFileRootOption());
-        }
-
-        public String getFolderRootPath()
-        {
-            return _folderRootPath;
-        }
-
-        public void setFolderRootPath(String folderRootPath)
-        {
-            _folderRootPath = folderRootPath;
-        }
-
-        public String getFileRootOption()
-        {
-            return _fileRootOption;
-        }
-
-        public void setFileRootOption(String fileRootOption)
-        {
-            _fileRootOption = fileRootOption;
-        }
-
         @SuppressWarnings({"UnusedDeclaration"})
         public void setSupportEmail(String supportEmail)
         {
@@ -1873,18 +1813,6 @@ public class AdminController extends SpringActionController
         public String getSupportEmail()
         {
             return _supportEmail;
-        }
-
-        @Override
-        public String[] getEnabledCloudStore()
-        {
-            return _enabledCloudStore;
-        }
-
-        @Override
-        public void setEnabledCloudStore(String[] enabledCloudStore)
-        {
-            _enabledCloudStore = enabledCloudStore;
         }
 
         @Override
@@ -1935,22 +1863,25 @@ public class AdminController extends SpringActionController
         {
             _restrictedColumnsEnabled = restrictedColumnsEnabled;
         }
+    }
 
-        public boolean isCloudFileRoot()
-        {
-            return FileRootProp.cloudRoot.name().equals(getFileRootOption());
-        }
+    public enum FileRootProp
+    {
+        disable,
+        siteDefault,
+        folderOverride,
+        cloudRoot
+    }
 
-        @Nullable
-        public String getCloudRootName()
-        {
-            return _cloudRootName;
-        }
-
-        public void setCloudRootName(String cloudRootName)
-        {
-            _cloudRootName = cloudRootName;
-        }
+    public static class FilesForm extends SetupForm implements FileManagementForm
+    {
+        private boolean _fileRootChanged;
+        private boolean _enabledCloudStoresChanged;
+        private String _cloudRootName;
+        private String _migrateFilesOption;
+        private String[] _enabledCloudStore;
+        private String _fileRootOption;
+        private String _folderRootPath;
 
         public boolean isFileRootChanged()
         {
@@ -1971,6 +1902,43 @@ public class AdminController extends SpringActionController
         {
             _enabledCloudStoresChanged = enabledCloudStoresChanged;
         }
+        public boolean isDisableFileSharing()
+        {
+            return FileRootProp.disable.name().equals(getFileRootOption());
+        }
+
+        public boolean hasSiteDefaultRoot()
+        {
+            return FileRootProp.siteDefault.name().equals(getFileRootOption());
+        }
+
+        @Override
+        public String[] getEnabledCloudStore()
+        {
+            return _enabledCloudStore;
+        }
+
+        @Override
+        public void setEnabledCloudStore(String[] enabledCloudStore)
+        {
+            _enabledCloudStore = enabledCloudStore;
+        }
+
+        public boolean isCloudFileRoot()
+        {
+            return FileRootProp.cloudRoot.name().equals(getFileRootOption());
+        }
+
+        @Nullable
+        public String getCloudRootName()
+        {
+            return _cloudRootName;
+        }
+
+        public void setCloudRootName(String cloudRootName)
+        {
+            _cloudRootName = cloudRootName;
+        }
 
         public String getMigrateFilesOption()
         {
@@ -1980,6 +1948,26 @@ public class AdminController extends SpringActionController
         public void setMigrateFilesOption(String migrateFilesOption)
         {
             _migrateFilesOption = migrateFilesOption;
+        }
+
+        public String getFolderRootPath()
+        {
+            return _folderRootPath;
+        }
+
+        public void setFolderRootPath(String folderRootPath)
+        {
+            _folderRootPath = folderRootPath;
+        }
+
+        public String getFileRootOption()
+        {
+            return _fileRootOption;
+        }
+
+        public void setFileRootOption(String fileRootOption)
+        {
+            _fileRootOption = fileRootOption;
         }
     }
 
@@ -4042,7 +4030,7 @@ public class AdminController extends SpringActionController
     public class MissingValuesAction extends FolderManagementViewPostAction<MissingValuesForm>
     {
         @Override
-        protected HttpView getTabView(MissingValuesForm form, BindException errors)
+        protected HttpView getTabView(MissingValuesForm form, boolean reshow, BindException errors)
         {
             return new JspView<>("/org/labkey/core/admin/mvIndicators.jsp", form, errors);
         }
@@ -4110,7 +4098,7 @@ public class AdminController extends SpringActionController
     public class RConfigurationAction extends FolderManagementViewPostAction<RConfigForm>
     {
         @Override
-        protected HttpView getTabView(RConfigForm form, BindException errors) throws Exception
+        protected HttpView getTabView(RConfigForm form, boolean reshow, BindException errors)
         {
             return new JspView<>("/org/labkey/core/admin/rConfiguration.jsp", form, errors);
         }
@@ -4291,7 +4279,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        protected HttpView getTabView(ExportFolderForm form, BindException errors)
+        protected HttpView getTabView(ExportFolderForm form, boolean reshow, BindException errors)
         {
             form.setExportType(PageFlowUtil.filter(getViewContext().getActionURL().getParameter("exportType")));
 
@@ -4479,7 +4467,7 @@ public class AdminController extends SpringActionController
         private ActionURL _successURL;
 
         @Override
-        protected HttpView getTabView(ImportFolderForm form, BindException errors)
+        protected HttpView getTabView(ImportFolderForm form, boolean reshow, BindException errors)
         {
             // default the createSharedDatasets and validateQueries to true if this is not a form error reshow
             if (!errors.hasErrors())
@@ -4764,9 +4752,9 @@ public class AdminController extends SpringActionController
     public class FolderSettingsAction extends FolderManagementViewPostAction<FolderSettingsForm>
     {
         @Override
-        protected HttpView getTabView(FolderSettingsForm form, BindException errors)
+        protected HttpView getTabView(FolderSettingsForm form, boolean reshow, BindException errors)
         {
-            return new LookAndFeelView(getContainer(), errors);
+            return new LookAndFeelView(errors);
         }
 
         @Override
@@ -4780,7 +4768,7 @@ public class AdminController extends SpringActionController
             Container c = getContainer();
             WriteableFolderLookAndFeelProperties props = LookAndFeelProperties.getWriteableFolderInstance(c);
 
-            return ProjectSettingsAction.saveFolderSettings(c, form, props, getUser(), errors);
+            return saveFolderSettings(c, form, props, getUser(), errors);
         }
     }
 
@@ -4852,7 +4840,7 @@ public class AdminController extends SpringActionController
         private ActionURL _successURL = null;
 
         @Override
-        protected HttpView getTabView(FolderTypeForm form, BindException errors)
+        protected HttpView getTabView(FolderTypeForm form, boolean reshow, BindException errors)
         {
             return new JspView<>("/org/labkey/core/admin/folderType.jsp", form, errors);
         }
@@ -4983,17 +4971,17 @@ public class AdminController extends SpringActionController
 
         public boolean isDisableFileSharing()
         {
-            return ProjectSettingsForm.FileRootProp.disable.name().equals(getFileRootOption());
+            return FileRootProp.disable.name().equals(getFileRootOption());
         }
 
         public boolean hasSiteDefaultRoot()
         {
-            return ProjectSettingsForm.FileRootProp.siteDefault.name().equals(getFileRootOption());
+            return FileRootProp.siteDefault.name().equals(getFileRootOption());
         }
 
         public boolean isCloudFileRoot()
         {
-            return ProjectSettingsForm.FileRootProp.cloudRoot.name().equals(getFileRootOption());
+            return FileRootProp.cloudRoot.name().equals(getFileRootOption());
         }
 
         @Nullable
@@ -5099,7 +5087,7 @@ public class AdminController extends SpringActionController
     public class FileRootsAction extends FolderManagementViewPostAction<FileRootsForm>
     {
         @Override
-        protected HttpView getTabView(FileRootsForm form, BindException errors)
+        protected HttpView getTabView(FileRootsForm form, boolean reshow, BindException errors)
         {
             return getFileRootsView(form, errors, getReshow());
         }
@@ -5202,9 +5190,9 @@ public class AdminController extends SpringActionController
         {
             // If we need to copy/move files based on the FileRoot change, we need to check children that use the default and move them, too.
             // And we need to capture the source roots for each of those, because changing this parent file root changes the child source roots.
-            ProjectSettingsForm.MigrateFilesOption migrateFilesOption = ProjectSettingsForm.MigrateFilesOption.valueOf(form.getMigrateFilesOption());
+            MigrateFilesOption migrateFilesOption = MigrateFilesOption.valueOf(form.getMigrateFilesOption());
             List<Pair<Container, String>> sourceInfos =
-                    ((ProjectSettingsForm.MigrateFilesOption.leave.equals(migrateFilesOption) && !form.isFolderSetup()) || form.isDisableFileSharing()) ?
+                    ((MigrateFilesOption.leave.equals(migrateFilesOption) && !form.isFolderSetup()) || form.isDisableFileSharing()) ?
                             Collections.emptyList() :
                             getCopySourceInfo(service, ctx.getContainer());
 
@@ -5296,7 +5284,7 @@ public class AdminController extends SpringActionController
 
             if (!errors.hasErrors())
             {
-                if (changed && shouldCopyMove && !ProjectSettingsForm.MigrateFilesOption.leave.equals(migrateFilesOption))
+                if (changed && shouldCopyMove && !MigrateFilesOption.leave.equals(migrateFilesOption))
                 {
                     // Make sure we have pipeRoot before starting jobs, even though each subfolder needs to get its own
                     PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(ctx.getContainer());
@@ -5359,7 +5347,7 @@ public class AdminController extends SpringActionController
     }
 
     private static void initiateCopyFilesPipelineJobs(ViewContext ctx, @NotNull List<Pair<Container, String>> sourceInfos, PipeRoot pipeRoot,
-                                                      ProjectSettingsForm.MigrateFilesOption migrateFilesOption) throws PipelineValidationException
+                                                      MigrateFilesOption migrateFilesOption) throws PipelineValidationException
     {
         CopyFileRootPipelineJob job = new CopyFileRootPipelineJob(ctx.getContainer(), ctx.getUser(), sourceInfos, pipeRoot, migrateFilesOption);
         PipelineService.get().queueJob(job);
@@ -5367,7 +5355,7 @@ public class AdminController extends SpringActionController
 
     private static void throwIfUnauthorizedFileRootChange(ViewContext ctx, FileContentService service, FileManagementForm form)
     {
-        // test permissions.  only site admins are able to turn on a custom file root for a folder
+        // test permissions. only site admins are able to turn on a custom file root for a folder
         // this is only relevant if the folder is either being switched to a custom file root,
         // or if the file root is changed.
         if (!service.isUseDefaultRoot(ctx.getContainer()))
@@ -5444,14 +5432,14 @@ public class AdminController extends SpringActionController
         String migrateFilesMessage = "";
         if (fileRootChanged && !form.isFolderSetup())
         {
-            if (ProjectSettingsForm.MigrateFilesOption.leave.name().equals(migrateFilesOption))
+            if (MigrateFilesOption.leave.name().equals(migrateFilesOption))
                 migrateFilesMessage = ". Existing files not copied or moved.";
-            else if (ProjectSettingsForm.MigrateFilesOption.copy.name().equals(migrateFilesOption))
+            else if (MigrateFilesOption.copy.name().equals(migrateFilesOption))
             {
                 migrateFilesMessage = ". Existing files copied.";
                 form.setMigrateFilesOption(migrateFilesOption);
             }
-            else if (ProjectSettingsForm.MigrateFilesOption.move.name().equals(migrateFilesOption))
+            else if (MigrateFilesOption.move.name().equals(migrateFilesOption))
             {
                 migrateFilesMessage = ". Existing files moved.";
                 form.setMigrateFilesOption(migrateFilesOption);
@@ -5462,13 +5450,13 @@ public class AdminController extends SpringActionController
         {
             if (service.isFileRootDisabled(container))
             {
-                form.setFileRootOption(ProjectSettingsForm.FileRootProp.disable.name());
+                form.setFileRootOption(FileRootProp.disable.name());
                 if (fileRootChanged)
                     confirmMessage = "File sharing has been disabled for this " + container.getContainerNoun();
             }
             else if (service.isUseDefaultRoot(container))
             {
-                form.setFileRootOption(ProjectSettingsForm.FileRootProp.siteDefault.name());
+                form.setFileRootOption(FileRootProp.siteDefault.name());
                 Path root = service.getFileRootPath(container);
                 if (root != null && Files.exists(root) && fileRootChanged)
                     confirmMessage = "The file root is set to a default of: " + FileUtil.getAbsolutePath(container, root) + migrateFilesMessage;
@@ -5477,7 +5465,7 @@ public class AdminController extends SpringActionController
             {
                 Path root = service.getFileRootPath(container);
 
-                form.setFileRootOption(ProjectSettingsForm.FileRootProp.folderOverride.name());
+                form.setFileRootOption(FileRootProp.folderOverride.name());
                 if (root != null)
                 {
                     String absolutePath = FileUtil.getAbsolutePath(container, root);
@@ -5491,7 +5479,7 @@ public class AdminController extends SpringActionController
             }
             else
             {
-                form.setFileRootOption(ProjectSettingsForm.FileRootProp.cloudRoot.name());
+                form.setFileRootOption(FileRootProp.cloudRoot.name());
                 form.setCloudRootName(service.getCloudRootName(container));
                 Path root = service.getFileRootPath(container);
                 if (root != null && fileRootChanged)
@@ -5541,7 +5529,7 @@ public class AdminController extends SpringActionController
     public class NotificationsAction extends FolderManagementViewPostAction<NotificationsForm>
     {
         @Override
-        protected HttpView getTabView(NotificationsForm form, BindException errors)
+        protected HttpView getTabView(NotificationsForm form, boolean reshow, BindException errors)
         {
             final String key = DataRegionSelection.getSelectionKey("core", CoreQuerySchema.USERS_MSG_SETTINGS_TABLE_NAME, null, DATA_REGION_NAME);
             DataRegionSelection.clearAll(getViewContext(), key);
@@ -5772,7 +5760,7 @@ public class AdminController extends SpringActionController
     public class ConceptsAction extends FolderManagementViewPostAction<ConceptsForm>
     {
         @Override
-        protected HttpView getTabView(ConceptsForm form, BindException errors)
+        protected HttpView getTabView(ConceptsForm form, boolean reshow, BindException errors)
         {
             return new JspView<>("/org/labkey/core/admin/manageConcepts.jsp", form, errors);
         }
@@ -6357,7 +6345,7 @@ public class AdminController extends SpringActionController
             }
             else if (newParent.hasChild(c.getName()))
             {
-                errors.reject(ERROR_MSG, "Error: The selected folder already has a folder with that name.  Please select a different location (or Cancel).");
+                errors.reject(ERROR_MSG, "Error: The selected folder already has a folder with that name. Please select a different location (or Cancel).");
             }
         }
 
@@ -6775,15 +6763,15 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class SetInitialFolderSettingsAction extends FormViewAction<ProjectSettingsForm>
+    public class SetInitialFolderSettingsAction extends FormViewAction<FilesForm>
     {
         private ActionURL _successURL;
 
-        public void validateCommand(ProjectSettingsForm target, Errors errors)
+        public void validateCommand(FilesForm target, Errors errors)
         {
         }
 
-        public ModelAndView getView(ProjectSettingsForm form, boolean reshow, BindException errors)
+        public ModelAndView getView(FilesForm form, boolean reshow, BindException errors)
         {
             VBox vbox = new VBox();
             Container c = getContainer();
@@ -6798,10 +6786,9 @@ public class AdminController extends SpringActionController
             getPageConfig().setTitle(noun + " Settings");
 
             return vbox;
-
         }
 
-        public boolean handlePost(ProjectSettingsForm form, BindException errors)
+        public boolean handlePost(FilesForm form, BindException errors)
         {
             Container c = getContainer();
             String folderRootPath = StringUtils.trimToNull(form.getFolderRootPath());
@@ -6844,7 +6831,7 @@ public class AdminController extends SpringActionController
             return true;
         }
 
-        public ActionURL getSuccessURL(ProjectSettingsForm form)
+        public ActionURL getSuccessURL(FilesForm form)
         {
             return _successURL;
         }
@@ -6860,11 +6847,9 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class DeleteFolderAction extends FormViewAction<ManageFoldersForm>
     {
-        private Container target;
-
         public void validateCommand(ManageFoldersForm form, Errors errors)
         {
-            target = getContainer();
+            Container target = getContainer();
 
             if (!ContainerManager.isDeletable(target))
                 errors.reject(ERROR_MSG, "The path " + target.getPath() + " is not deletable.");
@@ -9429,6 +9414,496 @@ public class AdminController extends SpringActionController
     }
 
 
+    @ActionNames("projectSettings, lookAndFeelSettings")
+    @RequiresPermission(AdminPermission.class)
+    public class ProjectSettingsAction extends ProjectSettingsViewPostAction<ProjectSettingsForm>
+    {
+        @Override
+        protected HttpView getTabView(ProjectSettingsForm form, boolean reshow, BindException errors)
+        {
+            return new LookAndFeelView(errors);
+        }
+
+        @Override
+        public void validateCommand(ProjectSettingsForm form, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(ProjectSettingsForm form, BindException errors) throws Exception
+        {
+            Container c = getContainer();
+            WriteableLookAndFeelProperties props = LookAndFeelProperties.getWriteableInstance(c);
+            boolean hasAdminOpsPerm = c.hasPermission(getUser(), AdminOperationsPermission.class);
+
+            try
+            {
+                if (form.getThemeName() == null)
+                {
+                    if (!c.isRoot())
+                        props.clearThemeName();
+                }
+                else
+                {
+                    props.setThemeName(form.getThemeName());
+                }
+            }
+            catch (IllegalArgumentException e)
+            {
+            }
+
+            if (form.getShouldInherit() != SecurityManager.shouldNewSubfoldersInheritPermissions(c))
+            {
+                SecurityManager.setNewSubfoldersInheritPermissions(c, getUser(), form.getShouldInherit());
+            }
+
+            // a few properties on this page should be restricted to operational permissions (i.e. site admin)
+            if (hasAdminOpsPerm)
+            {
+                try
+                {
+                    // this will throw an InvalidEmailException for invalid email addresses
+                    ValidEmail email = new ValidEmail(form.getSystemEmailAddress());
+                    props.setSystemEmailAddress(email);
+                }
+                catch (ValidEmail.InvalidEmailException e)
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, "Invalid System Email Address: ["
+                            + e.getBadEmail() + "]. Please enter a valid email address.");
+                    return false;
+                }
+
+                if (!props.isValidUrl(form.getCustomLogin()))
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, "Invalid login URL. Should be in the form <module>-<name>.");
+                    return false;
+                }
+                props.setCustomLogin(form.getCustomLogin());
+
+                String welcomeUrl = StringUtils.trimToNull(form.getCustomWelcome());
+                if ("/".equals(welcomeUrl) || AppProps.getInstance().getContextPath().equalsIgnoreCase(welcomeUrl))
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, "Invalid welcome URL. The url cannot equal '/' or the contextPath (" + AppProps.getInstance().getContextPath() + ")");
+                    return false;
+                }
+                props.setCustomWelcome(welcomeUrl);
+            }
+
+            props.setCompanyName(form.getCompanyName());
+            props.setSystemDescription(form.getSystemDescription());
+            props.setLogoHref(form.getLogoHref());
+            props.setSystemShortName(form.getSystemShortName());
+            props.setReportAProblemPath(form.getReportAProblemPath());
+
+            if (!isBlank(form.getSupportEmail()))
+            {
+                try
+                {
+                    // this will throw an InvalidEmailException for invalid email addresses
+                    ValidEmail email = new ValidEmail(form.getSupportEmail());
+                    props.setSupportEmail(email.toString());
+                }
+                catch (ValidEmail.InvalidEmailException e)
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, "Invalid Support Email Address: ["
+                            + e.getBadEmail() + "]. Please enter a valid email address.");
+                    return false;
+                }
+            }
+            else
+            {
+                props.setSupportEmail(null);
+            }
+
+            FolderDisplayMode folderDisplayMode = FolderDisplayMode.fromString(form.getFolderDisplayMode());
+            props.setFolderDisplayMode(folderDisplayMode);
+            props.setHelpMenuEnabled(form.isEnableHelpMenu());
+            props.setDiscussionEnabled(form.isEnableDiscussion());
+
+            DateParsingMode dateParsingMode = DateParsingMode.fromString(form.getDateParsingMode());
+            props.setDateParsingMode(dateParsingMode);
+
+            if (!saveFolderSettings(c, form, props, getUser(), errors))
+                return false;
+
+            // Bump the look & feel revision so browsers retrieve the new theme stylesheet
+            WriteableAppProps.incrementLookAndFeelRevisionAndSave();
+
+            return true;
+        }
+    }
+
+
+    @RequiresPermission(AdminPermission.class)
+    public class ResourcesAction extends ProjectSettingsViewPostAction
+    {
+        @Override
+        protected HttpView getTabView(Object o, boolean reshow, BindException errors)
+        {
+            LookAndFeelResourcesBean bean = new LookAndFeelResourcesBean(getContainer());
+            return new JspView<>("/org/labkey/core/admin/lookAndFeelResources.jsp", bean, errors);
+        }
+
+        @Override
+        public void validateCommand(Object target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors)
+        {
+            Container c = getContainer();
+            Map<String, MultipartFile> fileMap = getFileMap();
+
+            MultipartFile logoFile = fileMap.get("logoImage");
+            if (logoFile != null && !logoFile.isEmpty())
+            {
+                try
+                {
+                    handleLogoFile(logoFile, c);
+                }
+                catch (Exception e)
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                    return false;
+                }
+            }
+
+            MultipartFile iconFile = fileMap.get("iconImage");
+            if (logoFile != null && !iconFile.isEmpty())
+            {
+                try
+                {
+                    handleIconFile(iconFile, c);
+                }
+                catch (Exception e)
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                    return false;
+                }
+            }
+
+            MultipartFile customStylesheetFile = fileMap.get("customStylesheet");
+            if (customStylesheetFile != null && !customStylesheetFile.isEmpty())
+            {
+                try
+                {
+                    handleCustomStylesheetFile(customStylesheetFile, c);
+                }
+                catch (Exception e)
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                    return false;
+                }
+            }
+
+            // Note that audit logging happens via the attachment code, so we don't log separately here
+
+            // Bump the look & feel revision so browsers retrieve the new logo, custom stylesheet, etc.
+            WriteableAppProps.incrementLookAndFeelRevisionAndSave();
+
+            return true;
+        }
+
+        private void handleLogoFile(MultipartFile file, Container c) throws ServletException, IOException
+        {
+            User user = getUser();
+
+            // Set the name to something we'll recognize as a logo file
+            String uploadedFileName = file.getOriginalFilename();
+            int index = uploadedFileName.lastIndexOf(".");
+            if (index == -1)
+            {
+                throw new ServletException("No file extension on the uploaded image");
+            }
+
+            LookAndFeelResourceAttachmentParent parent = new LookAndFeelResourceAttachmentParent(c);
+            // Get rid of any existing logo
+            AdminController.deleteExistingLogo(c, user);
+
+            AttachmentFile renamed = new SpringAttachmentFile(file, AttachmentCache.LOGO_FILE_NAME_PREFIX + uploadedFileName.substring(index));
+            AttachmentService.get().addAttachments(parent, Collections.singletonList(renamed), user);
+            AttachmentCache.clearLogoCache();
+        }
+
+        private void handleIconFile(MultipartFile file, Container c) throws IOException, ServletException
+        {
+            User user = getUser();
+
+            if (!file.getOriginalFilename().toLowerCase().endsWith(".ico"))
+            {
+                throw new ServletException("FavIcon must be a .ico file");
+            }
+
+            AdminController.deleteExistingFavicon(c, user);
+
+            LookAndFeelResourceAttachmentParent parent = new LookAndFeelResourceAttachmentParent(c);
+            AttachmentFile renamed = new SpringAttachmentFile(file, AttachmentCache.FAVICON_FILE_NAME);
+            AttachmentService.get().addAttachments(parent, Collections.singletonList(renamed), user);
+            AttachmentCache.clearFavIconCache();
+        }
+
+        private void handleCustomStylesheetFile(MultipartFile file, Container c) throws IOException
+        {
+            User user = getUser();
+
+            AdminController.deleteExistingCustomStylesheet(c, user);
+
+            LookAndFeelResourceAttachmentParent parent = new LookAndFeelResourceAttachmentParent(c);
+            AttachmentFile renamed = new SpringAttachmentFile(file, AttachmentCache.STYLESHEET_FILE_NAME);
+            AttachmentService.get().addAttachments(parent, Collections.singletonList(renamed), user);
+
+            // Don't need to clear cache -- lookAndFeelRevision gets checked on retrieval
+        }
+    }
+
+
+    @RequiresPermission(AdminPermission.class)
+    public class MenuBarAction extends ProjectSettingsViewAction
+    {
+        @Override
+        protected HttpView getTabView()
+        {
+            if (getContainer().isRoot())
+                return getErrorView("Menu bar must be configured for each project separately.");
+
+            WebPartView v = new JspView<>("/org/labkey/core/admin/editMenuBar.jsp", null);
+            v.setView("menubar", new VBox());
+            Portal.populatePortalView(getViewContext(), Portal.DEFAULT_PORTAL_PAGE_ID, v, false, true, true, false);
+
+            return v;
+        }
+    }
+
+
+    private static HtmlView getErrorView(String msg)
+    {
+        return new HtmlView("<span class=\"labkey-error\">" + msg + "</span>");
+    }
+
+
+    @RequiresPermission(AdminPermission.class)
+    public class FilesAction extends ProjectSettingsViewPostAction<FilesForm>
+    {
+        @Override
+        protected HttpView getTabView(FilesForm form, boolean reshow, BindException errors)
+        {
+            Container c = getContainer();
+
+            if (c.isRoot())
+                return getErrorView("Files must be configured for each project separately.");
+
+            if (!reshow || form.isPipelineRootForm())
+            {
+                try
+                {
+                    AdminController.setFormAndConfirmMessage(getViewContext(), form);
+                }
+                catch (IllegalArgumentException e)
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                }
+            }
+            VBox box = new VBox();
+            JspView view = new JspView<>("/org/labkey/core/admin/view/filesProjectSettings.jsp", form, errors);
+            String title = "Configure File Root";
+            if (CloudStoreService.get() != null)
+                title += " And Enable Cloud Stores";
+            view.setTitle(title);
+            box.addView(view);
+
+            // only site admins (i.e. AdminOperationsPermission) can configure the pipeline root
+            if (c.hasPermission(getViewContext().getUser(), AdminOperationsPermission.class))
+            {
+                SetupForm setupForm = SetupForm.init(c);
+                setupForm.setShowAdditionalOptionsLink(true);
+                setupForm.setErrors(errors);
+                PipeRoot pipeRoot = SetupForm.getPipelineRoot(c);
+
+                if (pipeRoot != null)
+                {
+                    for (String errorMessage : pipeRoot.validate())
+                        errors.addError(new LabKeyError(errorMessage));
+                }
+                JspView pipelineView = (JspView) PipelineService.get().getSetupView(setupForm);
+                pipelineView.setTitle("Configure Data Processing Pipeline");
+                box.addView(pipelineView);
+            }
+
+            return box;
+        }
+
+        @Override
+        public void validateCommand(FilesForm form, Errors errors)
+        {
+            if (!form.isPipelineRootForm() && !form.isDisableFileSharing() && !form.hasSiteDefaultRoot() && !form.isCloudFileRoot())
+            {
+                String root = StringUtils.trimToNull(form.getFolderRootPath());
+                if (root != null)
+                {
+                    File f = new File(root);
+                    if (!f.exists() || !f.isDirectory())
+                    {
+                        errors.reject(SpringActionController.ERROR_MSG, "File root '" + root + "' does not appear to be a valid directory accessible to the server at " + getViewContext().getRequest().getServerName() + ".");
+                    }
+                }
+                else
+                    errors.reject(SpringActionController.ERROR_MSG, "A Project specified file root cannot be blank, to disable file sharing for this project, select the disable option.");
+            }
+            else if (form.isCloudFileRoot())
+            {
+                AdminController.validateCloudFileRoot(form, getContainer(), errors);
+            }
+        }
+
+        @Override
+        public boolean handlePost(FilesForm form, BindException errors) throws Exception
+        {
+            FileContentService service = FileContentService.get();
+            if (service != null)
+            {
+                if (form.isPipelineRootForm())
+                    return PipelineService.get().savePipelineSetup(getViewContext(), form, errors);
+                else
+                {
+                    AdminController.setFileRootFromForm(getViewContext(), form, errors);
+                }
+            }
+
+            // Cloud settings
+            AdminController.setEnabledCloudStores(getViewContext(), form, errors);
+
+            return !errors.hasErrors();
+        }
+
+        @Override
+        public URLHelper getSuccessURL(FilesForm form)
+        {
+            ActionURL url = new AdminController.AdminUrlsImpl().getProjectSettingsFileURL(getContainer());
+            if (form.isPipelineRootForm())
+            {
+                url.addParameter("piperootSet", true);
+            }
+            else
+            {
+                if (form.isFileRootChanged())
+                    url.addParameter("rootSet", form.getMigrateFilesOption());
+                if (form.isEnabledCloudStoresChanged())
+                    url.addParameter("cloudChanged", true);
+            }
+            return url;
+        }
+    }
+
+
+    // Validate and populate the folder settings; save & log all changes
+    private static boolean saveFolderSettings(Container c, SettingsForm form, WriteableFolderLookAndFeelProperties props, User user, BindException errors)
+    {
+        String defaultDateFormat = StringUtils.trimToNull(form.getDefaultDateFormat());
+        if (null == defaultDateFormat)
+        {
+            props.clearDefaultDateFormat();
+        }
+        else
+        {
+            try
+            {
+                props.setDefaultDateFormat(defaultDateFormat);
+            }
+            catch (IllegalArgumentException e)
+            {
+                errors.reject(ERROR_MSG, "Invalid date format: " + e.getMessage());
+                return false;
+            }
+        }
+
+        String defaultDateTimeFormat = StringUtils.trimToNull(form.getDefaultDateTimeFormat());
+        if (null == defaultDateTimeFormat)
+        {
+            props.clearDefaultDateTimeFormat();
+        }
+        else
+        {
+            try
+            {
+                props.setDefaultDateTimeFormat(defaultDateTimeFormat);
+            }
+            catch (IllegalArgumentException e)
+            {
+                errors.reject(ERROR_MSG, "Invalid date time format: " + e.getMessage());
+                return false;
+            }
+        }
+
+        String defaultNumberFormat = StringUtils.trimToNull(form.getDefaultNumberFormat());
+        if (null == defaultNumberFormat)
+        {
+            props.clearDefaultNumberFormat();
+        }
+        else
+        {
+            try
+            {
+                props.setDefaultNumberFormat(defaultNumberFormat);
+            }
+            catch (IllegalArgumentException e)
+            {
+                errors.reject(ERROR_MSG, "Invalid number format: " + e.getMessage());
+                return false;
+            }
+        }
+
+        try
+        {
+            props.setRestrictedColumnsEnabled(form.areRestrictedColumnsEnabled());
+        }
+        catch (IllegalArgumentException e)
+        {
+            errors.reject(ERROR_MSG, "Invalid restricted columns flag: " + e.getMessage());
+            return false;
+        }
+
+        props.save();
+
+        //write an audit log event
+        props.writeAuditLogEvent(c, user);
+
+        return true;
+    }
+
+
+    public static class LookAndFeelView extends JspView<LookAndFeelBean>
+    {
+        LookAndFeelView(BindException errors)
+        {
+            super("/org/labkey/core/admin/lookAndFeelProperties.jsp", new LookAndFeelBean(), errors);
+        }
+    }
+
+
+    public static class LookAndFeelBean
+    {
+        public final String helpLink = new HelpTopic("customizeLook").getSimpleLinkHtml("more info...");
+        public final String welcomeLink = new HelpTopic("customizeLook").getSimpleLinkHtml("more info...");
+        public final String customColumnRestrictionHelpLink = new HelpTopic("chartTrouble").getSimpleLinkHtml("more info...");
+    }
+
+
+    public static class LookAndFeelResourcesBean extends LookAndFeelBean
+    {
+        public final Attachment customLogo;
+        public final Attachment customFavIcon;
+        public final Attachment customStylesheet;
+
+        LookAndFeelResourcesBean(Container c)
+        {
+            customLogo = AttachmentCache.lookupLogoAttachment(c);
+            customFavIcon = AttachmentCache.lookupFavIconAttachment(new LookAndFeelResourceAttachmentParent(c));
+            customStylesheet = AttachmentCache.lookupCustomStylesheetAttachment(new LookAndFeelResourceAttachmentParent(c));
+        }
+    }
+
+
     public static class TestCase extends AbstractActionPermissionTest
     {
         @Test
@@ -9470,7 +9945,11 @@ public class AdminController extends SpringActionController
                     controller.new AddTabAction(),
                     controller.new ShowTabAction(),
                     controller.new MoveTabAction(),
-                    controller.new RenameTabAction()
+                    controller.new RenameTabAction(),
+                    controller.new ProjectSettingsAction(),
+                    controller.new ResourcesAction(),
+                    controller.new MenuBarAction(),
+                    controller.new FilesAction()
             );
 
             //TODO @RequiresPermission(AdminReadPermission.class)
@@ -9536,11 +10015,11 @@ public class AdminController extends SpringActionController
 
     public static class SerializationTest extends PipelineJob.TestSerialization
     {
-        public static class TestJob
+        static class TestJob
         {
-            public ImpersonationContext _impersonationContext;
-            public ImpersonationContext _impersonationContext1;
-            public ImpersonationContext _impersonationContext2;
+            ImpersonationContext _impersonationContext;
+            ImpersonationContext _impersonationContext1;
+            ImpersonationContext _impersonationContext2;
         }
 
         @Test

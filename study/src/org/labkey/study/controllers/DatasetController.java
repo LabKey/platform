@@ -155,7 +155,6 @@ public class DatasetController extends BaseStudyController
                         objForm.set(DatasetDefinition.DATASETKEY, datasetId);
 
                         DetailsView objView = new DetailsView(objForm);
-                        objView.getDataRegion().setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
 
                         view.addView(objView);
                     }

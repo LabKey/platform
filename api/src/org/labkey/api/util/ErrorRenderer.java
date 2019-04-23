@@ -93,7 +93,7 @@ public class ErrorRenderer
                 {
                     try
                     {
-                        exceptionMessage = _exception.getMessage();
+                        exceptionMessage = ExceptionUtil.getExtendedMessage(_exception);
                     }
                     catch (Throwable x)
                     {
@@ -104,7 +104,7 @@ public class ErrorRenderer
                 if (null != exceptionMessage)
                 {
                     out.println("<b style=\"color:red;\" class=\"exception-message\">");
-                    out.println(PageFlowUtil.filter(exceptionMessage));
+                    out.println(PageFlowUtil.filter(exceptionMessage, true));
                     out.println("</b><br><br>");
                 }
             }

@@ -682,18 +682,6 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
-    public int getDisplayModes()
-    {
-        return _column.getDisplayModes();
-    }
-
-    @Override
-    public void setDisplayModes(int displayModes)
-    {
-        _column.setDisplayModes(displayModes);
-    }
-
-    @Override
     public void render(RenderContext ctx, HttpServletRequest request, HttpServletResponse response) throws IOException
     {
         _column.render(ctx, request, response);

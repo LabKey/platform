@@ -18,7 +18,6 @@ package org.labkey.api.query;
 
 import org.labkey.api.data.*;
 
-import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
 import java.util.Map;
@@ -127,7 +126,7 @@ public class QueryNestingOption
 
         NestableDataRegion dataRegion = new NestableDataRegion(allColumns, _groupIdColumn.getColumnInfo().getAlias(), _ajaxNestedGridURL);
         // Set the nested button bar as not visible so that we don't render a bunch of nested <form>s which mess up IE.
-        dataRegion.setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
+        dataRegion.setButtonBar(new ButtonBar());
         dataRegion.setExpanded(expanded);
         dataRegion.setRecordSelectorValueColumns(_groupIdColumn.getColumnInfo().getAlias());
         DataRegion nestedRgn = new DataRegion()

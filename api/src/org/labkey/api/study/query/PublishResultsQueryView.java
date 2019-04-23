@@ -198,15 +198,13 @@ public class PublishResultsQueryView extends ResultsQueryView
         if (getSettings().getContainerFilterName() != null)
             view.getDataRegion().addHiddenFormField("containerFilterName", getSettings().getContainerFilterName());
 
+        ButtonBar bbar = new ButtonBar();
         if (_buttons != null)
         {
-            ButtonBar bbar = new ButtonBar();
             for (ActionButton button : _buttons)
                 bbar.add(button);
-            view.getDataRegion().setButtonBar(bbar);
         }
-        else
-            view.getDataRegion().setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
+        view.getDataRegion().setButtonBar(bbar);
 
         return view;
     }
