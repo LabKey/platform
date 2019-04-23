@@ -18,6 +18,7 @@ package org.labkey.wiki.query;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.EnumTableInfo;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
@@ -77,7 +78,7 @@ public class WikiSchema extends UserSchema
     }
 
     @Override
-    public TableInfo createTable(String name)
+    public TableInfo createTable(String name, ContainerFilter cf)
     {
         if (WikiService.RENDERER_TYPE_TABLE_NAME.equalsIgnoreCase(name))
         {
@@ -89,7 +90,7 @@ public class WikiSchema extends UserSchema
         else if (CURRENT_WIKI_VERSIONS.equalsIgnoreCase(name) || ALL_WIKI_VERSIONS.equalsIgnoreCase(name))
         {
             TableInfo dbTable = CommSchema.getInstance().getSchema().getTable(name);
-            SimpleUserSchema.SimpleTable<WikiSchema> table = new SimpleUserSchema.SimpleTable<>(this, dbTable);
+            SimpleUserSchema.SimpleTable<WikiSchema> table = new SimpleUserSchema.SimpleTable<>(this, dbTable, cf);
             table.setDeleteURL(AbstractTableInfo.LINK_DISABLER);
             table.init();
 
