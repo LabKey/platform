@@ -257,7 +257,7 @@ public class ExceptionUtil
         if (requestURL != null && MothershipReport.isMothershipExceptionReport(requestURL))
             return null;
 
-        String extraInfo = null;
+        String extraInfo = "";
         String sqlState = null;
         for (Throwable t = ex ; t != null ; t = t.getCause())
         {
@@ -316,14 +316,14 @@ public class ExceptionUtil
                 LOG.error(message, ex);
                 String decorations = getExtendedMessage(ex);
 
-                if ((extraInfo != null) || (!decorations.isEmpty()))
+                if (!extraInfo.isBlank() || !decorations.isBlank())
                 {
                     String logMessage = "Additional exception info:";
-                    if (extraInfo != null)
+                    if (!extraInfo.isBlank())
                     {
                         logMessage += "\n" + extraInfo;
                     }
-                    if (!decorations.isEmpty())
+                    if (!decorations.isBlank())
                     {
                         logMessage += "\n" + decorations;
                     }
