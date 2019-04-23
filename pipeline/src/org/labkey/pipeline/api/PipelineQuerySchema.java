@@ -78,11 +78,11 @@ public class PipelineQuerySchema extends UserSchema
         super(SCHEMA_NAME, "Contains data about pipeline jobs", user, container, PipelineSchema.getInstance().getSchema());
     }
 
-    public TableInfo createTable(String name)
+    public TableInfo createTable(String name, ContainerFilter cf)
     {
         if (JOB_TABLE_NAME.equalsIgnoreCase(name))
         {
-            FilteredTable table = new FilteredTable<PipelineQuerySchema>(PipelineSchema.getInstance().getTableInfoStatusFiles(), this)
+            FilteredTable table = new FilteredTable<PipelineQuerySchema>(PipelineSchema.getInstance().getTableInfoStatusFiles(), this, cf)
             {
                 @Override
                 public FieldKey getContainerFieldKey()
@@ -143,11 +143,11 @@ public class PipelineQuerySchema extends UserSchema
             });
             UserIdQueryForeignKey.initColumn(this, table.getMutableColumn("CreatedBy"), true);
             UserIdQueryForeignKey.initColumn(this, table.getMutableColumn("ModifiedBy"), true);
-            table.getMutableColumn("JobParent").setFk(new LookupForeignKey("Job", "Description")
+            table.getMutableColumn("JobParent").setFk(new LookupForeignKey(cf,"Job", "Description")
             {
                 public TableInfo getLookupTableInfo()
                 {
-                    return getTable(JOB_TABLE_NAME);
+                    return getTable(JOB_TABLE_NAME, getLookupContainerFilter());
                 }
             });
 
@@ -169,16 +169,16 @@ public class PipelineQuerySchema extends UserSchema
         }
         else if (TRIGGER_CONFIGURATIONS_TABLE_NAME.equalsIgnoreCase(name) && getContainer().hasPermission(getUser(), AdminPermission.class))
         {
-            return createTriggerConfigurationsTable();
+            return createTriggerConfigurationsTable(cf);
         }
         
         return null;
     }
 
     // for pipeline internal use only; other uses should go through createTable() above for proper permissions check
-    protected SimpleUserSchema.SimpleTable<PipelineQuerySchema> createTriggerConfigurationsTable()
+    protected SimpleUserSchema.SimpleTable<PipelineQuerySchema> createTriggerConfigurationsTable(ContainerFilter cf)
     {
-        return new TriggerConfigurationsTable(this, null).init();
+        return new TriggerConfigurationsTable(this, cf).init();
     }
 
     public Set<String> getTableNames()
