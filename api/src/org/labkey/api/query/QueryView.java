@@ -2819,9 +2819,20 @@ public class QueryView extends WebPartView<Object>
         return _table;
     }
 
+    // This can be used to override the container filter that would otherwise be provided by the QuerySettings
+    ContainerFilter _overrideContainerFilter = null;
+
+    public void setContainerFilter(ContainerFilter cf)
+    {
+        _overrideContainerFilter = cf;
+    }
+
     @Nullable
     protected ContainerFilter getContainerFilter()
     {
+        if (null != _overrideContainerFilter)
+            return _overrideContainerFilter;
+
         String filterName = _settings.getContainerFilterName();
 
         if (filterName == null && _customView != null)
