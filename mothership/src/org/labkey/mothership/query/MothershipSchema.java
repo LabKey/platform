@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.JdbcType;
@@ -112,38 +113,38 @@ public class MothershipSchema extends UserSchema
     }
 
 
-    public TableInfo createTable(String name)
+    public TableInfo createTable(String name, ContainerFilter cf)
     {
         if (name.equalsIgnoreCase(SERVER_INSTALLATIONS_TABLE_NAME))
         {
-            return createServerInstallationTable();
+            return createServerInstallationTable(cf);
         }
         else if (name.equalsIgnoreCase(SERVER_SESSIONS_TABLE_NAME))
         {
-            return createServerSessionTable();
+            return createServerSessionTable(cf);
         }
         else if (name.equalsIgnoreCase(EXCEPTION_STACK_TRACE_TABLE_NAME))
         {
-            return createExceptionStackTraceTable();
+            return createExceptionStackTraceTable(cf);
         }
         else if (name.equalsIgnoreCase(SOFTWARE_RELEASES_TABLE_NAME))
         {
-            return createSoftwareReleasesTable();
+            return createSoftwareReleasesTable(cf);
         }
         else if (name.equalsIgnoreCase(EXCEPTION_REPORT_TABLE_NAME))
         {
-            return createExceptionReportTable();
+            return createExceptionReportTable(cf);
         }
         else if (name.equalsIgnoreCase(EXCEPTION_REPORT_WITH_STACK_TABLE_NAME))
         {
-            return createExceptionReportTableWithStack();
+            return createExceptionReportTableWithStack(cf);
         }
         return null;
     }
 
-    public FilteredTable createSoftwareReleasesTable()
+    public FilteredTable createSoftwareReleasesTable(ContainerFilter cf)
     {
-        FilteredTable result = new FilteredTable<>(MothershipManager.get().getTableInfoSoftwareRelease(), this);
+        FilteredTable result = new FilteredTable<>(MothershipManager.get().getTableInfoSoftwareRelease(), this, cf);
         result.wrapAllColumns(true);
 
         result.getMutableColumn("SVNURL").setWidth("500");
@@ -159,9 +160,9 @@ public class MothershipSchema extends UserSchema
         return result;
     }
 
-    public FilteredTable createServerSessionTable()
+    public FilteredTable createServerSessionTable(ContainerFilter cf)
     {
-        FilteredTable result = new FilteredTable<>(MothershipManager.get().getTableInfoServerSession(), this);
+        FilteredTable result = new FilteredTable<>(MothershipManager.get().getTableInfoServerSession(), this, cf);
         result.wrapAllColumns(true);
         result.setTitleColumn("RowId");
 
@@ -169,7 +170,7 @@ public class MothershipSchema extends UserSchema
         {
             public TableInfo getLookupTableInfo()
             {
-                return createServerInstallationTable();
+                return createServerInstallationTable(cf);
             }
 
             @Override
@@ -217,9 +218,9 @@ public class MothershipSchema extends UserSchema
         return result;
     }
 
-    public TableInfo createServerInstallationTable()
+    public TableInfo createServerInstallationTable(ContainerFilter cf)
     {
-        FilteredTable<MothershipSchema> result = new MothershipTable(MothershipManager.get().getTableInfoServerInstallation(), this);
+        FilteredTable<MothershipSchema> result = new MothershipTable(MothershipManager.get().getTableInfoServerInstallation(), this, cf);
         result.setInsertURL(AbstractTableInfo.LINK_DISABLER);
         result.setImportURL(AbstractTableInfo.LINK_DISABLER);
         result.wrapAllColumns(true);
@@ -283,7 +284,7 @@ public class MothershipSchema extends UserSchema
         {
             public TableInfo getLookupTableInfo()
             {
-                return createServerSessionTable();
+                return createServerSessionTable(cf);
             }
 
             @Override
@@ -315,9 +316,9 @@ public class MothershipSchema extends UserSchema
         return result;
     }
 
-    public FilteredTable createExceptionStackTraceTable()
+    public FilteredTable createExceptionStackTraceTable(ContainerFilter cf)
     {
-        FilteredTable<MothershipSchema> result = new MothershipTable(MothershipManager.get().getTableInfoExceptionStackTrace(), this);
+        FilteredTable<MothershipSchema> result = new MothershipTable(MothershipManager.get().getTableInfoExceptionStackTrace(), this, cf);
         result.setUpdateURL(AbstractTableInfo.LINK_DISABLER);
         result.setInsertURL(AbstractTableInfo.LINK_DISABLER);
         result.setImportURL(AbstractTableInfo.LINK_DISABLER);
@@ -402,9 +403,9 @@ public class MothershipSchema extends UserSchema
         return result;
     }
 
-    public FilteredTable createExceptionReportTableWithStack()
+    public FilteredTable createExceptionReportTableWithStack(ContainerFilter cf)
     {
-        FilteredTable result = createExceptionReportTable();
+        FilteredTable result = createExceptionReportTable(cf);
         List<FieldKey> defaultCols = new ArrayList<>(result.getDefaultVisibleColumns());
         defaultCols.removeIf(fieldKey -> fieldKey.getParts().get(0).equals("ServerSessionId"));
         defaultCols.add(0, FieldKey.fromParts("ExceptionStackTraceId"));
@@ -414,7 +415,7 @@ public class MothershipSchema extends UserSchema
         return result;
     }
 
-    public FilteredTable createExceptionReportTable()
+    public FilteredTable createExceptionReportTable(ContainerFilter cf)
     {
         FilteredTable result = new FilteredTable<>(MothershipManager.get().getTableInfoExceptionReport(), this);
         result.setDetailsURL(AbstractTableInfo.LINK_DISABLER);
@@ -447,7 +448,7 @@ public class MothershipSchema extends UserSchema
         {
             public TableInfo getLookupTableInfo()
             {
-                return createExceptionStackTraceTable();
+                return createExceptionStackTraceTable(cf);
             }
 
             @Override
@@ -474,7 +475,7 @@ public class MothershipSchema extends UserSchema
         {
             public TableInfo getLookupTableInfo()
             {
-                return createServerSessionTable();
+                return createServerSessionTable(cf);
             }
 
             @Override
@@ -528,9 +529,9 @@ public class MothershipSchema extends UserSchema
 
     private static class MothershipTable extends FilteredTable<MothershipSchema>
     {
-        public MothershipTable(TableInfo tableInfo, MothershipSchema schema)
+        public MothershipTable(TableInfo tableInfo, MothershipSchema schema, ContainerFilter cf)
         {
-            super(tableInfo, schema);
+            super(tableInfo, schema, cf);
         }
 
         @Override
