@@ -40,12 +40,7 @@ import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.BatchValidationException;
-import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.QueryDefinition;
-import org.labkey.api.query.QuerySchema;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
@@ -133,7 +128,7 @@ public class ListImporter
         return processSingle(sourceDir, def, fileName, false, c, user,  errors, log);
     }
 
-    public boolean processSingle(VirtualFile sourceDir, ListDefinition def, String fileName, boolean hasXmlMetadata, Container c, User user, List<String> errors, Logger log) throws Exception
+    private boolean processSingle(VirtualFile sourceDir, ListDefinition def, String fileName, boolean hasXmlMetadata, Container c, User user, List<String> errors, Logger log) throws Exception
     {
         if (null != def)
         {
@@ -272,11 +267,11 @@ public class ListImporter
                 else if (_importContext.isTriggeredReload())
                 {
                     // Triggered source file might have been moved, deleted, etc. so we fail the job
-                    errors.add("Could not retrieve file stream for dir: " + sourceDir.toString() + " and flie: " + fileName);
+                    errors.add("Could not retrieve file stream for file: " + fileName);
                 }
                 else
                 {
-                    log.info("Could not retrieve file stream for dir: " + sourceDir.toString() + " and flie: " + fileName);
+                    log.info("Could not retrieve file stream for dir: " + sourceDir.getLocation() + " and file: " + fileName);
                 }
             }
             return true;
