@@ -20,22 +20,21 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.qc.QCState" %>
 <%@ page import="org.labkey.api.qc.QCStateHandler" %>
-<%@ page import="org.labkey.api.view.FolderManagement" %>
-<%@ page import="org.labkey.api.action.HasPageConfig" %>
 <%@ page import="org.labkey.api.qc.AbstractManageQCStatesBean" %>
-<%@ page import="org.springframework.web.servlet.mvc.Controller" %>
+<%@ page import="org.labkey.api.qc.AbstractManageQCStatesAction" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AbstractManageQCStatesBean> me = (JspView<AbstractManageQCStatesBean>) HttpView.currentView();
 
     AbstractManageQCStatesBean bean = me.getModelBean();
+    AbstractManageQCStatesAction manageAction = bean.getManageAction();
     ActionURL cancelUrl = bean.getReturnUrl() != null ? new ActionURL(bean.getReturnUrl()) :
-            new ActionURL(bean.getManageAction(), getContainer());
+            new ActionURL(manageAction.getClass(), getContainer());
     QCStateHandler qcStateHandler = bean.getQCStateHandler();
 %>
 <labkey:errors/><br>
-<labkey:form action="<%=h(buildURL(bean.getManageAction()))%>" name="manageQCStates" method="POST">
+<labkey:form action="<%=h(buildURL(manageAction.getClass()))%>" name="manageQCStates" method="POST">
 <input type="hidden" name="reshowPage" value="true">
 <input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl()) %>">
     <labkey:panel title="Currently Defined Dataset QC States"> <!-- TODO: make this title configurable -->
@@ -100,87 +99,24 @@
         </table>
     </labkey:panel>
 
+    <%
+        if (manageAction.getHasQcStateDefaultsPanel())
+        {
+    %>
     <labkey:panel title="Default states for dataset data">
-        <table class="lk-fields-table">
-            <tr>
-                <td colspan="2">These settings allow different default QC states depending on data source.
-                    If set, all imported data without an explicit QC state will have the selected state automatically assigned.</td>
-            </tr>
-            <tr>
-                <th align="right" width="300px">Pipeline imported datasets:</th> <!-- TODO: make this message configurable -->
-                <td>
-                    <select name="defaultPipelineQCState">
-                        <option value="">[none]</option>
-                        <%
-                            for (QCState state : qcStateHandler.getQCStates())
-                            {
-                                boolean selected = qcStateHandler.getDefaultPipelineQCState() != null &&
-                                        qcStateHandler.getDefaultPipelineQCState() == state.getRowId();
-                        %>
-                        <option value="<%= state.getRowId() %>"<%=selected(selected)%>>
-                            <%= h(state.getLabel())%></option>
-                        <%
-                            }
-                        %>
-                    </select>
-                </td>
-            </tr>
-            <tr>
-                <th align="right" width="300px">Assay data copied to this study:</th> <!-- TODO: make this message configurable -->
-                <td>
-                    <select name="defaultAssayQCState">
-                        <option value="">[none]</option>
-                        <%
-                            for (QCState state : qcStateHandler.getQCStates())
-                            {
-                                boolean selected = qcStateHandler.getDefaultAssayQCState() != null &&
-                                        qcStateHandler.getDefaultAssayQCState() == state.getRowId();
-                        %>
-                        <option value="<%= state.getRowId() %>"<%=selected(selected)%>><%= h(state.getLabel())%></option>
-                        <%
-                            }
-                        %>
-                    </select>
-                </td>
-            </tr>
-            <tr>
-                <th align="right" width="300px">Directly inserted/updated dataset data:</th> <!-- TODO: make this message configurable -->
-                <td>
-                    <select name="defaultDirectEntryQCState">
-                        <option value="">[none]</option>
-                        <%
-                            for (QCState state : qcStateHandler.getQCStates())
-                            {
-                                boolean selected = qcStateHandler.getDefaultDirectEntryQCState() != null &&
-                                        qcStateHandler.getDefaultDirectEntryQCState() == state.getRowId();
-                        %>
-                        <option value="<%= state.getRowId() %>"<%=selected(selected)%>><%= h(state.getLabel())%></option>
-                        <%
-                            }
-                        %>
-                    </select>
-                </td>
-            </tr>
-        </table>
+        <%= manageAction.getQcStateDefaultsPanel(qcStateHandler) %>
     </labkey:panel>
-
+    <%
+        }
+        if (manageAction.getHasDataVisibilityPanel())
+        {
+    %>
     <labkey:panel title="Data visibility">
-        <table class="lk-fields-table">
-            <tr>
-                <td colspan="2">This setting determines whether users see non-public data by default.
-                    Users can always explicitly choose to see data in any QC state.</td>
-            </tr>
-            <tr>
-                <th align="right" width="300px">Default visibility:</th>
-                <td>
-                    <select name="showPrivateDataByDefault">
-                        <option value="false">Public data</option>
-                        <option value="true"<%= selected(qcStateHandler.isShowPrivateDataByDefault())%>>All data</option>
-                    </select>
-                </td>
-            </tr>
-        </table>
+        <%= manageAction.getDataVisibilityPanel(qcStateHandler) %>
     </labkey:panel>
+    <%
+        }
+    %>
 
     <%= button("Done").submit(true).onClick("document.manageQCStates.reshowPage.value='false'; return true;") %>
     <%= button("Cancel").href(cancelUrl.getLocalURIString()) %>

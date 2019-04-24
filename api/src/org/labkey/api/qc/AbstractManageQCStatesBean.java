@@ -7,7 +7,7 @@ public class AbstractManageQCStatesBean
     private String _returnUrl;
     protected QCStateHandler _qcStateHandler;
     protected Class<? extends Controller> _controllerClass;
-    protected Class<? extends AbstractManageQCStatesAction> _manageAction;
+    protected AbstractManageQCStatesAction _manageAction;
     protected Class<? extends AbstractDeleteQCStateAction> _deleteAction;
 
     public AbstractManageQCStatesBean(String returnUrl)
@@ -30,7 +30,7 @@ public class AbstractManageQCStatesBean
         return _controllerClass;
     }
 
-    public Class<? extends AbstractManageQCStatesAction> getManageAction()
+    public AbstractManageQCStatesAction getManageAction()
     {
         return _manageAction;
     }

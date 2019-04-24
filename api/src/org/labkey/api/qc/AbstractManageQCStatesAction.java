@@ -16,6 +16,31 @@ public abstract class AbstractManageQCStatesAction extends FormViewAction<Manage
 {
     public abstract QcDefaultSettings getCurrentQcDefaultSettings();
     public abstract void persistQcSettings(ManageQCStatesForm form);
+    public abstract String getQcStateDefaultsPanel(QCStateHandler qcStateHandler);
+    public abstract String getDataVisibilityPanel(QCStateHandler qcStateHandler);
+
+    private Boolean _hasQcStateDefaultsPanel = null;
+    private Boolean _hasDataVisibilityPanel = null;
+
+    public Boolean getHasQcStateDefaultsPanel()
+    {
+        return _hasQcStateDefaultsPanel;
+    }
+
+    public void setHasQcStateDefaultsPanel(Boolean hasQcStateDefaultsPanel)
+    {
+        _hasQcStateDefaultsPanel = hasQcStateDefaultsPanel;
+    }
+
+    public Boolean getHasDataVisibilityPanel()
+    {
+        return _hasDataVisibilityPanel;
+    }
+
+    public void setHasDataVisibilityPanel(Boolean hasDataVisibilityPanel)
+    {
+        _hasDataVisibilityPanel = hasDataVisibilityPanel;
+    }
 
     public void validateCommand(ManageQCStatesForm form, Errors errors)
     {
@@ -95,7 +120,7 @@ public abstract class AbstractManageQCStatesAction extends FormViewAction<Manage
             return new ActionURL(defaultActionClass, getContainer());
     }
 
-    public static class QcDefaultSettings {
+    public class QcDefaultSettings {
         Integer _defaultAssayQCState;
         Integer _defaultPipelineQCState;
         Integer _defaultDirectEntryQCState;

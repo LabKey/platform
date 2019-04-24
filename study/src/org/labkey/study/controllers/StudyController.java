@@ -3314,7 +3314,7 @@ public class StudyController extends BaseStudyController
             super(returnUrl);
             _qcStateHandler = new StudyQCStateHandler(getStudyThrowIfNull());
             _controllerClass = StudyController.class;
-            _manageAction = ManageQCStatesAction.class;
+            _manageAction = new ManageQCStatesAction();
             _deleteAction = DeleteQCStateAction.class;
         }
     }
@@ -3327,6 +3327,8 @@ public class StudyController extends BaseStudyController
         public ManageQCStatesAction()
         {
             super();
+            setHasDataVisibilityPanel(true);
+            setHasQcStateDefaultsPanel(true);
         }
 
         @Override
@@ -3375,6 +3377,74 @@ public class StudyController extends BaseStudyController
         public URLHelper getSuccessURL(org.labkey.api.qc.ManageQCStatesForm manageQCStatesForm)
         {
             return getSuccessURL(manageQCStatesForm, ManageQCStatesAction.class, ManageStudyAction.class);
+        }
+
+        @Override
+        public String getQcStateDefaultsPanel(QCStateHandler qcStateHandler)
+        {
+            StringBuilder panelHtml = new StringBuilder();
+            panelHtml.append("  <table class=\"lk-fields-table\">");
+            panelHtml.append("      <tr>");
+            panelHtml.append("          <td colspan=\"2\">These settings allow different default QC states depending on data source.");
+            panelHtml.append("              If set, all imported data without an explicit QC state will have the selected state automatically assigned.</td>");
+            panelHtml.append("      </tr>");
+            panelHtml.append("      <tr>");
+            panelHtml.append("          <th align=\"right\" width=\"300px\">Pipeline imported datasets:</th>");
+            panelHtml.append(getQcStateHtml(qcStateHandler, "defaultPipelineQCState", qcStateHandler.getDefaultPipelineQCState()));
+            panelHtml.append("      </tr>");
+            panelHtml.append("      <tr>");
+            panelHtml.append("          <th align=\"right\" width=\"300px\">Assay data copied to this study:</th>");
+            panelHtml.append(getQcStateHtml(qcStateHandler, "defaultAssayQCState", qcStateHandler.getDefaultAssayQCState()));
+            panelHtml.append("      </tr>");
+            panelHtml.append("      <tr>");
+            panelHtml.append("          <th align=\"right\" width=\"300px\">Directly inserted/updated dataset data:</th>");
+            panelHtml.append(getQcStateHtml(qcStateHandler, "defaultDirectEntryQCState", qcStateHandler.getDefaultDirectEntryQCState()));
+            panelHtml.append("      </tr>");
+            panelHtml.append("  </table>");
+
+            return panelHtml.toString();
+        }
+
+        private String getQcStateHtml(QCStateHandler qcStateHandler, String selectName, Integer qcStateId)
+        {
+            StringBuilder qcStateHtml = new StringBuilder();
+            qcStateHtml.append("          <td>");
+            qcStateHtml.append("              <select name=\"").append(selectName).append("\">");
+            qcStateHtml.append("                  <option value=\"\">[none]</option>");
+            for (QCState state : qcStateHandler.getQCStates())
+            {
+                boolean selected = (qcStateId != null) && (qcStateId == state.getRowId());
+                String selectedText = (selected) ? " selected" : "";
+                qcStateHtml.append("              <option value=\"").append(state.getRowId()).append("\"").append(selectedText).append(">").append(state.getLabel()).append("</option>");
+            }
+            qcStateHtml.append("              </select>");
+            qcStateHtml.append("          </td>");
+
+            return qcStateHtml.toString();
+        }
+
+        @Override
+        public String getDataVisibilityPanel(QCStateHandler qcStateHandler)
+        {
+            StringBuilder panelHtml = new StringBuilder();
+            panelHtml.append("  <table class=\"lk-fields-table\">");
+            panelHtml.append("      <tr>");
+            panelHtml.append("          <td colspan=\"2\">This setting determines whether users see non-public data by default.");
+            panelHtml.append("              Users can always explicitly choose to see data in any QC state.</td>");
+            panelHtml.append("      </tr>");
+            panelHtml.append("      <tr>");
+            panelHtml.append("          <th align=\"right\" width=\"300px\">Default visibility:</th>");
+            panelHtml.append("          <td>");
+            panelHtml.append("              <select name=\"showPrivateDataByDefault\">");
+            panelHtml.append("                  <option value=\"false\">Public data</option>");
+            String selectedText = (qcStateHandler.isShowPrivateDataByDefault()) ? " selected" : "";
+            panelHtml.append("                  <option value=\"true\"").append(selectedText).append(">All data</option>");
+            panelHtml.append("              </select>");
+            panelHtml.append("          </td>");
+            panelHtml.append("      </tr>");
+            panelHtml.append("  </table>");
+
+            return panelHtml.toString();
         }
     }
 
