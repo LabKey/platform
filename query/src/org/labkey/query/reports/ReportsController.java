@@ -889,7 +889,7 @@ public class ReportsController extends SpringActionController
 
         private void addScriptDependencies(ScriptReportBean bean, LinkedHashSet<ClientDependency> clientDependencies, LinkedHashSet<String> cssScripts)
         {
-            LinkedHashSet<ClientDependency> scriptDependencies = ClientDependency.fromList(bean.getScriptDependencies());
+            Set<ClientDependency> scriptDependencies = ClientDependency.fromList(bean.getScriptDependencies());
 
             // add any css dependencies we have
             for (ClientDependency cd : scriptDependencies)

@@ -42,7 +42,7 @@ public class ExperimentUpdateView extends UpdateView
 
         ButtonBar bb = new ButtonBar();
         bb.setStyle(ButtonBar.Style.separateButtons);
-        bb.add(ActionButton.BUTTON_DO_UPDATE);
+        bb.add(new ActionButton(ExperimentController.UpdateAction.class, "Submit"));
 
         drg.setButtonBar(bb);
     }

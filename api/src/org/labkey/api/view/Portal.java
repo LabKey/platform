@@ -106,6 +106,9 @@ public class Portal
     private static Map<String, WebPartFactory> _viewMap = null;
     private static List<WebPartFactory> _homeWebParts = new ArrayList<>();
 
+    private static Map<String, NavTreeCustomizer> _navTreeCustomizerMap = new HashMap<>();
+
+
     public static DbSchema getSchema()
     {
         return CoreSchema.getInstance().getSchema();
@@ -1485,18 +1488,32 @@ public class Portal
                 Map<String, String> props = webPart.getPropertyMap();
                 if (null != props && props.containsKey("webpart.title"))
                     view.setTitle(props.get("webpart.title"));
+
+                //find any matching navTreeCustomizers and inject their NavTree elements
+                _navTreeCustomizerMap.forEach((webPartName, navTreeCustomizer) -> {
+                    if (webPart.name.equalsIgnoreCase(webPartName))
+                    {
+                        if (null != navTreeCustomizer.getNavTrees(portalCtx))
+                        {
+                            navTreeCustomizer.getNavTrees(portalCtx).forEach(view::setNavMenu);
+                        }
+                    }
+                });
             }
+
+            return view;
         }
         catch(Throwable t)
         {
+            WebPartView errorView;
             int status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
             String message = "An unexpected error occurred";
-            view = ExceptionUtil.getErrorWebPartView(status, message, t, portalCtx.getRequest());
-            view.setTitle(webPart.getName());
-            view.setWebPart(webPart);
+            errorView = ExceptionUtil.getErrorWebPartView(status, message, t, portalCtx.getRequest());
+            errorView.setTitle(webPart.getName());
+            errorView.setWebPart(webPart);
+            return errorView;
         }
 
-        return view;
     }
 
 
@@ -1878,5 +1895,10 @@ public class Portal
             if (null != simpleTest)
                 assertEquals("Webpart definitions from the simpletest module", 1, WEB_PART_FACTORY_CACHE.getResourceMap(simpleTest).size());
         }
+    }
+
+    public static void registerNavTreeCustomizer(String webPartName, NavTreeCustomizer navTreeCustomizer)
+    {
+        _navTreeCustomizerMap.put(webPartName, navTreeCustomizer);
     }
 }

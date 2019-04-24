@@ -885,7 +885,6 @@ public class SpecimenUtils
         commentsColumn.setWidth("50%");
         commentsColumn.setPreserveNewlines(true);
         rgn.addDisplayColumn(new AttachmentDisplayColumn(request));
-        rgn.setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
         GridView grid = new GridView(rgn, errors);
         grid.setFilter(filter);
         grid.setSort(new Sort("Created"));
@@ -949,7 +948,6 @@ public class SpecimenUtils
         rgn.setShowPagination(false);
         DisplayColumn attachmentDisplayColumn = new AttachmentDisplayColumn(request);
         rgn.addDisplayColumn(attachmentDisplayColumn);
-        rgn.setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
         GridView grid = new GridView(rgn, errors);
         SimpleFilter filter = new SimpleFilter(FieldKey.fromString("RequestId"), requestId);
         filter.addCondition(FieldKey.fromString("RequirementId"), null, CompareType.ISBLANK);     // if null, then event is NOT a requirement

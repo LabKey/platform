@@ -312,7 +312,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
     public void setPkVals(Object[] o)
     {
         List<String> pkNames = getPkNamesList();
-        for (int i = 0; i < pkNames.size(); i++)
+        for (int i = 0; i < pkNames.size() && i < o.length; i++)
             setTypedValue(pkNames.get(i), o[i]);
     }
 
@@ -324,7 +324,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
     public void setPkVals(String[] s)
     {
         List<String> pkNames = getPkNamesList();
-        for (int i = 0; i < pkNames.size(); i++)
+        for (int i = 0; i < pkNames.size() && i < s.length; i++)
             set(pkNames.get(i), s[i]);
     }
 

@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -42,8 +41,8 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.core.admin.AdminController.ProjectSettingsForm.MigrateFilesOption;
 import org.labkey.core.CoreModule;
+import org.labkey.core.admin.AdminController.MigrateFilesOption;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -73,7 +72,7 @@ public class CopyFileRootPipelineJob extends PipelineJob
         _migrateFilesOption = migrateFilesOption;
     }
 
-    public CopyFileRootPipelineJob(Container container, User user, @NotNull List<Pair<Container, String>> sourceInfos, PipeRoot pipeRoot, MigrateFilesOption migrateFilesOption)
+    CopyFileRootPipelineJob(Container container, User user, @NotNull List<Pair<Container, String>> sourceInfos, PipeRoot pipeRoot, MigrateFilesOption migrateFilesOption)
     {
         super(null, new ViewBackgroundInfo(container, user, null), pipeRoot);
         _sourceInfos = sourceInfos;
@@ -195,7 +194,7 @@ public class CopyFileRootPipelineJob extends PipelineJob
                 try
                 {
                     // Count files and sum sizes
-                    Pair<Integer, Long> stats = new Pair<>(Integer.valueOf(0), Long.valueOf(0));
+                    Pair<Integer, Long> stats = new Pair<>(0, 0L);
                     status = updateIfError(status, getStats(sourceDir, stats));
                     info("Source directory has " + stats.first + " files (" + stats.second + " total bytes)");
 
@@ -352,7 +351,6 @@ public class CopyFileRootPipelineJob extends PipelineJob
         return status;
     }
 
-    @Nullable
     private boolean matchesCopyFailureSimulatorRegex(String propertyName, String fileName)
     {
         Module module = ModuleLoader.getInstance().getCoreModule();
@@ -416,7 +414,7 @@ public class CopyFileRootPipelineJob extends PipelineJob
         }
     }
 
-    protected TaskStatus updateIfError(TaskStatus current, TaskStatus update)
+    private TaskStatus updateIfError(TaskStatus current, TaskStatus update)
     {
         return TaskStatus.error.equals(update) ? update : current;
     }
@@ -450,7 +448,7 @@ public class CopyFileRootPipelineJob extends PipelineJob
             User user = TestContext.get().getUser();
             Container container = ContainerManager.getRoot();
             PipeRoot pipeRoot = PipelineService.get().getPipelineRootSetting(container);
-            CopyFileRootPipelineJob job = new CopyFileRootPipelineJob(container, user, Collections.emptyList(), pipeRoot, AdminController.ProjectSettingsForm.MigrateFilesOption.leave);
+            CopyFileRootPipelineJob job = new CopyFileRootPipelineJob(container, user, Collections.emptyList(), pipeRoot, AdminController.MigrateFilesOption.leave);
             job.getActionSet().add(new RecordedAction("foo"));
             testSerialize(job, LOG);
         }
