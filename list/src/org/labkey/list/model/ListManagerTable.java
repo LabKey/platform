@@ -16,6 +16,7 @@
 package org.labkey.list.model;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
@@ -32,9 +33,9 @@ import java.util.List;
  */
 public class ListManagerTable extends FilteredTable<ListManagerSchema>
 {
-    public ListManagerTable(ListManagerSchema userSchema, TableInfo table)
+    public ListManagerTable(ListManagerSchema userSchema, TableInfo table, ContainerFilter cf)
     {
-        super(table, userSchema);
+        super(table, userSchema, cf);
 
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("ListID"))).setHidden(true);
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Name")));
