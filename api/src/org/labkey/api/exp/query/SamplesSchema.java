@@ -110,7 +110,7 @@ public class SamplesSchema extends AbstractExpSchema
         return getSampleSets().keySet();
     }
 
-    public TableInfo createTable(String name)
+    public TableInfo createTable(String name, ContainerFilter cf)
     {
         ExpSampleSet ss = getSampleSets().get(name);
         if (ss == null)
