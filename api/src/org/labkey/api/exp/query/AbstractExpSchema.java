@@ -15,6 +15,7 @@
  */
 package org.labkey.api.exp.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
@@ -55,5 +56,13 @@ public abstract class AbstractExpSchema extends UserSchema
     public void setContainerFilter(ContainerFilter filter)
     {
         _containerFilter = filter;
+    }
+
+    @Override
+    public @NotNull ContainerFilter getDefaultContainerFilter()
+    {
+        if (null != _containerFilter)
+            return _containerFilter;
+        return super.getDefaultContainerFilter();
     }
 }

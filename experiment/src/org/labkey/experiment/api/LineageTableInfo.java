@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
@@ -153,7 +154,7 @@ public class LineageTableInfo extends VirtualTable
                     {
                         // TODO don't call new SamplesSchema
                         SamplesSchema samplesSchema = new SamplesSchema(_userSchema.getUser(), _userSchema.getContainer());
-                        return samplesSchema.getSampleTable(ss);
+                        return samplesSchema.getSampleTable(ss, null);
                     });
                 }
 

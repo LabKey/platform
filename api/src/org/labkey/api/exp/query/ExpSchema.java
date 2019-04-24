@@ -111,7 +111,7 @@ public class ExpSchema extends AbstractExpSchema
             {
                 SamplesSchema schema = new SamplesSchema(expSchema.getPath(), expSchema.getUser(), expSchema.getContainer());
                 schema.setContainerFilter(expSchema._containerFilter);
-                ExpMaterialTable result = schema.getSampleTable(null);
+                ExpMaterialTable result = schema.getSampleTable(null, cf);
                 return result;
             }
         },

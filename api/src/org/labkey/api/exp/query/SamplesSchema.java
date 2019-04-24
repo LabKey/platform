@@ -115,7 +115,7 @@ public class SamplesSchema extends AbstractExpSchema
         ExpSampleSet ss = getSampleSets().get(name);
         if (ss == null)
             return null;
-        return getSampleTable(ss);
+        return getSampleTable(ss, cf);
     }
 
     @Override
@@ -143,11 +143,9 @@ public class SamplesSchema extends AbstractExpSchema
     }
 
     /** Creates a table of materials, scoped to the given sample set and including its custom columns, if provided */
-    public ExpMaterialTable getSampleTable(ExpSampleSet ss)
+    public ExpMaterialTable getSampleTable(ExpSampleSet ss, ContainerFilter cf)
     {
-        ExpMaterialTable ret = ExperimentService.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), this, null);
-        if (_containerFilter != null)
-            ret.setContainerFilter(_containerFilter);
+        ExpMaterialTable ret = ExperimentService.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), this, cf);
         ret.populate(ss, true);
         ret.overlayMetadata(ret.getPublicName(), SamplesSchema.this, new ArrayList<>());
         return ret;
