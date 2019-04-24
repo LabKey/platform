@@ -51,4 +51,9 @@ public class ContainerForeignKey extends QueryForeignKey
     {
         super(schema, new ContainerFilter.InternalNoContainerFilter(schema.getUser()), "core", schema.getContainer(), null, schema.getUser(), "Containers", "EntityId", "DisplayName");
     }
+
+    public ContainerForeignKey(UserSchema schema, ContainerFilter cf)
+    {
+        super(schema, cf, "core", schema.getContainer(), null, schema.getUser(), "Containers", "EntityId", "DisplayName");
+    }
 }

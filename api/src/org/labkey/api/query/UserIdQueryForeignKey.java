@@ -57,19 +57,24 @@ public class UserIdQueryForeignKey extends QueryForeignKey
     @Override
     public TableInfo getLookupTableInfo()
     {
-        TableInfo result = super.getLookupTableInfo();
-        if (_includeAllUsers)
+        if (_table == null && getSchema() != null)
         {
-            // Clear out the filter that might be preventing us from resolving the lookup if the user list is being filtered
-            FilteredTable table = (FilteredTable)result;
-            if (table == null)
+            _table = ((UserSchema) getSchema()).getTable(_tableName, getLookupContainerFilter(), true, true);
+
+            if (_includeAllUsers)
             {
-                // Exception 23740
-                throw new IllegalStateException("Failed to find lookup target " + getLookupSchemaName() + "." + getLookupTableName() + " in container " + getLookupContainer());
+                // Clear out the filter that might be preventing us from resolving the lookup if the user list is being filtered
+                FilteredTable table = (FilteredTable) _table;
+                if (table == null)
+                {
+                    // Exception 23740
+                    throw new IllegalStateException("Failed to find lookup target " + getLookupSchemaName() + "." + getLookupTableName() + " in container " + getLookupContainer());
+                }
+                table.clearConditions(FieldKey.fromParts("UserId"));
             }
-            table.clearConditions(FieldKey.fromParts("UserId"));
+            _table.setLocked(true);
         }
-        return result;
+        return _table;
     }
 
     /* set foreign key and display column */

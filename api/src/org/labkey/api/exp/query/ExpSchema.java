@@ -462,12 +462,13 @@ public class ExpSchema extends AbstractExpSchema
             }
             public TableInfo getLookupTableInfo(ContainerFilter cf)
             {
-                ExpExperimentTable result = (ExpExperimentTable)getTable(TableType.RunGroups,
-                        Objects.requireNonNullElse(cf, new ContainerFilter.CurrentPlusProjectAndShared(getUser())));
+                ExpExperimentTable result = (ExpExperimentTable)getTable(TableType.RunGroups.name(),
+                        Objects.requireNonNullElse(cf, new ContainerFilter.CurrentPlusProjectAndShared(getUser())), true, true);
                 if (!includeBatches)
                 {
                     result.setBatchProtocol(null);
                 }
+                result.setLocked(true);
                 return result;
             }
         };

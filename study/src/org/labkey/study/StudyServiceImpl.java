@@ -30,6 +30,7 @@ import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
@@ -848,7 +849,7 @@ public class StudyServiceImpl implements StudyService
                 var unionCol = unionColumns.get(name);
                 if (null == unionCol)
                 {
-                    unionCol = makeUnionColumn(c, aliasManager, containers, name);
+                    unionCol = makeUnionColumn(studyQuerySchema, c, aliasManager, containers, name);
                     if ("primarytype".equalsIgnoreCase(name))
                     {
                         LookupForeignKey fk = new LookupForeignKey("RowId")
@@ -990,14 +991,14 @@ public class StudyServiceImpl implements StudyService
         Map<String, BaseColumnInfo> unionColumns = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<>());
         for (ColumnInfo c : table.getColumns())
         {
-            unionColumns.put(c.getName(), makeUnionColumn(c, aliasManager, containers, c.getName()));
+            unionColumns.put(c.getName(), makeUnionColumn(schemaDefault, c, aliasManager, containers, c.getName()));
         }
 
         SQLFragment sqlf = getUnionSql(terms, filterFragmentMap, dontAliasColumns, dialect, unionColumns);
         return new UnionTable(schemaDefault, tableName, unionColumns.values(), sqlf, table, table.getTitleColumn());
     }
 
-    private BaseColumnInfo makeUnionColumn(ColumnInfo column, AliasManager aliasManager, Set<Container> containers, String name)
+    private BaseColumnInfo makeUnionColumn(StudyQuerySchema schema, ColumnInfo column, AliasManager aliasManager, Set<Container> containers, String name)
     {
         var unionCol = new AliasedColumn(null, new FieldKey(null,name), column, true)
         {
@@ -1012,11 +1013,9 @@ public class StudyServiceImpl implements StudyService
         unionCol.setAlias(aliasManager.decideAlias(name));
 
         unionCol.setJdbcType(JdbcType.promote(unionCol.getJdbcType(), column.getJdbcType()));
-        if ("container".equalsIgnoreCase(unionCol.getName()) && null != unionCol.getFk())
+        if ("container".equalsIgnoreCase(unionCol.getName()) && unionCol.getFk() instanceof ContainerForeignKey)
         {
-            TableInfo lookupTable = unionCol.getFk().getLookupTableInfo();
-            if (lookupTable instanceof FilteredTable)
-                ((FilteredTable)lookupTable).setContainerFilter(new ContainerFilter.SimpleContainerFilter(containers));
+            unionCol.setFk(new ContainerForeignKey(schema, new ContainerFilter.SimpleContainerFilter(containers)));
         }
 
         return unionCol;
