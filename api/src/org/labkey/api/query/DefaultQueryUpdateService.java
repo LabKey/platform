@@ -633,7 +633,8 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             {
                 pkVals[idx] = container;
             }
-            else if(null == pkVals[idx] && !pk.getColumnName().equalsIgnoreCase("Container")) {
+            if(null == pkVals[idx])
+            {
                 throw new InvalidKeyException("Value for key field '" + pk.getName() + "' was null or not supplied!", map);
             }
         }
