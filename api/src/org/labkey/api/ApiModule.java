@@ -35,6 +35,7 @@ import org.labkey.api.security.ApiKeyManager;
 import org.labkey.api.security.ApiKeyManager.ApiKeyMaintenanceTask;
 import org.labkey.api.security.AuthenticationLogoType;
 import org.labkey.api.security.AvatarType;
+import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.view.WebPartFactory;
 
@@ -64,8 +65,9 @@ public class ApiModule extends CodeOnlyModule
             AttachmentService.get().registerAttachmentType(ExpRunAttachmentType.get());
 
         // Replace the default JspFactory with a custom factory that injects our own JspWriter implementation
-        JspFactory factory = JspFactory.getDefaultFactory();
-        JspFactory.setDefaultFactory(new LabKeyJspFactory(factory));
+        LabKeyJspFactory factory = new LabKeyJspFactory(JspFactory.getDefaultFactory());
+        JspFactory.setDefaultFactory(factory);
+        ContextListener.addShutdownListener(factory);
     }
 
     @NotNull
