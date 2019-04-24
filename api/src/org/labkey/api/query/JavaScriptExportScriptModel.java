@@ -112,22 +112,6 @@ public class JavaScriptExportScriptModel extends ExportScriptModel
                 + PageFlowUtil.jsString(value) + ", LABKEY.Filter.Types." + operator.getScriptName() + ")";
     }
 
-    private String getColumns()
-    {
-        StringBuilder ret = new StringBuilder();
-        String sep = "";
-        for (DisplayColumn dc : getQueryView().getDisplayColumns())
-        {
-            if (dc.isQueryColumn())
-            {
-                ret.append(sep);
-                ret.append(dc.getColumnInfo().getName());
-                sep = ",";
-            }
-        }
-        return ret.toString();
-    }
-
     // Produce javascript code block containing all the standard query parameters. Callers need to wrap this block in
     // curly braces (at a minimum) and modify/add parameters as appropriate.
     public String getStandardJavaScriptParameters(int indentSpaces, boolean includeStandardCallbacks)
