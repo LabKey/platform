@@ -83,10 +83,18 @@ public class QueryHelper
     }
 
     @Nullable
+    public TableInfo getTableInfo(ContainerFilter cf)
+    {
+        UserSchema schema = getUserSchema();
+        return schema == null ? null : schema.getTable(_queryName, cf);
+    }
+
+    @Nullable
+    @Deprecated
     public TableInfo getTableInfo()
     {
         UserSchema schema = getUserSchema();
-        return schema == null ? null : schema.getTable(_queryName);
+        return schema == null ? null : schema.getTable(_queryName, null);
     }
 
     public UserSchema getUserSchema()
@@ -181,7 +189,7 @@ public class QueryHelper
     public Results select(List<FieldKey> columns, @Nullable SimpleFilter filter, @Nullable Sort sort)
     {
         QueryService qs = QueryService.get();
-        TableInfo ti = getTableInfo();
+        TableInfo ti = getTableInfo(null);
 
         Map<FieldKey, ColumnInfo> map = qs.getColumns(ti, columns);
         Set<FieldKey> fieldKeys = new LinkedHashSet<>();
@@ -217,14 +225,14 @@ public class QueryHelper
     {
         CustomView view = getCustomView();
 
-        return select(view == null ? getTableInfo().getDefaultVisibleColumns() : view.getColumns(), filter);
+        return select(view == null ? getTableInfo(null).getDefaultVisibleColumns() : view.getColumns(), filter);
     }
 
     public Results select()
     {
         CustomView view = getCustomView();
 
-        return select(view == null ? getTableInfo().getDefaultVisibleColumns() : view.getColumns(), null);
+        return select(view == null ? getTableInfo(null).getDefaultVisibleColumns() : view.getColumns(), null);
     }
 
     public ActionURL getQueryGridURL()
