@@ -860,6 +860,10 @@ public class PropertyController extends SpringActionController
         if (!kind.canEditDefinition(user, domain))
             throw new UnauthorizedException("You don't have permission to edit this domain.");
 
+        List<String> errors = DomainUtil.validateProperties(domain, update);
+        if (!errors.isEmpty())
+            return errors;
+
         return kind.updateDomain(original, update, container, user);
     }
 
