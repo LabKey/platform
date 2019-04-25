@@ -14,6 +14,7 @@ interface IDomainDesignerState {
     domainId?: number,
     returnUrl?: string,
     domain?: DomainDesign,
+    submitting: boolean,
     message?: string,
     messageType?: string
 }
@@ -34,6 +35,7 @@ export class App extends React.PureComponent<any, IDomainDesignerState> {
             queryName,
             domainId,
             returnUrl,
+            submitting: false,
             message: ((schemaName && queryName) || domainId) ? undefined : 'Missing required parameter: domainId or schemaName and queryName.'
         };
     }
@@ -55,18 +57,29 @@ export class App extends React.PureComponent<any, IDomainDesignerState> {
     submitHandler = () => {
         const { domain } = this.state;
 
+        this.setState(() => ({submitting: true}));
+
         saveDomain(domain)
             .then((success) => {
                 const newDomain = clearFieldDetails(domain);
 
-                this.setState({
+                this.setState(() => ({
                     domain: newDomain,
+                    submitting: false,
                     message: 'Domain saved successfully.',
                     messageType: 'success'
-                });
+                }));
+
+                window.setTimeout(() => {
+                    this.dismissAlert();
+                }, 5000);
             })
             .catch(error => {
-                this.setState({message: error.exception, messageType: 'danger'})
+                this.setState(() => ({
+                    submitting: false,
+                    message: error.exception,
+                    messageType: 'danger'
+                }));
             });
     };
 
@@ -86,7 +99,7 @@ export class App extends React.PureComponent<any, IDomainDesignerState> {
     };
 
     render() {
-        const { domain, message, messageType } = this.state;
+        const { domain, message, messageType, submitting } = this.state;
         const isLoading = domain === undefined && message === undefined;
 
         if (isLoading) {
@@ -98,8 +111,22 @@ export class App extends React.PureComponent<any, IDomainDesignerState> {
                 { domain && <Row>
                     <Col xs={12}>
                         <ButtonToolbar>
-                            <Button type='button' className={'domain-designer-button'} bsClass='btn' onClick={this.onCancel}>Cancel</Button>
-                            <Button type='button' className={'domain-designer-button'} bsClass='btn btn-success' onClick={this.submitHandler} >Save Changes</Button>
+                            <Button
+                                type='button'
+                                className={'domain-designer-button'}
+                                bsClass='btn'
+                                onClick={this.onCancel}
+                                disabled={submitting}>
+                                Cancel
+                            </Button>
+                            <Button
+                                type='button'
+                                className={'domain-designer-button'}
+                                bsClass='btn btn-success'
+                                onClick={this.submitHandler}
+                                disabled={submitting}>
+                                Save Changes
+                            </Button>
                         </ButtonToolbar>
                     </Col>
                 </Row>}
