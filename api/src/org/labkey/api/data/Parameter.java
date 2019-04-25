@@ -757,6 +757,7 @@ public class Parameter implements AutoCloseable
                     _closed = true;
                 }
             }
+            _parameters = new Parameter[0];
         }
 
         public boolean isClosed()
