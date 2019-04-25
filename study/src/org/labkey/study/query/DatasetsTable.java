@@ -46,7 +46,7 @@ public class DatasetsTable extends FilteredTable<StudyQuerySchema>
 {
     public DatasetsTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(StudySchema.getInstance().getTableInfoDataset(), schema, cf);
+        super(StudySchema.getInstance().getTableInfoDataset(), schema, null);
         setName("Datasets");
         for (ColumnInfo baseColumn : _rootTable.getColumns())
         {
