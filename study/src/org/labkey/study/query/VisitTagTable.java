@@ -35,9 +35,7 @@ public class VisitTagTable extends BaseStudyTable
 {
     public VisitTagTable(StudyQuerySchema schema, @Nullable ContainerFilter containerFilter)
     {
-        super(schema, StudySchema.getInstance().getTableInfoVisitTag(), true);
-        if (null != containerFilter)
-            _setContainerFilter(containerFilter);
+        super(schema, StudySchema.getInstance().getTableInfoVisitTag(), containerFilter, true);
 
         setName(StudyQuerySchema.VISIT_TAG_TABLE_NAME);
         setDescription("Contains one row per visit tag");

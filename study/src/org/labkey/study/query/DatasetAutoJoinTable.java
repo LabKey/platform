@@ -18,6 +18,7 @@ package org.labkey.study.query;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.VirtualTable;
@@ -65,7 +66,7 @@ public class DatasetAutoJoinTable extends VirtualTable
     // The "_Key" FieldKey that has possibly been remapped.
     private FieldKey _keyFieldKey;
 
-    public DatasetAutoJoinTable(StudyQuerySchema schema, DatasetDefinition source,
+    public DatasetAutoJoinTable(StudyQuerySchema schema, ContainerFilter cf, DatasetDefinition source,
                                 @Nullable ColumnInfo participantIdColumn,
                                 @Nullable FieldKey sequenceNumFieldKey,
                                 @Nullable FieldKey keyFieldKey)
@@ -125,7 +126,7 @@ public class DatasetAutoJoinTable extends VirtualTable
             if (getColumn(name) != null)
                 continue;
 
-            var datasetColumn = createDatasetColumn(name, dataset);
+            var datasetColumn = createDatasetColumn(name, dataset, cf);
             if (datasetColumn != null)
             {
                 addColumn(datasetColumn);
@@ -142,7 +143,7 @@ public class DatasetAutoJoinTable extends VirtualTable
     }
 
 
-    protected BaseColumnInfo createDatasetColumn(String name, final DatasetDefinition dsd)
+    protected BaseColumnInfo createDatasetColumn(String name, final DatasetDefinition dsd, ContainerFilter cf)
     {
         BaseColumnInfo ret;
         if (_participantIdColumn == null)
@@ -159,28 +160,28 @@ public class DatasetAutoJoinTable extends VirtualTable
         {
             if (dsd.isDemographicData())
                 // A -> A
-                fk = createParticipantFK(dsd);
+                fk = createParticipantFK(dsd, cf);
         }
         else if (_keyPropertyName == null || _source.isAssayData())
         {
             if (dsd.isDemographicData())
                 // B -> A
-                fk = createParticipantFK(dsd);
+                fk = createParticipantFK(dsd, cf);
             else if (dsd.getKeyPropertyName() == null)
                 // B -> B
-                fk = createParticipantSequenceNumFK(dsd);
+                fk = createParticipantSequenceNumFK(dsd, cf);
         }
         else
         {
             if (dsd.isDemographicData())
                 // C -> A
-                fk = createParticipantFK(dsd);
+                fk = createParticipantFK(dsd, cf);
             else if (dsd.getKeyPropertyName() == null || dsd.isAssayData())
                 // C -> B
-                fk = createParticipantSequenceNumFK(dsd);
+                fk = createParticipantSequenceNumFK(dsd, cf);
             else
                 // C -> C
-                fk = createParticipantSequenceNumKeyFK(dsd);
+                fk = createParticipantSequenceNumKeyFK(dsd, cf);
         }
 
         // The join type was not supported.
@@ -199,20 +200,20 @@ public class DatasetAutoJoinTable extends VirtualTable
         return ret;
     }
 
-    private DatasetForeignKey createParticipantFK(DatasetDefinition dsd)
+    private DatasetForeignKey createParticipantFK(DatasetDefinition dsd, ContainerFilter cf)
     {
         assert dsd.isDemographicData();
-        DatasetForeignKey fk = new DatasetForeignKey(dsd);
+        DatasetForeignKey fk = new DatasetForeignKey(dsd, cf);
         fk.setJoinDescription(StudyService.get().getSubjectColumnName(dsd.getContainer()));
         return fk;
     }
 
-    private DatasetForeignKey createParticipantSequenceNumFK(DatasetDefinition dsd)
+    private DatasetForeignKey createParticipantSequenceNumFK(DatasetDefinition dsd, ContainerFilter cf)
     {
         assert !dsd.isDemographicData() && (dsd.getKeyPropertyName() == null || dsd.isAssayData());
         assert !_source.isDemographicData();
 
-        DatasetForeignKey fk = new DatasetForeignKey(dsd);
+        DatasetForeignKey fk = new DatasetForeignKey(dsd, cf);
         if (_sequenceNumFieldKey != null)
         {
             fk.addJoin(_sequenceNumFieldKey, "SequenceNum", false);
@@ -223,7 +224,7 @@ public class DatasetAutoJoinTable extends VirtualTable
         return fk;
     }
 
-    private DatasetForeignKey createParticipantSequenceNumKeyFK(DatasetDefinition dsd)
+    private DatasetForeignKey createParticipantSequenceNumKeyFK(DatasetDefinition dsd, ContainerFilter cf)
     {
         assert !dsd.isDemographicData() && dsd.getKeyPropertyName() != null;
         assert !_source.isDemographicData() && _keyPropertyName != null;
@@ -231,7 +232,7 @@ public class DatasetAutoJoinTable extends VirtualTable
         if (!_source.hasMatchingExtraKey(dsd))
             return null;
 
-        DatasetForeignKey fk = new DatasetForeignKey(dsd);
+        DatasetForeignKey fk = new DatasetForeignKey(dsd, cf);
         if (_sequenceNumFieldKey != null && _keyFieldKey != null)
         {
             fk.addJoin(_sequenceNumFieldKey, "SequenceNum", false);
@@ -259,7 +260,7 @@ public class DatasetAutoJoinTable extends VirtualTable
         private final DatasetDefinition dsd;
         private String _joinDescription;
 
-        public DatasetForeignKey(DatasetDefinition dsd)
+        public DatasetForeignKey(DatasetDefinition dsd, ContainerFilter cf)
         {
             super(StudyService.get().getSubjectColumnName(dsd.getContainer()));
             this.dsd = dsd;
@@ -269,7 +270,7 @@ public class DatasetAutoJoinTable extends VirtualTable
         {
             try
             {
-                DatasetTableImpl ret = _schema.createDatasetTableInternal(dsd);
+                DatasetTableImpl ret = _schema.createDatasetTableInternal(dsd, getLookupContainerFilter());
                 ret.hideParticipantLookups();
                 return ret;
             }

@@ -21,6 +21,7 @@ import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
@@ -64,9 +65,9 @@ public class StudyPropertiesTable extends BaseStudyTable
     private Domain _domain;
     private List<FieldKey> _visibleColumns = new ArrayList<>();
 
-    public StudyPropertiesTable(StudyQuerySchema schema)
+    public StudyPropertiesTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoStudy());
+        super(schema, StudySchema.getInstance().getTableInfoStudy(), cf);
 
         Container c = schema.getContainer();
 

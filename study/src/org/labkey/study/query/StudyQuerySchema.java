@@ -430,11 +430,11 @@ public class StudyQuerySchema extends UserSchema
      * CONSIDER: use Schema.getTable() instead, use this only if you intend to manipulate the tableinfo in some way
      * UserSchema will call afterConstruct() for tables constructed the usual way
      */
-    public DatasetTableImpl createDatasetTableInternal(DatasetDefinition definition)
+    public DatasetTableImpl createDatasetTableInternal(DatasetDefinition definition, ContainerFilter cf)
     {
         try
         {
-            DatasetTableImpl ret = new DatasetTableImpl(this, definition);
+            DatasetTableImpl ret = new DatasetTableImpl(this, cf, definition);
             ret.afterConstruct();
             return ret;
         }
@@ -454,7 +454,7 @@ public class StudyQuerySchema extends UserSchema
 
 
     @Override
-    public TableInfo createTable(String name)
+    public TableInfo createTable(String name, ContainerFilter cf)
     {
         StudyService studyService = StudyService.get();
         if (null == studyService)
@@ -462,7 +462,7 @@ public class StudyQuerySchema extends UserSchema
 
         if (PROPERTIES_TABLE_NAME.equalsIgnoreCase(name) || STUDY_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return new StudyPropertiesTable(this);
+            return new StudyPropertiesTable(this, cf);
         }
 
         // Expose the simplified specimen table even if there's no study in this container. The caller may
@@ -479,16 +479,17 @@ public class StudyQuerySchema extends UserSchema
                 containers.add(sourceStudyContainer);
 
                 Map<Container, SQLFragment> filterFragments = getAncillaryStudyFilterFragments(sourceStudyContainer);
+                // TODO ContainerFilter
                 return studyService.getSpecimenTableUnion(this, containers, filterFragments, _dontAliasColumns, false);
             }
-            return new SimpleSpecimenTable(this, !_mustCheckPermissions);
+            return new SimpleSpecimenTable(this, cf, !_mustCheckPermissions);
         }
 
         if (VIAL_TABLE_NAME.equalsIgnoreCase(name))
         {
             if (getContainer().isRoot())
                 return null;
-            return new VialTable(this);
+            return new VialTable(this, cf);
         }
 
         if ("Site".equalsIgnoreCase(name) || LOCATION_TABLE_NAME.equalsIgnoreCase(name))
@@ -502,51 +503,52 @@ public class StudyQuerySchema extends UserSchema
                 Container sourceStudyContainer = _study.getSourceStudy().getContainer();
                 containers.add(sourceStudyContainer);
 
+                // TODO ContainerFilter
                 return studyService.getTypeTableUnion(LocationTable.class, this, containers, _dontAliasColumns);
             }
-            return new LocationTable(this);
+            return new LocationTable(this, cf);
         }
 
         // always expose the study designer lookup tables
         if (STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return new StudyDesignImmunogenTypesTable(this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
+            return new StudyDesignImmunogenTypesTable(this, cf);
         }
         if (STUDY_DESIGN_CHALLENGE_TYPES_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return new StudyDesignChallengeTypesTable(this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
+            return new StudyDesignChallengeTypesTable(this, cf);
         }
         if (STUDY_DESIGN_GENES_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return new StudyDesignGenesTable(this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
+            return new StudyDesignGenesTable(this, cf);
         }
         if (STUDY_DESIGN_ROUTES_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return new StudyDesignRoutesTable(this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
+            return new StudyDesignRoutesTable(this, cf);
         }
         if (STUDY_DESIGN_SUB_TYPES_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return new StudyDesignSubTypesTable(this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
+            return new StudyDesignSubTypesTable(this, cf);
         }
         if (STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return new StudyDesignSampleTypesTable(this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
+            return new StudyDesignSampleTypesTable(this, cf);
         }
         if (STUDY_DESIGN_UNITS_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return new StudyDesignUnitsTable(this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
+            return new StudyDesignUnitsTable(this, cf);
         }
         if (STUDY_DESIGN_ASSAYS_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return new StudyDesignAssaysTable(this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
+            return new StudyDesignAssaysTable(this, cf);
         }
         if (STUDY_DESIGN_LABS_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return new StudyDesignLabsTable(this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
+            return new StudyDesignLabsTable(this, cf);
         }
         if (DOSE_AND_ROUTE_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return new DoseAndRouteTable(this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
+            return new DoseAndRouteTable(this, cf);
         }
 
         if (_study == null)
@@ -554,31 +556,31 @@ public class StudyQuerySchema extends UserSchema
 
         if (STUDY_DATA_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return new StudyDataTable(this);
+            return new StudyDataTable(this, cf);
         }
         if ("Cohort".equalsIgnoreCase(name))
         {
-            return new CohortTable(this);
+            return new CohortTable(this, cf);
         }
         if (studyService.getSubjectTableName(getContainer()).equalsIgnoreCase(name))
         {
-            return new ParticipantTable(this, false);
+            return new ParticipantTable(this, cf, false);
         }
         if (studyService.getSubjectCategoryTableName(getContainer()).equalsIgnoreCase(name))
         {
-            return new ParticipantCategoryTable(this);
+            return new ParticipantCategoryTable(this, cf);
         }
         if (studyService.getSubjectGroupTableName(getContainer()).equalsIgnoreCase(name))
         {
-            return new ParticipantGroupTable(this);
+            return new ParticipantGroupTable(this, cf);
         }
         if (studyService.getSubjectGroupMapTableName(getContainer()).equalsIgnoreCase(name))
         {
-            return new ParticipantGroupMapTable(this);
+            return new ParticipantGroupMapTable(this, cf);
         }
         if (PARTICIPANT_GROUP_COHORT_UNION_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return new ParticipantGroupCohortUnionTable(this);
+            return new ParticipantGroupCohortUnionTable(this, cf);
         }
         if (SPECIMEN_SUMMARY_TABLE_NAME.equalsIgnoreCase(name))
         {
@@ -591,10 +593,11 @@ public class StudyQuerySchema extends UserSchema
                 Container sourceStudyContainer = _study.getSourceStudy().getContainer();
                 containers.add(sourceStudyContainer);
 
+                // TODO ContainerFilter
                 Map<Container, SQLFragment> filterFragments = getAncillaryStudyFilterFragments(sourceStudyContainer);
                 return studyService.getSpecimenSummaryTableUnion(this, containers, filterFragments, _dontAliasColumns, false);
             }
-            return new SpecimenSummaryTable(this);
+            return new SpecimenSummaryTable(this, cf);
         }
         if (SPECIMEN_DETAIL_TABLE_NAME.equalsIgnoreCase(name))
         {
@@ -607,10 +610,11 @@ public class StudyQuerySchema extends UserSchema
                 Container sourceStudyContainer = _study.getSourceStudy().getContainer();
                 containers.add(sourceStudyContainer);
 
+                // TODO ContainerFilter
                 Map<Container, SQLFragment> filterFragments = getAncillaryStudyFilterFragments(sourceStudyContainer);
                 return studyService.getSpecimenDetailTableUnion(this, containers, filterFragments, _dontAliasColumns, false);
             }
-            return new SpecimenDetailTable(this);
+            return new SpecimenDetailTable(this, cf);
         }
         if (SPECIMEN_WRAP_TABLE_NAME.equalsIgnoreCase(name))
         {
@@ -623,53 +627,54 @@ public class StudyQuerySchema extends UserSchema
                 Container sourceStudyContainer = _study.getSourceStudy().getContainer();
                 containers.add(sourceStudyContainer);
 
+                // TODO ContainerFilter
                 Map<Container, SQLFragment> filterFragments = getAncillaryStudyFilterFragments(sourceStudyContainer);
                 return studyService.getSpecimenWrapTableUnion(this, containers, filterFragments, _dontAliasColumns, false);
             }
-            return new SpecimenWrapTable(this);
+            return new SpecimenWrapTable(this, cf);
         }
         if ("SpecimenVialCount".equalsIgnoreCase(name))
         {
-            return new SpecimenVialCountTable(this);
+            return new SpecimenVialCountTable(this, cf);
         }
         if (SPECIMEN_EVENT_TABLE_NAME.equalsIgnoreCase(name))
         {
             if (getContainer().isRoot())
                 return null;
-            return new SpecimenEventTable(this);
+            return new SpecimenEventTable(this, cf);
         }
         if ((studyService.getSubjectVisitTableName(getContainer()).equalsIgnoreCase(name) || "ParticipantVisit".equalsIgnoreCase(name)) && _study.getTimepointType() != TimepointType.CONTINUOUS)
         {
-            return new ParticipantVisitTable(this, false);
+            return new ParticipantVisitTable(this, cf, false);
         }
         if ("SpecimenRequest".equalsIgnoreCase(name))
         {
-            return new SpecimenRequestTable(this);
+            return new SpecimenRequestTable(this, cf);
         }
         if ("SpecimenRequestStatus".equalsIgnoreCase(name))
         {
-            return new SpecimenRequestStatusTable(this);
+            return new SpecimenRequestStatusTable(this, cf);
         }
         if (VISIT_TABLE_NAME.equalsIgnoreCase(name) && _study.getTimepointType() != TimepointType.CONTINUOUS)
         {
-            return new VisitTable(this);
+            return new VisitTable(this, cf);
         }
         if (VISIT_ALIASES.equalsIgnoreCase(name) && _study.getTimepointType() != TimepointType.CONTINUOUS)
         {
-            return new VisitAliasesTable(this);
+            return new VisitAliasesTable(this, cf);
         }
         if ("DataSets".equalsIgnoreCase(name))
         {
-            return new DatasetsTable(this);
+            return new DatasetsTable(this, cf);
         }
         if (DatasetColumnsTable.NAME.equalsIgnoreCase(name))
         {
-            return new DatasetColumnsTable(this);
+            return new DatasetColumnsTable(this, cf);
         }
         if (QCSTATE_TABLE_NAME.equalsIgnoreCase(name))
         {
             // Moved to core but kept here for backwards compatibility
-            return new QCStateTable(this);
+            return new QCStateTable(this, cf);
         }
         if (SPECIMEN_ADDITIVE_TABLE_NAME.equalsIgnoreCase(name))
         {
@@ -682,9 +687,10 @@ public class StudyQuerySchema extends UserSchema
                 Container sourceStudyContainer = _study.getSourceStudy().getContainer();
                 containers.add(sourceStudyContainer);
 
+                // TODO ContainerFilter
                 return studyService.getTypeTableUnion(AdditiveTypeTable.class, this, containers, _dontAliasColumns);
             }
-            return new AdditiveTypeTable(this);
+            return new AdditiveTypeTable(this, cf);
         }
         if (SPECIMEN_DERIVATIVE_TABLE_NAME.equalsIgnoreCase(name))
         {
@@ -697,9 +703,10 @@ public class StudyQuerySchema extends UserSchema
                 Container sourceStudyContainer = _study.getSourceStudy().getContainer();
                 containers.add(sourceStudyContainer);
 
+                // TODO ContainerFilter
                 return studyService.getTypeTableUnion(DerivativeTypeTable.class, this, containers, _dontAliasColumns);
             }
-            return new DerivativeTypeTable(this);
+            return new DerivativeTypeTable(this, cf);
         }
         if (SPECIMEN_PRIMARY_TYPE_TABLE_NAME.equalsIgnoreCase(name))
         {
@@ -712,21 +719,22 @@ public class StudyQuerySchema extends UserSchema
                 Container sourceStudyContainer = _study.getSourceStudy().getContainer();
                 containers.add(sourceStudyContainer);
 
+                // TODO ContainerFilter
                 return studyService.getTypeTableUnion(PrimaryTypeTable.class, this, containers, _dontAliasColumns);
             }
-            return new PrimaryTypeTable(this);
+            return new PrimaryTypeTable(this, cf);
         }
         if ("SpecimenComment".equalsIgnoreCase(name))
         {
-            return new SpecimenCommentTable(this);
+            return new SpecimenCommentTable(this, cf);
         }
         if ("VialRequest".equalsIgnoreCase(name))
         {
-            return new VialRequestTable(this);
+            return new VialRequestTable(this, cf);
         }
         if (STUDY_SNAPSHOT_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return new StudySnapshotTable(this);
+            return new StudySnapshotTable(this, cf);
         }
         if (PRODUCT_TABLE_NAME.equalsIgnoreCase(name))
         {
@@ -736,75 +744,76 @@ public class StudyQuerySchema extends UserSchema
             {
                 domain = domainKind.ensureDomain(getContainer(), getUser(), PRODUCT_TABLE_NAME);
             }
-            return StudyProductTable.create(domain, this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
+            return StudyProductTable.create(domain, this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : cf);
         }
         if (PRODUCT_ANTIGEN_TABLE_NAME.equalsIgnoreCase(name))
         {
             StudyProductAntigenDomainKind domainKind = new StudyProductAntigenDomainKind();
             Domain domain = domainKind.ensureDomain(getContainer(), getUser(), PRODUCT_ANTIGEN_TABLE_NAME);
 
-            return StudyProductAntigenTable.create(domain, this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
+            return StudyProductAntigenTable.create(domain, this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : cf);
         }
         if (TREATMENT_PRODUCT_MAP_TABLE_NAME.equalsIgnoreCase(name))
         {
             StudyTreatmentProductDomainKind domainKind = new StudyTreatmentProductDomainKind();
             Domain domain = domainKind.ensureDomain(getContainer(), getUser(), TREATMENT_PRODUCT_MAP_TABLE_NAME);
 
-            return StudyTreatmentProductTable.create(domain, this, isDataspace() ? new ContainerFilter.AllInProject(getUser()) : null);
+            return StudyTreatmentProductTable.create(domain, this, isDataspace() ? new ContainerFilter.AllInProject(getUser()) : cf);
         }
         if (TREATMENT_TABLE_NAME.equalsIgnoreCase(name))
         {
             StudyTreatmentDomainKind domainKind = new StudyTreatmentDomainKind();
             Domain domain = domainKind.ensureDomain(getContainer(), getUser(), TREATMENT_TABLE_NAME);
 
-            return StudyTreatmentTable.create(domain, this, isDataspace() ? new ContainerFilter.AllInProject(getUser()) : null);
+            return StudyTreatmentTable.create(domain, this, isDataspace() ? new ContainerFilter.AllInProject(getUser()) : cf);
         }
         if (TREATMENT_VISIT_MAP_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return new StudyTreatmentVisitMapTable(this);
+            return new StudyTreatmentVisitMapTable(this, cf);
         }
         if (SpecimenPivotByPrimaryType.PIVOT_BY_PRIMARY_TYPE.equalsIgnoreCase(name))
         {
-            return new SpecimenPivotByPrimaryType(this);
+            return new SpecimenPivotByPrimaryType(this, cf);
         }
         if (SpecimenPivotByDerivativeType.PIVOT_BY_DERIVATIVE_TYPE.equalsIgnoreCase(name))
         {
-            return new SpecimenPivotByDerivativeType(this);
+            return new SpecimenPivotByDerivativeType(this, cf);
         }
         if (SpecimenPivotByRequestingLocation.PIVOT_BY_REQUESTING_LOCATION.equalsIgnoreCase(name))
         {
-            return new SpecimenPivotByRequestingLocation(this);
+            return new SpecimenPivotByRequestingLocation(this, cf);
         }
         if (LOCATION_SPECIMEN_LIST_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return new LocationSpecimenListTable(this);
+            return new LocationSpecimenListTable(this, cf);
         }
         if (PERSONNEL_TABLE_NAME.equalsIgnoreCase(name))
         {
             StudyPersonnelDomainKind domainKind = new StudyPersonnelDomainKind();
             Domain domain = domainKind.ensureDomain(getContainer(), getUser(), PERSONNEL_TABLE_NAME);
 
+            // TODO ContainerFilter
             return StudyPersonnelTable.create(domain, this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
         }
         if (OBJECTIVE_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return new StudyObjectiveTable(this);
+            return new StudyObjectiveTable(this, cf);
         }
         if (ASSAY_SPECIMEN_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return new AssaySpecimenTable(this);
+            return new AssaySpecimenTable(this, cf);
         }
         if (ASSAY_SPECIMEN_VISIT_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return new AssaySpecimenVisitTable(this);
+            return new AssaySpecimenVisitTable(this, cf);
         }
         if (VISIT_TAG_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return new VisitTagTable(this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
+            return new VisitTagTable(this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : cf);
         }
         if (VISIT_TAG_MAP_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return new VisitTagMapTable(this, null);
+            return new VisitTagMapTable(this, cf);
         }
         if (name.startsWith(VISUALIZATION_VISIT_TAG_TABLE_NAME))
         {
@@ -825,7 +834,7 @@ public class StudyQuerySchema extends UserSchema
             String tagName = hyphenIndex > -1 ? params.substring(0, hyphenIndex) : params;
             String altQueryName = hyphenIndex > -1 ? params.substring(hyphenIndex + 1) : null;
 
-            return new VisualizationVisitTagTable(getStudy(), getUser(), tagName, useProtocolDay, altQueryName);
+            return new VisualizationVisitTagTable(this, cf, getStudy(), getUser(), tagName, useProtocolDay, altQueryName);
         }
 
         // Might be a dataset
@@ -835,7 +844,7 @@ public class StudyQuerySchema extends UserSchema
         {
             try
             {
-                return new DatasetTableImpl(this, dsd);
+                return new DatasetTableImpl(this, cf, dsd);
             }
             catch (UnauthorizedException e)
             {
@@ -919,7 +928,7 @@ public class StudyQuerySchema extends UserSchema
 
                 if (null != def)
                 {
-                    DatasetTableImpl datasetTable = new DatasetTableImpl(this, def);
+                    DatasetTableImpl datasetTable = new DatasetTableImpl(this, null, def);
 
                     String aliasName = study.getParticipantAliasProperty();
                     String sourceName = study.getParticipantAliasSourceProperty();
@@ -1168,20 +1177,20 @@ public class StudyQuerySchema extends UserSchema
     }
 
     // Called on a study folder; return project-level table and container if appropriate; otherwise table from this container
-    public TablePackage getTablePackage(AbstractContext ctx, StudyQuerySchema projectSchema, String tableName)
+    public TablePackage getTablePackage(AbstractContext ctx, StudyQuerySchema projectSchema, String tableName, ContainerFilter cf)
     {
         TableInfo tableInfo;
         Container container;
         boolean isProjectLevel = false;
         if (ctx.isDataspaceProject() && StudyQuerySchema.isDataspaceProjectTable(tableName))
         {
-            tableInfo = projectSchema.getTable(tableName);
+            tableInfo = projectSchema.getTable(tableName, cf, true, false);
             container = ctx.getProject();
             isProjectLevel = true;
         }
         else
         {
-            tableInfo = this.getTable(tableName);
+            tableInfo = this.getTable(tableName, cf, true, true);
             container = ctx.getContainer();
         }
         return new TablePackage(tableInfo, container, isProjectLevel);

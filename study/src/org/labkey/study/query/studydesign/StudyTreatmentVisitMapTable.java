@@ -15,6 +15,7 @@
  */
 package org.labkey.study.query.studydesign;
 
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DefaultQueryUpdateService;
@@ -35,9 +36,9 @@ import org.labkey.study.query.VisitTable;
  */
 public class StudyTreatmentVisitMapTable extends BaseStudyTable
 {
-    public StudyTreatmentVisitMapTable(StudyQuerySchema schema)
+    public StudyTreatmentVisitMapTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoTreatmentVisitMap());
+        super(schema, StudySchema.getInstance().getTableInfoTreatmentVisitMap(), cf);
         setName(StudyQuerySchema.TREATMENT_VISIT_MAP_TABLE_NAME);
         setDescription("Contains one row per cohort/treatment/visit mapping");
 
@@ -46,7 +47,7 @@ public class StudyTreatmentVisitMapTable extends BaseStudyTable
         {
             public TableInfo getLookupTableInfo()
             {
-                return new CohortTable(_userSchema);
+                return new CohortTable(_userSchema, cf);
             }
         });
         addColumn(cohortCol);
@@ -57,7 +58,7 @@ public class StudyTreatmentVisitMapTable extends BaseStudyTable
             @Override
             public TableInfo getLookupTableInfo()
             {
-                return QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.TREATMENT_TABLE_NAME);
+                return QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.TREATMENT_TABLE_NAME, cf);
             }
         });
         addColumn(treatmentCol);
@@ -67,7 +68,7 @@ public class StudyTreatmentVisitMapTable extends BaseStudyTable
         {
             public TableInfo getLookupTableInfo()
             {
-                return new VisitTable(_userSchema);
+                return new VisitTable(_userSchema, cf);
             }
         });
         addColumn(visitCol);

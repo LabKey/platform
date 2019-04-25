@@ -15,6 +15,7 @@
  */
 package org.labkey.study.query;
 
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.study.StudyService;
@@ -26,15 +27,14 @@ import org.labkey.study.StudySchema;
  */
 public class ParticipantGroupMapTable extends BaseStudyTable
 {
-    public ParticipantGroupMapTable(StudyQuerySchema schema)
+    public ParticipantGroupMapTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        // TODO ContainerFilter
-        super(schema, StudySchema.getInstance().getTableInfoParticipantGroupMap());
+        super(schema, StudySchema.getInstance().getTableInfoParticipantGroupMap(), cf);
         setName(StudyService.get().getSubjectGroupMapTableName(schema.getContainer()));
         setDescription("This table contains study group membership information");
 
         var groupIdColumn = new AliasedColumn(this, "GroupId", _rootTable.getColumn("GroupId"));
-        groupIdColumn.setFk( QueryForeignKey.from(_userSchema, null).to(StudyService.get().getSubjectGroupTableName(getContainer()), "RowId", "Label") );
+        groupIdColumn.setFk( QueryForeignKey.from(_userSchema, cf).to(StudyService.get().getSubjectGroupTableName(getContainer()), "RowId", "Label") );
         addColumn(groupIdColumn);
         addWrapParticipantColumn("ParticipantId");
         addContainerColumn();

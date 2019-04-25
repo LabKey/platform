@@ -35,6 +35,7 @@ import org.labkey.api.data.TableInfoWriter;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.ColumnType;
@@ -61,25 +62,16 @@ public abstract class DefaultStudyDesignWriter
     {
         for (String tableName : tableNames)
         {
-            StudyQuerySchema.TablePackage tableAndContainer = schema.getTablePackage(ctx, projectSchema, tableName);
-            writeTableData(ctx, vf, tableAndContainer.getTableInfo(), getDefaultColumns(ctx, tableAndContainer.getTableInfo()), containerFilter);
+            StudyQuerySchema.TablePackage tableAndContainer = schema.getTablePackage(ctx, projectSchema, tableName, containerFilter);
+            writeTableData(ctx, vf, tableAndContainer.getTableInfo(), getDefaultColumns(ctx, tableAndContainer.getTableInfo()));
         }
     }
 
-    protected void writeTableData(StudyExportContext ctx, VirtualFile vf, TableInfo table, List<ColumnInfo> columns,
-                                @Nullable ContainerFilter containerFilter) throws IOException
+    protected void writeTableData(StudyExportContext ctx, VirtualFile vf, TableInfo table, List<ColumnInfo> columns) throws IOException
     {
         // Write each table as a separate .tsv
         if (table != null)
         {
-            if (containerFilter != null)
-            {
-                if (table instanceof ContainerFilterable)
-                {
-                    ((ContainerFilterable)table).setContainerFilter(containerFilter);
-                }
-            }
-//            createExtraForeignKeyColumns(table, columns);                             // TODO: QueryService gets unhappy and seems unnecessary
             Results rs = QueryService.get().select(table, columns, null, null, null, false);
             writeResultsToTSV(rs, vf, getFileName(table));
         }
@@ -137,7 +129,7 @@ public abstract class DefaultStudyDesignWriter
 
         for (String tableName : tableNames)
         {
-            StudyQuerySchema.TablePackage tablePackage = schema.getTablePackage(ctx, projectSchema, tableName);
+            StudyQuerySchema.TablePackage tablePackage = schema.getTablePackage(ctx, projectSchema, tableName, null);
             TableInfo tinfo = tablePackage.getTableInfo();
             Domain domain = tinfo.getDomain();
             if (domain != null)

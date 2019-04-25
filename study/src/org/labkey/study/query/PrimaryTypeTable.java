@@ -16,6 +16,7 @@
 
 package org.labkey.study.query;
 
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
@@ -23,9 +24,9 @@ import org.labkey.study.StudySchema;
 
 public class PrimaryTypeTable extends BaseStudyTable
 {
-    public PrimaryTypeTable(StudyQuerySchema schema)
+    public PrimaryTypeTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSpecimenPrimaryType(schema.getContainer()), true);
+        super(schema, StudySchema.getInstance().getTableInfoSpecimenPrimaryType(schema.getContainer()), cf, true);
         setName("SpecimenPrimaryType");
         setPublicSchemaName("study");
         addWrapColumn(_rootTable.getColumn("RowId")).setHidden(true);

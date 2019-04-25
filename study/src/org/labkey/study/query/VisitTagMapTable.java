@@ -40,9 +40,7 @@ public class VisitTagMapTable extends BaseStudyTable
 {
     public VisitTagMapTable(final StudyQuerySchema schema, @Nullable ContainerFilter containerFilter)
     {
-        super(schema, StudySchema.getInstance().getTableInfoVisitTagMap(), true);
-        if (null != containerFilter)
-            _setContainerFilter(containerFilter);
+        super(schema, StudySchema.getInstance().getTableInfoVisitTagMap(), containerFilter, true);
 
         var rowIdColumn = wrapColumn( _rootTable.getColumn("RowId"));
         rowIdColumn.setHidden(true);
@@ -83,7 +81,7 @@ public class VisitTagMapTable extends BaseStudyTable
         {
             cohortColumn = new NullColumnInfo(this, "Cohort", JdbcType.INTEGER);
         }
-        cohortColumn.setFk(new CohortForeignKey(schema, showCohorts, cohortColumn.getLabel()));
+        cohortColumn.setFk(new CohortForeignKey(schema, containerFilter, showCohorts, cohortColumn.getLabel()));
         addColumn(cohortColumn);
 
         addContainerColumn();

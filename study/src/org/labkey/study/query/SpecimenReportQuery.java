@@ -16,6 +16,7 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
@@ -102,9 +103,10 @@ public class SpecimenReportQuery
 //            IN (SELECT ...)
 
 
-    public static TableInfo getPivotByPrimaryType(Container container, User user)
+    public static TableInfo getPivotByPrimaryType(StudyQuerySchema schema, ContainerFilter cf)
     {
-        Study study = StudyService.get().getStudy(container);
+        Study study = schema.getStudy();
+        Container container = schema.getContainer();
 
         if (study == null)
             throw new IllegalStateException("A study does not exist for this folder");
@@ -114,7 +116,7 @@ public class SpecimenReportQuery
 
         String query = String.format(sql_pivotByPrimaryType, subjectCol, visitCol, subjectCol, visitCol);
 
-        QueryDefinition qdef = QueryService.get().createQueryDef(user, container, StudyQuerySchema.SCHEMA_NAME, PIVOT_BY_PRIMARY_TYPE);
+        QueryDefinition qdef = QueryService.get().createQueryDef(schema.getUser(), container, schema, PIVOT_BY_PRIMARY_TYPE);
         qdef.setSql(query);
         qdef.setIsHidden(true);
 
@@ -134,9 +136,10 @@ public class SpecimenReportQuery
         return tinfo;
     }
 
-    public static TableInfo getPivotByDerivativeType(Container container, User user)
+    public static TableInfo getPivotByDerivativeType(StudyQuerySchema schema, ContainerFilter cf)
     {
-        Study study = StudyService.get().getStudy(container);
+        Study study = schema.getStudy();
+        Container container = schema.getContainer();
 
         if (study == null)
             throw new IllegalStateException("A study does not exist for this folder");
@@ -146,7 +149,7 @@ public class SpecimenReportQuery
 
         String query = String.format(sql_pivotByDerivativeType, subjectCol, visitCol, subjectCol, visitCol, subjectCol, visitCol);
 
-        QueryDefinition qdef = QueryService.get().createQueryDef(user, container, StudyQuerySchema.SCHEMA_NAME, PIVOT_BY_DERIVATIVE_TYPE);
+        QueryDefinition qdef = QueryService.get().createQueryDef(schema.getUser(), container, schema, PIVOT_BY_DERIVATIVE_TYPE);
         qdef.setSql(query);
         qdef.setIsHidden(true);
 
@@ -166,9 +169,10 @@ public class SpecimenReportQuery
         return tinfo;
     }
 
-    public static TableInfo getPivotByRequestingLocation(Container container, User user)
+    public static TableInfo getPivotByRequestingLocation(StudyQuerySchema schema, ContainerFilter cf)
     {
-        Study study = StudyService.get().getStudy(container);
+        Study study = schema.getStudy();
+        Container container = schema.getContainer();
 
         if (study == null)
             throw new IllegalStateException("A study does not exist for this folder");
@@ -178,11 +182,12 @@ public class SpecimenReportQuery
 
         String query = String.format(sql_pivotRequestedByLocation, subjectCol, visitCol, subjectCol, visitCol, subjectCol, visitCol);
 
-        QueryDefinition qdef = QueryService.get().createQueryDef(user, container, StudyQuerySchema.SCHEMA_NAME, PIVOT_BY_REQUESTING_LOCATION);
+        QueryDefinition qdef = QueryService.get().createQueryDef(schema.getUser(), container, StudyQuerySchema.SCHEMA_NAME, PIVOT_BY_REQUESTING_LOCATION);
         qdef.setSql(query);
         qdef.setIsHidden(true);
 
         List<QueryException> errors = new ArrayList<>();
+        qdef.setContainerFilter(cf);
         TableInfo tinfo = qdef.getTable(errors, true);
 
         if (!errors.isEmpty())

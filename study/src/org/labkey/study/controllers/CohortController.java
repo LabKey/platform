@@ -308,7 +308,7 @@ public class CohortController extends BaseStudyController
         {
             StudyImpl study = getStudyThrowIfNull();
             StudyQuerySchema schema = StudyQuerySchema.createSchema(study, getUser(), true);
-            return new CohortTable(schema);
+            return new CohortTable(schema, null);
         }
 
         public ModelAndView getView(EditCohortForm form, boolean reshow, BindException errors)

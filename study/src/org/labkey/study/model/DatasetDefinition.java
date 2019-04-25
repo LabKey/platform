@@ -1371,8 +1371,6 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                 PropertyDescriptor pd = p.getPropertyDescriptor();
                 if (null != pd && (pd.getLookupQuery() != null || pd.getConceptURI() != null))
                 {
-                    // TODO ContainerFilter
-                    // I think this may be  redundant with DatasetTableImpl -- remove?
                     wrapped.setFk(PdLookupForeignKey.create(DefaultSchema.get(user, getContainer()), pd));
                 }
 
@@ -2394,7 +2392,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         // Unfortunately we need to use two tableinfos: one to get the column names with correct casing,
         // and one to get the data.  We should eventually be able to convert to using Query completely.
         StudyQuerySchema querySchema = StudyQuerySchema.createSchema(getStudy(), u, true);
-        TableInfo queryTableInfo = querySchema.createDatasetTableInternal(this);
+        TableInfo queryTableInfo = querySchema.createDatasetTableInternal(this, null);
 
         TableInfo tInfo = getTableInfo(u, true);
         SimpleFilter filter = new SimpleFilter();

@@ -83,7 +83,6 @@ public class TSVProtocolSchema extends AssayProtocolSchema
     {
         _AssayExcludedResultTable(AssayProtocolSchema schema, ContainerFilter cf, boolean includeCopiedToStudyColumns)
         {
-            // TODO ContainerFilter
             super(schema, cf, includeCopiedToStudyColumns);
 
             List<FieldKey> defaultCols = new ArrayList<>(getDefaultVisibleColumns());

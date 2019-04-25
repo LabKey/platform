@@ -16,6 +16,7 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.QueryForeignKey;
@@ -41,9 +42,9 @@ public class AssaySpecimenTable extends BaseStudyTable
         return QueryForeignKey.from(_userSchema,getContainerFilter());
     }
 
-    public AssaySpecimenTable(StudyQuerySchema schema)
+    public AssaySpecimenTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoAssaySpecimen());
+        super(schema, StudySchema.getInstance().getTableInfoAssaySpecimen(), cf);
         setName(StudyQuerySchema.ASSAY_SPECIMEN_TABLE_NAME);
 
         addWrapColumn(_rootTable.getColumn("RowId"));

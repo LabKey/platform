@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.SQLFragment;
@@ -59,9 +60,9 @@ public class ParticipantVisitDatasetTable extends VirtualTable<StudyQuerySchema>
     private final ColumnInfo _colParticipantId;
     private final Map<Double,ColumnInfo> _seqColumnMap = new HashMap<>();
 
-    public ParticipantVisitDatasetTable(StudyQuerySchema schema, DatasetDefinition dsd, ColumnInfo colParticipantId)
+    public ParticipantVisitDatasetTable(StudyQuerySchema schema, ContainerFilter cf, DatasetDefinition dsd, ColumnInfo colParticipantId)
     {
-        super(StudySchema.getInstance().getSchema(), null, schema);
+        super(StudySchema.getInstance().getSchema(), null, schema, cf);
         StudyManager studyManager = StudyManager.getInstance();
         _study = studyManager.getStudy(schema.getContainer());
         assert _study.getTimepointType() != TimepointType.CONTINUOUS;
@@ -141,7 +142,7 @@ public class ParticipantVisitDatasetTable extends VirtualTable<StudyQuerySchema>
                 String label = visit.getLabel();
                 if (!uniqueLabel || hasSequenceRange)
                     label += " (" + VisitImpl.formatSequenceNum(seq) + ")";
-                var colSeq = createVisitDatasetColumn(name, seq, visit);
+                var colSeq = createVisitDatasetColumn(name, cf, seq, visit);
                 colSeq.setLabel(label);
 //                colSeq.setHidden(!hasSequenceRange);
                 addColumn(colSeq);
@@ -221,7 +222,7 @@ public class ParticipantVisitDatasetTable extends VirtualTable<StudyQuerySchema>
     }
 
     
-    protected BaseColumnInfo createVisitDatasetColumn(String name, final double sequenceNum, @NotNull final VisitImpl visit)
+    protected BaseColumnInfo createVisitDatasetColumn(String name, ContainerFilter cf, final double sequenceNum, @NotNull final VisitImpl visit)
     {
         BaseColumnInfo ret;
         if (_colParticipantId == null)
@@ -232,8 +233,7 @@ public class ParticipantVisitDatasetTable extends VirtualTable<StudyQuerySchema>
         {
             ret = new AliasedColumn(name, _colParticipantId);
         }
-        // TODO ContainerFilter
-        ret.setFk(new AbstractForeignKey(getUserSchema(), null) {
+        ret.setFk(new AbstractForeignKey(getUserSchema(), cf) {
             public ColumnInfo createLookupColumn(ColumnInfo parent, String displayFieldName)
             {
                 TableInfo table = getLookupTableInfo();
@@ -258,7 +258,7 @@ public class ParticipantVisitDatasetTable extends VirtualTable<StudyQuerySchema>
             {
                 try
                 {
-                    DatasetTableImpl dsTable = _userSchema.createDatasetTableInternal(_dataset);
+                    DatasetTableImpl dsTable = _userSchema.createDatasetTableInternal(_dataset, getLookupContainerFilter());
                     dsTable.hideParticipantLookups();
                     return dsTable;
                 }
@@ -316,6 +316,6 @@ public class ParticipantVisitDatasetTable extends VirtualTable<StudyQuerySchema>
         ColumnInfo col = _seqColumnMap.get(seq);
         if (col != null)
             return col;
-        return createVisitDatasetColumn(name, seq, visitMatch);
+        return createVisitDatasetColumn(name, getContainerFilter(), seq, visitMatch);
     }
 }

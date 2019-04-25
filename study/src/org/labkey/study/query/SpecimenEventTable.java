@@ -17,6 +17,7 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.study.StudySchema;
 
@@ -27,9 +28,9 @@ import org.labkey.study.StudySchema;
  */
 public class SpecimenEventTable extends BaseStudyTable
 {
-    public SpecimenEventTable(StudyQuerySchema schema)
+    public SpecimenEventTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSpecimenEvent(schema.getContainer()), true);
+        super(schema, StudySchema.getInstance().getTableInfoSpecimenEvent(schema.getContainer()), cf, true);
         setName("SpecimenEvent");
 
         var vid = addWrapColumn(_rootTable.getColumn("VialId"));

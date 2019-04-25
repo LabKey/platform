@@ -51,9 +51,10 @@ import java.util.Map;
  */
 public class StudyDesignLookupBaseTable extends BaseStudyTable
 {
-    public StudyDesignLookupBaseTable(StudyQuerySchema schema, TableInfo tableInfo)
+    // Note: this has a different default container filter than BaseStudyTable
+    public StudyDesignLookupBaseTable(StudyQuerySchema schema, TableInfo tableInfo, ContainerFilter cf)
     {
-        super(schema, tableInfo);
+        super(schema, tableInfo, schema.isDataspaceProject() ? new ContainerFilter.Project(schema.getUser()) : cf);
         setDescription("Contains lookup values for dropdown options in the study designer.");
 
         for (ColumnInfo col : getRealTable().getColumns())
@@ -78,13 +79,6 @@ public class StudyDesignLookupBaseTable extends BaseStudyTable
                 FieldKey.fromParts("Inactive")
         ));
         setDefaultVisibleColumns(defaultColumns);
-    }
-
-    public StudyDesignLookupBaseTable(StudyQuerySchema schema, TableInfo tableInfo, @Nullable ContainerFilter containerFilter)
-    {
-        this(schema, tableInfo);
-        if (null != containerFilter)
-            _setContainerFilter(containerFilter);
     }
 
     @Override

@@ -18,6 +18,7 @@ package org.labkey.study.query;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
@@ -42,22 +43,21 @@ import org.labkey.study.model.StudyManager;
  */
 public class ParticipantGroupCohortUnionTable extends BaseStudyTable
 {
-    public ParticipantGroupCohortUnionTable(final StudyQuerySchema schema)
+    public ParticipantGroupCohortUnionTable(final StudyQuerySchema schema, ContainerFilter cf)
     {
-        // TODO ContainerFilter
-        super(schema, StudySchema.getInstance().getSchema().getTable(StudyQuerySchema.PARTICIPANT_GROUP_COHORT_UNION_TABLE_NAME));
+        super(schema, StudySchema.getInstance().getSchema().getTable(StudyQuerySchema.PARTICIPANT_GROUP_COHORT_UNION_TABLE_NAME), cf);
 
         addContainerColumn();
         addWrapParticipantColumn("ParticipantId");
 
         var groupIdColumn = new AliasedColumn(this, "GroupId", _rootTable.getColumn("GroupId"));
-        groupIdColumn.setFk( QueryForeignKey.from(_userSchema, null).to(StudyService.get().getSubjectGroupTableName(getContainer()), "RowId", "Label") );
+        groupIdColumn.setFk( QueryForeignKey.from(_userSchema, cf).to(StudyService.get().getSubjectGroupTableName(getContainer()), "RowId", "Label") );
         addColumn(groupIdColumn);
 
         if (StudyManager.getInstance().showCohorts(schema.getContainer(), schema.getUser()))
         {
             var currentCohortColumn = new AliasedColumn(this, "Cohort", _rootTable.getColumn("CohortId"));
-            currentCohortColumn.setFk(new CohortForeignKey(_userSchema));
+            currentCohortColumn.setFk(new CohortForeignKey(_userSchema, cf));
             addColumn(currentCohortColumn);
         }
 

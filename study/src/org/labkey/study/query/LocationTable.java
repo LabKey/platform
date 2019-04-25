@@ -58,15 +58,14 @@ import java.util.Map;
 
 public class LocationTable extends BaseStudyTable
 {
-    static public ForeignKey fkFor(StudyQuerySchema schema)
+    static public ForeignKey fkFor(StudyQuerySchema schema, ContainerFilter cf)
     {
-        // TODO: ContainerFilter
-        return QueryForeignKey.from(schema, null).to("Location", "RowId", "Label").build();
+        return QueryForeignKey.from(schema, cf).to("Location", "RowId", "Label").build();
     }
 
-    public LocationTable(StudyQuerySchema schema)
+    public LocationTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSite(schema.getContainer()));
+        super(schema, StudySchema.getInstance().getTableInfoSite(schema.getContainer()), cf);
         // FK on Container
         var containerColumn = ContainerForeignKey.initColumn(addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container"))), schema);
         containerColumn.setHidden(true);

@@ -107,9 +107,9 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     private TableInfo _fromTable;
     private TableInfo _assayResultTable;
 
-    public DatasetTableImpl(@NotNull final StudyQuerySchema schema, @NotNull DatasetDefinition dsd)
+    public DatasetTableImpl(@NotNull final StudyQuerySchema schema, ContainerFilter cf, @NotNull DatasetDefinition dsd)
     {
-        super(schema, dsd.getTableInfo(schema.getUser(), schema.getMustCheckPermissions(), true));
+        super(schema, dsd.getTableInfo(schema.getUser(), schema.getMustCheckPermissions(), true), cf);
 
         TimepointType timepointType = dsd.getStudy().getTimepointType();
 
@@ -170,7 +170,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                     return dataColumn;
                 });
 
-                column.setFk(new ParticipantForeignKey());
+                column.setFk(new ParticipantForeignKey(cf));
                 if (null == column.getURL())
                     column.setURL(column.getFk().getURL(column));
 
@@ -248,7 +248,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                 // Add a copy of the ParticipantSequenceNum column without the FK so we can get the value easily when materializing to temp tables:
                 addWrapColumn(baseColumn).setHidden(true);
                 var pvColumn = new AliasedColumn(this, StudyService.get().getSubjectVisitColumnName(dsd.getContainer()), baseColumn);//addWrapColumn(baseColumn);
-                pvColumn.setFk(new ParticipantVisitForeignKey("ParticipantSequenceNum"));
+                pvColumn.setFk(new ParticipantVisitForeignKey(cf, "ParticipantSequenceNum"));
                 pvColumn.setIsUnselectable(true);
                 pvColumn.setUserEditable(false);
                 pvColumn.setShownInInsertView(false);
@@ -303,7 +303,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                         @Override
                         public TableInfo getLookupTableInfo()
                         {
-                            TableInfo table = _userSchema.getTable(StudyQuerySchema.SPECIMEN_DETAIL_TABLE_NAME);
+                            TableInfo table = _userSchema.getTable(StudyQuerySchema.SPECIMEN_DETAIL_TABLE_NAME, null, true, true);
                             if (table instanceof SpecimenDetailTable)       // Could be a UnionTable, which should already have right containers
                                 ((SpecimenDetailTable)table).addCondition(new SimpleFilter(FieldKey.fromParts("Container"), _userSchema.getContainer().getId()));
                             return table;
@@ -353,14 +353,14 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                 if (displayField == null)
                     return null;
 
-                DatasetAutoJoinTable table = new DatasetAutoJoinTable(schema, DatasetTableImpl.this.getDatasetDefinition(), parent, getRemappedField(sequenceNumFieldKey), getRemappedField(keyFieldKey));
+                DatasetAutoJoinTable table = new DatasetAutoJoinTable(schema, cf, DatasetTableImpl.this.getDatasetDefinition(), parent, getRemappedField(sequenceNumFieldKey), getRemappedField(keyFieldKey));
                 return table.getColumn(displayField);
             }
 
             @Override
             public TableInfo getLookupTableInfo()
             {
-                return new DatasetAutoJoinTable(schema, DatasetTableImpl.this.getDatasetDefinition(), null, null, null);
+                return new DatasetAutoJoinTable(schema, cf, DatasetTableImpl.this.getDatasetDefinition(), null, null, null);
             }
 
             @Override
@@ -584,12 +584,12 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                 // node when this was OntologyManager-backed can still be queried there
                 var wrapped = wrapColumn("Properties", getRealTable().getColumn("_key"));
                 wrapped.setIsUnselectable(true);
-                LookupForeignKey fk = new LookupForeignKey("_key")
+                LookupForeignKey fk = new LookupForeignKey(getContainerFilter(), "_key", null)
                 {
                     @Override
                     public TableInfo getLookupTableInfo()
                     {
-                        return new DatasetTableImpl(getUserSchema(), _dsd);
+                        return new DatasetTableImpl(getUserSchema(), getLookupContainerFilter(), _dsd);
                     }
 
                     @Override
@@ -1105,9 +1105,9 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     {
         private ParticipantTable _tableInfo;
 
-        ParticipantForeignKey()
+        ParticipantForeignKey(ContainerFilter cf)
         {
-            super(StudyService.get().getSubjectColumnName(_userSchema.getContainer()));
+            super(cf, StudyService.get().getSubjectColumnName(_userSchema.getContainer()), null);
             // 19918: GROUP BY columns in custom query no longer retain ForeignKey configuration
             if (_dsd.isShared())
                 addJoin(new FieldKey(null,"Folder"),"Container",false);
@@ -1122,7 +1122,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             {
                 // Ideally we could just ask the schema for the ParticipantTable (e.g., _schema.getTable(...)),
                 // but we need to pass arguments to ParticipantTable constructor to hide datasets.
-                _tableInfo = new ParticipantTable(_userSchema, true);
+                _tableInfo = new ParticipantTable(_userSchema, getLookupContainerFilter(), true);
                 _tableInfo.setIgnoreSessionParticipantGroup();
                 _tableInfo.overlayMetadata(StudyService.get().getSubjectTableName(_userSchema.getContainer()), _userSchema, new ArrayList<>());
                 _tableInfo.afterConstruct();
@@ -1141,9 +1141,9 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     {
         private ParticipantVisitTable _tableInfo;
 
-        ParticipantVisitForeignKey(String pkColumnName)
+        ParticipantVisitForeignKey(ContainerFilter cf, String pkColumnName)
         {
-            super(pkColumnName);
+            super(cf, pkColumnName, null);
 
             // 20546: row duplication for dataspace project w/ same ptid in multiple containers
             if (_dsd.isShared())
@@ -1157,7 +1157,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             {
                 // Ideally we could just ask the schema for the ParticipantTable (e.g., _schema.getTable(...)),
                 // but we need to pass arguments to ParticipantTable constructor to hide datasets.
-                _tableInfo = new ParticipantVisitTable(_userSchema, true);
+                _tableInfo = new ParticipantVisitTable(_userSchema, getLookupContainerFilter(), true);
                 _tableInfo.setIgnoreSessionParticipantGroup();
                 _tableInfo.afterConstruct();
             }

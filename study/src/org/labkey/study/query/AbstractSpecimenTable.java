@@ -15,6 +15,7 @@
  */
 package org.labkey.study.query;
 
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 
 /**
@@ -24,9 +25,9 @@ import org.labkey.api.data.TableInfo;
  */
 public abstract class AbstractSpecimenTable extends BaseStudyTable
 {
-    public AbstractSpecimenTable(StudyQuerySchema schema, TableInfo realTable, boolean skipPermissionChecks, boolean isProvisioned)
+    public AbstractSpecimenTable(StudyQuerySchema schema, TableInfo realTable, ContainerFilter cf, boolean skipPermissionChecks, boolean isProvisioned)
     {
-        super(schema, realTable, true, skipPermissionChecks);
+        super(schema, realTable, cf, true, skipPermissionChecks);
 
         var rowIdColumn = addWrapColumn(_rootTable.getColumn("RowId"));
         rowIdColumn.setKeyField(true);

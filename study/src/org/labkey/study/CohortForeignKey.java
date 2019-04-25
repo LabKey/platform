@@ -18,6 +18,7 @@ package org.labkey.study;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.NullColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.LookupForeignKey;
@@ -37,14 +38,15 @@ public class CohortForeignKey extends LookupForeignKey
     final String _labelCaption;
 
 
-    public CohortForeignKey(StudyQuerySchema schema)
+    public CohortForeignKey(StudyQuerySchema schema, ContainerFilter cf)
     {
-        this(schema, StudyManager.getInstance().showCohorts(schema.getContainer(), schema.getUser()), null);
+        this(schema, cf, StudyManager.getInstance().showCohorts(schema.getContainer(), schema.getUser()), null);
     }
 
 
-    public CohortForeignKey(StudyQuerySchema schema, boolean showCohorts, String labelCaption)
+    public CohortForeignKey(StudyQuerySchema schema, ContainerFilter cf, boolean showCohorts, String labelCaption)
     {
+        super(cf, null, null);
         assert showCohorts == StudyManager.getInstance().showCohorts(schema.getContainer(), schema.getUser());
         _schema = schema;
         _showCohorts = showCohorts;
@@ -71,6 +73,6 @@ public class CohortForeignKey extends LookupForeignKey
 
     public TableInfo getLookupTableInfo()
     {
-        return new CohortTable(_schema);
+        return new CohortTable(_schema, getLookupContainerFilter());
     }
 }

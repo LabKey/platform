@@ -16,6 +16,7 @@
 
 package org.labkey.study.query;
 
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
@@ -32,9 +33,9 @@ import java.util.List;
  */
 public class SpecimenRequestTable extends BaseStudyTable
 {
-    public SpecimenRequestTable(StudyQuerySchema schema)
+    public SpecimenRequestTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSampleRequest());
+        super(schema, StudySchema.getInstance().getTableInfoSampleRequest(), cf);
 
         AliasedColumn rowIdColumn = new AliasedColumn(this, "RequestId", _rootTable.getColumn("RowId"));
         rowIdColumn.setKeyField(true);
@@ -44,7 +45,7 @@ public class SpecimenRequestTable extends BaseStudyTable
         {
             public TableInfo getLookupTableInfo()
             {
-                return new SpecimenRequestStatusTable(_userSchema);
+                return new SpecimenRequestStatusTable(_userSchema, cf);
             }
         });
         statusColumn.setKeyField(true);

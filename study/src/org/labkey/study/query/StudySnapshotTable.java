@@ -51,7 +51,7 @@ import java.util.HashSet;
  */
 public class StudySnapshotTable extends FilteredTable<StudyQuerySchema>
 {
-    public StudySnapshotTable(StudyQuerySchema schema)
+    public StudySnapshotTable(StudyQuerySchema schema, ContainerFilter cf)
     {
         super(StudySchema.getInstance().getTableInfoStudySnapshot(), schema, ContainerFilter.Type.CurrentWithUser.create(schema.getUser()));
 

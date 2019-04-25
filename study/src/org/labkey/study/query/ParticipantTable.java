@@ -22,6 +22,7 @@ import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.ForeignKey;
@@ -69,9 +70,9 @@ public class ParticipantTable extends BaseStudyTable
 
     private static final String ALIAS_INNER_QUERY_ALIAS = "X";
 
-    public ParticipantTable(StudyQuerySchema schema, boolean hideDatasets)
+    public ParticipantTable(StudyQuerySchema schema, ContainerFilter cf, boolean hideDatasets)
     {
-        super(schema, StudySchema.getInstance().getTableInfoParticipant());
+        super(schema, StudySchema.getInstance().getTableInfoParticipant(), cf);
         setName(StudyService.get().getSubjectTableName(schema.getContainer()));
 
         _study = StudyManager.getInstance().getStudy(schema.getContainer());
@@ -84,19 +85,18 @@ public class ParticipantTable extends BaseStudyTable
         datasetColumn.setKeyField(false);
         datasetColumn.setIsUnselectable(true);
         datasetColumn.setLabel("DataSet");
-        // TODO ContainerFilter
         datasetColumn.setFk(new AbstractForeignKey(getUserSchema(), null)
         {
             public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
             {
                 if (displayField == null)
                     return null;
-                return new ParticipantDatasetTable(_userSchema, parent).getColumn(displayField);
+                return new ParticipantDatasetTable(_userSchema, cf, parent).getColumn(displayField);
             }
 
             public TableInfo getLookupTableInfo()
             {
-                return new ParticipantDatasetTable(_userSchema, null);
+                return new ParticipantDatasetTable(_userSchema, cf, null);
             }
 
             public StringExpression getURL(ColumnInfo parent)
@@ -120,7 +120,7 @@ public class ParticipantTable extends BaseStudyTable
         {
             currentCohortColumn = new AliasedColumn(this, "Cohort", _rootTable.getColumn("CurrentCohortId"));
         }
-        currentCohortColumn.setFk(new CohortForeignKey(_userSchema, showCohorts, currentCohortColumn.getLabel()));
+        currentCohortColumn.setFk(new CohortForeignKey(_userSchema, cf, showCohorts, currentCohortColumn.getLabel()));
         addColumn(currentCohortColumn);
 
 
@@ -139,10 +139,10 @@ public class ParticipantTable extends BaseStudyTable
             initialCohortColumn = new AliasedColumn(this, "InitialCohort", _rootTable.getColumn("CurrentCohortId"));
             initialCohortColumn.setHidden(true);
         }
-        initialCohortColumn.setFk(new CohortForeignKey(_userSchema, showCohorts, initialCohortColumn.getLabel()));
+        initialCohortColumn.setFk(new CohortForeignKey(_userSchema, cf, showCohorts, initialCohortColumn.getLabel()));
         addColumn(initialCohortColumn);
 
-        ForeignKey fkSite = LocationTable.fkFor(_userSchema);
+        ForeignKey fkSite = LocationTable.fkFor(_userSchema, cf);
         addColumn(new AliasedColumn(this, "EnrollmentLocationId", _rootTable.getColumn("EnrollmentSiteId"))).setFk(fkSite);
         addColumn(new AliasedColumn(this, "CurrentLocationId", _rootTable.getColumn("CurrentSiteId"))).setFk(fkSite);
         addWrapColumn(_rootTable.getColumn("StartDate"));

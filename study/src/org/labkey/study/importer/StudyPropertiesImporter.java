@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
@@ -84,15 +85,15 @@ public class StudyPropertiesImporter extends DefaultStudyDesignImporter
                     if (!isDataspaceProject)
                     {
                         // objective is cross-container and thus not supported for dataspace import
-                        StudyQuerySchema.TablePackage objectiveTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.OBJECTIVE_TABLE_NAME);
+                        StudyQuerySchema.TablePackage objectiveTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.OBJECTIVE_TABLE_NAME, null);
                         importTableData(ctx, vf, objectiveTablePackage, _objectiveTableMapBuilder,
                                 new PreserveExistingProjectData(ctx.getUser(), objectiveTablePackage.getTableInfo(), "Label", "RowId", _objectiveIdMap));
                     }
 
-                    StudyQuerySchema.TablePackage propertiesTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.PROPERTIES_TABLE_NAME);
+                    StudyQuerySchema.TablePackage propertiesTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.PROPERTIES_TABLE_NAME, null);
                     importTableData(ctx, vf, propertiesTablePackage, null, new StudyPropertiesTransform());
 
-                    StudyQuerySchema.TablePackage personnelTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.PERSONNEL_TABLE_NAME);
+                    StudyQuerySchema.TablePackage personnelTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.PERSONNEL_TABLE_NAME, null);
                     importTableData(ctx, vf, personnelTablePackage, _personnelTableMapBuilder,
                             new PersonnelTableTransform(ctx.getUser(), personnelTablePackage.getTableInfo(), "Label", "RowId", _personnelIdMap));
 

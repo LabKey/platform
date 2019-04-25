@@ -42,9 +42,9 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
     protected List<DomainProperty> _optionalSpecimenProperties = new ArrayList<>();
     protected List<DomainProperty> _optionalVialProperties = new ArrayList<>();
 
-    public SpecimenDetailTable(StudyQuerySchema schema)
+    public SpecimenDetailTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSpecimenDetail(schema.getContainer()), false, true);
+        super(schema, StudySchema.getInstance().getTableInfoSpecimenDetail(schema.getContainer()), cf, false, true);
 
         var guid = addWrapColumn(_rootTable.getColumn(GLOBAL_UNIQUE_ID_COLUMN_NAME));
         guid.setDisplayColumnFactory(ColumnInfo.NOWRAP_FACTORY);
@@ -56,7 +56,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         {
             public TableInfo getLookupTableInfo()
             {
-                return new ParticipantVisitTable(_userSchema, false);
+                return new ParticipantVisitTable(_userSchema, cf,false);
             }
         });
         pvColumn.setIsUnselectable(true);
@@ -82,7 +82,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         {
             public TableInfo getLookupTableInfo()
             {
-                return new LocationTable(_userSchema);
+                return new LocationTable(_userSchema, cf);
             }
         });
         siteNameColumn.setDisplayColumnFactory(new DisplayColumnFactory()
@@ -99,7 +99,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         {
             public TableInfo getLookupTableInfo()
             {
-                return new LocationTable(_userSchema);
+                return new LocationTable(_userSchema, cf);
             }
         });
         siteLdmsCodeColumn.setUserEditable(false);
@@ -189,7 +189,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         if (!StudyManager.getInstance().showCohorts(getContainer(), schema.getUser()))
         {
             var c = new NullColumnInfo(parent, "CollectionCohort", JdbcType.INTEGER);
-            c.setFk(new CohortForeignKey(schema, false, c.getLabel()));
+            c.setFk(new CohortForeignKey(schema, null, false, c.getLabel()));
             return c;
         }
 
@@ -207,7 +207,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
                     new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "$" + COLLECTION_COHORT_JOIN + ".CohortId"),
                     JdbcType.INTEGER);
 
-            setFk(new CohortForeignKey(schema, true, this.getLabel()));
+            setFk(new CohortForeignKey(schema, parent.getContainerFilter(), true, this.getLabel()));
             setDescription("The cohort of the " + StudyService.get().getSubjectNounSingular(schema.getContainer()) + " at the time of specimen collection.");
         }
 

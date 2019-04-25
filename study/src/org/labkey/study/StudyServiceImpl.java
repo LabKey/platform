@@ -796,7 +796,7 @@ public class StudyServiceImpl implements StudyService
                 if (null != s)
                 {
                     StudyQuerySchema schema = StudyQuerySchema.createSchema((StudyImpl) s, user, false);
-                    BaseStudyTable t = tableClass.getConstructor(StudyQuerySchema.class).newInstance(schema);
+                    BaseStudyTable t = tableClass.getConstructor(StudyQuerySchema.class, ContainerFilter.class).newInstance(schema, null);
                     t.setPublic(false);
                     tables.put(c, t);
                     if (filterFragments.containsKey(c))

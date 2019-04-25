@@ -32,9 +32,9 @@ import org.labkey.study.StudySchema;
  */
 public class VialTable extends BaseStudyTable
 {
-    public VialTable(final StudyQuerySchema schema)
+    public VialTable(final StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoVial(schema.getContainer()), true);
+        super(schema, StudySchema.getInstance().getTableInfoVial(schema.getContainer()), cf, true);
 
         addWrapColumn(getRealTable().getColumn("RowID")).setHidden(true);
 

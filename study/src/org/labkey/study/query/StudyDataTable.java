@@ -17,6 +17,7 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.query.*;
@@ -41,10 +42,9 @@ import java.util.Set;
  */
 public class StudyDataTable extends BaseStudyTable
 {
-    public StudyDataTable(StudyQuerySchema schema)
+    public StudyDataTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        // TODO ContainerFilter
-        super(schema, StudySchema.getInstance().getTableInfoStudyData(schema.getStudy(), schema.getUser()));
+        super(schema, StudySchema.getInstance().getTableInfoStudyData(schema.getStudy(), schema.getUser()), cf);
 
         List<FieldKey> defaultColumns = new LinkedList<>();
 
@@ -52,7 +52,7 @@ public class StudyDataTable extends BaseStudyTable
         datasetColumn.setFk(new LookupForeignKey(getDatasetURL(), "entityId", "entityId", "Name") {
             public TableInfo getLookupTableInfo()
             {
-                return new DatasetsTable(_userSchema);
+                return new DatasetsTable(_userSchema, cf);
             }
         });
         addColumn(datasetColumn);
@@ -63,7 +63,7 @@ public class StudyDataTable extends BaseStudyTable
 
         String subjectColName = StudyService.get().getSubjectColumnName(getContainer());
         var participantIdColumn = new AliasedColumn(this, subjectColName, _rootTable.getColumn("participantid"));
-        participantIdColumn.setFk( QueryForeignKey.from(_userSchema, null).to(StudyService.get().getSubjectTableName(getContainer()), subjectColName, null) );
+        participantIdColumn.setFk( QueryForeignKey.from(_userSchema, cf).to(StudyService.get().getSubjectTableName(getContainer()), subjectColName, null) );
         addColumn(participantIdColumn);
         defaultColumns.add(FieldKey.fromParts(subjectColName));
 

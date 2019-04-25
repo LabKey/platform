@@ -16,6 +16,7 @@
 
 package org.labkey.study.query;
 
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
@@ -23,9 +24,9 @@ import org.labkey.study.StudySchema;
 
 public class AdditiveTypeTable extends BaseStudyTable
 {
-    public AdditiveTypeTable(StudyQuerySchema schema)
+    public AdditiveTypeTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSpecimenAdditive(schema.getContainer()), true);
+        super(schema, StudySchema.getInstance().getTableInfoSpecimenAdditive(schema.getContainer()), cf, true);
         setName("SpecimenAdditive");
         setPublicSchemaName("study");
         addWrapColumn(_rootTable.getColumn("RowId")).setHidden(true);

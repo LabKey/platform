@@ -19,6 +19,7 @@ package org.labkey.study.query;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
@@ -57,9 +58,9 @@ public class SpecimenSummaryTable extends BaseStudyTable
     final ColumnInfo _sequencenumColumn;
     final BaseColumnInfo _participantSequenceNumColumn;
 
-    public SpecimenSummaryTable(StudyQuerySchema schema)
+    public SpecimenSummaryTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSpecimen(schema.getContainer()), true);
+        super(schema, StudySchema.getInstance().getTableInfoSpecimen(schema.getContainer()), cf,true);
         setName("SpecimenSummary");
 
         _participantidColumn = addWrapParticipantColumn("PTID");
@@ -69,11 +70,11 @@ public class SpecimenSummaryTable extends BaseStudyTable
 
         _participantSequenceNumColumn = new AliasedColumn(this, StudyService.get().getSubjectVisitColumnName(schema.getContainer()),
                 _rootTable.getColumn("ParticipantSequenceNum"));
-        _participantSequenceNumColumn.setFk(new LookupForeignKey("ParticipantSequenceNum")
+        _participantSequenceNumColumn.setFk(new LookupForeignKey(cf,"ParticipantSequenceNum", null)
         {
             public TableInfo getLookupTableInfo()
             {
-                return new ParticipantVisitTable(_userSchema, false);
+                return new ParticipantVisitTable(_userSchema, getLookupContainerFilter(), false);
             }
         });
         _participantSequenceNumColumn.setIsUnselectable(true);

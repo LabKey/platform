@@ -71,20 +71,19 @@ import java.util.Set;
 
 public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 {
-    public BaseStudyTable(StudyQuerySchema schema, TableInfo realTable)
+    public BaseStudyTable(StudyQuerySchema schema, TableInfo realTable, ContainerFilter cf)
     {
-        this(schema, realTable, false);
+        this(schema, realTable, cf,false);
     }
 
-    public BaseStudyTable(StudyQuerySchema schema, TableInfo realTable, boolean includeSourceStudyData)
+    public BaseStudyTable(StudyQuerySchema schema, TableInfo realTable, ContainerFilter cf, boolean includeSourceStudyData)
     {
-        this(schema, realTable, includeSourceStudyData, false);
+        this(schema, realTable, cf, includeSourceStudyData, false);
     }
 
-
-    public BaseStudyTable(StudyQuerySchema schema, TableInfo realTable, boolean includeSourceStudyData, boolean skipPermissionChecks)
+    public BaseStudyTable(StudyQuerySchema schema, TableInfo realTable, ContainerFilter cf, boolean includeSourceStudyData, boolean skipPermissionChecks)
     {
-        super(realTable, schema);
+        super(realTable, schema, cf);
 
         if (includeSourceStudyData && null != schema._study && !schema._study.isDataspaceStudy())
             _setContainerFilter(new ContainerFilter.StudyAndSourceStudy(schema.getUser(), skipPermissionChecks));
@@ -205,9 +204,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         {
             public TableInfo getLookupTableInfo()
             {
-                LocationTable result = new LocationTable(_userSchema);
-                if (_userSchema.allowSetContainerFilter())
-                    result.setContainerFilter(new DelegatingContainerFilter(BaseStudyTable.this));
+                LocationTable result = new LocationTable(_userSchema, _userSchema.allowSetContainerFilter() ? getContainerFilter() : null);
                 return result;
             }
         });
@@ -241,17 +238,17 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
     protected ColumnInfo addWrapTypeColumn(String wrappedName, final String rootTableColumnName)
     {
         var typeColumn = new AliasedColumn(this, wrappedName, _rootTable.getColumn(rootTableColumnName));
-        LookupForeignKey fk = new LookupForeignKey("RowId")
+        LookupForeignKey fk = new LookupForeignKey(getContainerFilter(), "RowId", null)
         {
             public TableInfo getLookupTableInfo()
             {
                 BaseStudyTable result;
                 if (rootTableColumnName.equals("PrimaryTypeId"))
-                    result = new PrimaryTypeTable(_userSchema);
+                    result = new PrimaryTypeTable(_userSchema, getLookupContainerFilter());
                 else if (rootTableColumnName.equals("DerivativeTypeId") || rootTableColumnName.equals("DerivativeTypeId2"))
-                    result = new DerivativeTypeTable(_userSchema);
+                    result = new DerivativeTypeTable(_userSchema, getLookupContainerFilter());
                 else if (rootTableColumnName.equals("AdditiveTypeId"))
-                    result = new AdditiveTypeTable(_userSchema);
+                    result = new AdditiveTypeTable(_userSchema, getLookupContainerFilter());
                 else
                     throw new IllegalStateException(rootTableColumnName + " is not recognized as a valid specimen type column.");
                 if (_userSchema.allowSetContainerFilter())
@@ -295,11 +292,11 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             visitColumn = addColumn(new ParticipantVisitColumn(this, isProvisioned ? getContainer() : null));
         }
 
-        LookupForeignKey visitFK = new LookupForeignKey(null, (String) null, "RowId", null)
+        LookupForeignKey visitFK = new LookupForeignKey(getContainerFilter(), "RowId", null)
         {
             public TableInfo getLookupTableInfo()
             {
-                VisitTable visitTable = new VisitTable(_userSchema);
+                VisitTable visitTable = new VisitTable(_userSchema, getLookupContainerFilter());
                 if (_userSchema.allowSetContainerFilter())
                     visitTable.setContainerFilter(new DelegatingContainerFilter(BaseStudyTable.this));
                 return visitTable;
@@ -455,7 +452,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         {
             public TableInfo getLookupTableInfo()
             {
-                SpecimenCommentTable result = new SpecimenCommentTable(_userSchema, joinBackToSpecimens);
+                SpecimenCommentTable result = new SpecimenCommentTable(_userSchema, getLookupContainerFilter(), joinBackToSpecimens);
                 result.setContainerFilter(new DelegatingContainerFilter(BaseStudyTable.this));
                 return result;
             }

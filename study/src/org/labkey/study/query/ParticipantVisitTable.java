@@ -19,6 +19,7 @@ package org.labkey.study.query;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
@@ -46,9 +47,9 @@ public class ParticipantVisitTable extends BaseStudyTable
 {
     Map<String, ColumnInfo> _demographicsColumns;
 
-    public ParticipantVisitTable(StudyQuerySchema schema, boolean hideDatasets)
+    public ParticipantVisitTable(StudyQuerySchema schema, ContainerFilter cf, boolean hideDatasets)
     {
-        super(schema, StudySchema.getInstance().getTableInfoParticipantVisit());
+        super(schema, StudySchema.getInstance().getTableInfoParticipantVisit(), cf);
         _setContainerFilter(schema.getDefaultContainerFilter());
         setName(StudyService.get().getSubjectVisitTableName(schema.getContainer()));
         _demographicsColumns = new CaseInsensitiveHashMap<>();
@@ -68,11 +69,11 @@ public class ParticipantVisitTable extends BaseStudyTable
             else if ("VisitRowId".equalsIgnoreCase(col.getName()))
             {
                 var visitColumn = new AliasedColumn(this, "Visit", col);
-                LookupForeignKey visitFK = new LookupForeignKey("RowId")
+                LookupForeignKey visitFK = new LookupForeignKey(cf, "RowId", null)
                 {
                     public TableInfo getLookupTableInfo()
                     {
-                        return new VisitTable(_userSchema);
+                        return new VisitTable(_userSchema, getLookupContainerFilter());
                     }
                 };
                 visitColumn.setFk(visitFK);
@@ -100,7 +101,7 @@ public class ParticipantVisitTable extends BaseStudyTable
                     cohortColumn = new AliasedColumn(this, "Cohort", col);
                 }
                 cohortColumn.setLabel(col.getLabel());
-                cohortColumn.setFk(new CohortForeignKey(_userSchema, showCohorts, cohortColumn.getLabel()));
+                cohortColumn.setFk(new CohortForeignKey(_userSchema, cf, showCohorts, cohortColumn.getLabel()));
                 addColumn(cohortColumn);
             }
             else if ("ParticipantSequenceNum".equalsIgnoreCase(col.getName()))
@@ -140,7 +141,7 @@ public class ParticipantVisitTable extends BaseStudyTable
             if (dataset.getKeyPropertyName() != null)
                 continue;
 
-            var datasetColumn = createDatasetColumn(name, dataset, participantSequenceNumColumn);
+            var datasetColumn = createDatasetColumn(name, cf, dataset, participantSequenceNumColumn);
             datasetColumn.setHidden(hideDatasets);
 
             // Don't add demographics datasets, but stash it for backwards compatibility with <11.3 queries if needed.
@@ -152,10 +153,10 @@ public class ParticipantVisitTable extends BaseStudyTable
     }
 
 
-    protected BaseColumnInfo createDatasetColumn(String name, final DatasetDefinition dsd, ColumnInfo participantSequenceNumColumn)
+    protected BaseColumnInfo createDatasetColumn(String name, ContainerFilter cf, final DatasetDefinition dsd, ColumnInfo participantSequenceNumColumn)
     {
         var ret = new AliasedColumn(name, participantSequenceNumColumn);
-        ret.setFk(new PVForeignKey(dsd));
+        ret.setFk(new PVForeignKey(dsd, cf));
         ret.setLabel(dsd.getLabel());
         ret.setIsUnselectable(true);
         return ret;
@@ -183,9 +184,9 @@ public class ParticipantVisitTable extends BaseStudyTable
     {
         private final DatasetDefinition dsd;
 
-        public PVForeignKey(DatasetDefinition dsd)
+        public PVForeignKey(DatasetDefinition dsd, ContainerFilter cf)
         {
-            super(StudyService.get().getSubjectVisitColumnName(dsd.getContainer()));
+            super(cf, StudyService.get().getSubjectVisitColumnName(dsd.getContainer()), null);
             this.dsd = dsd;
         }
         
@@ -193,7 +194,7 @@ public class ParticipantVisitTable extends BaseStudyTable
         {
             try
             {
-                DatasetTableImpl ret = _userSchema.createDatasetTableInternal(dsd);
+                DatasetTableImpl ret = _userSchema.createDatasetTableInternal(dsd, getLookupContainerFilter());
                 ret.hideParticipantLookups();
                 return ret;
             }

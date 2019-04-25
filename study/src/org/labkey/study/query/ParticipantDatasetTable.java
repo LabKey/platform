@@ -19,6 +19,7 @@ package org.labkey.study.query;
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.TableInfo;
@@ -37,9 +38,9 @@ public class ParticipantDatasetTable extends VirtualTable<StudyQuerySchema>
 {
     ColumnInfo _colParticipantId;
 
-    public ParticipantDatasetTable(StudyQuerySchema schema, ColumnInfo colParticipantId)
+    public ParticipantDatasetTable(StudyQuerySchema schema, ContainerFilter cf, ColumnInfo colParticipantId)
     {
-        super(StudySchema.getInstance().getSchema(), null, schema);
+        super(StudySchema.getInstance().getSchema(), null, schema, cf);
         _colParticipantId = colParticipantId;
         for (DatasetDefinition dataset : schema.getStudy().getDatasets())
         {
@@ -97,8 +98,7 @@ public class ParticipantDatasetTable extends VirtualTable<StudyQuerySchema>
                 {
                     try
                     {
-                        // TODO ContainerFilter -- add CF to createDatasetTableInternal()
-                        DatasetTableImpl dsTable = _userSchema.createDatasetTableInternal(def);
+                        DatasetTableImpl dsTable = _userSchema.createDatasetTableInternal(def, getContainerFilter());
                         dsTable.hideParticipantLookups();
                         dsTable.overlayMetadata(dsTable.getName(), _userSchema, new ArrayList<>());
                         return dsTable;
@@ -125,7 +125,7 @@ public class ParticipantDatasetTable extends VirtualTable<StudyQuerySchema>
                 {
                     if (displayField == null)
                         return null;
-                    var ret = new ParticipantVisitDatasetTable(_userSchema, def, parent).getMutableColumn(displayField);
+                    var ret = new ParticipantVisitDatasetTable(_userSchema, getLookupContainerFilter(), def, parent).getMutableColumn(displayField);
                     if (ret == null)
                         return null;
                     ret.setLabel(parent.getLabel() + " " + ret.getLabel());
@@ -134,8 +134,7 @@ public class ParticipantDatasetTable extends VirtualTable<StudyQuerySchema>
 
                 public TableInfo getLookupTableInfo()
                 {
-                    // TODO ContainerFilter
-                    return new ParticipantVisitDatasetTable(_userSchema, def, null);
+                    return new ParticipantVisitDatasetTable(_userSchema, getLookupContainerFilter(), def, null);
                 }
 
                 public StringExpression getURL(ColumnInfo parent)

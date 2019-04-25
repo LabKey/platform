@@ -435,7 +435,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
         if (null == dsd)
             return null;
 
-        return new DatasetTableImpl(schema, dsd);
+        return new DatasetTableImpl(schema, null, dsd);
     }
 
     @Override

@@ -44,9 +44,9 @@ import java.util.Set;
  */
 public class DatasetsTable extends FilteredTable<StudyQuerySchema>
 {
-    public DatasetsTable(StudyQuerySchema schema)
+    public DatasetsTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(StudySchema.getInstance().getTableInfoDataset(), schema);
+        super(StudySchema.getInstance().getTableInfoDataset(), schema, cf);
         setName("Datasets");
         for (ColumnInfo baseColumn : _rootTable.getColumns())
         {

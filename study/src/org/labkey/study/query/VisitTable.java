@@ -33,11 +33,11 @@ import org.labkey.study.model.StudyManager;
 
 public class VisitTable extends BaseStudyTable
 {
-    public VisitTable(StudyQuerySchema schema)
+    public VisitTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoVisit());
+        super(schema, StudySchema.getInstance().getTableInfoVisit(), null);
 
-        ContainerFilter cf = schema.getDefaultContainerFilter();
+        cf = schema.getDefaultContainerFilter();
         Study study = schema.getStudy();
         if (null != study)
         {
@@ -82,7 +82,7 @@ public class VisitTable extends BaseStudyTable
         {
             cohortColumn = new NullColumnInfo(this, "Cohort", JdbcType.INTEGER);
         }
-        cohortColumn.setFk(new CohortForeignKey(schema, showCohorts, cohortColumn.getLabel()));
+        cohortColumn.setFk(new CohortForeignKey(schema, cf, showCohorts, cohortColumn.getLabel()));
         addColumn(cohortColumn);
         setTitleColumn("Label");
         setDeleteURL(LINK_DISABLER);

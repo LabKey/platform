@@ -17,6 +17,7 @@ package org.labkey.study.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.query.AliasedColumn;
@@ -36,9 +37,9 @@ public class SpecimenTable extends AbstractSpecimenTable
     private List<SpecimenTable> _studySpecimenTables = null;
     private List<ColumnInfo> _unionColumns = null;
 
-    public SpecimenTable(StudyQuerySchema schema, boolean skipPermissionChecks, boolean allStudies)
+    public SpecimenTable(StudyQuerySchema schema, ContainerFilter cf, boolean skipPermissionChecks, boolean allStudies)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSpecimen(schema.getContainer()), skipPermissionChecks, true);
+        super(schema, StudySchema.getInstance().getTableInfoSpecimen(schema.getContainer()), cf, skipPermissionChecks, true);
 
         var ptidColumn = getMutableColumn(StudyService.get().getSubjectColumnName(getContainer()));
 //        addWrapColumn(getRealTable().getColumn("RowId"));
@@ -74,7 +75,7 @@ public class SpecimenTable extends AbstractSpecimenTable
                 if (study.getContainer().hasPermission(user, ReadPermission.class) && study.getContainer().getId() != getContainer().getId())
                 {
                     StudyQuerySchema studyQuerySchema = StudyQuerySchema.createSchema((StudyImpl)study, user, false);
-                    SpecimenTable table = new SpecimenTable(studyQuerySchema, skipPermissionChecks, false);
+                    SpecimenTable table = new SpecimenTable(studyQuerySchema, null, skipPermissionChecks, false);
                     _studySpecimenTables.add(table);
                 }
             }

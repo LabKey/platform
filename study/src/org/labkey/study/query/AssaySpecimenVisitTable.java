@@ -16,6 +16,7 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DefaultQueryUpdateService;
@@ -32,29 +33,29 @@ import org.labkey.study.StudySchema;
  */
 public class AssaySpecimenVisitTable extends BaseStudyTable
 {
-    public AssaySpecimenVisitTable(StudyQuerySchema schema)
+    public AssaySpecimenVisitTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoAssaySpecimenVisit());
+        super(schema, StudySchema.getInstance().getTableInfoAssaySpecimenVisit(), cf);
         setName(StudyQuerySchema.ASSAY_SPECIMEN_VISIT_TABLE_NAME);
 
         addWrapColumn(_rootTable.getColumn("RowId"));
 
         var visitCol = new AliasedColumn(this, "VisitId", _rootTable.getColumn("VisitId"));
-        visitCol.setFk(new LookupForeignKey("RowId")
+        visitCol.setFk(new LookupForeignKey(cf, "RowId", null)
         {
             public TableInfo getLookupTableInfo()
             {
-                return new VisitTable(_userSchema);
+                return new VisitTable(_userSchema, getLookupContainerFilter());
             }
         });
         addColumn(visitCol);
 
         var assaySpecimenCol = new AliasedColumn(this, "AssaySpecimenId", _rootTable.getColumn("AssaySpecimenId"));
-        assaySpecimenCol.setFk(new LookupForeignKey("RowId")
+        assaySpecimenCol.setFk(new LookupForeignKey(cf, "RowId", null)
         {
             public TableInfo getLookupTableInfo()
             {
-                return new AssaySpecimenTable(_userSchema);
+                return new AssaySpecimenTable(_userSchema, getLookupContainerFilter());
             }
         });
         addColumn(assaySpecimenCol);

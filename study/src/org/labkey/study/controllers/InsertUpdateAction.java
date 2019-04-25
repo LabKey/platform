@@ -131,6 +131,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
 
         // if this is our cohort assignment dataset, we may want to display drop-downs for cohort, rather
         // than a text entry box:
+        // TODO: This is WRONG! Don't hack on the TableInfo, hack on the View!
         if (!study.isManualCohortAssignment() && Objects.equals(_ds.getDatasetId(), study.getParticipantCohortDatasetId()))
         {
             final List<? extends Cohort> cohorts = StudyManager.getInstance().getCohorts(study.getContainer(), getUser());
@@ -382,7 +383,8 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
     TableInfo getQueryTable()
     {
         StudyQuerySchema schema = StudyQuerySchema.createSchema(getStudy(), getUser(), true);
-        TableInfo datasetQueryTable= schema.getTable(_ds.getName());
+        // TODO need to return unlocked tableinfo because the action hacks on it
+        TableInfo datasetQueryTable= schema.getTable(_ds.getName(), null, true, true);
         if (null == datasetQueryTable) // shouldn't happen...
             throw new NotFoundException("table: study." + _ds.getName());
         return datasetQueryTable;

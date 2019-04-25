@@ -17,6 +17,7 @@ package org.labkey.study.query;
 
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
@@ -45,9 +46,9 @@ public class CohortTable extends BaseStudyTable
 {
     private Domain _domain;
 
-    public CohortTable(StudyQuerySchema schema)
+    public CohortTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoCohort());
+        super(schema, StudySchema.getInstance().getTableInfoCohort(), cf);
 
         addFolderColumn();
         addStudyColumn();

@@ -16,6 +16,7 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
@@ -38,9 +39,9 @@ import org.labkey.study.StudySchema;
  */
 public class StudyObjectiveTable extends BaseStudyTable
 {
-    public StudyObjectiveTable(StudyQuerySchema schema)
+    public StudyObjectiveTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoObjective(), true);
+        super(schema, StudySchema.getInstance().getTableInfoObjective(), cf, true);
 
         setDescription("Contains one row per study objective");
         var rowIdColumn = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("RowId")));
