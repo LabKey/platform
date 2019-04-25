@@ -5,9 +5,8 @@
 import * as React from 'react'
 import {Panel} from "react-bootstrap";
 import {ActionURL} from "@labkey/api";
-import {SchemaQuery} from "@glass/models";
 import {DomainDesign, DomainFieldsDisplay, fetchDomain} from "@glass/domainproperties";
-import {Alert, LoadingSpinner} from "@glass/utils";
+import {Alert, LoadingSpinner, SchemaQuery} from "@glass/base";
 
 type State = {
     schemaQuery: SchemaQuery,
