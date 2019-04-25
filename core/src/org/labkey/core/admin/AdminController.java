@@ -8889,19 +8889,30 @@ public class AdminController extends SpringActionController
                     QuerySchema q = def.getSchema(name);
                     if (null == q)
                         return;
-                    Collection<TableInfo> tables = q.getTables();
-                    if (null == tables)
+                    var tableNames = q.getTableNames();
+                    if (null == tableNames)
                         return;
-                    tables.forEach(t ->
+                    tableNames.forEach(table ->
                     {
-                        ActionURL grid = t.getGridURL(getContainer());
-                        if (null != grid)
-                            urls.add(grid.toString());
-                        else
-                            urls.add(new ActionURL("query", "executeQuery.view", getContainer())
-                                    .addParameter("schemaName", q.getSchemaName())
-                                    .addParameter("query.queryName", t.getName())
-                                    .toString());
+                        try
+                        {
+                            var t = q.getTable(table);
+                            if (null != t)
+                            {
+                                ActionURL grid = t.getGridURL(getContainer());
+                                if (null != grid)
+                                    urls.add(grid.toString());
+                                else
+                                    urls.add(new ActionURL("query", "executeQuery.view", getContainer())
+                                            .addParameter("schemaName", q.getSchemaName())
+                                            .addParameter("query.queryName", t.getName())
+                                            .toString());
+                            }
+                        }
+                        catch (Exception x)
+                        {
+                            // pass
+                        }
                     });
                 });
 
