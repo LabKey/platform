@@ -32,10 +32,10 @@
     }
   },
   "dependencies": {
-    "@labkey/dependencies": "0.0.1",
-    "@glass/domainproperties": "0.0.2",
-    "@glass/models": "0.0.3",
-    "@glass/utils": "0.0.5"
+    "@labkey/dependencies": "0.0.3",
+    "@glass/base": "0.1.8",
+    "@glass/domainproperties": "0.0.7",
+    "classnames": "2.2.6"
   },
   "devDependencies": {
     "@babel/core": "7.2.2",
