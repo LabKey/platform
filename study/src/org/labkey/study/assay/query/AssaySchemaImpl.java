@@ -206,7 +206,7 @@ public class AssaySchemaImpl extends AssaySchema
                 // moved as part of the refactor
                 if (protocolSchema != null && new CaseInsensitiveHashSet(protocolSchema.getTableNames()).contains(newName))
                 {
-                    return protocolSchema.getTable(newName, cf);
+                    return protocolSchema.getTable(newName, cf, true, true);
                 }
             }
         }
