@@ -132,8 +132,8 @@ public class QueryView extends WebPartView<Object>
     private String _linkTarget;
 
     // Overrides for any URLs that might already be set on the TableInfo
-    private String _updateURL;
-    private String _detailsURL;
+    private DetailsURL _updateURL;
+    private DetailsURL _detailsURL;
     private String _insertURL;
     private String _importURL;
     private String _deleteURL;
@@ -476,7 +476,23 @@ public class QueryView extends WebPartView<Object>
 
     protected StringExpression urlExpr(QueryAction action)
     {
-        StringExpression expr = getQueryDef().urlExpr(action, _schema.getContainer());
+        StringExpression expr = null;
+
+        // NOTE: details/update URL may not get picked up from TableInfo if subclass overrides createTable()
+        // but that case should use QueryView.setDetailsURL/setUpdateURL() anyway
+        switch (action)
+        {
+            case detailsQueryRow:
+                expr = _detailsURL;
+                break;
+            case updateQueryRow:
+                expr = _updateURL;
+                break;
+        }
+
+        if (null == expr)
+            expr = getQueryDef().urlExpr(action, _schema.getContainer());
+
         if (expr == null)
             return null;
 
@@ -505,7 +521,36 @@ public class QueryView extends WebPartView<Object>
     @Nullable
     protected ActionURL urlFor(QueryAction action)
     {
-        ActionURL ret = _schema.urlFor(action, getQueryDef());
+        ActionURL ret = null;
+
+        switch (action)
+        {
+            case deleteQueryRows:
+                if (null != _deleteURL)
+                    ret = DetailsURL.fromString(_deleteURL).getActionURL();
+                break;
+            case detailsQueryRow:
+                // TODO kinda suspect...
+                if (null != _detailsURL)
+                    ret = _detailsURL.getActionURL();
+                break;
+            case updateQueryRow:
+                // TODO also kinda suspect...
+                if (null != _updateURL)
+                    ret = _updateURL.getActionURL();
+                break;
+            case insertQueryRow:
+                if (null != _insertURL)
+                    ret = DetailsURL.fromString(_insertURL).getActionURL();
+                break;
+            case importData:
+                if (null != _importURL)
+                    ret = DetailsURL.fromString(_importURL).getActionURL();
+                break;
+        }
+
+        if (null == ret)
+            ret = _schema.urlFor(action, getQueryDef());
 
         if (ret == null)
         {
@@ -2781,41 +2826,6 @@ public class QueryView extends WebPartView<Object>
             }
         }
 
-        if (_table instanceof AbstractTableInfo)
-        {
-            // Setting URLs is not supported on SchemaTableInfos, which are singletons anyway and therefore
-            // shouldn't be mutated by a request
-            AbstractTableInfo urlTableInfo = (AbstractTableInfo) _table;
-            try
-            {
-                if (_updateURL != null)
-                {
-                    urlTableInfo.setUpdateURL(DetailsURL.fromString(_updateURL));
-                }
-                if (_detailsURL != null)
-                {
-                    urlTableInfo.setDetailsURL(DetailsURL.fromString(_detailsURL));
-                }
-                if (_insertURL != null)
-                {
-                    urlTableInfo.setInsertURL(DetailsURL.fromString(_insertURL));
-                }
-                if (_importURL != null)
-                {
-                    urlTableInfo.setImportURL(DetailsURL.fromString(_importURL));
-                }
-                if (_deleteURL != null)
-                {
-                    urlTableInfo.setDeleteURL(DetailsURL.fromString(_deleteURL));
-                }
-            }
-            catch (IllegalArgumentException e)
-            {
-                // Don't report bad client API URLs to the mothership
-                throw new ApiUsageException(e);
-            }
-        }
-
         return _table;
     }
 
@@ -2880,7 +2890,7 @@ public class QueryView extends WebPartView<Object>
         if (isPrintView() || isExportView())
             return;
 
-        if (_showDetailsColumn && (table.hasDetailsURL() || isShowExperimentalGenericDetailsURL()))
+        if (_showDetailsColumn && (null != _detailsURL || table.hasDetailsURL() || isShowExperimentalGenericDetailsURL()))
         {
             StringExpression urlDetails = urlExpr(QueryAction.detailsQueryRow);
 
@@ -2958,10 +2968,20 @@ public class QueryView extends WebPartView<Object>
 
     public void setUpdateURL(String updateURL)
     {
+        _updateURL = null==updateURL ? null : DetailsURL.fromString(updateURL);
+    }
+
+    public void setUpdateURL(DetailsURL updateURL)
+    {
         _updateURL = updateURL;
     }
 
     public void setDetailsURL(String detailsURL)
+    {
+        _detailsURL = null==detailsURL ? null : DetailsURL.fromString(detailsURL);
+    }
+
+    public void setDetailsURL(DetailsURL detailsURL)
     {
         _detailsURL = detailsURL;
     }
