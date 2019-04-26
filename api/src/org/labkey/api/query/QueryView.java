@@ -1610,7 +1610,7 @@ public class QueryView extends WebPartView<Object>
         {
             t = ((UnionTable) t).getComponentTable();   // check against a component table
         }
-        if (t.supportsContainerFilter() && !getAllowableContainerFilterTypes().isEmpty())
+        if (null != t && t.supportsContainerFilter() && !getAllowableContainerFilterTypes().isEmpty())
         {
             NavTree containerFilterItem = new NavTree("Folder Filter");
             containerFilterItem.setId(getBaseMenuId() + ":GridViews:Folder Filter");
