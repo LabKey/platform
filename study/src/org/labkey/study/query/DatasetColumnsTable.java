@@ -99,4 +99,10 @@ public class DatasetColumnsTable extends FilteredTable<StudyQuerySchema>
     {
         assert null == filter || ContainerFilter.CURRENT == filter;
     }
+
+    @Override
+    protected ContainerFilter getDefaultContainerFilter()
+    {
+        return ContainerFilter.CURRENT;
+    }
 }
