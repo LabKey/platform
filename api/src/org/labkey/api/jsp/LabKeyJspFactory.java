@@ -22,8 +22,8 @@ public class LabKeyJspFactory extends JspFactory
     public PageContext getPageContext(Servlet servlet, ServletRequest servletRequest, ServletResponse servletResponse, String s, boolean b, int i, boolean b1)
     {
         PageContext pageContext = _factory.getPageContext(servlet, servletRequest, servletResponse, s, b, i, b1);
-
-        return new LabKeyPageContext(pageContext);
+        return pageContext;
+//        return new LabKeyPageContext(pageContext);
     }
 
     @Override
