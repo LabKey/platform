@@ -83,12 +83,14 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 
     public BaseStudyTable(StudyQuerySchema schema, TableInfo realTable, ContainerFilter cf, boolean includeSourceStudyData, boolean skipPermissionChecks)
     {
-        super(realTable, schema, cf);
+        super(realTable, schema);
 
         if (includeSourceStudyData && null != schema._study && !schema._study.isDataspaceStudy())
             _setContainerFilter(new ContainerFilter.StudyAndSourceStudy(schema.getUser(), skipPermissionChecks));
+        else if (null != cf && supportsContainerFilter())
+            _setContainerFilter(cf);
         else
-            _setContainerFilter(schema.getDefaultContainerFilter());
+            _setContainerFilter(getDefaultContainerFilter());
 
         if (!includeSourceStudyData && skipPermissionChecks)
             throw new IllegalArgumentException("Skipping permission checks only applies when including source study data");
