@@ -788,32 +788,26 @@ public class StudyServiceImpl implements StudyService
             containers = Collections.emptySet();
         Map<Container, BaseStudyTable> tables = new HashMap<>();
         Map<TableInfo, SQLFragment> filterFragmentMap = new HashMap<>();
-        try
+
+       for (Container c : containers)
         {
-            for (Container c : containers)
+            Study s = StudyManager.getInstance().getStudy(c);
+            if (null != s)
             {
-                Study s = StudyManager.getInstance().getStudy(c);
-                if (null != s)
-                {
-                    StudyQuerySchema schema = StudyQuerySchema.createSchema((StudyImpl) s, user, false);
-                    BaseStudyTable t = tableClass.getConstructor(StudyQuerySchema.class, ContainerFilter.class).newInstance(schema, null);
-                    t.setPublic(false);
-                    tables.put(c, t);
-                    if (filterFragments.containsKey(c))
-                        filterFragmentMap.put(t, filterFragments.get(c));
-                    publicName = t.getPublicName();
-                }
-            }
-            if (tables.isEmpty())
-            {
-                BaseStudyTable t = tableClass.getConstructor(StudyQuerySchema.class).newInstance(schemaDefault);
+                StudyQuerySchema schema = StudyQuerySchema.createSchema((StudyImpl) s, user, false);
+                BaseStudyTable t = constructStudyTable(tableClass, schema);
                 t.setPublic(false);
-                return t;
+                tables.put(c, t);
+                if (filterFragments.containsKey(c))
+                    filterFragmentMap.put(t, filterFragments.get(c));
+                publicName = t.getPublicName();
             }
         }
-        catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e)
+        if (tables.isEmpty())
         {
-            throw new IllegalStateException("Unable to construct class instance.", e);
+            BaseStudyTable t = constructStudyTable(tableClass, schemaDefault);
+            t.setPublic(false);
+            return t;
         }
         return createUnionTable(schemaDefault, tables.values(), tables.keySet(), publicName, kind, filterFragmentMap,
                 dontAliasColumns, useParticipantIdName);
@@ -932,6 +926,20 @@ public class StudyServiceImpl implements StudyService
         return new UnionTable(schemaDefault, tableName, unionColumns.values(), sqlf, table);
     }
 
+
+    private static BaseStudyTable constructStudyTable(Class<? extends TableInfo> tableClass, StudyQuerySchema schema)
+    {
+        try
+        {
+            return (BaseStudyTable) tableClass.getConstructor(StudyQuerySchema.class, ContainerFilter.class).newInstance(schema, null);
+        }
+        catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e)
+        {
+            throw new IllegalStateException("Unable to construct class instance.");
+        }
+    }
+
+
     @Override
     public TableInfo getTypeTableUnion(Class<? extends TableInfo> tableClass, QuerySchema qsDefault, Set<Container> containers, boolean dontAliasColumns)
     {
@@ -945,30 +953,24 @@ public class StudyServiceImpl implements StudyService
         if (null == containers)                     // TODO: I'm reasonably sure this can't happen; for 15.2, verify all paths and @NotNull parameter
             containers = Collections.emptySet();
         Map<Container, BaseStudyTable> tables = new HashMap<>();
-        try
+
+        for (Container c : containers)
         {
-            for (Container c : containers)
+            Study s = StudyManager.getInstance().getStudy(c);
+            if (null != s)
             {
-                Study s = StudyManager.getInstance().getStudy(c);
-                if (null != s)
-                {
-                    StudyQuerySchema schema = StudyQuerySchema.createSchema((StudyImpl) s, user, false);
-                    BaseStudyTable t = (BaseStudyTable) tableClass.getConstructor(StudyQuerySchema.class).newInstance(schema);
-                    t.setPublic(false);
-                    tables.put(c, t);
-                    publicName = t.getPublicName();
-                }
-            }
-            if (tables.isEmpty())
-            {
-                BaseStudyTable t = (BaseStudyTable)tableClass.getConstructor(StudyQuerySchema.class).newInstance(schemaDefault);
+                StudyQuerySchema schema = StudyQuerySchema.createSchema((StudyImpl) s, user, false);
+                BaseStudyTable t = constructStudyTable(tableClass, schema);
                 t.setPublic(false);
-                return t;
+                tables.put(c, t);
+                publicName = t.getPublicName();
             }
         }
-        catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e)
+        if (tables.isEmpty())
         {
-            throw new IllegalStateException("Unable to construct class instance.");
+            BaseStudyTable t = constructStudyTable(tableClass, schemaDefault);
+            t.setPublic(false);
+            return t;
         }
 
         return createTypeUnionTable(schemaDefault, tables.values(), tables.keySet(), publicName, Collections.emptyMap(), dontAliasColumns);
