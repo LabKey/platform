@@ -1157,6 +1157,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     }
 
 
+    // NOTE: this method has been moved to DomainUtil.java (see validateProperties) for non-GWT use
     public List<String> validate()
     {
         DomainType d = getUpdates();
