@@ -855,7 +855,9 @@ public class Query
         {
             if (resolvedSchema instanceof UserSchema)
             {
-                t = ((UserSchema) resolvedSchema)._getTableOrQuery(key.getName(), getContainerFilter(), true, false, resolveExceptions);
+                TableType tableType = lookupMetadataTable(key.getName());
+                boolean forWrite = tableType != null;
+                t = ((UserSchema) resolvedSchema)._getTableOrQuery(key.getName(), getContainerFilter(), true, forWrite, resolveExceptions);
             }
             else
                 t = resolvedSchema.getTable(key.getName(), getContainerFilter());
@@ -885,6 +887,7 @@ public class Query
         if (t instanceof TableInfo)
         {
             TableInfo tableInfo = (TableInfo)t;
+            // I don't see why Query is being roped into helping with this??? Can't this be handled on the LinkedSchema side?
             TableType tableType = lookupMetadataTable(tableInfo.getName());
             if (null != tableType && tableInfo.isMetadataOverrideable() && resolvedSchema instanceof UserSchema)
                 tableInfo.overlayMetadata(Collections.singletonList(tableType), (UserSchema)resolvedSchema, _parseErrors);

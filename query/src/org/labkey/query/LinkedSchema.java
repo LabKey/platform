@@ -24,6 +24,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.LinkedSchemaCustomizer;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SimpleFilter;
@@ -237,11 +238,18 @@ public class LinkedSchema extends ExternalSchema
     @Override
     protected TableInfo createSourceTable(String name)
     {
-        return _sourceSchema.getTable(name);
+        return _sourceSchema.getTable(name, null, true, true);
     }
 
     @Override
-    protected TableInfo createWrappedTable(String name, @NotNull TableInfo sourceTable)
+    public @NotNull ContainerFilter getDefaultContainerFilter()
+    {
+        // NOTE: The source table ContainerFilter is already set by _sourceSchema.getTable()
+        return new ContainerFilter.InternalNoContainerFilter(getUser());
+    }
+
+    @Override
+    protected TableInfo createWrappedTable(String name, @NotNull TableInfo sourceTable, ContainerFilter cf)
     {
         TableType metaData = getXbTable(name);
         ArrayList<QueryException> errors = new ArrayList<>();

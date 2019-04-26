@@ -61,7 +61,7 @@ public class LinkedTableInfo extends SimpleUserSchema.SimpleTable<UserSchema>
                            @Nullable Set<FieldKey> includedColumns,
                            @Nullable Set<FieldKey> excludedColumns)
     {
-        super(schema, table);
+        super(schema, table, null);
         this.includedColumns = includedColumns;
         this.excludedColumns = excludedColumns;
     }

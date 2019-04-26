@@ -314,7 +314,7 @@ public class AssayController extends SpringActionController
         Map<String, TableInfo> tableInfoMap = new HashMap<>();
         for (String tableName : tableNames)
         {
-            TableInfo table = schema.getTable(tableName, true);
+            TableInfo table = schema.getTable(tableName, null, true, true);
             if (table != null)
             {
                 Domain domain = table.getDomain();

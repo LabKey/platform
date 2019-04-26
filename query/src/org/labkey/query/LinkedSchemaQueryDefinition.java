@@ -181,8 +181,7 @@ public class LinkedSchemaQueryDefinition extends QueryDefinitionImpl
     @Override
     public void setContainerFilter(ContainerFilter containerFilter)
     {
-        // XXX: Maybe allow?
-        throw new UnsupportedOperationException();
+        // Container filter is pre-defined by linked schema
     }
 
     @Override
