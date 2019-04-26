@@ -1184,7 +1184,7 @@ public class StudyQuerySchema extends UserSchema
         boolean isProjectLevel = false;
         if (ctx.isDataspaceProject() && StudyQuerySchema.isDataspaceProjectTable(tableName))
         {
-            tableInfo = projectSchema.getTable(tableName, cf, true, false);
+            tableInfo = projectSchema.getTable(tableName, cf, true, true);
             container = ctx.getProject();
             isProjectLevel = true;
         }
