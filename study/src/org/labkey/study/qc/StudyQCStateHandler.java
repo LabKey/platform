@@ -57,7 +57,7 @@ public class StudyQCStateHandler implements QCStateHandler<StudyController.Manag
         if (!QCStateHandler.nullSafeEqual(study.getDefaultAssayQCState(), form.getDefaultAssayQCState()) ||
                 !QCStateHandler.nullSafeEqual(study.getDefaultPipelineQCState(), form.getDefaultPipelineQCState()) ||
                 !QCStateHandler.nullSafeEqual(study.getDefaultDirectEntryQCState(), form.getDefaultDirectEntryQCState()) ||
-                !QCStateHandler.nullSafeEqual(study.isBlankQCStatePublic(), form.isBlankQCStatePublic()) ||
+                study.isBlankQCStatePublic() != form.isBlankQCStatePublic() ||
                 study.isShowPrivateDataByDefault() != form.isShowPrivateDataByDefault())
         {
             study = study.createMutable();

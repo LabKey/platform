@@ -2416,9 +2416,9 @@ public class CoreController extends SpringActionController
 
     public static class ManageQCStatesForm extends AbstractManageQCStatesForm
     {
-        private int _defaultQCState;
+        private Integer _defaultQCState;
 
-        public int getDefaultQCState()
+        public Integer getDefaultQCState()
         {
             return _defaultQCState;
         }
@@ -2450,9 +2450,23 @@ public class CoreController extends SpringActionController
         }
 
         @Override
-        public String getQcStateDefaultsPanel(Container container, QCStateHandler qcStateHandler)
+        public String getQcStateDefaultsPanel(Container container, QCStateHandler qcStateHandlerAbstract)
         {
-            return "";  // TODO implement me
+            CoreQCStateHandler qcStateHandler = (CoreQCStateHandler)qcStateHandlerAbstract;
+
+            StringBuilder panelHtml = new StringBuilder();
+            panelHtml.append("  <table class=\"lk-fields-table\">");
+            panelHtml.append("      <tr>");
+            panelHtml.append("          <td colspan=\"2\">These settings allow different default QC states depending on data source.");
+            panelHtml.append("              If set, all imported data without an explicit QC state will have the selected state automatically assigned.</td>");
+            panelHtml.append("      </tr>");
+            panelHtml.append("      <tr>");
+            panelHtml.append("          <th align=\"right\" width=\"300px\">Default QC state:</th>");
+            panelHtml.append(getQcStateHtml(container, qcStateHandler, "defaultQCState", qcStateHandler.getDefaultQCState(container)));
+            panelHtml.append("      </tr>");
+            panelHtml.append("  </table>");
+
+            return panelHtml.toString();
         }
 
         @Override

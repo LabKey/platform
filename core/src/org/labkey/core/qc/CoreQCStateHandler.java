@@ -16,26 +16,35 @@ public class CoreQCStateHandler implements QCStateHandler<CoreController.ManageQ
     protected List<QCState> _states = null;
     public static final String PROPS_KEY = "CoreQCStateHandlerProps";
     public static final String IS_BLANK_QC_STATE_PUBLIC_KEY = "IsBlankQCStatePublic";
-    public static final String DEFAULT_QC_STATE_KEY = "DefaultPipelineQCState";
+    public static final String DEFAULT_QC_STATE_KEY = "DefaultQCState";
 
     @Override
     public boolean isBlankQCStatePublic(Container container)
     {
         Map<String, String> props = PropertyManager.getNormalStore().getProperties(container, PROPS_KEY);
+        String isBlankQCStatePublicString = props.get(IS_BLANK_QC_STATE_PUBLIC_KEY);
+        if (isBlankQCStatePublicString == null)
+            return false;  // TODO: should a different default be used?
         return Boolean.parseBoolean(props.get(IS_BLANK_QC_STATE_PUBLIC_KEY));
     }
 
     public Integer getDefaultQCState(Container container)
     {
         Map<String, String> props = PropertyManager.getNormalStore().getProperties(container, PROPS_KEY);
+        String defaultQCStateKey = props.get(DEFAULT_QC_STATE_KEY);
+        if (defaultQCStateKey == null)
+            return null;
         return Integer.parseInt(props.get(DEFAULT_QC_STATE_KEY));
     }
 
-    public void setProps(Container container, boolean isBlankQCStatePublic, int defaultQCState)
+    public void setProps(Container container, boolean isBlankQCStatePublic, Integer defaultQCState)
     {
-        PropertyManager.PropertyMap props = PropertyManager.getNormalStore().getWritableProperties(container, PROPS_KEY, false);
+        PropertyManager.PropertyMap props = PropertyManager.getNormalStore().getWritableProperties(container, PROPS_KEY, true);
         props.put(IS_BLANK_QC_STATE_PUBLIC_KEY, Boolean.toString(isBlankQCStatePublic));
-        props.put(DEFAULT_QC_STATE_KEY, Integer.toString(defaultQCState));
+        if (defaultQCState == null)
+            props.put(DEFAULT_QC_STATE_KEY, null);
+        else
+            props.put(DEFAULT_QC_STATE_KEY, defaultQCState.toString());
         props.save();
     }
 
@@ -57,8 +66,8 @@ public class CoreQCStateHandler implements QCStateHandler<CoreController.ManageQ
     @Override
     public void updateQcState(Container container, CoreController.ManageQCStatesForm form, User user)
     {
-        if (QCStateHandler.nullSafeEqual(getDefaultQCState(container), form.getDefaultQCState()) ||
-                !QCStateHandler.nullSafeEqual(isBlankQCStatePublic(container), form.isBlankQCStatePublic()))
+        if (!QCStateHandler.nullSafeEqual(getDefaultQCState(container), form.getDefaultQCState()) ||
+                isBlankQCStatePublic(container) != form.isBlankQCStatePublic())
         {
             setProps(container, form.isBlankQCStatePublic(), form.getDefaultQCState());
         }

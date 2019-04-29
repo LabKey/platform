@@ -3436,25 +3436,6 @@ public class StudyController extends BaseStudyController
             return panelHtml.toString();
         }
 
-        private String getQcStateHtml(Container container, QCStateHandler qcStateHandler, String selectName, Integer qcStateId)
-        {
-            StringBuilder qcStateHtml = new StringBuilder();
-            qcStateHtml.append("          <td>");
-            qcStateHtml.append("              <select name=\"").append(selectName).append("\">");
-            qcStateHtml.append("                  <option value=\"\">[none]</option>");
-            for (Object stateObj : qcStateHandler.getQCStates(container))
-            {
-                QCState state = (QCState) stateObj;
-                boolean selected = (qcStateId != null) && (qcStateId == state.getRowId());
-                String selectedText = (selected) ? " selected" : "";
-                qcStateHtml.append("              <option value=\"").append(state.getRowId()).append("\"").append(selectedText).append(">").append(state.getLabel()).append("</option>");
-            }
-            qcStateHtml.append("              </select>");
-            qcStateHtml.append("          </td>");
-
-            return qcStateHtml.toString();
-        }
-
         @Override
         public String getDataVisibilityPanel(Container container, QCStateHandler qcStateHandler)
         {
