@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -34,12 +35,14 @@
     ActionURL cancelUrl = bean.getReturnUrl() != null ? new ActionURL(bean.getReturnUrl()) :
             new ActionURL(manageAction.getClass(), container);
     QCStateHandler qcStateHandler = bean.getQCStateHandler();
+    String currentQCPanelTitle = "Currently Defined " + StringUtils.capitalize(bean.getNoun()) + " QC States";
+    String defaultStatesPanelTitle = "Default states for " + bean.getNoun() + " data";
 %>
 <labkey:errors/><br>
 <labkey:form action="<%=h(buildURL(manageAction.getClass()))%>" name="manageQCStates" method="POST">
 <input type="hidden" name="reshowPage" value="true">
 <input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl()) %>">
-    <labkey:panel title="Currently Defined Dataset QC States"> <!-- TODO: make this title configurable -->
+    <labkey:panel title="<%=h(currentQCPanelTitle)%>">
         <table class="lk-fields-table">
             <tr>
                 <th>&nbsp;</th>
@@ -75,7 +78,7 @@
                 </td>
                 <td align="center"><input name="publicData" value="<%= state.getRowId() %>" id="<%= h(state.getLabel()) %>_public" type="checkbox"<%=checked(state.isPublicData())%>/></td>
                 <td>
-                    <%= /* TODO: make these messages configurable */ qcStateHandler.isQCStateInUse(container, state) ? "[in&nbsp;use]" + helpPopup("QC state in use", "This QC state cannot be deleted because it is currently a default state (see below) or is referenced by at least one dataset row.") :
+                    <%= qcStateHandler.isQCStateInUse(container, state) ? "[in&nbsp;use]" + helpPopup("QC state in use", "This QC state cannot be deleted because it is currently a default state (see below) or is referenced by at least one " + bean.getNoun() + " row.") :
                             link("Delete")
                                 .onClick("return LABKEY.Utils.confirmAndPost('Delete this QC state? No additional study data will be deleted.', " + qh(baseDeleteStateURL.clone().addParameter("id", state.getRowId()).getLocalURIString()) + ")") %>
                 </td>
@@ -84,7 +87,7 @@
                 }
             %>
             <tr>
-                <td nowrap>New dataset QC state:</td>
+                <td nowrap>New <%= h(bean.getNoun())%> QC state:</td>
                 <td><input type="text" name="newLabel" size="30"></td>
                 <td><input type="text" name="newDescription" size="50"></td>
                 <td align="center"><input type="checkbox" name="newPublicData" CHECKED></td>
@@ -106,7 +109,7 @@
         if (manageAction.hasQcStateDefaultsPanel())
         {
     %>
-    <labkey:panel title="Default states for dataset data">
+    <labkey:panel title="<%=h(defaultStatesPanelTitle)%>">
         <%= manageAction.getQcStateDefaultsPanel(container, qcStateHandler) %>
     </labkey:panel>
     <%

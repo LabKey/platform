@@ -3313,9 +3313,9 @@ public class StudyController extends BaseStudyController
         {
             super(returnUrl);
             _qcStateHandler = new StudyQCStateHandler();
-            _controllerClass = StudyController.class;
             _manageAction = new ManageQCStatesAction();
             _deleteAction = DeleteQCStateAction.class;
+            _noun = "dataset";
         }
     }
 

@@ -1,14 +1,12 @@
 package org.labkey.api.qc;
 
-import org.springframework.web.servlet.mvc.Controller;
-
 public class AbstractManageQCStatesBean
 {
     private String _returnUrl;
     protected QCStateHandler _qcStateHandler;
-    protected Class<? extends Controller> _controllerClass;
     protected AbstractManageQCStatesAction _manageAction;
     protected Class<? extends AbstractDeleteQCStateAction> _deleteAction;
+    protected String _noun;
 
     public AbstractManageQCStatesBean(String returnUrl)
     {
@@ -25,11 +23,6 @@ public class AbstractManageQCStatesBean
         return _qcStateHandler;
     }
 
-    public Class<? extends Controller> getControllerClass()
-    {
-        return _controllerClass;
-    }
-
     public AbstractManageQCStatesAction getManageAction()
     {
         return _manageAction;
@@ -38,5 +31,10 @@ public class AbstractManageQCStatesBean
     public Class<? extends AbstractDeleteQCStateAction> getDeleteAction()
     {
         return _deleteAction;
+    }
+
+    public String getNoun()
+    {
+        return _noun;
     }
 }
