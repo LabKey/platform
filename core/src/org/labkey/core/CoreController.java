@@ -61,6 +61,7 @@ import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.NormalContainerType;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyStore;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -88,8 +89,8 @@ import org.labkey.api.premium.PremiumService;
 import org.labkey.api.qc.AbstractDeleteQCStateAction;
 import org.labkey.api.qc.AbstractManageQCStatesAction;
 import org.labkey.api.qc.AbstractManageQCStatesBean;
+import org.labkey.api.qc.AbstractManageQCStatesForm;
 import org.labkey.api.qc.DeleteQCStateForm;
-import org.labkey.api.qc.ManageQCStatesForm;
 import org.labkey.api.qc.QCStateHandler;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -158,6 +159,7 @@ import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
 import org.labkey.api.writer.ZipUtil;
+import org.labkey.core.portal.ProjectController;
 import org.labkey.core.qc.CoreQCStateHandler;
 import org.labkey.core.reports.ExternalScriptEngineDefinitionImpl;
 import org.labkey.core.security.SecurityController;
@@ -207,6 +209,7 @@ public class CoreController extends SpringActionController
     private static final Logger _log = Logger.getLogger(CoreController.class);
 
     private static ActionResolver _actionResolver = new DefaultActionResolver(CoreController.class);
+    private static final PropertyStore _normalStore = PropertyManager.getNormalStore();
 
     public CoreController()
     {
@@ -2411,55 +2414,55 @@ public class CoreController extends SpringActionController
         }
     }
 
+    public static class ManageQCStatesForm extends AbstractManageQCStatesForm
+    {
+        private int _defaultQCState;
+
+        public int getDefaultQCState()
+        {
+            return _defaultQCState;
+        }
+
+        public void setDefaultQCState(Integer defaultQCState)
+        {
+            _defaultQCState = defaultQCState;
+        }
+    }
+
     @RequiresPermission(AdminPermission.class)
-    public class ManageQCStatesAction extends AbstractManageQCStatesAction
+    public class ManageQCStatesAction extends AbstractManageQCStatesAction<ManageQCStatesForm>
     {
         public ManageQCStatesAction()
         {
-            super();
-            setHasDataVisibilityPanel(true);
-            setHasQcStateDefaultsPanel(false);
+            super(new CoreQCStateHandler(), ManageQCStatesForm.class);
         }
 
         @Override
-        public QcDefaultSettings getCurrentQcDefaultSettings()
+        public boolean hasQcStateDefaultsPanel()
         {
-            QcDefaultSettings qcDefaultSettings = new QcDefaultSettings();
-            /*qcDefaultSettings.setDefaultAssayQCState(_study.getDefaultAssayQCState());
-            qcDefaultSettings.setDefaultPipelineQCState(_study.getDefaultPipelineQCState());
-            qcDefaultSettings.setDefaultDirectEntryQCState(_study.getDefaultDirectEntryQCState());
-            qcDefaultSettings.setBlankQCStatePublic(_study.isBlankQCStatePublic());
-            qcDefaultSettings.setShowPrivateDataByDefault(_study.isShowPrivateDataByDefault());*/
-
-            return qcDefaultSettings;
+            return true;
         }
 
         @Override
-        public void persistQcSettings(ManageQCStatesForm form)
+        public boolean hasDataVisibilityPanel()
         {
-            /*_study = _study.createMutable();
-            _study.setDefaultAssayQCState(form.getDefaultAssayQCState());
-            _study.setDefaultPipelineQCState(form.getDefaultPipelineQCState());
-            _study.setDefaultDirectEntryQCState(form.getDefaultDirectEntryQCState());
-            _study.setShowPrivateDataByDefault(form.isShowPrivateDataByDefault());
-            _study.setBlankQCStatePublic(form.isBlankQCStatePublic());
-            StudyManager.getInstance().updateStudy(getUser(), _study);*/
+            return false;
         }
 
         @Override
-        public String getQcStateDefaultsPanel(QCStateHandler qcStateHandler)
+        public String getQcStateDefaultsPanel(Container container, QCStateHandler qcStateHandler)
         {
-            return "";
+            return "";  // TODO implement me
         }
 
         @Override
-        public String getDataVisibilityPanel(QCStateHandler qcStateHandler)
+        public String getDataVisibilityPanel(Container container, QCStateHandler qcStateHandler)
         {
             throw new IllegalStateException("This action does not support a data visibility panel");
         }
 
         @Override
-        public ModelAndView getView(org.labkey.api.qc.ManageQCStatesForm manageQCStatesForm, boolean reshow, BindException errors)
+        public ModelAndView getView(ManageQCStatesForm manageQCStatesForm, boolean reshow, BindException errors)
         {
             return new JspView<>("/org/labkey/api/qc/view/manageQCStates.jsp",
                     new ManageQCStatesBean(manageQCStatesForm.getReturnUrl()), errors);
@@ -2469,33 +2472,14 @@ public class CoreController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("manageQC");
-            //_appendManageStudy(root);
             return root.addChild("Manage Assay QC States");
         }
 
         @Override
-        public URLHelper getSuccessURL(org.labkey.api.qc.ManageQCStatesForm manageQCStatesForm)
+        public URLHelper getSuccessURL(ManageQCStatesForm manageQCStatesForm)
         {
-            return getSuccessURL(manageQCStatesForm, ManageQCStatesAction.class, SimpleViewAction.class);  // TODO: fix last class
+            return getSuccessURL(manageQCStatesForm, ManageQCStatesAction.class, ProjectController.BeginAction.class);  // TODO: fix last class
         }
-    }
-
-    public static void updateQcState(User user, ManageQCStatesForm form)
-    {
-        /*if (!nullSafeEqual(study.getDefaultAssayQCState(), form.getDefaultAssayQCState()) ||
-                !nullSafeEqual(study.getDefaultPipelineQCState(), form.getDefaultPipelineQCState()) ||
-                !nullSafeEqual(study.getDefaultDirectEntryQCState(), form.getDefaultDirectEntryQCState()) ||
-                !nullSafeEqual(study.isBlankQCStatePublic(), form.isBlankQCStatePublic()) ||
-                study.isShowPrivateDataByDefault() != form.isShowPrivateDataByDefault())
-        {
-            study = study.createMutable();
-            study.setDefaultAssayQCState(form.getDefaultAssayQCState());
-            study.setDefaultPipelineQCState(form.getDefaultPipelineQCState());
-            study.setDefaultDirectEntryQCState(form.getDefaultDirectEntryQCState());
-            study.setShowPrivateDataByDefault(form.isShowPrivateDataByDefault());
-            study.setBlankQCStatePublic(form.isBlankQCStatePublic());
-            StudyManager.getInstance().updateStudy(user, study);
-        }*/
     }
 
     @RequiresPermission(AdminPermission.class)

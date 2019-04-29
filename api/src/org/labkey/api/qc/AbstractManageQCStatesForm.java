@@ -2,7 +2,7 @@ package org.labkey.api.qc;
 
 import org.labkey.api.action.ReturnUrlForm;
 
-public class ManageQCStatesForm extends ReturnUrlForm
+public class AbstractManageQCStatesForm extends ReturnUrlForm
 {
     private int[] _ids;
     private String[] _labels;
@@ -12,12 +12,7 @@ public class ManageQCStatesForm extends ReturnUrlForm
     private String _newDescription;
     private boolean _newPublicData;
     private boolean _reshowPage;
-    private Integer _defaultPipelineQCState;
-    private Integer _defaultAssayQCState;
-    private Integer _defaultDirectEntryQCState;
-    private boolean _showPrivateDataByDefault;
     private boolean _blankQCStatePublic;
-    private String _returnUrl;
 
     public int[] getIds()
     {
@@ -97,46 +92,6 @@ public class ManageQCStatesForm extends ReturnUrlForm
     public void setReshowPage(boolean reshowPage)
     {
         _reshowPage = reshowPage;
-    }
-
-    public Integer getDefaultPipelineQCState()
-    {
-        return _defaultPipelineQCState;
-    }
-
-    public void setDefaultPipelineQCState(Integer defaultPipelineQCState)
-    {
-        _defaultPipelineQCState = defaultPipelineQCState;
-    }
-
-    public Integer getDefaultAssayQCState()
-    {
-        return _defaultAssayQCState;
-    }
-
-    public void setDefaultAssayQCState(Integer defaultAssayQCState)
-    {
-        _defaultAssayQCState = defaultAssayQCState;
-    }
-
-    public Integer getDefaultDirectEntryQCState()
-    {
-        return _defaultDirectEntryQCState;
-    }
-
-    public void setDefaultDirectEntryQCState(Integer defaultDirectEntryQCState)
-    {
-        _defaultDirectEntryQCState = defaultDirectEntryQCState;
-    }
-
-    public boolean isShowPrivateDataByDefault()
-    {
-        return _showPrivateDataByDefault;
-    }
-
-    public void setShowPrivateDataByDefault(boolean showPrivateDataByDefault)
-    {
-        _showPrivateDataByDefault = showPrivateDataByDefault;
     }
 
     public boolean isBlankQCStatePublic()

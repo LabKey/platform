@@ -26,7 +26,7 @@ public abstract class AbstractDeleteQCStateAction extends FormHandlerAction<Dele
         {
             for (QCState state : QCStateManager.getInstance().getQCStates(getContainer()))
             {
-                if (!getQCStateHandler().isQCStateInUse(state))
+                if (!getQCStateHandler().isQCStateInUse(getContainer(), state))
                     QCStateManager.getInstance().deleteQCState(state);
             }
         }

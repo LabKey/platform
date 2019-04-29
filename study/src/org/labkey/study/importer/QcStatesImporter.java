@@ -19,7 +19,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;
-import org.labkey.api.qc.ManageQCStatesForm;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.controllers.StudyController;
@@ -63,10 +62,10 @@ public class QcStatesImporter implements InternalStudyImporter
         {
             StudyImpl study = ctx.getStudy();
             StudyDocument.Study.QcStates qcStates = ctx.getXml().getQcStates();
-            StudyQCStateHandler qcStateHandler = new StudyQCStateHandler(study);
+            StudyQCStateHandler qcStateHandler = new StudyQCStateHandler();
 
             ctx.getLogger().info("Loading QC states");
-            ManageQCStatesForm qcForm = new ManageQCStatesForm();
+            StudyController.ManageQCStatesForm qcForm = new StudyController.ManageQCStatesForm();
             StudyqcDocument doc = getSettingsFile(ctx, root);
 
             // if the import provides a study qc document (new in 13.3), parse it for the qc states, else
@@ -80,7 +79,7 @@ public class QcStatesImporter implements InternalStudyImporter
                 for (QCState existingState : QCStateManager.getInstance().getQCStates(ctx.getContainer()))
                 {
                     // replace any existing states unless they are currently in use
-                    if (!qcStateHandler.isQCStateInUse(existingState))
+                    if (!qcStateHandler.isQCStateInUse(ctx.getContainer(),existingState))
                         QCStateManager.getInstance().deleteQCState(existingState);
                     else
                         stateMap.put(existingState.getLabel(), existingState.getRowId());
@@ -126,7 +125,7 @@ public class QcStatesImporter implements InternalStudyImporter
                 qcForm.setShowPrivateDataByDefault(qcXml.getShowPrivateDataByDefault());
                 qcForm.setBlankQCStatePublic(qcXml.getBlankQCStatePublic());
 
-                StudyController.updateQcState(study, ctx.getUser(), qcForm);
+                qcStateHandler.updateQcState(ctx.getContainer(), qcForm, ctx.getUser());
             }
             else
             {
@@ -136,7 +135,7 @@ public class QcStatesImporter implements InternalStudyImporter
                 qcForm.setDefaultAssayQCState(study.getDefaultAssayQCState());
                 qcForm.setDefaultDirectEntryQCState(study.getDefaultDirectEntryQCState());
                 qcForm.setBlankQCStatePublic(study.isBlankQCStatePublic());
-                StudyController.updateQcState(study, ctx.getUser(), qcForm);
+                qcStateHandler.updateQcState(ctx.getContainer(), qcForm, ctx.getUser());
             }
 
             ctx.getLogger().info("Done importing QC states");

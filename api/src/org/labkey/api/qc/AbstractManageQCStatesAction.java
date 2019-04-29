@@ -2,7 +2,9 @@ package org.labkey.api.qc;
 
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.data.Container;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.view.ActionURL;
 import org.springframework.validation.BindException;
@@ -12,37 +14,27 @@ import java.util.HashSet;
 import java.util.Set;
 
 @RequiresPermission(AdminPermission.class)
-public abstract class AbstractManageQCStatesAction extends FormViewAction<ManageQCStatesForm>
+public abstract class AbstractManageQCStatesAction<FORM extends AbstractManageQCStatesForm> extends FormViewAction<FORM>
 {
-    public abstract QcDefaultSettings getCurrentQcDefaultSettings();
-    public abstract void persistQcSettings(ManageQCStatesForm form);
-    public abstract String getQcStateDefaultsPanel(QCStateHandler qcStateHandler);
-    public abstract String getDataVisibilityPanel(QCStateHandler qcStateHandler);
+    public abstract String getQcStateDefaultsPanel(Container container, QCStateHandler qcStateHandler);
+    public abstract String getDataVisibilityPanel(Container container, QCStateHandler qcStateHandler);
+    public abstract boolean hasQcStateDefaultsPanel();
+    public abstract boolean hasDataVisibilityPanel();
 
-    private Boolean _hasQcStateDefaultsPanel = null;
-    private Boolean _hasDataVisibilityPanel = null;
+    protected QCStateHandler _qcStateHandler;
 
-    public Boolean getHasQcStateDefaultsPanel()
+    public AbstractManageQCStatesAction(QCStateHandler qcStateHandler, Class<FORM> commandClass)
     {
-        return _hasQcStateDefaultsPanel;
+        super(commandClass);
+        _qcStateHandler = qcStateHandler;
     }
 
-    public void setHasQcStateDefaultsPanel(Boolean hasQcStateDefaultsPanel)
+    public void updateQcState(Container container, FORM form, User user)
     {
-        _hasQcStateDefaultsPanel = hasQcStateDefaultsPanel;
+        _qcStateHandler.updateQcState(container, form, user);
     }
 
-    public Boolean getHasDataVisibilityPanel()
-    {
-        return _hasDataVisibilityPanel;
-    }
-
-    public void setHasDataVisibilityPanel(Boolean hasDataVisibilityPanel)
-    {
-        _hasDataVisibilityPanel = hasDataVisibilityPanel;
-    }
-
-    public void validateCommand(ManageQCStatesForm form, Errors errors)
+    public void validateCommand(FORM form, Errors errors)
     {
         Set<String> labels = new HashSet<>();
         if (form.getLabels() != null)
@@ -62,7 +54,7 @@ public abstract class AbstractManageQCStatesAction extends FormViewAction<Manage
             errors.reject(null, "QC state \"" + form.getNewLabel() + "\" is defined more than once.");
     }
 
-    public boolean handlePost(ManageQCStatesForm form, BindException errors)
+    public boolean handlePost(FORM form, BindException errors)
     {
         if (form.getNewLabel() != null && form.getNewLabel().length() > 0)
         {
@@ -100,12 +92,12 @@ public abstract class AbstractManageQCStatesAction extends FormViewAction<Manage
             }
         }
 
-        updateQcState(form);
+        updateQcState(getContainer(), form, getUser());
 
         return true;
     }
 
-    public ActionURL getSuccessURL(ManageQCStatesForm manageQCStatesForm, Class<? extends AbstractManageQCStatesAction> manageActionClass, Class<? extends SimpleViewAction> defaultActionClass)
+    public ActionURL getSuccessURL(FORM manageQCStatesForm, Class<? extends AbstractManageQCStatesAction> manageActionClass, Class<? extends SimpleViewAction> defaultActionClass)
     {
         if (manageQCStatesForm.isReshowPage())
         {
@@ -118,86 +110,5 @@ public abstract class AbstractManageQCStatesAction extends FormViewAction<Manage
             return new ActionURL(manageQCStatesForm.getReturnUrl());
         else
             return new ActionURL(defaultActionClass, getContainer());
-    }
-
-    public class QcDefaultSettings {
-        Integer _defaultAssayQCState;
-        Integer _defaultPipelineQCState;
-        Integer _defaultDirectEntryQCState;
-        boolean _blankQCStatePublic;
-        boolean _showPrivateDataByDefault;
-
-        public Integer getDefaultAssayQCState()
-        {
-            return _defaultAssayQCState;
-        }
-
-        public void setDefaultAssayQCState(Integer defaultAssayQCState)
-        {
-            _defaultAssayQCState = defaultAssayQCState;
-        }
-
-        public Integer getDefaultPipelineQCState()
-        {
-            return _defaultPipelineQCState;
-        }
-
-        public void setDefaultPipelineQCState(Integer defaultPipelineQCState)
-        {
-            _defaultPipelineQCState = defaultPipelineQCState;
-        }
-
-        public Integer getDefaultDirectEntryQCState()
-        {
-            return _defaultDirectEntryQCState;
-        }
-
-        public void setDefaultDirectEntryQCState(Integer defaultDirectEntryQCState)
-        {
-            _defaultDirectEntryQCState = defaultDirectEntryQCState;
-        }
-
-        public boolean isBlankQCStatePublic()
-        {
-            return _blankQCStatePublic;
-        }
-
-        public void setBlankQCStatePublic(boolean blankQCStatePublic)
-        {
-            _blankQCStatePublic = blankQCStatePublic;
-        }
-
-        public boolean isShowPrivateDataByDefault()
-        {
-            return _showPrivateDataByDefault;
-        }
-
-        public void setShowPrivateDataByDefault(boolean showPrivateDataByDefault)
-        {
-            _showPrivateDataByDefault = showPrivateDataByDefault;
-        }
-    }
-
-    public void updateQcState(ManageQCStatesForm form)
-    {
-        QcDefaultSettings qcDefaultSettings = getCurrentQcDefaultSettings();
-
-        if (!nullSafeEqual(qcDefaultSettings.getDefaultAssayQCState(), form.getDefaultAssayQCState()) ||
-                !nullSafeEqual(qcDefaultSettings.getDefaultPipelineQCState(), form.getDefaultPipelineQCState()) ||
-                !nullSafeEqual(qcDefaultSettings.getDefaultDirectEntryQCState(), form.getDefaultDirectEntryQCState()) ||
-                !nullSafeEqual(qcDefaultSettings.isBlankQCStatePublic(), form.isBlankQCStatePublic()) ||
-                qcDefaultSettings.isShowPrivateDataByDefault() != form.isShowPrivateDataByDefault())
-        {
-            persistQcSettings(form);
-        }
-    }
-
-    public static <T> boolean nullSafeEqual(T first, T second)
-    {
-        if (first == null && second == null)
-            return true;
-        if (first == null)
-            return false;
-        return first.equals(second);
     }
 }

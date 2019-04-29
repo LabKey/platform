@@ -22,15 +22,17 @@
 <%@ page import="org.labkey.api.qc.QCStateHandler" %>
 <%@ page import="org.labkey.api.qc.AbstractManageQCStatesBean" %>
 <%@ page import="org.labkey.api.qc.AbstractManageQCStatesAction" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AbstractManageQCStatesBean> me = (JspView<AbstractManageQCStatesBean>) HttpView.currentView();
 
+    Container container = getContainer();
     AbstractManageQCStatesBean bean = me.getModelBean();
     AbstractManageQCStatesAction manageAction = bean.getManageAction();
     ActionURL cancelUrl = bean.getReturnUrl() != null ? new ActionURL(bean.getReturnUrl()) :
-            new ActionURL(manageAction.getClass(), getContainer());
+            new ActionURL(manageAction.getClass(), container);
     QCStateHandler qcStateHandler = bean.getQCStateHandler();
 %>
 <labkey:errors/><br>
@@ -49,15 +51,16 @@
                 <td>&nbsp;</td>
                 <td>[none]</td>
                 <td>Applies to data that has not been assigned an explicit QC State</td>
-                <td align="center"><input name="blankQCStatePublic" value="true" type="checkbox"<%=checked(qcStateHandler.isBlankQCStatePublic())%>/></td>
+                <td align="center"><input name="blankQCStatePublic" value="true" type="checkbox"<%=checked(qcStateHandler.isBlankQCStatePublic(container))%>/></td>
                 <td>[in&nbsp;use]<%= helpPopup("Blank QC State", "This QC state is provided by the system and cannot be deleted.") %></td>
             <tr>
             </tr>
             <%
-                ActionURL baseDeleteStateURL = new ActionURL(bean.getDeleteAction(), getContainer());
+                ActionURL baseDeleteStateURL = new ActionURL(bean.getDeleteAction(), container);
                 baseDeleteStateURL.addParameter("manageReturnUrl", bean.getReturnUrl());
-                for (QCState state : qcStateHandler.getQCStates())
+                for (Object stateObj : qcStateHandler.getQCStates(container))
                 {
+                    QCState state = (QCState)stateObj;
             %>
             <tr>
                 <td align="center">&nbsp;</td>
@@ -72,7 +75,7 @@
                 </td>
                 <td align="center"><input name="publicData" value="<%= state.getRowId() %>" id="<%= h(state.getLabel()) %>_public" type="checkbox"<%=checked(state.isPublicData())%>/></td>
                 <td>
-                    <%= /* TODO: make these messages configurable */ qcStateHandler.isQCStateInUse(state) ? "[in&nbsp;use]" + helpPopup("QC state in use", "This QC state cannot be deleted because it is currently a default state (see below) or is referenced by at least one dataset row.") :
+                    <%= /* TODO: make these messages configurable */ qcStateHandler.isQCStateInUse(container, state) ? "[in&nbsp;use]" + helpPopup("QC state in use", "This QC state cannot be deleted because it is currently a default state (see below) or is referenced by at least one dataset row.") :
                             link("Delete")
                                 .onClick("return LABKEY.Utils.confirmAndPost('Delete this QC state? No additional study data will be deleted.', " + qh(baseDeleteStateURL.clone().addParameter("id", state.getRowId()).getLocalURIString()) + ")") %>
                 </td>
@@ -100,19 +103,19 @@
     </labkey:panel>
 
     <%
-        if (manageAction.getHasQcStateDefaultsPanel())
+        if (manageAction.hasQcStateDefaultsPanel())
         {
     %>
     <labkey:panel title="Default states for dataset data">
-        <%= manageAction.getQcStateDefaultsPanel(qcStateHandler) %>
+        <%= manageAction.getQcStateDefaultsPanel(container, qcStateHandler) %>
     </labkey:panel>
     <%
         }
-        if (manageAction.getHasDataVisibilityPanel())
+        if (manageAction.hasDataVisibilityPanel())
         {
     %>
     <labkey:panel title="Data visibility">
-        <%= manageAction.getDataVisibilityPanel(qcStateHandler) %>
+        <%= manageAction.getDataVisibilityPanel(container, qcStateHandler) %>
     </labkey:panel>
     <%
         }
