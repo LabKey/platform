@@ -117,7 +117,7 @@ public class FileContentServiceImpl implements FileContentService
     private final ContainerListener _containerListener = new FileContentServiceContainerListener();
     private final List<FileListener> _fileListeners = new CopyOnWriteArrayList<>();
 
-    private List<DirectoryPattern> _ziploaderPattern = new ArrayList<>();
+    private final List<DirectoryPattern> _ziploaderPattern = new CopyOnWriteArrayList<>();
 
     enum Props
     {
@@ -1398,13 +1398,13 @@ public class FileContentServiceImpl implements FileContentService
 
 
     @Override
-    public void addZipUploadRecognizer(DirectoryPattern directoryPattern)
+    public void addZiploaderPattern(DirectoryPattern directoryPattern)
     {
        _ziploaderPattern.add(directoryPattern);
     }
 
     @Override
-    public List<DirectoryPattern> getZiploaderPattern(Container container)
+    public List<DirectoryPattern> getZiploaderPatterns(Container container)
     {
         List<DirectoryPattern> registeredPatterns = new ArrayList<>();
         for(Module module : container.getActiveModules())
