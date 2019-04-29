@@ -384,11 +384,9 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
         var info = new PropertyColumn(this, baseTable, lsidCol, container, user, false);
         if (getLookupQuery() != null || getConceptURI() != null)
         {
-            assert baseTable.getUserSchema().getUser() == user;
-            assert baseTable.getUserSchema().getContainer() == container;
-            // if assert fails, we may need this method instead
-            // info.setFk(PdLookupForeignKey.create(baseTable.getUserSchema(), user, container, this));
-            info.setFk(PdLookupForeignKey.create(baseTable.getUserSchema(), this));
+            assert null==baseTable.getUserSchema() || baseTable.getUserSchema().getUser() == user;
+            assert null==baseTable.getUserSchema() || baseTable.getUserSchema().getContainer() == container;
+            info.setFk(PdLookupForeignKey.create(baseTable.getUserSchema(), user, container, this));
         }
         return info;
     }
