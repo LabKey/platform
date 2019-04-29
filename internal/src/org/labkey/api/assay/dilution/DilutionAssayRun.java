@@ -258,7 +258,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
         Map<String, DilutionResultProperties> dilutionResultPropertiesMap = new HashMap<>();
 
         AssayProtocolSchema schema = _provider.createProtocolSchema(_user, _run.getContainer(), _protocol, null);
-        TableInfo virusTable = schema.createTable(DilutionManager.VIRUS_TABLE_NAME);
+        TableInfo virusTable = schema.createTable(DilutionManager.VIRUS_TABLE_NAME, null);
 
         // Do a query to get all the info we need to do the copy
         TableInfo resultTable = schema.createDataTable(null,false);
