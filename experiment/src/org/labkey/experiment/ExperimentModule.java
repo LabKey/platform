@@ -79,6 +79,7 @@ import org.labkey.experiment.api.ExpDataTableImpl;
 import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpSampleSetTestCase;
 import org.labkey.experiment.api.ExperimentServiceImpl;
+import org.labkey.experiment.api.GraphAlgorithms;
 import org.labkey.experiment.api.LogDataType;
 import org.labkey.experiment.api.SampleSetDomainKind;
 import org.labkey.experiment.api.SampleSetServiceImpl;
@@ -130,7 +131,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
     public double getVersion()
     {
-        return 19.10;
+        return 19.11;
     }
 
     @Nullable
@@ -447,7 +448,9 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         return new HashSet<>(Arrays.asList(
             Lsid.TestCase.class,
             LSIDRelativizer.TestCase.class,
-            LsidUtils.TestCase.class));
+            LsidUtils.TestCase.class,
+            GraphAlgorithms.TestCase.class
+        ));
     }
 
     @Override
