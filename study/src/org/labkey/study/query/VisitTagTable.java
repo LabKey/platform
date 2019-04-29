@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
@@ -35,7 +36,11 @@ public class VisitTagTable extends BaseStudyTable
 {
     public VisitTagTable(StudyQuerySchema schema, @Nullable ContainerFilter containerFilter)
     {
-        super(schema, StudySchema.getInstance().getTableInfoVisitTag(), containerFilter, true);
+        super(schema, StudySchema.getInstance().getTableInfoVisitTag(), null, true);
+
+        // NOTE: BaseStudyTable is maybe not the right base class for VisitTagTable? Its logic for CF doesn't quite work here
+        if (null != containerFilter)
+            _setContainerFilter(containerFilter);
 
         setName(StudyQuerySchema.VISIT_TAG_TABLE_NAME);
         setDescription("Contains one row per visit tag");
@@ -91,5 +96,18 @@ public class VisitTagTable extends BaseStudyTable
     public QueryUpdateService getUpdateService()
     {
         return new DefaultQueryUpdateService(this, this.getRealTable());
+    }
+
+
+    @Override
+    protected void _setContainerFilter(@NotNull ContainerFilter filter)
+    {
+        super._setContainerFilter(filter);
+    }
+
+    @Override
+    public @NotNull SQLFragment getFromSQL(String alias, boolean skip)
+    {
+        return super.getFromSQL(alias, skip);
     }
 }
