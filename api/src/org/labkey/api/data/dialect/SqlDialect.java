@@ -1252,9 +1252,9 @@ public abstract class SqlDialect
     /**
      * Returns header of a recursive CTE query: WITH alias AS or WITH RECURSIVE alias AS
      * depending on the SQL engine.
-     * @param tableAlias
-     * @param columnAliases
-     * @return
+     * @param tableAlias - alias of the CTE to create
+     * @param columnAliases - list of aliases for the CTE columns
+     * @return SQLFragment with the CTE declaration. 
      */
     public SQLFragment getRecursiveQueryHeader(String tableAlias, List<String> columnAliases){
         return new SQLFragment("WITH ").append(tableAlias)
