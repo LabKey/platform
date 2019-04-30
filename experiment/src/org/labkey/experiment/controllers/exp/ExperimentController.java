@@ -169,6 +169,7 @@ import org.labkey.experiment.api.ExpRunImpl;
 import org.labkey.experiment.api.ExpSampleSetImpl;
 import org.labkey.experiment.api.Experiment;
 import org.labkey.experiment.api.ExperimentServiceImpl;
+import org.labkey.experiment.api.GraphAlgorithms;
 import org.labkey.experiment.api.MaterialSource;
 import org.labkey.experiment.api.ProtocolActionStepDetail;
 import org.labkey.experiment.api.SampleSetDomainKind;
@@ -309,7 +310,8 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class) @ActionNames("showRunGroups, showExperiments")
+    @RequiresPermission(ReadPermission.class)
+    @ActionNames("showRunGroups, showExperiments")
     public class ShowRunGroupsAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors)
@@ -359,7 +361,9 @@ public class ExperimentController extends SpringActionController
                             runs.add(run);
                         }
                     }
-                    catch (NumberFormatException ignored) {}
+                    catch (NumberFormatException ignored)
+                    {
+                    }
                 }
             }
             if (runs.isEmpty())
@@ -492,7 +496,7 @@ public class ExperimentController extends SpringActionController
 
         public ModelAndView getView(ExpObjectForm form, BindException errors)
         {
-            _source = (ExpSampleSetImpl)ExperimentService.get().getSampleSet(getContainer(), getUser(), form.getRowId());
+            _source = (ExpSampleSetImpl) ExperimentService.get().getSampleSet(getContainer(), getUser(), form.getRowId());
             if (_source == null && form.getLsid() != null)
             {
                 if (form.getLsid().equalsIgnoreCase("Material") || form.getLsid().equalsIgnoreCase("Sample"))
@@ -501,7 +505,7 @@ public class ExperimentController extends SpringActionController
                     throw new RedirectException(new ActionURL(ShowAllMaterialsAction.class, getContainer()));
                 }
                 // Check if the URL specifies the LSID, and stick the bean back into the form
-                _source = (ExpSampleSetImpl)ExperimentService.get().getSampleSet(form.getLsid());
+                _source = (ExpSampleSetImpl) ExperimentService.get().getSampleSet(form.getLsid());
             }
 
             if (_source == null)
@@ -509,7 +513,7 @@ public class ExperimentController extends SpringActionController
                 throw new NotFoundException("No matching sample set found");
             }
 
-            List<ExpSampleSetImpl> allScopedSampleSets = (List<ExpSampleSetImpl>)ExperimentService.get().getSampleSets(getContainer(), getUser(), true);
+            List<ExpSampleSetImpl> allScopedSampleSets = (List<ExpSampleSetImpl>) ExperimentService.get().getSampleSets(getContainer(), getUser(), true);
             if (!allScopedSampleSets.contains(_source))
             {
                 ensureCorrectContainer(getContainer(), _source, getViewContext());
@@ -595,7 +599,7 @@ public class ExperimentController extends SpringActionController
                         }
                     }
 
-                    return hasInsertNewOption &&  hasImportDataOption? button : hasInsertNewOption ? createInsertButton() : hasImportDataOption ? createImportButton() : null;
+                    return hasInsertNewOption && hasImportDataOption ? button : hasInsertNewOption ? createInsertButton() : hasImportDataOption ? createImportButton() : null;
 
                 }
 
@@ -776,7 +780,7 @@ public class ExperimentController extends SpringActionController
         {
             JSONArray materials = json.getJSONArray("materials");
             List<Map<String, Object>> result = new ArrayList<>();
-            for (int i=0; i<materials.length(); i++)
+            for (int i = 0; i < materials.length(); i++)
             {
                 Map<String, Object> props = materials.getJSONObject(i).getJSONObject("properties");
                 result.add(props);
@@ -786,7 +790,9 @@ public class ExperimentController extends SpringActionController
     }
 
 
-    /** Only shows standard and custom properties, not parent and child samples. Used for indexing */
+    /**
+     * Only shows standard and custom properties, not parent and child samples. Used for indexing
+     */
     @RequiresPermission(ReadPermission.class)
     public class ShowMaterialSimpleAction extends SimpleViewAction<ExpObjectForm>
     {
@@ -984,7 +990,7 @@ public class ExperimentController extends SpringActionController
             ensureCorrectContainer(getContainer(), _dataClass, getViewContext());
 
             ExpSchema expSchema = new ExpSchema(getUser(), getContainer());
-            UserSchema dataClassSchema = (UserSchema)expSchema.getSchema(ExpSchema.NestedSchemas.data.toString());
+            UserSchema dataClassSchema = (UserSchema) expSchema.getSchema(ExpSchema.NestedSchemas.data.toString());
             if (dataClassSchema == null)
                 throw new NotFoundException("exp.dataclass schema not found");
             QueryView queryView = dataClassSchema.createView(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, _dataClass.getName(), errors);
@@ -1172,9 +1178,9 @@ public class ExperimentController extends SpringActionController
             else
             {
                 ExpDataClass dataClass = ExperimentService.get().createDataClass(
-                    getContainer(), getUser(), form.getName(), form.getDescription(),
-                    Collections.emptyList(), Collections.emptyList(), form.getMaterialSourceId(), form.getNameExpression(),
-                    null
+                        getContainer(), getUser(), form.getName(), form.getDescription(),
+                        Collections.emptyList(), Collections.emptyList(), form.getMaterialSourceId(), form.getNameExpression(),
+                        null
                 );
 
                 Domain domain = dataClass.getDomain();
@@ -1576,7 +1582,7 @@ public class ExperimentController extends SpringActionController
 
         private void addTab(String text, ActionURL url, boolean selected, StringBuilder sb)
         {
-            sb.append("<td class=\"labkey-tab" + (selected ? "-selected" : "" ) + "\" style=\"margin-bottom: 0px;\"><a href=\"" + url + "\">" + PageFlowUtil.filter(text) + "</a></td>");
+            sb.append("<td class=\"labkey-tab" + (selected ? "-selected" : "") + "\" style=\"margin-bottom: 0px;\"><a href=\"" + url + "\">" + PageFlowUtil.filter(text) + "</a></td>");
         }
 
         private void addSpace(StringBuilder sb)
@@ -1627,7 +1633,7 @@ public class ExperimentController extends SpringActionController
         private final ExpProtocol.ApplicationType _type;
 
         public UsageQueryView(String title, ViewContext context, ExpRun run, ExpProtocol.ApplicationType type,
-                                   QuerySettings settings, BindException errors)
+                              QuerySettings settings, BindException errors)
         {
             super(new ExpSchema(context.getUser(), context.getContainer()), settings, errors);
             setTitle(title);
@@ -1644,7 +1650,7 @@ public class ExperimentController extends SpringActionController
         @Override
         protected TableInfo createTable()
         {
-            ExpInputTable tableInfo = (ExpInputTable)super.createTable();
+            ExpInputTable tableInfo = (ExpInputTable) super.createTable();
             tableInfo.setContainerFilter(new ContainerFilter.AllFolders(getUser()));
             tableInfo.setRun(_run, _type);
             return tableInfo;
@@ -2027,7 +2033,7 @@ public class ExperimentController extends SpringActionController
             try
             {
                 tempFile = File.createTempFile("parse", formFile.getOriginalFilename());
-                FileUtil.copyData(formFile.getInputStream(),tempFile);
+                FileUtil.copyData(formFile.getInputStream(), tempFile);
                 streamToJSON(tempFile, form.getFormat(), form.getMaxRows(), formFile.getOriginalFilename());
             }
             finally
@@ -2093,7 +2099,7 @@ public class ExperimentController extends SpringActionController
             for (Map<String, Object> rowMap : tabLoader)
             {
                 // headers count as a row to be consistent
-                if (maxRow > -1 && maxRow <= rowsArray.length()+1)
+                if (maxRow > -1 && maxRow <= rowsArray.length() + 1)
                     break;
 
                 JSONArray rowArray = new JSONArray();
@@ -2179,10 +2185,10 @@ public class ExperimentController extends SpringActionController
                 String filename = rootObject.has("fileName") ? rootObject.getString("fileName") : "ExcelExport.xls";
                 ExcelWriter.ExcelDocumentType docType = filename.toLowerCase().endsWith(".xlsx") ? ExcelWriter.ExcelDocumentType.xlsx : ExcelWriter.ExcelDocumentType.xls;
 
-                Workbook workbook =  ExcelFactory.createFromArray(sheetsArray, docType);
+                Workbook workbook = ExcelFactory.createFromArray(sheetsArray, docType);
 
                 response.setContentType(docType.getMimeType());
-                response.setHeader("Content-disposition", "attachment; filename=\"" + filename +"\"");
+                response.setHeader("Content-disposition", "attachment; filename=\"" + filename + "\"");
                 ResponseHelper.setPrivate(response);
                 workbook.write(response.getOutputStream());
             }
@@ -2228,7 +2234,7 @@ public class ExperimentController extends SpringActionController
 
                 TSVWriter.DELIM delimType = (rootObject.getString("delim") != null ? TSVWriter.DELIM.valueOf(rootObject.getString("delim")) : TSVWriter.DELIM.TAB);
                 TSVWriter.QUOTE quoteType = (rootObject.getString("quoteChar") != null ? TSVWriter.QUOTE.valueOf(rootObject.getString("quoteChar")) : TSVWriter.QUOTE.NONE);
-                String filenamePrefix = (rootObject.getString("fileNamePrefix") != null ? rootObject.getString("fileNamePrefix") : "Export" );
+                String filenamePrefix = (rootObject.getString("fileNamePrefix") != null ? rootObject.getString("fileNamePrefix") : "Export");
                 String filename = filenamePrefix + "." + delimType.extension;
                 String newlineChar = rootObject.getString("newlineChar") != null ? rootObject.getString("newlineChar") : "\n";
 
@@ -2237,16 +2243,16 @@ public class ExperimentController extends SpringActionController
 
                 //NOTE: we could also have used TSVWriter; however, this is in use elsewhere and we dont need a custom subclass
                 CSVWriter writer = new CSVWriter(response.getWriter(), delimType.delim, quoteType.quoteChar, newlineChar);
-                for (int i=0; i < rowsArray.length(); i++)
+                for (int i = 0; i < rowsArray.length(); i++)
                 {
-                    Object[] oa = ((JSONArray)rowsArray.get(i)).toArray();
+                    Object[] oa = ((JSONArray) rowsArray.get(i)).toArray();
                     ArrayIterator it = new ArrayIterator(oa);
                     List<String> list = new ArrayList<>();
 
                     while (it.hasNext())
                     {
                         Object o = it.next();
-                        if(o != null)
+                        if (o != null)
                             list.add(o.toString());
                         else
                             list.add("");
@@ -2320,10 +2326,10 @@ public class ExperimentController extends SpringActionController
             String html =
                     "<form method=POST><textarea name=\"htmlFragment\" cols=100 rows=40>" +
                             PageFlowUtil.filter(form.getHtmlFragment()) +
-                    "</textarea><br>" +
-                    "<input type=\"submit\">" +
-                    "<input type=hidden name='X-LABKEY-CSRF' value=\"" + CSRFUtil.getExpectedToken(getViewContext()) + "\">" +
-                    "</form>";
+                            "</textarea><br>" +
+                            "<input type=\"submit\">" +
+                            "<input type=hidden name='X-LABKEY-CSRF' value=\"" + CSRFUtil.getExpectedToken(getViewContext()) + "\">" +
+                            "</form>";
             return new HtmlView(html);
         }
 
@@ -2822,7 +2828,9 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    /** Separate delete action from the client API */
+    /**
+     * Separate delete action from the client API
+     */
     @RequiresPermission(DeletePermission.class)
     public class DeleteRunAction extends MutatingApiAction<DeleteRunForm>
     {
@@ -3528,7 +3536,7 @@ public class ExperimentController extends SpringActionController
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
             initRequest(form);
-            return getDefaultImportView(form, true,null, errors);
+            return getDefaultImportView(form, true, null, errors);
         }
 
 
@@ -3628,7 +3636,13 @@ public class ExperimentController extends SpringActionController
             {
                 if (out != null)
                 { //noinspection EmptyCatchBlock
-                    try { out.close(); } catch (IOException e) {}
+                    try
+                    {
+                        out.close();
+                    }
+                    catch (IOException e)
+                    {
+                    }
                 }
             }
 
@@ -3672,8 +3686,10 @@ public class ExperimentController extends SpringActionController
     public class UpdateAction extends FormHandlerAction<ExperimentForm>
     {
         private Experiment _exp;
+
         public void validateCommand(ExperimentForm target, Errors errors)
-        {}
+        {
+        }
 
         public boolean handlePost(ExperimentForm form, BindException errors) throws Exception
         {
@@ -4402,7 +4418,9 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    /** Check for update on the object itself */
+    /**
+     * Check for update on the object itself
+     */
     @RequiresNoPermission
     public class SetFlagAction extends FormHandlerAction<SetFlagForm>
     {
@@ -4729,10 +4747,10 @@ public class ExperimentController extends SpringActionController
 
                 if (sampleSet != null)
                 {
-                    Map<String,Object> pvs = new HashMap<>();
+                    Map<String, Object> pvs = new HashMap<>();
                     for (Map.Entry<DomainProperty, String> propertyEntry : entry.getValue().entrySet())
                         pvs.put(propertyEntry.getKey().getName(), propertyEntry.getValue());
-                    ((ExpMaterialImpl)outputMaterial).setProperties(getUser(), pvs);
+                    ((ExpMaterialImpl) outputMaterial).setProperties(getUser(), pvs);
                 }
 
                 outputMaterials.put(outputMaterial, helper.getSampleNames().get(i++));
@@ -5081,9 +5099,9 @@ public class ExperimentController extends SpringActionController
                         @Override
                         protected List<ExpMaterial> getExpObject(List<Map<String, Object>> insertedRows)
                         {
-                            List<Integer> rowIds = insertedRows.stream().map(r -> (Integer)r.get("rowid")).collect(Collectors.toList());
+                            List<Integer> rowIds = insertedRows.stream().map(r -> (Integer) r.get("rowid")).collect(Collectors.toList());
                             List<? extends ExpMaterial> output = ExperimentService.get().getExpMaterials(rowIds);
-                            return (List<ExpMaterial>)output;
+                            return (List<ExpMaterial>) output;
                         }
                     };
 
@@ -5109,9 +5127,9 @@ public class ExperimentController extends SpringActionController
                         @Override
                         protected List<ExpData> getExpObject(List<Map<String, Object>> insertedRows)
                         {
-                            List<String> lsids = insertedRows.stream().map(r -> (String)r.get("lsid")).collect(Collectors.toList());
+                            List<String> lsids = insertedRows.stream().map(r -> (String) r.get("lsid")).collect(Collectors.toList());
                             List<? extends ExpData> output = ExperimentService.get().getExpDatasByLSID(lsids);
-                            return (List<ExpData>)output;
+                            return (List<ExpData>) output;
                         }
                     };
 
@@ -5267,7 +5285,8 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(InsertPermission.class) @ActionNames("createRunGroup, createExperiment")
+    @RequiresPermission(InsertPermission.class)
+    @ActionNames("createRunGroup, createExperiment")
     public class CreateRunGroupAction extends SimpleViewAction<CreateExperimentForm>
     {
         public ModelAndView getView(CreateExperimentForm form, BindException errors) throws Exception
@@ -5285,7 +5304,7 @@ public class ExperimentController extends SpringActionController
                 else
                 {
                     int maxNameLength = ExperimentService.get().getTinfoExperimentRun().getColumn("Name").getScale();
-                    if(exp.getName().length() > maxNameLength)
+                    if (exp.getName().length() > maxNameLength)
                     {
                         errors.reject(ERROR_MSG, "Name of the experiment must be " + maxNameLength + " characters or less.");
                     }
@@ -5429,11 +5448,11 @@ public class ExperimentController extends SpringActionController
     }
 
 
-
     @RequiresPermission(DeletePermission.class)
     public class MoveRunsAction extends FormHandlerAction<MoveRunsForm>
     {
         private Container _targetContainer;
+
         public void validateCommand(MoveRunsForm target, Errors errors)
         {
         }
@@ -5458,7 +5477,9 @@ public class ExperimentController extends SpringActionController
                         runs.add(run);
                     }
                 }
-                catch (NumberFormatException ignored) {}
+                catch (NumberFormatException ignored)
+                {
+                }
             }
 
             ViewBackgroundInfo info = getViewBackgroundInfo();
@@ -5554,6 +5575,7 @@ public class ExperimentController extends SpringActionController
     public class ShowGraphMoreListAction extends SimpleViewAction<ExperimentRunForm>
     {
         private ExperimentRunForm _form;
+
         public ModelAndView getView(ExperimentRunForm form, BindException errors)
         {
             _form = form;
@@ -5873,7 +5895,7 @@ public class ExperimentController extends SpringActionController
 
         public static ExperimentUrlsImpl get()
         {
-            return (ExperimentUrlsImpl)PageFlowUtil.urlProvider(ExperimentUrls.class);
+            return (ExperimentUrlsImpl) PageFlowUtil.urlProvider(ExperimentUrls.class);
         }
 
         public ActionURL getDownloadGraphURL(ExpRun run, boolean detail, String focus, String focusType)
@@ -6101,4 +6123,40 @@ public class ExperimentController extends SpringActionController
         }
     }
 
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(AdminPermission.class)
+    public class CheckEdgesAction extends ReadOnlyApiAction
+    {
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            List<Object[]> result;
+            DbSchema schema = ExperimentService.get().getSchema();
+            TableInfo edgeTable = schema.getTable("Edge");
+
+            if (null != edgeTable.getColumn("fromObjectId"))
+            {
+                var edges = new SqlSelector(ExperimentService.get().getSchema(), "SELECT fromObjectId, toObjectId FROM exp.Edge")
+                        .resultSetStream()
+                        .map(r -> { try { return new Pair<>(r.getInt(1), r.getInt(2)); } catch (SQLException x) { throw new RuntimeException(x); } })
+                        .collect(Collectors.toList());
+                var cycles = (new GraphAlgorithms<Integer>()).detectCycleInDirectedGraph(edges);
+                result = cycles.stream().map(e -> new Integer[]{e.first, e.second}).collect(Collectors.toList());
+            }
+            else
+            {
+                var edges = new SqlSelector(ExperimentService.get().getSchema(), "SELECT fromLsid, toLsid FROM exp.Edge")
+                        .resultSetStream()
+                        .map(r -> { try { return new Pair<>(r.getString(1), r.getString(2)); } catch (SQLException x) { throw new RuntimeException(x); } })
+                        .collect(Collectors.toList());
+                var cycles = (new GraphAlgorithms<String>()).detectCycleInDirectedGraph(edges);
+                result = cycles.stream().map(e -> new String[]{e.first, e.second}).collect(Collectors.toList());
+            }
+
+            JSONObject ret = new JSONObject();
+            ret.put("result", result);
+            ret.put("success", true);
+            return ret;
+        }
+    }
 }

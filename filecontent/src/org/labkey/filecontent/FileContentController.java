@@ -1378,23 +1378,23 @@ public class FileContentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetZipUploadRecognizerAction extends ReadOnlyApiAction
+    public class GetZiploaderPatternsAction extends ReadOnlyApiAction
     {
 
         @Override
-        public Object execute(Object o, BindException errors) throws Exception
+        public Object execute(Object o, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             FileContentService svc = FileContentService.get();
-            List<DirectoryPattern> directoryPattern = new ArrayList<>();
+            List<DirectoryPattern> directoryPatterns = new ArrayList<>();
             List<JSONObject> directoryPatternsJson = new ArrayList<>();
 
             if(null != svc)
             {
-                directoryPattern = svc.getZiploaderPattern(getContainer());
+                directoryPatterns = svc.getZiploaderPatterns(getContainer());
             }
 
-            for(DirectoryPattern directory: directoryPattern)
+            for(DirectoryPattern directory: directoryPatterns)
             {
                 directoryPatternsJson.add(directory.toJSON());
             }
