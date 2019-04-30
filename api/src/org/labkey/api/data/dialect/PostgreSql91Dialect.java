@@ -1874,4 +1874,10 @@ public abstract class PostgreSql91Dialect extends SqlDialect
 
         return super.formatJdbcFunction("timestampdiff", arguments);
     }
+    
+    public SQLFragment getRecursiveQueryHeader(String tableAlias, List<String> columnAliases){
+        return new SQLFragment("WITH RECURSIVE ").append(tableAlias)
+                .append("(" + StringUtils.join(columnAliases, ", ") + ")")
+                .append(" AS ");
+    }	    
 }
