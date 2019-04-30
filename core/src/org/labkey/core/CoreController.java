@@ -2411,6 +2411,7 @@ public class CoreController extends SpringActionController
             _manageAction = new ManageQCStatesAction();
             _deleteAction = DeleteQCStateAction.class;
             _noun = "assay";
+            _dataNoun = "assay";
         }
     }
 

@@ -3316,6 +3316,7 @@ public class StudyController extends BaseStudyController
             _manageAction = new ManageQCStatesAction();
             _deleteAction = DeleteQCStateAction.class;
             _noun = "dataset";
+            _dataNoun = "study";
         }
     }
 

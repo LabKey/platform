@@ -7,6 +7,7 @@ public class AbstractManageQCStatesBean
     protected AbstractManageQCStatesAction _manageAction;
     protected Class<? extends AbstractDeleteQCStateAction> _deleteAction;
     protected String _noun;
+    protected String _dataNoun;
 
     public AbstractManageQCStatesBean(String returnUrl)
     {
@@ -37,4 +38,6 @@ public class AbstractManageQCStatesBean
     {
         return _noun;
     }
+
+    public String getDataNoun() { return _dataNoun; }
 }

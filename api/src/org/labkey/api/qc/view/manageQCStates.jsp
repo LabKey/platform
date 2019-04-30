@@ -49,13 +49,13 @@
                 <th><b>State Name</b></th>
                 <th><b>State Description</b></th>
                 <th nowrap><b>Public Data<%= helpPopup("Public Data", "The 'Public Data' setting determines whether data in each QC state is shown to users by default.") %></b></th>
-                <th>&nbsp;</th>
+                <th nowrap><b>In Use<%= helpPopup("Blank QC State", "This QC state is provided by the system and cannot be deleted.") %></b></th>
             </tr>
                 <td>&nbsp;</td>
                 <td>[none]</td>
                 <td>Applies to data that has not been assigned an explicit QC State</td>
                 <td align="center"><input name="blankQCStatePublic" value="true" type="checkbox"<%=checked(qcStateHandler.isBlankQCStatePublic(container))%>/></td>
-                <td>[in&nbsp;use]<%= helpPopup("Blank QC State", "This QC state is provided by the system and cannot be deleted.") %></td>
+                <td><span style="color:black;padding-left: 30%;" class="fa fa-check-circle"></span></td>
             <tr>
             </tr>
             <%
@@ -78,9 +78,9 @@
                 </td>
                 <td align="center"><input name="publicData" value="<%= state.getRowId() %>" id="<%= h(state.getLabel()) %>_public" type="checkbox"<%=checked(state.isPublicData())%>/></td>
                 <td>
-                    <%= qcStateHandler.isQCStateInUse(container, state) ? "[in&nbsp;use]" + helpPopup("QC state in use", "This QC state cannot be deleted because it is currently a default state (see below) or is referenced by at least one " + bean.getNoun() + " row.") :
-                            link("Delete")
-                                .onClick("return LABKEY.Utils.confirmAndPost('Delete this QC state? No additional study data will be deleted.', " + qh(baseDeleteStateURL.clone().addParameter("id", state.getRowId()).getLocalURIString()) + ")") %>
+                    <%= qcStateHandler.isQCStateInUse(container, state) ? "<span style=\"color:black;padding-left: 30%;\" class=\"fa fa-check-circle\"></span>" + helpPopup("QC state in use", "This QC state cannot be deleted because it is currently a default state (see below) or is referenced by at least one " + bean.getNoun() + " row.") :
+                            "<span style=\"color:black;padding-left: 30%;\" class=\"fa fa-circle-o\"></span>" +
+                            " <span style=\"color:red;\" class=\"fa fa-times\" onclick=\"LABKEY.Utils.confirmAndPost('Delete this QC state? No additional " + bean.getDataNoun() + " data will be deleted.', " + qh(baseDeleteStateURL.clone().addParameter("id", state.getRowId()).getLocalURIString()) + ")\"></span>"%>
                 </td>
             </tr>
             <%
@@ -96,10 +96,8 @@
             <tr>
                 <td>&nbsp;</td>
                 <td colspan="4">
-                    <%= button("Save").submit(true) %>
                     <%= button("Delete Unused QC States")
-                            .onClick("return LABKEY.Utils.confirmAndPost('Delete all unused QC states? No additional study data will be deleted.', " + qh(baseDeleteStateURL.clone().addParameter("all", "true").getLocalURIString()) + ")") /* TODO: make this messages configurable */%>
-                    <%= button("Cancel").href(cancelUrl) %>
+                            .onClick("return LABKEY.Utils.confirmAndPost('Delete all unused QC states? No additional "+ bean.getDataNoun() + " data will be deleted.', " + qh(baseDeleteStateURL.clone().addParameter("all", "true").getLocalURIString()) + ")") %>
                 </td>
             </tr>
         </table>
@@ -124,6 +122,6 @@
         }
     %>
 
-    <%= button("Done").submit(true).onClick("document.manageQCStates.reshowPage.value='false'; return true;") %>
+    <%= button("Save").submit(true).onClick("document.manageQCStates.reshowPage.value='false'; return true;") %>
     <%= button("Cancel").href(cancelUrl.getLocalURIString()) %>
 </labkey:form>
