@@ -17,6 +17,7 @@ package org.labkey.survey.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
@@ -52,9 +53,9 @@ import java.util.Map;
  */
 public class SurveysTable extends SimpleUserSchema.SimpleTable<UserSchema>
 {
-    public SurveysTable(TableInfo table, SurveyQuerySchema schema)
+    public SurveysTable(TableInfo table, SurveyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, table);
+        super(schema, table, cf);
     }
 
     public SimpleUserSchema.SimpleTable<UserSchema> init()

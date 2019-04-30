@@ -41,9 +41,9 @@ import java.util.List;
  */
 public class SurveyDesignTable extends FilteredTable<SurveyQuerySchema>
 {
-    public SurveyDesignTable(TableInfo table, SurveyQuerySchema schema)
+    public SurveyDesignTable(TableInfo table, SurveyQuerySchema schema, ContainerFilter cf)
     {
-        super(table, schema, new ContainerFilter.CurrentPlusProjectAndShared(schema.getUser()));
+        super(table, schema, cf);
 
         wrapAllColumns(true);
 
@@ -58,6 +58,12 @@ public class SurveyDesignTable extends FilteredTable<SurveyQuerySchema>
 
         ActionURL updateUrl = new ActionURL(SurveyController.SurveyDesignAction.class, schema.getContainer());
         setUpdateURL(new DetailsURL(updateUrl, Collections.singletonMap("rowId", FieldKey.fromString("RowId"))));
+    }
+
+    @Override
+    protected ContainerFilter getDefaultContainerFilter()
+    {
+        return new ContainerFilter.CurrentPlusProjectAndShared(getUserSchema().getUser());
     }
 
     @Override

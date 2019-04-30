@@ -610,6 +610,24 @@ public class SurveyManager
         return null;
     }
 
+    public TableInfo getSurveyResponsesTableInfo(Container container, User user, SurveyDesign survey, AuditBehaviorType abt)
+    {
+        if (container != null)
+        {
+            UserSchema schema = QueryService.get().getUserSchema(user, container, survey.getSchemaName());
+
+            if (schema != null)
+            {
+                TableInfo table = schema.getTable(survey.getQueryName(), null, true, true);
+                if (table.supportsAuditTracking())
+                    ((AuditConfigurable)table).setAuditBehavior(AuditBehaviorType.DETAILED);
+                table.setLocked(true);
+                return table;
+            }
+        }
+        return null;
+    }
+
     public Map<String, SurveyDesign> getModuleSurveyDesigns(Container container, String schemaName)
     {
         Collection<Module> modules = container.getActiveModules();
