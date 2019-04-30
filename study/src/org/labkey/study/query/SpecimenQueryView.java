@@ -348,11 +348,11 @@ public class SpecimenQueryView extends BaseStudyQueryView
             ActionURL updateActionURL = new ActionURL(SpecimenController.UpdateSpecimenQueryRowAction.class, getContainer());
             updateActionURL.addParameter("schemaName", "study");
             updateActionURL.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, tableInfo.getName());
-            tableInfo.setUpdateURL(new DetailsURL(updateActionURL, Collections.singletonMap("RowId", "RowId")));
+            setUpdateURL(new DetailsURL(updateActionURL, Collections.singletonMap("RowId", "RowId")));
             ActionURL insertActionURL = new ActionURL(SpecimenController.InsertSpecimenQueryRowAction.class, getContainer());
             insertActionURL.addParameter("schemaName", "study");
             insertActionURL.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, tableInfo.getName());
-            tableInfo.setInsertURL(new DetailsURL(insertActionURL));
+            setInsertURL(new DetailsURL(insertActionURL).toString());
         }
 
         setViewItemFilter(new ReportService.ItemFilter()

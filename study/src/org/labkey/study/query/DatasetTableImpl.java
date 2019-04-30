@@ -109,7 +109,10 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 
     public DatasetTableImpl(@NotNull final StudyQuerySchema schema, ContainerFilter cf, @NotNull DatasetDefinition dsd)
     {
-        super(schema, dsd.getTableInfo(schema.getUser(), schema.getMustCheckPermissions(), true), cf);
+        super(schema, dsd.getTableInfo(schema.getUser(), schema.getMustCheckPermissions(), true), null);
+
+        if (null != cf && dsd.getStudy().getShareDatasetDefinitions())
+            _setContainerFilter(cf);
 
         TimepointType timepointType = dsd.getStudy().getTimepointType();
 
