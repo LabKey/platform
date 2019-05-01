@@ -26,6 +26,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
 import javax.servlet.jsp.JspException;
+import javax.servlet.jsp.JspWriter;
 import javax.servlet.jsp.tagext.BodyTagSupport;
 import java.io.IOException;
 
@@ -206,7 +207,8 @@ public class FormTag extends BodyTagSupport
         sb.append(">");
         try
         {
-            pageContext.getOut().write(sb.toString());
+            JspWriter out = pageContext.getOut();
+            out.write(sb.toString());
         }
         catch (IOException e)
         {
@@ -220,12 +222,13 @@ public class FormTag extends BodyTagSupport
     {
         try
         {
+            JspWriter out = pageContext.getOut();
             String csrf = CSRFUtil.getExpectedToken(pageContext);
             if (StringUtils.equals("POST", method))
             {
-                pageContext.getOut().write("<input type=\"hidden\" name=\"" + CSRFUtil.csrfName + "\" value=\"" + PageFlowUtil.filter(csrf) + "\">");
+                out.write("<input type=\"hidden\" name=\"" + CSRFUtil.csrfName + "\" value=\"" + PageFlowUtil.filter(csrf) + "\">");
             }
-            pageContext.getOut().write("</form>");
+            out.write("</form>");
         }
         catch (IOException e)
         {

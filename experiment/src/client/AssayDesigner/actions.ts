@@ -3,7 +3,7 @@
  * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
  */
 import {Ajax, Utils} from "@labkey/api";
-import {buildURL} from "@glass/utils";
+import {buildURL} from "@glass/base";
 
 import {AssayProtocolModel} from "./models";
 

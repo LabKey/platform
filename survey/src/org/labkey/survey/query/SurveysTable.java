@@ -184,7 +184,7 @@ public class SurveysTable extends SimpleUserSchema.SimpleTable<UserSchema>
         @Override
         protected Map<String, Object> deleteRow(User user, Container c, Map<String, Object> oldRowMap) throws InvalidKeyException, QueryUpdateServiceException, SQLException
         {
-            Object[] keys = getKeys(oldRowMap);
+            Object[] keys = getKeys(oldRowMap, c);
             Survey survey = null;
 
             if (keys.length >= 1 && (keys[0] instanceof Integer))
