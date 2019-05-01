@@ -44,9 +44,9 @@ public class ExternalSchemaTable extends SimpleUserSchema.SimpleTable<ExternalSc
 
     protected TableType _metadata;
 
-    public ExternalSchemaTable(ExternalSchema schema, TableInfo table, TableType metadata)
+    public ExternalSchemaTable(ExternalSchema schema, TableInfo table, TableType metadata, ContainerFilter cf)
     {
-        super(schema, table);
+        super(schema, table, cf);
         _metadata = metadata;
     }
 

@@ -16,6 +16,7 @@
 package org.labkey.api.ldk.table;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.UserSchema;
@@ -35,9 +36,9 @@ public class CustomPermissionsTable<SchemaType extends UserSchema> extends Simpl
 {
     private Map<Class<? extends Permission>, Class<? extends Permission>> _permMap = new HashMap<>();
 
-    public CustomPermissionsTable(SchemaType schema, TableInfo table)
+    public CustomPermissionsTable(SchemaType schema, TableInfo table, ContainerFilter cf)
     {
-        super(schema, table, null);
+        super(schema, table, cf);
     }
 
     @Override

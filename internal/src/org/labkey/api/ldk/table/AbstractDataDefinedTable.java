@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
@@ -62,9 +63,9 @@ abstract public class AbstractDataDefinedTable extends CustomPermissionsTable
     protected String _filterValue;
     protected String _valueColumn;
 
-    public AbstractDataDefinedTable(UserSchema schema, SchemaTableInfo table, String filterColumn, String valueColumn, String tableName, String filterValue)
+    public AbstractDataDefinedTable(UserSchema schema, SchemaTableInfo table, ContainerFilter cf, String filterColumn, String valueColumn, String tableName, String filterValue)
     {
-        super(schema, table);
+        super(schema, table, cf);
         _filterColumn = filterColumn;
         _filterValue = filterValue;
         _valueColumn = valueColumn;

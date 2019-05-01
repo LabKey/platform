@@ -68,9 +68,9 @@ public class ContainerScopedTable<SchemaType extends UserSchema> extends CustomP
     private Set<String> _realPKs = new HashSet<>();
     private static final Logger _log = Logger.getLogger(ContainerScopedTable.class);
 
-    public ContainerScopedTable(SchemaType schema, TableInfo st, String newPk)
+    public ContainerScopedTable(SchemaType schema, TableInfo st, ContainerFilter cf, String newPk)
     {
-        super(schema, st);
+        super(schema, st, cf);
         _pseudoPk = newPk;
     }
 
@@ -101,7 +101,8 @@ public class ContainerScopedTable<SchemaType extends UserSchema> extends CustomP
     @Override
     public ContainerFilter getContainerFilter()
     {
-        return super.getContainerFilter() instanceof DelegatingContainerFilter ? super.getContainerFilter() : ContainerFilter.CURRENT;
+        // TODO: does not look like anyone sets filter so don't think we need
+        return super.getContainerFilter();  // instanceof DelegatingContainerFilter ? super.getContainerFilter() : ContainerFilter.CURRENT;
     }
 
     @Override
