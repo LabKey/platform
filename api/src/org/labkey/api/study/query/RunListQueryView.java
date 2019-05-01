@@ -16,26 +16,36 @@
 
 package org.labkey.api.study.query;
 
+import org.labkey.api.admin.CoreUrls;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.exp.ExperimentRunListView;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.QCAnalystPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.actions.ReimportRedirectAction;
 import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayRunType;
+import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.assay.ReplacedRunFilter;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
+import org.labkey.api.view.NavTree;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.List;
 
 /**
  * User: brittp
@@ -97,6 +107,8 @@ public class RunListQueryView extends ExperimentRunListView
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
         super.populateButtonBar(view, bar);
+
+        createQCStateButton(bar, _schema);
         if (_schema.getProvider().getReRunSupport() != AssayProvider.ReRunSupport.None && getViewContext().hasPermission(InsertPermission.class) && getViewContext().hasPermission(DeletePermission.class))
         {
             ActionURL reRunURL = new ActionURL(ReimportRedirectAction.class, getContainer());
@@ -116,6 +128,31 @@ public class RunListQueryView extends ExperimentRunListView
                 type.addToURL(url, getDataRegionName(), REPLACED_FIELD_KEY);
                 button.addMenuItem(type.getTitle(), url).setSelected(type == _replacedRunFilter.getType());
 
+            }
+            bar.add(button);
+        }
+    }
+
+    private void createQCStateButton(ButtonBar bar, AssayProtocolSchema schema)
+    {
+        AssayProvider provider = schema.getProvider();
+
+        if (provider.isQCEnabled(schema.getProtocol()))
+        {
+            MenuButton button = new MenuButton("QC State");
+            if (getContainer().hasPermission(getUser(), QCAnalystPermission.class))
+            {
+                ActionURL updateAction = PageFlowUtil.urlProvider(AssayUrls.class).getUpdateQCStateURL(getContainer(), schema.getProtocol())
+                        .addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().getLocalURIString());
+                NavTree updateItem = button.addMenuItem("Update state of selected rows", "#", "if (verifySelected(" + DataRegion.getJavaScriptObjectReference(getDataRegionName()) + ".form, \"" +
+                        updateAction.getLocalURIString() + "\", \"post\", \"rows\")) " + DataRegion.getJavaScriptObjectReference(getDataRegionName()) + ".form.submit()");
+                updateItem.setId("QCState:updateSelected");
+            }
+
+            if (getContainer().hasPermission(getUser(), AdminPermission.class))
+            {
+                button.addMenuItem("Manage states", PageFlowUtil.urlProvider(CoreUrls.class).getManageQCStatesURL(getContainer())
+                        .addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().getLocalURIString()));
             }
             bar.add(button);
         }

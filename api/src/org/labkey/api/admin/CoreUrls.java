@@ -47,4 +47,6 @@ public interface CoreUrls extends UrlProvider
     ActionURL getDisplayCoreWarningActionURL(ViewContext context);
 
     ActionURL getStyleGuideURL(@NotNull Container container);
+
+    ActionURL getManageQCStatesURL(@NotNull Container container);
 }

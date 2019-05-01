@@ -28,15 +28,18 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.assay.AssayQCService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JsonWriter;
@@ -64,6 +67,8 @@ import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.qc.DataExchangeHandler;
+import org.labkey.api.qc.QCState;
+import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
@@ -73,6 +78,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.Study;
@@ -1171,6 +1177,17 @@ public class AssayController extends SpringActionController
             }
             return url;
         }
+
+        @Override
+        public ActionURL getUpdateQCStateURL(Container container, ExpProtocol protocol)
+        {
+            AssayProvider provider = AssayService.get().getProvider(protocol);
+            if (provider != null && provider.isQCEnabled(protocol))
+            {
+                return new ActionURL(UpdateQCStateAction.class, container);
+            }
+            return null;
+        }
     }
 
     @RequiresPermission(DesignAssayPermission.class)
@@ -1513,6 +1530,109 @@ public class AssayController extends SpringActionController
             }
             info("Auto copy to study complete");
             setStatus(finalStatus);
+        }
+    }
+
+    public static class UpdateQCStateForm extends ReturnUrlForm
+    {
+        private Integer _state;
+        private String _comment;
+        private Integer[] _runs;
+
+        public Integer getState()
+        {
+            return _state;
+        }
+
+        public void setState(Integer state)
+        {
+            _state = state;
+        }
+
+        public String getComment()
+        {
+            return _comment;
+        }
+
+        public void setComment(String comment)
+        {
+            _comment = comment;
+        }
+
+        public Integer[] getRuns()
+        {
+            return _runs;
+        }
+
+        public void setRuns(Integer[] runs)
+        {
+            _runs = runs;
+        }
+    }
+
+    @RequiresPermission(QCAnalystPermission.class)
+    public class UpdateQCStateAction extends FormViewAction<UpdateQCStateForm>
+    {
+        @Override
+        public void validateCommand(UpdateQCStateForm form, Errors errors)
+        {
+            if (form.getRuns() != null)
+            {
+                if (form.getState() == null)
+                    errors.reject(ERROR_MSG, "QC State cannot be blank");
+                if (form.getRuns().length == 0)
+                    errors.reject(ERROR_MSG, "No runs were selected to update their QC State");
+            }
+        }
+
+        @Override
+        public ModelAndView getView(UpdateQCStateForm form, boolean reshow, BindException errors) throws Exception
+        {
+            if (form.getRuns() == null || form.getRuns().length == 0)
+            {
+                if (DataRegionSelection.hasSelected(getViewContext()))
+                    form.setRuns(DataRegionSelection.getSelectedIntegers(getViewContext(), true).toArray(new Integer[0]));
+            }
+            return new JspView<>("/org/labkey/study/assay/view/updateQCState.jsp", form, errors);
+        }
+
+        @Override
+        public boolean handlePost(UpdateQCStateForm form, BindException errors) throws Exception
+        {
+            if (form.getRuns() != null)
+            {
+                AssayQCService svc = AssayQCService.getProvider();
+                ExpRun run = null;
+
+                for (int id : form.getRuns())
+                {
+                    // just get the first run
+                    run = ExperimentService.get().getExpRun(id);
+                    if (run != null)
+                        break;
+                }
+
+                if (run != null)
+                {
+                    QCState state = QCStateManager.getInstance().getQCStateForRowId(getContainer(), form.getState());
+                    if (state != null)
+                        svc.setQCStates(run.getProtocol(), getContainer(), getUser(), Arrays.asList(form.getRuns()), state, form.getComment());
+                }
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(UpdateQCStateForm form)
+        {
+            return form.getReturnActionURL();
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Change QC State");
         }
     }
 }

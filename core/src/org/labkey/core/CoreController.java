@@ -115,6 +115,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.RoleManager;
@@ -299,6 +300,12 @@ public class CoreController extends SpringActionController
         public ActionURL getStyleGuideURL(@NotNull Container container)
         {
             return new ActionURL(CoreController.StyleGuideAction.class, container);
+        }
+
+        @Override
+        public ActionURL getManageQCStatesURL(@NotNull Container container)
+        {
+            return new ActionURL(CoreController.ManageQCStatesAction.class, container);
         }
     }
 
