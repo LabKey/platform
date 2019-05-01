@@ -37,36 +37,33 @@
     QCStateHandler qcStateHandler = bean.getQCStateHandler();
     String currentQCPanelTitle = "Currently Defined " + StringUtils.capitalize(bean.getNoun()) + " QC States";
     String defaultStatesPanelTitle = "Default states for " + bean.getNoun() + " data";
+    ActionURL baseDeleteStateURL = new ActionURL(bean.getDeleteAction(), container);
 %>
 <labkey:errors/><br>
 <labkey:form action="<%=h(buildURL(manageAction.getClass()))%>" name="manageQCStates" method="POST">
 <input type="hidden" name="reshowPage" value="true">
 <input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl()) %>">
     <labkey:panel title="<%=h(currentQCPanelTitle)%>">
-        <table class="lk-fields-table">
+        <table id="qcStatesTable" class="lk-fields-table">
             <tr>
-                <th>&nbsp;</th>
                 <th><b>State Name</b></th>
                 <th><b>State Description</b></th>
                 <th nowrap><b>Public Data<%= helpPopup("Public Data", "The 'Public Data' setting determines whether data in each QC state is shown to users by default.") %></b></th>
-                <th nowrap><b>In Use<%= helpPopup("Blank QC State", "This QC state is provided by the system and cannot be deleted.") %></b></th>
+                <th nowrap><b>In Use</b></th>
             </tr>
-                <td>&nbsp;</td>
                 <td>[none]</td>
                 <td>Applies to data that has not been assigned an explicit QC State</td>
                 <td align="center"><input name="blankQCStatePublic" value="true" type="checkbox"<%=checked(qcStateHandler.isBlankQCStatePublic(container))%>/></td>
-                <td><span style="color:black;padding-left: 30%;" class="fa fa-check-circle"></span></td>
+                <td><span style="color:black;padding-left: 30%;" class="fa fa-check-circle"><%= helpPopup("Blank QC State", "This QC state is provided by the system and cannot be deleted.") %></span></td>
             <tr>
             </tr>
             <%
-                ActionURL baseDeleteStateURL = new ActionURL(bean.getDeleteAction(), container);
                 baseDeleteStateURL.addParameter("manageReturnUrl", bean.getReturnUrl());
                 for (Object stateObj : qcStateHandler.getQCStates(container))
                 {
                     QCState state = (QCState)stateObj;
             %>
             <tr>
-                <td align="center">&nbsp;</td>
                 <td>
                     <input type="hidden" name="ids" value="<%= state.getRowId() %>">
                     <input type="text" name="labels" size="30"
@@ -86,21 +83,11 @@
             <%
                 }
             %>
-            <tr>
-                <td nowrap>New <%= h(bean.getNoun())%> QC state:</td>
-                <td><input type="text" name="newLabel" size="30"></td>
-                <td><input type="text" name="newDescription" size="50"></td>
-                <td align="center"><input type="checkbox" name="newPublicData" CHECKED></td>
-                <td>&nbsp;</td>
-            </tr>
-            <tr>
-                <td>&nbsp;</td>
-                <td colspan="4">
-                    <%= button("Delete Unused QC States")
-                            .onClick("return LABKEY.Utils.confirmAndPost('Delete all unused QC states? No additional "+ bean.getDataNoun() + " data will be deleted.', " + qh(baseDeleteStateURL.clone().addParameter("all", "true").getLocalURIString()) + ")") %>
-                </td>
-            </tr>
         </table>
+        <span style="color:green" class="fa fa-plus-circle" onclick="addRow()"></span>&nbsp<span>Add State</span>
+            &nbsp&nbsp&nbsp&nbsp
+            <%= button("Delete Unused QC States")
+                    .onClick("return LABKEY.Utils.confirmAndPost('Delete all unused QC states? No additional "+ bean.getDataNoun() + " data will be deleted.', " + qh(baseDeleteStateURL.clone().addParameter("all", "true").getLocalURIString()) + ")") %>
     </labkey:panel>
 
     <%
@@ -124,4 +111,31 @@
 
     <%= button("Save").submit(true).onClick("document.manageQCStates.reshowPage.value='false'; return true;") %>
     <%= button("Cancel").href(cancelUrl.getLocalURIString()) %>
+    &nbsp&nbsp&nbsp&nbsp
+    <%= button("Import QC States")
+            .onClick("alert('implement me')") %> <!-- TODO implement me -->
+    <%= button("Export QC States")
+            .onClick("alert('implement me')") %> <!-- TODO implement me -->
 </labkey:form>
+<script language="javascript">
+    function addRow() {
+        var table = document.getElementById("qcStatesTable");
+        var numberOfRows = table.rows.length;  // we'll use this as an ID later too
+        var newRow = table.insertRow(numberOfRows);
+        var nameCell = newRow.insertCell(newRow.cells.length);
+        var descriptionCell = newRow.insertCell(newRow.cells.length);
+        var publicDataCell = newRow.insertCell(newRow.cells.length);
+        var inUseCell = newRow.insertCell(newRow.cells.length);
+
+        nameCell.innerHTML = '<input type="hidden" name="newIds" value="' + numberOfRows + '"><input type="text" name="newLabels" size="30">';
+        descriptionCell.innerHTML = '<input type="text" name="newDescriptions" size="50"></td>';
+        publicDataCell.innerHTML = '<input type="checkbox" value="' + numberOfRows + '" id="' + numberOfRows +'_public" name="newPublicData" CHECKED>';
+        publicDataCell.style.textAlign = 'center';
+        inUseCell.innerHTML = '<span style="color:black;padding-left: 30%;" class="fa fa-circle-o"></span> <span style="color:red;" class="fa fa-times" onclick="deleteRow(this)"></span>';
+    }
+
+    function deleteRow(deleteButton) {
+        var row = deleteButton.parentNode.parentNode;
+        row.parentNode.removeChild(row);
+    }
+</script>

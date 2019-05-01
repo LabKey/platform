@@ -8,9 +8,10 @@ public class AbstractManageQCStatesForm extends ReturnUrlForm
     private String[] _labels;
     private String[] _descriptions;
     private int[] _publicData;
-    private String _newLabel;
-    private String _newDescription;
-    private boolean _newPublicData;
+    private int[] _newIds;
+    private String[] _newLabels;
+    private String[] _newDescriptions;
+    private int[] _newPublicData;
     private boolean _reshowPage;
     private boolean _blankQCStatePublic;
 
@@ -54,32 +55,42 @@ public class AbstractManageQCStatesForm extends ReturnUrlForm
         _publicData = publicData;
     }
 
-    public String getNewLabel()
+    public int[] getNewIds()
     {
-        return _newLabel;
+        return _newIds;
     }
 
-    public void setNewLabel(String newLabel)
+    public void setNewIds(int[] newIds)
     {
-        _newLabel = newLabel;
+        _newIds = newIds;
     }
 
-    public String getNewDescription()
+    public String[] getNewLabels()
     {
-        return _newDescription;
+        return _newLabels;
     }
 
-    public void setNewDescription(String newDescription)
+    public void setNewLabels(String[] newLabels)
     {
-        _newDescription = newDescription;
+        _newLabels = newLabels;
     }
 
-    public boolean isNewPublicData()
+    public String[] getNewDescriptions()
+    {
+        return _newDescriptions;
+    }
+
+    public void setNewDescriptions(String[] newDescriptions)
+    {
+        _newDescriptions = newDescriptions;
+    }
+
+    public int[] getNewPublicData()
     {
         return _newPublicData;
     }
 
-    public void setNewPublicData(boolean newPublicData)
+    public void setNewPublicData(int[] newPublicData)
     {
         _newPublicData = newPublicData;
     }

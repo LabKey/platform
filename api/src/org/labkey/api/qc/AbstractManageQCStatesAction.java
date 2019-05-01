@@ -37,6 +37,7 @@ public abstract class AbstractManageQCStatesAction<FORM extends AbstractManageQC
     public void validateCommand(FORM form, Errors errors)
     {
         Set<String> labels = new HashSet<>();
+        Set<String> newLabels = new HashSet<>();
         if (form.getLabels() != null)
         {
             for (String label : form.getLabels())
@@ -50,21 +51,20 @@ public abstract class AbstractManageQCStatesAction<FORM extends AbstractManageQC
                     labels.add(label);
             }
         }
-        if (labels.contains(form.getNewLabel()))
-            errors.reject(null, "QC state \"" + form.getNewLabel() + "\" is defined more than once.");
+        if (form.getNewLabels() != null)
+        {
+            for (String newLabel : form.getNewLabels())
+            {
+                if (labels.contains(newLabel) || newLabels.contains(newLabel))
+                    errors.reject(null, "QC state \"" + newLabel + "\" is defined more than once.");
+                else
+                    newLabels.add(newLabel);
+            }
+        }
     }
 
     public boolean handlePost(FORM form, BindException errors)
     {
-        if (form.getNewLabel() != null && form.getNewLabel().length() > 0)
-        {
-            QCState newState = new QCState();
-            newState.setContainer(getContainer());
-            newState.setLabel(form.getNewLabel());
-            newState.setDescription(form.getNewDescription());
-            newState.setPublicData(form.isNewPublicData());
-            QCStateManager.getInstance().insertQCState(getUser(), newState);
-        }
         if (form.getIds() != null)
         {
             // use a map to store the IDs of the public QC states; since checkboxes are
@@ -89,6 +89,32 @@ public abstract class AbstractManageQCStatesAction<FORM extends AbstractManageQC
                 state.setPublicData(set.contains(state.getRowId()));
                 state.setContainer(getContainer());
                 QCStateManager.getInstance().updateQCState(getUser(), state);
+            }
+        }
+
+        if (form.getNewIds() != null)
+        {
+            // use a map to store the IDs of the new QC states; since checkboxes are
+            // omitted from the request entirely if they aren't checked, we use a different
+            // method for keeping track of the checked values (by posting the rowid of the item as the
+            // checkbox value).
+            Set<Integer> newSet = new HashSet<>();
+            if (form.getNewPublicData() != null)
+            {
+                for (int i = 0; i < form.getNewPublicData().length; i++)
+                    newSet.add(form.getNewPublicData()[i]);
+            }
+
+            for (int i = 0; i < form.getNewIds().length; i++)
+            {
+                int newRowId = form.getNewIds()[i];
+                QCState newState = new QCState();
+                newState.setLabel(form.getNewLabels()[i]);
+                if (form.getNewDescriptions() != null)
+                    newState.setDescription(form.getNewDescriptions()[i]);
+                newState.setPublicData(newSet.contains(newRowId));
+                newState.setContainer(getContainer());
+                QCStateManager.getInstance().insertQCState(getUser(), newState);
             }
         }
 
