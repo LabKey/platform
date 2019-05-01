@@ -6,7 +6,7 @@ import * as React from 'react'
 import {Button, ButtonToolbar, Col, Row} from "react-bootstrap";
 import {ActionURL} from "@labkey/api";
 import {LoadingSpinner, Alert} from "@glass/base";
-import {DomainForm, DomainDesign, clearFieldDetails, fetchDomain, saveDomain} from "@glass/domainproperties"
+import {DomainForm, DomainConfirm, DomainDesign, clearFieldDetails, fetchDomain, saveDomain} from "@glass/domainproperties"
 
 interface IDomainDesignerState {
     schemaName?: string,
@@ -16,7 +16,9 @@ interface IDomainDesignerState {
     domain?: DomainDesign,
     submitting: boolean,
     message?: string,
-    messageType?: string
+    messageType?: string,
+    showConfirm: boolean,
+    dirty: boolean
 }
 
 export class App extends React.PureComponent<any, IDomainDesignerState> {
@@ -36,7 +38,8 @@ export class App extends React.PureComponent<any, IDomainDesignerState> {
             domainId,
             returnUrl,
             submitting: false,
-            message: ((schemaName && queryName) || domainId) ? undefined : 'Missing required parameter: domainId or schemaName and queryName.'
+            showConfirm: false,
+            dirty: false
         };
     }
 
@@ -52,22 +55,32 @@ export class App extends React.PureComponent<any, IDomainDesignerState> {
                     this.setState({message: error.exception, messageType: 'danger'})
                 });
         }
+        else {
+            this.setState({domain: new DomainDesign()})
+        }
     }
 
     submitHandler = () => {
         const { domain } = this.state;
 
+        // Temp values for name and pk since those are not available inputs currently
+        const name = 'list_' + Math.floor(Math.random() * 10000);
+        const options = {
+            keyName: domain.fields.get(0).name
+        }
+
         this.setState(() => ({submitting: true}));
 
-        saveDomain(domain)
-            .then((success) => {
-                const newDomain = clearFieldDetails(domain);
+        saveDomain(domain, 'VarList', options, name )
+            .then((savedDomain) => {
+                const newDomain = clearFieldDetails(savedDomain);
 
                 this.setState(() => ({
                     domain: newDomain,
                     submitting: false,
                     message: 'Domain saved successfully.',
-                    messageType: 'success'
+                    messageType: 'success',
+                    dirty: false
                 }));
 
                 window.setTimeout(() => {
@@ -83,9 +96,10 @@ export class App extends React.PureComponent<any, IDomainDesignerState> {
             });
     };
 
-    onChangeHandler = (newDomain) => {
+    onChangeHandler = (newDomain, dirty) => {
         this.setState(() => ({
-            domain: newDomain
+            domain: newDomain,
+            dirty
         }));
     };
 
@@ -94,12 +108,25 @@ export class App extends React.PureComponent<any, IDomainDesignerState> {
     };
 
     onCancel = () => {
+        if( this.state.dirty ) {
+            this.setState({showConfirm: true})
+        }
+        else {
+            this.onCancelConfirm();
+        }
+    };
+
+    onCancelConfirm = () => {
         const { returnUrl } = this.state;
         window.location.href = returnUrl || ActionURL.buildURL('project', 'begin');
     };
 
+    onCancelCancel = () => {
+        this.setState({showConfirm: false})
+    };
+
     render() {
-        const { domain, message, messageType, submitting } = this.state;
+        const { domain, message, messageType, submitting, showConfirm } = this.state;
         const isLoading = domain === undefined && message === undefined;
 
         if (isLoading) {
@@ -108,7 +135,8 @@ export class App extends React.PureComponent<any, IDomainDesignerState> {
 
         return (
             <>
-                { domain && <Row>
+                { domain &&
+                <Row>
                     <Col xs={12}>
                         <ButtonToolbar>
                             <Button
@@ -130,8 +158,19 @@ export class App extends React.PureComponent<any, IDomainDesignerState> {
                         </ButtonToolbar>
                     </Col>
                 </Row>}
+                <DomainConfirm show={showConfirm} title='Confirm Leaving Page'
+                               msg='You have unsaved data, leave page before saving data?'
+                               onConfirm={this.onCancelConfirm}
+                               onCancel={this.onCancelCancel}
+                               confirmButtonText='Yes'
+                               cancelButtonText='No'
+                               confirmVariant='success'/>
                 { message && <Alert bsStyle={messageType} onDismiss={this.dismissAlert}>{message}</Alert> }
-                { domain && <DomainForm domain={domain} onChange={this.onChangeHandler}/>}
+                { domain && <DomainForm domain={domain}
+                                        onChange={this.onChangeHandler}
+                                        helpURL='https://www.labkey.org/Documentation/wiki-page.view?name=listDefineFields'
+                                        helpNoun='list'
+                            />}
             </>
         )
     }

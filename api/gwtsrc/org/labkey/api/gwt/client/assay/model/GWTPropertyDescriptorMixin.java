@@ -19,7 +19,8 @@ import org.labkey.api.gwt.client.util.StringProperty;
         "fileType",
         "updatedField",
         "newField",
-        "renderUpdate"
+        "renderUpdate",
+        "displayId"
 })
 public abstract class GWTPropertyDescriptorMixin
 {
