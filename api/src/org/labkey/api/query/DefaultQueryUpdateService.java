@@ -208,7 +208,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
         aliasColumns(_columnMapping, keys);
-        Map<String,Object> row = _select(container, getKeys(keys));
+        Map<String,Object> row = _select(container, getKeys(keys, container));
 
         //PostgreSQL includes a column named _row for the row index, but since this is selecting by
         //primary key, it will always be 1, which is not only unnecessary, but confusing, so strip it
@@ -404,7 +404,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             }
         }
 
-        Map<String,Object> updatedRow = _update(user, container, rowStripped, oldRow, oldRow == null ? getKeys(row) : getKeys(oldRow));
+        Map<String,Object> updatedRow = _update(user, container, rowStripped, oldRow, oldRow == null ? getKeys(row, container) : getKeys(oldRow, container));
 
         //when passing a map for the row, the Table layer returns the map of fields it updated, which excludes
         //the primary key columns as well as those marked read-only. So we can't simply return the map returned
@@ -581,7 +581,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                     OntologyManager.deleteProperties(c, oo.getObjectId());
             }
         }
-        Table.delete(getDbTable(), getKeys(row));
+        Table.delete(getDbTable(), getKeys(row, c));
     }
 
     // classes should override this method if they need to do more work than delete all the rows from the table
@@ -605,7 +605,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
        return Table.delete(getDbTable());
     }
 
-    protected Object[] getKeys(Map<String, Object> map) throws InvalidKeyException
+    protected Object[] getKeys(Map<String, Object> map, Container container) throws InvalidKeyException
     {
         //build an array of pk values based on the table info
         TableInfo table = getDbTable();
@@ -629,8 +629,14 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                 catch (ConversionException ignored) { /* Maybe the database can do the conversion */ }
             }
             pkVals[idx] = pkValue;
-            if (null == pkVals[idx])
+            if (null == pkVals[idx] && pk.getColumnName().equalsIgnoreCase("Container"))
+            {
+                pkVals[idx] = container;
+            }
+            if(null == pkVals[idx])
+            {
                 throw new InvalidKeyException("Value for key field '" + pk.getName() + "' was null or not supplied!", map);
+            }
         }
         return pkVals;
     }

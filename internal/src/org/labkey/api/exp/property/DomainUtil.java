@@ -771,4 +771,44 @@ public class DomainUtil
             }
         }
     }
+
+    /**
+     * Validate domain property descriptors for things like duplicate names, missing names, and check against required fields.
+     * @param domain The updated domain to validate
+     * @return List of errors strings found during the validation
+     */
+    public static List<String> validateProperties(@NotNull Domain domain, @NotNull GWTDomain updates)
+    {
+        List<String> errors = new ArrayList<>();
+        Set<String> reservedNames = new CaseInsensitiveHashSet(domain.getDomainKind().getReservedPropertyNames(domain));
+        Set<String> names = new CaseInsensitiveHashSet();
+
+        for (Object f : updates.getFields())
+        {
+            GWTPropertyDescriptor field = (GWTPropertyDescriptor)f;
+
+            String name = field.getName();
+            if (null == name || name.length() == 0)
+            {
+                errors.add("Name field must not be blank.");
+                continue;
+            }
+
+            if (reservedNames.contains(name) && field.getPropertyId() <= 0)
+            {
+                errors.add("\"" + name + "\" is a reserved field name in \"" + domain.getName() + "\".");
+                continue;
+            }
+
+            if (names.contains(name))
+            {
+                errors.add("All property names must be unique. Duplicate found: " + name + ".");
+                continue;
+            }
+
+            names.add(name);
+        }
+
+        return errors;
+    }
 }
