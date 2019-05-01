@@ -15,7 +15,6 @@
  */
 
 package org.labkey.experiment.api;
-
 import com.google.common.collect.Iterables;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
@@ -133,6 +132,10 @@ import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 import org.labkey.experiment.xar.XarExportSelection;
 
+
+import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRun;
+import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRunOutput;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -168,6 +171,7 @@ import static java.util.stream.Collectors.toList;
 import static org.labkey.api.data.CompareType.IN;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTROLLBACK;
+import static org.labkey.api.exp.OntologyManager.ensurePropertyDomain;
 import static org.labkey.api.exp.OntologyManager.getTinfoObject;
 
 public class ExperimentServiceImpl implements ExperimentService
@@ -1981,8 +1985,11 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
 
+
     static final String exp_graph_sql2;
+
     static final String exp_graph_sql_for_lookup2;
+
 
     static
     {
@@ -2018,6 +2025,7 @@ public class ExperimentServiceImpl implements ExperimentService
             if (parentRun != null)
                 runsToInvestigate.add(parentRun);
         }
+
         if (down)
         {
             if (start instanceof ExpData)
@@ -2520,13 +2528,6 @@ public class ExperimentServiceImpl implements ExperimentService
         return count;
     }
 
-    // cleanup edges for the object
-    public void removeEdges(String lsid)
-    {
-        Table.delete(getTinfoEdge(), new SimpleFilter("fromLsid", lsid));
-        Table.delete(getTinfoEdge(), new SimpleFilter("toLsid", lsid));
-    }
-
     // prepare for bulk insert of edges
     private void prepEdgeForInsert(List<List<Object>> params, @NotNull String fromLsid, @NotNull String toLsid, int runId)
     {
@@ -2543,22 +2544,13 @@ public class ExperimentServiceImpl implements ExperimentService
     private void ensureNodeObjects(Map<String, Map<String, Object>> allNodesByLsid, @NotNull Map<String, Integer> cpasTypeToObjectId)
     {
         // Issue 33932: partition into groups of 1000 to avoid SQLServer parameter limit
-        Set<String> allLsids = allNodesByLsid.keySet();
-        Iterables.partition(allLsids, 1000).forEach(lsids -> {
+        var allMissingObjectLsids = allNodesByLsid.entrySet().stream()
+                .filter(e -> e.getValue().get("objectId") == null)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
 
-            SQLFragment sql = new SQLFragment("SELECT lsid FROM (\n");
-            sql.append("VALUES\n");
-            String sep = "";
-            for (String lsid : lsids)
-            {
-                sql.append(sep).append("(?)").add(lsid);
-                sep = ",\n";
-            }
-            sql.append(") AS t (lsid)\n");
-            sql.append("WHERE NOT EXISTS (SELECT 1 FROM ").append(getTinfoObject(), "o").append(" WHERE o.objectUri = lsid)");
+        Iterables.partition(allMissingObjectLsids, 1000).forEach(missingObjectLsids -> {
 
-            SqlSelector ss = new SqlSelector(getExpSchema(), sql);
-            Collection<String> missingObjectLsids = ss.getCollection(String.class);
             if (!missingObjectLsids.isEmpty())
             {
                 LOG.debug("  creating exp.object for " + missingObjectLsids.size() + " nodes");
@@ -2631,10 +2623,11 @@ public class ExperimentServiceImpl implements ExperimentService
         if (params.isEmpty())
             return;
 
-        String sql = "INSERT INTO " + getTinfoEdge() + " (fromLsid, toLsid, runId) VALUES (?, ?, ?)";
         try
         {
-            Table.batchExecute(getExpSchema(), sql, params);
+            String edgeSql = "INSERT INTO " + getTinfoEdge() + " (fromObjectId, toObjectId, runId)\n"+
+                    "VALUES ( (select objectid from exp.Object where objecturi=?), (select objectid from exp.Object where objecturi=?), ?)";
+            Table.batchExecute(getExpSchema(), edgeSql, params);
         }
         catch (SQLException e)
         {
@@ -2669,36 +2662,38 @@ public class ExperimentServiceImpl implements ExperimentService
         LOG.debug("Rebuilding edges for runId " + runId);
         try (DbScope.Transaction tx = getExpSchema().getScope().ensureTransaction())
         {
+            // NOTE: Originally, we just filtered exp.data by runId.  This works for most runs but includes intermediate exp.data nodes and caused the ExpTest to fail
             SQLFragment datas = new SQLFragment()
-                    .append("SELECT d.Container, d.LSID FROM exp.Data d\n")
+                    .append("SELECT d.Container, d.LSID, o.ObjectId, pa.CpasType AS pa_cpas_type FROM exp.Data d\n")
                     .append("INNER JOIN exp.DataInput di ON d.rowId = di.dataId\n")
                     .append("INNER JOIN exp.ProtocolApplication pa ON di.TargetApplicationId = pa.RowId\n")
-                    .append("WHERE pa.RunId = ?")
-                    .add(runId)
-                    .append("  AND pa.CpasType = ?")
-                    .add(0);
+                    .append("LEFT JOIN exp.Object o on d.lsid = o.objecturi\n")
+                    .append("WHERE pa.RunId = ").append(runId).append(" AND pa.CpasType IN ('").append(ExperimentRun.name()).append("','").append(ExperimentRunOutput.name()).append("')");
 
-            datas.set(1, ExpProtocol.ApplicationType.ExperimentRun.name());
-            Collection<Map<String, Object>> fromDataLsids = new SqlSelector(getSchema(), datas).getMapCollection();
-
-            // NOTE: Originally, we just filtered exp.data by runId.  This works for most runs but includes intermediate exp.data nodes and caused the ExpTest to fail
-            datas.set(1, ExpProtocol.ApplicationType.ExperimentRunOutput.name());
-            Collection<Map<String, Object>> toDataLsids = new SqlSelector(getSchema(), datas).getMapCollection();
+            Collection<Map<String, Object>> fromDataLsids = new ArrayList<>();
+            Collection<Map<String, Object>> toDataLsids = new ArrayList<>();
+            new SqlSelector(getSchema(), datas).forEachMap(row -> {
+                if (ExperimentRun.name().equals(row.get("pa_cpas_type")))
+                    fromDataLsids.add(row);
+                else
+                    toDataLsids.add(row);
+            });
 
             SQLFragment materials = new SQLFragment()
-                    .append("SELECT m.Container, m.LSID, m.CpasType FROM exp.material m\n")
+                    .append("SELECT m.Container, m.LSID, m.CpasType, o.ObjectId, pa.CpasType AS pa_cpas_type FROM exp.material m\n")
                     .append("INNER JOIN exp.MaterialInput mi ON m.rowId = mi.materialId\n")
                     .append("INNER JOIN exp.ProtocolApplication pa ON mi.TargetApplicationId = pa.RowId\n")
-                    .append("WHERE pa.RunId = ?")
-                    .add(runId)
-                    .append("  AND pa.CpasType = ?")
-                    .add(0);
+                    .append("LEFT JOIN exp.Object o on m.lsid = o.objecturi\n")
+                    .append("WHERE pa.RunId = ").append(runId).append(" AND pa.CpasType IN ('").append(ExperimentRun.name()).append("','").append(ExperimentRunOutput.name()).append("')");
 
-            materials.set(1, ExpProtocol.ApplicationType.ExperimentRun.name());
-            Collection<Map<String, Object>> fromMaterialLsids = new SqlSelector(getSchema(), materials).getMapCollection();
-
-            materials.set(1, ExpProtocol.ApplicationType.ExperimentRunOutput.name());
-            Collection<Map<String, Object>> toMaterialLsids = new SqlSelector(getSchema(), materials).getMapCollection();
+            Collection<Map<String, Object>> fromMaterialLsids = new ArrayList<>();
+            Collection<Map<String, Object>> toMaterialLsids = new ArrayList<>();
+            new SqlSelector(getSchema(), materials).forEachMap(row -> {
+                if (ExperimentRun.name().equals(row.get("pa_cpas_type")))
+                    fromMaterialLsids.add(row);
+                else
+                    toMaterialLsids.add(row);
+            });
 
             // delete all existing edges for this run
             if (deleteFirst)
@@ -3630,9 +3625,12 @@ public class ExperimentServiceImpl implements ExperimentService
 
             try (Timing t = MiniProfiler.step("exp.edges"))
             {
+                SQLFragment objectIdFrag = new SQLFragment("IN (SELECT ObjectId FROM exp.Object WHERE ObjectURI ");
+                objectIdFrag.append(lsidInFrag).append(")");
+
                 SQLFragment deleteEdgeSql = new SQLFragment("DELETE FROM ").append(String.valueOf(getTinfoEdge())).append(" WHERE ")
-                        .append("fromLsid ").append(lsidInFrag)
-                        .append(" OR toLsid ").append(lsidInFrag);
+                        .append("fromObjectId ").append(objectIdFrag)
+                        .append(" OR toObjectId ").append(objectIdFrag);
                 executor.execute(deleteEdgeSql);
             }
 
@@ -3828,7 +3826,8 @@ public class ExperimentServiceImpl implements ExperimentService
 
                 SQLFragment deleteSql = new SQLFragment()
                     .append("DELETE FROM ").append(String.valueOf(getTinfoDataAliasMap())).append(" WHERE LSID = ?;\n").add(data.getLSID())
-                    .append("DELETE FROM ").append(String.valueOf(getTinfoEdge())).append(" WHERE fromLsid = ? OR toLsid = ?;").add(data.getLSID()).add(data.getLSID());
+                    .append("DELETE FROM ").append(String.valueOf(getTinfoEdge())).append(" WHERE fromObjectId = (select objectid from exp.object where objecturi = ?);").add(data.getLSID())
+                    .append("DELETE FROM ").append(String.valueOf(getTinfoEdge())).append(" WHERE toObjectId = (select objectid from exp.object where objecturi = ?);").add(data.getLSID());
                 new SqlExecutor(getExpSchema()).execute(deleteSql);
 
                 OntologyManager.deleteOntologyObjects(container, data.getLSID());
@@ -4000,9 +3999,9 @@ public class ExperimentServiceImpl implements ExperimentService
             // These are usually deleted when the run is deleted (unless the run is in a different container)
             // and would be cleaned up when deleting the exp.Material and exp.Data in this container at the end of this method.
             // However, we need to delete any exp.edge referenced by exp.object before calling deleteAllObjects() for this container.
-            String deleteObjEdges = "DELETE FROM " + getTinfoEdge() + "\n" +
-                    "WHERE fromLsid IN (SELECT ObjectUri FROM " + getTinfoObject() + " WHERE Container = ?)\n" +
-                    "   OR toLsid   IN (SELECT ObjectUri FROM " + getTinfoObject() + " WHERE Container = ?)";
+            String deleteObjEdges =
+                    "DELETE FROM " + getTinfoEdge() + "\nWHERE fromObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ?);\n"+
+                    "DELETE FROM " + getTinfoEdge() + "\nWHERE toObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ?);";
             new SqlExecutor(getExpSchema()).execute(deleteObjEdges, c, c);
 
             SimpleFilter containerFilter = SimpleFilter.createContainerFilter(c);

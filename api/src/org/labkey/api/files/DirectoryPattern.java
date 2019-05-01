@@ -12,11 +12,11 @@ public class DirectoryPattern
     String _ext;
     DirectoryPattern _subDirectory;
     String _fileExt;
-    Module module;
+    Module _module;
 
     public DirectoryPattern(Module module)
     {
-        this.module = module;
+        this._module = module;
     }
 
     public String getExt()
@@ -51,7 +51,7 @@ public class DirectoryPattern
 
     public Module getModule()
     {
-        return module;
+        return _module;
     }
 
     public JSONObject toJSON()
