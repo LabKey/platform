@@ -18,6 +18,7 @@ package org.labkey.study.plate.query;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.Lsid;
@@ -40,9 +41,9 @@ import java.util.TreeMap;
  */
 public class PlateTable extends BasePlateTable
 {
-    public PlateTable(PlateSchema schema)
+    public PlateTable(PlateSchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoPlate());
+        super(schema, StudySchema.getInstance().getTableInfoPlate(), cf);
         setPublicSchemaName(PlateSchema.SCHEMA_NAME);
         final FieldKey keyProp = new FieldKey(null, "Property");
         final List<FieldKey> visibleColumns = new ArrayList<>();

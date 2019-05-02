@@ -17,6 +17,7 @@
 package org.labkey.study.plate.query;
 
 import org.labkey.api.data.CompareType;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -43,9 +44,9 @@ import java.util.TreeMap;
  */
 public class WellGroupTable extends BasePlateTable
 {
-    public WellGroupTable(PlateSchema schema, WellGroup.Type groupType)
+    public WellGroupTable(PlateSchema schema, ContainerFilter cf, WellGroup.Type groupType)
     {
-        super(schema, StudySchema.getInstance().getTableInfoWellGroup());
+        super(schema, StudySchema.getInstance().getTableInfoWellGroup(), cf);
         final FieldKey keyProp = new FieldKey(null, "Property");
         final List<FieldKey> visibleColumns = new ArrayList<>();
         addWrapColumn(_rootTable.getColumn("RowId"));
@@ -65,7 +66,7 @@ public class WellGroupTable extends BasePlateTable
         {
             public TableInfo getLookupTableInfo()
             {
-                return new PlateTable(_userSchema);
+                return new PlateTable(_userSchema, cf);
             }
         });
         addColumn(plateIdColumn);
