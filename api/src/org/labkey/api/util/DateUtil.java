@@ -1952,6 +1952,16 @@ Parse:
 
             for (Locale l : DateFormat.getAvailableLocales())
             {
+                // Skipping Japanese Imperial calendar locale, since it doesn't parse the date correctly when we use SimpleDateFormat.
+                // ex. Date '2001-02-03' returns '13-02-03' with simple date format yyyy-MM-dd.
+                // And datetime '2001-02-03 04:05:06' returns '13-02-03 04:05:06.000' with getJsonDateTimeFormatString()
+                // But that's so last era's problem!
+                // With the new Japanese era 'Reiwa' beginning May 1, 2019, Date '2019-05-01' returns '元-05-01' with simple date format yyyy-MM-dd
+                // This makes it a special case and would require special handling. Hence, skipping!
+                if (l.hasExtensions() && l.getExtension('u').equalsIgnoreCase("ca-japanese"))
+                {
+                    continue;
+                }
                 try
                 {
                     SimpleDateFormat f = new SimpleDateFormat(getJsonDateTimeFormatString(), l);
