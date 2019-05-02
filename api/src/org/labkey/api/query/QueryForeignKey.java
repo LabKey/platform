@@ -213,6 +213,7 @@ public class QueryForeignKey extends AbstractForeignKey
         _user = builder.user;
         _useRawFKValue = builder.useRawFKValue;
         _table = builder.table;
+        _schema = builder.targetSchema;
     }
 
     private QueryForeignKey(QuerySchema sourceSchema, ContainerFilter cf, @NotNull String schemaName, @NotNull Container effectiveContainer, @Nullable Container lookupContainer, User user, String tableName, @Nullable String lookupKey, @Nullable String displayField, boolean useRawFKValue)
