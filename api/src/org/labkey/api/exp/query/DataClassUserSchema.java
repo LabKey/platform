@@ -84,11 +84,6 @@ public class DataClassUserSchema extends AbstractExpSchema
 
     @Nullable
     @Override
-    public TableInfo createTable(String name)
-    {
-        return createTable(name, getDefaultContainerFilter());
-    }
-
     public TableInfo createTable(String name, ContainerFilter cf)
     {
         ExpDataClass dataClass = getDataClasses().get(name);
