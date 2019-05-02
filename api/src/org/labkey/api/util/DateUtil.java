@@ -1958,7 +1958,7 @@ Parse:
                 // But that's so last era's problem!
                 // With the new Japanese era 'Reiwa' beginning May 1, 2019, Date '2019-05-01' returns '元-05-01' with simple date format yyyy-MM-dd
                 // This makes it a special case and would require special handling. Hence, skipping!
-                if (l.hasExtensions() && l.getExtension('u').equalsIgnoreCase("ca-japanese"))
+                if (l.hasExtensions() && ("ca-japanese").equalsIgnoreCase(l.getExtension('u')))
                 {
                     continue;
                 }
