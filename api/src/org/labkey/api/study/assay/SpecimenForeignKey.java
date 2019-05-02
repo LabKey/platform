@@ -21,9 +21,7 @@ import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.SQLFragment;
@@ -100,17 +98,11 @@ public class SpecimenForeignKey extends LookupForeignKey
 
     public SpecimenForeignKey(AssaySchema schema, AssayProvider provider, ExpProtocol protocol)
     {
-        this(schema, provider, protocol, provider.getTableMetadata(protocol));
-    }
-
-
-    public SpecimenForeignKey(AssaySchema schema, AssayProvider provider, ExpProtocol protocol, AssayTableMetadata tableMetadata)
-    {
         super("RowId");
         _schema = schema;
         _provider = provider;
         _protocol = protocol;
-        _tableMetadata = tableMetadata;
+        _tableMetadata = provider.getTableMetadata(protocol);
         _studyContainerFilter = new StudyContainerFilter(schema);
     }
 
@@ -154,9 +146,6 @@ public class SpecimenForeignKey extends LookupForeignKey
             AssayProtocolSchema assaySchema = _provider.createProtocolSchema(studySchema.getUser(), _schema.getContainer(), _protocol, null);
             _assayDataTable = assaySchema.createDataTable(ContainerFilter.EVERYTHING);
         }
-
-        // set container filter BEFORE we call getColumns(), it affects the filters on the join tables
-        // TODO could the caller pass in the container filter at construction time, or is that too early?
 
         FieldKey specimenFK = _tableMetadata.getSpecimenIDFieldKey();
         FieldKey targetStudyFK = _tableMetadata.getTargetStudyFieldKey();
@@ -364,7 +353,8 @@ public class SpecimenForeignKey extends LookupForeignKey
             sql.append(" LEFT OUTER JOIN (");
 
             // Select all the assay-side specimen columns that we'll need to do the comparison
-            ((ContainerFilterable)_assayDataTable).setContainerFilter(foreignKey.getParentTable().getContainerFilter());
+// TODO ContainerFilter make sure all callers of new SpecimenForeignKey() pass in appropriately constructed _assayDataTable
+//            ((ContainerFilterable)_assayDataTable).setContainerFilter(foreignKey.getParentTable().getContainerFilter());
             SQLFragment targetStudySQL = QueryService.get().getSelectSQL(_assayDataTable, _assayColumns.values(), null, null, Table.ALL_ROWS, Table.NO_OFFSET, false);
             sql.append(targetStudySQL);
 
