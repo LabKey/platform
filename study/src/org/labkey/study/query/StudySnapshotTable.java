@@ -51,9 +51,15 @@ import java.util.HashSet;
  */
 public class StudySnapshotTable extends FilteredTable<StudyQuerySchema>
 {
+    @Override
+    protected ContainerFilter getDefaultContainerFilter()
+    {
+        return ContainerFilter.Type.CurrentWithUser.create(getUserSchema().getUser());
+    }
+
     public StudySnapshotTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(StudySchema.getInstance().getTableInfoStudySnapshot(), schema, ContainerFilter.Type.CurrentWithUser.create(schema.getUser()));
+        super(StudySchema.getInstance().getTableInfoStudySnapshot(), schema, cf);
 
         setDescription("Contains a row for each Ancillary, Published, or Specimen study that was created from the study in this folder." +
                 " Only users with administrator permissions will see any data.");
