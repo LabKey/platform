@@ -155,6 +155,8 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         if (null != _queryDef && null != _queryDef.getName())
             name = _queryDef.getName();
         ContainerFilter.logSetContainerFilter(containerFilter, getClass().getSimpleName(), name);
+        if (containerFilter != _containerFilter)
+            _cache.clear();
         _containerFilter = containerFilter;
     }
 
