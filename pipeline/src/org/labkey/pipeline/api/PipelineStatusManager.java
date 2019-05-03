@@ -117,13 +117,9 @@ public class PipelineStatusManager
         for (int id : rowId)
             ints.add(id);
 
-        //try (DbScope.Transaction transaction = getTableInfo().getSchema().getScope().ensureTransaction(new PipelineStatusTransactionKind()))
-        //{
-            SimpleFilter filter = new SimpleFilter(new SimpleFilter.InClause(FieldKey.fromParts("RowId"), ints));
-            List<PipelineStatusFileImpl> result = new TableSelector(_schema.getTableInfoStatusFiles(), filter, null).getArrayList(PipelineStatusFileImpl.class);
-        //    transaction.commit();
-            return result;
-        //}
+        SimpleFilter filter = new SimpleFilter(new SimpleFilter.InClause(FieldKey.fromParts("RowId"), ints));
+        List<PipelineStatusFileImpl> result = new TableSelector(_schema.getTableInfoStatusFiles(), filter, null).getArrayList(PipelineStatusFileImpl.class);
+        return result;
     }
 
     /**
@@ -167,12 +163,8 @@ public class PipelineStatusManager
      */
     private static PipelineStatusFileImpl getStatusFile(Filter filter)
     {
-        //try (DbScope.Transaction transaction = getTableInfo().getSchema().getScope().ensureTransaction(new PipelineStatusTransactionKind()))
-        //{
-            PipelineStatusFileImpl pipelineStatusFile = new TableSelector(_schema.getTableInfoStatusFiles(), filter, null).getObject(PipelineStatusFileImpl.class);
-        //    transaction.commit();
-            return pipelineStatusFile;
-        //}
+        PipelineStatusFileImpl pipelineStatusFile = new TableSelector(_schema.getTableInfoStatusFiles(), filter, null).getObject(PipelineStatusFileImpl.class);
+        return pipelineStatusFile;
     }
 
     public static boolean setStatusFile(PipelineJob job, User user, PipelineJob.TaskStatus status, @Nullable String info, boolean allowInsert)
@@ -422,13 +414,9 @@ public class PipelineStatusManager
     */
     public static int getIncompleteStatusFileCount(String parentId, Container container)
     {
-        //try (DbScope.Transaction transaction = getTableInfo().getSchema().getScope().ensureTransaction(new PipelineStatusTransactionKind()))
-        //{
-            int result = new SqlSelector(_schema.getSchema(), "SELECT COUNT(*) FROM " + _schema.getTableInfoStatusFiles() + " WHERE Container = ? AND JobParent = ? AND Status <> ?",
-                    container, parentId, PipelineJob.TaskStatus.complete.toString()).getObject(Integer.class);
-        //    transaction.commit();
-            return result;
-        //}
+        int result = new SqlSelector(_schema.getSchema(), "SELECT COUNT(*) FROM " + _schema.getTableInfoStatusFiles() + " WHERE Container = ? AND JobParent = ? AND Status <> ?",
+                container, parentId, PipelineJob.TaskStatus.complete.toString()).getObject(Integer.class);
+        return result;
     }
 
     public static List<PipelineStatusFileImpl> getStatusFilesForLocation(String location, boolean includeJobsOnQueue)
@@ -496,12 +484,8 @@ public class PipelineStatusManager
 
     private static List<PipelineStatusFileImpl> getStatusFiles(SimpleFilter filter)
     {
-        //try (DbScope.Transaction transaction = getTableInfo().getSchema().getScope().ensureTransaction(new PipelineStatusTransactionKind()))
-        //{
-            List<PipelineStatusFileImpl> result = new TableSelector(_schema.getTableInfoStatusFiles(), filter, null).getArrayList(PipelineStatusFileImpl.class);
-        //    transaction.commit();
-            return result;
-        //}
+        List<PipelineStatusFileImpl> result = new TableSelector(_schema.getTableInfoStatusFiles(), filter, null).getArrayList(PipelineStatusFileImpl.class);
+        return result;
     }
 
     private static SimpleFilter createQueueFilter()
