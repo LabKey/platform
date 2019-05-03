@@ -61,12 +61,6 @@ public abstract class AssaySchema extends UserSchema
     /** Make it public - protected in superclass */
     public abstract @Nullable TableInfo createTable(String name, ContainerFilter cf);
 
-    public @Nullable TableInfo createTable(String name)
-    {
-        throw new IllegalStateException();
-    }
-
-
     /** Tack the table type onto the protocol name to create the full table name */
     public static String getLegacyProtocolTableName(ExpProtocol protocol, @NotNull String tableType)
     {
