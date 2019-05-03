@@ -24,7 +24,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DelegatingContainerFilter;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
@@ -254,7 +253,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
                 else
                     throw new IllegalStateException(rootTableColumnName + " is not recognized as a valid specimen type column.");
                 if (_userSchema.allowSetContainerFilter())
-                    result.setContainerFilter(new DelegatingContainerFilter(BaseStudyTable.this));
+                    result.setContainerFilter(getLookupContainerFilter());
                 return result;
             }
         };
@@ -300,7 +299,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             {
                 VisitTable visitTable = new VisitTable(_userSchema, getLookupContainerFilter());
                 if (_userSchema.allowSetContainerFilter())
-                    visitTable.setContainerFilter(new DelegatingContainerFilter(BaseStudyTable.this));
+                    visitTable.setContainerFilter(getLookupContainerFilter());
                 return visitTable;
             }
         };
@@ -450,12 +449,12 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
     protected void addVialCommentsColumn(final boolean joinBackToSpecimens)
     {
         var commentsColumn = new AliasedColumn(this, "VialComments", _rootTable.getColumn("GlobalUniqueId"));
-        LookupForeignKey commentsFK = new LookupForeignKey("GlobalUniqueId")
+        LookupForeignKey commentsFK = new LookupForeignKey(getContainerFilter(), "GlobalUniqueId", null)
         {
             public TableInfo getLookupTableInfo()
             {
                 SpecimenCommentTable result = new SpecimenCommentTable(_userSchema, getLookupContainerFilter(), joinBackToSpecimens);
-                result.setContainerFilter(new DelegatingContainerFilter(BaseStudyTable.this));
+                result.setContainerFilter(getLookupContainerFilter());
                 return result;
             }
         };
@@ -910,6 +909,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
     }
 
 
+    @Override
     @NotNull
     public ContainerFilter getDefaultContainerFilter()
     {
