@@ -384,12 +384,6 @@ public abstract class AssayProtocolSchema extends AssaySchema
         return createDataTable(includeCopiedToStudyColumns);
     }
 
-    /* TODO ContainerFilter implementations that override this method still need to be upgraded to use createDataTable(ContainerFilter cf) */
-    public ExpRunTable createRunsTable()
-    {
-        return createRunsTable(null);
-    }
-
     public ExpRunTable createRunsTable(ContainerFilter cf)
     {
         final ExpRunTable runTable = ExperimentService.get().createRunTable(RUNS_TABLE_NAME, this, cf);

@@ -131,7 +131,7 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
             public TableInfo getLookupTableInfo()
             {
                 AssayProvider provider = AssayService.get().getProvider(_assayProtocol);
-                return provider.createProtocolSchema(_userSchema.getUser(), _userSchema.getContainer(), _assayProtocol, null).createRunsTable();
+                return provider.createProtocolSchema(_userSchema.getUser(), _userSchema.getContainer(), _assayProtocol, null).createRunsTable(null);
             }
 
         });

@@ -208,7 +208,7 @@ public class LineageTableInfo extends VirtualTable
                         {
                             AssayProtocolSchema schema = provider.createProtocolSchema(_userSchema.getUser(), _userSchema.getContainer(), protocol, null);
                             if (schema != null)
-                                return schema.createRunsTable();
+                                return schema.createRunsTable(null);
                         }
                         return new ExpSchema(getUserSchema().getUser(), getUserSchema().getContainer()).getTable(ExpSchema.TableType.Runs.toString());
                     });

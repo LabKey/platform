@@ -82,8 +82,6 @@ public interface AssayService
 
     ModelAndView createAssayImportView(Map<String, String> properties);
 
-    @Deprecated
-    ExpRunTable createRunTable(ExpProtocol protocol, AssayProvider provider, User user, Container container);
     ExpRunTable createRunTable(ExpProtocol protocol, AssayProvider provider, User user, Container container, ContainerFilter cf);
 
     AssaySchema createSchema(User user, Container container, @Nullable Container targetStudy);

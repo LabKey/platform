@@ -390,12 +390,6 @@ public class AssayManager implements AssayService
         return provider.createProtocolSchema(user, container, protocol, null).createRunsTable(cf);
     }
 
-    // TODO ContainerFilter -- find usages
-    public ExpRunTable createRunTable(ExpProtocol protocol, AssayProvider provider, User user, Container container)
-    {
-        return provider.createProtocolSchema(user, container, protocol, null).createRunsTable();
-    }
-
     public AssaySchema createSchema(User user, Container container, @Nullable Container targetStudy)
     {
         return new AssaySchemaImpl(user, container, targetStudy);
