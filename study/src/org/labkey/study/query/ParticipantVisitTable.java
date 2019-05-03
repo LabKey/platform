@@ -171,7 +171,7 @@ public class ParticipantVisitTable extends BaseStudyTable
 
         col = _demographicsColumns.get(name);
         if (col != null)
-            return addColumn( (BaseColumnInfo)col );
+            return col;
 
         // Resolve 'ParticipantSequenceKey' to 'ParticipantSequenceNum' for compatibility with versions <12.2.
         if ("ParticipantSequenceKey".equalsIgnoreCase(name))
