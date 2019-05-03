@@ -100,6 +100,7 @@ abstract public class AbstractDataDefinedTable extends CustomPermissionsTable
         return this;
     }
 
+    @Override
     protected void addTableURLs()
     {
         setInsertURL(LINK_DISABLER);
@@ -113,14 +114,11 @@ abstract public class AbstractDataDefinedTable extends CustomPermissionsTable
      */
     protected Set<String> getDistinctValues()
     {
-        Set<String> distinctValues = new HashSet<>();
-
         SimpleFilter filter = new SimpleFilter(FieldKey.fromString(_filterColumn), _filterValue, CompareType.EQUAL);
         TableSelector ts = new TableSelector(_rootTable, Collections.singleton(_valueColumn), filter, null);
         String[] existing = ts.getArray(String.class);
-        distinctValues.addAll(Arrays.asList(existing));
 
-        return distinctValues;
+        return new HashSet<>(Arrays.asList(existing));
     }
 
     @Override

@@ -22,7 +22,6 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.module.Module;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -59,6 +58,7 @@ public abstract class AssaySchema extends UserSchema
     }
 
     /** Make it public - protected in superclass */
+    @Override
     public abstract @Nullable TableInfo createTable(String name, ContainerFilter cf);
 
     /** Tack the table type onto the protocol name to create the full table name */

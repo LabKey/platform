@@ -58,6 +58,7 @@ public class SurveysTable extends SimpleUserSchema.SimpleTable<UserSchema>
         super(schema, table, cf);
     }
 
+    @Override
     public SimpleUserSchema.SimpleTable<UserSchema> init()
     {
         super.init();
@@ -76,6 +77,7 @@ public class SurveysTable extends SimpleUserSchema.SimpleTable<UserSchema>
         return this;
     }
 
+    @Override
     protected void addTableURLs()
     {
         ActionURL updateUrl = new ActionURL(SurveyController.UpdateSurveyAction.class, getUserSchema().getContainer());
@@ -124,6 +126,7 @@ public class SurveysTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 getUserSchema().getUser());
     }
 
+    @Override
     public QueryUpdateService getUpdateService()
     {
         TableInfo table = getRealTable();
