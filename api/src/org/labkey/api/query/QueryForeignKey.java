@@ -110,6 +110,8 @@ public class QueryForeignKey extends AbstractForeignKey
         public Builder schema(String schemaName, Container effectiveContainer)
         {
             lookupSchemaName = schemaName;
+            // the caller might have defaulted the targetSchema to sourceSchema, so clear if schema is set by name
+            targetSchema = null;
             this.effectiveContainer = effectiveContainer;
             return this;
         }
