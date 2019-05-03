@@ -39,10 +39,8 @@ import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -79,6 +77,8 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
 
     private FieldKey _fieldKey;
     private String _name;
+    // _propertyName is computed from getName();
+    private String _propertyName = null;
     private String _alias;
     private String _sqlTypeName;
     private JdbcType _jdbcType = null;
@@ -224,6 +224,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
         assert !_lockName || 0 == _fieldKey.compareTo(newFieldKey);
         _fieldKey = newFieldKey;
         _name = null;
+        _propertyName = null;
     }
 
 
@@ -246,6 +247,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
         checkLocked();
         _fieldKey = key;
         _name = null;
+        _propertyName = null;
     }
 
 
@@ -755,7 +757,10 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
     @Override
     public String getPropertyName()
     {
-        return propNameFromName(getName());
+        // this is surprisingly expensive, cache it!
+        if (null == _propertyName)
+            _propertyName = propNameFromName(getName());
+        return _propertyName;
     }
 
     /**
