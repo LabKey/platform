@@ -90,6 +90,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         assert MemTracker.getInstance().put(this);
     }
 
+    @Override
     public @NotNull String getName()
     {
         return _name;
@@ -100,6 +101,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         return _path;
     }
 
+    @Override
     @Nullable
     public String getDescription()
     {
@@ -161,6 +163,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         return getTable(name, null, includeExtraMetadata, false);
     }
 
+    @Override
     @Nullable
     final public TableInfo getTable(String name, @Nullable ContainerFilter cf)
     {
@@ -263,6 +266,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         return torq;
     }
 
+    @Override
     @Nullable
     public final TableInfo getTable(String name)
     {
@@ -285,6 +289,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     }
 
 
+    @Override
     abstract public Set<String> getTableNames();
 
     public Set<String> getVisibleTableNames()
@@ -303,12 +308,14 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         return TableSorter.sort(this);
     }
 
+    @Override
     public Container getContainer()
     {
         return _container;
     }
 
     /** Returns a SchemaKey encoded name for this schema. */
+    @Override
     public @NotNull String getSchemaName()
     {
         return _path.toString();
@@ -319,6 +326,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         return _path;
     }
 
+    @Override
     public Set<String> getSchemaNames()
     {
         Set<String> ret = new HashSet<>(super.getSchemaNames());
@@ -326,6 +334,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         return ret;
     }
 
+    @Override
     public QuerySchema getSchema(String name)
     {
         if (_restricted)
@@ -795,5 +804,4 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         }
         return ret;
     }
-
 }

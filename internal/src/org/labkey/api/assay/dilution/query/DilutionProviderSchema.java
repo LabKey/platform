@@ -57,11 +57,13 @@ public class DilutionProviderSchema extends AssayProviderSchema
         _hidden = hidden;
     }
 
+    @Override
     public Set<String> getTableNames()
     {
         return getTableNames(false);
     }
 
+    @Override
     public Set<String> getVisibleTableNames()
     {
         return getTableNames(true);
@@ -77,6 +79,7 @@ public class DilutionProviderSchema extends AssayProviderSchema
         return names;
     }
 
+    @Override
     public TableInfo createTable(String name, ContainerFilter cf)
     {
         if (SAMPLE_PREPARATION_METHOD_TABLE_NAME.equalsIgnoreCase(name))
