@@ -274,15 +274,14 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     }
 
 
-    /* TODO schemas that still override this method have not been converted yet */
-    @Deprecated
+    @Deprecated // TODO ContainerFilter - remove. Schemas that still override this method have not been converted yet.
     public @Nullable TableInfo createTable(String name)
     {
         return createTable(name, null);
     }
 
 
-    /* TODO schemas that do not override this method have not been converted yet */
+    // TODO ContainerFilter - make abstract. Schemas that do not override this method have not been converted yet.
     public @Nullable TableInfo createTable(String name, ContainerFilter cf)
     {
         return createTable(name);

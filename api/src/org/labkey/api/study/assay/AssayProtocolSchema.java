@@ -249,6 +249,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
 
 
     // NOTE: Subclasses should override to add any additional provider specific tables.
+    @Deprecated // TODO: ContainerFilter - remove
     protected TableInfo createProviderTable(String name)
     {
         throw new IllegalStateException();
@@ -366,7 +367,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
     }
 
     /** Implementations may return null if they don't have any data associated with them */
-    /* TODO ContainerFilter implementations that override this method still need to be upgraded to use createDataTable(ContainerFilter cf) */
+    /* TODO ContainerFilter - remove. Implementations that override this method still need to be upgraded to use createDataTable(ContainerFilter cf). */
     @Nullable
     @Deprecated
     public TableInfo createDataTable(boolean includeCopiedToStudyColumns)
@@ -375,7 +376,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
     }
 
     /** Implementations may return null if they don't have any data associated with them */
-    // TODO ContainerFilter update Assay's that don't override this method
+    // TODO ContainerFilter - make abstract. Update assays that don't override this method.
     @Nullable
     public TableInfo createDataTable(ContainerFilter cf, boolean includeCopiedToStudyColumns)
     {
