@@ -535,7 +535,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     }
 
     /**
-     * ignores supportsContainerFilter(), allows subclasses to set container filter w/o suppporting
+     * ignores supportsContainerFilter(), allows subclasses to set container filter w/o supporting
      * external, "public" setting of filter.
      */
     protected void _setContainerFilter(@NotNull ContainerFilter filter)

@@ -189,6 +189,7 @@ public class ContainerTable extends FilteredTable<UserSchema>
         setImportURL(LINK_DISABLER);
     }
 
+    @Override
     protected String getContainerFilterColumn()
     {
         return "EntityId";

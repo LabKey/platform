@@ -1002,6 +1002,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     }
 
 
+    @Override
     protected TableInfo getFromTable()
     {
         if (_fromTable == null)

@@ -61,6 +61,7 @@ public abstract class AbstractContainerFilterable extends AbstractTableInfo
         return "Container";
     }
 
+    @Override
     @NotNull
     public ContainerFilter getContainerFilter()
     {

@@ -32,8 +32,6 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
@@ -624,12 +622,10 @@ public abstract class AssayProtocolSchema extends AssaySchema
     @Override
     public List<CustomView> getModuleCustomViews(Container container, QueryDefinition qd)
     {
-        List<CustomView> result = new ArrayList<>();
-
         // Look for <MODULE>/assay/<ASSAY_TYPE>/queries/<TABLE_TYPE>/*.qview.xml files
         // where TABLE_TYPE is Runs, Batches, Data, etc
         Path providerPath = new Path(AssayService.ASSAY_DIR_NAME, getProvider().getResourceName(), QueryService.MODULE_QUERIES_DIRECTORY, FileUtil.makeLegalName(qd.getName()));
-        result.addAll(QueryService.get().getFileBasedCustomViews(container, qd, providerPath, qd.getName(), getProvider().getDeclaringModule()));
+        List<CustomView> result = new ArrayList<>(QueryService.get().getFileBasedCustomViews(container, qd, providerPath, qd.getName(), getProvider().getDeclaringModule()));
 
         // Look in the legacy location in file-based modules (assay.<PROTOCOL_NAME> Batches, etc)
         String legacyQueryName = _protocol.getName() + " " + qd.getName();
@@ -732,11 +728,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
         }
         if (setVisibleColumns)
         {
-            List<FieldKey> visibleColumns = new ArrayList<>();
-            for (FieldKey key : table.getDefaultVisibleColumns())
-            {
-                visibleColumns.add(key);
-            }
+            List<FieldKey> visibleColumns = new ArrayList<>(table.getDefaultVisibleColumns());
             for (String columnName : visibleColumnNames)
             {
                 visibleColumns.add(new FieldKey(null, columnName));
@@ -768,6 +760,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
         {
             columnInfo.setFk(new LookupForeignKey("Folder", "Label")
             {
+                @Override
                 public TableInfo getLookupTableInfo()
                 {
                     FilteredTable table = new FilteredTable<>(DbSchema.get("study", DbSchemaType.Module).getTable("study"), AssayProtocolSchema.this, getLookupContainerFilter());
@@ -789,13 +782,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
         }
         else if (AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME.equalsIgnoreCase(col.getName()))
         {
-            columnInfo.setDisplayColumnFactory(new DisplayColumnFactory()
-            {
-                public DisplayColumn createRenderer(ColumnInfo colInfo)
-                {
-                    return new ParticipantVisitResolverColumn(colInfo);
-                }
-            });
+            columnInfo.setDisplayColumnFactory(ParticipantVisitResolverColumn::new);
         }
     }
 
