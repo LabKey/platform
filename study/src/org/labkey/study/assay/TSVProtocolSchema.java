@@ -62,6 +62,7 @@ public class TSVProtocolSchema extends AssayProtocolSchema
         return new _AssayResultTable(this, cf, includeCopiedToStudyColumns);
     }
 
+    @Override
     public TableInfo createProviderTable(String name, ContainerFilter cf)
     {
         if (name.equalsIgnoreCase(EXCLUSION_REPORT_TABLE_NAME))

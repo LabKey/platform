@@ -28,7 +28,6 @@ import org.labkey.api.data.CrosstabTableInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.FilteredTable;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayProvider;
@@ -52,6 +51,7 @@ public abstract class AbstractMatrixProtocolSchema extends AssayProtocolSchema
         _dataBySampleTableName = dataSampleTableName;
         _dataTableName = dataTableName;
     }
+
     public String getDataTableName()
     {
         return _dataTableName;
@@ -65,17 +65,6 @@ public abstract class AbstractMatrixProtocolSchema extends AssayProtocolSchema
     public abstract List<Map> getDistinctSampleIds();
 
     public abstract TableInfo getDataTableInfo(ContainerFilter cf);
-
-    public FilteredTable createDataTable(boolean includeCopiedToStudyColumns)
-    {
-        throw new IllegalStateException();
-    }
-
-    @Override
-    public FilteredTable createDataTable(ContainerFilter cf, boolean includeCopiedToStudyColumns)
-    {
-       return null;
-    }
 
     public TableInfo createTable(String name, ContainerFilter cf, String rowAxisId, String colAxisId, String valueMeasureName, String title)
     {
@@ -116,11 +105,11 @@ public abstract class AbstractMatrixProtocolSchema extends AssayProtocolSchema
         return cti;
     }
 
+    @Override
     public Set<String> getTableNames()
     {
         Set<String> result = super.getTableNames();
         result.add(_dataBySampleTableName);
         return result;
     }
-
 }
