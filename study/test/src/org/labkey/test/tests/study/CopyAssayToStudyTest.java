@@ -185,7 +185,8 @@ public class CopyAssayToStudyTest extends AbstractAssayTest
         assertTrue("expect to be in pipeline-status for Lab 1", getDriver().getCurrentUrl().contains("pipeline-status"));
 
         clickButton("Show Grid");
-        waitAndClick(Locator.linkWithText("Automatic copying of assay data to study"));
+        waitForPipelineJobsToComplete(1, false);
+        clickAndWait(Locator.linkWithText("Automatic copying of assay data to study"));
         DataRegionTable dataSet = new DataRegionTable("Dataset", this);
         List<String> specimenIds = Arrays.asList("AAA07XMC-02", "AAA07XMC-04", "AAA07XK5-05", "AAA07XSF-02",
                 "AssayTestControl1", "AssayTestControl2", "BAQ00051-09", "BAQ00051-08", "BAQ00051-11", "1");
