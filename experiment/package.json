@@ -32,9 +32,9 @@
     }
   },
   "dependencies": {
-    "@labkey/dependencies": "0.0.3",
+    "@labkey/dependencies": "0.0.4-alpha2",
     "@glass/base": "0.1.9-alpha1",
-    "@glass/domainproperties": "0.0.9-alpha6",
+    "@glass/domainproperties": "0.0.9-alpha13",
     "classnames": "2.2.6"
   },
   "devDependencies": {
