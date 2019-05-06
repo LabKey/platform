@@ -128,7 +128,11 @@ public class ExperimentUpgradeCode implements UpgradeCode
         if (context.isNewInstall())
             return;
 
-        ExperimentServiceImpl.get().rebuildAllEdges();
+        // skip this invocation if we're not at latest version of exp.Edges
+        DbSchema schema = ExperimentServiceImpl.get().getSchema();
+        TableInfo edge = schema.getTable("Edge");
+        if (null != edge.getColumn("toObjectId") && null != edge.getColumn("fromObjectId"))
+            ExperimentServiceImpl.get().rebuildAllEdges();
     }
 
 

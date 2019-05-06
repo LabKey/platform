@@ -22,26 +22,27 @@
   $PARENTS_INNER$ AS
   (
     SELECT
-      0                                              AS depth,
-      CAST(objecturi AS $LSIDTYPE$)                  AS self_lsid,
-      CAST(objecturi AS $LSIDTYPE$)                  AS fromLsid,
-      CAST(NULL AS $LSIDTYPE$)                       AS toLsid,
-      CAST('/' || objecturi || '/' AS VARCHAR(8000)) AS path
+      0                             AS depth,
+      objecturi                     AS self_lsid,
+      objectid                      AS self,
+      objectid                      AS fromObjectId,
+      CAST(NULL AS INT)             AS toObjectId,
+      CAST('/' AS VARCHAR(8000)) AS path
     FROM exp.object
     WHERE objecturi IN ($LSIDS$)
 
     UNION ALL
 
     SELECT
-      _Graph.depth - 1                                           AS depth,
+      _Graph.depth - 1              AS depth,
       _Graph.self_lsid,
-      _Edges.fromLsid,
-      _Edges.toLsid,
-      -- NOTE: will likely want to change fromLsid to fromObjectId in the path
-      CAST(_Graph.path || _Edges.toLsid || '/' AS VARCHAR(8000)) AS path
+      _Graph.self,
+      _Edges.fromObjectId,
+      _Edges.toObjectId,
+      CAST(SUBSTRING(_Graph.path,1+{fn LENGTH(_Graph.path)}+21-8000,8000) || CAST(_Edges.toObjectId AS VARCHAR(20)) || '/' AS VARCHAR(8000)) AS path
     FROM exp.Edge _Edges
-      INNER JOIN $SELF$ _Graph ON _Edges.toLsid = _Graph.fromLsid
-    WHERE _Graph.path NOT LIKE ('%/' || _Edges.fromLsid || '/%')
+      INNER JOIN $SELF$ _Graph ON _Edges.toObjectId = _Graph.fromObjectId
+    WHERE 0 = {fn LOCATE('/' || CAST(_Edges.fromObjectId as VARCHAR(20)) || '/', _Graph.path)}
     $AND_STUFF$
   ),
 
@@ -51,7 +52,7 @@
       SELECT
         I.depth,
         I.self_lsid,
-        --I.self_rowid,
+        I.self,
 
         -- parent columns
         COALESCE(PM.container, PD.container, PR.container)    AS container,
@@ -68,37 +69,37 @@
         COALESCE(PM.lsid, PD.lsid, PR.lsid)                   AS lsid,
         COALESCE(PM.rowId, PD.rowId, PR.rowId)                AS rowId
 
-      FROM $PARENTS_INNER$ AS I
-      LEFT OUTER JOIN exp.material PM ON I.fromLsid = PM.lsid
-      LEFT OUTER JOIN exp.data PD ON I.fromLsid = PD.lsid
-      LEFT OUTER JOIN exp.experimentrun PR ON I.fromLsid = PR.lsid
-
+      FROM ($PARENTS_INNER$ AS I INNER JOIN exp.Object O on I.fromObjectId = O.objectid)
+      LEFT OUTER JOIN exp.material PM ON O.objecturi = PM.lsid
+      LEFT OUTER JOIN exp.data PD ON O.objecturi = PD.lsid
+      LEFT OUTER JOIN exp.experimentrun PR ON O.objecturi = PR.lsid
   ),
 
   /* CTE */
   $CHILDREN_INNER$ AS
   (
     SELECT
-      0                                              AS depth,
-      CAST(objecturi AS $LSIDTYPE$)                  AS self_lsid,
-      CAST(NULL AS $LSIDTYPE$)                       AS fromLsid,
-      CAST(objecturi AS $LSIDTYPE$)                  AS toLsid,
-      CAST('/' || objecturi || '/' AS VARCHAR(8000)) AS path
+      0                             AS depth,
+      objecturi                     AS self_lsid,
+      objectid                      AS self,
+      CAST(NULL AS INT)             AS fromObjectId,
+      objectid                      AS toObjectId,
+      CAST('/' AS VARCHAR(8000)) AS path
     FROM exp.object
     WHERE objecturi IN ($LSIDS$)
 
     UNION ALL
 
     SELECT
-      _Graph.depth + 1                                             AS depth,
+      _Graph.depth + 1    AS depth,
       _Graph.self_lsid,
-      _Edges.fromLsid,
-      _Edges.toLsid,
-      -- NOTE: will likely want to change fromLsid to fromObjectId in the path
-      CAST(_Graph.path || _Edges.fromLsid || '/' AS VARCHAR(8000)) AS path
+      _Graph.self,
+      _Edges.fromObjectId           AS fromObjectId,
+      _Edges.toObjectId             AS toObjectId,
+      CAST(SUBSTRING(_Graph.path,1+{fn LENGTH(_Graph.path)}+21-8000,8000) || CAST(_Edges.fromObjectId AS VARCHAR(20)) || '/' AS VARCHAR(8000)) AS path
     FROM exp.Edge _Edges
-      INNER JOIN $SELF$ _Graph ON _Edges.fromLsid = _Graph.toLsid
-    WHERE _Graph.path NOT LIKE ('%/' || _Edges.toLsid || '/%')
+      INNER JOIN $SELF$ _Graph ON _Edges.fromObjectId = _Graph.toObjectId
+    WHERE 0 = {fn LOCATE('/' || CAST(_Edges.toObjectId as VARCHAR(20)) || '/', _Graph.path)}
     $AND_STUFF$
   ),
 
@@ -108,6 +109,7 @@
       SELECT
         I.depth,
         I.self_lsid,
+        I.self,
 
         -- child columns
         COALESCE(CM.container, CD.container, CR.container)    AS container,
@@ -124,11 +126,10 @@
         COALESCE(CM.lsid, CD.lsid, CR.lsid)                   AS lsid,
         COALESCE(CM.rowId, CD.rowId, CR.rowId)                AS rowId
 
-      FROM $CHILDREN_INNER$ AS I
-      LEFT OUTER JOIN exp.material CM ON I.toLsid = CM.lsid
-      LEFT OUTER JOIN exp.data CD ON I.toLsid = CD.lsid
-      LEFT OUTER JOIN exp.experimentrun CR ON I.toLsid = CR.lsid
-
+      FROM ($CHILDREN_INNER$ AS I INNER JOIN exp.Object O on I.toObjectId = O.objectid)
+      LEFT OUTER JOIN exp.material CM ON O.objecturi = CM.lsid
+      LEFT OUTER JOIN exp.data CD ON O.objecturi = CD.lsid
+      LEFT OUTER JOIN exp.experimentrun CR ON O.objecturi = CR.lsid
   )
 
 

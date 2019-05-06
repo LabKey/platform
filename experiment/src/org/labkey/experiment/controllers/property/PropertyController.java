@@ -851,7 +851,18 @@ public class PropertyController extends SpringActionController
     {
         DomainKind kind = PropertyService.get().getDomainKind(original.getDomainURI());
         if (kind == null)
-            throw new IllegalArgumentException("No domain kind matches URI '" + original.getDomainURI() + "'");
+            throw new IllegalArgumentException("No domain kind matches URI '" + original.getDomainURI() + "'.");
+
+        Domain domain = PropertyService.get().getDomain(container, original.getDomainURI());
+        if (domain == null)
+            throw new NotFoundException("No domain matches URI '" + original.getDomainURI() + "'.");
+
+        if (!kind.canEditDefinition(user, domain))
+            throw new UnauthorizedException("You don't have permission to edit this domain.");
+
+        List<String> errors = DomainUtil.validateProperties(domain, update);
+        if (!errors.isEmpty())
+            return errors;
 
         return kind.updateDomain(original, update, container, user);
     }
@@ -899,7 +910,7 @@ public class PropertyController extends SpringActionController
             domain = DomainUtil.getDomainDescriptor(user, domainURI, container);
 
             if (domain == null)
-                throw new NotFoundException("Could not find domain for " + domainURI);
+                throw new NotFoundException("Could not find domain for schemaName=" + schemaName + ", queryName=" + queryName);
         }
 
         return domain;

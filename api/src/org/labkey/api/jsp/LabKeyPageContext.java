@@ -20,6 +20,8 @@ public class LabKeyPageContext extends PageContext
 {
     private final PageContext _pageContext;
 
+    private JspWriter _out = null;
+
     LabKeyPageContext(PageContext pageContext)
     {
         _pageContext = pageContext;
@@ -142,7 +144,10 @@ public class LabKeyPageContext extends PageContext
 
     public JspWriter getOut()
     {
-        return new LabKeyJspWriter(_pageContext.getOut());
+        if (null == _out)
+            _out = new LabKeyJspWriter(_pageContext.getOut());
+
+        return _out;
     }
 
     public ExpressionEvaluator getExpressionEvaluator()
@@ -164,5 +169,11 @@ public class LabKeyPageContext extends PageContext
     public BodyContent pushBody()
     {
         return _pageContext.pushBody();
+    }
+
+    @Override
+    public JspWriter popBody()
+    {
+        return _pageContext.popBody();
     }
 }

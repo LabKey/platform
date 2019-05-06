@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SimpleFilter.FilterClause;
 import org.labkey.api.settings.AppProps;
@@ -98,6 +99,22 @@ public abstract class ExportScriptModel
     public abstract String getScriptExportText();
 
     public abstract String getFilters();
+
+    public String getColumns()
+    {
+        StringBuilder ret = new StringBuilder();
+        String sep = "";
+        for (DisplayColumn dc : getQueryView().getDisplayColumns())
+        {
+            if (dc.isQueryColumn())
+            {
+                ret.append(sep);
+                ret.append(dc.getColumnInfo().getName());
+                sep = ",";
+            }
+        }
+        return ret.toString();
+    }
 
     protected abstract String makeFilterExpression(String name, CompareType operator, String value);
 
