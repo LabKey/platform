@@ -220,11 +220,11 @@ public abstract class AssayProtocolSchema extends AssaySchema
         return names;
     }
 
-    @Override
-    public TableInfo createTable(String name)
-    {
-        throw new IllegalStateException();
-    }
+//    @Override
+//    public TableInfo createTable(String name)
+//    {
+//        throw new IllegalStateException();
+//    }
 
     @Override
     public TableInfo createTable(String name, ContainerFilter cf)
@@ -366,22 +366,26 @@ public abstract class AssayProtocolSchema extends AssaySchema
         return result;
     }
 
-    /** Implementations may return null if they don't have any data associated with them */
-    /* TODO ContainerFilter - remove. Implementations that override this method still need to be upgraded to use createDataTable(ContainerFilter cf). */
-    @Nullable
-    @Deprecated
-    public TableInfo createDataTable(boolean includeCopiedToStudyColumns)
-    {
-        throw new IllegalStateException();
-    }
+//    /** Implementations may return null if they don't have any data associated with them */
+//    /* TODO ContainerFilter - remove. Implementations that override this method still need to be upgraded to use createDataTable(ContainerFilter cf). */
+//    @Nullable
+//    @Deprecated
+//    public TableInfo createDataTable(boolean includeCopiedToStudyColumns)
+//    {
+//        throw new IllegalStateException();
+//    }
+//
+//    /** Implementations may return null if they don't have any data associated with them */
+//    // TODO ContainerFilter - make abstract. Update assays that don't override this method.
+//    @Nullable
+//    public TableInfo createDataTable(ContainerFilter cf, boolean includeCopiedToStudyColumns)
+//    {
+//        return createDataTable(includeCopiedToStudyColumns);
+//    }
 
     /** Implementations may return null if they don't have any data associated with them */
-    // TODO ContainerFilter - make abstract. Update assays that don't override this method.
     @Nullable
-    public TableInfo createDataTable(ContainerFilter cf, boolean includeCopiedToStudyColumns)
-    {
-        return createDataTable(includeCopiedToStudyColumns);
-    }
+    public abstract TableInfo createDataTable(ContainerFilter cf, boolean includeCopiedToStudyColumns);
 
     public ExpRunTable createRunsTable(ContainerFilter cf)
     {
