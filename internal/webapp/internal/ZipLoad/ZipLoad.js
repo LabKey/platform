@@ -13,6 +13,7 @@ LABKEY.internal.ZipLoad = new function () {
     var dropZone;
     var filePattern =new RegExp(".*\\.zipme$");
     var checkReadEntriesByBatch;
+    var testFile = false;
 
     var zipWriter, writer;
     var addIndex;
@@ -214,7 +215,10 @@ LABKEY.internal.ZipLoad = new function () {
             type: 'application/zip',
             lastModified: Date.now()
         });
-        zipBlobFile.fullPath =  correctPath + '.zip';
+
+        if(!testFile) {
+            zipBlobFile.fullPath = correctPath + '.zip';
+        }
         dropZone.addFile(zipBlobFile);
 
         moveToNextDirectory();
@@ -629,14 +633,16 @@ LABKEY.internal.ZipLoad = new function () {
         }
         else if(entry) {//file
             //code for file pattern - test integration
-            _file = entry.getAsFile();
+            var _file = entry.isFile ? entry : entry.getAsFile();
             if (checkFilePattern(_file)) {
+                testFile = true;
                 parentItemName = 'TestZipMeDir';
-                _file.fullPath =  _file.name;
                 testFilesToZip.push({file: _file, dir: parentItemName});
             }
             else {
-                dropZone.addFile(_file);
+                _file.file(function (file) {
+                    dropZone.addFile(file);
+                });
             }
             itemCount--;
             if (itemCount >= 0) {
