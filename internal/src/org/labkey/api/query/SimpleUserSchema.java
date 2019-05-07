@@ -363,7 +363,7 @@ public class SimpleUserSchema extends UserSchema
                     }
 
                     ForeignKey wrapFk = QueryForeignKey.from(getUserSchema(), getContainerFilter())
-                        .schema(lookupSchemaName)
+                        .schema(lookupSchemaName, fk.getLookupContainer())
                         .to(fk.getLookupTableName(), fk.getLookupColumnName(), fk.getLookupDisplayName())
                         .container(fk.getLookupContainer())
                         .raw(useRawFKValue).build();
