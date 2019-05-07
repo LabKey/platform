@@ -216,7 +216,10 @@ LABKEY.internal.ZipLoad = new function () {
             lastModified: Date.now()
         });
 
-        if(!testFile) {
+        if(testFile) {
+            zipBlobFile.fullPath = dirName + '.zip';
+        }
+        else {
             zipBlobFile.fullPath = correctPath + '.zip';
         }
         dropZone.addFile(zipBlobFile);
@@ -637,6 +640,7 @@ LABKEY.internal.ZipLoad = new function () {
             if (checkFilePattern(_file)) {
                 testFile = true;
                 parentItemName = 'TestZipMeDir';
+                _file.fullPath =  _file.name;
                 testFilesToZip.push({file: _file, dir: parentItemName});
             }
             else {
