@@ -760,13 +760,16 @@ public abstract class ContainerFilter
         public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
             Set<GUID> result = new HashSet<>();
-            if (currentContainer.hasPermission(_user, perm, roles))
-                result.add(currentContainer.getEntityId());
 
             if (currentContainer.isWorkbook())
             {
-                if(currentContainer.getParent().hasPermission(_user, perm, roles))
+                if (currentContainer.getParent().hasPermission(_user, perm, roles))
                     result.add(currentContainer.getParent().getEntityId());
+            }
+            else
+            {
+                if (currentContainer.hasPermission(_user, perm, roles))
+                    result.add(currentContainer.getEntityId());
             }
 
             return result;
