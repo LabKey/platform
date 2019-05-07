@@ -578,8 +578,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
             Map<String, String> params = new HashMap<>();
             params.put("runId", "RowId");
 
-            AbstractTableInfo ati = (AbstractTableInfo)queryView.getTable();
-            ati.setDetailsURL(new DetailsURL(runDetailsURL, params));
+            queryView.setDetailsURL(new DetailsURL(runDetailsURL, params));
             queryView.setShowDetailsColumn(true);
         }
 
@@ -616,8 +615,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
             // map ObjectId to url parameter ResultDetailsForm.dataRowId
             params.put("dataRowId", AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME);
 
-            AbstractTableInfo ati = (AbstractTableInfo)queryView.getTable();
-            ati.setDetailsURL(new DetailsURL(resultDetailsURL, params));
+            queryView.setDetailsURL(new DetailsURL(resultDetailsURL, params));
             queryView.setShowDetailsColumn(true);
         }
 
