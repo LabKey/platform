@@ -51,7 +51,7 @@ public class UserIdQueryForeignKey extends QueryForeignKey
     @Deprecated // TODO ContainerFilter
     public UserIdQueryForeignKey(User user, Container container, boolean includeAllUsers)
     {
-        this(null, null, user, container, includeAllUsers);
+        this(DefaultSchema.get(user,container), null, user, container, includeAllUsers);
     }
 
     @Override
