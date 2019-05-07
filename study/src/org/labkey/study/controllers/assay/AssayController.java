@@ -34,6 +34,7 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.AssayQCService;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -75,12 +76,16 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.CanSeeAuditLogRole;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.actions.*;
 import org.labkey.api.study.assay.AbstractAssayProvider;
@@ -115,6 +120,7 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.view.WebPartView;
 import org.labkey.study.assay.AssayImportServiceImpl;
 import org.labkey.study.assay.AssayManager;
 import org.labkey.study.assay.AssayPublishManager;
@@ -147,6 +153,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1537,7 +1544,7 @@ public class AssayController extends SpringActionController
     {
         private Integer _state;
         private String _comment;
-        private Integer[] _runs;
+        private Set<Integer> _runs;
 
         public Integer getState()
         {
@@ -1559,41 +1566,95 @@ public class AssayController extends SpringActionController
             _comment = comment;
         }
 
-        public Integer[] getRuns()
+        public Set<Integer> getRuns()
         {
             return _runs;
         }
 
-        public void setRuns(Integer[] runs)
+        public void setRuns(Set<Integer> runs)
         {
             _runs = runs;
         }
+
+        public void setRun(Integer run)
+        {
+            if (_runs == null)
+                _runs = new HashSet<>();
+            _runs.add(run);
+        }
     }
 
-    @RequiresPermission(QCAnalystPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class UpdateQCStateAction extends FormViewAction<UpdateQCStateForm>
     {
         @Override
         public void validateCommand(UpdateQCStateForm form, Errors errors)
         {
-            if (form.getRuns() != null)
+            if (getContainer().hasPermission(getUser(), QCAnalystPermission.class))
             {
-                if (form.getState() == null)
-                    errors.reject(ERROR_MSG, "QC State cannot be blank");
-                if (form.getRuns().length == 0)
-                    errors.reject(ERROR_MSG, "No runs were selected to update their QC State");
+                if (form.getRuns() != null)
+                {
+                    if (form.getState() == null)
+                        errors.reject(ERROR_MSG, "QC State cannot be blank");
+                    if (form.getRuns().isEmpty())
+                        errors.reject(ERROR_MSG, "No runs were selected to update their QC State");
+                }
             }
+            else
+                throw new UnauthorizedException("You must be in the QCAnalyst role to update QC states for the run.");
         }
 
         @Override
         public ModelAndView getView(UpdateQCStateForm form, boolean reshow, BindException errors) throws Exception
         {
-            if (form.getRuns() == null || form.getRuns().length == 0)
+            if (form.getRuns() == null)
             {
                 if (DataRegionSelection.hasSelected(getViewContext()))
-                    form.setRuns(DataRegionSelection.getSelectedIntegers(getViewContext(), true).toArray(new Integer[0]));
+                    form.setRuns(DataRegionSelection.getSelectedIntegers(getViewContext(), true));
             }
-            return new JspView<>("/org/labkey/study/assay/view/updateQCState.jsp", form, errors);
+            VBox view = new VBox();
+
+            if (form.getRuns() != null && !form.getRuns().isEmpty())
+            {
+                if (getContainer().hasPermission(getUser(), QCAnalystPermission.class))
+                {
+                    JspView jspView = new JspView<>("/org/labkey/study/assay/view/updateQCState.jsp", form, errors);
+                    jspView.setFrame(WebPartView.FrameType.PORTAL);
+                    view.addView(jspView);
+                }
+
+                if (form.getRuns().size() == 1)
+                {
+                    // construct the audit log query view
+                    User user = getUser();
+                    if (!getContainer().hasPermission(user, CanSeeAuditLogPermission.class))
+                    {
+                        Set<Role> contextualRoles = new HashSet<>(user.getStandardContextualRoles());
+                        contextualRoles.add(RoleManager.getRole(CanSeeAuditLogRole.class));
+                        user = new LimitedUser(user, user.getGroups(), contextualRoles, false);
+                    }
+
+                    UserSchema schema = AuditLogService.getAuditLogSchema(user, getContainer());
+                    ExpRun run = ExperimentService.get().getExpRun(form.getRuns().stream().findFirst().get());
+                    if (run != null && schema != null)
+                    {
+                        QuerySettings settings = new QuerySettings(getViewContext(), "auditHistory");
+                        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RunLsid"), run.getLSID());
+                        filter.addCondition(FieldKey.fromParts("QCState"), null, CompareType.NONBLANK);
+
+                        settings.setBaseFilter(filter);
+                        settings.setQueryName("ExperimentAuditEvent");
+
+                        QueryView auditView = schema.createView(getViewContext(), settings, errors);
+                        auditView.setTitle("QC History");
+
+                        view.addView(auditView);
+                    }
+                }
+                return view;
+            }
+            else
+                return new HtmlView("No runs have been selected to update");
         }
 
         @Override
@@ -1616,7 +1677,7 @@ public class AssayController extends SpringActionController
                 {
                     QCState state = QCStateManager.getInstance().getQCStateForRowId(getContainer(), form.getState());
                     if (state != null)
-                        svc.setQCStates(run.getProtocol(), getContainer(), getUser(), Arrays.asList(form.getRuns()), state, form.getComment());
+                        svc.setQCStates(run.getProtocol(), getContainer(), getUser(), List.copyOf(form.getRuns()), state, form.getComment());
                 }
                 return true;
             }

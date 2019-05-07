@@ -891,22 +891,22 @@ public class AssayManager implements AssayService
     }
 
     @Override
-    public <FlagType extends ExpQCFlag> void saveFlag(AssayProvider provider, FlagType flag, User user)
+    public <FlagType extends ExpQCFlag> void saveFlag(Container container, User user, AssayProvider provider, FlagType flag)
     {
         AssayFlagHandler handler = AssayFlagHandler.getHandler(provider);
         if (handler != null)
         {
-            handler.saveFlag(flag, user);
+            handler.saveFlag(container, user, flag);
         }
     }
 
     @Override
-    public int deleteFlags(AssayProvider provider, int runId, User user)
+    public int deleteFlags(Container container, User user, AssayProvider provider, int runId)
     {
         AssayFlagHandler handler = AssayFlagHandler.getHandler(provider);
         if (handler != null)
         {
-            return handler.deleteFlags(runId, user);
+            return handler.deleteFlags(container, user, runId);
         }
         return 0;
     }

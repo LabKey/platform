@@ -2,6 +2,7 @@ package org.labkey.api.assay;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExpQCFlag;
 import org.labkey.api.security.User;
@@ -50,12 +51,12 @@ public interface AssayFlagHandler
     /**
      * Saves a ExpQCFlag instance for the specified run.
      */
-    <FlagType extends ExpQCFlag> void saveFlag(FlagType flag, User user);
+    <FlagType extends ExpQCFlag> void saveFlag(Container container, User user, FlagType flag);
 
     /**
      * Delete all flags for the run.
      */
-    int deleteFlags(int runId, User user);
+    int deleteFlags(Container container, User user, int runId);
 
     /**
      * Returns the flags for the specified run.

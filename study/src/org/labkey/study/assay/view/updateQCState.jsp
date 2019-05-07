@@ -32,9 +32,9 @@
     AssayController.UpdateQCStateForm form = (AssayController.UpdateQCStateForm) HttpView.currentView().getModelBean();
     String currentState = null;
 
-    if (form.getRuns() != null && form.getRuns().length == 1)
+    if (form.getRuns().size() == 1)
     {
-        ExpRun run = ExperimentService.get().getExpRun(form.getRuns()[0]);
+        ExpRun run = ExperimentService.get().getExpRun(form.getRuns().stream().findFirst().get());
         if (run != null)
         {
             QCState state = AssayQCService.getProvider().getQCState(run.getProtocol(), run.getRowId());

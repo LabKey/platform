@@ -191,13 +191,13 @@ public interface AssayService
      * Saves a ExpQCFlag instance for the specified run.
      * The assay provider must implement an instance of the AssayFlagHandler interface
      */
-    <FlagType extends ExpQCFlag> void saveFlag(AssayProvider provider, FlagType flag, User user);
+    <FlagType extends ExpQCFlag> void saveFlag(Container container, User user, AssayProvider provider, FlagType flag);
 
     /**
      * Delete the flags for the run.
      * The assay provider must implement an instance of the AssayFlagHandler interface
      */
-    int deleteFlags(AssayProvider provider, int runId, User user);
+    int deleteFlags(Container container, User user, AssayProvider provider, int runId);
 
     /**
      * Returns the flags for the specified run.

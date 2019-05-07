@@ -17,30 +17,40 @@
 package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.ExpQCFlag;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpQCFlagTable;
+import org.labkey.api.qc.QCState;
+import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.experiment.ExperimentAuditProvider;
 
-import java.util.Collections;
-import java.util.HashSet;
+import java.sql.SQLException;
 import java.util.Map;
-import java.util.Set;
 
 public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> implements ExpQCFlagTable
 {
@@ -170,9 +180,71 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
 
     public class UpdateService extends DefaultQueryUpdateService
     {
+        private static final int INSERT = 1;
+        private static final int UPDATE = 2;
+        private static final int DELETE = 3;
+
         public UpdateService(TableInfo queryTable)
         {
             super(queryTable, ExperimentService.get().getTinfoAssayQCFlag(), _columnMapping);
+        }
+
+        @Override
+        protected Map<String, Object> _insert(User user, Container c, Map<String, Object> row) throws SQLException, ValidationException
+        {
+            Map<String, Object> newRow = super._insert(user, c, row);
+            addAuditEvent(c, user, INSERT, row);
+            return newRow;
+        }
+
+        @Override
+        protected Map<String, Object> _update(User user, Container c, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys) throws SQLException, ValidationException
+        {
+            Map<String, Object> newRow = super._update(user, c, row, oldRow, keys);
+            addAuditEvent(c, user, UPDATE, row);
+            return newRow;
+        }
+
+        @Override
+        protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap) throws QueryUpdateServiceException, SQLException, InvalidKeyException
+        {
+            Map<String, Object> newRow = super.deleteRow(user, container, oldRowMap);
+            addAuditEvent(container, user, DELETE, oldRowMap);
+            return newRow;
+        }
+
+        private void addAuditEvent(Container container, @Nullable User user, int action, Map<String, Object> row)
+        {
+            ObjectFactory<ExpQCFlag> f = ObjectFactory.Registry.getFactory(ExpQCFlag.class);
+            ExpQCFlag flag = f.fromMap(row);
+
+            ExperimentAuditProvider.ExperimentAuditEvent event = new ExperimentAuditProvider.ExperimentAuditEvent(container.getId(), flag.getComment());
+
+            ExpRun run = ExperimentService.get().getExpRun(flag.getRunId());
+            if (run != null)
+            {
+                event.setProtocolLsid(run.getProtocol().getLSID());
+                event.setRunLsid(run.getLSID());
+                event.setProtocolRun(ExperimentAuditProvider.getKey3(run.getProtocol(), run));
+                event.setProtocolLsid(run.getLSID());
+
+                // check if there is a QC state associated with this flag
+                QCState state = QCStateManager.getInstance().getQCStateForRowId(container, flag.getIntKey1());
+                switch (action)
+                {
+                    case INSERT:
+                        event.setMessage(state != null ? "QC State was set to: " + state.getLabel() : "QC State was added");
+                        break;
+                    case UPDATE:
+                        event.setMessage(state != null ? "QC State was updated to: " + state.getLabel() : "QC State was updated");
+                        break;
+                    case DELETE:
+                        event.setMessage(state != null ? "QC State was removed: " + state.getLabel() : "QC State was removed");
+                        break;
+                }
+                event.setQcState(state != null ? state.getRowId() : null);
+                AuditLogService.get().addEvent(user, event);
+            }
         }
     }
 }

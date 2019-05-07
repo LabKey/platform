@@ -6,11 +6,10 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.qc.QCState;
 import org.labkey.api.security.User;
-import org.labkey.api.study.assay.AssayProvider;
-import org.labkey.api.study.assay.AssayService;
 
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -70,6 +69,15 @@ public interface AssayQCService
      */
     SQLFragment getDataTableCondition(ExpProtocol protocol, Container container, User user);
 
+    /**
+     * Returns the list of runs or data rows that have not been QC approved, if the protocol
+     * does not support QC or has not been enabled for QC, then the list will be empty.
+     *
+     * @param runs the list of runs to check
+     */
+    List<Integer> getUnapprovedRuns(ExpProtocol protocol, List<Integer> runs);
+    List<Integer> getUnapprovedData(ExpProtocol protocol, List<Integer> dataIds);
+
     class DefaultQCService implements AssayQCService
     {
         @Override
@@ -100,6 +108,18 @@ public interface AssayQCService
         public SQLFragment getDataTableCondition(ExpProtocol protocol, Container container, User user)
         {
             return new SQLFragment();
+        }
+
+        @Override
+        public List<Integer> getUnapprovedRuns(ExpProtocol protocol, List<Integer> runs)
+        {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public List<Integer> getUnapprovedData(ExpProtocol protocol, List<Integer> dataIds)
+        {
+            return Collections.emptyList();
         }
     }
 }
