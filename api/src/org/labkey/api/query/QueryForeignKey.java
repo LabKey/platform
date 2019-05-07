@@ -270,8 +270,7 @@ public class QueryForeignKey extends AbstractForeignKey
     // Consider using LookupForeignKey instead
     public QueryForeignKey(TableInfo table, @Nullable String lookupKey, @Nullable String displayField)
     {
-        this(
-            from(null, null)
+        this( new QueryForeignKey.Builder()
             .table(table).key(lookupKey).display(displayField)
         );
     }
