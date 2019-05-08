@@ -21,6 +21,7 @@ import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 import org.labkey.data.xml.queryCustomView.FilterType;
 
@@ -94,13 +95,21 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
         return this;
     }
 
+    protected User getLookupUser()
+    {
+        if (null != _sourceSchema)
+            return _sourceSchema.getUser();
+        return null;
+    }
+
     protected ContainerFilter getLookupContainerFilter()
     {
         // if there is an explicit lookup container then use that
         Container c = getLookupContainer();
         if (null != c)
         {
-            return new ContainerFilter.SimpleContainerFilterWithUser(_sourceSchema.getUser(), c);
+            assert null != getLookupUser();
+            return new ContainerFilter.SimpleContainerFilterWithUser(getLookupUser(), c);
         }
         ContainerFilter cf = null;
         if (null != _containerFilter)

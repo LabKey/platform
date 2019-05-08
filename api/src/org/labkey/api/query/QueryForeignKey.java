@@ -340,6 +340,15 @@ public class QueryForeignKey extends AbstractForeignKey
         return _effectiveContainer;
     }
 
+    @Override
+    protected User getLookupUser()
+    {
+        if (null != _user)
+            return _user;
+        if (null != getSchema())
+            return getSchema().getUser();
+        return super.getLookupUser();
+    }
 
     @Override
     public TableInfo getLookupTableInfo()
