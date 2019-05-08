@@ -83,10 +83,16 @@ public class QueryHelper
     }
 
     @Nullable
-    public TableInfo getTableInfo(ContainerFilter cf)
+    public TableInfo getTableInfo(ContainerFilter cf, boolean forWrite)
     {
         UserSchema schema = getUserSchema();
-        return schema == null ? null : schema.getTable(_queryName, cf);
+        return schema == null ? null : schema.getTable(_queryName, cf, true, forWrite);
+    }
+
+    @Nullable
+    public TableInfo getTableInfo(ContainerFilter cf)
+    {
+        return getTableInfo(cf, false);
     }
 
     @Nullable

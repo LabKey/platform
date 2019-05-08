@@ -41,10 +41,13 @@ public class QueryForeignKey extends AbstractForeignKey
 {
     protected TableInfo _table;
 
-    /** The configured container for this lookup. Null if it should use the current container */
+    /**
+     * The configured container for this lookup. Null if it should use the current container
+     * This will create a single container containerFilter() using lookupContainer (unless tableinfo was explicitly provided, of course)
+     */
     @Nullable
     Container _lookupContainer;
-    /** The container in which the lookup should be evaluated. */
+    /** The container for the schema for the target table (unless the target schema was explicitly) provided. */
     @NotNull
     Container _effectiveContainer;
     User _user;
@@ -74,6 +77,11 @@ public class QueryForeignKey extends AbstractForeignKey
         // display
         String displayField = null;
         boolean useRawFKValue = false;
+
+        // for deprecated constructors only
+        private Builder()
+        {
+        }
 
         public Builder(@NotNull QuerySchema schema, @Nullable ContainerFilter cf)
         {
@@ -112,7 +120,8 @@ public class QueryForeignKey extends AbstractForeignKey
             lookupSchemaName = schemaName;
             // the caller might have defaulted the targetSchema to sourceSchema, so clear if schema is set by name
             targetSchema = null;
-            this.effectiveContainer = effectiveContainer;
+            if (null != effectiveContainer)
+                this.effectiveContainer = effectiveContainer;
             return this;
         }
 
@@ -216,32 +225,17 @@ public class QueryForeignKey extends AbstractForeignKey
         _useRawFKValue = builder.useRawFKValue;
         _table = builder.table;
         _schema = builder.targetSchema;
+        assert(null == _lookupContainer || getEffectiveContainer() == getLookupContainer());
     }
 
-    private QueryForeignKey(QuerySchema sourceSchema, ContainerFilter cf, @NotNull String schemaName, @NotNull Container effectiveContainer, @Nullable Container lookupContainer, User user, String tableName, @Nullable String lookupKey, @Nullable String displayField, boolean useRawFKValue)
+    protected QueryForeignKey(QuerySchema sourceSchema, ContainerFilter cf, @NotNull String schemaName, @NotNull Container effectiveContainer, @Nullable Container lookupContainer, User user, String tableName, @Nullable String lookupKey, @Nullable String displayField)
     {
-        super(sourceSchema, cf, schemaName, tableName, lookupKey, displayField);
-        _effectiveContainer = effectiveContainer;
-        _lookupContainer = lookupContainer;
-        _user = user;
-        _useRawFKValue = useRawFKValue;
-    }
-
-    protected QueryForeignKey(QuerySchema sourceSchema, ContainerFilter cf, String schemaName, @NotNull Container effectiveContainer, @Nullable Container lookupContainer, User user, String tableName, @Nullable String lookupKey, @Nullable String displayField)
-    {
-        this(sourceSchema, cf, schemaName, effectiveContainer, lookupContainer, user, tableName, lookupKey, displayField, false);
-    }
-
-    /**
-     * @param schema a schema pointed at the effective container for this usage
-     * @param lookupContainer null if the lookup isn't specifically configured to point at a specific container, and should be pointing at the current container
-     */
-    protected QueryForeignKey(QuerySchema sourceSchema, ContainerFilter cf, QuerySchema schema, @Nullable Container lookupContainer, String tableName, @Nullable String lookupKey, @Nullable String displayField, boolean useRawFKValue)
-    {
-        super(sourceSchema, cf, schema.getSchemaName(), tableName, lookupKey, displayField);
-        _schema = schema;
-        _lookupContainer = lookupContainer;
-        _useRawFKValue = useRawFKValue;
+        this(
+            from(sourceSchema,cf)
+            .schema(schemaName,effectiveContainer)
+            .to(tableName,lookupKey,displayField)
+            .container(lookupContainer) // for metadata pass-through
+        );
     }
 
     /**
@@ -250,7 +244,12 @@ public class QueryForeignKey extends AbstractForeignKey
      */
     public QueryForeignKey(QuerySchema sourceSchema, ContainerFilter cf, QuerySchema schema, @Nullable Container lookupContainer, String tableName, @Nullable String lookupKey, @Nullable String displayField)
     {
-        this(sourceSchema, cf, schema, lookupContainer, tableName, lookupKey, displayField, false);
+        this(
+            from(sourceSchema,cf)
+            .schema((UserSchema)schema)
+            .to(tableName,lookupKey,displayField)
+            .container(lookupContainer) // for metadata pass-through
+        );
     }
 
     /**
@@ -260,17 +259,29 @@ public class QueryForeignKey extends AbstractForeignKey
     @Deprecated // TODO ContainerFilter
     public QueryForeignKey(QuerySchema schema, @Nullable Container lookupContainer, String tableName, @Nullable String lookupKey, @Nullable String displayField)
     {
-        this(null, null, schema, lookupContainer, tableName, lookupKey, displayField, false);
+        this( new QueryForeignKey.Builder()
+            .schema((UserSchema)schema)
+            .to(tableName, lookupKey, displayField)
+            .container(lookupContainer) // for metadata pass-through
+        );
     }
 
+    // Caller is responsible for containerfilter on passed in TableInfo
+    // Consider using LookupForeignKey instead
+    public QueryForeignKey(TableInfo table, @Nullable String lookupKey, @Nullable String displayField)
+    {
+        this( new QueryForeignKey.Builder()
+            .table(table).key(lookupKey).display(displayField)
+        );
+    }
 
-    @Deprecated // TODO ContainerFilter
+    @Deprecated
     public QueryForeignKey(TableInfo table, @Nullable Container lookupContainer, @Nullable String lookupKey, @Nullable String displayField)
     {
-        super(null, null, table.getName(), lookupKey, displayField);
-        _table = table;
-        _lookupContainer = lookupContainer;
+        this(table, lookupKey, displayField);
+        assert null==lookupContainer;
     }
+
 
     public void setJoinType(LookupColumn.JoinType joinType)
     {
@@ -319,6 +330,16 @@ public class QueryForeignKey extends AbstractForeignKey
     {
         return _lookupContainer;
     }
+
+    private Container getEffectiveContainer()
+    {
+        if (null != _table)
+            return _table.getUserSchema().getContainer();
+        if (null != _schema)
+            return _schema.getContainer();
+        return _effectiveContainer;
+    }
+
 
     @Override
     public TableInfo getLookupTableInfo()

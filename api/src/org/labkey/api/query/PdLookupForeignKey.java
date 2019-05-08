@@ -208,18 +208,14 @@ public class PdLookupForeignKey extends AbstractForeignKey
         }
     }
 
-
     @Override
     public NamedObjectList getSelectList(RenderContext ctx)
     {
         // if the lookup table is core.containers, list all of the containers the user has access to
         if ("core".equalsIgnoreCase(_pd.getLookupSchema()) && "Containers".equalsIgnoreCase(_pd.getLookupQuery()))
         {
-            TableInfo lookupTable = getLookupTableInfo();
-            if (lookupTable == null)
-                return new NamedObjectList();
-            ((ContainerTable) lookupTable).setContainerFilter(new ContainerFilter.AllFolders(_user));
-
+            UserSchema schema = QueryService.get().getUserSchema(_user, _currentContainer, "core");
+            TableInfo lookupTable = schema.getTable("Containers", new ContainerFilter.AllFolders(_user));
             return ((ContainerTable) lookupTable).getPathSelectList();
         }
 

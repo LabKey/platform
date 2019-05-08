@@ -541,7 +541,7 @@ public class QueryView extends WebPartView<Object>
                 break;
             case insertQueryRow:
                 if (null != _insertURL)
-                    ret = DetailsURL.fromString(_insertURL).getActionURL();
+                    ret = new ActionURL(_insertURL);
                 break;
             case importData:
                 if (null != _importURL)

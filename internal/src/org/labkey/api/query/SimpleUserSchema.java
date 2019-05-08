@@ -111,13 +111,13 @@ public class SimpleUserSchema extends UserSchema
             _visible.removeAll(hiddenTables);
     }
 
-    @Override
-    @Deprecated
-    public TableInfo createTable(String name)
-    {
-        throw new IllegalStateException();
-    }
-
+//    @Override
+//    @Deprecated
+//    public TableInfo createTable(String name)
+//    {
+//        throw new IllegalStateException();
+//    }
+//
     @Override
     public TableInfo createTable(String name, ContainerFilter cf)
     {
@@ -157,11 +157,11 @@ public class SimpleUserSchema extends UserSchema
     }
 
     // TODO ContainerFilter - remove
-    @Deprecated
-    protected TableInfo createWrappedTable(String name, @NotNull TableInfo sourceTable)
-    {
-        return createWrappedTable(name, sourceTable, null);
-    }
+//    @Deprecated
+//    protected TableInfo createWrappedTable(String name, @NotNull TableInfo sourceTable)
+//    {
+//        return createWrappedTable(name, sourceTable, null);
+//    }
 
     @Override
     public Set<String> getTableNames()
@@ -363,7 +363,7 @@ public class SimpleUserSchema extends UserSchema
                     }
 
                     ForeignKey wrapFk = QueryForeignKey.from(getUserSchema(), getContainerFilter())
-                        .schema(lookupSchemaName)
+                        .schema(lookupSchemaName, fk.getLookupContainer())
                         .to(fk.getLookupTableName(), fk.getLookupColumnName(), fk.getLookupDisplayName())
                         .container(fk.getLookupContainer())
                         .raw(useRawFKValue).build();
