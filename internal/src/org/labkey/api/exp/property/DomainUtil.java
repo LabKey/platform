@@ -22,6 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderProperties;
@@ -48,8 +49,12 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.model.GWTPropertyValidator;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationError;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.util.DateUtil;
@@ -777,38 +782,44 @@ public class DomainUtil
      * @param domain The updated domain to validate
      * @return List of errors strings found during the validation
      */
-    public static List<String> validateProperties(@NotNull Domain domain, @NotNull GWTDomain updates)
+    public static ValidationException validateProperties(@NotNull Domain domain, @NotNull GWTDomain updates)
     {
-        List<String> errors = new ArrayList<>();
         Set<String> reservedNames = new CaseInsensitiveHashSet(domain.getDomainKind().getReservedPropertyNames(domain));
-        Set<String> names = new CaseInsensitiveHashSet();
+        Map<String, Integer> namePropertyIdMap = new CaseInsensitiveHashMap<>();
+//        Set<String> names = new CaseInsensitiveHashSet();
+        ValidationException exception = new ValidationException();
 
         for (Object f : updates.getFields())
         {
             GWTPropertyDescriptor field = (GWTPropertyDescriptor)f;
 
             String name = field.getName();
+
             if (null == name || name.length() == 0)
             {
-                errors.add("Name field must not be blank.");
+                exception.addError(new SimpleValidationError("Name field must not be blank."));
                 continue;
             }
 
             if (reservedNames.contains(name) && field.getPropertyId() <= 0)
             {
-                errors.add("\"" + name + "\" is a reserved field name in \"" + domain.getName() + "\".");
+                exception.addFieldError(name, "\"" + name + "\" is a reserved field name in \"" + domain.getName() + "\".");
                 continue;
             }
 
-            if (names.contains(name))
+            if (namePropertyIdMap.containsKey(name))
             {
-                errors.add("All property names must be unique. Duplicate found: " + name + ".");
+                String propertyIdOrName = namePropertyIdMap.get(name) > 0 ? String.valueOf(namePropertyIdMap.get(name)) : name;
+                exception.addFieldError(propertyIdOrName, "All property names must be unique. Duplicate found: " + name + ".");
                 continue;
             }
 
-            names.add(name);
+            if (!namePropertyIdMap.containsKey(name))
+            {
+                namePropertyIdMap.put(name, field.getPropertyId());
+            }
         }
 
-        return errors;
+        return exception;
     }
 }
