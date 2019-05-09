@@ -189,8 +189,6 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         }
         if (o instanceof QueryDefinition)
         {
-            // TODO QueryDefinition.getTable(ContainerFilter)
-            ((QueryDefinition)o).setContainerFilter(cf);
             TableInfo t = ((QueryDefinition)o).getTable(this, errors, true);
             // throw if there are any non-warning errors
             for (QueryException ex : errors)
@@ -221,10 +219,6 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
 
     Map<Pair<String, Boolean>, Object> cache = new HashMap<>();
 
-    /*
-     * NOTE ContainerFilter is ONLY applied to TableInfo not returned QueryDef
-     * Not ideal, but this is basically a private method anyway...
-     */
     public Object _getTableOrQuery(String name, ContainerFilter cf, boolean includeExtraMetadata, boolean forWrite, Collection<QueryException> errors)
     {
         if (name == null)
@@ -258,6 +252,8 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
             {
                 def.setMetadataXml(null);
             }
+            if (null != cf)
+                def.setContainerFilter(cf);
 
             fireAfterConstruct(def);
             torq = def;
@@ -269,9 +265,10 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
 
     @Override
     @Nullable
+    @Deprecated
     public final TableInfo getTable(String name)
     {
-        return getTable(name, true);
+        return getTable(name, null, true, false);
     }
 
 
