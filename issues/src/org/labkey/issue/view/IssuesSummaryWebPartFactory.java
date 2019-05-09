@@ -27,6 +27,7 @@ import org.labkey.issue.IssuesModule;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
 
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -65,7 +66,8 @@ public class IssuesSummaryWebPartFactory extends BaseWebPartFactory
 
     public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
     {
-        if (IssueManager.getDefaultIssueListDefName(context.getContainer()) != null)
+        Collection<IssueListDef> issueListDefs = IssueManager.getIssueListDefs(context.getContainer());
+        if (issueListDefs.size() > 0)
             return new IssuesListView.IssuesListConfig(webPart);
         else
             return null;
