@@ -238,6 +238,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
 
         if (table != null)
         {
+            assert !table.isLocked();
             if (includeExtraMetadata)
             {
                 table.overlayMetadata(name, this, errors);
