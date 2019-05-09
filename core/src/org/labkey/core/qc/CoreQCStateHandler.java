@@ -1,5 +1,6 @@
 package org.labkey.core.qc;
 
+import org.labkey.api.assay.AssayQCService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.qc.QCState;
@@ -16,7 +17,6 @@ public class CoreQCStateHandler implements QCStateHandler<CoreController.ManageQ
     protected List<QCState> _states = null;
     public static final String PROPS_KEY = "CoreQCStateHandlerProps";
     public static final String IS_BLANK_QC_STATE_PUBLIC_KEY = "IsBlankQCStatePublic";
-    public static final String DEFAULT_QC_STATE_KEY = "DefaultQCState";
 
     @Override
     public boolean isBlankQCStatePublic(Container container)
@@ -30,22 +30,17 @@ public class CoreQCStateHandler implements QCStateHandler<CoreController.ManageQ
 
     public Integer getDefaultQCState(Container container)
     {
-        Map<String, String> props = PropertyManager.getNormalStore().getProperties(container, PROPS_KEY);
-        String defaultQCStateKey = props.get(DEFAULT_QC_STATE_KEY);
-        if (defaultQCStateKey == null)
-            return null;
-        return Integer.parseInt(props.get(DEFAULT_QC_STATE_KEY));
+        QCState state = AssayQCService.getProvider().getDefaultDataImportState(container);
+        return state != null ? state.getRowId() : null;
     }
 
     public void setProps(Container container, boolean isBlankQCStatePublic, Integer defaultQCState)
     {
         PropertyManager.PropertyMap props = PropertyManager.getNormalStore().getWritableProperties(container, PROPS_KEY, true);
         props.put(IS_BLANK_QC_STATE_PUBLIC_KEY, Boolean.toString(isBlankQCStatePublic));
-        if (defaultQCState == null)
-            props.put(DEFAULT_QC_STATE_KEY, null);
-        else
-            props.put(DEFAULT_QC_STATE_KEY, defaultQCState.toString());
         props.save();
+
+        AssayQCService.getProvider().setDefaultDataImportState(container, QCStateManager.getInstance().getQCStateForRowId(container, defaultQCState));
     }
 
     @Override
@@ -59,8 +54,7 @@ public class CoreQCStateHandler implements QCStateHandler<CoreController.ManageQ
     @Override
     public boolean isQCStateInUse(Container container, QCState state)
     {
-        // TODO: implement real check
-        return false;
+        return AssayQCService.getProvider().isQCStateInUse(container, state);
     }
 
     @Override

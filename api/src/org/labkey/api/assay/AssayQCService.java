@@ -49,6 +49,11 @@ public interface AssayQCService
     boolean supportsQC();
 
     /**
+     * Returns whether the specified protocol has been configured for QC
+     */
+    boolean isQCEnabled(ExpProtocol protocol);
+
+    /**
      * Update the QC states for the specified runs
      */
     void setQCStates(ExpProtocol protocol, Container container, User user, List<Integer> runIds, QCState state, String comment);
@@ -78,10 +83,28 @@ public interface AssayQCService
     List<Integer> getUnapprovedRuns(ExpProtocol protocol, List<Integer> runs);
     List<Integer> getUnapprovedData(ExpProtocol protocol, List<Integer> dataIds);
 
+    /**
+     * Determine if any assay runs are assigned the specified state
+     */
+    boolean isQCStateInUse(Container container, QCState state);
+
+    /**
+     * Returns the default QCState for imported data
+     */
+    @Nullable
+    QCState getDefaultDataImportState(Container container);
+    void setDefaultDataImportState(Container container, QCState state);
+
     class DefaultQCService implements AssayQCService
     {
         @Override
         public boolean supportsQC()
+        {
+            return false;
+        }
+
+        @Override
+        public boolean isQCEnabled(ExpProtocol protocol)
         {
             return false;
         }
@@ -120,6 +143,23 @@ public interface AssayQCService
         public List<Integer> getUnapprovedData(ExpProtocol protocol, List<Integer> dataIds)
         {
             return Collections.emptyList();
+        }
+
+        @Override
+        public boolean isQCStateInUse(Container container, QCState state)
+        {
+            return false;
+        }
+
+        @Override
+        public @Nullable QCState getDefaultDataImportState(Container container)
+        {
+            return null;
+        }
+
+        @Override
+        public void setDefaultDataImportState(Container container, QCState state)
+        {
         }
     }
 }

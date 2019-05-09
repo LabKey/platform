@@ -128,6 +128,7 @@ public class QueryView extends WebPartView<Object>
     private ButtonBarConfig _buttonBarConfig = null;
     private boolean _showDetailsColumn = true;
     private boolean _showUpdateColumn = true;
+    private DataRegion.MessageSupplier _messageSupplier;
 
     private String _linkTarget;
 
@@ -2041,9 +2042,13 @@ public class QueryView extends WebPartView<Object>
         rgn.setShowPagination(isShowPagination());
         rgn.setShowPaginationCount(isShowPaginationCount());
 
+        if (_messageSupplier != null)
+            rgn.addMessageSupplier(_messageSupplier);
+
         if (_customView != null && _customView.getErrors() != null)
         {
-            _customView.getErrors().forEach(rgn::adViewErrorMessage);
+            rgn.addMessageSupplier(dataRegion -> _customView.getErrors().stream().map(e -> new DataRegion.Message(PageFlowUtil.filter(e), DataRegion.MessageType.ERROR, DataRegion.MessagePart.view))
+                    .collect(Collectors.toList()));
         }
 
         // Allow region to specify header lock, optionally override
@@ -3158,5 +3163,10 @@ public class QueryView extends WebPartView<Object>
         }
 
         return resources;
+    }
+
+    public void setMessageSupplier(DataRegion.MessageSupplier messageSupplier)
+    {
+        _messageSupplier = messageSupplier;
     }
 }

@@ -19,28 +19,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.assay.AssayQCService;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.AssayFlagHandler;
+import org.labkey.api.assay.AssayQCService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.AbstractTableInfo;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ColumnRenderProperties;
-import org.labkey.api.data.CompareType;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerFilterable;
-import org.labkey.api.data.ContainerForeignKey;
-import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DelegatingContainerFilter;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
@@ -66,9 +49,13 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.reports.report.view.ReportUtil;
+import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.actions.AssayDetailRedirectAction;
@@ -82,12 +69,14 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.DataView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.data.xml.TableType;
 import org.springframework.validation.BindException;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -575,6 +564,19 @@ public abstract class AssayProtocolSchema extends AssaySchema
             queryView.setShowDetailsColumn(true);
         }
 
+        // add an indicator for any missing rows
+        DataRegionDecorator decorator = new DataRegionDecorator()
+        {
+            @Override
+            public QueryView createAllResultsQueryView(ViewContext context, QuerySettings settings)
+            {
+                // need to create a new protocol schema with the contextual role added to the user
+                AssayProtocolSchema schema = AssayService.get().getProvider(getProtocol()).createProtocolSchema(context.getUser(), getContainer(), getProtocol(), getTargetStudy());
+                return new RunListQueryView(schema, settings, new AssayRunType(getProtocol(), getContainer()));
+            }
+        };
+        decorator.addQCWarningIndicator(queryView, context, settings, errors);
+
         return queryView;
     }
 
@@ -600,6 +602,17 @@ public abstract class AssayProtocolSchema extends AssaySchema
             }
         }
 
+        // add an indicator for any missing rows
+        DataRegionDecorator decorator = new DataRegionDecorator()
+        {
+            @Override
+            public QueryView createAllResultsQueryView(ViewContext context, QuerySettings settings)
+            {
+                return new ResultsQueryView(_protocol, context, settings);
+            }
+        };
+        decorator.addQCWarningIndicator(queryView, context, settings, errors);
+
         if (_provider.hasCustomView(ExpProtocol.AssayDomainTypes.Result, true))
         {
             ActionURL resultDetailsURL = new ActionURL(AssayResultDetailsAction.class, context.getContainer());
@@ -614,6 +627,65 @@ public abstract class AssayProtocolSchema extends AssaySchema
         }
 
         return queryView;
+    }
+
+    abstract class DataRegionDecorator
+    {
+        abstract QueryView createAllResultsQueryView(ViewContext context, QuerySettings settings);
+
+        /**
+         * Helper to display an indicator in the dataregion message area if there are rows not being shown because
+         * they have not been QC'ed and the user is not a QC Analyst.
+         */
+        public void addQCWarningIndicator(QueryView baseQueryView, ViewContext context, QuerySettings settings, BindException errors)
+        {
+            if (AssayQCService.getProvider().isQCEnabled(getProtocol()))
+            {
+                User user = context.getUser();
+                // if the user does not have the QCAnalyst permission, they may not be seeing unapproved data
+                if (!context.getContainer().hasPermission(user, QCAnalystPermission.class))
+                {
+                    Set<Role> contextualRoles = new HashSet<>(user.getStandardContextualRoles());
+                    Role qcRole = RoleManager.getRole("org.labkey.api.security.roles.QCAnalystRole");
+                    if (qcRole != null)
+                    {
+                        try
+                        {
+                            contextualRoles.add(RoleManager.getRole(qcRole.getClass()));
+                            User elevatedUser = new LimitedUser(user, user.getGroups(), contextualRoles, true);
+
+                            ViewContext viewContext = new ViewContext(context);
+                            viewContext.setUser(elevatedUser);
+                            QuerySettings qs = getSettings(viewContext, settings.getDataRegionName(), settings.getQueryName());
+
+                            // we want all the rows
+                            qs.setMaxRows(Table.ALL_ROWS);
+                            QueryView allResultsQueryView = createAllResultsQueryView(viewContext, qs);
+
+                            DataView dataView = allResultsQueryView.createDataView();
+                            try (Results r = dataView.getDataRegion().getResultSet(dataView.getRenderContext()))
+                            {
+                                final int rowCount = r.getSize();
+
+                                baseQueryView.setMessageSupplier(dataRegion -> {
+                                    if (dataRegion.getTotalRows() < rowCount)
+                                    {
+                                        DataRegion.Message msg = new DataRegion.Message("There are " + (rowCount - dataRegion.getTotalRows()) + " rows not shown due to unapproved QC state",
+                                                DataRegion.MessageType.WARNING, DataRegion.MessagePart.view);
+                                        return Collections.singletonList(msg);
+                                    }
+                                    return Collections.emptyList();
+                                });
+                            }
+                        }
+                        catch (SQLException | IOException e)
+                        {
+                            errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                        }
+                    }
+                }
+            }
+        }
     }
 
     @Override

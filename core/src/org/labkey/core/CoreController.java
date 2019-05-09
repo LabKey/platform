@@ -44,6 +44,7 @@ import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.ImportContext;
+import org.labkey.api.assay.AssayQCService;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.attachments.AttachmentParent;
@@ -115,7 +116,6 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.RoleManager;
@@ -2486,8 +2486,16 @@ public class CoreController extends SpringActionController
         @Override
         public ModelAndView getView(ManageQCStatesForm manageQCStatesForm, boolean reshow, BindException errors)
         {
-            return new JspView<>("/org/labkey/api/qc/view/manageQCStates.jsp",
-                    new ManageQCStatesBean(manageQCStatesForm.getReturnUrl()), errors);
+            // currently only assays support management of QC states (outside of study)
+            if (AssayQCService.getProvider().supportsQC())
+            {
+                return new JspView<>("/org/labkey/api/qc/view/manageQCStates.jsp",
+                        new ManageQCStatesBean(manageQCStatesForm.getReturnUrl()), errors);
+            }
+            else
+            {
+                return new HtmlView("An Assay QC provider is not configured for this server.");
+            }
         }
 
         @Override

@@ -16,14 +16,14 @@
  */
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.qc.AbstractManageQCStatesAction" %>
+<%@ page import="org.labkey.api.qc.AbstractManageQCStatesBean" %>
+<%@ page import="org.labkey.api.qc.QCState" %>
+<%@ page import="org.labkey.api.qc.QCStateHandler" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.qc.QCState" %>
-<%@ page import="org.labkey.api.qc.QCStateHandler" %>
-<%@ page import="org.labkey.api.qc.AbstractManageQCStatesBean" %>
-<%@ page import="org.labkey.api.qc.AbstractManageQCStatesAction" %>
-<%@ page import="org.labkey.api.data.Container" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -75,16 +75,29 @@
                 </td>
                 <td align="center"><input name="publicData" value="<%= state.getRowId() %>" id="<%= h(state.getLabel()) %>_public" type="checkbox"<%=checked(state.isPublicData())%>/></td>
                 <td>
-                    <%= qcStateHandler.isQCStateInUse(container, state) ? "<span style=\"color:black;padding-left: 30%;\" class=\"fa fa-check-circle\"></span>" + helpPopup("QC state in use", "This QC state cannot be deleted because it is currently a default state (see below) or is referenced by at least one " + bean.getNoun() + " row.") :
-                            "<span style=\"color:black;padding-left: 30%;\" class=\"fa fa-circle-o\"></span>" +
-                            " <span style=\"color:red;\" class=\"fa fa-times\" onclick=\"LABKEY.Utils.confirmAndPost('Delete this QC state? No additional " + bean.getDataNoun() + " data will be deleted.', " + qh(baseDeleteStateURL.clone().addParameter("id", state.getRowId()).getLocalURIString()) + ")\"></span>"%>
+                    <%
+                        if (qcStateHandler.isQCStateInUse(container, state))
+                        {
+                    %>
+                    <span style="color:black; padding-left: 30%;" class="fa fa-check-circle"></span>
+                    <%=helpPopup("QC state in use", "This QC state cannot be deleted because it is currently a default state (see below) or is referenced by at least one " + bean.getNoun() + " row.")%>
+                    <%
+                        }
+                        else
+                        {
+                    %>
+                    <span style="color:black;padding-left: 30%;" class="fa fa-circle-o"></span>
+                    <span style="cursor:pointer; color:red;" class="fa fa-times" onclick="LABKEY.Utils.confirmAndPost(<%=q("Delete this QC state? No additional " + bean.getDataNoun() + " data will be deleted.")%>, <%=q(baseDeleteStateURL.clone().addParameter("id", state.getRowId()).getLocalURIString())%>)"></span>
+                    <%
+                        }
+                    %>
                 </td>
             </tr>
             <%
                 }
             %>
         </table>
-        <span style="color:green" class="fa fa-plus-circle" onclick="addRow()"></span>&nbsp<span>Add State</span>
+        <span style="cursor:pointer;color:green" class="fa fa-plus-circle" onclick="addRow()"></span>&nbsp<span>Add State</span>
             &nbsp&nbsp&nbsp&nbsp
             <%= button("Delete Unused QC States")
                     .onClick("return LABKEY.Utils.confirmAndPost('Delete all unused QC states? No additional "+ bean.getDataNoun() + " data will be deleted.', " + qh(baseDeleteStateURL.clone().addParameter("all", "true").getLocalURIString()) + ")") %>
@@ -95,7 +108,7 @@
         {
     %>
     <labkey:panel title="<%=h(defaultStatesPanelTitle)%>">
-        <%= manageAction.getQcStateDefaultsPanel(container, qcStateHandler) %>
+        <%= text(manageAction.getQcStateDefaultsPanel(container, qcStateHandler)) %>
     </labkey:panel>
     <%
         }
@@ -103,7 +116,7 @@
         {
     %>
     <labkey:panel title="Data visibility">
-        <%= manageAction.getDataVisibilityPanel(container, qcStateHandler) %>
+        <%= text(manageAction.getDataVisibilityPanel(container, qcStateHandler)) %>
     </labkey:panel>
     <%
         }
@@ -111,11 +124,6 @@
 
     <%= button("Save").submit(true).onClick("document.manageQCStates.reshowPage.value='false'; return true;") %>
     <%= button("Cancel").href(cancelUrl.getLocalURIString()) %>
-    &nbsp&nbsp&nbsp&nbsp
-    <%= button("Import QC States")
-            .onClick("alert('implement me')") %> <!-- TODO implement me -->
-    <%= button("Export QC States")
-            .onClick("alert('implement me')") %> <!-- TODO implement me -->
 </labkey:form>
 <script language="javascript">
     function addRow() {
