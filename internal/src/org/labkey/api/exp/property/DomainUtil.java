@@ -782,11 +782,10 @@ public class DomainUtil
      * @param domain The updated domain to validate
      * @return List of errors strings found during the validation
      */
-    public static ValidationException validateProperties(@NotNull Domain domain, @NotNull GWTDomain updates)
+    public static ValidationException validateProperties(@Nullable Domain domain, @NotNull GWTDomain updates, @NotNull DomainKind domainKind)
     {
-        Set<String> reservedNames = new CaseInsensitiveHashSet(domain.getDomainKind().getReservedPropertyNames(domain));
+        Set<String> reservedNames = (null != domain ? new CaseInsensitiveHashSet(domainKind.getReservedPropertyNames(domain)) : null); //Note: won't be able to validate reserved names for createDomain api since this method is called before the domain gets created.
         Map<String, Integer> namePropertyIdMap = new CaseInsensitiveHashMap<>();
-//        Set<String> names = new CaseInsensitiveHashSet();
         ValidationException exception = new ValidationException();
 
         for (Object f : updates.getFields())
@@ -801,7 +800,7 @@ public class DomainUtil
                 continue;
             }
 
-            if (reservedNames.contains(name) && field.getPropertyId() <= 0)
+            if (null != reservedNames && reservedNames.contains(name) && field.getPropertyId() <= 0)
             {
                 exception.addFieldError(name, "\"" + name + "\" is a reserved field name in \"" + domain.getName() + "\".");
                 continue;

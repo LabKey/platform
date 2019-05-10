@@ -234,13 +234,22 @@ public class PropertyController extends SpringActionController
         public ApiResponse execute(DomainApiForm form, BindException errors) throws Exception
         {
             Map<String, Object> options = new HashMap<>();
-            GWTDomain newDomain;
+            GWTDomain newDomain = form.getDomainDesign();
             Domain domain = null;
             List<Domain> domains = null;
 
             String kindName = form.getKind() == null ? form.getDomainKind() : form.getKind();
             String domainGroup = form.getDomainGroup();
             String domainName = form.getDomainName();
+
+            ValidationException saveErrors = DomainUtil.validateProperties(null, newDomain, PropertyService.get().getDomainKindByName(kindName));
+            for (ValidationError ve : saveErrors.getErrors())
+            {
+                if (ve instanceof PropertyValidationError)
+                    errors.addError(new ObjectError(((PropertyValidationError)ve).getProperty(), null, null,  ve.getMessage()));
+                else
+                    errors.reject(ERROR_MSG, ve.getMessage());
+            }
 
             if (domainGroup != null)
             {
@@ -292,7 +301,6 @@ public class PropertyController extends SpringActionController
             }
             else if (kindName != null)
             {
-                newDomain = form.getDomainDesign();
                 JSONObject jsOptions = form.getOptions();
                 if (jsOptions == null)
                     jsOptions = new JSONObject();
@@ -871,7 +879,7 @@ public class PropertyController extends SpringActionController
         if (!kind.canEditDefinition(user, domain))
             throw new UnauthorizedException("You don't have permission to edit this domain.");
 
-       ValidationException validationException = DomainUtil.validateProperties(domain, update);
+       ValidationException validationException = DomainUtil.validateProperties(domain, update, domain.getDomainKind());
         if (validationException.hasErrors()) {
             return validationException;
         }
