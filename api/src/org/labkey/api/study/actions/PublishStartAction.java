@@ -205,11 +205,10 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
             DataRegionSelection.clearAll(getViewContext(), null);
             // Get the assay results table
             UserSchema schema = provider.createProtocolSchema(getUser(), getContainer(), _protocol, null);
-            TableInfo table = schema.getTable(AssayProtocolSchema.DATA_TABLE_NAME);
-            if (table.supportsContainerFilter() && publishForm.getContainerFilterName() != null)
-            {
-                ((ContainerFilterable)table).setContainerFilter(ContainerFilter.getContainerFilterByName(publishForm.getContainerFilterName(), getUser()));
-            }
+            ContainerFilter cf = null;
+            if (publishForm.getContainerFilterName() != null)
+                cf = ContainerFilter.getContainerFilterByName(publishForm.getContainerFilterName(), getUser());
+            TableInfo table = schema.getTable(AssayProtocolSchema.DATA_TABLE_NAME, cf);
             final ColumnInfo dataRowIdColumn = QueryService.get().getColumns(table, Collections.singleton(tableMetadata.getResultRowIdFieldKey())).get(tableMetadata.getResultRowIdFieldKey());
             assert dataRowIdColumn  != null : "Could not find dataRowId column in assay results table";
             FieldKey runFieldKey = tableMetadata.getRunRowIdFieldKeyFromResults();
