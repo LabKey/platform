@@ -800,6 +800,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
             {
                 throw new RuntimeException(x);
             }
+            assert ret.isLocked();
             tableInfoCache.put(key,ret);
         }
         return ret;

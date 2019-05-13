@@ -151,12 +151,12 @@ public class LineageTableInfo extends VirtualTable
                 @Override
                 public TableInfo getLookupTableInfo()
                 {
-                    return getUserSchema().getCachedTableInfo(getClass().getName() + "/Samples/" + ss.getName(), () ->
-                    {
+//                    return getUserSchema().getCachedTableInfo(getClass().getName() + "/Samples/" + ss.getName(), () ->
+//                    {
                         // TODO don't call new SamplesSchema
                         SamplesSchema samplesSchema = new SamplesSchema(_userSchema.getUser(), _userSchema.getContainer());
                         return samplesSchema.getSampleTable(ss, null);
-                    });
+//                    });
                 }
 
                 @Override
@@ -177,12 +177,12 @@ public class LineageTableInfo extends VirtualTable
                 @Override
                 public TableInfo getLookupTableInfo()
                 {
-                    return getUserSchema().getCachedTableInfo(getClass().getName() + "/DataClass", () ->
-                    {
+//                    return getUserSchema().getCachedTableInfo(getClass().getName() + "/DataClass", () ->
+//                    {
                         // TODO don't call new DataClassUserSchema
                         DataClassUserSchema dcus = new DataClassUserSchema(_userSchema.getContainer(), _userSchema.getUser());
                         return dcus.createTable(dc, getLookupContainerFilter());
-                    });
+//                    });
                 }
 
                 @Override
@@ -203,8 +203,8 @@ public class LineageTableInfo extends VirtualTable
                 @Override
                 public TableInfo getLookupTableInfo()
                 {
-                    return getUserSchema().getCachedTableInfo(getClass().getName() + "/Runs", () ->
-                    {
+//                    return getUserSchema().getCachedTableInfo(getClass().getName() + "/Runs", () ->
+//                    {
                         if (provider != null)
                         {
                             AssayProtocolSchema schema = provider.createProtocolSchema(_userSchema.getUser(), _userSchema.getContainer(), protocol, null);
@@ -212,7 +212,7 @@ public class LineageTableInfo extends VirtualTable
                                 return schema.createRunsTable(null);
                         }
                         return new ExpSchema(getUserSchema().getUser(), getUserSchema().getContainer()).getTable(ExpSchema.TableType.Runs.toString());
-                    });
+//                    });
                 }
 
                 @Override
