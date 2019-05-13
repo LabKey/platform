@@ -355,6 +355,11 @@ public class ExpSchema extends AbstractExpSchema
         return (ExpDataTable)getTable(TableType.Data);
     }
 
+    public ExpDataTable getDatasTable(boolean forWrite)
+    {
+        return (ExpDataTable)getTable(TableType.Data.toString(), null, true, forWrite);
+    }
+
     public ExpRunTable getRunsTable()
     {
         return (ExpRunTable)getTable(TableType.Runs.toString(), null, true, false);
