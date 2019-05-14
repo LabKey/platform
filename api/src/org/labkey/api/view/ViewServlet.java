@@ -391,7 +391,7 @@ public class ViewServlet extends HttpServlet
                     }
                     if ("GET".equals(request.getMethod()))
                         throw new RedirectException(expand.getLocalURIString());
-                    _log.error(DataRegion.LAST_FILTER_PARAM + " not supported for " + request.getMethod());
+                    _log.warn(DataRegion.LAST_FILTER_PARAM + " not supported for " + request.getMethod());
                 }
             }
         }
