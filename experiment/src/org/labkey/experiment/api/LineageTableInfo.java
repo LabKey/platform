@@ -118,9 +118,10 @@ public class LineageTableInfo extends VirtualTable
             @Override
             public TableInfo getLookupTableInfo()
             {
-                return getUserSchema().getCachedTableInfo(
-                    this.getClass().getName()+"/NodesTable",
-                    () -> new NodesTableInfo(_userSchema));
+                return new NodesTableInfo(_userSchema);
+//                return getUserSchema().getCachedTableInfo(
+//                    this.getClass().getName()+"/NodesTable",
+//                    () -> { var t = new NodesTableInfo(_userSchema); t.setLocked(true); return t; });
             }
         };
     }
