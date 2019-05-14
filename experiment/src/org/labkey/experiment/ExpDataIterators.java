@@ -4,8 +4,10 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.Sets;
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.CounterDefinition;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RemapCache;
@@ -14,6 +16,7 @@ import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
+import org.labkey.api.dataiterator.ErrorIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.TableInsertDataIterator;
@@ -57,6 +60,92 @@ import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 
 public class ExpDataIterators
 {
+    public static class CounterDataIteratorBuilder implements DataIteratorBuilder
+    {
+        private final DataIteratorBuilder _in;
+        private final Container _container;
+        private final AbstractTableInfo _expTable;
+        private final String _sequencePrefix;
+        private final int _id;
+
+        public static DataIteratorBuilder create(@NotNull DataIteratorBuilder in, Container container,
+                                                 AbstractTableInfo expTable, String sequencePrefix, int sequenceId)
+        {
+            if (expTable.getCounterDefinitions().isEmpty())
+                return in;
+
+            return new CounterDataIteratorBuilder(in, container, expTable, sequencePrefix, sequenceId);
+        }
+
+        public CounterDataIteratorBuilder(@NotNull DataIteratorBuilder in, Container container,
+                                          AbstractTableInfo expTable, String sequencePrefix, int sequenceId)
+        {
+            _in = in;
+            _container = container;
+            _expTable = expTable;
+            _sequencePrefix = sequencePrefix;
+            _id = sequenceId;
+        }
+
+        @Override
+        public DataIterator getDataIterator(DataIteratorContext context)
+        {
+            DataIterator pre = _in.getDataIterator(context);
+
+            SimpleTranslator counterTranslator = new SimpleTranslator(pre, context);
+            counterTranslator.setDebugName("Counter Def");
+            Set<String> skipColumns = new HashSet<>();
+            Map<String, Integer> columnNameMap = DataIteratorUtil.createColumnNameMap(pre);
+
+
+            for (CounterDefinition counterDefinition : _expTable.getCounterDefinitions())
+            {
+                Set<String> attachedColumnNames = counterDefinition.getAttachedColumnNames();
+                skipColumns.addAll(attachedColumnNames);
+
+                // validate we have all the paired columns
+                List<Integer> pairedIndexes = new ArrayList<>();
+                for (String pairedColumnName : counterDefinition.getPairedColumnNames())
+                {
+                    Integer i = columnNameMap.get(pairedColumnName);
+                    if (i == null)
+                    {
+                        // immediately return error iterator tied to the input DataIterator instead of counterTranslator
+                        ValidationException setupError = new ValidationException();
+                        setupError.addGlobalError("Paired column '" + pairedColumnName + "' is required for counter '" + counterDefinition.getCounterName() + "'");
+                        return ErrorIterator.wrap(pre, context, true, setupError);
+                    }
+                    else
+                    {
+                        pairedIndexes.add(i);
+                    }
+                }
+
+                // add a sequence column for each for each of the attached columns
+                for (String columnName : attachedColumnNames)
+                {
+                    Integer i = columnNameMap.get(columnName);
+                    ColumnInfo column;
+                    if (null != i)
+                    {
+                        column = pre.getColumnInfo(i);
+                        skipColumns.add(columnName);
+                    }
+                    else
+                    {
+                        column = _expTable.getColumn(columnName);
+                    }
+
+                    counterTranslator.addPairedSequenceColumn(column, i, _container, counterDefinition, pairedIndexes, _sequencePrefix, _id, 100);
+                }
+            }
+
+            counterTranslator.selectAll(skipColumns);
+
+            return LoggingDataIterator.wrap(counterTranslator);
+        }
+    }
+
 
     /**
      * Data iterator to handle aliases

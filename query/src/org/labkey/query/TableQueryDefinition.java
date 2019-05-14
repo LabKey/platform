@@ -185,10 +185,10 @@ public class TableQueryDefinition extends QueryDefinitionImpl
         }
         catch (QueryParseException e)
         {
-            log.warn("Exception from UserSchema.getTable", e);
+            log.warn("Exception creating table '" + getName() + "': " + e.getMessage(), e);
             if (null != errors)
             {
-                errors.add(new QueryParseException("Exception from UserSchema.getTable", e, 0, 0));
+                errors.add(new QueryParseException("Exception creating table '" + getName() + "': " + e.getMessage(), e, 0, 0));
                 return null;
             }
             throw e;

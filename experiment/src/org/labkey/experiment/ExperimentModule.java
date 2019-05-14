@@ -83,6 +83,7 @@ import org.labkey.experiment.api.GraphAlgorithms;
 import org.labkey.experiment.api.LogDataType;
 import org.labkey.experiment.api.SampleSetDomainKind;
 import org.labkey.experiment.api.SampleSetServiceImpl;
+import org.labkey.experiment.api.UniqueValueCounterTestCase;
 import org.labkey.experiment.api.data.ChildOfCompareType;
 import org.labkey.experiment.api.data.ParentOfCompareType;
 import org.labkey.experiment.api.property.DomainPropertyImpl;
@@ -436,6 +437,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 DomainPropertyImpl.TestCase.class,
                 ExpDataClassDataTestCase.class,
                 ExpSampleSetTestCase.class,
+                UniqueValueCounterTestCase.class,
                 ExperimentServiceImpl.TestCase.class,
                 ExpDataTableImpl.TestCase.class
                 /*,LineagePerfTest.class*/));

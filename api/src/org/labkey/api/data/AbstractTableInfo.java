@@ -41,6 +41,7 @@ import org.labkey.api.query.AggregateRowConfig;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.MetadataParseException;
 import org.labkey.api.query.MetadataParseWarning;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryForeignKey;
@@ -92,6 +93,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.unmodifiableCollection;
+
 abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable, MemTrackable
 {
     private static final Logger LOG = Logger.getLogger(AbstractTableInfo.class);
@@ -134,6 +137,8 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     private DetailsURL _detailsURL;
     protected AuditBehaviorType _auditBehaviorType = AuditBehaviorType.NONE;
     private FieldKey _auditRowPk;
+
+    private final Map<String, CounterDefinition> _counterDefinitionMap = new CaseInsensitiveHashMap<>();    // Really only 1 for now, but could be more in future
 
     @NotNull
     public List<ColumnInfo> getPkColumns()
@@ -531,6 +536,44 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         return column;
     }
 
+    public void addCounterDefinition(@NotNull CounterDefinition counterDef)
+    {
+        boolean valid = true;
+
+        for (String columnName : counterDef.getPairedColumnNames())
+        {
+            ColumnInfo column = getColumn(columnName);
+            if (column == null)
+            {
+                valid = false;
+                LOG.warn("Error in counter definition '" + counterDef.getCounterName() + "': paired column does not exist: " + columnName);
+            }
+        }
+
+        for (String columnName : counterDef.getAttachedColumnNames())
+        {
+            ColumnInfo column = getColumn(columnName);
+            if (column == null)
+            {
+                valid = false;
+                LOG.warn("Error in counter definition '" + counterDef.getCounterName() + "': attached column does not exist: " + columnName);
+            }
+            else if (!column.getJdbcType().isInteger())
+            {
+                valid = false;
+                LOG.warn("Error in counter definition '" + counterDef.getCounterName() + "': non-integer attached column: " + columnName);
+            }
+        }
+
+        if (valid)
+            _counterDefinitionMap.put(counterDef.getCounterName(), counterDef);
+    }
+
+    public Collection<CounterDefinition> getCounterDefinitions()
+    {
+        return unmodifiableCollection(_counterDefinitionMap.values());
+    }
+
     public void addMethod(String name, MethodInfo method)
     {
         checkLocked();
@@ -850,7 +893,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     {
         checkLocked();
         column.loadFromXml(xbColumn, true);
-        
+
         if (xbColumn.getFk() != null)
         {
             ColumnType.Fk columnFk = xbColumn.getFk();
@@ -1186,8 +1229,15 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
     private static void addAndLogError(Collection<QueryException> errors, String message, Exception e)
     {
-        errors.add(new QueryException(message, e));
-        LOG.warn(message + ((e == null || e.getMessage() == null) ? "" : e.getMessage()));
+        QueryException ex;
+        if (e instanceof QueryException)
+            ex = (QueryException)e;
+        else if (e.getCause() instanceof QueryException)
+            ex = (QueryException)e.getCause();
+        else
+            ex = new QueryException(message, e);
+        errors.add(ex);
+        LOG.warn(message + (e.getMessage() == null ? "" : e.getMessage()));
     }
 
     private void setAggregateRowConfig(TableType xmlTable)

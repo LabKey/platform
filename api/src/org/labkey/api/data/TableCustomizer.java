@@ -25,5 +25,5 @@ package org.labkey.api.data;
  */
 public interface TableCustomizer
 {
-    public void customize(TableInfo tableInfo);
+    void customize(TableInfo tableInfo);
 }

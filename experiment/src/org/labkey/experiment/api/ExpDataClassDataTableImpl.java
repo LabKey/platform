@@ -582,7 +582,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             // auto gen a sequence number for genId - reserve BATCH_SIZE numbers at a time so we don't select the next sequence value for every row
             ColumnInfo genIdCol = _dataClass.getTinfo().getColumn(FieldKey.fromParts("genId"));
             final int batchSize = _context.getInsertOption().batch ? BATCH_SIZE : 1;
-            step0.addSequenceColumn(genIdCol, _dataClass.getContainer(), ExpDataClassImpl.GENID_SEQUENCE_NAME, _dataClass.getRowId(), batchSize);
+            step0.addSequenceColumn(genIdCol, _dataClass.getContainer(), ExpDataClassImpl.SEQUENCE_PREFIX, _dataClass.getRowId(), batchSize);
 
             // Ensure we have a dataClass column and it is of the right value
             ColumnInfo classIdCol = expData.getColumn("classId");
@@ -599,8 +599,11 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 step0.addColumn(nameCol, (Supplier)() -> null);
             }
 
+            // Table Counters
+            ExpDataClassDataTableImpl queryTable = ExpDataClassDataTableImpl.this;
+            DataIteratorBuilder step1 = ExpDataIterators.CounterDataIteratorBuilder.create(DataIteratorBuilder.wrap(step0), _dataClass.getContainer(), queryTable, ExpDataClassImpl.SEQUENCE_PREFIX, _dataClass.getRowId());
+
             // Generate names
-            DataIteratorBuilder step1 = DataIteratorBuilder.wrap(LoggingDataIterator.wrap(step0));
             if (_dataClass.getNameExpression() != null)
             {
                 step0.addColumn(new ColumnInfo("nameExpression", JdbcType.VARCHAR), (Supplier) () -> _dataClass.getNameExpression());

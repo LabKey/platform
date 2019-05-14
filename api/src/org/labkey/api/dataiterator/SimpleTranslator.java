@@ -30,6 +30,7 @@ import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.CounterDefinition;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.ForeignKey;
@@ -1245,8 +1246,109 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             return sequence.next();
         }
     }
-    
 
+    /**
+     * @param col the column to which the PairedSequenceColumn is attached
+     * @param fromIndex index of the attached column if it exists in the input
+     * @param sequenceContainer sequence's container
+     * @param counterDefinition counter definition
+     * @param pairedIndexes indexes of the paired columns
+     * @param sequencePrefix sequence name prefix
+     * @param sequenceId sequenceId, if any
+     * @param batchSize sequence batch size
+     * @return index of PairedSequenceColumn
+     */
+    public int addPairedSequenceColumn(ColumnInfo col, @Nullable Integer fromIndex,
+                                       Container sequenceContainer, CounterDefinition counterDefinition,
+                                       List<Integer> pairedIndexes, String sequencePrefix,
+                                       @Nullable Integer sequenceId, @Nullable Integer batchSize)
+    {
+        PairedSequenceColumn seqCol = new PairedSequenceColumn(fromIndex, sequenceContainer, sequencePrefix, counterDefinition, pairedIndexes, sequenceId, batchSize);
+        return addColumn(col, seqCol);
+    }
+
+    protected class PairedSequenceColumn implements Supplier
+    {
+        // sequence settings
+        private final Container _seqContainer;
+        private final @Nullable Integer _columnIndex;
+        private final List<Integer> _pairedIndexes;
+        private final CounterDefinition _counterDefinition;
+        private final String _sequencePrefix;
+        private final int _seqId;
+        private final int _batchSize;
+
+        // sequence state
+        private Map<String, DbSequence> _sequences = new HashMap<>();
+
+        public PairedSequenceColumn(@Nullable Integer columnIndex, Container seqContainer, String sequencePrefix, CounterDefinition counterDefinition, List<Integer> pairedIndexes, @Nullable Integer seqId, @Nullable Integer batchSize)
+        {
+            _seqContainer = seqContainer;
+            _sequencePrefix = sequencePrefix;
+            _seqId = seqId == null ? 0 : seqId.intValue();
+            _batchSize = batchSize == null ? 1 : batchSize;
+            _pairedIndexes = pairedIndexes;
+            _counterDefinition = counterDefinition;
+            _columnIndex = columnIndex;
+        }
+
+        private DbSequence getSequence()
+        {
+            // Create the sequence name from the counter name + the paired values
+            List<String> pairedValues = new ArrayList<>();
+            for (Integer i : _pairedIndexes)
+            {
+                // We've already reported an error for missing paired column
+                if (i == null)
+                    return null;
+
+                Object value = _data.get(i);
+                if (null != value)
+                {
+                    pairedValues.add(value.toString());
+                }
+                else
+                {
+                    String name = _data.getColumnInfo(i).getName();
+                    addFieldError(name, "Paired column '" + name + "' must not be null for counter '" + _counterDefinition.getCounterName() + "'");
+                    return null;
+                }
+            }
+
+            String seqName = _counterDefinition.getDbSequenceName(_sequencePrefix, pairedValues);
+            if (!_sequences.containsKey(seqName))
+                _sequences.put(seqName, DbSequenceManager.getPreallocatingSequence(_seqContainer, seqName, _seqId, _batchSize));
+            return _sequences.get(seqName);
+        }
+
+        @Override
+        public Object get()
+        {
+            // Get the current value of the counter, compare with the provided value of the bound column, throw error or get the next counter number
+            DbSequence sequence = getSequence();
+            if (null != sequence)
+            {
+                int currentValue = sequence.current();
+                Object valueObj = _columnIndex != null ? _data.get(_columnIndex) : null;
+                if (null != valueObj)
+                {
+                    int value = (int) valueObj;
+                    if (value <= currentValue)
+                        return value;
+
+                    String name = _data.getColumnInfo(_columnIndex).getName();
+                    addFieldError(name, "Value (" + value + ") of paired column '" + name + "' is greater than the current counter value (" + currentValue + ") for counter '" + _counterDefinition.getCounterName() + "'");
+                }
+                else
+                {
+                    return sequence.next();
+                }
+            }
+
+            return null;
+        }
+    }
+    
     /** implementation **/
 
     @Override
