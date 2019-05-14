@@ -8,7 +8,7 @@ import {ActionURL} from "@labkey/api";
 import {LoadingSpinner, Alert} from "@glass/base";
 import {DomainForm, DomainConfirm, DomainDesign, clearFieldDetails, fetchDomain, saveDomain} from "@glass/domainproperties"
 
-interface IDomainDesignerState {
+interface StateProps {
     schemaName?: string,
     queryName?: string,
     domainId?: number,
@@ -21,7 +21,7 @@ interface IDomainDesignerState {
     dirty: boolean
 }
 
-export class App extends React.PureComponent<any, IDomainDesignerState> {
+export class App extends React.PureComponent<any, StateProps> {
 
     constructor(props)
     {
@@ -38,6 +38,7 @@ export class App extends React.PureComponent<any, IDomainDesignerState> {
             domainId,
             returnUrl,
             submitting: false,
+            message: ((schemaName && queryName) || domainId) ? undefined : 'Missing required parameter: domainId or schemaName and queryName.',
             showConfirm: false,
             dirty: false
         };
@@ -49,29 +50,30 @@ export class App extends React.PureComponent<any, IDomainDesignerState> {
         if ((schemaName && queryName) || domainId) {
             fetchDomain(domainId, schemaName, queryName)
                 .then(domain => {
-                    this.setState({domain});
+                    this.setState(() => ({domain}));
                 })
                 .catch(error => {
-                    this.setState({message: error.exception, messageType: 'danger'})
+                    this.setState(() => ({message: error.exception, messageType: 'danger'}));
                 });
         }
-        else {
-            this.setState({domain: new DomainDesign()})
-        }
+        // else {
+        //     this.setState(() => ({domain: new DomainDesign()}));
+        // }
     }
 
     submitHandler = () => {
         const { domain } = this.state;
 
-        // Temp values for name and pk since those are not available inputs currently
-        const name = 'list_' + Math.floor(Math.random() * 10000);
-        const options = {
-            keyName: domain.fields.get(0).name
-        }
+        // NOTE: temp values for name and pk since those are not available inputs currently
+        // const name = 'list_' + Math.floor(Math.random() * 10000);
+        // const options = {
+        //     keyName: domain.fields.size > 0 ? domain.fields.get(0).name : undefined
+        // };
 
         this.setState(() => ({submitting: true}));
 
-        saveDomain(domain, 'VarList', options, name )
+        // saveDomain(domain, 'VarList', options, name )
+        saveDomain(domain)
             .then((savedDomain) => {
                 const newDomain = clearFieldDetails(savedDomain);
 
@@ -97,33 +99,45 @@ export class App extends React.PureComponent<any, IDomainDesignerState> {
     };
 
     onChangeHandler = (newDomain, dirty) => {
-        this.setState(() => ({
+        this.setState((state) => ({
             domain: newDomain,
-            dirty
+            dirty: state.dirty || dirty // if the state is already dirty, leave it as such
         }));
     };
 
     dismissAlert = () => {
-        this.setState({message: null, messageType: null})
+        this.setState(() => ({message: null, messageType: null}));
     };
 
-    onCancel = () => {
-        if( this.state.dirty ) {
-            this.setState({showConfirm: true})
+    onCancelBtnHandler = () => {
+        if (this.state.dirty) {
+            this.setState(() => ({showConfirm: true}));
         }
         else {
-            this.onCancelConfirm();
+            this.onConfirm();
         }
     };
 
-    onCancelConfirm = () => {
+    onConfirm = () => {
         const { returnUrl } = this.state;
         window.location.href = returnUrl || ActionURL.buildURL('project', 'begin');
     };
 
-    onCancelCancel = () => {
-        this.setState({showConfirm: false})
+    hideConfirm = () => {
+        this.setState(() => ({showConfirm: false}));
     };
+
+    renderNavigateConfirm() {
+        return (
+            <DomainConfirm
+                title='Confirm Leaving Page'
+                msg='You have unsaved changes. Are you sure you would like to leave this page before saving your changes?'
+                confirmVariant='success'
+                onConfirm={this.onConfirm}
+                onCancel={this.hideConfirm}
+            />
+        )
+    }
 
     render() {
         const { domain, message, messageType, submitting, showConfirm } = this.state;
@@ -143,7 +157,7 @@ export class App extends React.PureComponent<any, IDomainDesignerState> {
                                 type='button'
                                 className={'domain-designer-button'}
                                 bsClass='btn'
-                                onClick={this.onCancel}
+                                onClick={this.onCancelBtnHandler}
                                 disabled={submitting}>
                                 Cancel
                             </Button>
@@ -158,19 +172,13 @@ export class App extends React.PureComponent<any, IDomainDesignerState> {
                         </ButtonToolbar>
                     </Col>
                 </Row>}
-                <DomainConfirm show={showConfirm} title='Confirm Leaving Page'
-                               msg='You have unsaved data, leave page before saving data?'
-                               onConfirm={this.onCancelConfirm}
-                               onCancel={this.onCancelCancel}
-                               confirmButtonText='Yes'
-                               cancelButtonText='No'
-                               confirmVariant='success'/>
+                { showConfirm && this.renderNavigateConfirm() }
                 { message && <Alert bsStyle={messageType} onDismiss={this.dismissAlert}>{message}</Alert> }
-                { domain && <DomainForm domain={domain}
-                                        onChange={this.onChangeHandler}
-                                        helpURL='https://www.labkey.org/Documentation/wiki-page.view?name=listDefineFields'
-                                        helpNoun='list'
-                            />}
+                { domain &&
+                <DomainForm
+                    domain={domain}
+                    onChange={this.onChangeHandler}
+                />}
             </>
         )
     }

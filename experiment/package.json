@@ -33,8 +33,8 @@
   },
   "dependencies": {
     "@labkey/dependencies": "0.0.4-alpha2",
-    "@glass/base": "0.1.9-alpha1",
-    "@glass/domainproperties": "0.0.9-alpha13",
+    "@glass/base": "0.2.0-fb-addremove.1",
+    "@glass/domainproperties": "0.0.9-fb-addremove.2",
     "classnames": "2.2.6"
   },
   "devDependencies": {
