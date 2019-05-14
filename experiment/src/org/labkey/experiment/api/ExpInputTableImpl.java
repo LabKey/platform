@@ -42,6 +42,7 @@ public abstract class ExpInputTableImpl<C extends Enum> extends ExpTableImpl<C> 
 
     public void setRun(ExpRun run, ExpProtocol.ApplicationType type)
     {
+        checkLocked();
         _run = run;
         _type = type;
         applyFilters();

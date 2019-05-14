@@ -119,6 +119,7 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
 
     public void setAssayProtocol(ExpProtocol protocol)
     {
+        checkLocked();
         if (_assayProtocol != null && !_assayProtocol.equals(protocol))
         {
             throw new IllegalStateException("Cannot change assay protocol when it has already been set to " + _assayProtocol.getLSID());

@@ -83,13 +83,16 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         super(name, ExperimentServiceImpl.get().getTinfoExperimentRun(), schema, new ExpRunImpl(new ExperimentRun()), cf);
     }
 
+    @Override
     public ExpProtocol getProtocol()
     {
         return _protocol;
     }
 
+    @Override
     public void setProtocol(ExpProtocol protocol)
     {
+        checkLocked();
         if (_protocol != null)
             throw new IllegalStateException("Cannot unset protocol");
         _protocol = protocol;
@@ -99,8 +102,10 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         }
     }
 
+    @Override
     public void setProtocolPatterns(String... patterns)
     {
+        checkLocked();
         _protocolPatterns = patterns;
         if (_protocolPatterns != null)
         {
@@ -130,13 +135,16 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         }
     }
 
+    @Override
     public ExpExperiment getExperiment()
     {
         return _experiment;
     }
 
+    @Override
     public void setInputMaterial(ExpMaterial material)
     {
+        checkLocked();
         if (_inputMaterial != null)
         {
             throw new IllegalArgumentException("Cannot unset source material");
@@ -150,13 +158,16 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             "(SELECT RunLSID FROM " + ExperimentServiceImpl.get().getTinfoExperimentRunMaterialInputs() + " WHERE RowId = ?)", _inputMaterial.getRowId()));
     }
 
+    @Override
     public ExpMaterial getInputMaterial()
     {
         return _inputMaterial;
     }
 
+    @Override
     public void setInputData(ExpData data)
     {
+        checkLocked();
         if (_inputData != null)
         {
             throw new IllegalArgumentException("Cannot unset input data");
@@ -171,13 +182,16 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
 
     }
 
+    @Override
     public ExpData getInputData()
     {
         return _inputData;
     }
 
+    @Override
     public void setRuns(List<ExpRun> runs)
     {
+        checkLocked();
         if (runs.isEmpty())
         {
             addCondition(new SQLFragment("1 = 2"));
@@ -199,8 +213,10 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         }
     }
 
+    @Override
     public void setExperiment(ExpExperiment experiment)
     {
+        checkLocked();
         if (_experiment != null)
             throw new IllegalArgumentException("Cannot unset experiment");
         if (experiment == null)
@@ -221,6 +237,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         }
     }
 
+    @Override
     public BaseColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
@@ -298,13 +315,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 result.setDescription("Link to the run's graph");
                 result.setShownInUpdateView(false);
                 result.setShownInInsertView(false);
-                result.setDisplayColumnFactory(new DisplayColumnFactory()
-                {
-                    public DisplayColumn createRenderer(ColumnInfo colInfo)
-                    {
-                        return new RunGraphDisplayColumn(colInfo);
-                    }
-                });
+                result.setDisplayColumnFactory(RunGraphDisplayColumn::new);
                 return result;
             }
             case RunGroupToggle:
@@ -315,13 +326,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 toggleCol.setIsUnselectable(true);
                 final ExperimentsForeignKey fk = new ExperimentsForeignKey();
                 toggleCol.setFk(fk);
-                toggleCol.setDisplayColumnFactory(new DisplayColumnFactory()
-                {
-                    public DisplayColumn createRenderer(ColumnInfo colInfo)
-                    {
-                        return new RunGroupListDisplayColumn(colInfo, fk);
-                    }
-                });
+                toggleCol.setDisplayColumnFactory(colInfo -> new RunGroupListDisplayColumn(colInfo, fk));
                 toggleCol.setShownInInsertView(false);
                 toggleCol.setShownInUpdateView(false);
                 return toggleCol;
@@ -398,8 +403,10 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         }
     }
 
+    @Override
     public BaseColumnInfo addDataInputColumn(String alias, String role)
     {
+        checkLocked();
         SQLFragment sql = new SQLFragment("(SELECT MIN(exp.datainput.dataid)" +
                 "\nFROM exp.datainput" +
                 "\nINNER JOIN exp.protocolapplication on exp.datainput.targetapplicationid = exp.protocolapplication.rowid" +
@@ -419,8 +426,10 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         return doAdd(new ExprColumn(this, alias, sql, JdbcType.INTEGER));
     }
 
+    @Override
     public BaseColumnInfo addDataCountColumn(String alias, String roleName)
     {
+        checkLocked();
         SQLFragment sql = new SQLFragment("(SELECT COUNT(DISTINCT exp.DataInput.DataId) FROM exp.DataInput " +
                 "\nINNER JOIN exp.ProtocolApplication ON exp.ProtocolApplication.RowId = exp.DataInput.TargetApplicationId" +
                 "\nWHERE exp.ProtocolApplication.RunId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId" +
@@ -584,11 +593,13 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             setWidth("200");
         }
 
+        @Override
         public boolean isFilterable()
         {
             return false;
         }
 
+        @Override
         public boolean isSortable()
         {
             return false;
@@ -635,6 +646,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             return sb.toString();
         }
 
+        @Override
         public String getDisplayValue(RenderContext ctx)
         {
             return buildString(ctx, false);
@@ -663,6 +675,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             return "";
         }
 
+        @Override
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
             out.write(buildString(ctx, true));
@@ -688,16 +701,19 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             setWidth("18");
         }
 
+        @Override
         public boolean isFilterable()
         {
             return false;
         }
 
+        @Override
         public boolean isSortable()
         {
             return false;
         }
 
+        @Override
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
             Object rowId = getColumnInfo().getValue(ctx);
@@ -726,6 +742,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             return _experiments;
         }
 
+        @Override
         public ColumnInfo createLookupColumn(final ColumnInfo parent, String displayField)
         {
             if (displayField == null)
@@ -755,26 +772,31 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             return null;
         }
 
+        @Override
         public StringExpression getURL(ColumnInfo parent)
         {
             return null;
         }
 
+        @Override
         public Container getLookupContainer()
         {
             return null;
         }
 
+        @Override
         public String getLookupTableName()
         {
             return ExpSchema.TableType.RunGroups.toString();
         }
 
+        @Override
         public String getLookupSchemaName()
         {
             return ExpSchema.SCHEMA_NAME;
         }
 
+        @Override
         public String getLookupColumnName()
         {
             return null; // XXX: NYI
@@ -786,6 +808,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             return null;
         }
 
+        @Override
         public TableInfo getLookupTableInfo()
         {
             VirtualTable result = new VirtualTable(ExperimentServiceImpl.get().getSchema(), "Experiments");
@@ -798,17 +821,20 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             return result;
         }
 
+        @Override
         public NamedObjectList getSelectList(RenderContext ctx)
         {
             // XXX: NYI
             return new NamedObjectList();
         }
 
+        @Override
         public ForeignKey remapFieldKeys(FieldKey parent, Map<FieldKey, FieldKey> mapping)
         {
             return this;
         }
 
+        @Override
         public Set<FieldKey> getSuggestedColumns()
         {
             return null;
@@ -892,7 +918,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
 
                         // Also check for properties
                         ColumnInfo col = getQueryTable().getColumn(entry.getKey());
-                        if (col != null && col instanceof PropertyColumn)
+                        if (col instanceof PropertyColumn)
                         {
                             PropertyColumn propColumn = (PropertyColumn)col;
                             PropertyDescriptor propertyDescriptor = propColumn.getPropertyDescriptor();

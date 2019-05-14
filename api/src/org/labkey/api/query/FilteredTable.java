@@ -272,6 +272,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
     final public void addCondition(SQLFragment condition, FieldKey... fieldKeys)
     {
+        checkLocked();
         if (condition.isEmpty())
             return;
         SQLFragment tmp = new SQLFragment();
@@ -281,6 +282,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
     public void addCondition(SimpleFilter filter)
     {
+        checkLocked();
         _filter.addAllClauses(filter);
     }
 
@@ -314,11 +316,13 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
     public void clearConditions(FieldKey fieldKey)
     {
+        checkLocked();
         _filter.deleteConditions(fieldKey);
     }
 
     public void addCondition(ColumnInfo col, Container container)
     {
+        checkLocked();
         assertCorrectParentTable(col);
         // This CAST improves performance on Postgres for some queries by choosing a more efficient query plan
         SQLFragment frag = new SQLFragment();
@@ -331,6 +335,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
     public void addCondition(ColumnInfo col, String value)
     {
+        checkLocked();
         assertCorrectParentTable(col);
         SQLFragment frag = new SQLFragment();
         frag.append(col.getSelectName());
@@ -347,6 +352,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
     public void addCondition(ColumnInfo col, int value)
     {
+        checkLocked();
         assertCorrectParentTable(col);
         SQLFragment frag = new SQLFragment();
         frag.append(filterName(col));
@@ -357,6 +363,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
     public void addCondition(ColumnInfo col, float value)
     {
+        checkLocked();
         assertCorrectParentTable(col);
         SQLFragment frag = new SQLFragment();
         frag.append(filterName(col));
@@ -367,6 +374,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
     public void addCondition(ColumnInfo col1, ColumnInfo col2)
     {
+        checkLocked();
         assert col1.getParentTable() == col2.getParentTable() : "Column is from the wrong table";
         assertCorrectParentTable(col1);
         SQLFragment frag = new SQLFragment();
@@ -379,6 +387,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
     public void addInClause(ColumnInfo col, Collection<?> params)
     {
+        checkLocked();
         assertCorrectParentTable(col);
         SimpleFilter.InClause clause = new SimpleFilter.InClause(col.getFieldKey(), params);
         SQLFragment frag = clause.toSQLFragment(Collections.emptyMap(), _schema.getSqlDialect());
@@ -451,6 +460,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     @Override
     public BaseColumnInfo addColumn(BaseColumnInfo column)
     {
+        checkLocked();
         BaseColumnInfo ret = column;
 
         // Choke point for handling all column filtering and transforming, e.g., respecting PHI annotations
@@ -549,7 +559,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     protected void applyContainerFilter(ContainerFilter filter)
     {
         // Datasets need to determine if they have container column in their root table
-        if(_rootTable.hasContainerColumn())
+        if (_rootTable.hasContainerColumn())
         {
             ColumnInfo containerColumn = _rootTable.getColumn(getContainerFilterColumn());
             if (containerColumn != null && getContainer() != null)

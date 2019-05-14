@@ -356,6 +356,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
 
     public void setDomain(Domain domain)
     {
+        checkLocked();
         assert _domain == null;
         _domain = domain;
     }

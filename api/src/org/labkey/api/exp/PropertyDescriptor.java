@@ -63,6 +63,12 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
 
     private static final Logger LOG = Logger.getLogger(PropertyDescriptor.class);
 
+    @Override
+    public void checkLocked()
+    {
+        // pass
+    }
+
     /** Entity id for the lookup's target container */
     public String getLookupContainer()
     {

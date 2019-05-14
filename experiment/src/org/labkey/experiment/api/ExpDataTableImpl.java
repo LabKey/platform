@@ -204,6 +204,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
 
     public void setDefaultColumns()
     {
+        checkLocked();
         List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromParts(Column.Name));
         defaultCols.add(FieldKey.fromParts(Column.Run));
@@ -554,6 +555,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
 
     public void setExperiment(ExpExperiment experiment)
     {
+        checkLocked();
         if (getExperiment() != null)
             throw new IllegalArgumentException("Attempt to unset experiment");
         if (experiment == null)
@@ -573,6 +575,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
 
     public void setRun(ExpRun run)
     {
+        checkLocked();
         if (_runSpecified)
             throw new IllegalArgumentException("Cannot unset run");
         _runSpecified = true;
@@ -636,6 +639,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
 
     public void setDataType(DataType type)
     {
+        checkLocked();
         _type = type;
         getFilter().deleteConditions(FieldKey.fromParts("LSID"));
         if (_type != null)
@@ -646,6 +650,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
 
     public void setDataClass(ExpDataClass dataClass)
     {
+        checkLocked();
         _dataClass = dataClass;
         getFilter().deleteConditions(FieldKey.fromParts("classId"));
         if (_dataClass != null)

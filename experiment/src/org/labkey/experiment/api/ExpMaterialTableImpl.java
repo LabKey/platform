@@ -295,6 +295,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
     public void setSampleSet(ExpSampleSet ss, boolean filter)
     {
+        checkLocked();
         if (_ss != null)
         {
             throw new IllegalStateException("Cannot unset sample set");
@@ -318,6 +319,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
     public void setMaterials(Set<ExpMaterial> materials)
     {
+        checkLocked();
         if (materials.isEmpty())
         {
             addCondition(new SQLFragment("1 = 2"));

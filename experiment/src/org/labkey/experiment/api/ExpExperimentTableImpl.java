@@ -116,6 +116,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
 
     public void addExperimentMembershipColumn(ExpRun run)
     {
+        checkLocked();
         final SQLFragment sql;
         if (run != null)
         {
@@ -217,6 +218,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
     @Override
     public void setContainerFilter(@NotNull ContainerFilter filter)
     {
+        checkLocked();
         if (getContainerFilter() instanceof ContainerFilter.CurrentPlusProjectAndShared)
         {
             filter = new UnionContainerFilter(filter, getContainerFilter());

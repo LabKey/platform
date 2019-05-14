@@ -84,9 +84,16 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
     protected FieldKey _crosstabColumnDimension;
     protected CrosstabMember _crosstabColumnMember;
 
+    abstract public void checkLocked();
+    private void _checkLocked()
+    {
+        checkLocked();
+    }
+
     @Override
     public void copyTo(ColumnRenderPropertiesImpl to)
     {
+        to._checkLocked();
         to._sortDirection = _sortDirection;
         to.setInputType(getInputType());
         to.setInputLength(getInputLength());
@@ -142,6 +149,7 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
 
     public void setSortDirection(SortDirection sortDirection)
     {
+        _checkLocked();
         _sortDirection = sortDirection;
     }
 
@@ -153,6 +161,7 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
 
     public void setInputType(String inputType)
     {
+        _checkLocked();
         _inputType = inputType;
     }
 
@@ -164,6 +173,7 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
 
     public void setInputLength(int inputLength)
     {
+        _checkLocked();
         _inputLength = inputLength;
     }
 
@@ -175,6 +185,7 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
 
     public void setInputRows(int inputRows)
     {
+        _checkLocked();
         _inputRows = inputRows;
     }
 
@@ -186,6 +197,7 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
 
     public void setDisplayWidth(String displayWidth)
     {
+        _checkLocked();
         _displayWidth = displayWidth;
     }
 
@@ -197,6 +209,7 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
 
     public void setFormat(String format)
     {
+        _checkLocked();
         _format = format;
     }
 
@@ -208,6 +221,7 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
 
     public void setExcelFormatString(String excelFormatString)
     {
+        _checkLocked();
         _excelFormatString = excelFormatString;
     }
 
@@ -219,6 +233,7 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
 
     public void setTsvFormatString(String tsvFormatString)
     {
+        _checkLocked();
         _tsvFormatString = tsvFormatString;
     }
 
@@ -230,6 +245,7 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
 
     public void setTextExpression(StringExpression expr)
     {
+        _checkLocked();
         _textExpression = expr;
     }
 
@@ -252,6 +268,7 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
 
     public void setShortLabel(String shortLabel)
     {
+        _checkLocked();
         _shortLabel = shortLabel;
     }
 
@@ -263,6 +280,7 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
 
     public void setDescription(String description)
     {
+        _checkLocked();
         _description = description;
     }
 
@@ -274,6 +292,7 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
 
     public void setHidden(boolean hidden)
     {
+        _checkLocked();
         _hidden = hidden;
     }
 
@@ -285,6 +304,7 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
 
     public void setShownInDetailsView(boolean shownInDetailsView)
     {
+        _checkLocked();
         _shownInDetailsView = shownInDetailsView;
     }
 
@@ -296,6 +316,7 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
 
     public void setShownInInsertView(boolean shownInInsertView)
     {
+        _checkLocked();
         _shownInInsertView = shownInInsertView;
     }
 
@@ -307,6 +328,7 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
 
     public void setShownInUpdateView(boolean shownInUpdateView)
     {
+        _checkLocked();
         _shownInUpdateView = shownInUpdateView;
     }
 
@@ -318,6 +340,7 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
 
     public void setURL(StringExpression url)
     {
+        _checkLocked();
         _url = url;
     }
 
@@ -329,6 +352,7 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
 
     public void setURLTargetWindow(String urlTargetWindow)
     {
+        _checkLocked();
         _urlTargetWindow = urlTargetWindow;
     }
 
@@ -340,6 +364,7 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
 
     public void setURLCls(String urlCls)
     {
+        _checkLocked();
         _urlCls = urlCls;
     }
 
@@ -351,6 +376,7 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
 
     public void setOnClick(String onClick)
     {
+        _checkLocked();
         _onClick = onClick;
     }
 
@@ -362,6 +388,7 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
 
     public void setRecommendedVariable(boolean recommendedVariable)
     {
+        _checkLocked();
         _recommendedVariable = recommendedVariable;
     }
 
@@ -373,16 +400,19 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
 
     public void setDefaultScale(DefaultScaleType defaultScale)
     {
+        _checkLocked();
         _defaultScale = defaultScale;
     }
 
     public void setMeasure(boolean measure)
     {
+        _checkLocked();
         _measure = measure;
     }
 
     public void setDimension(boolean dimension)
     {
+        _checkLocked();
         _dimension = dimension;
     }
 
@@ -460,6 +490,7 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
 
     public void setNullable(boolean nullable)
     {
+        _checkLocked();
         _nullable = nullable;
     }
 
@@ -480,6 +511,7 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
 
     public void setRequired(boolean required)
     {
+        _checkLocked();
         _required = required;
     }
 
@@ -492,6 +524,7 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
 
     public void setImportAliasesSet(Set<String> importAliases)
     {
+        _checkLocked();
         assert importAliases != null;
         _importAliases = importAliases;
     }
@@ -536,6 +569,7 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
 
     public void setPropertyType(PropertyType propertyType)
     {
+        _checkLocked();
         _propertyType = propertyType;
     }
 
@@ -639,6 +673,7 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
 
     public void setFacetingBehaviorType(FacetingBehaviorType type)
     {
+        _checkLocked();
         _facetingBehaviorType = type;
     }
 
@@ -656,6 +691,7 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
 
     public void setCrosstabColumnDimension(FieldKey crosstabColumnDimension)
     {
+        _checkLocked();
         _crosstabColumnDimension = crosstabColumnDimension;
     }
 
@@ -667,11 +703,13 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
 
     public void setCrosstabColumnMember(CrosstabMember member)
     {
+        _checkLocked();
         _crosstabColumnMember = member;
     }
 
     public void setPHI(PHI phi)
     {
+        _checkLocked();
         _phi = phi;
     }
 
@@ -689,6 +727,7 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
 
     public void setRedactedText(String redactedText)
     {
+        _checkLocked();
         _redactedText = redactedText;
     }
 
@@ -700,6 +739,7 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
 
     public void setExcludeFromShifting(boolean isExcludeFromShifting)
     {
+        _checkLocked();
         _isExcludeFromShifting = isExcludeFromShifting;
     }
 
@@ -711,6 +751,7 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
 
     public void setScale(int scale)
     {
+        _checkLocked();
         _scale = scale;
     }
 }
