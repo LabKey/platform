@@ -5,8 +5,8 @@
 import * as React from 'react'
 import {Button, ButtonToolbar, Col, Row} from "react-bootstrap";
 import {ActionURL} from "@labkey/api";
-import {LoadingSpinner, Alert} from "@glass/base";
-import {DomainForm, DomainConfirm, DomainDesign, clearFieldDetails, fetchDomain, saveDomain} from "@glass/domainproperties"
+import {LoadingSpinner, Alert, ConfirmModal} from "@glass/base";
+import {DomainForm, DomainDesign, clearFieldDetails, fetchDomain, saveDomain} from "@glass/domainproperties"
 
 interface StateProps {
     schemaName?: string,
@@ -129,7 +129,7 @@ export class App extends React.PureComponent<any, StateProps> {
 
     renderNavigateConfirm() {
         return (
-            <DomainConfirm
+            <ConfirmModal
                 title='Confirm Leaving Page'
                 msg='You have unsaved changes. Are you sure you would like to leave this page before saving your changes?'
                 confirmVariant='success'
