@@ -140,7 +140,7 @@ export class App extends React.PureComponent<any, StateProps> {
     }
 
     render() {
-        const { domain, message, messageType, submitting, showConfirm } = this.state;
+        const { domain, message, messageType, submitting, showConfirm, dirty } = this.state;
         const isLoading = domain === undefined && message === undefined;
 
         if (isLoading) {
@@ -166,7 +166,7 @@ export class App extends React.PureComponent<any, StateProps> {
                                 className={'domain-designer-button'}
                                 bsClass='btn btn-success'
                                 onClick={this.submitHandler}
-                                disabled={submitting}>
+                                disabled={submitting || !dirty}>
                                 Save Changes
                             </Button>
                         </ButtonToolbar>
