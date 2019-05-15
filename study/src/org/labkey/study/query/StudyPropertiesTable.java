@@ -18,8 +18,10 @@ package org.labkey.study.query;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
@@ -63,23 +65,23 @@ public class StudyPropertiesTable extends BaseStudyTable
     private Domain _domain;
     private List<FieldKey> _visibleColumns = new ArrayList<>();
 
-    public StudyPropertiesTable(StudyQuerySchema schema)
+    public StudyPropertiesTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoStudy());
+        super(schema, StudySchema.getInstance().getTableInfoStudy(), cf);
 
         Container c = schema.getContainer();
 
-        ColumnInfo labelColumn = addRootColumn("label", true, true);
+        var labelColumn = addRootColumn("label", true, true);
         DetailsURL detailsURL = new DetailsURL(PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c));
         labelColumn.setURL(detailsURL);
         addRootColumn("startDate", true, true);
         addRootColumn("endDate", true, true);
 
-        ColumnInfo containerColumn = addRootColumn("container", false, false);
+        var containerColumn = addRootColumn("container", false, false);
         containerColumn.setFk(new ContainerForeignKey(schema));
         containerColumn.setKeyField(true);
 
-        ColumnInfo timepointTypeColumn = addRootColumn("timepointType", false, false);
+        var timepointTypeColumn = addRootColumn("timepointType", false, false);
         addRootColumn("subjectNounSingular", false, true);
         addRootColumn("subjectNounPlural", false, true);
         addRootColumn("subjectColumnName", false, true);
@@ -90,8 +92,8 @@ public class StudyPropertiesTable extends BaseStudyTable
         addRootColumn("participantAliasProperty", true, true);
         addRootColumn("participantAliasSourceProperty", true, true);
         addRootColumn("assayPlan", true, true);
-        ColumnInfo descriptionColumn = addRootColumn("description", true, true);
-        final ColumnInfo descriptionRendererTypeColumn = addRootColumn("descriptionRendererType", false, true);
+        var descriptionColumn = addRootColumn("description", true, true);
+        final var descriptionRendererTypeColumn = addRootColumn("descriptionRendererType", false, true);
         descriptionRendererTypeColumn.setFk(new LookupForeignKey("Value")
         {
             @Override
@@ -112,13 +114,13 @@ public class StudyPropertiesTable extends BaseStudyTable
         String bTRUE = getSchema().getSqlDialect().getBooleanTRUE();
         String bFALSE = getSchema().getSqlDialect().getBooleanFALSE();
 
-        ColumnInfo dateBasedColumn = new ExprColumn(this, "DateBased", new SQLFragment("(CASE WHEN " + ExprColumn.STR_TABLE_ALIAS + ".timepointType != 'VISIT' THEN " + bTRUE + " ELSE " + bFALSE + " END)"), JdbcType.BOOLEAN, timepointTypeColumn);
+        var dateBasedColumn = new ExprColumn(this, "DateBased", new SQLFragment("(CASE WHEN " + ExprColumn.STR_TABLE_ALIAS + ".timepointType != 'VISIT' THEN " + bTRUE + " ELSE " + bFALSE + " END)"), JdbcType.BOOLEAN, timepointTypeColumn);
         dateBasedColumn.setUserEditable(false);
         dateBasedColumn.setHidden(true);
         dateBasedColumn.setDescription("Deprecated. Use 'timepointType' column instead.");
         addColumn(dateBasedColumn);
 
-        ColumnInfo lsidColumn = addRootColumn("LSID", false, false);
+        var lsidColumn = addRootColumn("LSID", false, false);
         lsidColumn.setHidden(true);
 
         String domainURI = StudyImpl.DOMAIN_INFO.getDomainURI(c);
@@ -144,7 +146,7 @@ public class StudyPropertiesTable extends BaseStudyTable
         {
             for (ColumnInfo extraColumn : _domain.getColumns(this, lsidColumn, c, schema.getUser()))
             {
-                safeAddColumn(extraColumn);
+                safeAddColumn( (BaseColumnInfo) extraColumn);
                 _visibleColumns.add(FieldKey.fromParts(extraColumn.getName()));
             }
         }
@@ -155,9 +157,9 @@ public class StudyPropertiesTable extends BaseStudyTable
         setImportURL(AbstractTableInfo.LINK_DISABLER);
     }
 
-    private ColumnInfo addRootColumn(String columnName, boolean visible, boolean userEditable)
+    private BaseColumnInfo addRootColumn(String columnName, boolean visible, boolean userEditable)
     {
-        ColumnInfo columnInfo = addWrapColumn(_rootTable.getColumn(columnName));
+        var columnInfo = addWrapColumn(_rootTable.getColumn(columnName));
         columnInfo.setUserEditable(userEditable);
         if (visible)
             _visibleColumns.add(columnInfo.getFieldKey());

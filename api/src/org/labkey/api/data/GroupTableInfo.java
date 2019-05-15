@@ -146,7 +146,7 @@ public class GroupTableInfo extends VirtualTable
             addColumn(createAggregateColumn(measure));
     }
 
-    protected ColumnInfo createGroupByColumn(ColumnInfo sourceCol)
+    protected BaseColumnInfo createGroupByColumn(ColumnInfo sourceCol)
     {
         // All lookup columns have already been flattened into a subselect for us, so we just need to pluck out the
         // values by alias
@@ -155,7 +155,7 @@ public class GroupTableInfo extends VirtualTable
         return result;
     }
 
-    protected ColumnInfo createAggregateColumn(CrosstabMeasure measure)
+    protected BaseColumnInfo createAggregateColumn(CrosstabMeasure measure)
     {
         return new AggregateColumnInfo(this, null, measure);
     }

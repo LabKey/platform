@@ -28,6 +28,7 @@ import org.json.JSONArray;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSequence;
@@ -105,7 +106,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     {
         super(context);
         _data = source;
-        _outputColumns.add(new Pair<>(new ColumnInfo(source.getColumnInfo(0)), new PassthroughColumn(0)));
+        _outputColumns.add(new Pair<>(new BaseColumnInfo(source.getColumnInfo(0)), new PassthroughColumn(0)));
     }
 
     protected DataIterator getInput()
@@ -895,19 +896,19 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
     public int addColumn(int fromIndex)
     {
-        ColumnInfo col = new ColumnInfo(_data.getColumnInfo(fromIndex));
+        ColumnInfo col = new BaseColumnInfo(_data.getColumnInfo(fromIndex));
         return addColumn(col, new PassthroughColumn(fromIndex));
     }
 
     public int addColumn(ColumnInfo from, int fromIndex)
     {
-        ColumnInfo clone = new ColumnInfo(from);
+        ColumnInfo clone = new BaseColumnInfo(from);
         return addColumn(clone, new PassthroughColumn(fromIndex));
     }
 
     public int addColumn(String name, int fromIndex)
     {
-        ColumnInfo col = new ColumnInfo(_data.getColumnInfo(fromIndex));
+        var col = new BaseColumnInfo(_data.getColumnInfo(fromIndex));
         col.setName(name);
         return addColumn(col, new PassthroughColumn(fromIndex));
     }
@@ -964,7 +965,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
     public int addAliasColumn(String name, int aliasIndex)
     {
-        ColumnInfo col = new ColumnInfo(_outputColumns.get(aliasIndex).getKey());
+        var col = new BaseColumnInfo(_outputColumns.get(aliasIndex).getKey());
         col.setName(name);
         // don't want duplicate property ids usually
         col.setPropertyURI(null);
@@ -973,7 +974,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
     public int addAliasColumn(String name, int aliasIndex, JdbcType toType)
     {
-        ColumnInfo col = new ColumnInfo(_outputColumns.get(aliasIndex).getKey());
+        var col = new BaseColumnInfo(_outputColumns.get(aliasIndex).getKey());
         col.setName(name);
         col.setJdbcType(toType);
         // don't want duplicate property ids usually
@@ -983,7 +984,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
     public int addConvertColumn(String name, int fromIndex, JdbcType toType, boolean mv)
     {
-        ColumnInfo col = new ColumnInfo(_data.getColumnInfo(fromIndex));
+        var col = new BaseColumnInfo(_data.getColumnInfo(fromIndex));
         col.setName(name);
         col.setJdbcType(toType);
         return addConvertColumn(col, fromIndex, mv);
@@ -1022,7 +1023,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
     public int addCoaleseColumn(String name, int fromIndex, Supplier second)
     {
-        ColumnInfo col = new ColumnInfo(_data.getColumnInfo(fromIndex));
+        var col = new BaseColumnInfo(_data.getColumnInfo(fromIndex));
         col.setName(name);
         return addColumn(col, new CoalesceColumn(fromIndex, second));
     }
@@ -1030,21 +1031,21 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
     public int addNullColumn(String name, JdbcType type)
     {
-        ColumnInfo col = new ColumnInfo(name, type);
+        ColumnInfo col = new BaseColumnInfo(name, type);
         return addColumn(col, new NullColumn());
     }
 
 
     public int addConstantColumn(String name, JdbcType type, Object val)
     {
-        ColumnInfo col = new ColumnInfo(name, type);
+        ColumnInfo col = new BaseColumnInfo(name, type);
         return addColumn(col, new ConstantColumn(val));
     }
 
 
     public int addTimestampColumn(String name)
     {
-        ColumnInfo col = new ColumnInfo(name, JdbcType.TIMESTAMP);
+        ColumnInfo col = new BaseColumnInfo(name, JdbcType.TIMESTAMP);
         return addColumn(col, new TimestampColumn());
     }
 
@@ -1056,7 +1057,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
      */
     public int addRemapColumn(int fromIndex, @NotNull Map<?, ?> map, RemapMissingBehavior missing)
     {
-        ColumnInfo col = new ColumnInfo(_data.getColumnInfo(fromIndex));
+        ColumnInfo col = new BaseColumnInfo(_data.getColumnInfo(fromIndex));
         RemapColumn remap = new RemapColumn(fromIndex, map, missing);
         return addColumn(col, remap);
     }
@@ -1086,7 +1087,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 });
             }
         }
-        ColumnInfo col = new ColumnInfo(_data.getColumnInfo(fromIndex));
+        ColumnInfo col = new BaseColumnInfo(_data.getColumnInfo(fromIndex));
         return addColumn(col, new SharedTableLookupColumn(fromIndex, extraColumnIndex, lookupStringToRowIdMap, dataspaceTableIdMap));
     }
 
@@ -1188,7 +1189,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 return addColumn(name, indexIn);
             else
             {
-                _outputColumns.add(new Pair<>(new ColumnInfo(name, col.getJdbcType()), c));
+                _outputColumns.add(new Pair<>(new BaseColumnInfo(name, col.getJdbcType()), c));
                 return _outputColumns.size()-1;
             }
         }
@@ -1196,7 +1197,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         else
         {
             if (!allowPassThrough)
-                _outputColumns.set(indexOut, new Pair<>(new ColumnInfo(name, col.getJdbcType()), c));
+                _outputColumns.set(indexOut, new Pair<>(new BaseColumnInfo(name, col.getJdbcType()), c));
             return indexOut;
         }
     }

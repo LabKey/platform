@@ -19,6 +19,7 @@ package org.labkey.query.sql;
 import org.antlr.runtime.tree.CommonTree;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
@@ -27,7 +28,6 @@ import org.labkey.api.data.MultiValuedDisplayColumn;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
 
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
@@ -418,9 +418,10 @@ public class QAggregate extends QExpr
         return true;
     }
 
-    public ColumnInfo createColumnInfo(SQLTableInfo table, String alias, Query query)
+    @Override
+    public BaseColumnInfo createColumnInfo(SQLTableInfo table, String alias, Query query)
     {
-        ColumnInfo ret = super.createColumnInfo(table, alias, query);
+        var ret = super.createColumnInfo(table, alias, query);
         if (getType() == Type.MAX || getType() == Type.MIN)
         {
             List<QNode> children = childList();
@@ -433,7 +434,7 @@ public class QAggregate extends QExpr
                 ret.setURL(null);
                 ret.setMvColumnName(null);
                 ret.setDisplayColumnFactory(ColumnInfo.DEFAULT_FACTORY);
-                ret.setFk(null);
+                ret.clearFk();
             }
         }
         if (getType() == Type.GROUP_CONCAT)

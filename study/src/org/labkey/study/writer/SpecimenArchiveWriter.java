@@ -18,6 +18,7 @@ package org.labkey.study.writer;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
@@ -180,13 +181,13 @@ public class SpecimenArchiveWriter extends AbstractSpecimenWriter
         @Test
         public void testShouldRemovePhi()
         {
-            ColumnInfo ciNotPhi = new ColumnInfo("test", JdbcType.OTHER);
+            var ciNotPhi = new BaseColumnInfo("test", JdbcType.OTHER);
             ciNotPhi.setPHI(PHI.NotPHI);
-            ColumnInfo ciLimitedPhi = new ColumnInfo("test", JdbcType.OTHER);
+            var ciLimitedPhi = new BaseColumnInfo("test", JdbcType.OTHER);
             ciLimitedPhi.setPHI(PHI.Limited);
-            ColumnInfo ciPhi = new ColumnInfo("test", JdbcType.OTHER);
+            var ciPhi = new BaseColumnInfo("test", JdbcType.OTHER);
             ciPhi.setPHI(PHI.PHI);
-            ColumnInfo ciRestrictedPhi = new ColumnInfo("test", JdbcType.OTHER);
+            var ciRestrictedPhi = new BaseColumnInfo("test", JdbcType.OTHER);
             ciRestrictedPhi.setPHI(PHI.Restricted);
 
             // should remove if it is at or above PHI export level

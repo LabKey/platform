@@ -17,7 +17,7 @@ package org.labkey.study.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -68,7 +68,7 @@ public class StudyPersonnelTable extends DefaultStudyDesignTable
     }
 
     @Override
-    protected void initColumn(ColumnInfo col)
+    protected void initColumn(BaseColumnInfo col)
     {
         if ("UserId".equalsIgnoreCase(col.getName()))
         {

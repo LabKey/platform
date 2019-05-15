@@ -17,6 +17,7 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.study.StudySchema;
 
 /**
@@ -26,9 +27,9 @@ import org.labkey.study.StudySchema;
  */
 public class SpecimenRequestStatusTable extends BaseStudyTable
 {
-    public SpecimenRequestStatusTable(StudyQuerySchema schema)
+    public SpecimenRequestStatusTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSampleRequestStatus());
+        super(schema, StudySchema.getInstance().getTableInfoSampleRequestStatus(), cf);
         setName("SpecimenRequestStatus");
         for (ColumnInfo baseColumn : _rootTable.getColumns())
         {

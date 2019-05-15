@@ -23,6 +23,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.SwapQueue;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -573,8 +574,8 @@ public class StatementDataIterator extends AbstractDataIterator
                 public ColumnInfo getColumnInfo(int i)
                 {
                     return i==0 ?
-                        new ColumnInfo("rownumber",JdbcType.INTEGER) :
-                        new ColumnInfo("I",JdbcType.INTEGER);
+                        new BaseColumnInfo("rownumber",JdbcType.INTEGER) :
+                        new BaseColumnInfo("I",JdbcType.INTEGER);
                 }
 
                 @Override

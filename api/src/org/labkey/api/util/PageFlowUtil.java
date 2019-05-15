@@ -40,6 +40,7 @@ import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.announcements.api.Tour;
 import org.labkey.api.announcements.api.TourService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -2598,7 +2599,7 @@ public class PageFlowUtil
      */
     public static void saveLastFilter(ViewContext context, ActionURL url, String scope)
     {
-        boolean lastFilter = ColumnInfo.booleanFromString(url.getParameter(scope + DataRegion.LAST_FILTER_PARAM));
+        boolean lastFilter = BaseColumnInfo.booleanFromString(url.getParameter(scope + DataRegion.LAST_FILTER_PARAM));
         if (lastFilter)
             return;
         ActionURL clone = url.clone();

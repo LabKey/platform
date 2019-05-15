@@ -16,7 +16,7 @@
 
 package org.labkey.experiment.api;
 
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
@@ -32,9 +32,9 @@ import org.labkey.api.query.UserSchema;
 
 public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApplicationTable.Column> implements ExpProtocolApplicationTable
 {
-    public ExpProtocolApplicationTableImpl(String name, UserSchema schema)
+    public ExpProtocolApplicationTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoProtocolApplication(), schema, new ExpProtocolApplicationImpl(new ProtocolApplication()));
+        super(name, ExperimentServiceImpl.get().getTinfoProtocolApplication(), schema, new ExpProtocolApplicationImpl(new ProtocolApplication()), cf);
 
     }
 
@@ -51,12 +51,12 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
         addCondition(getContainerFilter().getSQLFragment(getSchema(), sqlFragment, getContainer(), false), containerFK);
     }
 
-    public ColumnInfo createColumn(String alias, ExpProtocolApplicationTable.Column column)
+    public BaseColumnInfo createColumn(String alias, ExpProtocolApplicationTable.Column column)
     {
         switch (column)
         {
             case RowId:
-                ColumnInfo rowIdColumnInfo = wrapColumn(alias, _rootTable.getColumn("RowId"));
+                var rowIdColumnInfo = wrapColumn(alias, _rootTable.getColumn("RowId"));
                 rowIdColumnInfo.setHidden(true);
                 return rowIdColumnInfo;
             case Name:
@@ -64,7 +64,7 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
             case LSID:
                 return wrapColumn(alias, _rootTable.getColumn("LSID"));
             case Run:
-                ColumnInfo runColumnInfo = wrapColumn(alias, _rootTable.getColumn("RunId"));
+                var runColumnInfo = wrapColumn(alias, _rootTable.getColumn("RunId"));
                 runColumnInfo.setFk(getExpSchema().getRunIdForeignKey());
                 return runColumnInfo;
             case ActionSequence:
@@ -72,14 +72,14 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
             case Type:
                 return wrapColumn(alias, _rootTable.getColumn("CpasType"));
             case Protocol:
-                ColumnInfo columnInfo = wrapColumn(alias, _rootTable.getColumn("ProtocolLSID"));
-                columnInfo.setFk(getExpSchema().getProtocolForeignKey("LSID"));
+                var columnInfo = wrapColumn(alias, _rootTable.getColumn("ProtocolLSID"));
+                columnInfo.setFk(getExpSchema().getProtocolForeignKey(getContainerFilter(), "LSID"));
                 return columnInfo;
         }
         throw new IllegalArgumentException("Unknown column " + column);
     }
 
-    public ColumnInfo createMaterialInputColumn(String alias, SamplesSchema schema, ExpSampleSet sampleSet, String... roleNames)
+    public BaseColumnInfo createMaterialInputColumn(String alias, SamplesSchema schema, ExpSampleSet sampleSet, String... roleNames)
     {
         SQLFragment sql = new SQLFragment("(SELECT MIN(exp.MaterialInput.MaterialId) FROM exp.MaterialInput\nWHERE ");
 
@@ -98,13 +98,13 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
             sql.append(")");
         }
         sql.append(")");
-        ColumnInfo ret = new ExprColumn(this, alias, sql, JdbcType.INTEGER);
+        var ret = new ExprColumn(this, alias, sql, JdbcType.INTEGER);
 
         ret.setFk(schema.materialIdForeignKey(sampleSet, null));
         return ret;
     }
 
-    public ColumnInfo createDataInputColumn(String name, final ExpSchema schema, String... roleNames)
+    public BaseColumnInfo createDataInputColumn(String name, final ExpSchema schema, String... roleNames)
     {
         SQLFragment sql = new SQLFragment("(SELECT MIN(exp.DataInput.DataId) FROM exp.DataInput\nWHERE ");
         sql.append(ExprColumn.STR_TABLE_ALIAS +".RowId = exp.DataInput.TargetApplicationId");
@@ -122,14 +122,15 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
             sql.append(")");
         }
         sql.append(")");
-        ColumnInfo ret = new ExprColumn(this, name, sql, JdbcType.INTEGER);
+        var ret = new ExprColumn(this, name, sql, JdbcType.INTEGER);
 
+        // TODO add ContainerFitler to ExperimentLookupForeignKey() constructor
         ret.setFk(new ExpSchema.ExperimentLookupForeignKey("RowId")
         {
             public TableInfo getLookupTableInfo()
             {
-                ExpDataTable expDataTable = (ExpDataTable)schema.getTable(ExpSchema.TableType.Data.name(), true);
-                expDataTable.setContainerFilter(getContainerFilter());
+                ExpDataTable expDataTable;
+                expDataTable = (ExpDataTable)schema.getTable(ExpSchema.TableType.Data.name(), getLookupContainerFilter(), true, false);
                 return expDataTable;
             }
         });

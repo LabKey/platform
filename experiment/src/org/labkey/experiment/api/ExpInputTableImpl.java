@@ -35,13 +35,14 @@ public abstract class ExpInputTableImpl<C extends Enum> extends ExpTableImpl<C> 
     private ExpRun _run;
     private ExpProtocol.ApplicationType _type;
 
-    public ExpInputTableImpl(String name, TableInfo rootTable, UserSchema schema, AbstractRunItemImpl objectType)
+    public ExpInputTableImpl(String name, TableInfo rootTable, UserSchema schema, AbstractRunItemImpl objectType, ContainerFilter cf)
     {
-        super(name, rootTable, schema, objectType);
+        super(name, rootTable, schema, objectType, cf);
     }
 
     public void setRun(ExpRun run, ExpProtocol.ApplicationType type)
     {
+        checkLocked();
         _run = run;
         _type = type;
         applyFilters();

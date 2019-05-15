@@ -30,7 +30,7 @@ public interface MethodInfo
     /**
      * Return a {@link ColumnInfo} whose {@link ColumnInfo#getValueSql } will be the result of evaluating the method.
      */
-    ColumnInfo createColumnInfo(TableInfo parentTable, ColumnInfo[] arguments, String alias);
+    BaseColumnInfo createColumnInfo(TableInfo parentTable, ColumnInfo[] arguments, String alias);
 
     SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments);
 

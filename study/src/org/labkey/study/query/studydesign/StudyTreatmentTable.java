@@ -16,8 +16,8 @@
 package org.labkey.study.query.studydesign;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
@@ -72,7 +72,7 @@ public class StudyTreatmentTable extends DefaultStudyDesignTable
     }
 
     @Override
-    protected void initColumn(ColumnInfo col)
+    protected void initColumn(BaseColumnInfo col)
     {
         if ("Description".equalsIgnoreCase(col.getName()))
         {

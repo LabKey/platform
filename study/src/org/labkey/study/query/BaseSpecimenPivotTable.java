@@ -18,6 +18,7 @@ package org.labkey.study.query;
 import org.apache.log4j.Logger;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -187,7 +188,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
         _typeNameIdMapWrapper = new PropertyMapWrapper(getContainer());
     }
 
-    protected ColumnInfo wrapPivotColumn(ColumnInfo col, String descriptionFormat, NameLabelPair ...parts)
+    protected BaseColumnInfo wrapPivotColumn(ColumnInfo col, String descriptionFormat, NameLabelPair ...parts)
     {
         // The parts._name should already be "Normal Legal Name" parts
         StringBuilder name = new StringBuilder();
@@ -213,7 +214,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
         // issue 21022 : duplicate primary or derivative type names results in duplicate wrapped column names
         ensureUniqueWrappedName(name);
         _wrappedColumnNames.add(name.toString());
-        ColumnInfo colInfo = new AliasedColumn(this, name.toString(), col);       // make lower case
+        var colInfo = new AliasedColumn(this, name.toString(), col);       // make lower case
         colInfo.setLabel(label.toString());
         if (descriptionFormat != null)
             colInfo.setDescription(String.format(descriptionFormat, labelsForDescription));

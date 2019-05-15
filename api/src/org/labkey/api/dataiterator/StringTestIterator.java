@@ -16,11 +16,10 @@
 
 package org.labkey.api.dataiterator;
 
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.query.BatchValidationException;
 
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -52,8 +51,8 @@ class StringTestIterator extends AbstractDataIterator implements ScrollableDataI
     public ColumnInfo getColumnInfo(int i)
     {
         if (i==0)
-            return new ColumnInfo("_rownumber", JdbcType.INTEGER);
-        return new ColumnInfo(columns.get(i-1),JdbcType.VARCHAR);
+            return new BaseColumnInfo("_rownumber", JdbcType.INTEGER);
+        return new BaseColumnInfo(columns.get(i-1),JdbcType.VARCHAR);
     }
 
     @Override

@@ -1531,7 +1531,9 @@ public class UserController extends SpringActionController
 
             // for the root container or if the user is site/app admin, use the site users table
             String userTableName = c.isRoot() || c.hasPermission(user, UserManagementPermission.class) ? CoreQuerySchema.SITE_USERS_TABLE_NAME : CoreQuerySchema.USERS_TABLE_NAME;
-            TableInfo table = schema.getTable(userTableName);
+            // use getTable(forWrite=true) because we hack on this TableInfo
+            // TODO don't hack on the TableInfo, shouldn't the schma check canSeeuserDetails() and has AdminPermission?
+            TableInfo table = schema.getTable(userTableName, null, true, true);
             if (table == null)
                 throw new NotFoundException(userTableName + " table");
             else if (table instanceof AbstractTableInfo)

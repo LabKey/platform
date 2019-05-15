@@ -56,7 +56,7 @@
         @Override
         protected TableInfo createTable()
         {
-            TableInfo table = super.createTable();
+            TableInfo table = getSchema().getTable("StudyData", null, true, true);
             if (bean.getParticipantId() != null)
             {
                 if (table instanceof FilteredTable)

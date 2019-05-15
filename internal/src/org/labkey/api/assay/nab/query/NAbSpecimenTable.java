@@ -34,15 +34,15 @@ public class NAbSpecimenTable extends FilteredTable<AssayProtocolSchema>
 {
     private static final FieldKey CONTAINER_FIELD_KEY = FieldKey.fromParts("Container");
 
-    public NAbSpecimenTable(AssayProtocolSchema schema)
+    public NAbSpecimenTable(AssayProtocolSchema schema, ContainerFilter cf)
     {
-        super(DilutionManager.getTableInfoNAbSpecimen(), schema);
+        super(DilutionManager.getTableInfoNAbSpecimen(), schema, cf);
 
         wrapAllColumns(true);
 
         // TODO - add columns for all of the different cutoff values
-        ColumnInfo selectedAUC = new ExprColumn(this, "AUC", getSelectedCurveFitAUC(false), JdbcType.DECIMAL);
-        ColumnInfo selectedPositiveAUC = new ExprColumn(this, "PositiveAUC", getSelectedCurveFitAUC(true), JdbcType.DECIMAL);
+        ExprColumn selectedAUC = new ExprColumn(this, "AUC", getSelectedCurveFitAUC(false), JdbcType.DECIMAL);
+        ExprColumn selectedPositiveAUC = new ExprColumn(this, "PositiveAUC", getSelectedCurveFitAUC(true), JdbcType.DECIMAL);
         addColumn(selectedAUC);
         addColumn(selectedPositiveAUC);
 
@@ -94,7 +94,8 @@ public class NAbSpecimenTable extends FilteredTable<AssayProtocolSchema>
     @Override
     protected ColumnInfo resolveColumn(String name)
     {
-        ColumnInfo columnInfo = super.resolveColumn(name);
+        ColumnInfo columnInfo;
+        columnInfo = super.resolveColumn(name);
         return columnInfo;
     }
 }

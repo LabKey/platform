@@ -15,10 +15,9 @@
  */
 package org.labkey.study.view;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.Sort;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -44,15 +43,8 @@ public class StudyListQueryView extends QueryView
     }
 
     @Override
-    protected TableInfo createTable()
+    protected @Nullable ContainerFilter getContainerFilter()
     {
-        //Cast is OK since coming from study schema where it is created as FilteredTable
-        FilteredTable table = (FilteredTable) super.createTable();
-
-        // Dataspace queries don't support container filter, #21501
-        if (table.supportsContainerFilter())
-            table.setContainerFilter(ContainerFilter.Type.CurrentAndSubfolders.create(getUser()));
-
-        return table;
+        return ContainerFilter.Type.CurrentAndSubfolders.create(getUser());
     }
 }

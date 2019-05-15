@@ -25,7 +25,6 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.AnalyticsProviderItem;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.ShowRows;
 import org.labkey.api.data.SimpleFilter;
@@ -34,7 +33,6 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.ChartReport;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.MemTracker;
@@ -494,9 +492,10 @@ public class QuerySettings
         String queryName = getQueryName();
         if (queryName == null)
             return null;
-        TableInfo table = schema.getTable(queryName);
-        if (table instanceof ContainerFilterable && getContainerFilterName() != null)
-            ((ContainerFilterable)table).setContainerFilter(ContainerFilter.getContainerFilterByName(getContainerFilterName(), schema.getUser()));
+        ContainerFilter cf = null;
+        if (getContainerFilterName() != null)
+            cf = ContainerFilter.getContainerFilterByName(getContainerFilterName(), schema.getUser());
+        TableInfo table = schema.getTable(queryName, cf);
         return table;
     }
 

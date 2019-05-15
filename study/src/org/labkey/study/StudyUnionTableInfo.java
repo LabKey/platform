@@ -18,6 +18,7 @@ package org.labkey.study;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NullColumnInfo;
@@ -316,7 +317,7 @@ public class StudyUnionTableInfo extends VirtualTable
 
         for (String name : COLUMN_NAMES)
         {
-            ColumnInfo ci = new ColumnInfo(name, this);
+            var ci = new BaseColumnInfo(name, this);
             ColumnInfo t = template.getColumn(name);
             if (null != t)
             {
@@ -328,15 +329,15 @@ public class StudyUnionTableInfo extends VirtualTable
 
         for (PropertyDescriptor pd : sharedProperties)
         {
-            ColumnInfo ci = new ColumnInfo(pd.getName(), this);
+            var ci = new BaseColumnInfo(pd.getName(), this);
             PropertyColumn.copyAttributes(_user, ci, pd, _study.getContainer(), null);
             ci.setSqlTypeName(StudySchema.getInstance().getSqlDialect().getSqlTypeName(pd.getJdbcType()));
             safeAddColumn(ci);
         }
 
-        ColumnInfo datasetColumn = new ColumnInfo(new FieldKey(null,"dataset"), this, JdbcType.VARCHAR);
+        var datasetColumn = new BaseColumnInfo(new FieldKey(null,"dataset"), this, JdbcType.VARCHAR);
         addColumn(datasetColumn);
-        ColumnInfo datasetIdColumn = new ColumnInfo(new FieldKey(null, "datasetid"), this, JdbcType.INTEGER);
+        var datasetIdColumn = new BaseColumnInfo(new FieldKey(null, "datasetid"), this, JdbcType.INTEGER);
         addColumn(datasetIdColumn);
     }
 

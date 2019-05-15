@@ -15,6 +15,7 @@
  */
 package org.labkey.api.study.assay;
 
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -24,5 +25,5 @@ public interface AssayColumnInfoRenderer
 {
     boolean isApplicable(ExpProtocol protocol, ColumnInfo columnInfo, Container container, User user);
 
-    void fixupColumnInfo(ExpProtocol protocol, ColumnInfo columnInfo);
+    void fixupColumnInfo(ExpProtocol protocol, BaseColumnInfo columnInfo);
 }

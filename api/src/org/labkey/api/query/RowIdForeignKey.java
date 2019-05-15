@@ -36,7 +36,12 @@ public class RowIdForeignKey extends AbstractForeignKey
 
     public RowIdForeignKey(ColumnInfo rowidColumn)
     {
-        super(rowidColumn.getParentTable().getPublicSchemaName(), rowidColumn.getParentTable().getName(), rowidColumn.getName());
+        this(rowidColumn.getParentTable(), rowidColumn);
+    }
+
+    private RowIdForeignKey(TableInfo parent, ColumnInfo rowidColumn)
+    {
+        super(parent.getUserSchema(), parent.getContainerFilter(), parent.getPublicSchemaName(), parent.getName(), rowidColumn.getName());
         _rowidColumn = rowidColumn;
     }
 

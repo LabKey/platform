@@ -17,8 +17,10 @@ package org.labkey.study.assay;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RemappingDisplayColumnFactory;
@@ -55,33 +57,34 @@ public class TSVProtocolSchema extends AssayProtocolSchema
     }
 
     @Override
-    public FilteredTable createDataTable(boolean includeCopiedToStudyColumns)
+    public FilteredTable createDataTable(ContainerFilter cf, boolean includeCopiedToStudyColumns)
     {
-        return new _AssayResultTable(this, includeCopiedToStudyColumns);
+        return new _AssayResultTable(this, cf, includeCopiedToStudyColumns);
     }
 
-    public TableInfo createProviderTable(String name)
+    @Override
+    public TableInfo createProviderTable(String name, ContainerFilter cf)
     {
         if (name.equalsIgnoreCase(EXCLUSION_REPORT_TABLE_NAME))
         {
-            return createExclusionReportTable();
+            return createExclusionReportTable(cf);
         }
 
-        return super.createProviderTable(name);
+        return super.createProviderTable(name, cf);
     }
 
-    private TableInfo createExclusionReportTable()
+    private TableInfo createExclusionReportTable(ContainerFilter cf)
     {
-        FilteredTable result = new _AssayExcludedResultTable(this, false);
+        FilteredTable result = new _AssayExcludedResultTable(this, cf, false);
         result.setName(EXCLUSION_REPORT_TABLE_NAME);
         return result;
     }
 
     private class _AssayExcludedResultTable extends AssayResultTable
     {
-        _AssayExcludedResultTable(AssayProtocolSchema schema, boolean includeCopiedToStudyColumns)
+        _AssayExcludedResultTable(AssayProtocolSchema schema, ContainerFilter cf, boolean includeCopiedToStudyColumns)
         {
-            super(schema, includeCopiedToStudyColumns);
+            super(schema, cf, includeCopiedToStudyColumns);
 
             List<FieldKey> defaultCols = new ArrayList<>(getDefaultVisibleColumns());
             defaultCols.add(FieldKey.fromParts("Run"));
@@ -90,9 +93,9 @@ public class TSVProtocolSchema extends AssayProtocolSchema
             AssayWellExclusionService svc = AssayWellExclusionService.getProvider(getProtocol());
             if (svc != null)
             {
-                ColumnInfo excludedByColumn = svc.createExcludedByColumn(this, getProtocol());
-                ColumnInfo excludedAtColumn = svc.createExcludedAtColumn(this, getProtocol());
-                ColumnInfo excludedCommentColumn = svc.createExclusionCommentColumn(this, getProtocol());
+                var excludedByColumn = svc.createExcludedByColumn(this, getProtocol());
+                var excludedAtColumn = svc.createExcludedAtColumn(this, getProtocol());
+                var excludedCommentColumn = svc.createExclusionCommentColumn(this, getProtocol());
 
                 addColumn(excludedByColumn);
                 addColumn(excludedAtColumn);
@@ -110,15 +113,15 @@ public class TSVProtocolSchema extends AssayProtocolSchema
     */
     private class _AssayResultTable extends AssayResultTable
     {
-        _AssayResultTable(AssayProtocolSchema schema, boolean includeCopiedToStudyColumns)
+        _AssayResultTable(AssayProtocolSchema schema, ContainerFilter cf, boolean includeCopiedToStudyColumns)
         {
-            super(schema, includeCopiedToStudyColumns);
+            super(schema, cf, includeCopiedToStudyColumns);
             String flagConceptURI = org.labkey.api.gwt.client.ui.PropertyType.expFlag.getURI();
             for (ColumnInfo col : getColumns())
             {
                 if (col.getJdbcType() == JdbcType.VARCHAR && flagConceptURI.equals(col.getConceptURI()))
                 {
-                    col.setDisplayColumnFactory(new _FlagDisplayColumnFactory(schema.getProtocol(), this.getName()));
+                    ((BaseColumnInfo)col).setDisplayColumnFactory(new _FlagDisplayColumnFactory(schema.getProtocol(), this.getName()));
                 }
             }
         }

@@ -19,8 +19,8 @@ package org.labkey.mothership.query;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractTableInfo;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.JdbcType;
@@ -113,41 +113,41 @@ public class MothershipSchema extends UserSchema
     }
 
 
-    public TableInfo createTable(String name)
+    public TableInfo createTable(String name, ContainerFilter cf)
     {
         if (name.equalsIgnoreCase(SERVER_INSTALLATIONS_TABLE_NAME))
         {
-            return createServerInstallationTable();
+            return createServerInstallationTable(cf);
         }
         else if (name.equalsIgnoreCase(SERVER_SESSIONS_TABLE_NAME))
         {
-            return createServerSessionTable();
+            return createServerSessionTable(cf);
         }
         else if (name.equalsIgnoreCase(EXCEPTION_STACK_TRACE_TABLE_NAME))
         {
-            return createExceptionStackTraceTable();
+            return createExceptionStackTraceTable(cf);
         }
         else if (name.equalsIgnoreCase(SOFTWARE_RELEASES_TABLE_NAME))
         {
-            return createSoftwareReleasesTable();
+            return createSoftwareReleasesTable(cf);
         }
         else if (name.equalsIgnoreCase(EXCEPTION_REPORT_TABLE_NAME))
         {
-            return createExceptionReportTable();
+            return createExceptionReportTable(cf);
         }
         else if (name.equalsIgnoreCase(EXCEPTION_REPORT_WITH_STACK_TABLE_NAME))
         {
-            return createExceptionReportTableWithStack();
+            return createExceptionReportTableWithStack(cf);
         }
         return null;
     }
 
-    public FilteredTable createSoftwareReleasesTable()
+    public FilteredTable createSoftwareReleasesTable(ContainerFilter cf)
     {
-        FilteredTable result = new FilteredTable<>(MothershipManager.get().getTableInfoSoftwareRelease(), this);
+        FilteredTable result = new FilteredTable<>(MothershipManager.get().getTableInfoSoftwareRelease(), this, cf);
         result.wrapAllColumns(true);
 
-        result.getColumn("SVNURL").setWidth("500");
+        result.getMutableColumn("SVNURL").setWidth("500");
 
         List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromParts("Description"));
@@ -160,17 +160,17 @@ public class MothershipSchema extends UserSchema
         return result;
     }
 
-    public FilteredTable createServerSessionTable()
+    public FilteredTable createServerSessionTable(ContainerFilter cf)
     {
-        FilteredTable result = new FilteredTable<>(MothershipManager.get().getTableInfoServerSession(), this);
+        FilteredTable result = new FilteredTable<>(MothershipManager.get().getTableInfoServerSession(), this, cf);
         result.wrapAllColumns(true);
         result.setTitleColumn("RowId");
 
-        result.getColumn("ServerInstallationId").setFk(new LookupForeignKey("ServerInstallationId")
+        result.getMutableColumn("ServerInstallationId").setFk(new LookupForeignKey("ServerInstallationId")
         {
             public TableInfo getLookupTableInfo()
             {
-                return createServerInstallationTable();
+                return createServerInstallationTable(cf);
             }
 
             @Override
@@ -185,10 +185,10 @@ public class MothershipSchema extends UserSchema
                 return SERVER_INSTALLATIONS_TABLE_NAME;
             }
         });
-        result.getColumn("ServerInstallationId").setLabel("Server");
+        result.getMutableColumn("ServerInstallationId").setLabel("Server");
 
-        ColumnInfo earliestCol = result.getColumn("EarliestKnownTime");
-        ColumnInfo latestCol = result.getColumn("LastKnownTime");
+        var earliestCol = result.getColumn("EarliestKnownTime");
+        var latestCol = result.getColumn("LastKnownTime");
 
         ExprColumn durationCol = new ExprColumn(result, "Duration", new SQLFragment(MothershipManager.get().getDialect().getDateDiff(Calendar.DATE, STR_TABLE_ALIAS + ".LastKnownTime", STR_TABLE_ALIAS + ".EarliestKnownTime")), JdbcType.INTEGER, earliestCol, latestCol);
         result.addColumn(durationCol);
@@ -218,16 +218,16 @@ public class MothershipSchema extends UserSchema
         return result;
     }
 
-    public TableInfo createServerInstallationTable()
+    public TableInfo createServerInstallationTable(ContainerFilter cf)
     {
-        FilteredTable<MothershipSchema> result = new MothershipTable(MothershipManager.get().getTableInfoServerInstallation(), this);
+        FilteredTable<MothershipSchema> result = new MothershipTable(MothershipManager.get().getTableInfoServerInstallation(), this, cf);
         result.setInsertURL(AbstractTableInfo.LINK_DISABLER);
         result.setImportURL(AbstractTableInfo.LINK_DISABLER);
         result.wrapAllColumns(true);
 
         ActionURL url = new ActionURL(MothershipController.ShowInstallationDetailAction.class, getContainer());
         url.addParameter("serverInstallationId","${ServerInstallationId}");
-        result.getColumn("ServerHostName").setURL(StringExpressionFactory.createURL(url));
+        result.getMutableColumn("ServerHostName").setURL(StringExpressionFactory.createURL(url));
 
         SQLFragment firstPingSQL = new SQLFragment("(SELECT MIN(EarliestKnownTime) FROM ");
         firstPingSQL.append(MothershipManager.get().getTableInfoServerSession(), "ss");
@@ -284,7 +284,7 @@ public class MothershipSchema extends UserSchema
         {
             public TableInfo getLookupTableInfo()
             {
-                return createServerSessionTable();
+                return createServerSessionTable(cf);
             }
 
             @Override
@@ -316,14 +316,14 @@ public class MothershipSchema extends UserSchema
         return result;
     }
 
-    public FilteredTable createExceptionStackTraceTable()
+    public FilteredTable createExceptionStackTraceTable(ContainerFilter cf)
     {
-        FilteredTable<MothershipSchema> result = new MothershipTable(MothershipManager.get().getTableInfoExceptionStackTrace(), this);
+        FilteredTable<MothershipSchema> result = new MothershipTable(MothershipManager.get().getTableInfoExceptionStackTrace(), this, cf);
         result.setUpdateURL(AbstractTableInfo.LINK_DISABLER);
         result.setInsertURL(AbstractTableInfo.LINK_DISABLER);
         result.setImportURL(AbstractTableInfo.LINK_DISABLER);
         result.wrapAllColumns(true);
-        result.getColumn("StackTrace").setDisplayColumnFactory(StackTraceDisplayColumn::new);
+        result.getMutableColumn("StackTrace").setDisplayColumnFactory(StackTraceDisplayColumn::new);
 
         LookupForeignKey softwareReleaseFK = new LookupForeignKey("SoftwareReleaseId")
         {
@@ -355,19 +355,19 @@ public class MothershipSchema extends UserSchema
         String path = MothershipManager.get().getIssuesContainer(getContainer());
         ActionURL issueURL = PageFlowUtil.urlProvider(IssuesUrls.class).getDetailsURL(ContainerManager.getForPath(path));
         issueURL.addParameter("issueId", "${BugNumber}");
-        result.getColumn("BugNumber").setURL(StringExpressionFactory.createURL(issueURL));
+        result.getMutableColumn("BugNumber").setURL(StringExpressionFactory.createURL(issueURL));
 
         ActionURL stack = new ActionURL(MothershipController.ShowStackTraceDetailAction.class, getContainer());
         stack.addParameter("exceptionStackTraceId","${ExceptionStackTraceId}");
-        result.getColumn("ExceptionStackTraceId").setURL(StringExpressionFactory.createURL(stack));
-        result.getColumn("ExceptionStackTraceId").setLabel("Exception");
-        result.getColumn("ExceptionStackTraceId").setFormat("'#'0");
-        result.getColumn("ExceptionStackTraceId").setExcelFormatString("0");
+        result.getMutableColumn("ExceptionStackTraceId").setURL(StringExpressionFactory.createURL(stack));
+        result.getMutableColumn("ExceptionStackTraceId").setLabel("Exception");
+        result.getMutableColumn("ExceptionStackTraceId").setFormat("'#'0");
+        result.getMutableColumn("ExceptionStackTraceId").setExcelFormatString("0");
 
         result.setTitleColumn("ExceptionStackTraceId");
         result.setDetailsURL(new DetailsURL(new ActionURL(MothershipController.ShowStackTraceDetailAction.class, getContainer()), Collections.singletonMap("exceptionStackTraceId", "ExceptionStackTraceId")));
 
-        result.getColumn("ModifiedBy").setFk(new UserIdQueryForeignKey(getUser(), getContainer(), true));
+        result.getMutableColumn("ModifiedBy").setFk(new UserIdQueryForeignKey(this, true));
 
         List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromParts("ExceptionStackTraceId"));
@@ -403,9 +403,9 @@ public class MothershipSchema extends UserSchema
         return result;
     }
 
-    public FilteredTable createExceptionReportTableWithStack()
+    public FilteredTable createExceptionReportTableWithStack(ContainerFilter cf)
     {
-        FilteredTable result = createExceptionReportTable();
+        FilteredTable result = createExceptionReportTable(cf);
         List<FieldKey> defaultCols = new ArrayList<>(result.getDefaultVisibleColumns());
         defaultCols.removeIf(fieldKey -> fieldKey.getParts().get(0).equals("ServerSessionId"));
         defaultCols.add(0, FieldKey.fromParts("ExceptionStackTraceId"));
@@ -415,18 +415,18 @@ public class MothershipSchema extends UserSchema
         return result;
     }
 
-    public FilteredTable createExceptionReportTable()
+    public FilteredTable createExceptionReportTable(ContainerFilter cf)
     {
         FilteredTable result = new FilteredTable<>(MothershipManager.get().getTableInfoExceptionReport(), this);
         result.setDetailsURL(AbstractTableInfo.LINK_DISABLER);
         result.wrapAllColumns(true);
-        result.getColumn("URL").setDisplayColumnFactory(colInfo ->
+        result.getMutableColumn("URL").setDisplayColumnFactory(colInfo ->
         {
             DataColumn result1 = new DataColumn(colInfo);
             result1.setURLExpression(StringExpressionFactory.create("${URL}", false));
             return result1;
         });
-        result.getColumn("ReferrerURL").setDisplayColumnFactory(colInfo ->
+        result.getMutableColumn("ReferrerURL").setDisplayColumnFactory(colInfo ->
         {
             DataColumn result12 = new DataColumn(colInfo);
             result12.setURLExpression(StringExpressionFactory.create("${ReferrerURL}", false));
@@ -441,14 +441,14 @@ public class MothershipSchema extends UserSchema
         result.addCondition(containerSQL);
 
         // Decorate the stack trace id column and make it a lookup
-        ColumnInfo stackTraceIdColumn = result.getColumn("ExceptionStackTraceId");
+        var stackTraceIdColumn = result.getMutableColumn("ExceptionStackTraceId");
         stackTraceIdColumn.setLabel("Exception");
         stackTraceIdColumn.setURL(new DetailsURL(new ActionURL(MothershipController.ShowStackTraceDetailAction.class, getContainer()), "exceptionStackTraceId", FieldKey.fromParts("ExceptionStackTraceId")));
         stackTraceIdColumn.setFk(new LookupForeignKey("ExceptionStackTraceId")
         {
             public TableInfo getLookupTableInfo()
             {
-                return createExceptionStackTraceTable();
+                return createExceptionStackTraceTable(cf);
             }
 
             @Override
@@ -464,18 +464,18 @@ public class MothershipSchema extends UserSchema
             }
         });
 
-        result.getColumn("PageflowName").setLabel("Controller");
-        result.getColumn("PageflowAction").setLabel("Action");
+        result.getMutableColumn("PageflowName").setLabel("Controller");
+        result.getMutableColumn("PageflowAction").setLabel("Action");
 
-        result.getColumn("ServerSessionId").setURL(StringExpressionFactory.createURL("/mothership/showServerSessionDetail.view?serverSessionId=${ServerSessionId}"));
-        result.getColumn("ServerSessionId").setLabel("Session");
-        result.getColumn("ServerSessionId").setFormat("'#'0");
-        result.getColumn("ServerSessionId").setExcelFormatString("0");
+        result.getMutableColumn("ServerSessionId").setURL(StringExpressionFactory.createURL("/mothership/showServerSessionDetail.view?serverSessionId=${ServerSessionId}"));
+        result.getMutableColumn("ServerSessionId").setLabel("Session");
+        result.getMutableColumn("ServerSessionId").setFormat("'#'0");
+        result.getMutableColumn("ServerSessionId").setExcelFormatString("0");
         LookupForeignKey fk = new LookupForeignKey("ServerSessionId")
         {
             public TableInfo getLookupTableInfo()
             {
-                return createServerSessionTable();
+                return createServerSessionTable(cf);
             }
 
             @Override
@@ -491,7 +491,7 @@ public class MothershipSchema extends UserSchema
             }
         };
         fk.setPrefixColumnCaption(false);
-        result.getColumn("ServerSessionId").setFk(fk);
+        result.getMutableColumn("ServerSessionId").setFk(fk);
 
         List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromParts("ServerSessionId"));
@@ -529,9 +529,9 @@ public class MothershipSchema extends UserSchema
 
     private static class MothershipTable extends FilteredTable<MothershipSchema>
     {
-        public MothershipTable(TableInfo tableInfo, MothershipSchema schema)
+        public MothershipTable(TableInfo tableInfo, MothershipSchema schema, ContainerFilter cf)
         {
-            super(tableInfo, schema);
+            super(tableInfo, schema, cf);
         }
 
         @Override
@@ -544,7 +544,7 @@ public class MothershipSchema extends UserSchema
         @Override
         public QueryUpdateService getUpdateService()
         {
-            return new SimpleQueryUpdateService(new SimpleUserSchema.SimpleTable<>(this.getUserSchema(), this.getRealTable()).init(), this.getRealTable());
+            return new SimpleQueryUpdateService(new SimpleUserSchema.SimpleTable<>(this.getUserSchema(), this.getRealTable(), null).init(), this.getRealTable());
         }
     }
 }

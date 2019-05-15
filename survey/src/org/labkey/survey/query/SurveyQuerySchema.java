@@ -16,6 +16,7 @@
 package org.labkey.survey.query;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -51,12 +52,12 @@ public class SurveyQuerySchema extends UserSchema
     }
 
     @Override
-    public TableInfo createTable(String name)
+    public TableInfo createTable(String name, ContainerFilter cf)
     {
         if (SURVEY_DESIGN_TABLE_NAME.equalsIgnoreCase(name))
-            return new SurveyDesignTable(SurveySchema.getInstance().getSchema().getTable(SURVEY_DESIGN_TABLE_NAME), this);
+            return new SurveyDesignTable(SurveySchema.getInstance().getSchema().getTable(SURVEY_DESIGN_TABLE_NAME), this, cf);
         if (SURVEYS_TABLE_NAME.equalsIgnoreCase(name))
-            return new SurveysTable(SurveySchema.getInstance().getSchema().getTable(SURVEYS_TABLE_NAME), this).init();
+            return new SurveysTable(SurveySchema.getInstance().getSchema().getTable(SURVEYS_TABLE_NAME), this, cf).init();
 
         return null;
     }

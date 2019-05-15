@@ -17,6 +17,7 @@ package org.labkey.study.query.studydesign;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -62,7 +63,7 @@ public class DefaultStudyDesignTable extends FilteredTable<UserSchema>
 
         for (ColumnInfo baseColumn : getRealTable().getColumns())
         {
-            ColumnInfo col = addWrapColumn(baseColumn);
+            var col = addWrapColumn(baseColumn);
 
             if (baseColumn.isHidden())
                 col.setHidden(true);
@@ -77,7 +78,7 @@ public class DefaultStudyDesignTable extends FilteredTable<UserSchema>
                     if (pd != null)
                     {
                         if (pd.getLookupQuery() != null || pd.getConceptURI() != null)
-                            col.setFk(new PdLookupForeignKey(schema.getUser(), pd, schema.getContainer()));
+                            col.setFk(PdLookupForeignKey.create(schema, pd));
 
                         if (pd.getPropertyType() == PropertyType.MULTI_LINE)
                         {
@@ -97,20 +98,20 @@ public class DefaultStudyDesignTable extends FilteredTable<UserSchema>
         _defaultVisibleColumns.add(FieldKey.fromParts("CreatedBy"));
 
         // setup lookups for the standard fields
-        ColumnInfo container = getColumn("Container");
+        var container = getMutableColumn("Container");
         ContainerForeignKey.initColumn(container, schema);
 
-        ColumnInfo created = getColumn("Created");
+        var created = getMutableColumn("Created");
         created.setFormat("DateTime");
 
-        ColumnInfo createdBy = getColumn(FieldKey.fromParts("CreatedBy"));
+        var createdBy = getMutableColumn(FieldKey.fromParts("CreatedBy"));
         createdBy.setLabel("Created By");
         UserIdForeignKey.initColumn(createdBy);
 
-        ColumnInfo modified = getColumn("Modified");
+        var modified = getMutableColumn("Modified");
         modified.setFormat("DateTime");
 
-        ColumnInfo modifiedBy = getColumn(FieldKey.fromParts("ModifiedBy"));
+        var modifiedBy = getMutableColumn(FieldKey.fromParts("ModifiedBy"));
         modifiedBy.setLabel("Modified By");
         UserIdForeignKey.initColumn(modifiedBy);
 
@@ -143,12 +144,12 @@ public class DefaultStudyDesignTable extends FilteredTable<UserSchema>
 
     protected void initColumns()
     {
-        for (ColumnInfo col : getColumns())
+        for (var col : getMutableColumns())
             initColumn(col);
     }
 
     // Subclasses may override this to provide customizations to the column
-    protected void initColumn(ColumnInfo col)
+    protected void initColumn(BaseColumnInfo col)
     {
     }
 

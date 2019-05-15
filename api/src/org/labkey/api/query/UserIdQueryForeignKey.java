@@ -28,40 +28,66 @@ public class UserIdQueryForeignKey extends QueryForeignKey
 {
     private final boolean _includeAllUsers;
 
-    public UserIdQueryForeignKey(User user, Container container)
+    public UserIdQueryForeignKey(QuerySchema sourceSchema)
     {
-        this(user, container, false);
+        this(sourceSchema, false);
     }
 
     /** @param includeAllUsers if true, don't filter to users who are members of the current project, etc. Useful for
      * automatically-populated columns like CreatedBy and ModifiedBy, where you want to see if the user even if they
      * no longer have permission to access the container */
+    public UserIdQueryForeignKey(QuerySchema sourceSchema, boolean includeAllUsers)
+    {
+        super(sourceSchema, null,"core", sourceSchema.getContainer(), null, sourceSchema.getUser(), includeAllUsers ? "SiteUsers" : "Users", "UserId", "DisplayName");
+        _includeAllUsers = includeAllUsers;
+    }
+
+    public UserIdQueryForeignKey(QuerySchema sourceSchema, ContainerFilter cf, User user, Container container, boolean includeAllUsers)
+    {
+        super (sourceSchema, cf, "core", container, null, user, includeAllUsers ? "SiteUsers" : "Users", "UserId", "DisplayName");
+        _includeAllUsers = includeAllUsers;
+    }
+
+    @Deprecated // TODO ContainerFilter
     public UserIdQueryForeignKey(User user, Container container, boolean includeAllUsers)
     {
-        super("core", container, null, user, includeAllUsers ? "SiteUsers" : "Users", "UserId", "DisplayName");
-        _includeAllUsers = includeAllUsers;
+        this(DefaultSchema.get(user,container), null, user, container, includeAllUsers);
     }
 
     @Override
     public TableInfo getLookupTableInfo()
     {
-        TableInfo result = super.getLookupTableInfo();
-        if (_includeAllUsers)
+        if (_table == null && getSchema() != null)
         {
-            // Clear out the filter that might be preventing us from resolving the lookup if the user list is being filtered
-            FilteredTable table = (FilteredTable)result;
-            if (table == null)
+            _table = ((UserSchema) getSchema()).getTable(_tableName, getLookupContainerFilter(), true, true);
+
+            if (_includeAllUsers)
             {
-                // Exception 23740
-                throw new IllegalStateException("Failed to find lookup target " + getLookupSchemaName() + "." + getLookupTableName() + " in container " + getLookupContainer());
+                // Clear out the filter that might be preventing us from resolving the lookup if the user list is being filtered
+                FilteredTable table = (FilteredTable) _table;
+                if (table == null)
+                {
+                    // Exception 23740
+                    throw new IllegalStateException("Failed to find lookup target " + getLookupSchemaName() + "." + getLookupTableName() + " in container " + getLookupContainer());
+                }
+                table.clearConditions(FieldKey.fromParts("UserId"));
             }
-            table.clearConditions(FieldKey.fromParts("UserId"));
+            _table.setLocked(true);
         }
-        return result;
+        return _table;
     }
 
     /* set foreign key and display column */
-    static public ColumnInfo initColumn(User user, Container container, ColumnInfo column, boolean guestAsBlank)
+    static public ColumnInfo initColumn(QuerySchema sourceSchema, BaseColumnInfo column, boolean guestAsBlank)
+    {
+        boolean showAllUsers = column.getName().equalsIgnoreCase("createdby") || column.getName().equalsIgnoreCase("modifiedby");
+        column.setFk(new UserIdQueryForeignKey(sourceSchema, showAllUsers));
+        column.setDisplayColumnFactory(guestAsBlank ? _factoryBlank : _factoryGuest);
+        return column;
+    }
+
+    @Deprecated // TODO ContainerFilter
+    static public ColumnInfo initColumn(User user, Container container, BaseColumnInfo column, boolean guestAsBlank)
     {
         boolean showAllUsers = column.getName().equalsIgnoreCase("createdby") || column.getName().equalsIgnoreCase("modifiedby");
         column.setFk(new UserIdQueryForeignKey(user, container, showAllUsers));

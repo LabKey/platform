@@ -979,99 +979,99 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public ExpRunTable createRunTable(String name, UserSchema schema)
+    public ExpRunTable createRunTable(String name, UserSchema schema, ContainerFilter cf)
     {
-        return new ExpRunTableImpl(name, schema);
+        return new ExpRunTableImpl(name, schema, cf);
     }
 
     @Override
-    public ExpRunGroupMapTable createRunGroupMapTable(String name, UserSchema schema)
+    public ExpRunGroupMapTable createRunGroupMapTable(String name, UserSchema schema, ContainerFilter cf)
     {
-        return new ExpRunGroupMapTableImpl(name, schema);
+        return new ExpRunGroupMapTableImpl(name, schema, cf);
     }
 
     @Override
-    public ExpDataTable createDataTable(String name, UserSchema schema)
+    public ExpDataTable createDataTable(String name, UserSchema schema, ContainerFilter cf)
     {
-        return new ExpDataTableImpl(name, schema);
+        return new ExpDataTableImpl(name, schema, cf);
     }
 
     @Override
-    public ExpDataInputTable createDataInputTable(String name, ExpSchema expSchema)
+    public ExpDataInputTable createDataInputTable(String name, ExpSchema expSchema, ContainerFilter cf)
     {
-        return new ExpDataInputTableImpl(name, expSchema);
+        return new ExpDataInputTableImpl(name, expSchema, cf);
     }
 
     @Override
-    public ExpDataProtocolInputTableImpl createDataProtocolInputTable(String name, ExpSchema expSchema)
+    public ExpDataProtocolInputTableImpl createDataProtocolInputTable(String name, ExpSchema expSchema, ContainerFilter cf)
     {
-        return new ExpDataProtocolInputTableImpl(name, expSchema);
+        return new ExpDataProtocolInputTableImpl(name, expSchema, cf);
     }
 
     @Override
-    public ExpSampleSetTable createSampleSetTable(String name, UserSchema schema)
+    public ExpSampleSetTable createSampleSetTable(String name, UserSchema schema, ContainerFilter cf)
     {
-        return new ExpSampleSetTableImpl(name, schema);
+        return new ExpSampleSetTableImpl(name, schema, cf);
     }
 
     @Override
-    public ExpDataClassTable createDataClassTable(String name, UserSchema schema)
+    public ExpDataClassTable createDataClassTable(String name, UserSchema schema, ContainerFilter cf)
     {
-        return new ExpDataClassTableImpl(name, schema);
+        return new ExpDataClassTableImpl(name, schema, cf);
     }
 
     @Override
-    public ExpProtocolTableImpl createProtocolTable(String name, UserSchema schema)
+    public ExpProtocolTableImpl createProtocolTable(String name, UserSchema schema, ContainerFilter cf)
     {
-        return new ExpProtocolTableImpl(name, schema);
+        return new ExpProtocolTableImpl(name, schema, cf);
     }
 
     @Override
-    public ExpExperimentTableImpl createExperimentTable(String name, UserSchema schema)
+    public ExpExperimentTableImpl createExperimentTable(String name, UserSchema schema, ContainerFilter cf)
     {
-        return new ExpExperimentTableImpl(name, schema);
+        return new ExpExperimentTableImpl(name, schema, cf);
     }
 
     @Override
-    public ExpMaterialTable createMaterialTable(String name, UserSchema schema)
+    public ExpMaterialTable createMaterialTable(String name, UserSchema schema, ContainerFilter cf)
     {
-        return new ExpMaterialTableImpl(name, schema);
+        return new ExpMaterialTableImpl(name, schema, cf);
     }
 
     @Override
-    public ExpDataClassDataTable createDataClassDataTable(String name, UserSchema schema, @NotNull ExpDataClass dataClass)
+    public ExpDataClassDataTable createDataClassDataTable(String name, UserSchema schema, ContainerFilter cf, @NotNull ExpDataClass dataClass)
     {
-        return new ExpDataClassDataTableImpl(name, schema, (ExpDataClassImpl) dataClass);
+        return new ExpDataClassDataTableImpl(name, schema, cf, (ExpDataClassImpl) dataClass);
     }
 
     @Override
-    public ExpMaterialInputTable createMaterialInputTable(String name, ExpSchema schema)
+    public ExpMaterialInputTable createMaterialInputTable(String name, ExpSchema schema, ContainerFilter cf)
     {
-        return new ExpMaterialInputTableImpl(name, schema);
+        return new ExpMaterialInputTableImpl(name, schema, cf);
     }
 
     @Override
-    public ExpMaterialProtocolInputTableImpl createMaterialProtocolInputTable(String name, ExpSchema expSchema)
+    public ExpMaterialProtocolInputTableImpl createMaterialProtocolInputTable(String name, ExpSchema expSchema, ContainerFilter cf)
     {
-        return new ExpMaterialProtocolInputTableImpl(name, expSchema);
+        return new ExpMaterialProtocolInputTableImpl(name, expSchema, cf);
     }
 
     @Override
-    public ExpProtocolApplicationTable createProtocolApplicationTable(String name, UserSchema schema)
+    public ExpProtocolApplicationTable createProtocolApplicationTable(String name, UserSchema schema, ContainerFilter cf)
     {
-        return new ExpProtocolApplicationTableImpl(name, schema);
+        return new ExpProtocolApplicationTableImpl(name, schema, cf);
     }
 
     @Override
-    public ExpQCFlagTableImpl createQCFlagsTable(String name, UserSchema schema)
+    public ExpQCFlagTableImpl createQCFlagsTable(String name, UserSchema schema, ContainerFilter cf)
     {
-        return new ExpQCFlagTableImpl(name, schema);
+        return new ExpQCFlagTableImpl(name, schema, cf);
     }
 
     @Override
-    public ExpDataTable createFilesTable(String name, UserSchema schema)
+    public ExpDataTable createFilesTable(String name, UserSchema schema, ContainerFilter cf)
     {
-        return new ExpFilesTableImpl(name, schema);
+        return new ExpFilesTableImpl(name, schema, cf);
     }
 
     private String getNamespacePrefix(Class<? extends ExpObject> clazz)
@@ -2267,7 +2267,8 @@ public class ExperimentServiceImpl implements ExperimentService
 
         String parentsSelect = map.get("$PARENTS$");
         parentsSelect = StringUtils.replace(parentsSelect, "$PARENTS_INNER$", parentsInnerToken);
-        String parentsToken = ret.addCommonTableExpression(parentsSelect, "org_lk_exp_PARENTS", new SQLFragment(parentsSelect), recursive);
+        // don't use parentsSelect as key, it may not consolidate correctly because of parentsInnerToken
+        String parentsToken = ret.addCommonTableExpression("$PARENTS$/" + parentsInnerSelect, "org_lk_exp_PARENTS", new SQLFragment(parentsSelect), recursive);
 
         String childrenInnerSelect = map.get("$CHILDREN_INNER$");
         childrenInnerSelect = StringUtils.replace(childrenInnerSelect, "$SEED$", seedToken);
@@ -2285,7 +2286,8 @@ public class ExperimentServiceImpl implements ExperimentService
 
         String childrenSelect = map.get("$CHILDREN$");
         childrenSelect = StringUtils.replace(childrenSelect, "$CHILDREN_INNER$", childrenInnerToken);
-        String childrenToken = ret.addCommonTableExpression(childrenSelect, "org_lk_exp_CHILDREN", new SQLFragment(childrenSelect), recursive);
+        // don't use childrenSelect as key, it may not consolidate correctly because of childrenInnerToken
+        String childrenToken = ret.addCommonTableExpression("$CHILDREN$/" + childrenInnerSelect, "org_lk_exp_CHILDREN", new SQLFragment(childrenSelect), recursive);
 
         return new Pair<>(parentsToken,childrenToken);
     }

@@ -64,9 +64,9 @@ public class AssayScheduleWriter extends DefaultStudyDesignWriter implements Int
         StudyQuerySchema projectSchema = ctx.isDataspaceProject() ? new StudyQuerySchema(StudyManager.getInstance().getStudy(ctx.getProject()), ctx.getUser(), true) : schema;
 
         // add the assay schedule specific tables
-        TableInfo assaySpecimenTable = schema.getTable(StudyQuerySchema.ASSAY_SPECIMEN_TABLE_NAME);
+        TableInfo assaySpecimenTable = schema.getTable(StudyQuerySchema.ASSAY_SPECIMEN_TABLE_NAME, null);
 
-        writeTableData(ctx, vf, assaySpecimenTable, getDefaultColumns(ctx, assaySpecimenTable), null);
+        writeTableData(ctx, vf, assaySpecimenTable, getDefaultColumns(ctx, assaySpecimenTable));
         writeAssaySpecimenVisitMap(ctx, vf);
 
         // assay schedule lookup values can have data stored at both the project and folder level
@@ -87,13 +87,12 @@ public class AssayScheduleWriter extends DefaultStudyDesignWriter implements Int
         StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
         TableInfo tableInfo = schema.getTable(StudyQuerySchema.ASSAY_SPECIMEN_VISIT_TABLE_NAME);
 
-        List<FieldKey> fields = new ArrayList<>();
-        fields.addAll(tableInfo.getDefaultVisibleColumns());
+        List<FieldKey> fields = new ArrayList<>(tableInfo.getDefaultVisibleColumns());
 
         // we want to include the visit sequence number so we can resolve during import
         fields.add(FieldKey.fromParts("visitId", "sequenceNumMin"));
 
         Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(tableInfo, fields);
-        writeTableData(ctx, vf, tableInfo, new ArrayList<>(columns.values()), null);
+        writeTableData(ctx, vf, tableInfo, new ArrayList<>(columns.values()));
     }
 }

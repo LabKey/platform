@@ -25,6 +25,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -112,17 +113,21 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 {
     private @NotNull ExpDataClassImpl _dataClass;
 
-    public ExpDataClassDataTableImpl(String name, UserSchema schema, @NotNull ExpDataClassImpl dataClass)
+    @Override
+    protected ContainerFilter getDefaultContainerFilter()
     {
-        super(name, ExperimentService.get().getTinfoData(), schema, dataClass);
+        return new ContainerFilter.CurrentPlusProjectAndShared(_userSchema.getUser());
+    }
+
+    public ExpDataClassDataTableImpl(String name, UserSchema schema, ContainerFilter cf, @NotNull ExpDataClassImpl dataClass)
+    {
+        super(name, ExperimentService.get().getTinfoData(), schema, dataClass, cf);
         _dataClass = dataClass;
         addAllowablePermission(InsertPermission.class);
         addAllowablePermission(UpdatePermission.class);
 
         // Filter exp.data to only those rows that are members of the DataClass
         addCondition(new SimpleFilter(FieldKey.fromParts("classId"), _dataClass.getRowId()));
-
-        setContainerFilter(new ContainerFilter.CurrentPlusProjectAndShared(_userSchema.getUser()));
     }
 
     @NotNull
@@ -132,13 +137,13 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     }
 
     @Override
-    public ColumnInfo createColumn(String alias, Column column)
+    public BaseColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
         {
             case RowId:
             {
-                ColumnInfo c = wrapColumn(alias, getRealTable().getColumn("RowId"));
+                var c = wrapColumn(alias, getRealTable().getColumn("RowId"));
                 // When no sorts are added by views, QueryServiceImpl.createDefaultSort() adds the primary key's default sort direction
                 c.setSortDirection(Sort.SortDirection.DESC);
                 c.setFk(new RowIdForeignKey(c));
@@ -149,7 +154,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             case LSID:
             {
-                ColumnInfo c = wrapColumn(alias, getRealTable().getColumn("LSID"));
+                var c = wrapColumn(alias, getRealTable().getColumn("LSID"));
                 c.setHidden(true);
                 c.setShownInInsertView(false);
                 c.setShownInUpdateView(false);
@@ -160,7 +165,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             case Name:
             {
-                ColumnInfo c = wrapColumn(alias, getRealTable().getColumn(column.name()));
+                var c = wrapColumn(alias, getRealTable().getColumn(column.name()));
                 // TODO: Name is editable in insert view, but not in update view
                 String desc = ExpMaterialTableImpl.appendNameExpressionDescription(c.getDescription(), _dataClass.getNameExpression());
                 c.setDescription(desc);
@@ -175,7 +180,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             case CreatedBy:
             case ModifiedBy:
             {
-                ColumnInfo c = wrapColumn(alias, getRealTable().getColumn(column.name()));
+                var c = wrapColumn(alias, getRealTable().getColumn(column.name()));
                 c.setFk(new UserIdForeignKey(getUserSchema()));
                 c.setShownInInsertView(false);
                 c.setShownInUpdateView(false);
@@ -185,8 +190,8 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             case DataClass:
             {
-                ColumnInfo c = wrapColumn(alias, getRealTable().getColumn("classId"));
-                c.setFk(new QueryForeignKey(ExpSchema.SCHEMA_NAME, getContainer(), null, getUserSchema().getUser(), ExpSchema.TableType.DataClasses.name(), "RowId", "Name"));
+                var c = wrapColumn(alias, getRealTable().getColumn("classId"));
+                c.setFk(QueryForeignKey.from(getUserSchema(), getContainerFilter()).schema(ExpSchema.SCHEMA_NAME).to(ExpSchema.TableType.DataClasses.name(), "RowId", "Name"));
                 c.setShownInInsertView(false);
                 c.setShownInUpdateView(false);
                 c.setUserEditable(false);
@@ -198,14 +203,14 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             case Folder:
             {
-                ColumnInfo c = wrapColumn("Container", getRealTable().getColumn("Container"));
+                var c = wrapColumn("Container", getRealTable().getColumn("Container"));
                 ContainerForeignKey.initColumn(c, getUserSchema());
                 c.setLabel("Folder");
                 c.setShownInDetailsView(false);
                 return c;
             }
             case Alias:
-                ColumnInfo aliasCol = wrapColumn("Alias", getRealTable().getColumn("LSID"));
+                var aliasCol = wrapColumn("Alias", getRealTable().getColumn("LSID"));
                 aliasCol.setDescription("Contains the list of aliases for this data object");
                 aliasCol.setFk(new MultiValuedForeignKey(new LookupForeignKey("LSID")
                 {
@@ -230,7 +235,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 return createLineageColumn(this, alias, false);
 
             case DataFileUrl:
-                ColumnInfo dataFileUrl = wrapColumn(alias, getRealTable().getColumn("DataFileUrl"));
+                var dataFileUrl = wrapColumn(alias, getRealTable().getColumn("DataFileUrl"));
                 dataFileUrl.setUserEditable(false);
                 DetailsURL url = new DetailsURL(new ActionURL(ExperimentController.ShowFileAction.class, getContainer()), Collections.singletonMap("rowId", "rowId"));
                 dataFileUrl.setDisplayColumnFactory(new FileLinkDisplayColumn.Factory(url, getContainer(), FieldKey.fromParts("RowId")));
@@ -265,8 +270,8 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         defaultVisible.add(FieldKey.fromParts(Column.Flag));
 
         addColumn(Column.LSID);
-        ColumnInfo rowIdCol = addColumn(Column.RowId);
-        ColumnInfo nameCol = addColumn(Column.Name);
+        var rowIdCol = addColumn(Column.RowId);
+        var nameCol = addColumn(Column.Name);
         addColumn(Column.Created);
         addColumn(Column.CreatedBy);
         addColumn(Column.Modified);
@@ -280,7 +285,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         //TODO: may need to expose ExpData.Run as well
 
         // Add the domain columns
-        Collection<ColumnInfo> cols = new ArrayList<>(20);
+        Collection<BaseColumnInfo> cols = new ArrayList<>(20);
         for (ColumnInfo col : extTable.getColumns())
         {
             // Skip the lookup column itself, LSID, and exp.data.rowid -- it is added above
@@ -290,11 +295,11 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             if (colName.equalsIgnoreCase("genid"))
             {
-                col.setHidden(true);
-                col.setUserEditable(false);
-                col.setShownInDetailsView(false);
-                col.setShownInInsertView(false);
-                col.setShownInUpdateView(false);
+                ((BaseColumnInfo)col).setHidden(true);
+                ((BaseColumnInfo)col).setUserEditable(false);
+                ((BaseColumnInfo)col).setShownInDetailsView(false);
+                ((BaseColumnInfo)col).setShownInInsertView(false);
+                ((BaseColumnInfo)col).setShownInUpdateView(false);
             }
             String newName = col.getName();
             for (int i = 0; null != getColumn(newName); i++)
@@ -313,7 +318,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         for (DomainProperty dp : getDomain().getProperties())
             properties.put(dp.getPropertyURI(), dp);
 
-        for (ColumnInfo col : cols)
+        for (var col : cols)
         {
             String propertyURI = col.getPropertyURI();
             // TODO use PropertyColumn.copyAttributes()
@@ -326,7 +331,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 {
                     if (pd.getLookupQuery() != null || pd.getConceptURI() != null)
                     {
-                        col.setFk(new PdLookupForeignKey(schema.getUser(), pd, schema.getContainer()));
+                        col.setFk(PdLookupForeignKey.create(schema, pd));
                     }
 
                     if (pd.getPropertyType() == PropertyType.MULTI_LINE)
@@ -603,7 +608,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             DataIteratorBuilder step1 = DataIteratorBuilder.wrap(LoggingDataIterator.wrap(step0));
             if (_dataClass.getNameExpression() != null)
             {
-                step0.addColumn(new ColumnInfo("nameExpression", JdbcType.VARCHAR), (Supplier) () -> _dataClass.getNameExpression());
+                step0.addColumn(new BaseColumnInfo("nameExpression", JdbcType.VARCHAR), (Supplier) () -> _dataClass.getNameExpression());
                 step1 = new NameExpressionDataIteratorBuilder(step1,  ExpDataClassDataTableImpl.this);
             }
 

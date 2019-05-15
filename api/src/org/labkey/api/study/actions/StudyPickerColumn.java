@@ -16,6 +16,7 @@
 package org.labkey.api.study.actions;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
@@ -52,7 +53,7 @@ public class StudyPickerColumn extends UploadWizardAction.InputDisplayColumn
     {
         super(AbstractAssayProvider.TARGET_STUDY_PROPERTY_CAPTION, inputName);
         _colInfo = col;
-        _colInfo.setInputType("select");
+        ((BaseColumnInfo)_colInfo).setInputType("select");
     }
 
     protected Object calculateValue(RenderContext ctx)

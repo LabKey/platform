@@ -18,6 +18,7 @@ package org.labkey.api.study.assay.matrix;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CrosstabDimension;
 import org.labkey.api.data.CrosstabMeasure;
 import org.labkey.api.data.CrosstabMember;
@@ -27,7 +28,6 @@ import org.labkey.api.data.CrosstabTableInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.FilteredTable;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayProvider;
@@ -51,6 +51,7 @@ public abstract class AbstractMatrixProtocolSchema extends AssayProtocolSchema
         _dataBySampleTableName = dataSampleTableName;
         _dataTableName = dataTableName;
     }
+
     public String getDataTableName()
     {
         return _dataTableName;
@@ -63,27 +64,21 @@ public abstract class AbstractMatrixProtocolSchema extends AssayProtocolSchema
 
     public abstract List<Map> getDistinctSampleIds();
 
-    public abstract TableInfo getDataTableInfo();
+    public abstract TableInfo getDataTableInfo(ContainerFilter cf);
 
-    @Override
-    public FilteredTable createDataTable(boolean includeCopiedToStudyColumns)
-    {
-       return null;
-    }
-
-    public TableInfo createTable(String name, String rowAxisId, String colAxisId, String valueMeasureName, String title)
+    public TableInfo createTable(String name, ContainerFilter cf, String rowAxisId, String colAxisId, String valueMeasureName, String title)
     {
         if (name.equals(getDataBySampleTableName()))
         {
-            return getDataBySampleTable(rowAxisId, colAxisId, valueMeasureName, title); //TODO: change
+            return getDataBySampleTable(cf, rowAxisId, colAxisId, valueMeasureName, title); //TODO: change
         }
 
-        return super.createTable(name);
+        return super.createTable(name, cf);
     }
 
-    public CrosstabTableInfo getDataBySampleTable(String rowAxisId, String colAxisId, String valueMeasureName, String title)
+    public CrosstabTableInfo getDataBySampleTable(ContainerFilter cf, String rowAxisId, String colAxisId, String valueMeasureName, String title)
     {
-        CrosstabSettings settings = new CrosstabSettings(getDataTableInfo());
+        CrosstabSettings settings = new CrosstabSettings(getDataTableInfo(cf));
         CrosstabTable cti;
         CrosstabDimension rowDim = settings.getRowAxis().addDimension(FieldKey.fromParts(rowAxisId));
         CrosstabDimension colDim = settings.getColumnAxis().addDimension(FieldKey.fromParts(colAxisId));
@@ -110,11 +105,11 @@ public abstract class AbstractMatrixProtocolSchema extends AssayProtocolSchema
         return cti;
     }
 
+    @Override
     public Set<String> getTableNames()
     {
         Set<String> result = super.getTableNames();
         result.add(_dataBySampleTableName);
         return result;
     }
-
 }

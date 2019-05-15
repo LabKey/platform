@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
@@ -391,6 +392,9 @@ public class DefaultStudyDesignImporter
             _keyName = null;
             _keyMap = null;
             _verifyDuplicateFieldKeys = false;
+
+            // this helper is evil and messes with container filters, so require !locked tables
+            ((AbstractTableInfo)table).checkLocked();
         }
 
         public PreserveExistingProjectData(User user, TableInfo table, String fieldName, @Nullable String keyName, @Nullable Map<Object, Object> keyMap,
@@ -402,6 +406,9 @@ public class DefaultStudyDesignImporter
             _keyName = keyName;
             _keyMap = keyMap;
             _verifyDuplicateFieldKeys = verifyDuplicateFieldKeys;
+
+            // this helper is evil and messes with container filters, so require !locked tables
+            ((AbstractTableInfo)table).checkLocked();
         }
 
         protected void initializeData()

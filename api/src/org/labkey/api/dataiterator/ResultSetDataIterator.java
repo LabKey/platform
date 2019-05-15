@@ -18,6 +18,7 @@ package org.labkey.api.dataiterator;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.CachedResultSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CoreSchema;
@@ -61,9 +62,9 @@ public class ResultSetDataIterator extends AbstractDataIterator implements Scrol
             _rs = rs;
             ResultSetMetaData rsmd = _rs.getMetaData();
             _columns = new ColumnInfo[rsmd.getColumnCount()+1];
-            _columns[0] = new ColumnInfo("_row", JdbcType.INTEGER);
+            _columns[0] = new BaseColumnInfo("_row", JdbcType.INTEGER);
             for (int i=1 ; i<=rsmd.getColumnCount() ; i++)
-                _columns[i] = new ColumnInfo(rsmd, i);
+                _columns[i] = new BaseColumnInfo(rsmd, i);
         }
         catch (SQLException x)
         {

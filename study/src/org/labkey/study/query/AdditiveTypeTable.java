@@ -16,17 +16,17 @@
 
 package org.labkey.study.query;
 
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.study.StudySchema;
-import org.labkey.api.query.AliasedColumn;
 
 public class AdditiveTypeTable extends BaseStudyTable
 {
-    public AdditiveTypeTable(StudyQuerySchema schema)
+    public AdditiveTypeTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSpecimenAdditive(schema.getContainer()), true);
+        super(schema, StudySchema.getInstance().getTableInfoSpecimenAdditive(schema.getContainer()), cf, true);
         setName("SpecimenAdditive");
         setPublicSchemaName("study");
         addWrapColumn(_rootTable.getColumn("RowId")).setHidden(true);
@@ -34,7 +34,7 @@ public class AdditiveTypeTable extends BaseStudyTable
         addColumn(new AliasedColumn(this, "LdmsCode", _rootTable.getColumn("LdmsAdditiveCode")));
         addColumn(new AliasedColumn(this, "LabwareCode", _rootTable.getColumn("LabwareAdditiveCode")));
         addColumn(new AliasedColumn(this, "Description", _rootTable.getColumn("Additive")));
-        ColumnInfo typeColumn = addWrapColumn("Additive", _rootTable.getColumn("Additive"));    // for lookups
+        var typeColumn = addWrapColumn("Additive", _rootTable.getColumn("Additive"));    // for lookups
         typeColumn.setHidden(true);
         ContainerForeignKey.initColumn(addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container"))), schema).setHidden(true);
         setTitleColumn("Description");
