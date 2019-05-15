@@ -271,9 +271,7 @@ public class CoreQuerySchema extends UserSchema
         ColumnInfo expirationDateCol = users.getColumn(FieldKey.fromParts("ExpirationDate"));
         if (expirationDateCol != null)
         {
-            boolean isUserManager = getUser().hasRootPermission(UserManagementPermission.class);
-            boolean isAdmin = getContainer().hasPermission(getUser(), AdminPermission.class);
-            if ((isUserManager || isAdmin) && AuthenticationManager.isAccountExpirationEnabled())
+            if (AuthenticationManager.canSetUserExpirationDate(getUser(), getContainer()))
             {
                 List<FieldKey> visibleColumns = new ArrayList<>(users.getDefaultVisibleColumns());
                 visibleColumns.add(FieldKey.fromParts("ExpirationDate"));
