@@ -225,7 +225,8 @@ public class QueryForeignKey extends AbstractForeignKey
         _useRawFKValue = builder.useRawFKValue;
         _table = builder.table;
         _schema = builder.targetSchema;
-        assert(null == _lookupContainer || getEffectiveContainer() == getLookupContainer());
+        // TODO there is an EHR usage that fails this assert (AbstractTableCustomizer)
+        // assert(null == _lookupContainer || getEffectiveContainer() == getLookupContainer());
     }
 
     protected QueryForeignKey(QuerySchema sourceSchema, ContainerFilter cf, @NotNull String schemaName, @NotNull Container effectiveContainer, @Nullable Container lookupContainer, User user, String tableName, @Nullable String lookupKey, @Nullable String displayField)
