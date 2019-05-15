@@ -712,8 +712,8 @@ public class SpecimenQueryView extends BaseStudyQueryView
             rgn.setRecordSelectorValueColumns("RowId");
 
             // NOTE: Setting here instead of in table ctor because if set when SpecimenDetail is sub-query, we have too many columns in sub-query (Dave)
-            if (ViewType.VIALS.equals(_viewType))
-                ((BaseColumnInfo)getTable().getColumn("Container")).setRequired(true);
+//            if (ViewType.VIALS.equals(_viewType))
+//                ((BaseColumnInfo)getTable().getColumn("Container")).setRequired(true);
         }
         else
         {
