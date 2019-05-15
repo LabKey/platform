@@ -48,13 +48,6 @@ public interface AuditTypeProvider
 
     Domain getDomain();
 
-    // TODO ContainerFilter find subclasses that implement this method instead of createTable(CF)
-    @Deprecated
-    default TableInfo createTableInfo(UserSchema schema)
-    {
-        throw new IllegalStateException("Class must implement createTable(schema,containerFilter)");
-    }
-
     default TableInfo createTableInfo(UserSchema schema, ContainerFilter cf)
     {
         return createTableInfo(schema, null);
