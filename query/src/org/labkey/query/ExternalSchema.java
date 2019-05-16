@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
@@ -301,9 +302,10 @@ public class ExternalSchema extends SimpleUserSchema
         }
     }
 
-    protected TableInfo createWrappedTable(String name, @NotNull TableInfo sourceTable)
+    @Override
+    protected TableInfo createWrappedTable(String name, @NotNull TableInfo sourceTable, ContainerFilter cf)
     {
-        ExternalSchemaTable ret = new ExternalSchemaTable(this, sourceTable, getXbTable(name));
+        ExternalSchemaTable ret = new ExternalSchemaTable(this, sourceTable, getXbTable(name), cf);
         ret.init();
         ret.setContainer(_def.getContainerId());
         return ret;

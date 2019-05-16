@@ -61,6 +61,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.Callable;
 
 
 abstract public class UserSchema extends AbstractSchema implements MemTrackable
@@ -89,6 +90,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         assert MemTracker.getInstance().put(this);
     }
 
+    @Override
     public @NotNull String getName()
     {
         return _name;
@@ -99,6 +101,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         return _path;
     }
 
+    @Override
     @Nullable
     public String getDescription()
     {
@@ -149,22 +152,38 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         return null;
     }
 
-
-
-    @Nullable
-    public TableInfo getTable(String name, boolean includeExtraMetadata)
+    public @NotNull ContainerFilter getDefaultContainerFilter()
     {
-        return getTable(name, includeExtraMetadata, false);
+        return ContainerFilter.CURRENT;
     }
 
+    @Nullable
+    final public TableInfo getTable(String name, boolean includeExtraMetadata)
+    {
+        return getTable(name, null, includeExtraMetadata, false);
+    }
 
-    /** if forWrite==true, do not return a cached version */
-    public TableInfo getTable(String name, boolean includeExtraMetadata, boolean forWrite)
+    @Override
+    @Nullable
+    final public TableInfo getTable(String name, @Nullable ContainerFilter cf)
+    {
+        return getTable(name, cf, true, false);
+    }
+
+    /**
+     * @param cf null means to use the default for this schema/table (often schema.getDefaultContainerFilter()). It does not mean there is not ContainerFilter
+     * @param forWrite true means do not return a cached version
+     */
+    @Nullable
+    public TableInfo getTable(String name, @Nullable ContainerFilter cf, boolean includeExtraMetadata, boolean forWrite)
     {
         ArrayList<QueryException> errors = new ArrayList<>();
-        Object o = _getTableOrQuery(name, includeExtraMetadata, forWrite, errors);
+        /* NOTE: ContainerFilter is only applied to TableInfo not QueryDef */
+        Object o = _getTableOrQuery(name, cf, includeExtraMetadata, forWrite, errors);
         if (o instanceof TableInfo)
         {
+            if (!forWrite)
+                ((TableInfo)o).setLocked(true);
             assert validateTableInfo((TableInfo)o);
             return (TableInfo)o;
         }
@@ -179,6 +198,8 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
                 throw ex;
             }
             assert validateTableInfo(t);
+            if (null != t && !forWrite)
+                t.setLocked(true);
             return t;
         }
         return null;
@@ -198,7 +219,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
 
     Map<Pair<String, Boolean>, Object> cache = new HashMap<>();
 
-    public Object _getTableOrQuery(String name, boolean includeExtraMetadata, boolean forWrite, Collection<QueryException> errors)
+    public Object _getTableOrQuery(String name, ContainerFilter cf, boolean includeExtraMetadata, boolean forWrite, Collection<QueryException> errors)
     {
         if (name == null)
             return null;
@@ -206,27 +227,18 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         if (!canReadSchema())
             return null; // See #21014
 
-        Pair<String,Boolean> key = new Pair<>(name.toLowerCase(), includeExtraMetadata);
-        boolean useCache = _cacheTableInfos && !forWrite;
+        TableInfo table = createTable(name, cf);
         Object torq;
 
-        if (useCache)
-        {
-            torq = cache.get(key);
-            if (null != torq)
-                return torq;
-        }
-
-        TableInfo table = createTable(name);
         if (table != null)
         {
+            assert !table.isLocked();
             if (includeExtraMetadata)
             {
                 table.overlayMetadata(name, this, errors);
             }
             afterConstruct(table);
-            // should just be !forWrite, but exp schema is still a problem
-            if (useCache)
+            if (!forWrite)
                 table.setLocked(true);
             fireAfterConstruct(table);
             torq = table;
@@ -240,26 +252,44 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
             {
                 def.setMetadataXml(null);
             }
+            if (null != cf)
+                def.setContainerFilter(cf);
 
             fireAfterConstruct(def);
             torq = def;
         }
 
-        if (false && useCache)
-           cache.put(key,torq);
-
         MemTracker.getInstance().put(torq);
         return torq;
     }
 
+    @Override
     @Nullable
+    @Deprecated
     public final TableInfo getTable(String name)
     {
-        return getTable(name, true);
+        return getTable(name, null, true, false);
     }
 
-    public abstract @Nullable TableInfo createTable(String name);
 
+    @Deprecated // TODO ContainerFilter - remove. Schemas that still override or call this method have not been converted yet.
+    public final @Nullable TableInfo createTable(String name)
+    {
+        return createTable(name, null);
+    }
+//
+//
+//    // TODO ContainerFilter - make abstract. Schemas that do not override this method have not been converted yet.
+//    public @Nullable TableInfo createTable(String name, ContainerFilter cf)
+//    {
+//        return createTable(name);
+//    }
+//
+//
+    public abstract @Nullable TableInfo createTable(String name, ContainerFilter cf);
+
+
+    @Override
     abstract public Set<String> getTableNames();
 
     public Set<String> getVisibleTableNames()
@@ -278,12 +308,14 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         return TableSorter.sort(this);
     }
 
+    @Override
     public Container getContainer()
     {
         return _container;
     }
 
     /** Returns a SchemaKey encoded name for this schema. */
+    @Override
     public @NotNull String getSchemaName()
     {
         return _path.toString();
@@ -294,6 +326,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         return _path;
     }
 
+    @Override
     public Set<String> getSchemaNames()
     {
         Set<String> ret = new HashSet<>(super.getSchemaNames());
@@ -301,6 +334,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         return ret;
     }
 
+    @Override
     public QuerySchema getSchema(String name)
     {
         if (_restricted)
@@ -739,5 +773,36 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         {
             throw new UnauthorizedException("Insufficient permissions for folder: " + rowContainer.getPath());
         }
+    }
+
+    // FOR USE BY SUBCLASSES
+    /* Eventually we want UserSchema.getTable() to implement support for caching TableInfo
+     * However, many ForeignKeys create tables w/o using getTable().  This can be used to optimize
+     * that scenario.  It is up to the caller to ensure propert caching when ContainerFilter may differ
+     * CONSIDER: add ContainerFilter as a second parameter in addition to String key
+     */
+    private Map<String,TableInfo> tableInfoCache = Collections.synchronizedMap(new CaseInsensitiveHashMap<TableInfo>());
+
+    public TableInfo getCachedTableInfo(String key, Callable<TableInfo> call)
+    {
+        TableInfo ret = tableInfoCache.get(key);
+        if (null == ret)
+        {
+            try
+            {
+                ret = call.call();
+            }
+            catch (RuntimeException rex)
+            {
+                throw rex;
+            }
+            catch (Exception x)
+            {
+                throw new RuntimeException(x);
+            }
+            assert ret.isLocked();
+            tableInfoCache.put(key,ret);
+        }
+        return ret;
     }
 }

@@ -127,7 +127,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
             fieldKeys.put(FieldKey.fromParts(property.getName()), property.getPropertyDescriptor());
 
         // Add all of the hard columns to the set of properties we can show
-        TableInfo runTableInfo = AssayService.get().createRunTable(_protocol, _provider, _user, _run.getContainer());
+        TableInfo runTableInfo = AssayService.get().createRunTable(_protocol, _provider, _user, _run.getContainer(), null);
         for (ColumnInfo runColumn : runTableInfo.getColumns())
         {
             // These columns cause an UnauthorizedException if the user has permission to see the dataset
@@ -197,7 +197,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
         if (_runDisplayProperties == null)
         {
             Map<FieldKey, PropertyDescriptor> fieldKeys = getFieldKeys();
-            TableInfo runTable = AssayService.get().createRunTable(_protocol, _provider, _user, _run.getContainer());
+            TableInfo runTable = AssayService.get().createRunTable(_protocol, _provider, _user, _run.getContainer(), null);
 
             CustomView runView = getRunsCustomView(context);
             Collection<FieldKey> fieldKeysToShow;
@@ -258,10 +258,10 @@ public abstract class DilutionAssayRun extends Luc5Assay
         Map<String, DilutionResultProperties> dilutionResultPropertiesMap = new HashMap<>();
 
         AssayProtocolSchema schema = _provider.createProtocolSchema(_user, _run.getContainer(), _protocol, null);
-        TableInfo virusTable = schema.createTable(DilutionManager.VIRUS_TABLE_NAME);
+        TableInfo virusTable = schema.createTable(DilutionManager.VIRUS_TABLE_NAME, null);
 
         // Do a query to get all the info we need to do the copy
-        TableInfo resultTable = schema.createDataTable(false);
+        TableInfo resultTable = schema.createDataTable(null,false);
         DilutionManager mgr = new DilutionManager();
 
         Set<Double> cutoffValues = new HashSet<>();
@@ -320,7 +320,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
         if (_runProperties == null)
         {
             Map<FieldKey, PropertyDescriptor> fieldKeys = getFieldKeys();
-            TableInfo runTable = AssayService.get().createRunTable(_protocol, _provider, _user, _run.getContainer());
+            TableInfo runTable = AssayService.get().createRunTable(_protocol, _provider, _user, _run.getContainer(), null);
             Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(runTable, fieldKeys.keySet());
             _runProperties = new TreeMap<>(new PropertyDescriptorComparator());
             _runProperties.putAll(getRunProperties(runTable, fieldKeys, cols));

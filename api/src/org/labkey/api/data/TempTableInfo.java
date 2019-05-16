@@ -42,10 +42,10 @@ public class TempTableInfo extends SchemaTableInfo
         // TODO: Do away with _tempTableName?  getSelectName() is synonymous.
         _tempTableName = getSelectName();
 
-        for (ColumnInfo col : cols)
+        for (var col : cols)
         {
-            col.setParentTable(this);
-            addColumn(col);
+            ((BaseColumnInfo)col).setParentTable(this);
+            addColumn(((BaseColumnInfo)col));
         }
 
         if (pk != null)

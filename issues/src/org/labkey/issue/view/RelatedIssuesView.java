@@ -148,13 +148,7 @@ public class RelatedIssuesView extends VBox
         view.getSettings().setAllowChooseView(false);
         view.getSettings().setAllowCustomizeView(false);
 
-        TableInfo table = view.getTable();
-        if (table instanceof ContainerFilterable)
-        {
-            ContainerFilterable cf = (ContainerFilterable) table;
-            ContainerFilter filter = new ContainerFilter.SimpleContainerFilter(containers);
-            cf.setContainerFilter(filter);
-        }
+        view.setContainerFilter(new ContainerFilter.SimpleContainerFilter(containers));
 
         return view;
     }

@@ -20,7 +20,7 @@ import org.labkey.api.admin.ImportException;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ColumnRenderProperties;
+import org.labkey.api.data.ColumnRenderPropertiesImpl;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -125,12 +125,12 @@ public class ImportTypesHelper
                 if (columnXml.isSetMeasure())
                     builder.setMeasure(columnXml.getMeasure());
                 else
-                    builder.setMeasure(ColumnRenderProperties.inferIsMeasure(columnXml.getColumnName(), columnXml.getColumnTitle(), pt.getJdbcType().isNumeric(), columnXml.getIsAutoInc(), columnXml.getFk() != null, columnXml.getIsHidden()));
+                    builder.setMeasure(ColumnRenderPropertiesImpl.inferIsMeasure(columnXml.getColumnName(), columnXml.getColumnTitle(), pt.getJdbcType().isNumeric(), columnXml.getIsAutoInc(), columnXml.getFk() != null, columnXml.getIsHidden()));
 
                 if (columnXml.isSetDimension())
                     builder.setDimension(columnXml.getDimension());
                 else
-                    builder.setDimension(ColumnRenderProperties.inferIsDimension(columnXml.getColumnName(), columnXml.getFk() != null, columnXml.getIsHidden()));
+                    builder.setDimension(ColumnRenderPropertiesImpl.inferIsDimension(columnXml.getColumnName(), columnXml.getFk() != null, columnXml.getIsHidden()));
 
                 if (columnXml.isSetRecommendedVariable())
                     builder.setRecommendedVariable(columnXml.getRecommendedVariable());
@@ -147,7 +147,7 @@ public class ImportTypesHelper
                 if (columnXml.isSetImportAliases())
                 {
                     importAliases.addAll(Arrays.asList(columnXml.getImportAliases().getImportAliasArray()));
-                    builder.setImportAliases(ColumnRenderProperties.convertToString(importAliases));
+                    builder.setImportAliases(ColumnRenderPropertiesImpl.convertToString(importAliases));
                 }
 
                 org.labkey.data.xml.PHIType.Enum phi = org.labkey.data.xml.PHIType.NOT_PHI;

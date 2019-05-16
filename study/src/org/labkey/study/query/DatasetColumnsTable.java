@@ -38,19 +38,19 @@ public class DatasetColumnsTable extends FilteredTable<StudyQuerySchema>
 {
     public static final String NAME = "DataSetColumns";
 
-    public DatasetColumnsTable(final StudyQuerySchema schema)
+    public DatasetColumnsTable(final StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(ExperimentService.get().getTinfoPropertyDescriptor(), schema);
+        super(ExperimentService.get().getTinfoPropertyDescriptor(), schema, cf);
         setName(NAME);
         setDescription("Metadata table containing one row of metadata for each column in all study datasets.");
         List<FieldKey> defaultCols = new ArrayList<>();
         SQLFragment sql = new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".DataSetId");
-        ColumnInfo datasetLookupCol = new ExprColumn(this, "DataSet", sql, JdbcType.INTEGER);
-        datasetLookupCol.setFk(new LookupForeignKey("DataSetId")
+        var datasetLookupCol = new ExprColumn(this, "DataSet", sql, JdbcType.INTEGER);
+        datasetLookupCol.setFk(new LookupForeignKey(cf, "DataSetId", null)
         {
             public TableInfo getLookupTableInfo()
             {
-                return new DatasetsTable(schema);
+                return new DatasetsTable(schema, getLookupContainerFilter());
             }
         });
         addColumn(datasetLookupCol);
@@ -98,5 +98,11 @@ public class DatasetColumnsTable extends FilteredTable<StudyQuerySchema>
     protected void applyContainerFilter(ContainerFilter filter)
     {
         assert null == filter || ContainerFilter.CURRENT == filter;
+    }
+
+    @Override
+    protected ContainerFilter getDefaultContainerFilter()
+    {
+        return ContainerFilter.CURRENT;
     }
 }

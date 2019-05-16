@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnLogging;
 import org.labkey.api.data.ContainerFilter;
@@ -190,7 +191,7 @@ public class QueryTable extends QueryRelation
         ForeignKey foreignKey = parent._col.getFk();
         if (null == foreignKey)
             return null;
-        ColumnInfo lk = parent._col.getFk().createLookupColumn(parent._col, name);
+        ColumnInfo lk = foreignKey.createLookupColumn(parent._col, name);
         if (lk == null)
             return null;
         ret = new TableColumn(k, lk, parent);
@@ -216,7 +217,7 @@ public class QueryTable extends QueryRelation
         if (null != ret)
             return ret;
 
-        ForeignKey qfk = AbstractTableInfo.makeForeignKey(_schema, fk);
+        ForeignKey qfk = AbstractTableInfo.makeForeignKey(_schema, _query.getContainerFilter(), fk);
         if (null == qfk)
             return null;
         ColumnInfo lk = qfk.createLookupColumn(parent._col, name);
@@ -450,7 +451,8 @@ public class QueryTable extends QueryRelation
             return _col.isHidden();
         }
 
-        void copyColumnAttributesTo(ColumnInfo to)
+        @Override
+        void copyColumnAttributesTo(BaseColumnInfo to)
         {
             to.copyAttributesFrom(_col);
             to.setKeyField(false);

@@ -69,6 +69,6 @@ public class StudyPropertiesWriter extends DefaultStudyDesignWriter
         List<ColumnInfo> columns = getDefaultColumns(ctx, tableInfo);
         columns.add(extraColumns.get(fieldKey));
 
-        writeTableData(ctx, vf, tableInfo, columns, null);
+        writeTableData(ctx, vf, tableInfo, columns);
     }
 }

@@ -145,7 +145,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
      * @param dimension The dimension object from the settings.
      * @return A new column info for the row dimension.
      */
-    protected ColumnInfo createRowDimCol(CrosstabDimension dimension)
+    protected BaseColumnInfo createRowDimCol(CrosstabDimension dimension)
     {
         return new DimensionColumnInfo(this, dimension);
     }
@@ -186,7 +186,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
      * @param measure The measure (aggregate)
      * @return A new column info for display
      */
-    protected ColumnInfo createMemberMeasureCol(@Nullable CrosstabMember member, CrosstabMeasure measure)
+    protected BaseColumnInfo createMemberMeasureCol(@Nullable CrosstabMember member, CrosstabMeasure measure)
     {
         AggregateColumnInfo result = new AggregateColumnInfo(this, member, measure);
         result.setMeasure(true);
@@ -200,12 +200,12 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
     protected void addCountAndPatternCols()
     {
         //add the instance count/sort pattern columns
-        ColumnInfo instanceCountCol = addColumn(new ExprColumn(this, COL_INSTANCE_COUNT,
+        var instanceCountCol = addColumn(new ExprColumn(this, COL_INSTANCE_COUNT,
                 new SQLFragment(COL_INSTANCE_COUNT), JdbcType.INTEGER));
         instanceCountCol.setLabel(getSettings().getInstanceCountCaption());
         instanceCountCol.setFacetingBehaviorType(FacetingBehaviorType.ALWAYS_OFF);
 
-        ColumnInfo sortPatternCol = addColumn(new ExprColumn(this, COL_SORT_PATTERN,
+        var sortPatternCol = addColumn(new ExprColumn(this, COL_SORT_PATTERN,
                 new SQLFragment(COL_SORT_PATTERN), JdbcType.INTEGER));
         sortPatternCol.setHidden(true);
         sortPatternCol.setFacetingBehaviorType(FacetingBehaviorType.ALWAYS_OFF);

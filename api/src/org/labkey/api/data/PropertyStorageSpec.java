@@ -227,7 +227,7 @@ public class PropertyStorageSpec
         {
             Set<String> aliases = new HashSet<>();
             aliases.add(alias);
-            setImportAliases(ColumnRenderProperties.convertToString(aliases));
+            setImportAliases(ColumnRenderPropertiesImpl.convertToString(aliases));
         }
     }
 

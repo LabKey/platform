@@ -54,7 +54,7 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
         super(dc);
 
         _boundCol = dc.getColumnInfo();
-        ColumnInfo lookupCol = null;
+        BaseColumnInfo lookupCol = null;
         if (_boundCol.getFk() instanceof MultiValuedForeignKey)
         {
             // Retrieve the value column so it can be used when rendering json or tsv values.
@@ -63,7 +63,7 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
             if (childKey != null && childKey.getFk() != null)
             {
                 ForeignKey childKeyFk = childKey.getFk();
-                lookupCol = childKeyFk.createLookupColumn(childKey, childKeyFk.getLookupColumnName());
+                lookupCol = (BaseColumnInfo)childKeyFk.createLookupColumn(childKey, childKeyFk.getLookupColumnName());
                 if (lookupCol == null)
                 {
                     LOG.warn("Failed to create lookup column from '" + childKey.getName() + "' to '" + childKeyFk.getLookupSchemaName() + "." + childKeyFk.getLookupTableName() + "." + childKeyFk.getLookupColumnName() + "'");

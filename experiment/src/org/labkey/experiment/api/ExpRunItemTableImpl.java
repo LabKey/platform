@@ -16,7 +16,8 @@
 package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.query.ExpMaterialInputTable;
 import org.labkey.api.exp.query.ExpSchema;
@@ -26,18 +27,18 @@ import org.labkey.api.query.UserSchema;
 
 public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C>
 {
-    protected ExpRunItemTableImpl(String name, TableInfo rootTable, UserSchema schema, @Nullable ExpObjectImpl objectType)
+    protected ExpRunItemTableImpl(String name, TableInfo rootTable, UserSchema schema, @Nullable ExpObjectImpl objectType, ContainerFilter cf)
     {
-        super(name, rootTable, schema, objectType);
+        super(name, rootTable, schema, objectType, cf);
     }
 
     /**
      * Create a column with a lookup to MaterialInput that is joined by materialId
      * and a targetProtocolApplication provided by the <code>protocolApplication</code> column.
      */
-    protected ColumnInfo createEdgeColumn(String alias, C protocolAppColumn, ExpSchema.TableType lookupTable)
+    protected BaseColumnInfo createEdgeColumn(String alias, C protocolAppColumn, ExpSchema.TableType lookupTable)
     {
-        ColumnInfo col = wrapColumn(alias, _rootTable.getColumn("rowId"));
+        var col = wrapColumn(alias, _rootTable.getColumn("rowId"));
         LookupForeignKey fk = new LookupForeignKey()
         {
             @Override
@@ -57,9 +58,9 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
     }
 
 
-    protected ColumnInfo createLineageColumn(ExpTableImpl table, String alias, boolean inputs)
+    protected BaseColumnInfo createLineageColumn(ExpTableImpl table, String alias, boolean inputs)
     {
-        ColumnInfo ret = table.wrapColumn(alias, table.getRealTable().getColumn("LSID"));
+        var ret = table.wrapColumn(alias, table.getRealTable().getColumn("LSID"));
         ret.setFk(new LineageForeignKey(table, inputs));
         ret.setCalculated(true);
         ret.setUserEditable(false);

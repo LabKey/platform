@@ -20,6 +20,7 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.HtmlDisplayColumnFactory;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -87,10 +88,10 @@ public class SiteSettingsAuditProvider extends AbstractAuditTypeProvider impleme
     }
 
     @Override
-    public TableInfo createTableInfo(UserSchema userSchema)
+    public TableInfo createTableInfo(UserSchema userSchema, ContainerFilter cf)
     {
-        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, defaultVisibleColumns);
-        table.getColumn("Changes").setDisplayColumnFactory(new HtmlDisplayColumnFactory());
+        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, cf, defaultVisibleColumns);
+        table.getMutableColumn("Changes").setDisplayColumnFactory(new HtmlDisplayColumnFactory());
         List<FieldKey> defaultCols = new ArrayList<>(table.getDefaultVisibleColumns());
         defaultCols.add(FieldKey.fromParts("Changes"));
         table.setDefaultVisibleColumns(defaultCols);

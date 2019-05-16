@@ -223,6 +223,10 @@ public class Query
     public void setContainerFilter(ContainerFilter containerFilter)
     {
         ContainerFilter.logSetContainerFilter(containerFilter, getClass().getSimpleName(), StringUtils.defaultString(_name, "anonymous"));
+        if (_queryRoot != null)
+        {
+            throw new IllegalStateException("query is already parsed");
+        }
         _containerFilter = containerFilter;
     }
 
@@ -625,8 +629,6 @@ public class Query
             QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, getSchema().getContainer());
 
             TableInfo tinfo = _queryRoot.getTableInfo();
-            if (tinfo instanceof ContainerFilterable && tinfo.supportsContainerFilter() && getContainerFilter() != null)
-                ((ContainerFilterable) tinfo).setContainerFilter(getContainerFilter());
 
             if (_parseErrors.size() > 0)
                 return null;
@@ -824,7 +826,7 @@ public class Query
         if (null != found)
         {
             TableInfo ti = found.second;
-            if (ti.getContainerFilter() == getContainerFilter() || (ti instanceof ContainerFilterable && ((ContainerFilterable)ti).hasDefaultContainerFilter() && null == getContainerFilter()))
+            if (null != ti.getContainerFilter() && ti.getContainerFilter().equals(getContainerFilter()))
                 return new QueryTable(this, found.first, found.second, alias);
         }
 
@@ -853,13 +855,12 @@ public class Query
         {
             if (resolvedSchema instanceof UserSchema)
             {
-                t = ((UserSchema) resolvedSchema)._getTableOrQuery(key.getName(), true, false, resolveExceptions);
+                TableType tableType = lookupMetadataTable(key.getName());
+                boolean forWrite = tableType != null;
+                t = ((UserSchema) resolvedSchema)._getTableOrQuery(key.getName(), getContainerFilter(), true, forWrite, resolveExceptions);
             }
             else
-                t = resolvedSchema.getTable(key.getName());
-
-            if (t instanceof ContainerFilterable && ((ContainerFilterable)t).supportsContainerFilter() && getContainerFilter() != null)
-                ((ContainerFilterable) t).setContainerFilter(getContainerFilter());
+                t = resolvedSchema.getTable(key.getName(), getContainerFilter());
         }
         catch (QueryException ex)
         {
@@ -886,6 +887,7 @@ public class Query
         if (t instanceof TableInfo)
         {
             TableInfo tableInfo = (TableInfo)t;
+            // I don't see why Query is being roped into helping with this??? Can't this be handled on the LinkedSchema side?
             TableType tableType = lookupMetadataTable(tableInfo.getName());
             if (null != tableType && tableInfo.isMetadataOverrideable() && resolvedSchema instanceof UserSchema)
                 tableInfo.overlayMetadata(Collections.singletonList(tableType), (UserSchema)resolvedSchema, _parseErrors);
@@ -2131,9 +2133,9 @@ public class Query
             q.setSql("SELECT DISTINCT label, container.name\n" +
                     "FROM (SELECT DISTINCT rowid, container, label FROM issuelistdef WHERE EXISTS (SELECT * FROM issuelistdef WHERE rowid=5)) x");
             errors = new ArrayList<>();
+            q.setContainerFilter(custom);
             t = q.getTable(errors, false);
             assertTrue(errors.isEmpty());
-            ((ContainerFilterable)t).setContainerFilter(custom);
             sqlf = t.getFromSQL("$");
             assertNotNull(sqlf);
             debugSql = sqlf.toDebugString();

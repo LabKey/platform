@@ -16,7 +16,7 @@
 package org.labkey.core.query;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.CoreSchema;
@@ -61,34 +61,34 @@ class FileListTableInfo extends FilteredTable<CoreQuerySchema>
             _query.append(svc.listFilesQuery(schema.getUser()));
             _query.appendComment("</FileListTableInfo>", getSchema().getSqlDialect());
 
-            ColumnInfo containerCol = new ColumnInfo("Container", this, JdbcType.VARCHAR);
+            var containerCol = new BaseColumnInfo("Container", this, JdbcType.VARCHAR);
             ContainerForeignKey.initColumn(containerCol, schema);
             addColumn(containerCol);
 
-            ColumnInfo createdCol = new ColumnInfo("Created", this, JdbcType.DATE);
+            var createdCol = new BaseColumnInfo("Created", this, JdbcType.DATE);
             addColumn(createdCol);
 
-            ColumnInfo createdByCol = new ColumnInfo("CreatedBy", this, JdbcType.INTEGER);
+            var createdByCol = new BaseColumnInfo("CreatedBy", this, JdbcType.INTEGER);
             UserIdForeignKey.initColumn(createdByCol);
             addColumn(createdByCol);
 
-            ColumnInfo modifiedCol = new ColumnInfo("Modified", this, JdbcType.DATE);
+            var modifiedCol = new BaseColumnInfo("Modified", this, JdbcType.DATE);
             modifiedCol.setHidden(true);
             addColumn(modifiedCol);
 
-            ColumnInfo modifiedByCol = new ColumnInfo("ModifiedBy", this, JdbcType.INTEGER);
+            var modifiedByCol = new BaseColumnInfo("ModifiedBy", this, JdbcType.INTEGER);
             UserIdForeignKey.initColumn(modifiedByCol);
             modifiedByCol.setHidden(true);
             addColumn(modifiedByCol);
 
-            ColumnInfo filePathCol = new ColumnInfo("FilePath", this, JdbcType.VARCHAR);
+            var filePathCol = new BaseColumnInfo("FilePath", this, JdbcType.VARCHAR);
             addColumn(filePathCol);
 
-            ColumnInfo sourceKeyCol = new ColumnInfo("SourceKey", this, JdbcType.INTEGER);
+            var sourceKeyCol = new BaseColumnInfo("SourceKey", this, JdbcType.INTEGER);
             sourceKeyCol.setHidden(true);
             addColumn(sourceKeyCol);
 
-            ColumnInfo sourceNameCol = new ColumnInfo("SourceName", this, JdbcType.VARCHAR);
+            var sourceNameCol = new BaseColumnInfo("SourceName", this, JdbcType.VARCHAR);
             sourceNameCol.setHidden(true);
             addColumn(sourceNameCol);
         }

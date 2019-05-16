@@ -27,12 +27,14 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.PanelButton;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -302,6 +304,15 @@ public class ExperimentRunListView extends QueryView
                 return null;
         }
         return super.urlFor(action);
+    }
+
+    /* override createTable, because some callers expect an unlocked TableInfo */
+    @Override
+    protected TableInfo createTable()
+    {
+        TableInfo tableInfo;
+        tableInfo = getSchema().getTable(getSettings().getQueryName(), getContainerFilter(), true, true);
+        return tableInfo;
     }
 
     public ExpRunTable getRunTable()

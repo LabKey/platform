@@ -130,6 +130,8 @@ sourceSets {
 dependencies {
   BuildUtils.addLabKeyDependency(project: project, config: "compile", depProjectPath: BuildUtils.getRemoteApiProjectPath(gradle))
   BuildUtils.addLabKeyDependency(project: project, config: "compile", depProjectPath: BuildUtils.getBootstrapProjectPath(gradle))
+  BuildUtils.addLabKeyDependency(project: project, config: "api", depProjectPath: project.path, depProjectConfig: "xmlSchema")
+
   compile project.files(project.tasks.schemasJar)
 
   implementation fileTree(dir: "$tomcatDir/lib", includes: ['*.jar'], excludes: ['servlet-api.jar', 'mail.jar'])

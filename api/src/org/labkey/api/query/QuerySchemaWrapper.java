@@ -16,6 +16,7 @@
 package org.labkey.api.query;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
@@ -56,12 +57,23 @@ public class QuerySchemaWrapper implements QuerySchema
         return null;
     }
 
+    @Override
+    public DefaultSchema getDefaultSchema()
+    {
+        throw new IllegalStateException();
+    }
+
     public DbSchema getDbSchema()
     {
         return _schema;
     }
 
     public TableInfo getTable(String name)
+    {
+        return _schema.getTable(name);
+    }
+
+    public TableInfo getTable(String name, ContainerFilter cf)
     {
         return _schema.getTable(name);
     }

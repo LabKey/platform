@@ -80,7 +80,7 @@ public class TreatmentVisitMapImporter extends DefaultStudyDesignImporter implem
                     StudyQuerySchema projectSchema = ctx.isDataspaceProject() ? new StudyQuerySchema(StudyManager.getInstance().getStudy(ctx.getProject()), ctx.getUser(), true) : schema;
 
                     // Note: TreatmentVisitMap info needs to import after cohorts are loaded (issue 19947).
-                    StudyQuerySchema.TablePackage treatmentVisitMapTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.TREATMENT_VISIT_MAP_TABLE_NAME);
+                    StudyQuerySchema.TablePackage treatmentVisitMapTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.TREATMENT_VISIT_MAP_TABLE_NAME, null);
                     importTableData(ctx, vf, treatmentVisitMapTablePackage, null, _treatmentVisitMapTransform);
 
                     transaction.commit();

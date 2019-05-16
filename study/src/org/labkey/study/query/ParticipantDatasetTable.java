@@ -17,7 +17,9 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.AbstractForeignKey;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.TableInfo;
@@ -36,9 +38,9 @@ public class ParticipantDatasetTable extends VirtualTable<StudyQuerySchema>
 {
     ColumnInfo _colParticipantId;
 
-    public ParticipantDatasetTable(StudyQuerySchema schema, ColumnInfo colParticipantId)
+    public ParticipantDatasetTable(StudyQuerySchema schema, ContainerFilter cf, ColumnInfo colParticipantId)
     {
-        super(StudySchema.getInstance().getSchema(), null, schema);
+        super(StudySchema.getInstance().getSchema(), null, schema, cf);
         _colParticipantId = colParticipantId;
         for (DatasetDefinition dataset : schema.getStudy().getDatasets())
         {
@@ -60,12 +62,12 @@ public class ParticipantDatasetTable extends VirtualTable<StudyQuerySchema>
         }
     }
 
-    protected ColumnInfo createDatasetColumn(String name, final DatasetDefinition def)
+    protected BaseColumnInfo createDatasetColumn(String name, final DatasetDefinition def)
     {
-        ColumnInfo column;
+        BaseColumnInfo column;
         if (_colParticipantId == null)
         {
-            column = new ColumnInfo(name, this, JdbcType.VARCHAR);
+            column = new BaseColumnInfo(name, this, JdbcType.VARCHAR);
             column.setSqlTypeName("VARCHAR");
         }
         else
@@ -77,7 +79,8 @@ public class ParticipantDatasetTable extends VirtualTable<StudyQuerySchema>
         // If it's demographic or a continuous study, there are no visits, so we can add the dataset fields directly
         if (def.isDemographicData() || def.getStudy().getTimepointType() == TimepointType.CONTINUOUS)
         {
-            column.setFk(new AbstractForeignKey() {
+            column.setFk(new AbstractForeignKey(getUserSchema(), getContainerFilter())
+            {
                 public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
                 {
                     TableInfo table = getLookupTableInfo();
@@ -95,7 +98,7 @@ public class ParticipantDatasetTable extends VirtualTable<StudyQuerySchema>
                 {
                     try
                     {
-                        DatasetTableImpl dsTable = _userSchema.createDatasetTableInternal(def);
+                        DatasetTableImpl dsTable = _userSchema.createDatasetTableInternal(def, getContainerFilter());
                         dsTable.hideParticipantLookups();
                         dsTable.overlayMetadata(dsTable.getName(), _userSchema, new ArrayList<>());
                         return dsTable;
@@ -116,13 +119,13 @@ public class ParticipantDatasetTable extends VirtualTable<StudyQuerySchema>
         }
         else
         {
-            column.setFk(new AbstractForeignKey()
+            column.setFk(new AbstractForeignKey(getUserSchema(), getContainerFilter())
             {
                 public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
                 {
                     if (displayField == null)
                         return null;
-                    ColumnInfo ret = new ParticipantVisitDatasetTable(_userSchema, def, parent).getColumn(displayField);
+                    var ret = new ParticipantVisitDatasetTable(_userSchema, getLookupContainerFilter(), def, parent).getMutableColumn(displayField);
                     if (ret == null)
                         return null;
                     ret.setLabel(parent.getLabel() + " " + ret.getLabel());
@@ -131,7 +134,7 @@ public class ParticipantDatasetTable extends VirtualTable<StudyQuerySchema>
 
                 public TableInfo getLookupTableInfo()
                 {
-                    return new ParticipantVisitDatasetTable(_userSchema, def, null);
+                    return new ParticipantVisitDatasetTable(_userSchema, getLookupContainerFilter(), def, null);
                 }
 
                 public StringExpression getURL(ColumnInfo parent)

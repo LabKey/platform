@@ -18,6 +18,7 @@ package org.labkey.core.query;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.NullColumnInfo;
@@ -90,7 +91,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
     public UsersTable(UserSchema schema, TableInfo table)
     {
-        super(schema, table);
+        super(schema, table, null);
 
         setDescription("Contains all users who are members of the current project." +
             " The data in this table are available only to users who are signed-in (not guests). Guests see no rows." +
@@ -130,7 +131,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 if (ALWAYS_AVAILABLE_FIELDS.contains(col.getFieldKey()))
                     wrapColumn(col);
                 else
-                    addUserDetailColumn(col, isCanSeeDetails(), true);
+                    addUserDetailColumn( (BaseColumnInfo)col, isCanSeeDetails(), true);
             }
         }
 
@@ -155,7 +156,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
         // The details action requires admin permission so don't offer the link if they can't see it
         if (getUser().hasRootPermission(UserManagementPermission.class) || getContainer().hasPermission(getUser(), AdminPermission.class))
         {
-            ColumnInfo userIdCol = getColumn(FieldKey.fromParts("UserId"));
+            var userIdCol = getMutableColumn(FieldKey.fromParts("UserId"));
             if (userIdCol != null)
             {
                 DetailsURL detailsURL = QueryService.get().urlDefault(getContainer(), QueryAction.detailsQueryRow,
@@ -177,7 +178,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
      *
      * @param wrapColumn true to wrap the column when it is already in the underlying physical table
      */
-    private void addUserDetailColumn(ColumnInfo col, boolean canSeeDetails, boolean wrapColumn)
+    private void addUserDetailColumn(BaseColumnInfo col, boolean canSeeDetails, boolean wrapColumn)
     {
         if (canSeeDetails || !_mustCheckPermissions)
         {
@@ -189,7 +190,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
         else
         {
             // display a column with blank results
-            ColumnInfo nullColumn = addColumn(new NullColumnInfo(this, col.getName(), col.getJdbcType()));
+            var nullColumn = addColumn(new NullColumnInfo(this, col.getName(), col.getJdbcType()));
             nullColumn.setReadOnly(true);
             nullColumn.setHidden(col.isHidden());
             nullColumn.setNullable(col.isNullable());
@@ -199,7 +200,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
     private void hideExpirationDateColumn()
     {
-        ColumnInfo expirationDateCol = getColumn(FieldKey.fromParts("ExpirationDate"));
+        var expirationDateCol = getMutableColumn(FieldKey.fromParts("ExpirationDate"));
         if (expirationDateCol != null)
         {
             expirationDateCol.setHidden(true);
@@ -247,12 +248,12 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 for (DomainProperty dp : domain.getProperties())
                 {
                     PropertyDescriptor pd = dp.getPropertyDescriptor();
-                    ColumnInfo propColumn = new PropertyColumn(pd, getObjectUriColumn(), getContainer(), user, false);
+                    var propColumn = new PropertyColumn(pd, getObjectUriColumn(), getContainer(), user, false);
 
                     if (reserved.contains(propColumn.getName()))
                     {
                         // merge property descriptor settings into the built in columns
-                        ColumnInfo col = getColumn(propColumn.getName());
+                        var col = getMutableColumn(propColumn.getName());
                         if (col != null)
                         {
                             if (!(col instanceof NullColumnInfo))

@@ -18,6 +18,7 @@ package org.labkey.study.query;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.study.StudyService;
 import java.util.Map;
 
@@ -30,9 +31,9 @@ public class SpecimenPivotByDerivativeType extends BaseSpecimenPivotTable
     public static final String PIVOT_BY_DERIVATIVE_TYPE = "Primary/Derivative Type Vial Counts";
     private static final String COLUMN_DESCRIPTION_FORMAT = "Number of vials of primary & derivative type %s/%s";
 
-    public SpecimenPivotByDerivativeType(final StudyQuerySchema schema)
+    public SpecimenPivotByDerivativeType(final StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(SpecimenReportQuery.getPivotByDerivativeType(schema.getContainer(), schema.getUser()), schema);
+        super(SpecimenReportQuery.getPivotByDerivativeType(schema, cf), schema);
         setDescription("Contains up to one row of Specimen Primary/Derivative Type totals for each " + StudyService.get().getSubjectNounSingular(getContainer()) +
             "/visit combination.");
 

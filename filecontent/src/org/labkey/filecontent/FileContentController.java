@@ -895,7 +895,7 @@ public class FileContentController extends SpringActionController
 
         public ApiResponse execute(FilePropsForm form, BindException errors) throws Exception
         {
-            TableInfo ti = ExpSchema.TableType.Data.createTable(new ExpSchema(getUser(), getContainer()), ExpSchema.TableType.Data.toString());
+            TableInfo ti = ExpSchema.TableType.Data.createTable(new ExpSchema(getUser(), getContainer()), ExpSchema.TableType.Data.toString(), null);
             QueryUpdateService qus = ti.getUpdateService();
 
             try
@@ -1339,7 +1339,7 @@ public class FileContentController extends SpringActionController
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             List<Map<String, Object>> rows = new ArrayList<>();
-            TableInfo tableInfo = ExpSchema.TableType.Data.createTable(new ExpSchema(getUser(), getContainer()), ExpSchema.TableType.Data.toString());
+            TableInfo tableInfo = ExpSchema.TableType.Data.createTable(new ExpSchema(getUser(), getContainer()), ExpSchema.TableType.Data.toString(), null);
             new TableSelector(tableInfo).forEachMap(data ->
             {
                 Object encodedUrl = data.get("dataFileUrl");

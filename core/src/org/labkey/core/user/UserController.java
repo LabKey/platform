@@ -964,6 +964,9 @@ public class UserController extends SpringActionController
             {
                 for (Map.Entry<String, Object> entry : form.getTypedColumns().entrySet())
                 {
+                    if (entry.getKey().equals("ExpirationDate") && !AuthenticationManager.canSetUserExpirationDate(getUser(), getContainer()))
+                        errors.reject(ERROR_MSG, "User does not have permission to edit the ExpirationDate field.");
+
                     if (entry.getValue() != null)
                     {
                         ColumnInfo col = table.getColumn(FieldKey.fromParts(entry.getKey()));
@@ -1019,6 +1022,9 @@ public class UserController extends SpringActionController
             {
                 if ((new Date()).compareTo(new Date(expirationDate.getTime())) > 0)
                     errors.reject(SpringActionController.ERROR_MSG, "Expiration Date cannot be in the past.");
+
+                if (isOwnRecord(form))
+                    errors.reject(SpringActionController.ERROR_MSG, "Cannot set your own expiration date.");
             }
 
             // validate the original size of the avatar image
@@ -1046,19 +1052,25 @@ public class UserController extends SpringActionController
             }
         }
 
-        public boolean handlePost(QueryUpdateForm form, BindException errors) throws Exception
+        private boolean isOwnRecord(QueryUpdateForm form)
         {
             User user = getUser();
             _userId = user.getUserId();
             _pkVal = NumberUtils.toInt(form.getPkVal().toString());
-            boolean isOwnRecord = _pkVal.equals(_userId);
+            return _pkVal.equals(_userId);
+        }
+
+        public boolean handlePost(QueryUpdateForm form, BindException errors) throws Exception
+        {
+            User postingUser = getUser();
+            boolean isOwnRecord = isOwnRecord(form);
 
             Date oldExpirationDate = null;
             User targetUser = UserManager.getUser(_pkVal);
             if (targetUser != null)
                 oldExpirationDate = targetUser.getExpirationDate();
 
-            if (user.hasRootPermission(UserManagementPermission.class) || isOwnRecord)
+            if (postingUser.hasRootPermission(UserManagementPermission.class) || isOwnRecord)
             {
                 TableInfo table = form.getTable();
                 if (table instanceof UsersTable)
@@ -1077,32 +1089,33 @@ public class UserController extends SpringActionController
 
         private void auditExpirationDateChange(Date oldExpirationDate, QueryUpdateForm form)
         {
-            Date newExpirationDate = null;
-            Timestamp expirationDateTimestamp = (Timestamp) form.getTypedColumns().get("ExpirationDate");
-            if (expirationDateTimestamp != null)
-                newExpirationDate = new Date(expirationDateTimestamp.getTime());
             User targetUser = UserManager.getUser(_pkVal);
             if (targetUser == null)
                 return;
+
+            Date newExpirationDate = targetUser.getExpirationDate();
             String currentUserEmail = getUser().getEmail();
             String targetUserEmail = targetUser.getEmail();
             Container c = getContainer();
 
-            StringBuilder message = new StringBuilder(currentUserEmail);
+            String message;
 
             if (oldExpirationDate == null && newExpirationDate == null)
                 return;
             else if (oldExpirationDate == null)
             {
-                message.append(" set expiration date for ").append(targetUserEmail).append(" to ").append(DateUtil.formatDateTime(c, newExpirationDate));
+                message = String.format("%1$s set expiration date for %2$s to %3$s.",
+                        currentUserEmail, targetUserEmail, DateUtil.formatDateTime(c, newExpirationDate));
             }
             else if (newExpirationDate == null)
             {
-                message.append(" removed expiration date for ").append(targetUserEmail).append(" from ").append(DateUtil.formatDateTime(c, oldExpirationDate));
+                message = String.format("%1$s removed expiration date for %2$s. Previous value was %3$s",
+                        currentUserEmail, targetUserEmail, DateUtil.formatDateTime(c, oldExpirationDate));
             }
             else if (oldExpirationDate.compareTo(newExpirationDate) != 0)
             {
-                message.append(" changed expiration date for ").append(targetUserEmail).append(" from ").append(DateUtil.formatDateTime(c, oldExpirationDate)).append(" to ").append(DateUtil.formatDateTime(c, newExpirationDate));
+                message = String.format("%1$s changed expiration date for %2$s from %3$s to %4$s.",
+                        currentUserEmail, targetUserEmail, DateUtil.formatDateTime(c, oldExpirationDate), DateUtil.formatDateTime(c, newExpirationDate));
             }
             else
                 return;
@@ -1518,7 +1531,9 @@ public class UserController extends SpringActionController
 
             // for the root container or if the user is site/app admin, use the site users table
             String userTableName = c.isRoot() || c.hasPermission(user, UserManagementPermission.class) ? CoreQuerySchema.SITE_USERS_TABLE_NAME : CoreQuerySchema.USERS_TABLE_NAME;
-            TableInfo table = schema.getTable(userTableName);
+            // use getTable(forWrite=true) because we hack on this TableInfo
+            // TODO don't hack on the TableInfo, shouldn't the schma check canSeeuserDetails() and has AdminPermission?
+            TableInfo table = schema.getTable(userTableName, null, true, true);
             if (table == null)
                 throw new NotFoundException(userTableName + " table");
             else if (table instanceof AbstractTableInfo)

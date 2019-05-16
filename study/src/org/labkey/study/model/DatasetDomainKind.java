@@ -17,6 +17,7 @@
 package org.labkey.study.model;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchemaType;
@@ -434,7 +435,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
         if (null == dsd)
             return null;
 
-        return new DatasetTableImpl(schema, dsd);
+        return new DatasetTableImpl(schema, null, dsd);
     }
 
     @Override
@@ -450,11 +451,11 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
             // The column may be null if the dataset is being deleted in the background
             if (null != tCol && c != null)
             {
-                c.setExtraAttributesFrom(tCol);
+                ((BaseColumnInfo)c).setExtraAttributesFrom(tCol);
 
                 // When copying a column, the hidden bit is not propagated, so we need to do it manually
                 if (tCol.isHidden())
-                    c.setHidden(true);
+                    ((BaseColumnInfo)c).setHidden(true);
             }
         }
     }

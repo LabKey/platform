@@ -846,7 +846,7 @@ public class DbSchema
         DbSchema coreSchema = CoreSchema.getInstance().getSchema();
 
         List<ColumnInfo> listColInfos = new ArrayList<>();
-        ColumnInfo col = new ColumnInfo("RowId", JdbcType.INTEGER);
+        var col = new BaseColumnInfo("RowId", JdbcType.INTEGER);
         col.setNullable(false);
         listColInfos.add(col);
 

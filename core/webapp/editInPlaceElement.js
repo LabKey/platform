@@ -220,6 +220,15 @@ Ext4.define('LABKEY.ext.EditInPlaceElement', {
         this.el.update(Ext4.util.Format.htmlEncode(unencodedValue));
     },
 
+    //Returns un-encoded raw value
+    getCurrentElementValue: function(){
+        return Ext4.String.trim(Ext4.util.Format.htmlDecode(this.el.dom.innerHTML));
+    },
+
+    setElementValue: function(unencodedValue) {
+        this.el.update(Ext4.util.Format.htmlEncode(unencodedValue));
+    },
+
     completeEdit: function(){
         var value = this.getEditorValue();
         this.endEdit();

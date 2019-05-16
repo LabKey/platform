@@ -16,6 +16,7 @@
 package org.labkey.issue.query;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.SimpleUserSchema;
 
@@ -24,8 +25,9 @@ import org.labkey.api.query.SimpleUserSchema;
  */
 public class AllIssuesTable extends SimpleUserSchema.SimpleTable<IssuesQuerySchema>
 {
-    public AllIssuesTable(@NotNull IssuesQuerySchema schema)
+    // TODO ContainerFilter -- what is the default CF for this table?
+    public AllIssuesTable(@NotNull IssuesQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, IssuesSchema.getInstance().getTableInfoIssues());
+        super(schema, IssuesSchema.getInstance().getTableInfoIssues(), cf);
     }
 }

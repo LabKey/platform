@@ -131,7 +131,7 @@ public abstract class SamplePropertyHelper<ObjectType>
                             autoCompletePrefix = SpecimenService.get().getCompletionURLBase(targetStudy, SpecimenService.CompletionType.VisitId);
                     }
                 }
-                ColumnInfo col = sampleProperty.getPropertyDescriptor().createColumnInfo(OntologyManager.getTinfoObject(), "ObjectURI", user, view.getViewContext().getContainer());
+                var col = sampleProperty.getPropertyDescriptor().createColumnInfo(OntologyManager.getTinfoObject(), "ObjectURI", user, view.getViewContext().getContainer());
                 col.setName(inputName);
                 cols.add(new SpecimenInputColumn(col, autoCompletePrefix));
             }

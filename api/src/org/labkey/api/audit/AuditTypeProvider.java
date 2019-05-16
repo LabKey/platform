@@ -15,7 +15,7 @@
  */
 package org.labkey.api.audit;
 
-import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.FieldKey;
@@ -47,7 +47,12 @@ public interface AuditTypeProvider
     void initializeProvider(User user);
 
     Domain getDomain();
-    TableInfo createTableInfo(UserSchema schema);
+
+    default TableInfo createTableInfo(UserSchema schema, ContainerFilter cf)
+    {
+        return createTableInfo(schema, null);
+    }
+
 
     <K extends AuditTypeEvent> Class<K> getEventClass();
 

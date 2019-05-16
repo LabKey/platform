@@ -123,10 +123,10 @@ public class TableInfoWriter
         if (!column.isShownInDetailsView())
             columnXml.setShownInDetailsView(false);
 
-        if (column.isDimension() != ColumnRenderProperties.inferIsDimension(column))
+        if (column.isDimension() != ColumnRenderPropertiesImpl.inferIsDimension(column))
             columnXml.setDimension(column.isDimension());
 
-        if (column.isMeasure() != ColumnRenderProperties.inferIsMeasure(column))
+        if (column.isMeasure() != ColumnRenderPropertiesImpl.inferIsMeasure(column))
             columnXml.setMeasure(column.isMeasure());
 
         if (column.isRecommendedVariable())
