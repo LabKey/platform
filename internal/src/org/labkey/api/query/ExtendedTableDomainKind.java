@@ -57,10 +57,10 @@ public abstract class ExtendedTableDomainKind extends SimpleTableDomainKind
         updatedDomain.setFields(gwtDomain.getFields());
         updatedDomain.setName(gwtDomain.getName());
 
-        List<String> errors = updateDomain(existingDomain, updatedDomain, container, user);
-        if(errors.size() > 0)
+        ValidationException errors = updateDomain(existingDomain, updatedDomain, container, user);
+        if(errors.hasErrors())
         {
-            throw new RuntimeException(errors.get(0));
+            throw new RuntimeException(errors);
         }
 
         return PropertyService.get().getDomain(container, domainURI);

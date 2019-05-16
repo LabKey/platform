@@ -22,6 +22,7 @@ package org.labkey.api.query;
 */
 
 import org.jetbrains.annotations.NotNull;
+import org.springframework.validation.ObjectError;
 
 import java.sql.SQLException;
 
@@ -46,6 +47,12 @@ public class SimpleValidationError implements ValidationError
     public String getMessage()
     {
         return _message;
+    }
+
+    @Override
+    public ObjectError getObjectError()
+    {
+        return null;
     }
 
 

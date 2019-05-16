@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 package org.labkey.api.query;
+
+import org.springframework.validation.ObjectError;
+
 /**
  * Represents a particular validation error. Various validation error
  * classes will implement this interface for use in the
@@ -24,4 +27,6 @@ package org.labkey.api.query;
 public interface ValidationError
 {
     String getMessage();
+
+    ObjectError getObjectError();
 }

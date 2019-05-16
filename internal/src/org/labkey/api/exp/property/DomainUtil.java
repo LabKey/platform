@@ -441,22 +441,28 @@ public class DomainUtil
 
     /** @return Errors encountered during the save attempt */
     @NotNull
-    public static List<String> updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user)
+    public static ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user)
     {
         assert orig.getDomainURI().equals(update.getDomainURI());
-        List<String> errors = new ArrayList<>();
 
         Domain d = PropertyService.get().getDomain(container, update.getDomainURI());
+        ValidationException validationException = validateProperties(d, update, d.getDomainKind());
+
+        if (validationException.hasErrors())
+        {
+            return validationException;
+        }
+
         if (null == d)
         {
-            errors.add("Domain not found: " + update.getDomainURI());
-            return errors;
+            validationException.addError(new SimpleValidationError("Domain not found: " + update.getDomainURI()));
+            return validationException;
         }
 
         if (!d.getDomainKind().canEditDefinition(user, d))
         {
-            errors.add("Unauthorized");
-            return errors;
+            validationException.addError(new SimpleValidationError("Unauthorized"));
+            return validationException;
         }
 
         // NOTE that DomainImpl.save() does an optimistic concurrency check, but we still need to check here.
@@ -465,8 +471,8 @@ public class DomainUtil
         String currentTs = JdbcUtil.rowVersionToString(d.get_Ts());
         if (!StringUtils.equalsIgnoreCase(currentTs,orig.get_Ts()))
         {
-            errors.add("The domain has been edited by another user, you may need to refresh and try again.");
-            return errors;
+            validationException.addError(new SimpleValidationError("The domain has been edited by another user, you may need to refresh and try again."));
+            return validationException;
         }
 
         // validate names
@@ -518,8 +524,9 @@ public class DomainUtil
             DomainProperty p = d.getProperty(pd.getPropertyId());
             if(p == null)
             {
-                errors.add("Column " + pd.getName() + " not found (id: " + pd.getPropertyId() + "), it was probably deleted. Please reload the designer and attempt the edit again.");
-                return errors;
+                String errorMsg = "Column " + pd.getName() + " not found (id: " + pd.getPropertyId() + "), it was probably deleted. Please reload the designer and attempt the edit again.";
+                validationException.addError(new PropertyValidationError(errorMsg, pd.getName(), pd.getPropertyId()));
+                return validationException;
             }
 
             defaultValues.put(p, pd.getDefaultValue());
@@ -530,7 +537,7 @@ public class DomainUtil
             if (old.equals(pd))
                 continue;
 
-            _copyProperties(p, pd, errors);
+            _copyProperties(p, pd, validationException);
         }
 
         // Need to ensure that any new properties are given a unique PropertyURI.  See #8329
@@ -543,14 +550,14 @@ public class DomainUtil
         // now add properties
         for (GWTPropertyDescriptor pd : update.getFields())
         {
-            addProperty(d, pd, defaultValues, propertyUrisInUse, errors);
+            addProperty(d, pd, defaultValues, propertyUrisInUse, validationException);
         }
 
         // TODO: update indices -- drop and re-add?
 
         try
         {
-            if (errors.size() == 0)
+            if (validationException.getErrors().isEmpty())
             {
                 // Reorder the properties based on what we got from GWT
                 Map<String, DomainProperty> dps = new HashMap<>();
@@ -574,19 +581,19 @@ public class DomainUtil
                 }
                 catch (ExperimentException e)
                 {
-                    errors.add(e.getMessage() == null ? e.toString() : e.getMessage());
+                    validationException.addError(new SimpleValidationError(e.getMessage() == null ? e.toString() : e.getMessage()));
                 }
             }
         }
         catch (IllegalStateException | ChangePropertyDescriptorException x)
         {
-            errors.add(x.getMessage() == null ? x.toString() : x.getMessage());
+            validationException.addError(new SimpleValidationError(x.getMessage() == null ? x.toString() : x.getMessage()));
         }
 
-        return errors;
+        return validationException;
     }
 
-    public static DomainProperty addProperty(Domain domain, GWTPropertyDescriptor pd, Map<DomainProperty, Object> defaultValues, Set<String> propertyUrisInUse, List<String> errors)
+    public static DomainProperty addProperty(Domain domain, GWTPropertyDescriptor pd, Map<DomainProperty, Object> defaultValues, Set<String> propertyUrisInUse, ValidationException errors)
     {
         if (pd.getPropertyId() > 0)
             return null;
@@ -622,7 +629,7 @@ public class DomainUtil
         return candidateURI;
     }
 
-    private static void _copyProperties(DomainProperty to, GWTPropertyDescriptor from, List<String> errors)
+    private static void _copyProperties(DomainProperty to, GWTPropertyDescriptor from, ValidationException errors)
     {
         // avoid problems with setters that depend on rangeURI being set
         to.setRangeURI(from.getRangeURI());
@@ -641,7 +648,7 @@ public class DomainUtil
             String msg = "Unrecognized type '" + from.getRangeURI() + "' for property '" + from.getName() + "'";
             if (errors == null)
                 throw new IllegalArgumentException(msg);
-            errors.add(msg);
+            errors.addError(new PropertyValidationError(msg, from.getName(), from.getPropertyId()));
             return;
         }
 
@@ -658,10 +665,10 @@ public class DomainUtil
                     c = ContainerManager.getForPath(containerId);
                 if (c == null)
                 {
-                    String msg = "Container not found: " + containerId;
+                    String msg = "Lookup for "+ from.getName() + " target Container not found: " + containerId;
                     if (errors == null)
                         throw new RuntimeException(msg);
-                    errors.add(msg);
+                    errors.addError(new PropertyValidationError(msg, from.getName(), from.getPropertyId()));
                 }
             }
             Lookup lu = new Lookup(c, from.getLookupSchema(), from.getLookupQuery());
@@ -808,8 +815,9 @@ public class DomainUtil
 
             if (namePropertyIdMap.containsKey(name))
             {
-                String propertyIdOrName = namePropertyIdMap.get(name) > 0 ? String.valueOf(namePropertyIdMap.get(name)) : name;
-                exception.addFieldError(propertyIdOrName, "All property names must be unique. Duplicate found: " + name + ".");
+                String errorMsg = "All property names must be unique. Duplicate found: " + name + ".";
+                PropertyValidationError propertyValidationError = new PropertyValidationError(errorMsg, name, field.getPropertyId());
+                exception.addError(propertyValidationError);
                 continue;
             }
 

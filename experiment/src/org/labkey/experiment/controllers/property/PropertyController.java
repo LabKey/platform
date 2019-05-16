@@ -84,7 +84,6 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.PrintWriters;
 import org.springframework.validation.BindException;
-import org.springframework.validation.ObjectError;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
@@ -242,15 +241,6 @@ public class PropertyController extends SpringActionController
             String domainGroup = form.getDomainGroup();
             String domainName = form.getDomainName();
 
-            ValidationException saveErrors = DomainUtil.validateProperties(null, newDomain, PropertyService.get().getDomainKindByName(kindName));
-            for (ValidationError ve : saveErrors.getErrors())
-            {
-                if (ve instanceof PropertyValidationError)
-                    errors.addError(new ObjectError(((PropertyValidationError)ve).getProperty(), null, null,  ve.getMessage()));
-                else
-                    errors.reject(ERROR_MSG, ve.getMessage());
-            }
-
             if (domainGroup != null)
             {
                 String moduleName = form.getModule();
@@ -385,7 +375,7 @@ public class PropertyController extends SpringActionController
             return mapper;
         }
 
-        public Object execute(DomainApiForm form, BindException errors) throws ValidationException
+        public Object execute(DomainApiForm form, BindException errors)
         {
             GWTDomain newDomain = form.getDomainDesign();
             if (newDomain.getDomainId() == -1 || newDomain.getDomainURI() == null)
@@ -394,13 +384,7 @@ public class PropertyController extends SpringActionController
             GWTDomain originalDomain = getDomain(form.getSchemaName(), form.getQueryName(), form.getDomainId(), getContainer(), getUser());
 
             ValidationException updateErrors = updateDomain(originalDomain, newDomain, getContainer(), getUser());
-            for (ValidationError ve : updateErrors.getErrors())
-            {
-                if (ve instanceof PropertyValidationError)
-                    errors.addError(new ObjectError(((PropertyValidationError)ve).getProperty(), null, null,  ve.getMessage()));
-                else
-                    errors.reject(ERROR_MSG, ve.getMessage());
-            }
+            updateErrors.setBindExceptionErrors(errors, ERROR_MSG);
 
             return new ApiSimpleResponse("success", true);
         }
@@ -866,7 +850,8 @@ public class PropertyController extends SpringActionController
 
     /** @return Errors encountered during the save attempt */
     @NotNull
-    private static ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user) throws ValidationException
+    private static ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
+                                             Container container, User user)
     {
         DomainKind kind = PropertyService.get().getDomainKind(original.getDomainURI());
         if (kind == null)
@@ -879,17 +864,7 @@ public class PropertyController extends SpringActionController
         if (!kind.canEditDefinition(user, domain))
             throw new UnauthorizedException("You don't have permission to edit this domain.");
 
-       ValidationException validationException = DomainUtil.validateProperties(domain, update, domain.getDomainKind());
-        if (validationException.hasErrors()) {
-            return validationException;
-        }
-
-        List<String> errors =  kind.updateDomain(original, update, container, user);
-        for (String error : errors)
-        {
-            validationException.addError(new SimpleValidationError(error));
-        }
-        return validationException;
+        return kind.updateDomain(original, update, container, user);
     }
 
     private static void deleteDomain(String schemaName, String queryName, Container container, User user)

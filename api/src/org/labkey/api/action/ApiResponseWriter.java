@@ -428,6 +428,7 @@ public abstract class ApiResponseWriter implements AutoCloseable
             ObjectError error = allErrors.get(i);
             String msg = error.getDefaultMessage();
             String key = error.getObjectName();
+            String propertyId = (null != error.getCodes() ? error.getCodes()[0] : key);
 
             if (error instanceof FieldError)
             {
@@ -437,7 +438,7 @@ public abstract class ApiResponseWriter implements AutoCloseable
 
             JSONObject jsonError = new JSONObject();
             // these are the Ext expected property names
-            jsonError.putOpt("id", key);
+            jsonError.putOpt("id", propertyId);
             jsonError.put("msg", msg);
             // TODO deprecate these with a new API version
             jsonError.put("field", key);

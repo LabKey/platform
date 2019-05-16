@@ -42,6 +42,7 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
@@ -223,18 +224,19 @@ public abstract class AbstractAuditDomainKind extends DomainKind
     @Override
     public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
     {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
-    public List<String> updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user)
+    public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user)
     {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void deleteDomain(User user, Domain domain)
     {
+        throw new UnsupportedOperationException();
     }
 
     @Override
