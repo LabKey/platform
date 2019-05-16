@@ -5,6 +5,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExpQCFlag;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProvider;
 
@@ -44,9 +45,9 @@ public interface AssayFlagHandler
         return _handlers.get(provider.getName());
     }
 
-    ColumnInfo createFlagColumn(TableInfo parent, String schemaName, boolean editable);
+    ColumnInfo createFlagColumn(ExpProtocol protocol, TableInfo parent, String schemaName, boolean editable);
 
-    ColumnInfo createQCEnabledColumn(TableInfo parent, String schemaName);
+    ColumnInfo createQCEnabledColumn(ExpProtocol protocol, TableInfo parent, String schemaName);
 
     /**
      * Saves a ExpQCFlag instance for the specified run.

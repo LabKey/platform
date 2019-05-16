@@ -435,8 +435,8 @@ public abstract class AssayProtocolSchema extends AssaySchema
         AssayFlagHandler handler = AssayFlagHandler.getHandler(getProvider());
         if (handler != null)
         {
-            ColumnInfo flagCol = handler.createFlagColumn(runTable, getSchemaName(), true);
-            ColumnInfo enabledCol = handler.createQCEnabledColumn(runTable, getSchemaName());
+            ColumnInfo flagCol = handler.createFlagColumn(getProtocol(), runTable, getSchemaName(), true);
+            ColumnInfo enabledCol = handler.createQCEnabledColumn(getProtocol(), runTable, getSchemaName());
 
             if (flagCol != null)
                 runTable.addColumn(flagCol);
