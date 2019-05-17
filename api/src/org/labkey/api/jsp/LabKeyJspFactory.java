@@ -55,6 +55,7 @@ public class LabKeyJspFactory extends JspFactory implements ShutdownListener
     @Override
     public void shutdownPre()
     {
+        LabKeyJspWriter.logStatistics();
     }
 
     @Override
