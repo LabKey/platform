@@ -45,11 +45,13 @@ public class SelectTag extends BodyTagSupport
         this.formGroup = formGroup;
     }
 
+    @Override
     public String getId()
     {
         return id;
     }
 
+    @Override
     public void setId(String id)
     {
         this.id = id;
@@ -123,6 +125,8 @@ public class SelectTag extends BodyTagSupport
     @Override
     public int doStartTag() throws JspException
     {
+        // TODO: HtmlString
+
         StringBuilder sb = new StringBuilder();
 
         if (isFormGroup())
@@ -149,7 +153,7 @@ public class SelectTag extends BodyTagSupport
 
         sb.append(">");
 
-        write(sb);
+        print(sb);
         return BodyTagSupport.EVAL_BODY_INCLUDE;
     }
 
@@ -167,7 +171,7 @@ public class SelectTag extends BodyTagSupport
         if (isFormGroup())
             sb.append("</div>");
 
-        write(sb);
+        print(sb);
         return BodyTagSupport.EVAL_PAGE;
     }
 
@@ -178,11 +182,11 @@ public class SelectTag extends BodyTagSupport
         sb.append("\"></i>");
     }
 
-    private void write(StringBuilder sb) throws JspException
+    private void print(StringBuilder sb) throws JspException
     {
         try
         {
-            pageContext.getOut().write(sb.toString());
+            pageContext.getOut().print(sb.toString());
         }
         catch (IOException e)
         {

@@ -57,6 +57,8 @@ public class AutoCompleteTextareaTag extends AutoCompleteTag
         _tabindex = tabindex;
     }
 
+    // TODO: HtmlString
+
     @Override
     protected String getTagConfig()
     {
@@ -76,6 +78,7 @@ public class AutoCompleteTextareaTag extends AutoCompleteTag
         return sb.toString();
     }
 
+    @Override
     protected void addOptionalAttrs(StringBuilder sb)
     {
         super.addOptionalAttrs(sb);
