@@ -52,8 +52,6 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
 {
     protected static final String NAMESPACE_PREFIX = "DataClass";
 
-    public static final String GENID_SEQUENCE_NAME = "org.labkey.experiment.api.DataClass";
-
     private Domain _domain;
 
     // For serialization

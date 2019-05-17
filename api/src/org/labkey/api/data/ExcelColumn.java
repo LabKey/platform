@@ -114,6 +114,14 @@ public class ExcelColumn extends RenderColumn
         _formatters = formatters;
         _workbook = workbook;
 
+        setName(dc.getName());
+        if (dc.getColumnInfo() != null)
+        {
+            // Use bound column's name so import/export will round-trip
+            setName(dc.getColumnInfo().getName());
+        }
+        setCaption(dc.getCaptionExpr());
+        setSimpleType(dc); //call after the call to setName()
         if (dc.getExcelFormatString() != null)
         {
             setFormatString(dc.getExcelFormatString());
@@ -122,14 +130,7 @@ public class ExcelColumn extends RenderColumn
         {
             setFormatString(dc.getFormatString());
         }
-        setName(dc.getName());
-        if (dc.getColumnInfo() != null)
-        {
-            // Use bound column's name so import/export will round-trip
-            setName(dc.getColumnInfo().getName());
-        }
-        setCaption(dc.getCaptionExpr());
-        setSimpleType(dc);  //call this last so that setName() has already been called
+
     }
 
     public DisplayColumn getDisplayColumn()

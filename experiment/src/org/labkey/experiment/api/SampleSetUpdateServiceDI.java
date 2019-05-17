@@ -118,7 +118,7 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
         }
 
         // MOVE PrepareDataIteratorBuilder into this file
-        return new UploadSamplesHelper.PrepareDataIteratorBuilder(_sampleset, in);
+        return new UploadSamplesHelper.PrepareDataIteratorBuilder(_sampleset, getQueryTable(), in);
     }
 
     @Override
