@@ -19,8 +19,9 @@ package org.labkey.experiment.api;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.PropertyColumn;
@@ -30,32 +31,27 @@ import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.query.ExpProtocolTable;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.DetailsURL;
-import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
-import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Map;
 
 public class ExpProtocolTableImpl extends ExpTableImpl<ExpProtocolTable.Column> implements ExpProtocolTable
 {
-    public ExpProtocolTableImpl(String name, UserSchema schema)
+    public ExpProtocolTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoProtocol(), schema, new ExpProtocolImpl(new Protocol()));
+        super(name, ExperimentServiceImpl.get().getTinfoProtocol(), schema, new ExpProtocolImpl(new Protocol()), cf);
         setTitleColumn("Name");
     }
 
-    public ColumnInfo createColumn(String alias, Column column)
+    public BaseColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
         {
@@ -98,15 +94,15 @@ public class ExpProtocolTableImpl extends ExpTableImpl<ExpProtocolTable.Column> 
     @Override
     protected void populateColumns()
     {
-        ColumnInfo colRowId = addColumn(Column.RowId);
+        var colRowId = addColumn(Column.RowId);
         colRowId.setHidden(true);
         colRowId.setFk(new RowIdForeignKey(colRowId));
         colRowId.setKeyField(true);
 
-        ColumnInfo colName = addColumn(Column.Name);
+        var colName = addColumn(Column.Name);
         setTitleColumn(colName.getName());
 
-        ColumnInfo colLSID = addColumn(Column.LSID);
+        var colLSID = addColumn(Column.LSID);
         colLSID.setHidden(true);
 
         addContainerColumn(Column.Folder, null);

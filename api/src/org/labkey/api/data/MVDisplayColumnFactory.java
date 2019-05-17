@@ -51,17 +51,17 @@ public class MVDisplayColumnFactory implements DisplayColumnFactory
         return new MVDisplayColumn(colInfo, qcColumn);
     }
 
-    public static List<ColumnInfo> createMvColumns(ColumnInfo valueColumn, PropertyDescriptor pd, ColumnInfo lsidColumn)
+    public static List<BaseColumnInfo> createMvColumns(BaseColumnInfo valueColumn, PropertyDescriptor pd, ColumnInfo lsidColumn)
     {
-        ColumnInfo mvColumn = new MvColumn(pd, lsidColumn);
-        ColumnInfo rawValueCol = new RawValueColumn(lsidColumn.getParentTable(), valueColumn);
+        var mvColumn = new MvColumn(pd, lsidColumn);
+        var rawValueCol = new RawValueColumn(lsidColumn.getParentTable(), valueColumn);
         valueColumn.setDisplayColumnFactory(new MVDisplayColumnFactory());
 
         return Arrays.asList(mvColumn, rawValueCol);
     }
     
 
-    private static ColumnInfo[] createMvColumns(AbstractTableInfo table, ColumnInfo valueColumn, DomainProperty property, ColumnInfo colObjectId, Container container, User user)
+    private static BaseColumnInfo[] createMvColumns(AbstractTableInfo table, BaseColumnInfo valueColumn, DomainProperty property, ColumnInfo colObjectId, Container container, User user)
     {
         String mvColumnName = property.getName() + MvColumn.MV_INDICATOR_SUFFIX;
 
@@ -79,11 +79,11 @@ public class MVDisplayColumnFactory implements DisplayColumnFactory
         
         valueColumn.setMvColumnName(mvColumn.getFieldKey());
 
-        ColumnInfo rawValueCol = new RawValueColumn(table, valueColumn);
+        RawValueColumn rawValueCol = new RawValueColumn(table, valueColumn);
 
         valueColumn.setDisplayColumnFactory(new MVDisplayColumnFactory());
 
-        ColumnInfo[] result = new ColumnInfo[2];
+        BaseColumnInfo[] result = new BaseColumnInfo[2];
         result[0] = mvColumn;
         result[1] = rawValueCol;
 
@@ -91,12 +91,12 @@ public class MVDisplayColumnFactory implements DisplayColumnFactory
     }
 
 
-    public static void addMvColumns(AbstractTableInfo table, ColumnInfo valueColumn, DomainProperty property, ColumnInfo colObjectId, Container container, User user)
+    public static void addMvColumns(AbstractTableInfo table, BaseColumnInfo valueColumn, DomainProperty property, ColumnInfo colObjectId, Container container, User user)
     {
         ColumnInfo[] newColumns = createMvColumns(table, valueColumn, property, colObjectId, container, user);
         for (ColumnInfo column : newColumns)
         {
-            table.addColumn(column);
+            table.addColumn( (BaseColumnInfo)column );
         }
     }
 

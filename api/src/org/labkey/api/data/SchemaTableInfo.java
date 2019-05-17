@@ -938,7 +938,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     // TODO: Eliminate these setters/modifiers, making SchemaTableInfo effectively immutable... which would improve
     // concurrency, caching, performance, and maintainability
 
-    protected void addColumn(ColumnInfo c)
+    protected void addColumn(BaseColumnInfo c)
     {
         checkLocked();
         getColumnMetaData().addColumn(c);
@@ -979,7 +979,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
         List<ColumnInfo> cols = getColumns(); // may have side-effects
         _locked = b;
         for (ColumnInfo c : cols)
-            c.setLocked(b);
+            ((BaseColumnInfo)c).setLocked(b);
     }
 
     @Override

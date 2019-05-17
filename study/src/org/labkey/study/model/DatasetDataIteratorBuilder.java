@@ -18,6 +18,7 @@ package org.labkey.study.model;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.Converter;
 import org.apache.log4j.Logger;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.dataiterator.ScrollableDataIterator;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -176,7 +177,7 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
 
             if (null != match)
             {
-                inputColumn.setPropertyURI(match.getPropertyURI());
+                ((BaseColumnInfo)inputColumn).setPropertyURI(match.getPropertyURI());
 
                 if (match == lsidColumn || match == seqnumColumn)
                     continue;
@@ -228,7 +229,7 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
                     // to simplify a little, use matched name/propertyuri here (even though StandardDataIteratorBuilder would rematch using the same logic)
                     out = it.addColumn(match.getName(), in);
                 }
-                it.getColumnInfo(out).setPropertyURI(match.getPropertyURI());
+                ((BaseColumnInfo)it.getColumnInfo(out)).setPropertyURI(match.getPropertyURI());
             }
             else
             {
@@ -278,7 +279,7 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
         if (!timetype.isVisitBased() && null == indexVisitDate && (_datasetDefinition.isDemographicData() || _datasetDefinition.isParticipantAliasDataset()))
         {
             final Date start = _datasetDefinition.getStudy().getStartDate();
-            indexVisitDate = it.addColumn(new ColumnInfo("Date", JdbcType.TIMESTAMP), new Callable()
+            indexVisitDate = it.addColumn(new BaseColumnInfo("Date", JdbcType.TIMESTAMP), new Callable()
             {
                 @Override
                 public Object call()
@@ -305,7 +306,7 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
 
             if (_datasetDefinition.getKeyManagementType() == Dataset.KeyManagementType.RowId)
             {
-                ColumnInfo key = new ColumnInfo(keyColumn);
+                ColumnInfo key = new BaseColumnInfo(keyColumn);
                 Supplier call = new SimpleTranslator.AutoIncrementColumn()
                 {
                     @Override
@@ -327,7 +328,7 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
                 {
                     throw new IllegalStateException("Could not find key column '" + keyColumnName + "' in dataset " + _datasetDefinition.getName());
                 }
-                ColumnInfo key = new ColumnInfo(keyColumn);
+                ColumnInfo key = new BaseColumnInfo(keyColumn);
                 indexKeyProperty = it.addColumn(key, new SimpleTranslator.GuidColumn());
             }
 
@@ -577,7 +578,7 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
 
         int addQCStateColumn(int index, String uri, QCState defaultQCState)
         {
-            ColumnInfo qcCol = new ColumnInfo("QCState", JdbcType.INTEGER);
+            var qcCol = new BaseColumnInfo("QCState", JdbcType.INTEGER);
             qcCol.setPropertyURI(uri);
             Callable qcCall = new QCStateColumn(index, defaultQCState);
             return addColumn(qcCol, qcCall);
@@ -585,7 +586,7 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
 
     //        int addSequenceNumFromDateColumn()
     //        {
-    //            return addColumn(new ColumnInfo("SequenceNum", JdbcType.DOUBLE), new SequenceNumFromDateColumn());
+    //            return addColumn(new BaseColumnInfo("SequenceNum", JdbcType.DOUBLE), new SequenceNumFromDateColumn());
     //        }
     //
     //        int translateColumn(final int index, Map<?, ?> map, boolean strict)
@@ -598,7 +599,7 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
 
         int translateSequenceNum(Integer indexSequenceNumInput, Integer indexVisitDateInput)
         {
-            ColumnInfo col = new ColumnInfo("SequenceNum", JdbcType.DOUBLE);
+            ColumnInfo col = new BaseColumnInfo("SequenceNum", JdbcType.DOUBLE);
             SequenceNumImportHelper snih = new SequenceNumImportHelper(_datasetDefinition.getStudy(), _datasetDefinition);
             Callable call = snih.getCallable(getInput(), indexSequenceNumInput, indexVisitDateInput);
             return addColumn(col, call);
@@ -606,7 +607,7 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
 
         int translatePtid(Integer indexPtidInput, User user) throws ValidationException
         {
-            ColumnInfo col = new ColumnInfo("ParticipantId", JdbcType.VARCHAR);
+            ColumnInfo col = new BaseColumnInfo("ParticipantId", JdbcType.VARCHAR);
             ParticipantIdImportHelper piih = new ParticipantIdImportHelper(_datasetDefinition.getStudy(), user, _datasetDefinition);
             Callable call = piih.getCallable(getInput(), indexPtidInput);
             return addColumn(col, call);
@@ -614,14 +615,14 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
 
         int addLSID()
         {
-            ColumnInfo col = new ColumnInfo("lsid", JdbcType.VARCHAR);
+            ColumnInfo col = new BaseColumnInfo("lsid", JdbcType.VARCHAR);
             indexLSIDOutput = addColumn(col, new LSIDColumn());
             return indexLSIDOutput;
         }
 
         int addParticipantSequenceNum()
         {
-            ColumnInfo col = new ColumnInfo("participantsequencenum", JdbcType.VARCHAR);
+            var col = new BaseColumnInfo("participantsequencenum", JdbcType.VARCHAR);
             return addColumn(col, new ParticipantSequenceNumColumn());
         }
 

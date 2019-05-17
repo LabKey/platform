@@ -15,6 +15,7 @@
  */
 package org.labkey.study.query;
 
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.AliasedColumn;
@@ -29,12 +30,12 @@ import org.labkey.study.StudySchema;
  */
 public class SpecimenCommentTable extends FilteredTable<StudyQuerySchema>
 {
-    public SpecimenCommentTable(final StudyQuerySchema schema)
+    public SpecimenCommentTable(final StudyQuerySchema schema, ContainerFilter cf)
     {
-        this(schema, true);
+        this(schema, cf, true);
     }
 
-    public SpecimenCommentTable(final StudyQuerySchema schema, boolean joinBackToSpecimens)
+    public SpecimenCommentTable(final StudyQuerySchema schema, ContainerFilter cf, boolean joinBackToSpecimens)
     {
         super(StudySchema.getInstance().getTableInfoSpecimenComment(), schema);
         for (ColumnInfo baseColumn : _rootTable.getColumns())
@@ -47,7 +48,7 @@ public class SpecimenCommentTable extends FilteredTable<StudyQuerySchema>
                 {
                     public TableInfo getLookupTableInfo()
                     {
-                        return new SpecimenDetailTable(schema);
+                        return new SpecimenDetailTable(schema, cf);
                     }
                 });
                 globalUniqueIdColumn.setKeyField(true);
@@ -55,13 +56,13 @@ public class SpecimenCommentTable extends FilteredTable<StudyQuerySchema>
             }
             else if (!"Container".equalsIgnoreCase(name))
             {
-                ColumnInfo wrappedColumn = addWrapColumn(baseColumn);
+                var wrappedColumn = addWrapColumn(baseColumn);
                 if ("RowId".equalsIgnoreCase(name) || "QualityControlFlagForced".equalsIgnoreCase(name))
                     wrappedColumn.setHidden(true);
             }
         }
 
-        ColumnInfo folderColumn = wrapColumn("Folder", _rootTable.getColumn("Container"));
+        var folderColumn = wrapColumn("Folder", _rootTable.getColumn("Container"));
         ContainerForeignKey.initColumn(folderColumn, schema);
         addColumn(folderColumn);
 

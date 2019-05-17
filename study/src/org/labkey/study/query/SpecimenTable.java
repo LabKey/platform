@@ -17,34 +17,31 @@ package org.labkey.study.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasedColumn;
-import org.labkey.api.query.ExprColumn;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.study.StudySchema;
-import org.labkey.api.study.StudyService;
 import org.labkey.study.model.StudyImpl;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class SpecimenTable extends AbstractSpecimenTable
 {
     private List<SpecimenTable> _studySpecimenTables = null;
     private List<ColumnInfo> _unionColumns = null;
 
-    public SpecimenTable(StudyQuerySchema schema, boolean skipPermissionChecks, boolean allStudies)
+    public SpecimenTable(StudyQuerySchema schema, ContainerFilter cf, boolean skipPermissionChecks, boolean allStudies)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSpecimen(schema.getContainer()), skipPermissionChecks, true);
+        super(schema, StudySchema.getInstance().getTableInfoSpecimen(schema.getContainer()), cf, skipPermissionChecks, true);
 
-        ColumnInfo ptidColumn = getColumn(StudyService.get().getSubjectColumnName(getContainer()));
+        var ptidColumn = getMutableColumn(StudyService.get().getSubjectColumnName(getContainer()));
 //        addWrapColumn(getRealTable().getColumn("RowId"));
 //        addContainerColumn(true);
         if (false)                      // If we generate more like VialTable, then we need this
@@ -53,7 +50,7 @@ public class SpecimenTable extends AbstractSpecimenTable
             ptidColumn = new OuterAliasedColumn(this, "ParticipantId", getRealTable().getColumn("PTID"));
             addColumn(ptidColumn);
             addColumn(new OuterAliasedColumn(this, "Date", getRealTable().getColumn("DrawTimeStamp")));
-            ColumnInfo aliasVisitColumn = new OuterAliasedColumn(this, "SequenceNum", _rootTable.getColumn("VisitValue"));
+            var aliasVisitColumn = new OuterAliasedColumn(this, "SequenceNum", _rootTable.getColumn("VisitValue"));
             addSpecimenVisitColumn(TimepointType.DATE, aliasVisitColumn, true);
         }
         else
@@ -62,7 +59,7 @@ public class SpecimenTable extends AbstractSpecimenTable
             addColumn(new AliasedColumn(this, "Date", getRealTable().getColumn("DrawTimeStamp")));
             addSpecimenVisitColumn(TimepointType.DATE, true);
         }
-        ptidColumn.setFk(null);
+        ptidColumn.clearFk();
 
         addSpecimenTypeColumns();
 
@@ -78,7 +75,7 @@ public class SpecimenTable extends AbstractSpecimenTable
                 if (study.getContainer().hasPermission(user, ReadPermission.class) && study.getContainer().getId() != getContainer().getId())
                 {
                     StudyQuerySchema studyQuerySchema = StudyQuerySchema.createSchema((StudyImpl)study, user, false);
-                    SpecimenTable table = new SpecimenTable(studyQuerySchema, skipPermissionChecks, false);
+                    SpecimenTable table = new SpecimenTable(studyQuerySchema, null, skipPermissionChecks, false);
                     _studySpecimenTables.add(table);
                 }
             }

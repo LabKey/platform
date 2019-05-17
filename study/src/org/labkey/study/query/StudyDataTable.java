@@ -17,6 +17,7 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.query.*;
@@ -41,17 +42,17 @@ import java.util.Set;
  */
 public class StudyDataTable extends BaseStudyTable
 {
-    public StudyDataTable(StudyQuerySchema schema)
+    public StudyDataTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoStudyData(schema.getStudy(), schema.getUser()));
+        super(schema, StudySchema.getInstance().getTableInfoStudyData(schema.getStudy(), schema.getUser()), cf);
 
         List<FieldKey> defaultColumns = new LinkedList<>();
 
-        ColumnInfo datasetColumn = new AliasedColumn(this, "DataSet", _rootTable.getColumn("DataSet"));
+        var datasetColumn = new AliasedColumn(this, "DataSet", _rootTable.getColumn("DataSet"));
         datasetColumn.setFk(new LookupForeignKey(getDatasetURL(), "entityId", "entityId", "Name") {
             public TableInfo getLookupTableInfo()
             {
-                return new DatasetsTable(_userSchema);
+                return new DatasetsTable(_userSchema, cf);
             }
         });
         addColumn(datasetColumn);
@@ -61,40 +62,40 @@ public class StudyDataTable extends BaseStudyTable
         addStudyColumn();
 
         String subjectColName = StudyService.get().getSubjectColumnName(getContainer());
-        ColumnInfo participantIdColumn = new AliasedColumn(this, subjectColName, _rootTable.getColumn("participantid"));
-        participantIdColumn.setFk(new QueryForeignKey(_userSchema, null, StudyService.get().getSubjectTableName(getContainer()), subjectColName, null));
+        var participantIdColumn = new AliasedColumn(this, subjectColName, _rootTable.getColumn("participantid"));
+        participantIdColumn.setFk( QueryForeignKey.from(_userSchema, cf).to(StudyService.get().getSubjectTableName(getContainer()), subjectColName, null) );
         addColumn(participantIdColumn);
         defaultColumns.add(FieldKey.fromParts(subjectColName));
 
-        ColumnInfo dateColumn = new AliasedColumn(this, "Date", _rootTable.getColumn("_visitdate"));
+        var dateColumn = new AliasedColumn(this, "Date", _rootTable.getColumn("_visitdate"));
         addColumn(dateColumn);
         defaultColumns.add(FieldKey.fromParts("Date"));
 
-        ColumnInfo createdColumn = new AliasedColumn(this, "Created", _rootTable.getColumn("Created"));
+        var createdColumn = new AliasedColumn(this, "Created", _rootTable.getColumn("Created"));
         addColumn(createdColumn);
-        ColumnInfo createdByColumn = new AliasedColumn(this, "CreatedBy", _rootTable.getColumn("CreatedBy"));
+        var createdByColumn = new AliasedColumn(this, "CreatedBy", _rootTable.getColumn("CreatedBy"));
         addColumn(createdByColumn);
 
 
-        ColumnInfo modifiedColumn = new AliasedColumn(this, "Modified", _rootTable.getColumn("Modified"));
+        var modifiedColumn = new AliasedColumn(this, "Modified", _rootTable.getColumn("Modified"));
         addColumn(modifiedColumn);
-        ColumnInfo modifiedByColumn = new AliasedColumn(this, "ModifiedBy", _rootTable.getColumn("ModifiedBy"));
+        var modifiedByColumn = new AliasedColumn(this, "ModifiedBy", _rootTable.getColumn("ModifiedBy"));
         addColumn(modifiedByColumn);
 
-        ColumnInfo lsidColumn = new AliasedColumn(this, "LSID", _rootTable.getColumn("lsid"));
+        var lsidColumn = new AliasedColumn(this, "LSID", _rootTable.getColumn("lsid"));
         lsidColumn.setHidden(true);
         addColumn(lsidColumn);
 
-        ColumnInfo qcStateColumn = new AliasedColumn(this, "QCState", _rootTable.getColumn("qcstate"));
+        var qcStateColumn = new AliasedColumn(this, "QCState", _rootTable.getColumn("qcstate"));
         // isHidden doesn't get propagated like the other properties, so preserve its value separately
         qcStateColumn.setHidden(_rootTable.getColumn("qcstate").isHidden());
         addColumn(qcStateColumn);
 
-        ColumnInfo sourceLsidColumn = new AliasedColumn(this, "Source LSID", _rootTable.getColumn("sourceLsid"));
+        var sourceLsidColumn = new AliasedColumn(this, "Source LSID", _rootTable.getColumn("sourceLsid"));
         sourceLsidColumn.setHidden(true);
         addColumn(sourceLsidColumn);
 
-        ColumnInfo sequenceNumColumn = new AliasedColumn(this, "SequenceNum", _rootTable.getColumn("SequenceNum"));
+        var sequenceNumColumn = new AliasedColumn(this, "SequenceNum", _rootTable.getColumn("SequenceNum"));
         sequenceNumColumn.setHidden(true);
         sequenceNumColumn.setMeasure(false);
         addColumn(sequenceNumColumn);
@@ -106,7 +107,7 @@ public class StudyDataTable extends BaseStudyTable
         {
             columnName = "AdditionalKey" + (suffix++);
         }
-        ColumnInfo additionalKeyColumn = wrapColumn(columnName, _rootTable.getColumn("_key"));
+        var additionalKeyColumn = wrapColumn(columnName, _rootTable.getColumn("_key"));
         addColumn(additionalKeyColumn);
         defaultColumns.add(additionalKeyColumn.getFieldKey());
         

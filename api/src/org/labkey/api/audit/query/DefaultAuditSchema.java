@@ -16,6 +16,7 @@
 
 package org.labkey.api.audit.query;
 
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.security.User;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
@@ -41,7 +42,7 @@ public class DefaultAuditSchema extends UserSchema
         return Collections.singleton("default");
     }
 
-    public TableInfo createTable(String name)
+    public TableInfo createTable(String name, ContainerFilter cf)
     {
         return null;
     }

@@ -29,6 +29,9 @@ import java.util.Set;
  * User: jeckels
  * Date: Feb 4, 2009
  */
+
+// TODO ContainerFilter remove uses of this class, we should always know the ContainerFilter at construction time
+@Deprecated
 public class DelegatingContainerFilter extends ContainerFilter.ContainerFilterWithUser
 {
     private final TableInfo _source;

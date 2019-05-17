@@ -21,6 +21,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Sort;
@@ -94,12 +95,12 @@ public class ListManagerSchema extends UserSchema
 
     @Nullable
     @Override
-    public TableInfo createTable(String name)
+    public TableInfo createTable(String name, ContainerFilter cf)
     {
         if (LIST_MANAGER.equalsIgnoreCase(name))
         {
             TableInfo dbTable = getDbSchema().getTable("list");
-            ListManagerTable table = new ListManagerTable(this, dbTable);
+            ListManagerTable table = new ListManagerTable(this, dbTable, cf);
             table.setName("Available Lists");
             return table;
         }

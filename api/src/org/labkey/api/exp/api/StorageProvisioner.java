@@ -468,7 +468,7 @@ public class StorageProvisioner
         ColumnInfo mvColumn = storageTable.getColumn(prop.getMvIndicatorStorageColumnName());
         if (null == mvColumn)
         {
-            for(String mvColumnName : PropertyStorageSpec.getLegacyMvIndicatorStorageColumnNames(prop))
+            for (String mvColumnName : PropertyStorageSpec.getLegacyMvIndicatorStorageColumnNames(prop))
             {
                 mvColumn = storageTable.getColumn(mvColumnName);
                 if (null != mvColumn)
@@ -552,7 +552,7 @@ public class StorageProvisioner
         for (ColumnInfo from : sti.getColumns())
         {
             String name = StringUtils.defaultString(map.get(from.getName()), from.getName());
-            ColumnInfo to = new AliasedColumn(wrapper, new FieldKey(null, name), from, true)
+            AliasedColumn to = new AliasedColumn(wrapper, new FieldKey(null, name), from, true)
             {
                 @Override
                 public String getSelectName()
@@ -1030,7 +1030,7 @@ public class StorageProvisioner
         Set<String> basePropertyNames = new HashSet<>();
         for (PropertyStorageSpec s : kind.getBaseProperties(domain))
         {
-            ColumnInfo c = ti.getColumn(s.getName());
+            BaseColumnInfo c = (BaseColumnInfo)ti.getColumn(s.getName());
             basePropertyNames.add(s.getName().toLowerCase());
 
             if (null == c)
@@ -1062,7 +1062,7 @@ public class StorageProvisioner
                 throw new RuntimeException("Duplicate property descriptor name found for: " + tableName + "." + p.getName());
             }
 
-            ColumnInfo c = ti.getColumn(p.getPropertyDescriptor().getStorageColumnName());
+            BaseColumnInfo c = (BaseColumnInfo)ti.getColumn(p.getPropertyDescriptor().getStorageColumnName());
 
             if (null == c)
             {
@@ -1086,7 +1086,7 @@ public class StorageProvisioner
             {
                 c.setDisplayColumnFactory(new MVDisplayColumnFactory());
 
-                ColumnInfo mvColumn = getMvIndicatorColumn(ti, p.getPropertyDescriptor(), "No MV column found for '" + p.getName() + "' in table '" + domain.getName() + "'");
+                var mvColumn = (BaseColumnInfo)getMvIndicatorColumn(ti, p.getPropertyDescriptor(), "No MV column found for '" + p.getName() + "' in table '" + domain.getName() + "'");
                 c.setMvColumnName(mvColumn.getFieldKey());
                 mvColumn.setMvIndicatorColumn(true);
                 // The UI for the main column will include MV input as well, so no need for another column in insert/update views
@@ -1793,7 +1793,7 @@ renaming a property AND toggling mvindicator on in the same change.
             SchemaTableInfo ti = schema.getTable(tableName);
 
             // Slight overkill, given that tests merely verify column existence, but might as well reuse existing code
-            Collection<ColumnInfo> cols = ColumnInfo.createFromDatabaseMetaData(schemaName, ti, columnName);
+            Collection<BaseColumnInfo> cols = BaseColumnInfo.createFromDatabaseMetaData(schemaName, ti, columnName);
 
             return cols.isEmpty() ? null : cols.iterator().next();
         }

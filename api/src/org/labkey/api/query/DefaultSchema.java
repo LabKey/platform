@@ -21,7 +21,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.collections.ConcurrentCaseInsensitiveSortedMap;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.Module;
@@ -33,7 +35,9 @@ import org.labkey.api.visualization.VisualizationProvider;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
@@ -41,7 +45,10 @@ import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * A schema, scoped to a particular container
+ * A schema, scoped to a particular container and user
+ *
+ * For performance a DefaultSchema caches resolved UserSchema objects. The DefaultSchema itself should not
+ * be cached.  It should only be held onto for a short time (e.g. request or query scope).
  */
 final public class DefaultSchema extends AbstractSchema
 {
@@ -156,6 +163,8 @@ final public class DefaultSchema extends AbstractSchema
         return get(user, container, SchemaKey.fromString(schemaPath));
     }
 
+    Map<SchemaKey,QuerySchema> cache = Collections.synchronizedMap(new HashMap<>());
+
     /**
      * Get QuerySchema for SchemaKey schema path.
      *
@@ -170,16 +179,30 @@ final public class DefaultSchema extends AbstractSchema
         if (schemaPath == null)
             return null;
 
-        List<String> parts = schemaPath.getParts();
-        if (parts.size() == 0)
+        if (schemaPath.size() == 0)
             return null;
 
-        QuerySchema schema = DefaultSchema.get(user, container);
+        DefaultSchema schema = DefaultSchema.get(user, container);
+        return schema.get(schemaPath);
+    }
+
+    private QuerySchema get(SchemaKey schemaPath)
+    {
+        SchemaKey subPath = null;
+        List<String> parts = schemaPath.getParts();
+        QuerySchema schema = this;
         for (String part : parts)
         {
-            schema = schema.getSchema(part);
-            if (schema == null)
-                return null;
+            subPath = new SchemaKey(subPath, part);
+            QuerySchema child = cache.get(subPath);
+            if (null == child)
+            {
+                child = schema.getSchema(part);
+                if (null == child)
+                    return null;
+                cache.put(subPath, child);
+            }
+            schema = child;
         }
 
         return schema;
@@ -193,6 +216,11 @@ final public class DefaultSchema extends AbstractSchema
 
     public TableInfo getTable(String name)
     {
+        throw new IllegalStateException("Use getTable(Name, ContainerFilter)");
+    }
+
+    public TableInfo getTable(String name, ContainerFilter cf)
+    {
         return null;
     }
 
@@ -202,7 +230,23 @@ final public class DefaultSchema extends AbstractSchema
         return Collections.emptySet();
     }
 
+    @Override
     public QuerySchema getSchema(@NotNull String name)
+    {
+        SchemaKey skey = new SchemaKey(null, name);
+        QuerySchema ret = cache.get(skey);
+        if (ret != null)
+            return ret;
+        ret = _getSchema(name);
+        if (null != ret)
+        {
+            // If QuerySchema had getSchemaKey(), it would be nice to cache under a canonical name
+            cache.put(skey,ret);
+        }
+        return ret;
+    }
+
+    private QuerySchema _getSchema(@NotNull String name)
     {
         Objects.requireNonNull(name, "null schema name");
 
@@ -361,5 +405,22 @@ final public class DefaultSchema extends AbstractSchema
     public VisualizationProvider createVisualizationProvider()
     {
         return null;
+    }
+
+    @Override
+    public DefaultSchema getDefaultSchema()
+    {
+        return this;
+    }
+    static DefaultSchema getFor(QuerySchema qs)
+    {
+        return qs.getDefaultSchema();
+    }
+    static DefaultSchema getFor(TableInfo t)
+    {
+        UserSchema s = t.getUserSchema();
+        if (null == s)
+            throw new IllegalStateException();
+        return getFor(s);
     }
 }

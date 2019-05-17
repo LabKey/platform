@@ -21,14 +21,12 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.query.ExpRunGroupMapTable;
 import org.labkey.api.query.AbstractQueryUpdateService;
-import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -37,32 +35,31 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.UnauthorizedException;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 public class ExpRunGroupMapTableImpl extends ExpTableImpl<ExpRunGroupMapTable.Column> implements ExpRunGroupMapTable
 {
-    public ExpRunGroupMapTableImpl(String name, UserSchema schema)
+    public ExpRunGroupMapTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoRunList(), schema, null);
+        super(name, ExperimentServiceImpl.get().getTinfoRunList(), schema, null, cf);
         addAllowablePermission(InsertPermission.class);
         addAllowablePermission(DeletePermission.class);
     }
 
     @Override
-    public ColumnInfo createColumn(String alias, Column column)
+    public BaseColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
         {
             case RunGroup:
-                ColumnInfo experimentId = wrapColumn(alias, _rootTable.getColumn("ExperimentId"));
+                var experimentId = wrapColumn(alias, _rootTable.getColumn("ExperimentId"));
                 experimentId.setFk(getExpSchema().getRunGroupIdForeignKey(true));
                 return experimentId;
 
             case Run:
-                ColumnInfo experimentRunId = wrapColumn(alias, _rootTable.getColumn("ExperimentRunId"));
+                var experimentRunId = wrapColumn(alias, _rootTable.getColumn("ExperimentRunId"));
                 experimentRunId.setFk(getExpSchema().getRunIdForeignKey());
                 return experimentRunId;
 
@@ -70,8 +67,8 @@ public class ExpRunGroupMapTableImpl extends ExpTableImpl<ExpRunGroupMapTable.Co
                 return wrapColumn(alias, _rootTable.getColumn("Created"));
 
             case CreatedBy:
-                ColumnInfo createdBy = wrapColumn(alias, _rootTable.getColumn("CreatedBy"));
-                createdBy.setFk(new UserIdQueryForeignKey(_userSchema.getUser(),_userSchema.getContainer(), true));
+                var createdBy = wrapColumn(alias, _rootTable.getColumn("CreatedBy"));
+                createdBy.setFk(new UserIdQueryForeignKey(_userSchema, true));
                 return createdBy;
 
             default:

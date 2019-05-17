@@ -15,23 +15,24 @@
  */
 package org.labkey.study.query;
 
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.study.TimepointType;
 import org.labkey.study.StudySchema;
 import org.labkey.api.study.StudyService;
 
 public class SimpleSpecimenTable extends AbstractSpecimenTable
 {
-    public SimpleSpecimenTable(StudyQuerySchema schema)
+    public SimpleSpecimenTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        this(schema, false);
+        this(schema, cf, false);
     }
 
-    public SimpleSpecimenTable(StudyQuerySchema schema, boolean skipPermissionChecks)
+    public SimpleSpecimenTable(StudyQuerySchema schema, ContainerFilter cf, boolean skipPermissionChecks)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSpecimen(schema.getContainer()), skipPermissionChecks, true);
+        super(schema, StudySchema.getInstance().getTableInfoSpecimen(schema.getContainer()), cf, skipPermissionChecks, true);
         setName("SimpleSpecimen");
 
-        getColumn(StudyService.get().getSubjectColumnName(getContainer())).setFk(null);
+        getMutableColumn(StudyService.get().getSubjectColumnName(getContainer())).clearFk();
 
         addSpecimenVisitColumn(TimepointType.DATE, true);
 

@@ -25,6 +25,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.collections.Sets;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
@@ -1110,12 +1111,12 @@ public class DomainImpl implements Domain
         return null;
     }
 
-    public List<ColumnInfo> getColumns(TableInfo sourceTable, ColumnInfo lsidColumn, Container container, User user)
+    public List<BaseColumnInfo> getColumns(TableInfo sourceTable, ColumnInfo lsidColumn, Container container, User user)
     {
-        List<ColumnInfo> result = new ArrayList<>();
+        List<BaseColumnInfo> result = new ArrayList<>();
         for (DomainProperty property : getProperties())
         {
-            ColumnInfo column = new PropertyColumn(property.getPropertyDescriptor(), lsidColumn, container, user, false);
+            var column = new PropertyColumn(property.getPropertyDescriptor(), lsidColumn, container, user, false);
             result.add(column);
             if (property.isMvEnabled())
             {

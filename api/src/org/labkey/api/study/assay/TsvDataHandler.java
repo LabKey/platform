@@ -138,7 +138,7 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
                 if (provider instanceof AbstractTsvAssayProvider)
                 {
                     AssayProtocolSchema schema = provider.createProtocolSchema(user, data.getContainer(), protocol, null);
-                    TableInfo dataTable = schema.createDataTable(false);
+                    TableInfo dataTable = schema.createDataTable(null, false);
 
                     if (dataTable != null)
                     {

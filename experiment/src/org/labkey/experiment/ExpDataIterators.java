@@ -5,6 +5,7 @@ import org.json.JSONArray;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CounterDefinition;
@@ -778,7 +779,7 @@ public class ExpDataIterators
                 st.selectAll();
                 //ColumnInfo aliasCol = getColumn(FieldKey.fromParts("alias"));
                 final DataIterator _aliasDI = input;
-                st.addColumn(new ColumnInfo("alias", JdbcType.VARCHAR), (Supplier) () -> _aliasDI.get(colNameMap.get("alias")));
+                st.addColumn(new BaseColumnInfo("alias", JdbcType.VARCHAR), (Supplier) () -> _aliasDI.get(colNameMap.get("alias")));
                 step6 = DataIteratorBuilder.wrap(st);
             }
 

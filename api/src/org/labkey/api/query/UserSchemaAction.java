@@ -66,7 +66,7 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
         {
             throw new NotFoundException("Schema not found");
         }
-        _table = _schema.getTable(_form.getQueryName(), true, true);
+        _table = _schema.getTable(_form.getQueryName(), null, true, true);
         if (null == _table)
         {
             throw new NotFoundException("Query not found");

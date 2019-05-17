@@ -1582,7 +1582,7 @@ public class Table
             new Object[] {3, "Three", 103, true, date, guid}
         };
 
-        private final static class _ColumnInfo extends ColumnInfo
+        private final static class _ColumnInfo extends BaseColumnInfo
         {
             _ColumnInfo(String name, JdbcType type)
             {

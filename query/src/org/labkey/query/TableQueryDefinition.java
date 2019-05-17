@@ -181,7 +181,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
     {
         try
         {
-            return schema.getTable(getName(), includeMetadata);
+            return schema.getTable(getName(), getContainerFilter(), includeMetadata, false);
         }
         catch (QueryParseException e)
         {

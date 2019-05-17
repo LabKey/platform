@@ -20,7 +20,8 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -95,12 +96,12 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
     }
 
     @Override
-    public TableInfo createTableInfo(UserSchema userSchema)
+    public TableInfo createTableInfo(UserSchema userSchema, ContainerFilter cf)
     {
-        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, defaultVisibleColumns)
+        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, cf, defaultVisibleColumns)
         {
             @Override
-            protected void initColumn(ColumnInfo col)
+            protected void initColumn(BaseColumnInfo col)
             {
                 if (COLUMN_NAME_DATASET_ID.equalsIgnoreCase(col.getName()))
                 {

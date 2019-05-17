@@ -15,6 +15,7 @@
  */
 package org.labkey.api.study.assay;
 
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.query.PropertyColumnDecorator;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -38,7 +39,7 @@ public class SpecimenPropertyColumnDecorator implements PropertyColumnDecorator
         _schema = schema;
     }
 
-    public void decorateColumn(ColumnInfo columnInfo, PropertyDescriptor pd)
+    public void decorateColumn(BaseColumnInfo columnInfo, PropertyDescriptor pd)
     {
         if (AbstractAssayProvider.SPECIMENID_PROPERTY_NAME.equals(pd.getName()) && pd.getLookupQuery() == null && pd.getLookupSchema() == null)
         {
@@ -52,7 +53,7 @@ public class SpecimenPropertyColumnDecorator implements PropertyColumnDecorator
             {
                 columnInfo.setFk(new SpecimenForeignKey(_schema, _provider, _protocol));
                 columnInfo.setURL(columnInfo.getFk().getURL(columnInfo));
-                columnInfo.setDisplayColumnFactory(ColumnInfo.NOLOOKUP_FACTORY);
+                columnInfo.setDisplayColumnFactory(BaseColumnInfo.NOLOOKUP_FACTORY);
             }
         }
     }

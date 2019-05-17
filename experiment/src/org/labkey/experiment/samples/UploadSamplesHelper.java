@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -547,7 +548,7 @@ public abstract class UploadSamplesHelper
             addGenId.setDebugName("add genId");
             addGenId.selectAll(Sets.newCaseInsensitiveHashSet("genId"));
 
-            ColumnInfo genIdCol = new ColumnInfo(FieldKey.fromParts("genId"), JdbcType.INTEGER);
+            ColumnInfo genIdCol = new BaseColumnInfo(FieldKey.fromParts("genId"), JdbcType.INTEGER);
             final int batchSize = context.getInsertOption().batch ? BATCH_SIZE : 1;
             addGenId.addSequenceColumn(genIdCol, sampleset.getContainer(), ExpSampleSetImpl.SEQUENCE_PREFIX, sampleset.getRowId(), batchSize);
             DataIterator dataIterator = LoggingDataIterator.wrap(addGenId);
@@ -587,10 +588,10 @@ public abstract class UploadSamplesHelper
             skip.addAll("name","lsid");
             selectAll(skip);
 
-            addColumn(new ColumnInfo("name",JdbcType.VARCHAR), (Supplier)() -> generatedName);
-            addColumn(new ColumnInfo("lsid",JdbcType.VARCHAR), (Supplier)() -> generatedLsid);
+            addColumn(new BaseColumnInfo("name",JdbcType.VARCHAR), (Supplier)() -> generatedName);
+            addColumn(new BaseColumnInfo("lsid",JdbcType.VARCHAR), (Supplier)() -> generatedLsid);
             // Ensure we have a cpasType column and it is of the right value
-            addColumn(new ColumnInfo("cpasType",JdbcType.VARCHAR), new SimpleTranslator.ConstantColumn(sampleset.getLSID()));
+            addColumn(new BaseColumnInfo("cpasType",JdbcType.VARCHAR), new SimpleTranslator.ConstantColumn(sampleset.getLSID()));
         }
 
         void onFirst()

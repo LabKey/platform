@@ -62,10 +62,10 @@ public class UsersMsgPrefTable extends UsersTable
     {
         super.addColumns();
 
-        ColumnInfo msgCol = addColumn(new EmailSettingsColumn("MessageSettings", "messages", this));
+        var msgCol = addColumn(new EmailSettingsColumn("MessageSettings", "messages", this));
         msgCol.setDisplayColumnFactory(NotificationSettingColumn::new);
 
-        ColumnInfo fileCol = addColumn(new EmailSettingsColumn("FileSettings", "files", this));
+        var fileCol = addColumn(new EmailSettingsColumn("FileSettings", "files", this));
         fileCol.setDisplayColumnFactory(NotificationSettingColumn::new);
 
         // add all of the active users who have read permission to this container to an in clause, this avoids

@@ -198,8 +198,8 @@ public class AssayTableMetadata
         {
             // TargetStudy on batch or run
             FilteredTable targetStudyTable = (FilteredTable)schema.getTable(
-                    onBatch ? AssayProtocolSchema.BATCHES_TABLE_NAME : AssayProtocolSchema.RUNS_TABLE_NAME);
-            targetStudyTable.setContainerFilter(assayDataTable.getContainerFilter());
+                    onBatch ? AssayProtocolSchema.BATCHES_TABLE_NAME : AssayProtocolSchema.RUNS_TABLE_NAME,
+                    assayDataTable.getContainerFilter());
 
             SQLFragment sqlf = new SQLFragment("SELECT DISTINCT ");
             sqlf.append(targetStudyFieldKey.getName());

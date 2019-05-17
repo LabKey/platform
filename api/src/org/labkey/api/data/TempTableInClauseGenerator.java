@@ -72,7 +72,7 @@ public class TempTableInClauseGenerator implements InClauseGenerator
         String cacheKey = getCacheKey(jdbcType, sortedParameters);
         TempTableInfo tempTableInfo = _tempTableCache.get(cacheKey, sortedParameters, (key, argument) ->
         {
-            TempTableInfo tempTableInfo1 = new TempTableInfo("InClause", Collections.singletonList(new ColumnInfo("Id", jdbcType, 0, false)), null);
+            TempTableInfo tempTableInfo1 = new TempTableInfo("InClause", Collections.singletonList(new BaseColumnInfo("Id", jdbcType, 0, false)), null);
             String tableName = tempTableInfo1.getSelectName();
             SQLFragment sqlCreate = new SQLFragment("CREATE TABLE ");
             sqlCreate.append(tableName)

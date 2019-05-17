@@ -20,13 +20,13 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DefaultQueryUpdateService;
@@ -60,16 +60,15 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
     protected Map<String, String> _dbSchemaToColumnMap;
 
 
-    @Deprecated
-    public DefaultAuditTypeTable(AuditTypeProvider provider, Domain domain, UserSchema schema)
+    @Override
+    protected ContainerFilter getDefaultContainerFilter()
     {
-        this(provider, StorageProvisioner.createTableInfo(domain), schema, null);
+        return  ContainerFilter.Type.CurrentWithUser.create(_userSchema.getUser());
     }
 
-
-    public DefaultAuditTypeTable(AuditTypeProvider provider, TableInfo storage, UserSchema schema, List<FieldKey> defaultVisibleColumns)
+    public DefaultAuditTypeTable(AuditTypeProvider provider, TableInfo storage, UserSchema schema, ContainerFilter cf, List<FieldKey> defaultVisibleColumns)
     {
-        super(storage, schema, ContainerFilter.Type.CurrentWithUser.create(schema.getUser()));
+        super(storage, schema, cf);
 
         _provider = provider;
 
@@ -103,26 +102,26 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
         }
         setDefaultVisibleColumns(defaultVisibleColumns);
 
-        ColumnInfo rowIdColumn = getColumn(FieldKey.fromParts("rowId"));
+        var rowIdColumn = getMutableColumn(FieldKey.fromParts("rowId"));
         rowIdColumn.setSortDirection(Sort.SortDirection.DESC);
 
         // setup lookups for the standard fields
-        ColumnInfo created = getColumn("Created");
+        var created = getMutableColumn("Created");
         created.setLabel("Date");
         created.setFormat("DateTime");
 
-        ColumnInfo container = getColumn("Container");
+        var container = getMutableColumn("Container");
         ContainerForeignKey.initColumn(container, schema);
 
-        ColumnInfo project = getColumn("ProjectId");
+        var project = getMutableColumn("ProjectId");
         project.setLabel("Project");
         ContainerForeignKey.initColumn(project, schema);
 
-        ColumnInfo createdBy = getColumn(FieldKey.fromParts("CreatedBy"));
+        var createdBy = getMutableColumn(FieldKey.fromParts("CreatedBy"));
         createdBy.setLabel("Created By");
         UserIdForeignKey.initColumn(createdBy);
 
-        ColumnInfo impersonatedBy = getColumn(FieldKey.fromParts("ImpersonatedBy"));
+        var impersonatedBy = getMutableColumn(FieldKey.fromParts("ImpersonatedBy"));
         impersonatedBy.setLabel("Impersonated By");
         UserIdForeignKey.initColumn(impersonatedBy);
 
@@ -131,7 +130,7 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
 
     protected void initColumns()
     {
-        for (ColumnInfo col : getColumns())
+        for (var col : getMutableColumns())
             initColumn(col);
     }
 
@@ -148,7 +147,7 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
     }
 
     // Subclasses may override this to provide customizations to the column
-    protected void initColumn(ColumnInfo col)
+    protected void initColumn(BaseColumnInfo col)
     {
     }
 
@@ -182,7 +181,6 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
             // and copy the real column's label to the aliased column so it will be used in the DataRegion grid.
             AliasedColumn a = new AliasedColumn(this, name, col);
             a.setLabel(col.getLabel());
-            addColumn(a);
             return a;
         }
 
@@ -191,7 +189,7 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
         if (name.equalsIgnoreCase("Property"))
         {
             // UNDONE: backwards compat to "Property/*" columns
-//            col = new ColumnInfo("Property", this);
+//            col = new BaseColumnInfo("Property", this);
 //            col.setFk(new LookupForeignKey()
 //            {
 //                @Override

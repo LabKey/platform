@@ -125,18 +125,6 @@ public interface ForeignKey
      */
     default boolean allowImportByAlternateKey() { return false; }
 
-    default void propagateContainerFilter(ColumnInfo parent, TableInfo table)
-    {
-        if (table.supportsContainerFilter() && parent.getParentTable().getContainerFilter() != null)
-        {
-            ContainerFilterable newTable = (ContainerFilterable)table;
-
-            // Only override if the new table doesn't already have some special filter
-            if (newTable.hasDefaultContainerFilter())
-                newTable.setContainerFilter(new DelegatingContainerFilter(parent.getParentTable(), true));
-        }
-    }
-
     enum FilterOperation
     {
         insert,

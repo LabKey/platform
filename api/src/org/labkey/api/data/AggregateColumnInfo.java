@@ -33,7 +33,7 @@ import java.util.Set;
  * Date: Jan 29, 2008
  * Time: 4:39:51 PM
  */
-public class AggregateColumnInfo extends ColumnInfo
+public class AggregateColumnInfo extends BaseColumnInfo
 {
     public static final String NAME_PREFIX = "CTAGG_";
     public static final String PIVOTED_NAME_PREFIX = "PCTAGG_";
@@ -62,7 +62,7 @@ public class AggregateColumnInfo extends ColumnInfo
         //if the agg function is something other than min or max, clear the FK
         if (!_crosstabMeasure.getAggregateFunction().retainsForeignKey())
         {
-            setFk(null);
+            clearFk();
         }
         else
         {
@@ -84,9 +84,9 @@ public class AggregateColumnInfo extends ColumnInfo
             return new ForeignKey()
             {
                 @Override
-                public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
+                public BaseColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
                 {
-                    ColumnInfo result = fk.createLookupColumn(parent, displayField);
+                    BaseColumnInfo result = (BaseColumnInfo)fk.createLookupColumn(parent, displayField);
                     if (result != null)
                     {
                         result.setCrosstabColumnMember(getCrosstabColumnMember());
