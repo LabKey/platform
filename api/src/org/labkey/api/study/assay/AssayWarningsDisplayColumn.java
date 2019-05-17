@@ -16,6 +16,7 @@
 
 package org.labkey.api.study.assay;
 
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.study.actions.AssayRunUploadForm;
@@ -35,7 +36,7 @@ public class AssayWarningsDisplayColumn extends DataColumn
 
     private static ColumnInfo createColumnInfo()
     {
-        return new ColumnInfo("ignoreWarnings");
+        return new BaseColumnInfo("ignoreWarnings");
     }
 
     public boolean isEditable()

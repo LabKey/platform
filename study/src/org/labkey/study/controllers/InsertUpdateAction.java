@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -131,13 +132,14 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
 
         // if this is our cohort assignment dataset, we may want to display drop-downs for cohort, rather
         // than a text entry box:
+        // TODO: This is WRONG! Don't hack on the TableInfo, hack on the View!
         if (!study.isManualCohortAssignment() && Objects.equals(_ds.getDatasetId(), study.getParticipantCohortDatasetId()))
         {
             final List<? extends Cohort> cohorts = StudyManager.getInstance().getCohorts(study.getContainer(), getUser());
             String participantCohortPropertyName = study.getParticipantCohortProperty();
             if (participantCohortPropertyName != null)
             {
-                ColumnInfo cohortCol = datasetTable.getColumn(participantCohortPropertyName);
+                BaseColumnInfo cohortCol = (BaseColumnInfo)datasetTable.getColumn(participantCohortPropertyName);
                 if (cohortCol != null && cohortCol.getJdbcType() == JdbcType.VARCHAR)
                 {
                     cohortCol.setDisplayColumnFactory(colInfo -> new DataColumn(colInfo)
@@ -382,7 +384,8 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
     TableInfo getQueryTable()
     {
         StudyQuerySchema schema = StudyQuerySchema.createSchema(getStudy(), getUser(), true);
-        TableInfo datasetQueryTable= schema.getTable(_ds.getName());
+        // TODO need to return unlocked tableinfo because the action hacks on it
+        TableInfo datasetQueryTable= schema.getTable(_ds.getName(), null, true, true);
         if (null == datasetQueryTable) // shouldn't happen...
             throw new NotFoundException("table: study." + _ds.getName());
         return datasetQueryTable;

@@ -18,8 +18,8 @@ package org.labkey.announcements.query;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
@@ -49,37 +49,37 @@ import java.util.Map;
  */
 public class ForumSubscriptionTable extends AbstractSubscriptionTable
 {
-    public ForumSubscriptionTable(AnnouncementSchema schema)
+    public ForumSubscriptionTable(AnnouncementSchema schema, ContainerFilter cf)
     {
-        super(CommSchema.getInstance().getTableInfoEmailPrefs(), schema);
+        super(CommSchema.getInstance().getTableInfoEmailPrefs(), schema, cf);
 
-        ColumnInfo folderColumn = wrapColumn("Folder", getRealTable().getColumn("Container"));
+        var folderColumn = wrapColumn("Folder", getRealTable().getColumn("Container"));
         addColumn(folderColumn);
         folderColumn.setFk(new ContainerForeignKey(_userSchema));
 
-        ColumnInfo modifiedByColumn = wrapColumn("ModifiedBy", getRealTable().getColumn("LastModifiedBy"));
+        var modifiedByColumn = wrapColumn("ModifiedBy", getRealTable().getColumn("LastModifiedBy"));
         addColumn(modifiedByColumn);
-        modifiedByColumn.setFk(new UserIdQueryForeignKey(_userSchema.getUser(), getContainer(), true));
+        modifiedByColumn.setFk(new UserIdQueryForeignKey(_userSchema, true));
         modifiedByColumn.setUserEditable(false);
 
-        ColumnInfo emailOptionColumn = wrapColumn("EmailOption", getRealTable().getColumn("EmailOptionId"));
-        emailOptionColumn.setFk(new LookupForeignKey("EmailOptionId")
+        var emailOptionColumn = wrapColumn("EmailOption", getRealTable().getColumn("EmailOptionId"));
+        emailOptionColumn.setFk(new LookupForeignKey(cf, "EmailOptionId", null)
         {
             @Override
             public TableInfo getLookupTableInfo()
             {
-                return _userSchema.createEmailOptionTable();
+                return _userSchema.createEmailOptionTable(getLookupContainerFilter());
             }
         });
         addColumn(emailOptionColumn);
 
-        ColumnInfo emailFormatColumn = wrapColumn("EmailFormat", getRealTable().getColumn("EmailFormatId"));
-        emailFormatColumn.setFk(new LookupForeignKey("EmailFormatId")
+        var emailFormatColumn = wrapColumn("EmailFormat", getRealTable().getColumn("EmailFormatId"));
+        emailFormatColumn.setFk(new LookupForeignKey(cf, "EmailFormatId", null)
         {
             @Override
             public TableInfo getLookupTableInfo()
             {
-                return _userSchema.createEmailFormatTable();
+                return _userSchema.createEmailFormatTable(getLookupContainerFilter());
             }
         });
         addColumn(emailFormatColumn);

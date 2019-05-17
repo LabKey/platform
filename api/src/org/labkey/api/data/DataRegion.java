@@ -2485,7 +2485,7 @@ public class DataRegion extends DisplayElement
         List<ColumnInfo> cols = new LinkedList<>();
 
         for (int i = 1; i <= columnCount; i++)
-            cols.add(new ColumnInfo(md, i));
+            cols.add(new BaseColumnInfo(md, i));
 
         return cols;
     }

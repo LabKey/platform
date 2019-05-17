@@ -17,10 +17,10 @@ package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.LookupColumn;
@@ -98,17 +98,11 @@ public class SpecimenForeignKey extends LookupForeignKey
 
     public SpecimenForeignKey(AssaySchema schema, AssayProvider provider, ExpProtocol protocol)
     {
-        this(schema, provider, protocol, provider.getTableMetadata(protocol));
-    }
-
-
-    public SpecimenForeignKey(AssaySchema schema, AssayProvider provider, ExpProtocol protocol, AssayTableMetadata tableMetadata)
-    {
         super("RowId");
         _schema = schema;
         _provider = provider;
         _protocol = protocol;
-        _tableMetadata = tableMetadata;
+        _tableMetadata = provider.getTableMetadata(protocol);
         _studyContainerFilter = new StudyContainerFilter(schema);
     }
 
@@ -150,12 +144,8 @@ public class SpecimenForeignKey extends LookupForeignKey
         if (null == _assayDataTable)
         {
             AssayProtocolSchema assaySchema = _provider.createProtocolSchema(studySchema.getUser(), _schema.getContainer(), _protocol, null);
-            _assayDataTable = assaySchema.createDataTable();
+            _assayDataTable = assaySchema.createDataTable(ContainerFilter.EVERYTHING);
         }
-
-        // set container filter BEFORE we call getColumns(), it affects the filters on the join tables
-        // TODO could the caller pass in the container filter at construction time, or is that too early?
-        ((ContainerFilterable)_assayDataTable).setContainerFilter(ContainerFilter.EVERYTHING);
 
         FieldKey specimenFK = _tableMetadata.getSpecimenIDFieldKey();
         FieldKey targetStudyFK = _tableMetadata.getTargetStudyFieldKey();
@@ -208,7 +198,7 @@ public class SpecimenForeignKey extends LookupForeignKey
         TableInfo vialTableInfo = getVialTableInfo();
         if (null == vialTableInfo)
             return null;
-        FilteredTable ft = new FilteredTable<AssaySchema>(vialTableInfo, _schema)
+        FilteredTable ft = new FilteredTable<>(vialTableInfo, _schema)
         {
             @NotNull
             @Override
@@ -218,8 +208,8 @@ public class SpecimenForeignKey extends LookupForeignKey
             }
         };
         ft.wrapAllColumns(true);
-        ft.addColumn(new ColumnInfo(new FieldKey(null,AbstractAssayProvider.ASSAY_SPECIMEN_MATCH_COLUMN_NAME),ft,JdbcType.BOOLEAN));
-        ft.getColumn("Specimen").setFk(new _SpecimenUnionForeignKey());
+        ft.addColumn(new BaseColumnInfo(new FieldKey(null,AbstractAssayProvider.ASSAY_SPECIMEN_MATCH_COLUMN_NAME),ft,JdbcType.BOOLEAN));
+        ft.getMutableColumn("Specimen").setFk(new _SpecimenUnionForeignKey());
         ft.setPublic(false);
         ft.setLocked(true);
         return ft;
@@ -244,6 +234,7 @@ public class SpecimenForeignKey extends LookupForeignKey
 
     private TableInfo getSpecimenTableInfo()
     {
+        // ignore passed in getLookupContainerFilter() we know the target container
         _initAssayColumns();
         UserSchema studySchema = QueryService.get().getUserSchema(_schema.getUser(), _schema.getContainer(), "study");
         List<Container> list = _containerList;
@@ -311,7 +302,7 @@ public class SpecimenForeignKey extends LookupForeignKey
             if (null != vialTableInfo)
             {
                 ColumnInfo lookupColumn = vialTableInfo.getColumn(displayFieldName);
-                ColumnInfo specimenCol = new SpecimenLookupColumn(foreignKey, displayFieldKey, lookupColumn, false);
+                var specimenCol = new SpecimenLookupColumn(foreignKey, displayFieldKey, lookupColumn, false);
                 specimenCol.setFk(new _SpecimenUnionForeignKey());
                 return specimenCol;
             }
@@ -362,7 +353,8 @@ public class SpecimenForeignKey extends LookupForeignKey
             sql.append(" LEFT OUTER JOIN (");
 
             // Select all the assay-side specimen columns that we'll need to do the comparison
-            ((ContainerFilterable)_assayDataTable).setContainerFilter(foreignKey.getParentTable().getContainerFilter());
+// TODO ContainerFilter make sure all callers of new SpecimenForeignKey() pass in appropriately constructed _assayDataTable
+//            ((ContainerFilterable)_assayDataTable).setContainerFilter(foreignKey.getParentTable().getContainerFilter());
             SQLFragment targetStudySQL = QueryService.get().getSelectSQL(_assayDataTable, _assayColumns.values(), null, null, Table.ALL_ROWS, Table.NO_OFFSET, false);
             sql.append(targetStudySQL);
 
@@ -461,7 +453,7 @@ public class SpecimenForeignKey extends LookupForeignKey
     }
 
 
-    public class SpecimenLookupColumn extends ColumnInfo // extends LookupColumn
+    public class SpecimenLookupColumn extends BaseColumnInfo
     {
         private boolean _returnNull;
         ColumnInfo _foreignKey;
@@ -487,7 +479,7 @@ public class SpecimenForeignKey extends LookupForeignKey
             setLabel("Specimen  " + lookupColumn.getLabel());
             setShortLabel(lookupColumn.getShortLabel());
             if (getFk() instanceof RowIdForeignKey)
-                setFk(null);
+                clearFk();
         }
 
 
@@ -536,7 +528,7 @@ public class SpecimenForeignKey extends LookupForeignKey
     }
 
 
-    public class SpecimenMatchLookupColumn extends ColumnInfo
+    public class SpecimenMatchLookupColumn extends BaseColumnInfo
     {
         ColumnInfo _foreignKey;
 

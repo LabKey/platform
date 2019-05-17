@@ -28,6 +28,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerType;
 import org.labkey.api.data.MenuButton;
@@ -385,9 +386,10 @@ public class AssayManager implements AssayService
         return null;
     }
 
-    public ExpRunTable createRunTable(ExpProtocol protocol, AssayProvider provider, User user, Container container)
+    @Override
+    public ExpRunTable createRunTable(ExpProtocol protocol, AssayProvider provider, User user, Container container, ContainerFilter cf)
     {
-        return provider.createProtocolSchema(user, container, protocol, null).createRunsTable();
+        return provider.createProtocolSchema(user, container, protocol, null).createRunsTable(cf);
     }
 
     public AssaySchema createSchema(User user, Container container, @Nullable Container targetStudy)

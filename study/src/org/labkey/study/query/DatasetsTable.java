@@ -44,9 +44,9 @@ import java.util.Set;
  */
 public class DatasetsTable extends FilteredTable<StudyQuerySchema>
 {
-    public DatasetsTable(StudyQuerySchema schema)
+    public DatasetsTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(StudySchema.getInstance().getTableInfoDataset(), schema);
+        super(StudySchema.getInstance().getTableInfoDataset(), schema, null);
         setName("Datasets");
         for (ColumnInfo baseColumn : _rootTable.getColumns())
         {
@@ -56,7 +56,7 @@ public class DatasetsTable extends FilteredTable<StudyQuerySchema>
             if (name.equalsIgnoreCase("datasharing"))
                 continue;
 
-            ColumnInfo colInfo = addWrapColumn(baseColumn);
+            var colInfo = addWrapColumn(baseColumn);
             if ("Container".equalsIgnoreCase(name) || "EntityId".equalsIgnoreCase(name))
                 colInfo.setHidden(true);
         }
@@ -82,7 +82,7 @@ public class DatasetsTable extends FilteredTable<StudyQuerySchema>
 
         setTitleColumn("Label");
 
-        getColumn("Container").setFk(new ContainerForeignKey(schema));
+        getMutableColumn("Container").setFk(new ContainerForeignKey(schema));
     }
 
 
@@ -123,5 +123,11 @@ public class DatasetsTable extends FilteredTable<StudyQuerySchema>
     protected void applyContainerFilter(ContainerFilter filter)
     {
         assert null == filter || ContainerFilter.CURRENT == filter;
+    }
+
+    @Override
+    protected ContainerFilter getDefaultContainerFilter()
+    {
+        return ContainerFilter.CURRENT;
     }
 }

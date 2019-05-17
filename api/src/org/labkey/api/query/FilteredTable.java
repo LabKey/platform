@@ -21,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.compliance.TableRules;
 import org.labkey.api.compliance.TableRulesManager;
 import org.labkey.api.data.AbstractTableInfo;
-import org.labkey.api.data.AuditConfigurable;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ButtonBarConfig;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnLogging;
@@ -88,21 +88,28 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         // UNDONE: lazy load button bar config????
         _buttonBarConfig = _rootTable.getButtonBarConfig() == null ? null : new ButtonBarConfig(_rootTable.getButtonBarConfig());
         if (_rootTable.supportsAuditTracking())
-            _auditBehaviorType = ((AuditConfigurable)_rootTable).getAuditBehavior();
+            _auditBehaviorType = _rootTable.getAuditBehavior();
 
         // We used to copy the titleColumn from table, but this forced all ColumnInfos to load.  Now, delegate
         // to _rootTable lazily, allowing overrides.
         _userSchema = userSchema;
 
-        if (_userSchema.getContainer() == null)
-            throw new IllegalArgumentException("container cannot be null");
-
-        if (containerFilter != null)
-            setContainerFilter(containerFilter);
-        else
-            applyContainerFilter(ContainerFilter.CURRENT);
+        // TODO ContainerFilter -- for some subclasses it is too early to call supportsContainerFilter() (e.g. DatasetTableImpl)
+//        if (supportsContainerFilter())
+        {
+            if (containerFilter != null)
+                setContainerFilter(containerFilter);
+            else
+                applyContainerFilter(getDefaultContainerFilter());
+        }
 
         _rules = supportTableRules() ? TableRulesManager.get().getTableRules(getContainer(), userSchema.getUser()) : TableRules.NOOP_TABLE_RULES;
+    }
+
+    @Override
+    protected ContainerFilter getDefaultContainerFilter()
+    {
+        return _userSchema.getDefaultContainerFilter();
     }
 
     public boolean supportTableRules()
@@ -164,7 +171,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     {
         for (ColumnInfo col : getRealTable().getColumns())
         {
-            ColumnInfo newCol = addWrapColumn(col);
+            BaseColumnInfo newCol = addWrapColumn(col);
             if (preserveHidden && col.isHidden())
             {
                 newCol.setHidden(col.isHidden());
@@ -251,7 +258,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
         TableInfo t = getRealTable();
         if (t instanceof AbstractTableInfo)
-            return ((AbstractTableInfo)t).getContainerFieldKey();
+            return t.getContainerFieldKey();
 
         return null;
     }
@@ -265,6 +272,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
     final public void addCondition(SQLFragment condition, FieldKey... fieldKeys)
     {
+        checkLocked();
         if (condition.isEmpty())
             return;
         SQLFragment tmp = new SQLFragment();
@@ -274,10 +282,11 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
     public void addCondition(SimpleFilter filter)
     {
+        checkLocked();
         _filter.addAllClauses(filter);
     }
 
-    public ColumnInfo wrapColumnFromJoinedTable(String alias, ColumnInfo underlyingColumn, String tableAlias)
+    public BaseColumnInfo wrapColumnFromJoinedTable(String alias, ColumnInfo underlyingColumn, String tableAlias)
     {
         ExprColumn ret = new ExprColumn(this, alias, underlyingColumn.getValueSql(tableAlias), underlyingColumn.getJdbcType());
         ret.copyAttributesFrom(underlyingColumn);
@@ -294,24 +303,26 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         return ret;
     }
 
-    public ColumnInfo wrapColumn(String alias, ColumnInfo underlyingColumn)
+    public BaseColumnInfo wrapColumn(String alias, ColumnInfo underlyingColumn)
     {
         assert underlyingColumn.getParentTable() == _rootTable;
         return wrapColumnFromJoinedTable(alias, underlyingColumn, ExprColumn.STR_TABLE_ALIAS);
     }
 
-    public ColumnInfo wrapColumn(ColumnInfo underlyingColumn)
+    public BaseColumnInfo wrapColumn(ColumnInfo underlyingColumn)
     {
         return wrapColumn(underlyingColumn.getName(), underlyingColumn);
     }
 
     public void clearConditions(FieldKey fieldKey)
     {
+        checkLocked();
         _filter.deleteConditions(fieldKey);
     }
 
     public void addCondition(ColumnInfo col, Container container)
     {
+        checkLocked();
         assertCorrectParentTable(col);
         // This CAST improves performance on Postgres for some queries by choosing a more efficient query plan
         SQLFragment frag = new SQLFragment();
@@ -324,6 +335,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
     public void addCondition(ColumnInfo col, String value)
     {
+        checkLocked();
         assertCorrectParentTable(col);
         SQLFragment frag = new SQLFragment();
         frag.append(col.getSelectName());
@@ -340,6 +352,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
     public void addCondition(ColumnInfo col, int value)
     {
+        checkLocked();
         assertCorrectParentTable(col);
         SQLFragment frag = new SQLFragment();
         frag.append(filterName(col));
@@ -350,6 +363,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
     public void addCondition(ColumnInfo col, float value)
     {
+        checkLocked();
         assertCorrectParentTable(col);
         SQLFragment frag = new SQLFragment();
         frag.append(filterName(col));
@@ -360,6 +374,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
     public void addCondition(ColumnInfo col1, ColumnInfo col2)
     {
+        checkLocked();
         assert col1.getParentTable() == col2.getParentTable() : "Column is from the wrong table";
         assertCorrectParentTable(col1);
         SQLFragment frag = new SQLFragment();
@@ -372,6 +387,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
     public void addInClause(ColumnInfo col, Collection<?> params)
     {
+        checkLocked();
         assertCorrectParentTable(col);
         SimpleFilter.InClause clause = new SimpleFilter.InClause(col.getFieldKey(), params);
         SQLFragment frag = clause.toSQLFragment(Collections.emptyMap(), _schema.getSqlDialect());
@@ -442,9 +458,10 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     }
 
     @Override
-    public ColumnInfo addColumn(ColumnInfo column)
+    public BaseColumnInfo addColumn(BaseColumnInfo column)
     {
-        ColumnInfo ret = column;
+        checkLocked();
+        BaseColumnInfo ret = column;
 
         // Choke point for handling all column filtering and transforming, e.g., respecting PHI annotations
         if (_rules.getColumnInfoFilter().test(column))
@@ -453,7 +470,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
             if (null == _aliasManager)
                 _aliasManager = new AliasManager(getSchema());
             _aliasManager.ensureAlias(column);
-            ret = super.addColumn(transformed);
+            ret = super.addColumn((BaseColumnInfo)transformed);
         }
 
         return ret;
@@ -470,10 +487,10 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         return result;
     }
 
-    public ColumnInfo addWrapColumn(String name, ColumnInfo column)
+    public BaseColumnInfo addWrapColumn(String name, ColumnInfo column)
     {
         assert column.getParentTable() == getRealTable() : "Column is not from the same \"real\" table";
-        ColumnInfo ret = new AliasedColumn(this, name, column);
+        BaseColumnInfo ret = new AliasedColumn(this, name, column);
 
         if (!getPHIDataLoggingColumns().isEmpty() && PHI.NotPHI != column.getPHI() && column.isShouldLog())
         {
@@ -502,12 +519,12 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         return null;
     }
 
-    public ColumnInfo addWrapColumn(ColumnInfo column)
+    public BaseColumnInfo addWrapColumn(ColumnInfo column)
     {
         return addWrapColumn(column.getName(), column);
     }
 
-    public void propagateKeyField(ColumnInfo orig, ColumnInfo wrapped)
+    public void propagateKeyField(ColumnInfo orig, BaseColumnInfo wrapped)
     {
         // Use getColumnNameSet() instead of getColumn() because we don't want to go through the resolveColumn()
         // codepath, which is potentially expensive and doesn't reflect the "real" columns that are part of this table
@@ -528,7 +545,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     }
 
     /**
-     * ignores supportsContainerFilter(), allows subclasses to set container filter w/o suppporting
+     * ignores supportsContainerFilter(), allows subclasses to set container filter w/o supporting
      * external, "public" setting of filter.
      */
     protected void _setContainerFilter(@NotNull ContainerFilter filter)
@@ -537,16 +554,12 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         ContainerFilter.logSetContainerFilter(filter, getClass().getSimpleName(), getName());
         _containerFilter = filter;
         applyContainerFilter(_containerFilter);
-        if (getRealTable().supportsContainerFilter() && getRealTable() instanceof ContainerFilterable)
-        {
-            ((ContainerFilterable)getRealTable()).setContainerFilter(filter);
-        }
     }
 
     protected void applyContainerFilter(ContainerFilter filter)
     {
         // Datasets need to determine if they have container column in their root table
-        if(_rootTable.hasContainerColumn())
+        if (_rootTable.hasContainerColumn())
         {
             ColumnInfo containerColumn = _rootTable.getColumn(getContainerFilterColumn());
             if (containerColumn != null && getContainer() != null)

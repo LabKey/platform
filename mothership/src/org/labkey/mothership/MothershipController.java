@@ -1616,7 +1616,7 @@ public class MothershipController extends SpringActionController
         {
             super(new DataRegion(), form, errors);
 
-            TableInfo serverInstallationTable = new MothershipSchema(getViewContext().getUser(), getViewContext().getContainer()).getTable(MothershipSchema.SERVER_INSTALLATIONS_TABLE_NAME);
+            TableInfo serverInstallationTable = new MothershipSchema(getViewContext().getUser(), getViewContext().getContainer()).getTable(MothershipSchema.SERVER_INSTALLATIONS_TABLE_NAME, null, true, true);
             getDataRegion().setTable(serverInstallationTable);
 
             Collection<FieldKey> requestedColumns = new ArrayList<>();
@@ -1657,7 +1657,7 @@ public class MothershipController extends SpringActionController
                 // incorrect for their usage on this page.
                 if (!("Note".equalsIgnoreCase(col.getColumnName()) || "IgnoreExceptions".equalsIgnoreCase(col.getColumnName())))
                 {
-                    col.setUserEditable(false);
+                    ((BaseColumnInfo)col).setUserEditable(false);
                 }
             }
 

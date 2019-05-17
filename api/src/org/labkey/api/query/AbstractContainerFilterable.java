@@ -19,15 +19,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.DbSchema;
 
 /**
- * Utility base class that adds support for {@link ContainerFilter}s via the {@link ContainerFilterable} interface.
+ * Utility base class that adds support for {@link ContainerFilter}.
  * Created by: jeckels
  * Date: 1/31/16
  */
-public abstract class AbstractContainerFilterable extends AbstractTableInfo implements ContainerFilterable
+public abstract class AbstractContainerFilterable extends AbstractTableInfo
 {
     @Nullable // if null, means default
     protected ContainerFilter _containerFilter;
@@ -62,6 +61,7 @@ public abstract class AbstractContainerFilterable extends AbstractTableInfo impl
         return "Container";
     }
 
+    @Override
     @NotNull
     public ContainerFilter getContainerFilter()
     {

@@ -67,7 +67,7 @@ public interface ImportAliasable
             // Then propName variant of name
             for (T property : reversedProperties)
             {
-                m.put(ColumnInfo.propNameFromName(property.getName()), property);
+                m.put(BaseColumnInfo.propNameFromName(property.getName()), property);
             }
             // Then aliases
             for (T property : reversedProperties)

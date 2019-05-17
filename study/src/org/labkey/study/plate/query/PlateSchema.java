@@ -18,6 +18,7 @@ package org.labkey.study.plate.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.DefaultSchema;
@@ -76,16 +77,16 @@ public class PlateSchema extends UserSchema
     }
 
     @Override
-    public TableInfo createTable(String name)
+    public TableInfo createTable(String name, ContainerFilter cf)
     {
         if (name.equals("Plate"))
-            return new PlateTable(this);
+            return new PlateTable(this, cf);
         else if (name.equals("WellGroup"))
-            return new WellGroupTable(this, null);
+            return new WellGroupTable(this, cf, null);
         else if (name.startsWith("WellGroup_"))
         {
             String typeName = name.substring("WellGroup_".length());
-            return new WellGroupTable(this, WellGroup.Type.valueOf(typeName));
+            return new WellGroupTable(this, cf, WellGroup.Type.valueOf(typeName));
         }
 
         return null;

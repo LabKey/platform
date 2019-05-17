@@ -20,8 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ContainerFilterable;
-import org.labkey.api.data.DelegatingContainerFilter;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.TableInfo;
@@ -44,16 +43,21 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
 
     private final Map<FieldKey, Pair<String, Boolean>> _additionalJoins = new HashMap<>();
 
-    protected LookupForeignKey(ActionURL baseURL, Object param, String schemaName, String tableName, String pkColumnName, String titleColumn)
+    protected LookupForeignKey(ContainerFilter cf, ActionURL baseURL, Object param, String pkColumnName, String titleColumn)
     {
-        super(schemaName, tableName, pkColumnName, titleColumn);
+        this(cf, baseURL, param, null, null, pkColumnName, titleColumn);
+    }
+
+    protected LookupForeignKey(ContainerFilter cf, ActionURL baseURL, Object param, String schemaName, String tableName, String pkColumnName, String titleColumn)
+    {
+        super(null, cf, schemaName, tableName, pkColumnName, titleColumn);
         _baseURL = baseURL;
         _param = param;
     }
 
     public LookupForeignKey(ActionURL baseURL, String paramName, String schemaName, String tableName, String pkColumnName, String titleColumn)
     {
-        this(baseURL, (Object)paramName, schemaName, tableName, pkColumnName, titleColumn);
+        this(null, baseURL, (Object)paramName, schemaName, tableName, pkColumnName, titleColumn);
     }
 
     public LookupForeignKey(ActionURL baseURL, String paramName, String tableName, String pkColumnName, String titleColumn)
@@ -68,7 +72,7 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
 
     public LookupForeignKey(ActionURL baseURL, Enum paramName, String pkColumnName, String titleColumn)
     {
-        this(baseURL, paramName, null, null, pkColumnName, titleColumn);
+        this(null, baseURL, paramName, null, null, pkColumnName, titleColumn);
     }
 
     public LookupForeignKey(String tableName, @Nullable String pkColumnName, String titleColumn)
@@ -84,6 +88,11 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
     public LookupForeignKey(@Nullable String pkColumnName)
     {
         this(null, null, null, null, pkColumnName, null);
+    }
+
+    public LookupForeignKey(ContainerFilter cf, @Nullable String pkColumnName, @Nullable String titleColumn)
+    {
+        this(cf, null, null, null, null, pkColumnName, titleColumn);
     }
 
     /** Use the table's (single) PK column as the lookup target */
@@ -121,8 +130,6 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
         }
         if (displayField == null)
             return null;
-
-        propagateContainerFilter(parent, table);
 
         LookupColumn result = LookupColumn.create(parent, getPkColumn(table), table.getColumn(displayField), _prefixColumnCaption);
         if (result != null)

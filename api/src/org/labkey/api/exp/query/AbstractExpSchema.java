@@ -15,6 +15,7 @@
  */
 package org.labkey.api.exp.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
@@ -43,6 +44,9 @@ public abstract class AbstractExpSchema extends UserSchema
 
     protected <T extends ExpTable> T setupTable(T table)
     {
+        // Note, this is 'legal' since a schema can modify its own tables during construction
+        // Then again, if the CF is not set during TableInfo construction, we may not be able to set of construct FK's correctly
+        // TODO ContainerFilter -- is this still necessary, or is CF set up in constructor in all cases?
         if (_containerFilter != null)
             table.setContainerFilter(_containerFilter);
         table.populate();
@@ -52,5 +56,13 @@ public abstract class AbstractExpSchema extends UserSchema
     public void setContainerFilter(ContainerFilter filter)
     {
         _containerFilter = filter;
+    }
+
+    @Override
+    public @NotNull ContainerFilter getDefaultContainerFilter()
+    {
+        if (null != _containerFilter)
+            return _containerFilter;
+        return super.getDefaultContainerFilter();
     }
 }

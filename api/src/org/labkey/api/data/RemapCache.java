@@ -78,15 +78,13 @@ public class RemapCache
             UserSchema schema = QueryService.get().getUserSchema(key._user, key._container, key._schemaKey);
             if (schema == null)
                 throw new NotFoundException("Schema not found: " + key._schemaKey.toString());
-            TableInfo table = schema.getTable(key._queryName);
+            // TODO ContainerFilter test usages of this code
+            ContainerFilter containerFilter = null;
+            if (key._containerFilterType != null)
+                containerFilter = key._containerFilterType.create(key._user);
+            TableInfo table = schema.getTable(key._queryName, containerFilter);
             if (table == null)
                 throw new NotFoundException("Table not found: " + key._queryName);
-
-            if (key._containerFilterType != null && table instanceof ContainerFilterable)
-            {
-                ContainerFilter containerFilter = key._containerFilterType.create(key._user);
-                ((ContainerFilterable)table).setContainerFilter(containerFilter);
-            }
             return new SimpleTranslator.RemapPostConvert(table, true, SimpleTranslator.RemapMissingBehavior.Null);
         });
     }

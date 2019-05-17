@@ -21,8 +21,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
@@ -52,26 +54,28 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Map;
 
+import static org.labkey.api.exp.query.ExpSchema.TableType.SampleSets;
+
 /**
  * User: kevink
  * Date: 9/21/15
  */
 public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column> implements ExpDataClassTable
 {
-    protected ExpDataClassTableImpl(String name, UserSchema schema)
+    protected ExpDataClassTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoDataClass(), schema, new ExpDataClassImpl(new DataClass()));
+        super(name, ExperimentServiceImpl.get().getTinfoDataClass(), schema, new ExpDataClassImpl(new DataClass()), cf);
         addAllowablePermission(InsertPermission.class);
         addAllowablePermission(UpdatePermission.class);
     }
 
     @Override
-    public ColumnInfo createColumn(String alias, Column column)
+    public BaseColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
         {
             case Folder:
-                ColumnInfo columnInfo = wrapColumn(alias, _rootTable.getColumn("Container"));
+                var columnInfo = wrapColumn(alias, _rootTable.getColumn("Container"));
                 ContainerForeignKey.initColumn(columnInfo, _userSchema, new ActionURL(ExperimentController.ListDataClassAction.class, getContainer()));
                 return columnInfo;
 
@@ -82,7 +86,7 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
 
             case Name:
             {
-                ColumnInfo c = wrapColumn(alias, getRealTable().getColumn(column.name()));
+                var c = wrapColumn(alias, getRealTable().getColumn(column.name()));
                 c.setShownInUpdateView(false);
 
                 // Since the 'Name' column isn't a real PK column, we can't use the ShowDataClassAction with 'Name' as
@@ -95,7 +99,7 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
 
             case LSID:
             {
-                ColumnInfo c = wrapColumn(alias, _rootTable.getColumn(column.toString()));
+                var c = wrapColumn(alias, _rootTable.getColumn(column.toString()));
                 c.setHidden(true);
                 c.setShownInInsertView(false);
                 c.setShownInUpdateView(false);
@@ -118,9 +122,11 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
 
             case SampleSet:
             {
-                ColumnInfo col = wrapColumn(alias, _rootTable.getColumn("MaterialSourceId"));
-                QueryForeignKey fk = new QueryForeignKey(ExpSchema.SCHEMA_NAME, getContainer(), null, getUserSchema().getUser(), ExpSchema.TableType.SampleSets.name(), "RowId", null);
-                col.setFk(fk);
+                var col = wrapColumn(alias, _rootTable.getColumn("MaterialSourceId"));
+                var fk = QueryForeignKey.from(this.getUserSchema(), getContainerFilter())
+                        .schema(ExpSchema.SCHEMA_NAME, getContainer())
+                        .to(SampleSets.name(), "RowId", null);
+                col.setFk( fk );
                 return col;
             }
 

@@ -16,6 +16,7 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.query.QueryService;
 
 import java.util.ArrayList;
@@ -23,9 +24,9 @@ import java.util.List;
 
 public class LocationSpecimenListTable extends SpecimenDetailTable
 {
-    public LocationSpecimenListTable(StudyQuerySchema schema)
+    public LocationSpecimenListTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema);
+        super(schema, cf);
         setName("LocationSpecimenList");
 
         List<ColumnInfo> defaultColumns = new ArrayList<>();

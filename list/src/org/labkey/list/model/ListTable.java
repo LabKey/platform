@@ -22,12 +22,14 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.compliance.ComplianceService;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.Parameter;
+import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.StatementUtils;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
@@ -96,7 +98,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
 
         assert getRealTable().getColumns().size() > 0 : "ListTable has not been provisioned properly. The real table does not exist.";
 
-        ColumnInfo colKey = null;
+        BaseColumnInfo colKey = null;
 
         // We can have a ListDef that has been saved before the domain has been saved (urg)
         if (!domain.getProperties().isEmpty())
@@ -121,7 +123,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                         colKey.setName(pd.getName());
                         colKey.setLabel(pd.getLabel());
                         if (null != pd.getLookupQuery() || null != pd.getConceptURI())
-                            colKey.setFk(new PdLookupForeignKey(schema.getUser(), pd, schema.getContainer()));
+                            colKey.setFk(PdLookupForeignKey.create(schema, pd));
                     }
                     else
                     {
@@ -151,10 +153,10 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                         name.equalsIgnoreCase("CreatedBy") || name.equalsIgnoreCase("ModifiedBy")
                         )
                 {
-                    ColumnInfo c = wrapColumn(baseColumn);
+                    var c = wrapColumn(baseColumn);
                     if (name.equalsIgnoreCase("CreatedBy") || name.equalsIgnoreCase("ModifiedBy"))
                     {
-                        UserIdQueryForeignKey.initColumn(schema.getUser(), schema.getContainer(), c, true);
+                        UserIdQueryForeignKey.initColumn(schema, c, true);
                         if (name.equalsIgnoreCase("CreatedBy"))
                         {
                             c.setName("CreatedBy");
@@ -183,13 +185,13 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                 }
                 else if (name.equalsIgnoreCase("LastIndexed"))
                 {
-                    ColumnInfo column = addWrapColumn(baseColumn);
+                    var column = addWrapColumn(baseColumn);
                     column.setHidden(true);
                     column.setUserEditable(false);
                 }
                 else if (name.equalsIgnoreCase("Container"))
                 {
-                    ColumnInfo folderColumn = wrapColumn(baseColumn);
+                    var folderColumn = wrapColumn(baseColumn);
                     folderColumn.setFk(new ContainerForeignKey(schema));
                     folderColumn.setUserEditable(false);
                     folderColumn.setShownInInsertView(false);
@@ -202,9 +204,9 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                 {
                     assert baseColumn.getParentTable() == getRealTable() : "Column is not from the same \"real\" table";
 
-                    ColumnInfo col = wrapColumn(baseColumn);
+                    var col = wrapColumn(baseColumn);
 
-                    ColumnInfo ret = new AliasedColumn(this, col.getName(), col);
+                    var ret = new AliasedColumn(this, col.getName(), col);
                     // Use getColumnNameSet() instead of getColumn() because we don't want to go through the resolveColumn()
                     // codepath, which is potentially expensive and doesn't reflect the "real" columns that are part of this table
                     if (col.isKeyField() && getColumnNameSet().contains(col.getName()))
@@ -227,7 +229,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                         {
                             // The column in the physical table has a "_MVIndicator" suffix, but we want to expose
                             // it with a "MVIndicator" suffix (no underscore)
-                            ColumnInfo mvColumn = new AliasedColumn(this, col.getName() + MvColumn.MV_INDICATOR_SUFFIX,
+                            var mvColumn = new AliasedColumn(this, col.getName() + MvColumn.MV_INDICATOR_SUFFIX,
                                                                     StorageProvisioner.getMvIndicatorColumn(getRealTable(), pd, "No MV column found for '" + pd.getName() + "' in list '" + getName() + "'"));
                             // MV indicators are strings
                             mvColumn.setLabel(col.getLabel() + " MV Indicator");
@@ -238,8 +240,8 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                             mvColumn.setHidden(true);
                             mvColumn.setMvIndicatorColumn(true);
 
-                            ColumnInfo rawValueCol = new AliasedColumn(col.getName() + RawValueColumn.RAW_VALUE_SUFFIX, col);
-                            rawValueCol.setDisplayColumnFactory(ColumnInfo.DEFAULT_FACTORY);
+                            var rawValueCol = new AliasedColumn(col.getName() + RawValueColumn.RAW_VALUE_SUFFIX, col);
+                            rawValueCol.setDisplayColumnFactory(BaseColumnInfo.DEFAULT_FACTORY);
                             rawValueCol.setLabel(col.getLabel() + " Raw Value");
                             rawValueCol.setUserEditable(false);
                             rawValueCol.setHidden(true);
@@ -283,7 +285,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
         }
         else
         {
-            ColumnInfo entityId = wrapColumn(colEntityId);
+            var entityId = wrapColumn(colEntityId);
             entityId.setName("EntityId");
             entityId.setLabel("Entity Id");
             entityId.setHidden(true);
@@ -376,9 +378,9 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
      * For logging, replace the provisioned table name with the nicer name
      */
     @Override
-    public ColumnInfo wrapColumn(ColumnInfo underlyingColumn)
+    public BaseColumnInfo wrapColumn(ColumnInfo underlyingColumn)
     {
-        ColumnInfo col = super.wrapColumn(underlyingColumn);
+        var col = super.wrapColumn(underlyingColumn);
         col.getColumnLogging().setOriginalTableName(getName());
         return col;
     }
@@ -387,9 +389,9 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
      * For logging, replace the provisioned table name with the nicer name
      */
     @Override
-    public ColumnInfo addWrapColumn(ColumnInfo column)
+    public BaseColumnInfo addWrapColumn(ColumnInfo column)
     {
-        ColumnInfo col = super.addWrapColumn(column);
+        var col = super.addWrapColumn(column);
         col.getColumnLogging().setOriginalTableName(getName());
         return col;
     }

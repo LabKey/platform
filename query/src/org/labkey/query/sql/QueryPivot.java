@@ -20,26 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.NamedObjectList;
-import org.labkey.api.data.AbstractTableInfo;
-import org.labkey.api.data.AggregateColumnInfo;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.CrosstabDimension;
-import org.labkey.api.data.CrosstabMeasure;
-import org.labkey.api.data.CrosstabMember;
-import org.labkey.api.data.CrosstabSettings;
-import org.labkey.api.data.CrosstabTableInfo;
-import org.labkey.api.data.Filter;
-import org.labkey.api.data.ForeignKey;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.NullColumnInfo;
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.query.AliasManager;
@@ -470,7 +451,7 @@ public class QueryPivot extends QueryRelation
         }
 
         @Override
-        void copyColumnAttributesTo(ColumnInfo to)
+        void copyColumnAttributesTo(BaseColumnInfo to)
         {
             _s.copyColumnAttributesTo(to);
             if (_aggregates.containsKey(_s.getFieldKey().getName()))
@@ -633,7 +614,7 @@ public class QueryPivot extends QueryRelation
             }
 
             @Override
-            void copyColumnAttributesTo(ColumnInfo to)
+            void copyColumnAttributesTo(BaseColumnInfo to)
             {
                 agg.copyColumnAttributesTo(to);
 
@@ -834,8 +815,7 @@ public class QueryPivot extends QueryRelation
 
             for (RelationColumn col : getAllColumns().values())
             {
-                String name = col.getFieldKey().getName();
-                ColumnInfo columnInfo = new RelationColumnInfo(this, col);
+                var columnInfo = new RelationColumnInfo(this, col);
                 addColumn(columnInfo);
             }
         }
@@ -1093,7 +1073,7 @@ public class QueryPivot extends QueryRelation
             }
             for (String displayField : pivotValues.keySet())
             {
-                ColumnInfo c = new RelationColumnInfo(t, _agg);
+                var c = new RelationColumnInfo(t, _agg);
                 c.setName(displayField);
                 c.setLabel(displayField);
                 t.addColumn(c);

@@ -19,12 +19,11 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.AssayQCService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DelegatingContainerFilter;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
@@ -82,9 +81,15 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
 
     private static final String RUN_ID_ALIAS = "Run";
 
+    @Deprecated
     public AssayResultTable(AssayProtocolSchema schema, boolean includeCopiedToStudyColumns)
     {
-        super(StorageProvisioner.createTableInfo(schema.getProvider().getResultsDomain(schema.getProtocol())), schema);
+        this(schema, null, includeCopiedToStudyColumns);
+    }
+
+    public AssayResultTable(AssayProtocolSchema schema, ContainerFilter cf, boolean includeCopiedToStudyColumns)
+    {
+        super(StorageProvisioner.createTableInfo(schema.getProvider().getResultsDomain(schema.getProtocol())), schema, cf);
         _protocol = _userSchema.getProtocol();
         _provider = _userSchema.getProvider();
 
@@ -96,12 +101,12 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
 
         List<FieldKey> visibleColumns = new ArrayList<>();
 
-        ColumnInfo specimenIdCol = null;
+        BaseColumnInfo specimenIdCol = null;
         boolean foundTargetStudyCol = false;
 
         for (ColumnInfo baseColumn : getRealTable().getColumns())
         {
-            ColumnInfo col;
+            BaseColumnInfo col;
 
             if (getRealTable().getColumn(baseColumn.getName() + OORDisplayColumnFactory.OOR_INDICATOR_COLUMN_SUFFIX) != null)
             {
@@ -152,12 +157,12 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
 
                 if (col.getMvColumnName() != null)
                 {
-                    ColumnInfo rawValueCol = createRawValueColumn(baseColumn, col, RawValueColumn.RAW_VALUE_SUFFIX, "Raw Value", "This column contains the raw value itself, regardless of any missing value indicators that may have been set.");
+                    BaseColumnInfo rawValueCol = createRawValueColumn(baseColumn, col, RawValueColumn.RAW_VALUE_SUFFIX, "Raw Value", "This column contains the raw value itself, regardless of any missing value indicators that may have been set.");
                     addColumn(rawValueCol);
 
                     Domain domain = schema.getProvider().getResultsDomain(schema.getProtocol());
                     PropertyDescriptor pd = domain.getPropertyByName(col.getName()).getPropertyDescriptor();
-                    ColumnInfo mvColumn = new AliasedColumn(this, col.getName() + MvColumn.MV_INDICATOR_SUFFIX,
+                    AliasedColumn mvColumn = new AliasedColumn(this, col.getName() + MvColumn.MV_INDICATOR_SUFFIX,
                                                             StorageProvisioner.getMvIndicatorColumn(getRealTable(), pd, "No MV column found for '" + col.getName() + "' in list '" + getName() + "'"));
                     // MV indicators are strings
                     mvColumn.setLabel(col.getLabel() + " MV Indicator");
@@ -184,34 +189,25 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
 
         configureSpecimensLookup(specimenIdCol, foundTargetStudyCol);
 
-        ColumnInfo dataColumn = getColumn("DataId");
+        BaseColumnInfo dataColumn = getMutableColumn("DataId");
         dataColumn.setLabel("Data");
         dataColumn.setFk(new ExpSchema(_userSchema.getUser(), _userSchema.getContainer()).getDataIdForeignKey());
         dataColumn.setUserEditable(false);
         dataColumn.setShownInUpdateView(false);
         dataColumn.setShownInUpdateView(false);
 
-        getColumn("RowId").setShownInUpdateView(false);
+        getMutableColumn("RowId").setShownInUpdateView(false);
 
         SQLFragment runIdSQL = new SQLFragment();
         runIdSQL.append(ExprColumn.STR_TABLE_ALIAS);
         runIdSQL.append(".");
         runIdSQL.append(RUN_ID_ALIAS);
         ExprColumn runColumn = new ExprColumn(this, RUN_ID_ALIAS, runIdSQL, JdbcType.INTEGER);
-        runColumn.setFk(new QueryForeignKey(_userSchema, null, AssayProtocolSchema.RUNS_TABLE_NAME, null, null)
-        {
-            @Override
-            public void propagateContainerFilter(ColumnInfo foreignKey, TableInfo lookupTable)
-            {
-                // Can't rely on normal container filter propagation since assay-backed datasets will have different
-                // container filters on the dataset table compared with the assay result table from which they are
-                // adopting columns
-                if (lookupTable.supportsContainerFilter())
-                {
-                    ((ContainerFilterable)lookupTable).setContainerFilter(new DelegatingContainerFilter(AssayResultTable.this));
-                }
-            }
-        });
+        // TODO ContainerFilter make sure this is still correct
+        // Can't rely on normal container filter propagation since assay-backed datasets will have different
+        // container filters on the dataset table compared with the assay result table from which they are
+        // adopting columns
+        runColumn.setFk(QueryForeignKey.from(_userSchema, getContainerFilter()).to(AssayProtocolSchema.RUNS_TABLE_NAME, null, null));
         runColumn.setUserEditable(false);
         runColumn.setShownInInsertView(false);
         runColumn.setShownInUpdateView(false);
@@ -251,7 +247,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
             }
         }
 
-        ColumnInfo folderCol = getColumn("Folder");
+        BaseColumnInfo folderCol = getMutableColumn("Folder");
         if (folderCol == null)
         {
             // Insert a folder/container column so that we can build up the right URL for links to this row of data 
@@ -271,7 +267,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         setDefaultVisibleColumns(visibleColumns);
     }
 
-    private void configureSpecimensLookup(ColumnInfo specimenIdCol, boolean foundTargetStudyCol)
+    private void configureSpecimensLookup(BaseColumnInfo specimenIdCol, boolean foundTargetStudyCol)
     {
         // Add FK to specimens
         if (specimenIdCol != null && specimenIdCol.getFk() == null)
@@ -326,7 +322,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
             {
                 specimenIdCol.setFk(new SpecimenForeignKey(_userSchema, _provider, _protocol));
                 specimenIdCol.setURL(specimenIdCol.getFk().getURL(specimenIdCol));
-                specimenIdCol.setDisplayColumnFactory(ColumnInfo.NOLOOKUP_FACTORY);
+                specimenIdCol.setDisplayColumnFactory(BaseColumnInfo.NOLOOKUP_FACTORY);
             }
         }
     }
@@ -365,10 +361,10 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         return _resultsDomain;
     }
 
-    private ColumnInfo createRawValueColumn(ColumnInfo baseColumn, ColumnInfo col, String nameSuffix, String labelSuffix, String descriptionSuffix)
+    private BaseColumnInfo createRawValueColumn(ColumnInfo baseColumn, ColumnInfo col, String nameSuffix, String labelSuffix, String descriptionSuffix)
     {
-        ColumnInfo rawValueCol = new AliasedColumn(baseColumn.getName() + nameSuffix, col);
-        rawValueCol.setDisplayColumnFactory(ColumnInfo.DEFAULT_FACTORY);
+        AliasedColumn rawValueCol = new AliasedColumn(baseColumn.getName() + nameSuffix, col);
+        rawValueCol.setDisplayColumnFactory(BaseColumnInfo.DEFAULT_FACTORY);
         rawValueCol.setLabel(baseColumn.getLabel() + " " + labelSuffix);
         String description = baseColumn.getDescription();
         if (description == null)
@@ -398,18 +394,19 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         {
             // Hook up a column that joins back to this table so that the columns formerly under the Properties
             // node when this was OntologyManager-backed can still be queried there
-            result = wrapColumn("Properties", getRealTable().getColumn("RowId"));
-            result.setIsUnselectable(true);
-            LookupForeignKey fk = new LookupForeignKey("RowId")
+            BaseColumnInfo wrapped = wrapColumn("Properties", getRealTable().getColumn("RowId"));
+            wrapped.setIsUnselectable(true);
+            LookupForeignKey fk = new LookupForeignKey(getContainerFilter(),"RowId", null)
             {
                 @Override
                 public TableInfo getLookupTableInfo()
                 {
-                    return new AssayResultTable(_userSchema, false);
+                    return new AssayResultTable(_userSchema, getLookupContainerFilter(), false);
                 }
             };
             fk.setPrefixColumnCaption(false);
-            result.setFk(fk);
+            wrapped.setFk(fk);
+            result = wrapped;
         }
 
         return result;

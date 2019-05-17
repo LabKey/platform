@@ -15,6 +15,7 @@
  */
 package org.labkey.api.query;
 
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 
@@ -25,5 +26,5 @@ import org.labkey.api.exp.PropertyDescriptor;
  */
 public interface PropertyColumnDecorator
 {
-    public void decorateColumn(ColumnInfo columnInfo, PropertyDescriptor pd);
+    void decorateColumn(BaseColumnInfo columnInfo, PropertyDescriptor pd);
 }

@@ -140,7 +140,7 @@ public class StudyPropertiesController extends BaseStudyController
         {
             StudyImpl study = getStudyThrowIfNull();
             StudyQuerySchema schema = StudyQuerySchema.createSchema(study, getUser(), true);
-            return new StudyPropertiesTable(schema);
+            return new StudyPropertiesTable(schema, null);
         }
     }
 }

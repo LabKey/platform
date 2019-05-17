@@ -41,6 +41,7 @@ import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.attachments.ByteArrayAttachmentFile;
 import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.BeanViewForm;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
@@ -5765,13 +5766,13 @@ public class SpecimenController extends BaseStudyController
             // Don't allow GlobalUniqueId to be edited
             TableInfo tableInfo = tableForm.getTable();
             if (null != tableInfo.getColumn("GlobalUniqueId"))
-                tableInfo.getColumn("GlobalUniqueId").setReadOnly(true);
+                ((BaseColumnInfo)tableInfo.getColumn("GlobalUniqueId")).setReadOnly(true);
 
-            ColumnInfo vialComments = tableInfo.getColumn("VialComments");
+            var vialComments = tableInfo.getColumn("VialComments");
             if (null != vialComments)
             {
-                vialComments.setUserEditable(false);
-                vialComments.setHidden(true);
+                ((BaseColumnInfo)vialComments).setUserEditable(false);
+                ((BaseColumnInfo)vialComments).setHidden(true);
             }
 
             SpecimenController.fixSpecimenRequestableColumn(tableForm);
@@ -5804,11 +5805,11 @@ public class SpecimenController extends BaseStudyController
         public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors)
         {
             TableInfo tableInfo = tableForm.getTable();
-            ColumnInfo vialComments = tableInfo.getColumn("VialComments");
+            var vialComments = tableInfo.getColumn("VialComments");
             if (null != vialComments)
             {
-                vialComments.setUserEditable(false);
-                vialComments.setHidden(true);
+                ((BaseColumnInfo)vialComments).setUserEditable(false);
+                ((BaseColumnInfo)vialComments).setHidden(true);
             }
 
             SpecimenController.fixSpecimenRequestableColumn(tableForm);

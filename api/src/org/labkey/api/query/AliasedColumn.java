@@ -16,6 +16,7 @@
 
 package org.labkey.api.query;
 
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
@@ -24,7 +25,7 @@ import org.labkey.api.util.ContainerContext;
 import java.util.HashMap;
 import java.util.Map;
 
-public class AliasedColumn extends ColumnInfo
+public class AliasedColumn extends BaseColumnInfo
 {
     protected ColumnInfo _column;
 

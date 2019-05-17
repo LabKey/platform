@@ -510,15 +510,13 @@ public class SurveyController extends SpringActionController implements SurveyUr
 
             if (surveyDesign != null)
             {
-                TableInfo table = SurveyManager.get().getSurveyResponsesTableInfo(getContainer(), getUser(), surveyDesign);
+                TableInfo table = SurveyManager.get().getSurveyResponsesTableInfo(getContainer(), getUser(), surveyDesign, AuditBehaviorType.DETAILED);
                 if (table == null)
                 {
                     response.put("errorInfo", "Table " + surveyDesign.getSchemaName() + "." + surveyDesign.getQueryName() + " could not be found in this container.");
                     response.put("success", false);
                     return response;
                 }
-                if (table.supportsAuditTracking())
-                    ((AuditConfigurable)table).setAuditBehavior(AuditBehaviorType.DETAILED);
                 FieldKey pk = SurveyManager.getSurveyPk(table);
 
                 if (pk != null)

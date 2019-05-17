@@ -17,7 +17,9 @@
 package org.labkey.api.query;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
@@ -74,13 +76,14 @@ abstract public class FolderSchemaProvider extends DefaultSchema.SchemaProvider
             return Collections.emptySet();
         }
 
-        public TableInfo createTable(String name)
+        @Override
+        public TableInfo createTable(String name, ContainerFilter cf)
         {
             return null;
         }
 
 		@Override
-		public TableInfo getTable(String name, boolean includeExtraMetadata)
+        public TableInfo getTable(String name, @Nullable ContainerFilter cf, boolean includeExtraMetadata, boolean forWrite)
 		{
 			return null;
 		}

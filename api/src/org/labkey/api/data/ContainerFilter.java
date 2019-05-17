@@ -38,6 +38,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -431,6 +432,7 @@ public abstract class ContainerFilter
         }
     };
 
+    /* TODO ContainerFilter -- Consolidate with InternalNoContainerFilter
     /** Use this with extreme caution - it doesn't check permissions */
     public static final ContainerFilter EVERYTHING = new ContainerFilter()
     {
@@ -503,6 +505,38 @@ public abstract class ContainerFilter
         public Collection<GUID> getIds(Container currentContainer)
         {
             return _ids;
+        }
+
+        public Type getType()
+        {
+            return null;
+        }
+    }
+
+    public static class SimpleContainerFilterWithUser extends ContainerFilterWithUser
+    {
+        private final Collection<GUID> _ids;
+
+        public SimpleContainerFilterWithUser(User user, Container c)
+        {
+            this(user, Collections.singleton(c));
+        }
+
+        public SimpleContainerFilterWithUser(User user, Collection<Container> containers)
+        {
+            super(user);
+            _ids = toIds(containers);
+        }
+
+        public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> permission, Set<Role> roles)
+        {
+            Set<GUID> result = _ids.stream()
+                    .map(ContainerManager::getForId)
+                    .filter(Objects::nonNull)
+                    .filter(c -> c.hasPermission(_user, permission, roles))
+                    .map(Container::getEntityId)
+                    .collect(Collectors.toSet());
+            return result;
         }
 
         public Type getType()
@@ -726,13 +760,16 @@ public abstract class ContainerFilter
         public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
             Set<GUID> result = new HashSet<>();
-            if (currentContainer.hasPermission(_user, perm, roles))
-                result.add(currentContainer.getEntityId());
 
             if (currentContainer.isWorkbook())
             {
-                if(currentContainer.getParent().hasPermission(_user, perm, roles))
+                if (currentContainer.getParent().hasPermission(_user, perm, roles))
                     result.add(currentContainer.getParent().getEntityId());
+            }
+            else
+            {
+                if (currentContainer.hasPermission(_user, perm, roles))
+                    result.add(currentContainer.getEntityId());
             }
 
             return result;

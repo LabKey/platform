@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AnalyticsProviderItem;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.FilterInfo;
@@ -536,7 +537,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView, Ed
                 {
                     continue;
                 }
-                ColumnInfo column = new ColumnInfo(field, JdbcType.OTHER);
+                var column = new BaseColumnInfo(field, JdbcType.OTHER);
                 column.setLabel(field.toDisplayString() + " (not found)");
                 ret.put(field, column);
             }

@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.ExpQCFlag;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpExperiment;
@@ -82,7 +83,7 @@ public interface AssayService
 
     ModelAndView createAssayImportView(Map<String, String> properties);
 
-    ExpRunTable createRunTable(ExpProtocol protocol, AssayProvider provider, User user, Container container);
+    ExpRunTable createRunTable(ExpProtocol protocol, AssayProvider provider, User user, Container container, ContainerFilter cf);
 
     AssaySchema createSchema(User user, Container container, @Nullable Container targetStudy);
 

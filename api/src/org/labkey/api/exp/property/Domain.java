@@ -18,6 +18,7 @@ package org.labkey.api.exp.property;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -64,7 +65,7 @@ public interface Domain extends IPropertyType
     DomainProperty addProperty();
     DomainProperty addProperty(PropertyStorageSpec spec);
 
-    List<ColumnInfo> getColumns(TableInfo sourceTable, ColumnInfo lsidColumn, Container container, User user);
+    List<BaseColumnInfo> getColumns(TableInfo sourceTable, ColumnInfo lsidColumn, Container container, User user);
 
     void delete(@Nullable User user) throws DomainNotFoundException;
     void save(User user) throws ChangePropertyDescriptorException;

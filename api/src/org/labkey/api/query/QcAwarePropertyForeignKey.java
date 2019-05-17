@@ -35,28 +35,18 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
     private final TableInfo _baseTable;
     private final QcMetadata _metadata;
 
-    
-    public QcAwarePropertyForeignKey(Collection<PropertyDescriptor> pds, TableInfo baseTable, QuerySchema schema)
+    public QcAwarePropertyForeignKey(QuerySchema schema, TableInfo baseTable, Collection<PropertyDescriptor> pds)
     {
-        super(getDisplayPds(pds).getDisplayProperties(), schema);
-        _baseTable = baseTable;
-        // It's annoying that we have to call 'getDisplayPds()' twice, but using
-        // a ThreadLocal or the like seems like overkill.
-        _metadata = getDisplayPds(pds);
+        this(getDisplayPds(pds), baseTable, schema);
     }
 
-//    public QcAwarePropertyForeignKey(List<? extends DomainProperty> dps, TableInfo baseTable, QuerySchema schema)
-//    {
-//        this(getPropertyDescriptors(dps), baseTable, schema);
-//    }
-//
-//    private static PropertyDescriptor[] getPropertyDescriptors(List<? extends DomainProperty> domainProperties)
-//    {
-//        PropertyDescriptor[] propertyDescriptors = new PropertyDescriptor[domainProperties.size()];
-//        for (int i = 0; i < domainProperties.size(); i++)
-//            propertyDescriptors[i] = domainProperties.get(i).getPropertyDescriptor();
-//        return propertyDescriptors;
-//    }
+    private QcAwarePropertyForeignKey(QcMetadata metadata, TableInfo baseTable, QuerySchema schema)
+    {
+        super(schema, null, metadata.getDisplayProperties());
+        _baseTable = baseTable;
+        _metadata = metadata;
+    }
+
 
     private static QcMetadata getDisplayPds(Collection<PropertyDescriptor> pds)
     {
@@ -82,12 +72,12 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
     }
 
     @Override
-    protected ColumnInfo constructColumnInfo(ColumnInfo parent, FieldKey name, PropertyDescriptor pd)
+    protected BaseColumnInfo constructColumnInfo(ColumnInfo parent, FieldKey name, PropertyDescriptor pd)
     {
         OORColumnGroup group = _metadata.getOORGroupByDisplayColumn(pd);
         if (group != null)
         {
-            ColumnInfo col = super.constructColumnInfo(parent, name, pd);
+            BaseColumnInfo col = super.constructColumnInfo(parent, name, pd);
             col.setDisplayColumnFactory(new LateBoundOORDisplayColumnFactory(group.getBaseName()));
             return col;
         }
@@ -95,7 +85,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
         group = _metadata.getOORGroupByInRangeColumn(pd);
         if (group != null)
         {
-            ColumnInfo inRangeColumn = new InRangeExprColumn(_baseTable, name, group.getBaseName());
+            BaseColumnInfo inRangeColumn = new InRangeExprColumn(_baseTable, name, group.getBaseName());
             inRangeColumn.setLabel(group.getInRangePd().getLabel());
             inRangeColumn.setFormat(group.getNumberPd().getFormat());
             return inRangeColumn;
@@ -104,7 +94,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
         if (pd.isMvEnabled())
         {
             // Just need to set the display column factory
-            ColumnInfo col = super.constructColumnInfo(parent, name, pd);
+            BaseColumnInfo col = super.constructColumnInfo(parent, name, pd);
             col.setMvColumnName(new FieldKey(null, pd.getName() + MvColumn.MV_INDICATOR_SUFFIX));
             col.setDisplayColumnFactory(new MVDisplayColumnFactory());
             return col;
@@ -115,7 +105,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
         {
             if (parent == null)
             {
-                return new ColumnInfo(pd.getName(), pd.getJdbcType());
+                return new BaseColumnInfo(pd.getName(), pd.getJdbcType());
             }
             PropertyColumn qcColumn = new PropertyColumn(pd, parent, _schema.getContainer(), _schema.getUser(), false);
             qcColumn.setParentIsObjectId(_parentIsObjectId);

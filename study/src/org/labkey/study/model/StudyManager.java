@@ -4509,7 +4509,7 @@ public class StudyManager
         body.append(keywords).append("\n");
 
         StudyQuerySchema schema = StudyQuerySchema.createSchema(dsd.getStudy(), User.getSearchUser(), false);
-        TableInfo tableInfo = schema.createDatasetTableInternal(dsd);
+        TableInfo tableInfo = schema.createDatasetTableInternal(dsd, null);
         Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(tableInfo, tableInfo.getDefaultVisibleColumns());
         String sep = "";
         for (ColumnInfo column : columns.values())

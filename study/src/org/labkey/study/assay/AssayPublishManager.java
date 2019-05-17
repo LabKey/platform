@@ -796,7 +796,7 @@ public class AssayPublishManager implements AssayPublishService
 
     public boolean hasMismatchedInfo(List<Integer> dataRowPKs, AssayProtocolSchema schema)
     {
-        TableInfo tableInfo = schema.createDataTable();
+        TableInfo tableInfo = schema.createDataTable(null);
         if (tableInfo == null)
             return false;
 
@@ -876,7 +876,7 @@ public class AssayPublishManager implements AssayPublishService
                 AssayProtocolSchema schema = provider.createProtocolSchema(user, container, protocol, null);
 
                 // Do a query to get all the info we need to do the copy
-                TableInfo resultTable = schema.createDataTable(false);
+                TableInfo resultTable = schema.createDataTable(null, false);
 
                 // Check if we can resolve the PTID column by name. See issue 32281
                 if (resultTable.getColumn(ptidFK) == null)

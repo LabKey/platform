@@ -310,7 +310,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         for (int i = 0; i < columnCount; i++)
         {
             int sqlColumn = i + 1;
-            cols.add(new ColumnInfo(md, sqlColumn));
+            cols.add(new BaseColumnInfo(md, sqlColumn));
         }
 
         setColumns(cols);
@@ -461,7 +461,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     {
         for (DisplayColumn column : columns)
         {
-            if (_insertableColumnsOnly && (null == column.getColumnInfo() || !column.getColumnInfo()._shownInInsertView))
+            if (_insertableColumnsOnly && (null == column.getColumnInfo() || !column.getColumnInfo().isShownInInsertView()))
                 continue;
             addColumn(column);
         }
@@ -472,7 +472,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     {
         for (ColumnInfo col : cols)
         {
-            if (_insertableColumnsOnly && !col._shownInInsertView)
+            if (_insertableColumnsOnly && !col.isShownInInsertView())
                 continue;
             addColumn(new DataColumn(col));
         }

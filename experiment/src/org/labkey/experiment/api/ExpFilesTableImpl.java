@@ -16,9 +16,11 @@
 package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
@@ -47,9 +49,9 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
 {
     protected FileContentService _svc = FileContentService.get();
 
-    public ExpFilesTableImpl(String name, UserSchema schema)
+    public ExpFilesTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, schema);
+        super(name, schema, cf);
         addCondition(new SimpleFilter(FieldKey.fromParts("DataFileUrl"), null, CompareType.NONBLANK));
         _svc.ensureFileData(getUpdateService(), schema.getUser(), schema.getContainer());
     }
@@ -64,14 +66,14 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
     protected void populateColumns()
     {
         addColumn(Column.RowId).setHidden(true);
-        ColumnInfo nameCol = addColumn(Column.Name);
+        var nameCol = addColumn(Column.Name);
         nameCol.setUserEditable(true);
         nameCol.setShownInUpdateView(false);
         nameCol.setShownInDetailsView(true);
         nameCol.setShownInInsertView(false);
 
         ExpSchema schema = getExpSchema();
-        ColumnInfo runCol = addColumn(Column.Run);
+        var runCol = addColumn(Column.Run);
         runCol.setFk(schema.getRunIdForeignKey());
         runCol.setUserEditable(true);
         runCol.setShownInUpdateView(false);
@@ -83,7 +85,7 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
         List<String> customProps = addFileColumns(true);
         if (showAbsoluteFilePath())
         {
-            ColumnInfo dataFileUrlCol = addColumn(Column.DataFileUrl);
+            var dataFileUrlCol = addColumn(Column.DataFileUrl);
             dataFileUrlCol.setUserEditable(true);
             dataFileUrlCol.setShownInInsertView(false);
             dataFileUrlCol.setShownInUpdateView(false);
@@ -102,8 +104,8 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
 
         DetailsURL detailsURL = DetailsURL.fromString("/query/detailsQueryRow.view?schemaName=exp&query.queryName=Files&RowId=${rowId}");
         setDetailsURL(detailsURL);
-        getColumn(Column.RowId).setURL(detailsURL);
-        getColumn(Column.Name).setURL(detailsURL);
+        getMutableColumn(Column.RowId).setURL(detailsURL);
+        getMutableColumn(Column.Name).setURL(detailsURL);
         ActionURL deleteUrl = ExperimentController.ExperimentUrlsImpl.get().getDeleteDatasURL(getContainer(), null);
         setDeleteURL(new DetailsURL(deleteUrl));
     }
@@ -132,9 +134,9 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
         return (null != container && SecurityManager.canSeeFilePaths(container, getUserSchema().getUser()));
     }
 
-    private ColumnInfo getAbsolutePathColumn()
+    private BaseColumnInfo getAbsolutePathColumn()
     {
-        ColumnInfo result = wrapColumn("AbsoluteFilePath", _rootTable.getColumn("RowId"));
+        var result = wrapColumn("AbsoluteFilePath", _rootTable.getColumn("RowId"));
         result.setTextAlign("left");
         result.setJdbcType(JdbcType.VARCHAR);
         result.setDisplayColumnFactory(new DisplayColumnFactory()
@@ -188,9 +190,9 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
         return result;
     }
 
-    private ColumnInfo getRelativeFolderColumn()
+    private BaseColumnInfo getRelativeFolderColumn()
     {
-        ColumnInfo result = wrapColumn("RelativeFolder", _rootTable.getColumn("RowId"));
+        var result = wrapColumn("RelativeFolder", _rootTable.getColumn("RowId"));
         result.setTextAlign("left");
         result.setJdbcType(JdbcType.VARCHAR);
         result.setDisplayColumnFactory(new DisplayColumnFactory()
