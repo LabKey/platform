@@ -160,27 +160,27 @@
 <%!
     int countSection = 0;
 
-    void startReportSection(Writer out, String title, StudyManageReportsBean bean) throws Exception
+    void startReportSection(JspWriter out, String title, StudyManageReportsBean bean) throws Exception
     {
         if (!bean.getAdminView())
         {
-            out.write("<table class=\"lk-fields-table\">");
+            out.print("<table class=\"lk-fields-table\">");
         }
         else
         {
-            out.write("<tr width=\"100%\"><td colspan=\"7\" class=\"labkey-announcement-title\" align=left><span>");
-            out.write(h(title) + " " + countSection);
-            out.write("</span></td></tr>");
-            out.write("<tr width=\"100%\"><td colspan=\"7\" class=\"labkey-title-area-line\"></td></tr>");
+            out.print("<tr width=\"100%\"><td colspan=\"7\" class=\"labkey-announcement-title\" align=left><span>");
+            out.print(h(title) + " " + countSection);
+            out.print("</span></td></tr>");
+            out.print("<tr width=\"100%\"><td colspan=\"7\" class=\"labkey-title-area-line\"></td></tr>");
         }
         countSection++;
     }
 
-    void endReportSection(Writer out, StudyManageReportsBean bean) throws Exception
+    void endReportSection(JspWriter out, StudyManageReportsBean bean) throws Exception
     {
         if (!bean.getAdminView())
         {
-            out.write("</table>");
+            out.print("</table>");
         }
     }
 %>
