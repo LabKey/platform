@@ -53,6 +53,7 @@ public class TextOutput extends AbstractParamReplacement
         return file;
     }
 
+    @Override
     public HttpView render(ViewContext context)
     {
         return new TextOutputView(this);
@@ -87,6 +88,7 @@ public class TextOutput extends AbstractParamReplacement
             return null;
         }
 
+        @Override
         protected void renderInternal(Object model, PrintWriter out)
         {
             for (File file : getFiles())

@@ -41,7 +41,6 @@ import org.labkey.api.announcements.api.Tour;
 import org.labkey.api.announcements.api.TourService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.BaseColumnInfo;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;

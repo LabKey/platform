@@ -74,6 +74,7 @@ public class PopupMenuView extends HttpView<PopupMenu>
         getModelBean().setButtonStyle(buttonStyle);
     }
 
+    @Override
     protected void renderInternal(PopupMenu model, PrintWriter out) throws Exception
     {
        model.render(out);

@@ -29,6 +29,7 @@ import java.util.Map;
 
 public class ActionsExceptionsView extends HttpView
 {
+    @Override
     protected void renderInternal(Object model, PrintWriter out) throws Exception
     {
         Map<String, Map<String, Map<String, SpringActionController.ActionStats>>> modules = ActionsHelper.getActionStatistics();

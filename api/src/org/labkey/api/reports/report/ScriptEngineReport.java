@@ -131,16 +131,19 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         ParamReplacementSvc.get().registerHandler(new KnitrOutput());
     }
 
+    @Override
     public String getType()
     {
         return TYPE;
     }
 
+    @Override
     public String getDescriptorType()
     {
         return RReportDescriptor.TYPE;
     }
 
+    @Override
     public ScriptEngine getScriptEngine(Container c)
     {
         String extension = getDescriptor().getProperty(ScriptReportDescriptor.Prop.scriptExtension);
@@ -149,6 +152,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         return mgr.getEngineByExtension(c, extension);
     }
 
+    @Override
     public String getTypeDescription()
     {
         ScriptEngine engine = getScriptEngine(ContainerManager.getForId(getContainerId()));
@@ -168,6 +172,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         return true;
     }
 
+    @Override
     public Results generateResults(ViewContext context, boolean allowAsyncQuery) throws Exception
     {
         ReportDescriptor descriptor = getDescriptor();
@@ -789,6 +794,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
             return _name;
         }
 
+        @Override
         public String getTsvFormattedValue(RenderContext ctx)
         {
             String value = super.getTsvFormattedValue(ctx);
@@ -809,6 +815,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
             _path = path;
         }
 
+        @Override
         protected void renderInternal(Object model, PrintWriter out)
         {
             FileUtil.deleteDir(new File(_path));

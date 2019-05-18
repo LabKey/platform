@@ -6030,6 +6030,7 @@ public class StudyController extends BaseStudyController
             _report = report;
         }
 
+        @Override
         protected void renderInternal(Object model, PrintWriter out)
         {
             if (!StringUtils.isEmpty(_report.getDescriptor().getReportDescription()))
@@ -6051,6 +6052,7 @@ public class StudyController extends BaseStudyController
     {
         public static final String TYPE = "Study.chartReport";
 
+        @Override
         public String getType()
         {
             return TYPE;

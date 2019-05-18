@@ -64,6 +64,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
 
     private static class ViewStack extends Stack<ViewStackEntry>
     {
+        @Override
         public ViewStackEntry push(ViewStackEntry item)
         {
             return super.push(item);
@@ -109,6 +110,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     /**
      * convert org.springframework.web.servlet.View.render(Map) to View.render(ModelBean)
      */
+    @Override
     public final void render(Map map, HttpServletRequest request, HttpServletResponse response) throws Exception
     {
         // HttpView acts like map is not important, however, stash it so we can get it back
@@ -149,6 +151,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     }
 
 
+    @Override
     public String getContentType()
     {
         return "text/html";
@@ -272,11 +275,13 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     }
 
     // only used to satisfy HasViewContext
+    @Override
     public void setViewContext(ViewContext context)
     {
         _viewContext = context;
     }
 
+    @Override
     public ViewContext getViewContext()
     {
         return _viewContext;
@@ -501,6 +506,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
             {
                 response = new HttpServletResponseWrapper(response)
                 {
+                    @Override
                     public PrintWriter getWriter()
                     {
                         return out;
@@ -531,6 +537,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         }
 
 
+        @Override
         public ModelAndView getView(String name)
         {
             ModelAndView v = super.getView(name);
@@ -649,12 +656,12 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
             {
                 value = String.valueOf(v);
             }
-            sb.append(value.substring(0, Math.min(100, value.length())));
+            sb.append(value, 0, Math.min(100, value.length()));
             sb.append("; ");
         }
 
         sb.append("} ");
-        sb.append(String.valueOf(getModelBean()));
+        sb.append(getModelBean());
         return sb.toString();
     }
 
@@ -674,6 +681,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     /**
      * for compatibility with old late-bound views
      */
+    @Override
     @Deprecated
     public ModelAndView addObject(String key, Object value)
     {
@@ -689,11 +697,13 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
             super(response);
         }
 
+        @Override
         public PrintWriter getWriter()
         {
             throw new IllegalStateException("Should not call getWriter() before render() is called.");
         }
 
+        @Override
         public ServletOutputStream getOutputStream()
         {
             throw new IllegalStateException("Should not call getOutputStream() before render() is called.");
