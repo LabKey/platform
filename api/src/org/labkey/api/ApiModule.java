@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.LookAndFeelResourceType;
 import org.labkey.api.attachments.SecureDocumentType;
+import org.labkey.api.data.ExcelColumn;
 import org.labkey.api.data.SqlScanner;
 import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.dataiterator.DataIteratorUtil;
@@ -98,7 +99,8 @@ public class ApiModule extends CodeOnlyModule
     {
         return ImmutableSet.of(
             ApiKeyManager.TestCase.class,
-            WorkbookContainerType.TestCase.class
+            WorkbookContainerType.TestCase.class,
+            ExcelColumn.TestCase.class
         );
     }
 }
