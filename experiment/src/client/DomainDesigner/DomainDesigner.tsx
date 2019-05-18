@@ -56,9 +56,19 @@ export class App extends React.PureComponent<any, StateProps> {
                     this.setState(() => ({message: error.exception, messageType: 'danger'}));
                 });
         }
-        // else {
-        //     this.setState(() => ({domain: new DomainDesign()}));
-        // }
+
+        window.addEventListener("beforeunload", this.handleWindowBeforeUnload);
+    }
+
+    handleWindowBeforeUnload = (event) => {
+
+        if (this.state.dirty) {
+            event.returnValue = 'Changes you made may not be saved.';
+        }
+    }
+
+    componentWillUnmount() {
+        window.removeEventListener("beforeunload", this.handleWindowBeforeUnload);
     }
 
     submitHandler = () => {

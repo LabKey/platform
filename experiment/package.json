@@ -34,7 +34,7 @@
   "dependencies": {
     "@labkey/dependencies": "0.0.4",
     "@glass/base": "0.2.0-fb-addremove.1",
-    "@glass/domainproperties": "0.0.9-fb-addremove.4",
+    "@glass/domainproperties": "0.0.9-fb-addremove.7",
     "classnames": "2.2.6"
   },
   "devDependencies": {
