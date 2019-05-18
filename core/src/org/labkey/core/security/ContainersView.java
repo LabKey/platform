@@ -26,8 +26,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartView;
 
-import javax.servlet.ServletException;
-import java.io.IOException;
 import java.io.PrintWriter;
 
 /**
@@ -57,6 +55,7 @@ public class ContainersView extends WebPartView
         _c = c;
     }
 
+    @Override
     public void renderView(Object model, PrintWriter out)
     {
         ActionURL url = PageFlowUtil.urlProvider(SecurityUrls.class).getContainerURL(_c);
@@ -78,6 +77,7 @@ public class ContainersView extends WebPartView
             super(rootPath, user, AdminPermission.class, url);
         }
 
+        @Override
         protected void renderCellContents(StringBuilder html, Container c, ActionURL url)
         {
             if (c.equals(current))

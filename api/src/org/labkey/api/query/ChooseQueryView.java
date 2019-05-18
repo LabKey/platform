@@ -37,6 +37,7 @@ public class ChooseQueryView extends WebPartView
         _dataRegionName = dataRegionName;
     }
 
+    @Override
     protected void renderView(Object model, PrintWriter out)
     {
         out.write("<table>");
