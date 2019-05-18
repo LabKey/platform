@@ -9421,6 +9421,9 @@ public class AdminController extends SpringActionController
             {
                 writer.write(response);
             }
+
+            // For now, also log the JspWriter statistics.
+            LabKeyJspWriter.logStatistics();
         }
     }
 
