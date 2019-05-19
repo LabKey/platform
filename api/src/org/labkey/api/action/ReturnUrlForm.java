@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
@@ -42,9 +43,9 @@ public class ReturnUrlForm
      * Generate a hidden form field to post a return URL with the standard name used by this form.
      * @see org.labkey.api.jsp.JspBase#generateReturnUrlFormField(ReturnUrlForm)
      */
-    public static String generateHiddenFormField(URLHelper returnUrl)
+    public static HtmlString generateHiddenFormField(URLHelper returnUrl)
     {
-        return "<input type=\"hidden\" name=\"" + ActionURL.Param.returnUrl + "\" value=\"" + PageFlowUtil.filter(returnUrl) + "\">";
+        return HtmlString.unsafe("<input type=\"hidden\" name=\"" + ActionURL.Param.returnUrl + "\" value=\"" + PageFlowUtil.filter(returnUrl) + "\">");
     }
 
     /**

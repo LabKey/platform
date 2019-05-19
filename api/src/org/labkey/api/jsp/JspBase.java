@@ -30,6 +30,7 @@ import org.labkey.api.util.Button.ButtonBuilder;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
@@ -74,11 +75,13 @@ abstract public class JspBase extends JspContext implements HasViewContext
 
     private ViewContext _viewContext;
 
+    @Override
     public ViewContext getViewContext()
     {
         return _viewContext;
     }
 
+    @Override
     public void setViewContext(ViewContext context)
     {
         _viewContext = context;
@@ -100,9 +103,9 @@ abstract public class JspBase extends JspContext implements HasViewContext
     }
 
     // Encoded version of the context path
-    public _HtmlString getContextPath()
+    public HtmlString getContextPath()
     {
-        return new _HtmlString(h(_viewContext.getContextPath()));
+        return HtmlString.of(_viewContext.getContextPath());
     }
 
     /**
@@ -112,9 +115,9 @@ abstract public class JspBase extends JspContext implements HasViewContext
      * @param path Relative path to a resource in the webapp directory. Supports both "/"-prefixed and not prefixed paths.
      * @return Properly encoded URL in an _HtmlString
      */
-    public _HtmlString getWebappURL(String path)
+    public HtmlString getWebappURL(String path)
     {
-        return new _HtmlString(h(_viewContext.getContextPath() + (path.startsWith("/") ? "" : "/") + path));
+        return HtmlString.of(_viewContext.getContextPath() + (path.startsWith("/") ? "" : "/") + path);
     }
 
     /**
@@ -173,10 +176,10 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return PageFlowUtil.jsString(str);
     }
 
-    final protected String q(_HtmlString str)
+    final protected String q(HtmlString str)
     {
         if (null == str) return "null";
-        return q(str.toString());
+            return q(str.toString());
     }
 
 
@@ -206,47 +209,47 @@ abstract public class JspBase extends JspContext implements HasViewContext
 
 
     /** Returns " checked" (if true) or "" (false) */
-    public _HtmlString checked(boolean checked)
+    public HtmlString checked(boolean checked)
     {
-        return new _HtmlString(checked ? " checked" : "");
+        return HtmlString.unsafe(checked ? " checked" : "");
     }
 
 
     /** Returns " selected" (if true) or "" (false) */
-    public _HtmlString selected(boolean selected)
+    public HtmlString selected(boolean selected)
     {
-        return new _HtmlString(selected ? " selected" : "");
+        return HtmlString.unsafe(selected ? " selected" : "");
     }
 
     /** Returns " selected" (if a.equals(b)) */
-    public _HtmlString selectedEq(Object a, Object b)
+    public HtmlString selectedEq(Object a, Object b)
     {
         return selected(null==a ? null==b : a.equals(b));
     }
 
 
     /** Returns " disabled" (if true) or "" (false) */
-    public _HtmlString disabled(boolean disabled)
+    public HtmlString disabled(boolean disabled)
     {
-        return new _HtmlString(disabled ? " disabled" : "");
+        return HtmlString.unsafe(disabled ? " disabled" : "");
     }
 
     /** Returns " readonly" (if true) or "" (false) */
-    public _HtmlString readonly(boolean readOnly)
+    public HtmlString readonly(boolean readOnly)
     {
-        return new _HtmlString(readOnly ? " readonly" : "");
+        return HtmlString.unsafe(readOnly ? " readonly" : "");
     }
 
 
     // Returns "labkey-alternate-row" (true) or "labkey-row" (false)
-    public _HtmlString getShadeRowClass(boolean shade)
+    public HtmlString getShadeRowClass(boolean shade)
     {
-        return new _HtmlString(shade ? "labkey-alternate-row" : "labkey-row");
+        return HtmlString.unsafe(shade ? "labkey-alternate-row" : "labkey-row");
     }
 
 
     // Returns "labkey-alternate-row" (row is even) or "labkey-row" (row is odd)
-    public _HtmlString getShadeRowClass(int row)
+    public HtmlString getShadeRowClass(int row)
     {
         return getShadeRowClass(row % 2 == 0);
     }
@@ -292,40 +295,40 @@ abstract public class JspBase extends JspContext implements HasViewContext
     // Link to a different action in the current container (no params)
     public String textLink(String text, Class<? extends Controller> action)
     {
-        return textLink(text, urlFor(action));
+        return link(text).href(urlFor(action)).build().toString();
     }
 
     @Deprecated  // Use textLink(text, actionClass) or textLink(text, url) instead
     public String textLink(String text, String href)
     {
-        return PageFlowUtil.textLink(text, href, null, null);
+        return link(text).href(href).build().toString();
     }
 
     @Deprecated  // Use URLHelper version instead
     public String textLink(String text, String href, String onClickScript, String id)
     {
-        return PageFlowUtil.textLink(text, href, onClickScript, id);
+        return link(text).href(href).onClick(onClickScript).id(id).build().toString();
     }
 
     public String textLink(String text, URLHelper url, String onClickScript, String id)
     {
-        return PageFlowUtil.textLink(text, url, onClickScript, id);
+        return link(text).href(url).onClick(onClickScript).id(id).build().toString();
     }
 
     @Deprecated  // Use URLHelper version instead
     public String textLink(String text, String href, String onClickScript, @Nullable String id, Map<String, String> props)
     {
-        return PageFlowUtil.textLink(text, href, onClickScript, id, props);
+        return link(text).href(href).onClick(onClickScript).id(id).attributes(props).build().toString();
     }
 
     public String textLink(String text, URLHelper url, String onClickScript, @Nullable String id, Map<String, String> props)
     {
-        return PageFlowUtil.textLink(text, url, onClickScript, id, props);
+        return link(text).href(url).onClick(onClickScript).id(id).attributes(props).build().toString();
     }
 
     public String textLink(String text, URLHelper url)
     {
-        return PageFlowUtil.textLink(text, url);
+        return link(text).href(url).build().toString();
     }
 
     public String iconLink(String iconCls, String tooltip, URLHelper url)
@@ -348,34 +351,34 @@ abstract public class JspBase extends JspContext implements HasViewContext
 
     public String textLink(String text, URLHelper url, String id)
     {
-        return PageFlowUtil.textLink(text, url, id);
+        return link(text).href(url).id(id).build().toString();
     }
 
     public LinkBuilder link(String text)
     {
-        return PageFlowUtil.link(text);
+        return new LinkBuilder(text);
     }
 
     // Link to another action in the current container
     public LinkBuilder link(String text, @NotNull Class<? extends Controller> actionClass)
     {
-        return PageFlowUtil.link(text).href(actionClass, getContainer());
+        return link(text).href(actionClass, getContainer());
     }
 
     // Link to a URLHelper
     public LinkBuilder link(String text, @NotNull URLHelper url)
     {
-        return PageFlowUtil.link(text).href(url);
+        return link(text).href(url);
     }
 
-    public _HtmlString generateBackButton()
+    public HtmlString generateBackButton()
     {
-        return new _HtmlString(PageFlowUtil.generateBackButton());
+        return PageFlowUtil.generateBackButton();
     }
 
-    public _HtmlString generateBackButton(String text)
+    public HtmlString generateBackButton(String text)
     {
-        return new _HtmlString(PageFlowUtil.generateBackButton(text));
+        return PageFlowUtil.generateBackButton(text);
     }
 
     public ButtonBuilder button(String text)
@@ -383,12 +386,12 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return PageFlowUtil.button(text);
     }
 
-    public _HtmlString generateReturnUrlFormField(URLHelper returnURL)
+    public HtmlString generateReturnUrlFormField(URLHelper returnURL)
     {
-        return new _HtmlString(ReturnUrlForm.generateHiddenFormField(returnURL));
+        return ReturnUrlForm.generateHiddenFormField(returnURL);
     }
 
-    public _HtmlString generateReturnUrlFormField(ReturnUrlForm form)
+    public HtmlString generateReturnUrlFormField(ReturnUrlForm form)
     {
         return generateReturnUrlFormField(form.getReturnActionURL());
     }
@@ -398,36 +401,36 @@ abstract public class JspBase extends JspContext implements HasViewContext
         HttpView.currentView().include(view, writer);
     }
     
-    public _HtmlString helpPopup(String helpText)
+    public HtmlString helpPopup(String helpText)
     {
         return helpPopup(null, helpText, false);
     }
 
-    public _HtmlString helpPopup(String title, String helpText)
+    public HtmlString helpPopup(String title, String helpText)
     {
         return helpPopup(title, helpText, false);
     }
 
-    public _HtmlString helpPopup(String title, String helpText, boolean htmlHelpText)
+    public HtmlString helpPopup(String title, String helpText, boolean htmlHelpText)
     {
-        return new _HtmlString(PageFlowUtil.helpPopup(title, helpText, htmlHelpText));
+        return new HtmlString(PageFlowUtil.helpPopup(title, helpText, htmlHelpText));
     }
 
-    public _HtmlString helpLink(String helpTopic, String displayText)
+    public HtmlString helpLink(String helpTopic, String displayText)
     {
-        return new _HtmlString(new HelpTopic(helpTopic).getSimpleLinkHtml(displayText));
+        return new HelpTopic(helpTopic).getSimpleLinkHtml(displayText);
     }
 
     // Format date using the container-configured date format and HTML filter the result
-    public _HtmlString formatDate(Date date)
+    public HtmlString formatDate(Date date)
     {
-        return new _HtmlString(null == date ? "" : h(DateUtil.formatDate(getContainer(), date)));
+        return HtmlString.of(null == date ? "" : DateUtil.formatDate(getContainer(), date));
     }
 
     // Format date & time using the container-configured date & time format and HTML filter the result
-    public _HtmlString formatDateTime(Date date)
+    public HtmlString formatDateTime(Date date)
     {
-        return new _HtmlString(null == date ? "" : h(DateUtil.formatDateTime(getContainer(), date)));
+        return HtmlString.of(null == date ? "" : DateUtil.formatDateTime(getContainer(), date));
     }
 
     public String getMessage(ObjectError e)
@@ -529,9 +532,9 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return _formatErrorList(l, false);
     }
 
-    public _HtmlString formatErrorsForPath(String path)
+    public HtmlString formatErrorsForPath(String path)
     {
-        return new _HtmlString(formatErrorsForPathStr(path));
+        return new HtmlString(formatErrorsForPathStr(path));
     }
 
     //Set<String> _returnedErrors = new HashSet<String>();
@@ -564,30 +567,30 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return _formatErrorList(l, true);
     }
 
-    protected _HtmlString formatMissedErrors(String bean)
+    protected HtmlString formatMissedErrors(String bean)
     {
-        return new _HtmlString(formatMissedErrorsStr(bean));
+        return new HtmlString(formatMissedErrorsStr(bean));
     }
 
-    protected _HtmlString formatMissedErrors(String bean, String prefix, String suffix)
+    protected HtmlString formatMissedErrors(String bean, String prefix, String suffix)
     {
         String str = formatMissedErrorsStr(bean);
         if (StringUtils.isEmpty(str))
-            return new _HtmlString(str);
+            return new HtmlString(str);
         else
-            return new _HtmlString(prefix + str + suffix);
+            return new HtmlString(prefix + str + suffix);
     }
 
     // If errors exist, returns formatted errors in a <tr> with the specified colspan (or no colspan, for 0 or 1) followed by a blank line
     // If no errors, returns an empty string
-    protected _HtmlString formatMissedErrorsInTable(String bean, int colspan)
+    protected HtmlString formatMissedErrorsInTable(String bean, int colspan)
     {
         String errorHTML = formatMissedErrorsStr(bean);
 
         if (StringUtils.isEmpty(errorHTML))
-            return new _HtmlString(errorHTML);
+            return new HtmlString(errorHTML);
         else
-            return new _HtmlString("\n<tr><td" + (colspan > 1 ? " colspan=" + colspan : "") + ">" + errorHTML + "</td></tr>\n<tr><td" + (colspan > 1 ? " colspan=" + colspan : "") + ">&nbsp;</td></tr>");
+            return new HtmlString("\n<tr><td" + (colspan > 1 ? " colspan=" + colspan : "") + ">" + errorHTML + "</td></tr>\n<tr><td" + (colspan > 1 ? " colspan=" + colspan : "") + ">&nbsp;</td></tr>");
     }
 
     protected String _formatErrorList(List<ObjectError> l, boolean fieldNames)
@@ -634,9 +637,9 @@ abstract public class JspBase extends JspContext implements HasViewContext
         }
     }
 
-    protected _HtmlString formAction(Class<? extends Controller> actionClass, Method method)
+    protected HtmlString formAction(Class<? extends Controller> actionClass, Method method)
     {
-        return new _HtmlString("action=\"" + buildURL(actionClass,method) + "\" method=\"" + method.getMethod() + "\"");
+        return new HtmlString("action=\"" + buildURL(actionClass,method) + "\" method=\"" + method.getMethod() + "\"");
     }
 
     // Provides a unique integer within the context of this request.  Handy for generating element ids, etc. See UniqueID for caveats and warnings.
@@ -696,33 +699,5 @@ abstract public class JspBase extends JspContext implements HasViewContext
     @SuppressWarnings("UnusedParameters")
     public void addClientDependencies(ClientDependencies dependencies)
     {
-    }
-
-    protected final _HtmlString _hs(String html)
-    {
-        return new _HtmlString(html);
-    }
-
-    /**
-     * This is just a marker for JspBase helper methods that return Html and do not need to be encoded
-     * No one should ever see this class it should just get passed directly from the helper to out.write()
-     *
-     * As an aside, Java 7 claims to be very good at optimizing usages like this (avoiding the object allocation)
-     * http://docs.oracle.com/javase/7/docs/technotes/guides/vm/performance-enhancements-7.html
-     */
-    final protected static class _HtmlString
-    {
-        private final String s;
-
-        public _HtmlString(String s)
-        {
-            this.s = s;
-        }
-
-        @Override
-        public String toString()
-        {
-            return s;
-        }
     }
 }

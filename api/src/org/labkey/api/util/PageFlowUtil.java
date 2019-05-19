@@ -1283,14 +1283,14 @@ public class PageFlowUtil
         return new LinkBuilder(text);
     }
 
-    public static String generateBackButton()
+    public static HtmlString generateBackButton()
     {
         return generateBackButton("Back");
     }
 
-    public static String generateBackButton(String text)
+    public static HtmlString generateBackButton(String text)
     {
-        return button(text).href("#").onClick("LABKEY.setDirty(false); window.history.back(); return false;").toString();
+        return button(text).href("#").onClick("LABKEY.setDirty(false); window.history.back(); return false;").getHtmlString();
     }
 
     public static String generateDropDownButton(String text, String href, String onClick, @Nullable Map<String, String> attributes)
@@ -1375,23 +1375,23 @@ public class PageFlowUtil
 
     public static String textLink(String text, String href, String id)
     {
-        return textLink(text, href, null, id);
+        return link(text).href(href).id(id).build().toString();
     }
 
     public static String textLink(String text, String href)
     {
-        return textLink(text, href, null, null);
+        return link(text).href(href).build().toString();
     }
 
     @Deprecated
     public static String textLink(String text, String href, @Nullable String onClickScript, @Nullable String id)
     {
-        return textLink(text, href, onClickScript, id, Collections.emptyMap());
+        return link(text).href(href).onClick(onClickScript).id(id).build().toString();
     }
 
     public static String textLink(String text, URLHelper url, @Nullable String onClickScript, @Nullable String id)
     {
-        return textLink(text, url, onClickScript, id, Collections.emptyMap());
+        return link(text).href(url).onClick(onClickScript).id(id).build().toString();
     }
 
     @Deprecated
@@ -1431,12 +1431,12 @@ public class PageFlowUtil
 
     public static String textLink(String text, URLHelper url)
     {
-        return textLink(text, url.getLocalURIString(), null, null);
+        return link(text).href(url).build().toString();
     }
 
     public static String textLink(String text, URLHelper url, String id)
     {
-        return textLink(text, url == null ? null : url.getLocalURIString(), null, id);
+        return link(text).href(url).id(id).build().toString();
     }
 
     public static String unstyledTextLink(String text, String href, String onClickScript, String id)

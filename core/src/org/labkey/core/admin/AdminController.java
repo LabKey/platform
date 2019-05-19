@@ -394,11 +394,13 @@ public class AdminController extends SpringActionController
     @AdminConsoleAction
     public class ShowAdminAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             return new JspView<>("/org/labkey/core/admin/admin.jsp", new AdminBean(getUser()));
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             URLHelper returnUrl = getViewContext().getActionURL().getReturnURL();
@@ -1486,7 +1488,7 @@ public class AdminController extends SpringActionController
 
     public static class SiteSettingsBean
     {
-        public final String helpLink;
+        public final HtmlString helpLink;
         public final boolean upgradeInProgress;
         public final boolean testInPage;
         public final boolean showSelfReportExceptions;
@@ -1499,7 +1501,7 @@ public class AdminController extends SpringActionController
             helpLink = new HelpTopic("configAdmin").getSimpleLinkHtml("more info...");
         }
 
-        private SiteSettingsBean(boolean upgradeInProgress, boolean testInPage, String helpLink)
+        private SiteSettingsBean(boolean upgradeInProgress, boolean testInPage, HtmlString helpLink)
         {
             this.upgradeInProgress = upgradeInProgress;
             this.testInPage = testInPage;
@@ -1517,6 +1519,7 @@ public class AdminController extends SpringActionController
             return new JspView<>("/org/labkey/core/admin/sitevalidation/siteValidation.jsp");
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             getPageConfig().setHelpTopic(new HelpTopic("siteValidation"));
@@ -9370,7 +9373,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @SuppressWarnings("unused")  // Invoked by
+    @SuppressWarnings("unused")  // Invoked by test framework (BaseWebDriverTest.checkActionCoverage())
     @AdminConsoleAction
     public class ExportMutationWarningsAction extends ExportAction
     {
@@ -9898,9 +9901,9 @@ public class AdminController extends SpringActionController
 
     public static class LookAndFeelBean
     {
-        public final String helpLink = new HelpTopic("customizeLook").getSimpleLinkHtml("more info...");
-        public final String welcomeLink = new HelpTopic("customizeLook").getSimpleLinkHtml("more info...");
-        public final String customColumnRestrictionHelpLink = new HelpTopic("chartTrouble").getSimpleLinkHtml("more info...");
+        public final HtmlString helpLink = new HelpTopic("customizeLook").getSimpleLinkHtml("more info...");
+        public final HtmlString welcomeLink = new HelpTopic("customizeLook").getSimpleLinkHtml("more info...");
+        public final HtmlString customColumnRestrictionHelpLink = new HelpTopic("chartTrouble").getSimpleLinkHtml("more info...");
     }
 
 

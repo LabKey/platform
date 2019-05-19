@@ -3111,7 +3111,7 @@ public class StudyController extends BaseStudyController
         return map;
     }
 
-    public static Map<String, Integer> getSortedColumnList(ViewContext context, Dataset dsd)
+    public static @NotNull Map<String, Integer> getSortedColumnList(ViewContext context, Dataset dsd)
     {
         Map<String, Map<String, Integer>> map = getDatasetSortColumnMap(context);
         Map<String, Integer> sortMap = map.get(dsd.getLabel());
