@@ -529,7 +529,7 @@ public class QueryView extends WebPartView<Object>
                     ret = DetailsURL.fromString(_deleteURL).getActionURL();
                 break;
             case detailsQueryRow:
-                // TODO kinda suspect...
+                // TODO kinda suspect... since this is a per-row url
                 if (null != _detailsURL)
                     ret = _detailsURL.getActionURL();
                 break;
