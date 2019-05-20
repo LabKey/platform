@@ -37,6 +37,7 @@ class ActionsView extends HttpView
         _summary = summary;
     }
 
+    @Override
     protected void renderInternal(Object model, PrintWriter out) throws Exception
     {
         if (!_summary)

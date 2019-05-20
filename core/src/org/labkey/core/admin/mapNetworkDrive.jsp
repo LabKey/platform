@@ -75,7 +75,7 @@
     The user account that represents the service may not automatically have permissions to access a network share that the
     logged-in user does have access to. If you are running on Windows and using LabKey Server to access files on a remote server,
     for example via the LabKey Server pipeline, you'll need to configure the server to map the network drive for the service's user account.<br>
-    (<%=text(bean.helpLink)%>)
+    (<%=bean.helpLink%>)
 </p>
 
 <labkey:errors/>

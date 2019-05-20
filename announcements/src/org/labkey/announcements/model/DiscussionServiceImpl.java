@@ -360,6 +360,7 @@ public class DiscussionServiceImpl implements DiscussionService
             return _id;
         }
 
+        @Override
         protected void renderView(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
         {
             _vbox.render(request, response);

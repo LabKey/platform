@@ -15,7 +15,6 @@
  */
 package org.labkey.api.view;
 
-import org.labkey.api.admin.CoreUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;

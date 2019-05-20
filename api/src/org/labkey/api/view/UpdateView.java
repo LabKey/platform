@@ -42,11 +42,13 @@ public class UpdateView extends DataView
         super(form, errors);
     }
 
+    @Override
     protected boolean isColumnIncluded(ColumnInfo col)
     {
         return col.isShownInUpdateView();
     }
 
+    @Override
     protected void _renderDataRegion(RenderContext ctx, Writer out) throws IOException
     {
         if (null != getRenderContext().getForm())

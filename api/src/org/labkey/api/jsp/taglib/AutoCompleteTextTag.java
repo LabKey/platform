@@ -46,6 +46,8 @@ public class AutoCompleteTextTag extends AutoCompleteTag
         _size = size;
     }
 
+    // TODO: HtmlString
+
     @Override
     protected String getTagConfig()
     {
@@ -64,6 +66,7 @@ public class AutoCompleteTextTag extends AutoCompleteTag
         return sb.toString();
     }
 
+    @Override
     protected void addOptionalAttrs(StringBuilder sb)
     {
         super.addOptionalAttrs(sb);

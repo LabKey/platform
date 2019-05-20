@@ -638,7 +638,7 @@ public class Input extends DisplayElement
     }
 
     @SuppressWarnings("unchecked")
-    public static class InputBuilder<T extends InputBuilder<T>>
+    public static class InputBuilder<T extends InputBuilder<T>> // TODO: extends DisplayElementBuilder? HtmlString?
     {
         private String _autoComplete;
         private Boolean _autoFocus;

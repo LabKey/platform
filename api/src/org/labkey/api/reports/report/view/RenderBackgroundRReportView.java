@@ -40,6 +40,7 @@ public class RenderBackgroundRReportView extends HttpView
         _report = report;        
     }
 
+    @Override
     protected void renderInternal(Object model, PrintWriter out) throws Exception
     {
         if (_report != null)

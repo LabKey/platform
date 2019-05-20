@@ -117,7 +117,7 @@
         new SqlSelector(dbschema, sqlf).forEach(rs-> {
             String ptid = rs.getString(1);
             ptidMap.put(ptid,ptidMap.size());
-            try { _out.write(commas[0]); _out.write(q(ptid)); commas[0]=(0==ptidMap.size()%10?",\n":","); } catch (IOException x) {}
+            try { _out.print(commas[0]); _out.print(q(ptid)); commas[0]=(0==ptidMap.size()%10?",\n":","); } catch (IOException x) {}
         });
         %>];
     var _groups = [<%
@@ -755,15 +755,15 @@ Ext4.onReady(<%=viewObject%>.render, <%=viewObject%>);
 void writeUnicodeChar(JspWriter out, int i) throws IOException
 {
     if (i==0)
-        out.write("\\");
+        out.print("\\");
     else if (i<16)
-        out.write("\\x0");
+        out.print("\\x0");
     else if (i<256)
-        out.write("\\x");
+        out.print("\\x");
     else if (i<4096)
-        out.write("\\u0");
+        out.print("\\u0");
     else
-        out.write("\\u");
-    out.write(Integer.toHexString(i));
+        out.print("\\u");
+    out.print(Integer.toHexString(i));
 }
 %>
