@@ -29,6 +29,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Button.ButtonBuilder;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
+import org.labkey.api.util.HasHtmlString;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Link.LinkBuilder;
@@ -344,9 +345,9 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return link(text).href(url).build().toString();
     }
 
-    public String iconLink(String iconCls, String tooltip, URLHelper url)
+    public HasHtmlString iconLink(String iconCls, String tooltip, URLHelper url)
     {
-        return PageFlowUtil.iconLink(iconCls, tooltip, url.getLocalURIString(), null, null, null);
+        return new LinkBuilder().iconCls(iconCls).tooltip(tooltip).href(url);
     }
 
     /**
@@ -427,6 +428,11 @@ abstract public class JspBase extends JspContext implements HasViewContext
     public HtmlString helpPopup(String title, String helpText, boolean htmlHelpText)
     {
         return new HtmlString(PageFlowUtil.helpPopup(title, helpText, htmlHelpText));
+    }
+
+    public HtmlString helpPopup(String title, String helpText, boolean htmlHelpText, int width)
+    {
+        return new HtmlString(PageFlowUtil.helpPopup(title, helpText, htmlHelpText, width));
     }
 
     public HtmlString helpLink(String helpTopic, String displayText)

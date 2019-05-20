@@ -80,7 +80,7 @@
 <%  } //site administrator %>
 
 
-<b>File Sets<%=PageFlowUtil.helpPopup("File Sets", fileSetHelp, true)%></b><br>
+<b>File Sets<%=helpPopup("File Sets", fileSetHelp, true)%></b><br>
 Each file set is an additional directory that stores files accessible to users of this folder.<br/>
 <%
     for (AttachmentDirectory attDir : attachmentDirs)
