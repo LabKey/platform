@@ -27,6 +27,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.FieldKey;
@@ -311,13 +312,21 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
     {
         if (AssayQCService.getProvider().supportsQC())
         {
-            if (!runIds.isEmpty())
+            try
             {
-                return AssayQCService.getProvider().getUnapprovedRuns(_protocol, runIds).isEmpty();
+                if (!runIds.isEmpty())
+                {
+                    return AssayQCService.getProvider().getUnapprovedRuns(_protocol, runIds).isEmpty();
+                }
+                else
+                {
+                    return AssayQCService.getProvider().getUnapprovedData(_protocol, dataIds).isEmpty();
+                }
+
             }
-            else
+            catch (ExperimentException e)
             {
-                return AssayQCService.getProvider().getUnapprovedData(_protocol, dataIds).isEmpty();
+                throw new RuntimeException(e);
             }
         }
         return true;

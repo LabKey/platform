@@ -47,7 +47,7 @@
 
     (function($){
 
-        setQCStates = function(data){
+        let setQCStates = function(data){
 
             if (data && data.rows){
 

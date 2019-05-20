@@ -708,7 +708,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
                                 final int rowCount = r.getSize();
 
                                 baseQueryView.setMessageSupplier(dataRegion -> {
-                                    if (dataRegion.getTotalRows() < rowCount)
+                                    if (dataRegion.getTotalRows() != null && dataRegion.getTotalRows() < rowCount)
                                     {
                                         DataRegion.Message msg = new DataRegion.Message("There are " + (rowCount - dataRegion.getTotalRows()) + " rows not shown due to unapproved QC state",
                                                 DataRegion.MessageType.WARNING, DataRegion.MessagePart.view);

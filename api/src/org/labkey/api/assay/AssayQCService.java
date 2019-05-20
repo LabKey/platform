@@ -3,6 +3,7 @@ package org.labkey.api.assay;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.qc.QCState;
 import org.labkey.api.security.User;
@@ -62,7 +63,7 @@ public interface AssayQCService
      * Get the QC state (if any) associated with the run.
      */
     @Nullable
-    QCState getQCState(ExpProtocol protocol, int runId);
+    QCState getQCState(ExpProtocol protocol, int runId) throws ExperimentException;
 
     /**
      * Generate the filter condition for the runs table based on the configured QC state.
@@ -80,8 +81,8 @@ public interface AssayQCService
      *
      * @param runs the list of runs to check
      */
-    List<Integer> getUnapprovedRuns(ExpProtocol protocol, List<Integer> runs);
-    List<Integer> getUnapprovedData(ExpProtocol protocol, List<Integer> dataIds);
+    List<Integer> getUnapprovedRuns(ExpProtocol protocol, List<Integer> runs) throws ExperimentException;
+    List<Integer> getUnapprovedData(ExpProtocol protocol, List<Integer> dataIds) throws ExperimentException;
 
     /**
      * Determine if any assay runs are assigned the specified state
