@@ -34,6 +34,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -99,6 +100,19 @@ public class DbSequenceManager
     }
 
 
+    private static Collection<Integer> getRowIds(Container c, String likePrefix, int id)
+    {
+        TableInfo tinfo = getTableInfo();
+        SQLFragment getRowIdSql = new SQLFragment("SELECT RowId FROM ").append(tinfo.getSelectName());
+        getRowIdSql.append(" WHERE Container = ? AND Name LIKE ? AND Id = ?");
+        getRowIdSql.add(c);
+        getRowIdSql.add(likePrefix + "%");
+        getRowIdSql.add(id);
+
+        return executeAndReturnIntCollection(tinfo, getRowIdSql);
+    }
+
+
     // Always initializes to 0; use ensureMinimumValue() to set a higher starting point
     private static int create(Container c, String name, int id)
     {
@@ -152,6 +166,22 @@ public class DbSequenceManager
             SQLFragment sql = new SQLFragment("DELETE FROM ").append(tinfo.getSelectName()).append(" WHERE Container = ? AND RowId = ?");
             sql.add(c);
             sql.add(rowId);
+
+            execute(tinfo, sql);
+        }
+    }
+
+    public static void deleteLike(Container c, String likePrefix, int id, SqlDialect dialect)
+    {
+        Collection<Integer> rowIds = getRowIds(c, likePrefix, id);
+
+        if (!rowIds.isEmpty())
+        {
+            TableInfo tinfo = getTableInfo();
+            SQLFragment sql = new SQLFragment("DELETE FROM ").append(tinfo.getSelectName()).append(" WHERE Container = ?");
+            sql.add(c);
+            sql.append(" AND RowId");
+            sql = dialect.appendInClauseSql(sql, rowIds);
 
             execute(tinfo, sql);
         }
@@ -332,6 +362,22 @@ public class DbSequenceManager
         try (Connection conn = scope.getPooledConnection())
         {
             return new SqlExecutor(scope, conn).setLogLevel(level).executeWithResults(sql, INTEGER_RETURNING_RESULTSET_HANDLER);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
+
+    // Executes in a separate connection that does NOT participate in the current transaction. Always returns an int.
+    private static Collection<Integer> executeAndReturnIntCollection(TableInfo tinfo, SQLFragment sql)
+    {
+        DbScope scope = tinfo.getSchema().getScope();
+
+        try (Connection conn = scope.getPooledConnection())
+        {
+            return new SqlSelector(scope, conn, sql).getCollection(Integer.class);
         }
         catch (SQLException e)
         {
