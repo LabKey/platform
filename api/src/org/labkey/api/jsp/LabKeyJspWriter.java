@@ -2,6 +2,7 @@ package org.labkey.api.jsp;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.ConcurrentHashSet;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HasHtmlString;
 import org.labkey.api.util.HtmlString;
 
@@ -63,12 +64,15 @@ public class LabKeyJspWriter extends JspWriterWrapper
 
     public static void logStatistics()
     {
-        LOG.info("print(char[]) invocations: " + CHAR_ARRAY_INVOCATIONS);
-        LOG.info("print(String) invocations: " + STRING_INVOCATIONS);
-        LOG.info("print(Object) invocations: " + OBJECT_INVOCATIONS);
+        if (AppProps.getInstance().isDevMode())
+        {
+            LOG.info("print(char[]) invocations: " + CHAR_ARRAY_INVOCATIONS);
+            LOG.info("print(String) invocations: " + STRING_INVOCATIONS);
+            LOG.info("print(Object) invocations: " + OBJECT_INVOCATIONS);
 
-        LOG.info("Unique code points that invoke print(char[]): " + UNIQUE_CHAR_ARRAY_INVOCATIONS.size());
-        LOG.info("Unique code points that invoke print(String): " + UNIQUE_STRING_INVOCATIONS.size());
-        LOG.info("Unique code points that invoke print(Object): " + UNIQUE_OBJECT_INVOCATIONS.size());
+            LOG.info("Unique code points that invoke print(char[]): " + UNIQUE_CHAR_ARRAY_INVOCATIONS.size());
+            LOG.info("Unique code points that invoke print(String): " + UNIQUE_STRING_INVOCATIONS.size());
+            LOG.info("Unique code points that invoke print(Object): " + UNIQUE_OBJECT_INVOCATIONS.size());
+        }
     }
 }
