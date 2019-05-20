@@ -22,7 +22,6 @@ public class Link extends DisplayElement implements HasHtmlString
     @Override
     public HtmlString getHtmlString()
     {
-        boolean icon = lb.iconCls != null;
         StringBuilder sb = new StringBuilder();
 
         sb.append("<a href=\"");
@@ -33,6 +32,8 @@ public class Link extends DisplayElement implements HasHtmlString
             sb.append(PageFlowUtil.filter(lb.href));
 
         sb.append("\"");
+
+        boolean icon = lb.iconCls != null;
 
         if (null != lb.cssClass || icon)
             sb.append("class=\"").append(icon ? lb.iconCls : lb.cssClass).append("\" ");

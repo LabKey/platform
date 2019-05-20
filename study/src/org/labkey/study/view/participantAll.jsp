@@ -528,7 +528,7 @@
                         boolean hasDescription = state != null && state.getDescription() != null && state.getDescription().length() > 0;
     %>
     <td>
-        <%= h(state == null ? "Unspecified" : state.getLabel())%><%= hasDescription ? helpPopup("QC State: " + state.getLabel(), state.getDescription()) : HtmlString.unsafe("") %>
+        <%= h(state == null ? "Unspecified" : state.getLabel())%><%= hasDescription ? helpPopup("QC State: " + state.getLabel(), state.getDescription()) : HtmlString.EMPTY_STRING %>
     </td>
     <%
                 countTD++;
@@ -860,7 +860,7 @@
         if (value instanceof Number)
             return HtmlString.of(Formats.formatNumber(getContainer(), (Number) value));
 
-        return HtmlString.unsafe(null == value ? "&nbsp;" : h(ConvertUtils.convert(value), true));
+        return null == value ? HtmlString.NBSP : HtmlString.unsafe(h(ConvertUtils.convert(value), true));
     }
 %>
 

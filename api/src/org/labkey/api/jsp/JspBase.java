@@ -57,6 +57,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
+import static org.labkey.api.util.HtmlString.EMPTY_STRING;
+
 /**
  * Base class for nearly all JSP pages that we use.
  * This is the place to put methods that will be useful to lots
@@ -208,17 +210,21 @@ abstract public class JspBase extends JspContext implements HasViewContext
     }
 
 
+    private static final HtmlString CHECKED = HtmlString.of(" checked");
+
     /** Returns " checked" (if true) or "" (false) */
     public HtmlString checked(boolean checked)
     {
-        return HtmlString.unsafe(checked ? " checked" : "");
+        return checked ? CHECKED : EMPTY_STRING;
     }
 
+
+    private static final HtmlString SELECTED = HtmlString.of(" selected");
 
     /** Returns " selected" (if true) or "" (false) */
     public HtmlString selected(boolean selected)
     {
-        return HtmlString.unsafe(selected ? " selected" : "");
+        return selected ? SELECTED : EMPTY_STRING;
     }
 
     /** Returns " selected" (if a.equals(b)) */
@@ -228,23 +234,30 @@ abstract public class JspBase extends JspContext implements HasViewContext
     }
 
 
+    private static final HtmlString DISABLED = HtmlString.of(" disabled");
+
     /** Returns " disabled" (if true) or "" (false) */
     public HtmlString disabled(boolean disabled)
     {
-        return HtmlString.unsafe(disabled ? " disabled" : "");
+        return disabled ? DISABLED : EMPTY_STRING;
     }
+
+    private static final HtmlString READ_ONLY = HtmlString.of(" readonly");
 
     /** Returns " readonly" (if true) or "" (false) */
     public HtmlString readonly(boolean readOnly)
     {
-        return HtmlString.unsafe(readOnly ? " readonly" : "");
+        return readOnly ? READ_ONLY: EMPTY_STRING;
     }
 
+
+    private static final HtmlString ALTERNATE_ROW = HtmlString.of("labkey-alternate-row");
+    private static final HtmlString ROW = HtmlString.of("labkey-row");
 
     // Returns "labkey-alternate-row" (true) or "labkey-row" (false)
     public HtmlString getShadeRowClass(boolean shade)
     {
-        return HtmlString.unsafe(shade ? "labkey-alternate-row" : "labkey-row");
+        return shade ? ALTERNATE_ROW : ROW;
     }
 
 

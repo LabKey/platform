@@ -2,6 +2,8 @@ package org.labkey.api.jsp;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.ConcurrentHashSet;
+import org.labkey.api.util.HasHtmlString;
+import org.labkey.api.util.HtmlString;
 
 import javax.servlet.jsp.JspWriter;
 import java.io.IOException;
@@ -43,17 +45,19 @@ public class LabKeyJspWriter extends JspWriterWrapper
     @Override
     public void print(Object obj) throws IOException
     {
-//        if
-//        (
-//            !(obj instanceof Number) &&
-//            !"org.labkey.api.jsp.JspBase$_HtmlString".equals(obj.getClass().getName()) &&
-//            !(obj instanceof Button.ButtonBuilder) &&  // Ignore for now
-//            !(obj instanceof ActionURL)                // Ignore for now
-//        )
-//            LOG.warn("I don't like this object: " + obj);
-//
-        OBJECT_INVOCATIONS.incrementAndGet();
-        UNIQUE_OBJECT_INVOCATIONS.add(Thread.currentThread().getStackTrace()[2].toString());
+        if (!(obj instanceof HtmlString))
+        {
+            if (obj instanceof HasHtmlString)
+            {
+                obj = ((HasHtmlString) obj).getHtmlString();
+            }
+            else
+            {
+                OBJECT_INVOCATIONS.incrementAndGet();
+                UNIQUE_OBJECT_INVOCATIONS.add(Thread.currentThread().getStackTrace()[2].toString());
+            }
+        }
+
         super.print(obj);
     }
 

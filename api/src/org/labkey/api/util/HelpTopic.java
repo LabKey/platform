@@ -67,20 +67,7 @@ public class HelpTopic
     // the provided text, uses the standard target, etc. Use in cases where LabKey standard link style doesn't fit in.
     public HtmlString getSimpleLinkHtml(String displayText)
     {
-        StringBuilder html = new StringBuilder();
-        html.append("<a href=\"");
-        html.append(PageFlowUtil.filter(getHelpTopicHref()));
-        html.append("\" target=\"");
-        html.append(TARGET_NAME);
-        html.append("\">");
-        html.append(PageFlowUtil.filter(displayText));
-        html.append("</a>");
-
-        HtmlString newHtml = PageFlowUtil.link(displayText).href(getHelpTopicHref()).attributes(TARGET_MAP).clearClasses().getHtmlString();
-
-        assert newHtml.toString().equals(html.toString());
-
-        return newHtml;
+        return PageFlowUtil.link(displayText).href(getHelpTopicHref()).attributes(TARGET_MAP).clearClasses().getHtmlString();
     }
 
     // TODO: Use this in places where it makes sense (search results page, etc.)
