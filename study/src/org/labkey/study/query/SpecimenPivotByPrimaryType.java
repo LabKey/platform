@@ -18,6 +18,7 @@ package org.labkey.study.query;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.study.StudyService;
 
 import java.util.Map;
@@ -31,9 +32,9 @@ public class SpecimenPivotByPrimaryType extends BaseSpecimenPivotTable
     public static final String PIVOT_BY_PRIMARY_TYPE = "Primary Type Vial Counts";
     private static final String COLUMN_DESCRIPTION_FORMAT = "Number of vials of primary type %s";
 
-    public SpecimenPivotByPrimaryType(final StudyQuerySchema schema)
+    public SpecimenPivotByPrimaryType(final StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(SpecimenReportQuery.getPivotByPrimaryType(schema.getContainer(), schema.getUser()), schema);
+        super(SpecimenReportQuery.getPivotByPrimaryType(schema, cf), schema);
         setDescription("Contains up to one row of Specimen Primary Type totals for each " + StudyService.get().getSubjectNounSingular(getContainer()) +
             "/visit combination.");
 
@@ -57,7 +58,7 @@ public class SpecimenPivotByPrimaryType extends BaseSpecimenPivotTable
                 }
                 else if (allPrimaryTypes.containsKey(primaryId))
                 {
-                    ColumnInfo wrappedCol = wrapPivotColumn(col, COLUMN_DESCRIPTION_FORMAT, allPrimaryTypes.get(primaryId),
+                    var wrappedCol = wrapPivotColumn(col, COLUMN_DESCRIPTION_FORMAT, allPrimaryTypes.get(primaryId),
                             new NameLabelPair(parts[1], parts[1]));
 
                     wrappedCol.setHidden(true);

@@ -18,7 +18,7 @@ package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
@@ -47,22 +47,22 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
     private ExpProtocol _assayProtocol;
     private Map<String, String> _columnMapping = new CaseInsensitiveHashMap<>();
 
-    public ExpQCFlagTableImpl(String name, UserSchema schema)
+    public ExpQCFlagTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoAssayQCFlag(), schema, new ExpProtocolApplicationImpl(new ProtocolApplication()));
+        super(name, ExperimentServiceImpl.get().getTinfoAssayQCFlag(), schema, new ExpProtocolApplicationImpl(new ProtocolApplication()), cf);
     }
 
-    public ColumnInfo createColumn(String alias, Column column)
+    public BaseColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
         {
             case RowId:
-                ColumnInfo rowIdColumnInfo = wrapColumn(alias, _rootTable.getColumn("RowId"));
+                var rowIdColumnInfo = wrapColumn(alias, _rootTable.getColumn("RowId"));
                 rowIdColumnInfo.setHidden(true);
                 return rowIdColumnInfo;
             case Run:
                 _columnMapping.put(column.name(), "RunId");
-                ColumnInfo runColumnInfo = wrapColumn(alias, _rootTable.getColumn("RunId"));
+                var runColumnInfo = wrapColumn(alias, _rootTable.getColumn("RunId"));
                 runColumnInfo.setFk(getExpSchema().getRunIdForeignKey());
                 return runColumnInfo;
             case FlagType:
@@ -76,13 +76,13 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
             case Created:
                 return wrapColumn(alias, _rootTable.getColumn("Created"));
             case CreatedBy:
-                ColumnInfo createdByColumn = wrapColumn(alias, _rootTable.getColumn("CreatedBy"));
+                var createdByColumn = wrapColumn(alias, _rootTable.getColumn("CreatedBy"));
                 createdByColumn.setFk(new UserIdForeignKey(getUserSchema()));
                 return createdByColumn;
             case Modified:
                 return wrapColumn(alias, _rootTable.getColumn("Modified"));
             case ModifiedBy:
-                ColumnInfo modifiedByColumn = wrapColumn(alias, _rootTable.getColumn("ModifiedBy"));
+                var modifiedByColumn = wrapColumn(alias, _rootTable.getColumn("ModifiedBy"));
                 modifiedByColumn.setFk(new UserIdForeignKey(getUserSchema()));
                 return modifiedByColumn;
             case IntKey1:
@@ -119,19 +119,20 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
 
     public void setAssayProtocol(ExpProtocol protocol)
     {
+        checkLocked();
         if (_assayProtocol != null && !_assayProtocol.equals(protocol))
         {
             throw new IllegalStateException("Cannot change assay protocol when it has already been set to " + _assayProtocol.getLSID());
         }
         _assayProtocol = protocol;
 
-        getColumn(Column.Run).setFk(new LookupForeignKey("RowId")
+        getMutableColumn(Column.Run).setFk(new LookupForeignKey("RowId")
         {
             @Override
             public TableInfo getLookupTableInfo()
             {
                 AssayProvider provider = AssayService.get().getProvider(_assayProtocol);
-                return provider.createProtocolSchema(_userSchema.getUser(), _userSchema.getContainer(), _assayProtocol, null).createRunsTable();
+                return provider.createProtocolSchema(_userSchema.getUser(), _userSchema.getContainer(), _assayProtocol, null).createRunsTable(null);
             }
 
         });

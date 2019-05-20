@@ -32,6 +32,7 @@ import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -274,7 +275,6 @@ public class AssayController extends SpringActionController
 
             return serializeAssayDefinitions(assayProtocols, c, getUser());
         }
-
     }
 
     public static ApiResponse serializeAssayDefinitions(HashMap<ExpProtocol, AssayProvider> assayProtocols, Container c, User user)
@@ -314,7 +314,7 @@ public class AssayController extends SpringActionController
         Map<String, TableInfo> tableInfoMap = new HashMap<>();
         for (String tableName : tableNames)
         {
-            TableInfo table = schema.getTable(tableName, true);
+            TableInfo table = schema.getTable(tableName, null, true, true);
             if (table != null)
             {
                 Domain domain = table.getDomain();
@@ -390,7 +390,7 @@ public class AssayController extends SpringActionController
             {
                 Object defaultValue = defaults.get(column.getFieldKey());
                 if (defaultValue != null)
-                    column.setDefaultValue(defaultValue.toString());
+                    ((BaseColumnInfo)column).setDefaultValue(defaultValue.toString());
 
                 displayColumns.add(column.getDisplayColumnFactory().createRenderer(column));
             }

@@ -50,7 +50,9 @@ import org.labkey.api.security.AuthenticationProvider.ResetPasswordProvider;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationProvider;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.util.DateUtil;
@@ -475,6 +477,19 @@ public class AuthenticationManager
             if (provider.isEnabled())
                 return true;
         return false;
+    }
+
+    /**
+     * Check permissions for those allowed to edit expiration dates
+     * @param userManager to check permissions for
+     * @param container to check against
+     * @return True if user is an Admin or UserManager and AccountExpiration is enabled, false otherwise
+     */
+    public static boolean canSetUserExpirationDate(User userManager, Container container)
+    {
+        boolean isUserManager = userManager.hasRootPermission(UserManagementPermission.class);
+        boolean isAdmin = container.hasPermission(userManager, AdminPermission.class);
+        return (isUserManager || isAdmin) && AuthenticationManager.isAccountExpirationEnabled();
     }
 
     /**

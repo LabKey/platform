@@ -51,21 +51,22 @@ import java.util.Map;
  */
 public class StudyDesignLookupBaseTable extends BaseStudyTable
 {
-    public StudyDesignLookupBaseTable(StudyQuerySchema schema, TableInfo tableInfo)
+    // Note: this has a different default container filter than BaseStudyTable
+    public StudyDesignLookupBaseTable(StudyQuerySchema schema, TableInfo tableInfo, ContainerFilter cf)
     {
-        super(schema, tableInfo);
+        super(schema, tableInfo, schema.isDataspaceProject() ? new ContainerFilter.Project(schema.getUser()) : cf);
         setDescription("Contains lookup values for dropdown options in the study designer.");
 
         for (ColumnInfo col : getRealTable().getColumns())
         {
             if (!col.getName().equalsIgnoreCase("Container"))
             {
-                ColumnInfo newCol = addWrapColumn(col);
+                var newCol = addWrapColumn(col);
                 if (col.isHidden())
                     newCol.setHidden(col.isHidden());
 
                 if (newCol.getName().equalsIgnoreCase("CreatedBy") || newCol.getName().equalsIgnoreCase("ModifiedBy"))
-                    UserIdQueryForeignKey.initColumn(schema.getUser(), schema.getContainer(), newCol, true);
+                    UserIdQueryForeignKey.initColumn(schema, newCol, true);
             }
             else
                 addContainerColumn();
@@ -78,13 +79,6 @@ public class StudyDesignLookupBaseTable extends BaseStudyTable
                 FieldKey.fromParts("Inactive")
         ));
         setDefaultVisibleColumns(defaultColumns);
-    }
-
-    public StudyDesignLookupBaseTable(StudyQuerySchema schema, TableInfo tableInfo, @Nullable ContainerFilter containerFilter)
-    {
-        this(schema, tableInfo);
-        if (null != containerFilter)
-            _setContainerFilter(containerFilter);
     }
 
     @Override

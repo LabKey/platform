@@ -15,6 +15,7 @@
  */
 package org.labkey.api.study.actions;
 
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
@@ -39,8 +40,8 @@ public class BulkPropertiesDisplayColumn extends SimpleDisplayColumn
         _form = form;
         setCaption("Run Properties");
 
-        _col = new ColumnInfo("Run Properties");
-        _col.setInputType("file");
+        _col = new BaseColumnInfo("Run Properties");
+        ((BaseColumnInfo)_col).setInputType("file");
         setWidth("100%");
     }
 

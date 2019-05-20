@@ -33,6 +33,8 @@ import java.util.List;
  */
 public interface ExpDataClass extends ExpObject
 {
+    String SEQUENCE_PREFIX = "org.labkey.experiment.api.DataClass";
+
     String getDataLsidPrefix();
 
     @Nullable

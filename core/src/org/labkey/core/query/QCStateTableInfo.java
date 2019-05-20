@@ -32,7 +32,7 @@ public class QCStateTableInfo extends FilteredTable<CoreQuerySchema>
             String name = baseColumn.getName();
             if ("Container".equalsIgnoreCase(name))
                 continue;
-            ColumnInfo wrappedColumn = addWrapColumn(baseColumn);
+            var wrappedColumn = addWrapColumn(baseColumn);
             if ("RowId".equalsIgnoreCase(name))
                 wrappedColumn.setHidden(true);
         }

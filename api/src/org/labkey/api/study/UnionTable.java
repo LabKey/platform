@@ -17,6 +17,7 @@ package org.labkey.api.study;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
@@ -31,19 +32,19 @@ public class UnionTable extends AbstractTableInfo
     final SQLFragment _sqlInner;
     final TableInfo _componentTable;       // one of the unioned tables
 
-    public UnionTable(UserSchema studyQuerySchema, String tableName, Collection<ColumnInfo> cols, SQLFragment sqlf,
+    public UnionTable(UserSchema studyQuerySchema, String tableName, Collection<BaseColumnInfo> cols, SQLFragment sqlf,
                       TableInfo componentTable, String titleColumn)
     {
         this(studyQuerySchema, tableName, cols, sqlf, componentTable);
         _titleColumn = titleColumn;
     }
 
-    public UnionTable(UserSchema studyQuerySchema, String tableName, Collection<ColumnInfo> cols, SQLFragment sqlf, TableInfo componentTable)
+    public UnionTable(UserSchema studyQuerySchema, String tableName, Collection<BaseColumnInfo> cols, SQLFragment sqlf, TableInfo componentTable)
     {
         super(studyQuerySchema.getDbSchema(), tableName);
         _studyQuerySchema = studyQuerySchema;
         _componentTable = componentTable;
-        for (ColumnInfo col : cols)
+        for (BaseColumnInfo col : cols)
         {
             col.setParentTable(this);
             addColumn(col);

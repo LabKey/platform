@@ -20,7 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.data.ColumnRenderProperties;
+import org.labkey.api.data.ColumnRenderPropertiesImpl;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -400,7 +400,7 @@ public class DomainPropertyImpl implements DomainProperty
     public void setImportAliasSet(Set<String> aliases)
     {
         String current = getImportAliases();
-        String newAliases = ColumnRenderProperties.convertToString(aliases);
+        String newAliases = ColumnRenderPropertiesImpl.convertToString(aliases);
         if (StringUtils.equals(current, newAliases))
             return;
         edit().setImportAliasesSet(aliases);

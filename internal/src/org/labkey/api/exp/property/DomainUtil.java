@@ -25,7 +25,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ColumnRenderProperties;
+import org.labkey.api.data.ColumnRenderPropertiesImpl;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -692,13 +692,13 @@ public class DomainUtil
         if (from.isSetDimension())
             to.setDimension(from.isDimension());
         else
-            to.setDimension(ColumnRenderProperties.inferIsDimension(from.getName(), from.getLookupQuery() != null, from.isHidden()));
+            to.setDimension(ColumnRenderPropertiesImpl.inferIsDimension(from.getName(), from.getLookupQuery() != null, from.isHidden()));
         if (from.isSetMeasure())
             to.setMeasure(from.isMeasure());
         else
         {
             Type type = Type.getTypeByXsdType(from.getRangeURI());
-            to.setMeasure(ColumnRenderProperties.inferIsMeasure(from.getName(), from.getLabel(), type != null && type.isNumeric(),
+            to.setMeasure(ColumnRenderPropertiesImpl.inferIsMeasure(from.getName(), from.getLabel(), type != null && type.isNumeric(),
                                                                 false, from.getLookupQuery() != null, from.isHidden()));
         }
 

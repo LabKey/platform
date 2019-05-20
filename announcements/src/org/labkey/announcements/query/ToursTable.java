@@ -25,6 +25,7 @@ import org.labkey.announcements.model.TourModel;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
@@ -92,27 +93,27 @@ public class ToursTable extends FilteredTable<AnnouncementSchema>
         }
     }
 
-    public ToursTable(AnnouncementSchema schema)
+    public ToursTable(AnnouncementSchema schema, ContainerFilter cf)
     {
-        super(CommSchema.getInstance().getTableInfoTours(), schema);
+        super(CommSchema.getInstance().getTableInfoTours(), schema, cf);
 
         //
         // Handle columns
         //
         wrapAllColumns(true);
 
-        getColumn("EntityId").setHidden(true);
-        getColumn("RowId").setHidden(true);
-        getColumn("Json").setHidden(true);
+        getMutableColumn("EntityId").setHidden(true);
+        getMutableColumn("RowId").setHidden(true);
+        getMutableColumn("Json").setHidden(true);
 
-        ColumnInfo containerCol = getColumn("Container");
+        var containerCol = getMutableColumn("Container");
         containerCol.setLabel("Folder");
         ContainerForeignKey.initColumn(containerCol, schema);
 
-        getColumn("CreatedBy").setFk(new UserIdQueryForeignKey(_userSchema.getUser(), getContainer(), true));
-        getColumn("ModifiedBy").setFk(new UserIdQueryForeignKey(_userSchema.getUser(), getContainer(), true));
+        getMutableColumn("CreatedBy").setFk(new UserIdQueryForeignKey(_userSchema, true));
+        getMutableColumn("ModifiedBy").setFk(new UserIdQueryForeignKey(_userSchema, true));
 
-        ColumnInfo modeCol = getColumn("Mode");
+        var modeCol = getMutableColumn("Mode");
         modeCol.setDisplayColumnFactory(new DisplayColumnFactory()
         {
             public DisplayColumn createRenderer(final ColumnInfo colInfo)

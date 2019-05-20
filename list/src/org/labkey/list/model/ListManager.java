@@ -291,9 +291,18 @@ public class ListManager implements SearchService.DocumentProvider
         Runnable r = () -> {
             Map<String, ListDefinition> lists = ListService.get().getLists(c);
 
-            for (ListDefinition list : lists.values())
+            try
             {
-                indexList(task, list, false);
+                QueryService.get().setEnvironment(QueryService.Environment.USER, User.getSearchUser());
+                QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, c);
+                for (ListDefinition list : lists.values())
+                {
+                    indexList(task, list, false);
+                }
+            }
+            finally
+            {
+                QueryService.get().clearEnvironment();
             }
         };
 

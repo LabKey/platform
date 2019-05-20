@@ -15,7 +15,7 @@
  */
 package org.labkey.study.query;
 
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.TableInfo;
@@ -42,9 +42,9 @@ import java.util.Collections;
  */
 public class ParticipantGroupTable extends BaseStudyTable
 {
-    public ParticipantGroupTable(StudyQuerySchema schema)
+    public ParticipantGroupTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoParticipantGroup());
+        super(schema, StudySchema.getInstance().getTableInfoParticipantGroup(), cf);
         setName(StudyService.get().getSubjectGroupTableName(schema.getContainer()));
         setDescription("This table contains one row for each " + StudyService.get().getSubjectTableName(schema.getContainer()).toLowerCase() + " group");
 
@@ -52,17 +52,17 @@ public class ParticipantGroupTable extends BaseStudyTable
         if (schema.getContainer().isProject() && getContainerFilter() instanceof DataspaceContainerFilter)
             _setContainerFilter(((DataspaceContainerFilter)getContainerFilter()).getIncludeProjectDatasetContainerFilter());
 
-        ColumnInfo folderColumn = wrapColumn("Folder", getRealTable().getColumn("Container"));
+        var folderColumn = wrapColumn("Folder", getRealTable().getColumn("Container"));
         addColumn(folderColumn);
         folderColumn.setFk(new ContainerForeignKey(_userSchema));
 
-        ColumnInfo rowIdColumn = addWrapColumn(_rootTable.getColumn("RowId"));
+        var rowIdColumn = addWrapColumn(_rootTable.getColumn("RowId"));
         rowIdColumn.setHidden(true);
         rowIdColumn.setUserEditable(false);
         rowIdColumn.setKeyField(true);
 
-        ColumnInfo categoryIdColumn = new AliasedColumn(this, "CategoryId", _rootTable.getColumn("CategoryId"));
-        categoryIdColumn.setFk(new QueryForeignKey(_userSchema, null, StudyService.get().getSubjectCategoryTableName(getContainer()), "RowId", "Label"));
+        var categoryIdColumn = new AliasedColumn(this, "CategoryId", _rootTable.getColumn("CategoryId"));
+        categoryIdColumn.setFk( QueryForeignKey.from(_userSchema, cf).to(StudyService.get().getSubjectCategoryTableName(getContainer()), "RowId", "Label") );
         addColumn(categoryIdColumn);
 
         addWrapColumn(_rootTable.getColumn("Label"));

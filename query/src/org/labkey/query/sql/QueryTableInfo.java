@@ -127,7 +127,7 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
     public void remapFieldKeys()
     {
         initFieldKeyMap();
-        for (ColumnInfo ci : getColumns())
+        for (var ci : getMutableColumns())
         {
             Map<FieldKey, FieldKey> remap = mapFieldKeyToSiblings.get(ci.getFieldKey());
             if (null == remap || remap.isEmpty())

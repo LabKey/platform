@@ -19,6 +19,7 @@ package org.labkey.api.query;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
@@ -34,9 +35,19 @@ public interface QuerySchema extends SchemaTreeNode
 
     Container getContainer();
 
+    DefaultSchema getDefaultSchema();
+
     DbSchema getDbSchema();
 
+    @Deprecated
     TableInfo getTable(String name);
+
+    TableInfo getTable(String name, ContainerFilter cf);
+
+    default ContainerFilter getDefaultContainerFilter()
+    {
+        return ContainerFilter.CURRENT;
+    }
 
     Set<String> getTableNames();
 

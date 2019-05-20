@@ -17,6 +17,7 @@
 package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
@@ -28,7 +29,7 @@ import java.util.Map;
  * {@link ColumnInfo} backed by a {@link SQLFragment} with the expression to generate the desired value. A typical way
  * to inject calculated columns into a {@link TableInfo}.
  */
-public class ExprColumn extends ColumnInfo
+public class ExprColumn extends BaseColumnInfo
 {
     /** Placeholder that is later substituted with the table/subquery alias during SQL generation */
     public static final String STR_TABLE_ALIAS = "'''~~TABLE~~'''";

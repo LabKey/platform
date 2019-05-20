@@ -103,11 +103,11 @@ public class SchemaColumnMetaData
             }
             else
             {
-                ColumnInfo colInfo;
+                BaseColumnInfo colInfo;
 
                 if (tinfo.getTableType() != DatabaseTableType.NOT_IN_DB)
                 {
-                    colInfo = getColumn(xmlColumn.getColumnName());
+                    colInfo = (BaseColumnInfo) getColumn(xmlColumn.getColumnName());
                     if (null != colInfo)
                     {
                         loadFromXml(xmlColumn, colInfo, true);
@@ -118,7 +118,7 @@ public class SchemaColumnMetaData
                 if (tinfo.getTableType() != DatabaseTableType.NOT_IN_DB)
                     colInfo = new VirtualColumnInfo(xmlColumn.getColumnName(), tinfo);
                 else
-                    colInfo = new ColumnInfo(xmlColumn.getColumnName(), tinfo);
+                    colInfo = new BaseColumnInfo(xmlColumn.getColumnName(), tinfo);
                 colInfo.setNullable(true);
                 loadFromXml(xmlColumn, colInfo, false);
                 addColumn(colInfo);
@@ -131,7 +131,7 @@ public class SchemaColumnMetaData
 
             if (column != null && getColumn(wrappedColumnXml.getColumnName()) == null)
             {
-                ColumnInfo wrappedColumn = new WrappedColumn(column, wrappedColumnXml.getColumnName());
+                var wrappedColumn = new WrappedColumn(column, wrappedColumnXml.getColumnName());
                 loadFromXml(wrappedColumnXml, wrappedColumn, false);
                 addColumn(wrappedColumn);
             }
@@ -159,7 +159,7 @@ public class SchemaColumnMetaData
         }
     }
 
-    protected void loadFromXml(ColumnType xmlColumn, ColumnInfo colInfo, boolean merge)
+    protected void loadFromXml(ColumnType xmlColumn, BaseColumnInfo colInfo, boolean merge)
     {
         colInfo.loadFromXml(xmlColumn, merge);
     }
@@ -194,7 +194,7 @@ public class SchemaColumnMetaData
                 {
                     columnCount++;
                     String colName = reader.getName();
-                    ColumnInfo colInfo = getColumn(colName);
+                    BaseColumnInfo colInfo = (BaseColumnInfo)getColumn(colName);
 
                     if (null != colInfo)
                     {
@@ -221,7 +221,7 @@ public class SchemaColumnMetaData
 
     private void loadColumnsFromMetaData(SchemaTableInfo ti) throws SQLException
     {
-        ColumnInfo.createFromDatabaseMetaData(ti.getSchema().getName(), ti, null /* all columns */)
+        BaseColumnInfo.createFromDatabaseMetaData(ti.getSchema().getName(), ti, null /* all columns */)
             .forEach(this::addColumn);
     }
 
@@ -306,7 +306,7 @@ public class SchemaColumnMetaData
         return Collections.unmodifiableList(_columns);
     }
 
-    protected void addColumn(ColumnInfo column)
+    protected void addColumn(BaseColumnInfo column)
     {
         if(getColumn(column.getName()) != null)
             _log.warn("Duplicate column '" + column.getName() + "' on table '" + _tinfo.getName() + "'");

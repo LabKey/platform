@@ -24,7 +24,7 @@ import org.labkey.api.query.FieldKey;
  * Date: Sep 30, 2010
  */
 
-public class NullColumnInfo extends ColumnInfo
+public class NullColumnInfo extends BaseColumnInfo
 {
     public NullColumnInfo(TableInfo parent, FieldKey name, String sqlType)
     {

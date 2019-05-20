@@ -35,7 +35,6 @@ import org.labkey.data.xml.TableType;
 import org.labkey.query.persist.QueryDef;
 import org.labkey.query.sql.Query;
 
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -182,8 +181,7 @@ public class LinkedSchemaQueryDefinition extends QueryDefinitionImpl
     @Override
     public void setContainerFilter(ContainerFilter containerFilter)
     {
-        // XXX: Maybe allow?
-        throw new UnsupportedOperationException();
+        // Container filter is pre-defined by linked schema
     }
 
     @Override

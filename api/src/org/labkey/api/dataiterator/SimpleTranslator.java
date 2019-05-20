@@ -28,8 +28,10 @@ import org.json.JSONArray;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.CounterDefinition;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.ForeignKey;
@@ -105,7 +107,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     {
         super(context);
         _data = source;
-        _outputColumns.add(new Pair<>(new ColumnInfo(source.getColumnInfo(0)), new PassthroughColumn(0)));
+        _outputColumns.add(new Pair<>(new BaseColumnInfo(source.getColumnInfo(0)), new PassthroughColumn(0)));
     }
 
     protected DataIterator getInput()
@@ -895,19 +897,19 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
     public int addColumn(int fromIndex)
     {
-        ColumnInfo col = new ColumnInfo(_data.getColumnInfo(fromIndex));
+        ColumnInfo col = new BaseColumnInfo(_data.getColumnInfo(fromIndex));
         return addColumn(col, new PassthroughColumn(fromIndex));
     }
 
     public int addColumn(ColumnInfo from, int fromIndex)
     {
-        ColumnInfo clone = new ColumnInfo(from);
+        ColumnInfo clone = new BaseColumnInfo(from);
         return addColumn(clone, new PassthroughColumn(fromIndex));
     }
 
     public int addColumn(String name, int fromIndex)
     {
-        ColumnInfo col = new ColumnInfo(_data.getColumnInfo(fromIndex));
+        var col = new BaseColumnInfo(_data.getColumnInfo(fromIndex));
         col.setName(name);
         return addColumn(col, new PassthroughColumn(fromIndex));
     }
@@ -964,7 +966,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
     public int addAliasColumn(String name, int aliasIndex)
     {
-        ColumnInfo col = new ColumnInfo(_outputColumns.get(aliasIndex).getKey());
+        var col = new BaseColumnInfo(_outputColumns.get(aliasIndex).getKey());
         col.setName(name);
         // don't want duplicate property ids usually
         col.setPropertyURI(null);
@@ -973,7 +975,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
     public int addAliasColumn(String name, int aliasIndex, JdbcType toType)
     {
-        ColumnInfo col = new ColumnInfo(_outputColumns.get(aliasIndex).getKey());
+        var col = new BaseColumnInfo(_outputColumns.get(aliasIndex).getKey());
         col.setName(name);
         col.setJdbcType(toType);
         // don't want duplicate property ids usually
@@ -983,7 +985,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
     public int addConvertColumn(String name, int fromIndex, JdbcType toType, boolean mv)
     {
-        ColumnInfo col = new ColumnInfo(_data.getColumnInfo(fromIndex));
+        var col = new BaseColumnInfo(_data.getColumnInfo(fromIndex));
         col.setName(name);
         col.setJdbcType(toType);
         return addConvertColumn(col, fromIndex, mv);
@@ -1022,7 +1024,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
     public int addCoaleseColumn(String name, int fromIndex, Supplier second)
     {
-        ColumnInfo col = new ColumnInfo(_data.getColumnInfo(fromIndex));
+        var col = new BaseColumnInfo(_data.getColumnInfo(fromIndex));
         col.setName(name);
         return addColumn(col, new CoalesceColumn(fromIndex, second));
     }
@@ -1030,21 +1032,21 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
     public int addNullColumn(String name, JdbcType type)
     {
-        ColumnInfo col = new ColumnInfo(name, type);
+        ColumnInfo col = new BaseColumnInfo(name, type);
         return addColumn(col, new NullColumn());
     }
 
 
     public int addConstantColumn(String name, JdbcType type, Object val)
     {
-        ColumnInfo col = new ColumnInfo(name, type);
+        ColumnInfo col = new BaseColumnInfo(name, type);
         return addColumn(col, new ConstantColumn(val));
     }
 
 
     public int addTimestampColumn(String name)
     {
-        ColumnInfo col = new ColumnInfo(name, JdbcType.TIMESTAMP);
+        ColumnInfo col = new BaseColumnInfo(name, JdbcType.TIMESTAMP);
         return addColumn(col, new TimestampColumn());
     }
 
@@ -1056,7 +1058,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
      */
     public int addRemapColumn(int fromIndex, @NotNull Map<?, ?> map, RemapMissingBehavior missing)
     {
-        ColumnInfo col = new ColumnInfo(_data.getColumnInfo(fromIndex));
+        ColumnInfo col = new BaseColumnInfo(_data.getColumnInfo(fromIndex));
         RemapColumn remap = new RemapColumn(fromIndex, map, missing);
         return addColumn(col, remap);
     }
@@ -1086,7 +1088,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 });
             }
         }
-        ColumnInfo col = new ColumnInfo(_data.getColumnInfo(fromIndex));
+        ColumnInfo col = new BaseColumnInfo(_data.getColumnInfo(fromIndex));
         return addColumn(col, new SharedTableLookupColumn(fromIndex, extraColumnIndex, lookupStringToRowIdMap, dataspaceTableIdMap));
     }
 
@@ -1188,7 +1190,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 return addColumn(name, indexIn);
             else
             {
-                _outputColumns.add(new Pair<>(new ColumnInfo(name, col.getJdbcType()), c));
+                _outputColumns.add(new Pair<>(new BaseColumnInfo(name, col.getJdbcType()), c));
                 return _outputColumns.size()-1;
             }
         }
@@ -1196,7 +1198,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         else
         {
             if (!allowPassThrough)
-                _outputColumns.set(indexOut, new Pair<>(new ColumnInfo(name, col.getJdbcType()), c));
+                _outputColumns.set(indexOut, new Pair<>(new BaseColumnInfo(name, col.getJdbcType()), c));
             return indexOut;
         }
     }
@@ -1245,8 +1247,109 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             return sequence.next();
         }
     }
-    
 
+    /**
+     * @param col the column to which the PairedSequenceColumn is attached
+     * @param fromIndex index of the attached column if it exists in the input
+     * @param sequenceContainer sequence's container
+     * @param counterDefinition counter definition
+     * @param pairedIndexes indexes of the paired columns
+     * @param sequencePrefix sequence name prefix
+     * @param sequenceId sequenceId, if any
+     * @param batchSize sequence batch size
+     * @return index of PairedSequenceColumn
+     */
+    public int addPairedSequenceColumn(ColumnInfo col, @Nullable Integer fromIndex,
+                                       Container sequenceContainer, CounterDefinition counterDefinition,
+                                       List<Integer> pairedIndexes, String sequencePrefix,
+                                       @Nullable Integer sequenceId, @Nullable Integer batchSize)
+    {
+        PairedSequenceColumn seqCol = new PairedSequenceColumn(fromIndex, sequenceContainer, sequencePrefix, counterDefinition, pairedIndexes, sequenceId, batchSize);
+        return addColumn(col, seqCol);
+    }
+
+    protected class PairedSequenceColumn implements Supplier
+    {
+        // sequence settings
+        private final Container _seqContainer;
+        private final @Nullable Integer _columnIndex;
+        private final List<Integer> _pairedIndexes;
+        private final CounterDefinition _counterDefinition;
+        private final String _sequencePrefix;
+        private final int _seqId;
+        private final int _batchSize;
+
+        // sequence state
+        private Map<String, DbSequence> _sequences = new HashMap<>();
+
+        public PairedSequenceColumn(@Nullable Integer columnIndex, Container seqContainer, String sequencePrefix, CounterDefinition counterDefinition, List<Integer> pairedIndexes, @Nullable Integer seqId, @Nullable Integer batchSize)
+        {
+            _seqContainer = seqContainer;
+            _sequencePrefix = sequencePrefix;
+            _seqId = seqId == null ? 0 : seqId.intValue();
+            _batchSize = batchSize == null ? 1 : batchSize;
+            _pairedIndexes = pairedIndexes;
+            _counterDefinition = counterDefinition;
+            _columnIndex = columnIndex;
+        }
+
+        private DbSequence getSequence()
+        {
+            // Create the sequence name from the counter name + the paired values
+            List<String> pairedValues = new ArrayList<>();
+            for (Integer i : _pairedIndexes)
+            {
+                // We've already reported an error for missing paired column
+                if (i == null)
+                    return null;
+
+                Object value = _data.get(i);
+                if (null != value)
+                {
+                    pairedValues.add(value.toString());
+                }
+                else
+                {
+                    String name = _data.getColumnInfo(i).getName();
+                    addFieldError(name, "Paired column '" + name + "' must not be null for counter '" + _counterDefinition.getCounterName() + "'");
+                    return null;
+                }
+            }
+
+            String seqName = _counterDefinition.getDbSequenceName(_sequencePrefix, pairedValues);
+            if (!_sequences.containsKey(seqName))
+                _sequences.put(seqName, DbSequenceManager.getPreallocatingSequence(_seqContainer, seqName, _seqId, _batchSize));
+            return _sequences.get(seqName);
+        }
+
+        @Override
+        public Object get()
+        {
+            // Get the current value of the counter, compare with the provided value of the bound column, throw error or get the next counter number
+            DbSequence sequence = getSequence();
+            if (null != sequence)
+            {
+                int currentValue = sequence.current();
+                Object valueObj = _columnIndex != null ? _data.get(_columnIndex) : null;
+                if (null != valueObj)
+                {
+                    int value = (int) valueObj;
+                    if (value <= currentValue)
+                        return value;
+
+                    String name = _data.getColumnInfo(_columnIndex).getName();
+                    addFieldError(name, "Value (" + value + ") of paired column '" + name + "' is greater than the current counter value (" + currentValue + ") for counter '" + _counterDefinition.getCounterName() + "'");
+                }
+                else
+                {
+                    return sequence.next();
+                }
+            }
+
+            return null;
+        }
+    }
+    
     /** implementation **/
 
     @Override

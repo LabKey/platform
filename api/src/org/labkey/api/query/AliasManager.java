@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.dialect.MockSqlDialect;
@@ -278,7 +279,7 @@ public class AliasManager
     /* assumes won't be called on same columninfo twice
      * does not assume that names are unique (e.g. might be fieldkey.toString() or just fieldKey.getname())
      */
-    public void ensureAlias(ColumnInfo column, @Nullable String extra)          // TODO: any external modules use this?
+    public void ensureAlias(BaseColumnInfo column, @Nullable String extra)          // TODO: any external modules use this?
     {
         if (column.isAliasSet())
         {
@@ -290,7 +291,7 @@ public class AliasManager
             column.setAlias(decideAlias(column.getName() + StringUtils.defaultString(extra,"")));
     }
 
-    public void ensureAlias(ColumnInfo column)
+    public void ensureAlias(BaseColumnInfo column)
     {
         if (column.isAliasSet())
         {

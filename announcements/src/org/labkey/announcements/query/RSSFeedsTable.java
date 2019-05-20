@@ -18,7 +18,7 @@ package org.labkey.announcements.query;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.announcements.CommSchema;
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.TableInfo;
@@ -33,16 +33,16 @@ import org.labkey.api.security.permissions.Permission;
  */
 public class RSSFeedsTable extends FilteredTable<AnnouncementSchema>
 {
-    public RSSFeedsTable(AnnouncementSchema schema)
+    public RSSFeedsTable(AnnouncementSchema schema, ContainerFilter cf)
     {
-        super(CommSchema.getInstance().getTableInfoRSSFeeds(), schema);
+        super(CommSchema.getInstance().getTableInfoRSSFeeds(), schema, cf);
 
         //
         // Handle columns
         //
         wrapAllColumns(true);
 
-        ColumnInfo containerColumn = getColumn("Container");
+        var containerColumn = getMutableColumn("Container");
         containerColumn.setFk(new ContainerForeignKey(schema));
         containerColumn.setUserEditable(false);
         containerColumn.setLabel("Folder");

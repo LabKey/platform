@@ -31,6 +31,7 @@ import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -143,37 +144,30 @@ public class ParentChildView extends VBox
             settings.getBaseFilter().addClause(new SimpleFilter.InClause(FieldKey.fromParts("rowId"), rowIds));
         }
 
+        QueryView queryView = new QueryView(schema, settings, null);
+        TableInfo table = queryView.getTable();
 
-        QueryView queryView = new QueryView(schema, settings, null)
+        CustomView v = queryView.getCustomView();
+        if (null == v)
         {
-            protected TableInfo createTable()
+            List<FieldKey> defaultVisibleColumns = new ArrayList<>();
+            if (dataClass == null)
             {
-                //ExpDataTable table = ExperimentServiceImpl.get().createDataTable(ExpSchema.TableType.Data.toString(), getSchema());
-                TableInfo table = super.createTable();
-                //table.populate();
-                // We've already set an IN clause that restricts us to showing just data that we have permission
-                // to view
-                //table.setContainerFilter(ContainerFilter.EVERYTHING);
-
-                List<FieldKey> defaultVisibleColumns = new ArrayList<>();
-                if (dataClass == null)
-                {
-                    // The table columns without any of the DataClass property columns
-                    defaultVisibleColumns.add(FieldKey.fromParts(ExpDataTable.Column.Name));
-                    defaultVisibleColumns.add(FieldKey.fromParts(ExpDataTable.Column.DataClass));
-                    defaultVisibleColumns.add(FieldKey.fromParts(ExpDataTable.Column.Flag));
-                }
-                else
-                {
-                    defaultVisibleColumns.addAll(table.getDefaultVisibleColumns());
-                }
-                defaultVisibleColumns.add(FieldKey.fromParts(ExpDataTable.Column.Created));
-                defaultVisibleColumns.add(FieldKey.fromParts(ExpDataTable.Column.CreatedBy));
-                defaultVisibleColumns.add(FieldKey.fromParts(ExpDataTable.Column.Run));
-                table.setDefaultVisibleColumns(defaultVisibleColumns);
-                return table;
+                // The table columns without any of the DataClass property columns
+                defaultVisibleColumns.add(FieldKey.fromParts(ExpDataTable.Column.Name));
+                defaultVisibleColumns.add(FieldKey.fromParts(ExpDataTable.Column.DataClass));
+                defaultVisibleColumns.add(FieldKey.fromParts(ExpDataTable.Column.Flag));
             }
-        };
+            else
+            {
+                defaultVisibleColumns.addAll(table.getDefaultVisibleColumns());
+            }
+            defaultVisibleColumns.add(FieldKey.fromParts(ExpDataTable.Column.Created));
+            defaultVisibleColumns.add(FieldKey.fromParts(ExpDataTable.Column.CreatedBy));
+            defaultVisibleColumns.add(FieldKey.fromParts(ExpDataTable.Column.Run));
+
+            queryView.getSettings().setFieldKeys(defaultVisibleColumns);
+        }
 
         return configureView(queryView, title);
     }
@@ -228,7 +222,7 @@ public class ParentChildView extends VBox
         {
             protected TableInfo createTable()
             {
-                ExpMaterialTable table = ExperimentServiceImpl.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), getSchema());
+                ExpMaterialTable table = ExperimentServiceImpl.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), getSchema(), getContainerFilter());
                 table.setMaterials(materials);
                 table.populate(ss, false);
                 // We've already set an IN clause that restricts us to showing just data that we have permission

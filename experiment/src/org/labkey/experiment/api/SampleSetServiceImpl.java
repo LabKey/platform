@@ -420,7 +420,7 @@ public class SampleSetServiceImpl implements SampleSetService
                 Integer rowId = (Integer) row.get("rowId");
                 Integer domainId = (Integer) row.get("domainId");
 
-                DbSequenceManager.delete(ContainerManager.getSharedContainer(), ExpSampleSetImpl.GENID_SEQUENCE_NAME, rowId);
+                DbSequenceManager.delete(ContainerManager.getSharedContainer(), ExpSampleSetImpl.SEQUENCE_PREFIX, rowId);
 
                 Domain d = PropertyService.get().getDomain(domainId);
                 if (d != null)
@@ -488,8 +488,6 @@ public class SampleSetServiceImpl implements SampleSetService
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
-            DbSequenceManager.delete(c, ExpSampleSetImpl.GENID_SEQUENCE_NAME, source.getRowId());
-
             // TODO: option to skip deleting rows from the materialized table since we're about to delete it anyway
             // TODO do we need both truncateSampleSet() and deleteDomainObjects()?
             truncateSampleSet(source, user, null);
@@ -507,6 +505,10 @@ public class SampleSetServiceImpl implements SampleSetService
             transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
             transaction.commit();
         }
+
+        // Delete sequences (genId and the unique counters)
+        DbSequenceManager.deleteLike(c, ExpSampleSet.SEQUENCE_PREFIX, source.getRowId(), getExpSchema().getSqlDialect());
+
         SchemaKey samplesSchema = SchemaKey.fromParts(SamplesSchema.SCHEMA_NAME);
         QueryService.get().fireQueryDeleted(user, c, null, samplesSchema, singleton(source.getName()));
 

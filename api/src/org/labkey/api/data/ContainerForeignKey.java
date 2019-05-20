@@ -16,10 +16,10 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 
 /**
@@ -29,14 +29,12 @@ import org.labkey.api.view.ActionURL;
  */
 public class ContainerForeignKey extends QueryForeignKey
 {
-    private final User _user;
-
-    static public ColumnInfo initColumn(ColumnInfo column, UserSchema schema)
+    static public BaseColumnInfo initColumn(BaseColumnInfo column, UserSchema schema)
     {
         return initColumn(column, schema, null);
     }
 
-    static public ColumnInfo initColumn(ColumnInfo column, UserSchema schema, final ActionURL url)
+    static public BaseColumnInfo initColumn(@NotNull BaseColumnInfo column, UserSchema schema, final ActionURL url)
     {
         column.setFk(new ContainerForeignKey(schema));
         column.setUserEditable(false);
@@ -51,27 +49,11 @@ public class ContainerForeignKey extends QueryForeignKey
 
     public ContainerForeignKey(UserSchema schema)
     {
-        this(schema.getContainer(), schema.getUser());
+        super(schema, new ContainerFilter.InternalNoContainerFilter(schema.getUser()), "core", schema.getContainer(), null, schema.getUser(), "Containers", "EntityId", "DisplayName");
     }
 
-    public ContainerForeignKey(Container c, User user)
+    public ContainerForeignKey(UserSchema schema, ContainerFilter cf)
     {
-        super("core", c, null, user, "Containers", "EntityId", "DisplayName");
-        _user = user;
-    }
-
-    @Override
-    public TableInfo getLookupTableInfo()
-    {
-        TableInfo containers = super.getLookupTableInfo();
-        if (null != containers)
-            ((ContainerFilterable)containers).setContainerFilter(new ContainerFilter.InternalNoContainerFilter(_user));
-        return containers;
-    }
-
-    @Override
-    public void propagateContainerFilter(ColumnInfo foreignKey, TableInfo lookupTable)
-    {
-        /* let's not propagate */
+        super(schema, cf, "core", schema.getContainer(), null, schema.getUser(), "Containers", "EntityId", "DisplayName");
     }
 }

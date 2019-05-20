@@ -96,14 +96,13 @@ public class TreatmentDataWriter extends DefaultStudyDesignWriter implements Int
         StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
         TableInfo tableInfo = schema.getTable(StudyQuerySchema.TREATMENT_VISIT_MAP_TABLE_NAME);
 
-        List<FieldKey> fields = new ArrayList<>();
-        fields.addAll(tableInfo.getDefaultVisibleColumns());
+        List<FieldKey> fields = new ArrayList<>(tableInfo.getDefaultVisibleColumns());
 
         // we want to include the cohort label and visit sequence number so we can resolve during import
         fields.add(FieldKey.fromParts("cohortId", "label"));
         fields.add(FieldKey.fromParts("visitId", "sequenceNumMin"));
 
         Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(tableInfo, fields);
-        writeTableData(ctx, vf, tableInfo, new ArrayList<>(columns.values()), null);
+        writeTableData(ctx, vf, tableInfo, new ArrayList<>(columns.values()));
     }
 }

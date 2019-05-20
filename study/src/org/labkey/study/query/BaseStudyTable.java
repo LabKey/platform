@@ -18,12 +18,12 @@ package org.labkey.study.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DelegatingContainerFilter;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
@@ -70,25 +70,26 @@ import java.util.Set;
 
 public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 {
-    public BaseStudyTable(StudyQuerySchema schema, TableInfo realTable)
+    public BaseStudyTable(StudyQuerySchema schema, TableInfo realTable, ContainerFilter cf)
     {
-        this(schema, realTable, false);
+        this(schema, realTable, cf,false);
     }
 
-    public BaseStudyTable(StudyQuerySchema schema, TableInfo realTable, boolean includeSourceStudyData)
+    public BaseStudyTable(StudyQuerySchema schema, TableInfo realTable, ContainerFilter cf, boolean includeSourceStudyData)
     {
-        this(schema, realTable, includeSourceStudyData, false);
+        this(schema, realTable, cf, includeSourceStudyData, false);
     }
 
-
-    public BaseStudyTable(StudyQuerySchema schema, TableInfo realTable, boolean includeSourceStudyData, boolean skipPermissionChecks)
+    public BaseStudyTable(StudyQuerySchema schema, TableInfo realTable, ContainerFilter cf, boolean includeSourceStudyData, boolean skipPermissionChecks)
     {
         super(realTable, schema);
 
         if (includeSourceStudyData && null != schema._study && !schema._study.isDataspaceStudy())
             _setContainerFilter(new ContainerFilter.StudyAndSourceStudy(schema.getUser(), skipPermissionChecks));
+        else if (null != cf && supportsContainerFilter())
+            _setContainerFilter(cf);
         else
-            _setContainerFilter(schema.getDefaultContainerFilter());
+            _setContainerFilter(getDefaultContainerFilter());
 
         if (!includeSourceStudyData && skipPermissionChecks)
             throw new IllegalArgumentException("Skipping permission checks only applies when including source study data");
@@ -136,12 +137,12 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
     }
 
 
-    protected ColumnInfo addWrapParticipantColumn(String rootTableColumnName)
+    protected BaseColumnInfo addWrapParticipantColumn(String rootTableColumnName)
     {
         final String subjectColName = StudyService.get().getSubjectColumnName(getContainer());
         final String subjectTableName = StudyService.get().getSubjectTableName(getContainer());
 
-        ColumnInfo participantColumn =
+        var participantColumn =
                 new AliasedColumn(this, subjectColName, _rootTable.getColumn(rootTableColumnName));
         LookupForeignKey lfk = new LookupForeignKey(subjectTableName, subjectColName, null)
         {
@@ -197,30 +198,28 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
     }
 
 
-    protected ColumnInfo addWrapLocationColumn(String wrappedName, String rootTableColumnName)
+    protected BaseColumnInfo addWrapLocationColumn(String wrappedName, String rootTableColumnName)
     {
-        ColumnInfo locationColumn = new AliasedColumn(this, wrappedName, _rootTable.getColumn(rootTableColumnName));
+        var locationColumn = new AliasedColumn(this, wrappedName, _rootTable.getColumn(rootTableColumnName));
         locationColumn.setFk(new LookupForeignKey("RowId")
         {
             public TableInfo getLookupTableInfo()
             {
-                LocationTable result = new LocationTable(_userSchema);
-                if (_userSchema.allowSetContainerFilter())
-                    result.setContainerFilter(new DelegatingContainerFilter(BaseStudyTable.this));
+                LocationTable result = new LocationTable(_userSchema, _userSchema.allowSetContainerFilter() ? getContainerFilter() : null);
                 return result;
             }
         });
         return addColumn(locationColumn);
     }
 
-    protected ColumnInfo addContainerColumn()
+    protected BaseColumnInfo addContainerColumn()
     {
-        return  addContainerColumn(false);
+        return addContainerColumn(false);
     }
 
-    protected ColumnInfo addContainerColumn(boolean isProvisioned)
+    protected BaseColumnInfo addContainerColumn(boolean isProvisioned)
     {
-        ColumnInfo containerCol;
+        BaseColumnInfo containerCol;
         if (isProvisioned)
         {
             SQLFragment sql = new SQLFragment("CAST (");
@@ -239,22 +238,22 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 
     protected ColumnInfo addWrapTypeColumn(String wrappedName, final String rootTableColumnName)
     {
-        ColumnInfo typeColumn = new AliasedColumn(this, wrappedName, _rootTable.getColumn(rootTableColumnName));
-        LookupForeignKey fk = new LookupForeignKey("RowId")
+        var typeColumn = new AliasedColumn(this, wrappedName, _rootTable.getColumn(rootTableColumnName));
+        LookupForeignKey fk = new LookupForeignKey(getContainerFilter(), "RowId", null)
         {
             public TableInfo getLookupTableInfo()
             {
                 BaseStudyTable result;
                 if (rootTableColumnName.equals("PrimaryTypeId"))
-                    result = new PrimaryTypeTable(_userSchema);
+                    result = new PrimaryTypeTable(_userSchema, getLookupContainerFilter());
                 else if (rootTableColumnName.equals("DerivativeTypeId") || rootTableColumnName.equals("DerivativeTypeId2"))
-                    result = new DerivativeTypeTable(_userSchema);
+                    result = new DerivativeTypeTable(_userSchema, getLookupContainerFilter());
                 else if (rootTableColumnName.equals("AdditiveTypeId"))
-                    result = new AdditiveTypeTable(_userSchema);
+                    result = new AdditiveTypeTable(_userSchema, getLookupContainerFilter());
                 else
                     throw new IllegalStateException(rootTableColumnName + " is not recognized as a valid specimen type column.");
                 if (_userSchema.allowSetContainerFilter())
-                    result.setContainerFilter(new DelegatingContainerFilter(BaseStudyTable.this));
+                    result.setContainerFilter(getLookupContainerFilter());
                 return result;
             }
         };
@@ -266,14 +265,14 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 
     protected ColumnInfo addSpecimenVisitColumn(TimepointType timepointType, boolean isProvisioned)
     {
-        ColumnInfo aliasVisitColumn = new AliasedColumn(this, "SequenceNum", _rootTable.getColumn("VisitValue"));
+        var aliasVisitColumn = new AliasedColumn(this, "SequenceNum", _rootTable.getColumn("VisitValue"));
         return addSpecimenVisitColumn(timepointType, aliasVisitColumn, isProvisioned);
     }
 
-    protected ColumnInfo addSpecimenVisitColumn(TimepointType timepointType, ColumnInfo aliasVisitColumn, boolean isProvisioned)
+    protected ColumnInfo addSpecimenVisitColumn(TimepointType timepointType, BaseColumnInfo aliasVisitColumn, boolean isProvisioned)
     {
-        ColumnInfo visitColumn = null;
-        ColumnInfo visitDescriptionColumn = addWrapColumn(_rootTable.getColumn("VisitDescription"));
+        BaseColumnInfo visitColumn = null;
+        var visitDescriptionColumn = addWrapColumn(_rootTable.getColumn("VisitDescription"));
 
         // add the sequenceNum column so we have it for later queries
         // Make it visible by default since it's useful in scenarios like specimen lookups from assay data
@@ -294,13 +293,13 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             visitColumn = addColumn(new ParticipantVisitColumn(this, isProvisioned ? getContainer() : null));
         }
 
-        LookupForeignKey visitFK = new LookupForeignKey(null, (String) null, "RowId", null)
+        LookupForeignKey visitFK = new LookupForeignKey(getContainerFilter(), "RowId", null)
         {
             public TableInfo getLookupTableInfo()
             {
-                VisitTable visitTable = new VisitTable(_userSchema);
+                VisitTable visitTable = new VisitTable(_userSchema, getLookupContainerFilter());
                 if (_userSchema.allowSetContainerFilter())
-                    visitTable.setContainerFilter(new DelegatingContainerFilter(BaseStudyTable.this));
+                    visitTable.setContainerFilter(getLookupContainerFilter());
                 return visitTable;
             }
         };
@@ -449,13 +448,13 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 
     protected void addVialCommentsColumn(final boolean joinBackToSpecimens)
     {
-        ColumnInfo commentsColumn = new AliasedColumn(this, "VialComments", _rootTable.getColumn("GlobalUniqueId"));
-        LookupForeignKey commentsFK = new LookupForeignKey("GlobalUniqueId")
+        var commentsColumn = new AliasedColumn(this, "VialComments", _rootTable.getColumn("GlobalUniqueId"));
+        LookupForeignKey commentsFK = new LookupForeignKey(getContainerFilter(), "GlobalUniqueId", null)
         {
             public TableInfo getLookupTableInfo()
             {
-                SpecimenCommentTable result = new SpecimenCommentTable(_userSchema, joinBackToSpecimens);
-                result.setContainerFilter(new DelegatingContainerFilter(BaseStudyTable.this));
+                SpecimenCommentTable result = new SpecimenCommentTable(_userSchema, getLookupContainerFilter(), joinBackToSpecimens);
+                result.setContainerFilter(getLookupContainerFilter());
                 return result;
             }
         };
@@ -851,7 +850,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             SQLFragment sql = new SQLFragment(ExprColumn.STR_TABLE_ALIAS);
             String legalName = property.getLegalSelectName(dialect);
             sql.append(".").append(legalName);
-            ColumnInfo column = new ExprColumn(this, legalName, sql, property.getJdbcType());
+            var column = new ExprColumn(this, legalName, sql, property.getJdbcType());
             PropertyColumn.copyAttributes(getUserSchema().getUser(), column, domainProperty, getContainer(), null);
             if (editable)
             {
@@ -872,7 +871,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         // Workaround to prevent IllegalArgumentException for assay tables
         if (getColumn("Folder") == null)
         {
-            ColumnInfo folder = new AliasedColumn(this, "Folder", _rootTable.getColumn("Container"));
+            var folder = new AliasedColumn(this, "Folder", _rootTable.getColumn("Container"));
             ContainerForeignKey.initColumn(folder,getUserSchema());
             folder.setHidden(true);
             addColumn(folder);
@@ -883,7 +882,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 
     protected ColumnInfo addStudyColumn()
     {
-        ColumnInfo study = new AliasedColumn(this, "Study", _rootTable.getColumn("Container"));
+        var study = new AliasedColumn(this, "Study", _rootTable.getColumn("Container"));
 
 //      NOTE: QFK doesn't seem to support container joins
 //      study.setFk(new QueryForeignKey("study", getUserSchema().getContainer(), null, getUserSchema().getUser(), "studyproperties", "Container", "Label", false));
@@ -910,6 +909,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
     }
 
 
+    @Override
     @NotNull
     public ContainerFilter getDefaultContainerFilter()
     {

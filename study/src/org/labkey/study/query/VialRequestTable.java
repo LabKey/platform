@@ -27,9 +27,9 @@ import org.labkey.study.StudySchema;
  */
 public class VialRequestTable extends FilteredTable<StudyQuerySchema>
 {
-    public VialRequestTable(final StudyQuerySchema schema)
+    public VialRequestTable(final StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(StudySchema.getInstance().getTableInfoSampleRequestSpecimen(), schema);
+        super(StudySchema.getInstance().getTableInfoSampleRequestSpecimen(), schema, cf);
         for (ColumnInfo baseColumn : _rootTable.getColumns())
         {
             String name = baseColumn.getName();
@@ -47,7 +47,7 @@ public class VialRequestTable extends FilteredTable<StudyQuerySchema>
                 {
                     public TableInfo getLookupTableInfo()
                     {
-                        return new SpecimenDetailTable(schema);
+                        return new SpecimenDetailTable(schema, cf);
                     }
                 };
                 fk.setPrefixColumnCaption(false);
@@ -70,7 +70,7 @@ public class VialRequestTable extends FilteredTable<StudyQuerySchema>
                 {
                     public TableInfo getLookupTableInfo()
                     {
-                        return new SpecimenRequestTable(schema);
+                        return new SpecimenRequestTable(schema, cf);
                     }
                 };
                 fk.setPrefixColumnCaption(false);
@@ -80,7 +80,7 @@ public class VialRequestTable extends FilteredTable<StudyQuerySchema>
             }
             else if (!"Container".equalsIgnoreCase(name))
             {
-                ColumnInfo wrappedColumn = addWrapColumn(baseColumn);
+                var wrappedColumn = addWrapColumn(baseColumn);
                 if ("RowId".equalsIgnoreCase(name))
                     wrappedColumn.setHidden(true);
             }

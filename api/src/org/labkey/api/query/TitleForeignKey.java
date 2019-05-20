@@ -39,6 +39,7 @@ public class TitleForeignKey extends AbstractForeignKey
 
     public TitleForeignKey(ActionURL baseURL, ColumnInfo lookupKey, ColumnInfo displayColumn, String paramName, ContainerContext cc)
     {
+        super(null,null);
         _baseURL = baseURL;
         _lookupKey = lookupKey;
         _displayColumn = displayColumn;
