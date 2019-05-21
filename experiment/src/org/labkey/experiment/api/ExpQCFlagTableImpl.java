@@ -16,6 +16,8 @@
 
 package org.labkey.experiment.api;
 
+import org.apache.commons.beanutils.ConversionException;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
@@ -54,6 +56,7 @@ import java.util.Map;
 
 public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> implements ExpQCFlagTable
 {
+    private static final Logger LOG = Logger.getLogger(ExpQCFlagTableImpl.class);
     private ExpProtocol _assayProtocol;
     private Map<String, String> _columnMapping = new CaseInsensitiveHashMap<>();
 
@@ -216,35 +219,49 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
 
         private void addAuditEvent(Container container, @Nullable User user, int action, Map<String, Object> row)
         {
-            ObjectFactory<ExpQCFlag> f = ObjectFactory.Registry.getFactory(ExpQCFlag.class);
-            ExpQCFlag flag = f.fromMap(row);
-
-            ExperimentAuditProvider.ExperimentAuditEvent event = new ExperimentAuditProvider.ExperimentAuditEvent(container.getId(), flag.getComment());
-
-            ExpRun run = ExperimentService.get().getExpRun(flag.getRunId());
-            if (run != null)
+            // for now we are only auditing QCState related flag events
+            if (row.containsKey("IntKey1") && row.get("IntKey1") != null)
             {
-                event.setProtocolLsid(run.getProtocol().getLSID());
-                event.setRunLsid(run.getLSID());
-                event.setProtocolRun(ExperimentAuditProvider.getKey3(run.getProtocol(), run));
-                event.setProtocolLsid(run.getLSID());
-
-                // check if there is a QC state associated with this flag
-                QCState state = QCStateManager.getInstance().getQCStateForRowId(container, flag.getIntKey1());
-                switch (action)
+                try
                 {
-                    case INSERT:
-                        event.setMessage(state != null ? "QC State was set to: " + state.getLabel() : "QC State was added");
-                        break;
-                    case UPDATE:
-                        event.setMessage(state != null ? "QC State was updated to: " + state.getLabel() : "QC State was updated");
-                        break;
-                    case DELETE:
-                        event.setMessage(state != null ? "QC State was removed: " + state.getLabel() : "QC State was removed");
-                        break;
+                    ObjectFactory<ExpQCFlag> f = ObjectFactory.Registry.getFactory(ExpQCFlag.class);
+                    ExpQCFlag flag = f.fromMap(row);
+
+                    ExpRun run = ExperimentService.get().getExpRun(flag.getRunId());
+                    if (run != null)
+                    {
+                        // check if there is a QC state associated with this flag
+                        QCState state = QCStateManager.getInstance().getQCStateForRowId(container, flag.getIntKey1());
+                        if (state != null)
+                        {
+                            ExperimentAuditProvider.ExperimentAuditEvent event = new ExperimentAuditProvider.ExperimentAuditEvent(container.getId(), flag.getComment());
+
+                            event.setProtocolLsid(run.getProtocol().getLSID());
+                            event.setRunLsid(run.getLSID());
+                            event.setProtocolRun(ExperimentAuditProvider.getKey3(run.getProtocol(), run));
+                            event.setProtocolLsid(run.getLSID());
+
+                            switch (action)
+                            {
+                                case INSERT:
+                                    event.setMessage("QC State was set to: " + state.getLabel());
+                                    break;
+                                case UPDATE:
+                                    event.setMessage("QC State was updated to: " + state.getLabel());
+                                    break;
+                                case DELETE:
+                                    event.setMessage("QC State was removed: " + state.getLabel());
+                                    break;
+                            }
+                            event.setQcState(state.getRowId());
+                            AuditLogService.get().addEvent(user, event);
+                        }
+                    }
                 }
-                event.setQcState(state != null ? state.getRowId() : null);
-                AuditLogService.get().addEvent(user, event);
+                catch (ConversionException e)
+                {
+                    LOG.warn("Unable to log audit event for QC flag changes: " + e.getMessage());
+                }
             }
         }
     }
